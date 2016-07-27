@@ -162,6 +162,8 @@ public:
                                  bool specialized = false);
   void generate_function_helpers(t_service* tservice, t_function* tfunction);
   void generate_service_async_skeleton(t_service* tservice);
+  void generate_service_stub_interface(t_service* tservice);
+  void generate_service_stub(t_service* tservice);
 
   /**
    * Serialization constructs
@@ -883,10 +885,10 @@ void t_cpp_generator::generate_struct_declaration(ofstream& out,
                                                   bool is_user_struct) {
   string extends = "";
   if (is_exception) {
-    extends = " : public ::apache::thrift::TException";
+    extends = " : public apache::thrift::TException";
   } else {
-    if (is_user_struct && !gen_templates_) {
-      extends = " : public virtual ::apache::thrift::TBase";
+    if (!gen_templates_) {
+      extends = " : public virtual apache::thrift::TBase";
     }
   }
 
@@ -1130,9 +1132,15 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
   vector<t_field*>::const_iterator m_iter;
   const vector<t_field*>& members = tstruct->get_members();
 
+  string method_prefix = "";
+  if (service_name_ != "") {
+    method_prefix = service_name_ + "::";
+  }
+
   // Destructor
   if (tstruct->annotations_.find("final") == tstruct->annotations_.end()) {
-    force_cpp_out << endl << indent() << tstruct->get_name() << "::~" << tstruct->get_name()
+    force_cpp_out << endl << indent() << method_prefix <<
+    tstruct->get_name() << "::~" << tstruct->get_name()
                   << "() throw() {" << endl;
     indent_up();
 
@@ -1145,12 +1153,14 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
     for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
       if (is_reference((*m_iter))) {
         std::string type = type_name((*m_iter)->get_type());
-        out << endl << indent() << "void " << tstruct->get_name() << "::__set_"
+        out << endl << indent() << "void " << method_prefix
+            << tstruct->get_name() << "::__set_"
             << (*m_iter)->get_name() << "(boost::shared_ptr<"
             << type_name((*m_iter)->get_type(), false, false) << ">";
         out << " val) {" << endl;
       } else {
-        out << endl << indent() << "void " << tstruct->get_name() << "::__set_"
+        out << endl << indent() << "void " << method_prefix
+            << tstruct->get_name() << "::__set_"
             << (*m_iter)->get_name() << "(" << type_name((*m_iter)->get_type(), false, true);
         out << " val) {" << endl;
       }
@@ -1177,12 +1187,17 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
  * @param tstruct The struct
  */
 void t_cpp_generator::generate_struct_reader(ofstream& out, t_struct* tstruct, bool pointers) {
+  string method_prefix = "";
+  if (service_name_ != "") {
+    method_prefix = service_name_ + "::";
+  }
+
   if (gen_templates_) {
     out << indent() << "template <class Protocol_>" << endl << indent() << "uint32_t "
-        << tstruct->get_name() << "::read(Protocol_* iprot) {" << endl;
+        << method_prefix << tstruct->get_name() << "::read(Protocol_* iprot) {" << endl;
   } else {
-    indent(out) << "uint32_t " << tstruct->get_name()
-                << "::read(::apache::thrift::protocol::TProtocol* iprot) {" << endl;
+    indent(out) << "uint32_t " << method_prefix << tstruct->get_name()
+                << "::read(::apache::thrift::protocol::TProtocol* iprot) {" << endl;  
   }
   indent_up();
 
@@ -1301,14 +1316,18 @@ void t_cpp_generator::generate_struct_reader(ofstream& out, t_struct* tstruct, b
  */
 void t_cpp_generator::generate_struct_writer(ofstream& out, t_struct* tstruct, bool pointers) {
   string name = tstruct->get_name();
+  string method_prefix = "";
+  if (service_name_ != "") {
+    method_prefix = service_name_ + "::";
+  }
   const vector<t_field*>& fields = tstruct->get_sorted_members();
   vector<t_field*>::const_iterator f_iter;
 
   if (gen_templates_) {
     out << indent() << "template <class Protocol_>" << endl << indent() << "uint32_t "
-        << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
+        << method_prefix << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
   } else {
-    indent(out) << "uint32_t " << tstruct->get_name()
+    indent(out) << "uint32_t " << method_prefix << tstruct->get_name()
                 << "::write(::apache::thrift::protocol::TProtocol* oprot) const {" << endl;
   }
   indent_up();
@@ -1369,14 +1388,18 @@ void t_cpp_generator::generate_struct_result_writer(ofstream& out,
                                                     t_struct* tstruct,
                                                     bool pointers) {
   string name = tstruct->get_name();
+  string method_prefix = "";
+  if (service_name_ != "") {
+    method_prefix = service_name_ + "::";
+  }
   const vector<t_field*>& fields = tstruct->get_sorted_members();
   vector<t_field*>::const_iterator f_iter;
 
   if (gen_templates_) {
     out << indent() << "template <class Protocol_>" << endl << indent() << "uint32_t "
-        << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
+        << method_prefix << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
   } else {
-    indent(out) << "uint32_t " << tstruct->get_name()
+    indent(out) << "uint32_t " << method_prefix << tstruct->get_name()
                 << "::write(::apache::thrift::protocol::TProtocol* oprot) const {" << endl;
   }
   indent_up();
@@ -1387,16 +1410,16 @@ void t_cpp_generator::generate_struct_result_writer(ofstream& out,
 
   bool first = true;
   for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
-    if (first) {
-      first = false;
-      out << endl << indent() << "if ";
-    } else {
-      out << " else if ";
-    }
+    // if (first) {
+    //   first = false;
+    //   out << endl << indent() << "if ";
+    // } else {
+    //   out << " else if ";
+    // }
 
-    out << "(this->__isset." << (*f_iter)->get_name() << ") {" << endl;
+    // out << "(this->__isset." << (*f_iter)->get_name() << ") {" << endl;
 
-    indent_up();
+    // indent_up();
 
     // Write field header
     out << indent() << "xfer += oprot->writeFieldBegin("
@@ -1411,8 +1434,8 @@ void t_cpp_generator::generate_struct_result_writer(ofstream& out,
     // Write field closer
     indent(out) << "xfer += oprot->writeFieldEnd();" << endl;
 
-    indent_down();
-    indent(out) << "}";
+    // indent_down();
+    // indent(out) << "}";
   }
 
   // Write the struct map
@@ -1478,9 +1501,13 @@ void t_cpp_generator::generate_struct_ostream_operator(std::ofstream& out, t_str
 }
 
 void t_cpp_generator::generate_struct_print_method_decl(std::ofstream& out, t_struct* tstruct) {
+  string method_prefix = "";
+  if (service_name_ != "") {
+    method_prefix = service_name_ + "::";
+  }
   out << "void ";
   if (tstruct) {
-    out << tstruct->get_name() << "::";
+    out << method_prefix << tstruct->get_name() << "::";
   }
   out << "printTo(std::ostream& out) const";
 }
@@ -1601,10 +1628,12 @@ void t_cpp_generator::generate_exception_what_method(std::ofstream& out, t_struc
  */
 void t_cpp_generator::generate_service(t_service* tservice) {
   string svcname = tservice->get_name();
+  string ns = tservice->get_program()->get_namespace("cpp");
 
   // Make output files
-  string f_header_name = get_out_dir() + svcname + ".h";
+  string f_header_name = get_out_dir() + svcname + ".grpc.thrift.h";
   f_header_.open(f_header_name.c_str());
+
 
   // Print header file includes
   f_header_ << autogen_comment();
@@ -1621,14 +1650,37 @@ void t_cpp_generator::generate_service(t_service* tservice) {
     f_header_ << "#include <thrift/async/TAsyncDispatchProcessor.h>" << endl;
   }
   f_header_ << "#include <thrift/async/TConcurrentClientSyncInfo.h>" << endl;
+
   f_header_ << "#include \"" << get_include_prefix(*get_program()) << program_name_ << "_types.h\""
             << endl;
-
+  
   t_service* extends_service = tservice->get_extends();
-  if (extends_service != NULL) {
+  if (extends_service != nullptr) {
     f_header_ << "#include \"" << get_include_prefix(*(extends_service->get_program()))
-              << extends_service->get_name() << ".h\"" << endl;
+              << extends_service->get_name() << ".grpc.thrift.h\"" << endl;
   }
+  
+
+  f_header_  <<
+      "#include <grpc++/impl/codegen/async_stream.h>" << endl <<
+      "#include <grpc++/impl/codegen/async_unary_call.h>"  << endl <<
+      "#include <grpc++/impl/codegen/thrift_utils.h>" << endl <<
+      "#include <grpc++/impl/codegen/rpc_method.h>"  << endl <<
+      "#include <grpc++/impl/codegen/service_type.h>"  << endl <<
+      "#include <grpc++/impl/codegen/status.h>" << endl <<
+      "#include <grpc++/impl/codegen/stub_options.h>" << endl <<
+      "#include <grpc++/impl/codegen/sync_stream.h>" << endl;
+
+
+  f_header_  <<
+      endl <<
+      "namespace grpc {" << endl <<
+      "class CompletionQueue;"  << endl <<
+      "class Channel;"  << endl <<
+      "class RpcService;"  << endl <<
+      "class ServerCompletionQueue;"  << endl <<
+      "class ServerContext;" << endl <<
+      "}" << endl;
 
   f_header_ << endl << ns_open_ << endl << endl;
 
@@ -1638,10 +1690,13 @@ void t_cpp_generator::generate_service(t_service* tservice) {
                "#endif\n\n";
 
   // Service implementation file includes
-  string f_service_name = get_out_dir() + svcname + ".cpp";
+  string f_service_name = get_out_dir() + svcname + ".grpc.thrift.cpp";
   f_service_.open(f_service_name.c_str());
   f_service_ << autogen_comment();
-  f_service_ << "#include \"" << get_include_prefix(*get_program()) << svcname << ".h\"" << endl;
+  
+  f_service_ << "#include \"" << 
+    get_include_prefix(*get_program()) << svcname << ".grpc.thrift.h\"" << endl;
+  
   if (gen_cob_style_) {
     f_service_ << "#include \"thrift/async/TAsyncChannel.h\"" << endl;
   }
@@ -1652,7 +1707,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
     string f_service_tcc_name = get_out_dir() + svcname + ".tcc";
     f_service_tcc_.open(f_service_tcc_name.c_str());
     f_service_tcc_ << autogen_comment();
-    f_service_tcc_ << "#include \"" << get_include_prefix(*get_program()) << svcname << ".h\""
+    f_service_tcc_ << "#include \"" << get_include_prefix(*get_program()) << svcname << ".grpc.thrift.h\""
                    << endl;
 
     f_service_tcc_ << "#ifndef " << svcname << "_TCC" << endl << "#define " << svcname << "_TCC"
@@ -1663,19 +1718,66 @@ void t_cpp_generator::generate_service(t_service* tservice) {
     }
   }
 
+  f_service_ <<
+    endl <<
+    "#include <grpc++/impl/codegen/async_stream.h>" << endl <<
+    "#include <grpc++/impl/codegen/async_unary_call.h>" << endl <<
+    "#include <grpc++/impl/codegen/channel_interface.h>" << endl <<
+    "#include <grpc++/impl/codegen/client_unary_call.h>" << endl <<
+    "#include <grpc++/impl/codegen/method_handler_impl.h>" << endl <<
+    "#include <grpc++/impl/codegen/rpc_service_method.h>" << endl <<
+    "#include <grpc++/impl/codegen/service_type.h>" << endl <<
+    "#include <grpc++/impl/codegen/sync_stream.h>" << endl <<
+    endl;
+
   f_service_ << endl << ns_open_ << endl << endl;
   f_service_tcc_ << endl << ns_open_ << endl << endl;
 
+  vector<t_function*> functions = tservice->get_functions();
+  vector<t_function*>::iterator f_iter;
+
+  f_service_ <<
+    "static const char* " << service_name_ << "_method_names[] = {" << endl;
+
+  
+  indent_up();
+
+  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+    f_service_ <<
+      indent() << "\"/" << ns << "." << service_name_ << "/" << (*f_iter)->get_name() << "\"," << endl;
+  }
+
+  if (extends_service != nullptr) {
+    vector<t_function*> functions = extends_service->get_functions();
+    vector<t_function*>::iterator f_iter;
+    
+    for ( f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+      indent() << "\"/" << extends_service->get_program()->get_namespace("cpp") <<
+      "." << extends_service->get_name() << "/" << (*f_iter)->get_name() << "\"," << endl;
+    }
+  }
+
+  indent_down();
+  f_service_ <<
+  "};" << endl;
+
+  // Generate service class
+  if ( extends_service != nullptr ) {
+    f_header_ << "class " << service_name_ << " : public " <<
+      extends_service->get_name() << " {" << endl <<
+      "public:" << endl;
+  }
+  else {
+    f_header_ << "class " << service_name_ << "{" << endl <<
+      "public:" << endl;
+  }
+
   // Generate all the components
-  generate_service_interface(tservice, "");
-  generate_service_interface_factory(tservice, "");
-  generate_service_null(tservice, "");
   generate_service_helpers(tservice);
-  generate_service_client(tservice, "");
-  generate_service_processor(tservice, "");
-  generate_service_multiface(tservice);
-  generate_service_skeleton(tservice);
-  generate_service_client(tservice, "Concurrent");
+  generate_service_interface(tservice, "");
+  generate_service_stub_interface(tservice);
+  generate_service_stub(tservice);
 
   // Generate all the cob components
   if (gen_cob_style_) {
@@ -1688,9 +1790,13 @@ void t_cpp_generator::generate_service(t_service* tservice) {
     generate_service_async_skeleton(tservice);
   }
 
+   // Close service class
+  f_header_ << "};" << endl;
+
   f_header_ << "#ifdef _WIN32\n"
                "  #pragma warning( pop )\n"
                "#endif\n\n";
+
 
   // Close the namespace
   f_service_ << ns_close_ << endl << endl;
@@ -1729,20 +1835,217 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
     string name_orig = ts->get_name();
 
     // TODO(dreiss): Why is this stuff not in generate_function_helpers?
-    ts->set_name(tservice->get_name() + "_" + (*f_iter)->get_name() + "_args");
+    ts->set_name((*f_iter)->get_name() + "Req");
     generate_struct_declaration(f_header_, ts, false);
-    generate_struct_definition(out, f_service_, ts, false);
+    generate_struct_definition(out, f_service_, ts, true);
     generate_struct_reader(out, ts);
     generate_struct_writer(out, ts);
-    ts->set_name(tservice->get_name() + "_" + (*f_iter)->get_name() + "_pargs");
-    generate_struct_declaration(f_header_, ts, false, true, false, true);
-    generate_struct_definition(out, f_service_, ts, false);
-    generate_struct_writer(out, ts, true);
+    // ts->set_name(tservice->get_name() + "_" + (*f_iter)->get_name() + "_pargs");
+    // generate_struct_declaration(f_header_, ts, false, true, false, true);
+    // generate_struct_definition(out, f_service_, ts, false);
+    // generate_struct_writer(out, ts, true);
     ts->set_name(name_orig);
 
     generate_function_helpers(tservice, *f_iter);
   }
 }
+
+/**
+ *  Generates a service Stub Interface
+ *
+ * @param tservice The service to generate a stub for.
+ *
+ */
+void t_cpp_generator::generate_service_stub_interface(t_service* tservice) {
+
+    string extends = "";
+    if (tservice->get_extends() != nullptr) {
+      extends = " : virtual public " + type_name(tservice->get_extends()) + "::StubInterface";
+    }
+
+    f_header_ <<
+    endl <<
+    "class StubInterface " << extends << " {" << endl;
+    indent_up();
+    f_header_ <<
+    " public:" << endl <<
+    indent() << "virtual ~StubInterface() {}" << endl;
+
+    vector<t_function*> functions = tservice->get_functions();
+    vector<t_function*>::iterator f_iter;
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      string function_name = (*f_iter)->get_name();
+      f_header_ <<
+        indent() << "virtual ::grpc::Status " << function_name <<
+        "(::grpc::ClientContext* context, const " << function_name <<
+        "Req& request, " << function_name << "Resp* response) = 0;" << endl;
+    }
+    indent_down();
+    f_header_ <<
+      "};" << endl << endl;
+
+}
+void t_cpp_generator::generate_service_stub(t_service* tservice) {
+    f_header_ <<
+    endl <<
+    "class Stub : public StubInterface {" <<
+    endl;
+
+    indent_up();
+    f_header_ <<
+    " public:" << endl <<
+    indent() << "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);" <<
+    endl;
+
+    vector<t_function*> functions = tservice->get_functions();
+    vector<t_function*>::iterator f_iter;
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      string function_name = (*f_iter)->get_name();
+      f_header_ <<
+        indent() << "::grpc::Status " << function_name <<
+        "(::grpc::ClientContext* context, const " << function_name <<
+        "Req& request, " << function_name << "Resp* response) override;" << endl;
+    }
+
+    t_service* extends_service = tservice->get_extends();
+    if (extends_service != nullptr) {
+      // generate inherited methods
+      vector<t_function*> functions = extends_service->get_functions();
+      vector<t_function*>::iterator f_iter;
+      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+        string function_name = (*f_iter)->get_name();
+        f_header_ <<
+          indent() << "::grpc::Status " << function_name <<
+          "(::grpc::ClientContext* context, const " << function_name <<
+          "Req& request, " << function_name << "Resp* response) override;" << endl;
+      }
+    }
+
+    f_header_ <<
+    endl <<
+    " private:" << endl <<
+    indent() << "std::shared_ptr< ::grpc::ChannelInterface> channel_;" <<
+    endl;
+
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_header_ <<
+        indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
+    }
+
+    if (extends_service != nullptr) {
+      // generate inherited methods
+      vector<t_function*> functions = extends_service->get_functions();
+      vector<t_function*>::iterator f_iter;
+      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+        f_header_ <<
+          indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
+      }
+    }
+
+    indent_down();
+    f_header_ <<
+      "};" << endl << endl;
+
+    // generate the implementaion of Stub
+    f_service_ <<
+      endl <<
+      service_name_ << "::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)" << endl;
+
+    indent_up();
+    f_service_ <<
+    indent() << ": channel_(channel)" << endl;
+    int i=0;
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter , ++i) {
+      f_service_ <<
+        indent() <<
+        ", rpcmethod_" << (*f_iter)->get_name() << "_(" <<
+        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
+    }
+
+    if (extends_service != nullptr) {
+      // generate inherited methods
+      vector<t_function*> functions = extends_service->get_functions();
+      vector<t_function*>::iterator f_iter;
+      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter, ++i) {
+        f_service_ <<
+        indent() <<
+        ", rpcmethod_" << (*f_iter)->get_name() << "_(" <<
+        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
+      }
+    }
+    f_service_ <<
+    indent() << "{}" << endl;
+    indent_down();
+
+    // generate NewStub
+    f_header_ <<
+    endl <<
+    "static std::unique_ptr<Stub> NewStub(const std::shared_ptr\
+    < ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());" <<
+    endl;
+
+    // generate NewStub Implementation
+    f_service_ <<
+    endl <<
+    "std::unique_ptr< " << service_name_ << "::Stub> " << service_name_ << "::NewStub(const std::shared_ptr\
+    < ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {" << endl;
+
+    indent_up();
+    f_service_ <<
+    indent() << "std::unique_ptr< " << service_name_ << "::Stub> stub(new " << service_name_ <<
+    "::Stub(channel));" << endl <<
+    indent() << "return stub;" << endl;
+    indent_down();
+    f_service_ <<
+    "}" << endl;
+
+    // generate stub methods
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      string function_name = (*f_iter)->get_name();
+      f_service_ <<
+        endl <<
+        "::grpc::Status " << service_name_ << "::Stub::" <<  function_name <<
+        "(::grpc::ClientContext* context, const " << service_name_ << "::" <<
+        function_name << "Req& request, " << service_name_ << "::" <<
+        function_name << "Resp* response) {" << endl;
+
+      indent_up();
+      f_service_ <<
+      indent() << "return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_" <<
+      function_name << "_, context, request, response);" << endl;
+      indent_down();
+
+      f_service_ <<
+      "}" << endl;
+
+    }
+
+    if (extends_service != nullptr) {
+      vector<t_function*> functions = extends_service->get_functions();
+      vector<t_function*>::iterator f_iter;
+      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+        string function_name = (*f_iter)->get_name();
+        f_service_ <<
+          endl <<
+          "::grpc::Status " << service_name_ << "::Stub::" <<  function_name <<
+          "(::grpc::ClientContext* context, const " << service_name_ << "::" <<
+          function_name << "Req& request, " << service_name_ << "::" <<
+          function_name << "Resp* response) {" << endl;
+
+        indent_up();
+        f_service_ <<
+        indent() << "return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_" <<
+        function_name << "_, context, request, response);" << endl;
+        indent_down();
+
+        f_service_ <<
+        "}" << endl;
+
+      }
+    }
+
+}
+
 
 /**
  * Generates a service interface definition.
@@ -1751,7 +2054,7 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
  */
 void t_cpp_generator::generate_service_interface(t_service* tservice, string style) {
 
-  string service_if_name = service_name_ + style + "If";
+  string service_if_name = "Service";
   if (style == "CobCl") {
     // Forward declare the client.
     string client_name = service_name_ + "CobClient";
@@ -1765,20 +2068,24 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
 
   string extends = "";
   if (tservice->get_extends() != NULL) {
-    extends = " : virtual public " + type_name(tservice->get_extends()) + style + "If";
+    extends = " : virtual public " + type_name(tservice->get_extends()) + style + "::Service";
     if (style == "CobCl" && gen_templates_) {
       // TODO(simpkins): If gen_templates_ is enabled, we currently assume all
       // parent services were also generated with templates enabled.
       extends += "T<Protocol_>";
-    }
+    } 
+  } else {
+    extends = " : public ::grpc::Service";
   }
-
+ 
   if (style == "CobCl" && gen_templates_) {
     f_header_ << "template <class Protocol_>" << endl;
   }
   f_header_ << "class " << service_if_name << extends << " {" << endl << " public:" << endl;
   indent_up();
-  f_header_ << indent() << "virtual ~" << service_if_name << "() {}" << endl;
+
+  f_header_ << indent() << "Service();" << endl;
+  f_header_ << indent() << "virtual ~Service();" << endl;
 
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::iterator f_iter;
@@ -1786,7 +2093,12 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
     if ((*f_iter)->has_doc())
       f_header_ << endl;
     generate_java_doc(f_header_, *f_iter);
-    f_header_ << indent() << "virtual " << function_signature(*f_iter, style) << " = 0;" << endl;
+
+    string function_name = (*f_iter)->get_name();
+    f_header_ <<
+      indent() << "virtual ::grpc::Status " << function_name <<
+      "(::grpc::ServerContext* context, const "<< function_name <<
+      "Req* request, "<< function_name << "Resp* response);" << endl;
   }
   indent_down();
   f_header_ << "};" << endl << endl;
@@ -1797,6 +2109,66 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
     f_header_ << "typedef " << service_if_name << "< ::apache::thrift::protocol::TProtocol> "
               << service_name_ << style << "If;" << endl << endl;
   }
+
+   // generate the service interface implementations
+
+    f_service_ <<
+    endl <<
+    service_name_ << "::Service::Service() {" << endl;
+    indent_up();
+    f_service_ <<
+    indent() << "(void)" << service_name_ << "_method_names;" << endl;
+    int i=0;
+    for(i=0;i<functions.size(); i++) {
+      string function_name = functions[i]->get_name();
+      f_service_ <<
+        endl <<
+        indent() << "AddMethod(new ::grpc::RpcServiceMethod(" << endl;
+        indent_up();
+
+      f_service_ <<
+        indent() << service_name_ << "_method_names[" << i << "]," << endl <<
+        indent() << "::grpc::RpcMethod::NORMAL_RPC," << endl <<
+        indent() << "new ::grpc::RpcMethodHandler< " << service_name_ << "::Service, " <<
+        service_name_ << "::" << function_name << "Req, " << service_name_ << "::" <<
+        function_name << "Resp>(" << endl;
+
+      indent_up();
+      f_service_ <<
+        indent() << "std::mem_fn(&" << service_name_ << "::Service::" << function_name << "), this)));" << endl;
+
+      indent_down();
+      indent_down();
+    }
+
+    indent_down();
+    f_service_ <<
+    "}" << endl;
+
+    f_service_ <<
+    endl <<
+    service_name_ << "::Service::~Service() {" << endl <<
+    "}" << endl;
+
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      string function_name = (*f_iter)->get_name();
+      f_service_ <<
+        endl <<
+        "::grpc::Status " << service_name_ << "::Service::" << function_name <<
+        "(::grpc::ServerContext* context, const " << service_name_ << "::" << function_name <<
+        "Req* request, " << service_name_ << "::" << function_name << "Resp* response) {" << endl;
+      indent_up();
+      f_service_ <<
+      indent() << "(void) context;" << endl <<
+      indent() << "(void) request;" << endl <<
+      indent() << "(void) response;" << endl <<
+      indent() << "return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED,\"\");" << endl;
+      indent_down();
+
+      f_service_ <<
+      "}" << endl;
+    }
+
 }
 
 /**
@@ -3095,7 +3467,7 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
 
   std::ofstream& out = (gen_templates_ ? f_service_tcc_ : f_service_);
 
-  t_struct result(program_, tservice->get_name() + "_" + tfunction->get_name() + "_result");
+  t_struct result(program_, tfunction->get_name() + "Resp");
   t_field success(tfunction->get_returntype(), "success", 0);
   if (!tfunction->get_returntype()->is_void()) {
     result.append(&success);
@@ -3109,17 +3481,17 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
   }
 
   generate_struct_declaration(f_header_, &result, false);
-  generate_struct_definition(out, f_service_, &result, false);
+  generate_struct_definition(out, f_service_, &result, true);
   generate_struct_reader(out, &result);
   generate_struct_result_writer(out, &result);
 
-  result.set_name(tservice->get_name() + "_" + tfunction->get_name() + "_presult");
-  generate_struct_declaration(f_header_, &result, false, true, true, gen_cob_style_);
-  generate_struct_definition(out, f_service_, &result, false);
-  generate_struct_reader(out, &result, true);
-  if (gen_cob_style_) {
-    generate_struct_writer(out, &result, true);
-  }
+  // result.set_name(tservice->get_name() + "_" + tfunction->get_name() + "_presult");
+  // generate_struct_declaration(f_header_, &result, false, true, true, gen_cob_style_);
+  // generate_struct_definition(out, f_service_, &result, false);
+  // generate_struct_reader(out, &result, true);
+  // if (gen_cob_style_) {
+  //   generate_struct_writer(out, &result, true);
+  // }
 }
 
 /**
@@ -3162,8 +3534,8 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
         << endl;
     scope_up(out);
 
-    string argsname = tservice->get_name() + "_" + tfunction->get_name() + "_args";
-    string resultname = tservice->get_name() + "_" + tfunction->get_name() + "_result";
+    string argsname = tfunction->get_name() + "Req";
+    string resultname = tfunction->get_name() + "Resp";
 
     if (tfunction->is_oneway() && !unnamed_oprot_seqid) {
       out << indent() << "(void) seqid;" << endl << indent() << "(void) oprot;" << endl;
@@ -3320,7 +3692,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
       out << indent() << "(void) seqid;" << endl << indent() << "(void) oprot;" << endl;
     }
 
-    out << indent() << tservice->get_name() + "_" + tfunction->get_name() << "_args args;" << endl
+    out << indent() << tfunction->get_name() << "Req args;" << endl
         << indent() << "void* ctx = NULL;" << endl << indent()
         << "if (this->eventHandler_.get() != NULL) {" << endl << indent()
         << "  ctx = this->eventHandler_->getContext(" << service_func_name << ", NULL);" << endl
@@ -3487,7 +3859,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
           << "this->eventHandler_.get(), ctx, " << service_func_name << ");" << endl << endl;
 
       // Throw the TDelayedException, and catch the result
-      out << indent() << tservice->get_name() << "_" << tfunction->get_name() << "_result result;"
+      out << indent() << tfunction->get_name() << "Resp result;"
           << endl << endl << indent() << "try {" << endl;
       indent_up();
       out << indent() << "_throw->throw_it();" << endl << indent() << "return cob(false);"

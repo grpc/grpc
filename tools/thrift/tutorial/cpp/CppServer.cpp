@@ -1,181 +1,87 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright 2015, Google Inc.
+ * All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
-#include <thrift/concurrency/ThreadManager.h>
-#include <thrift/concurrency/PlatformThreadFactory.h>
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/server/TSimpleServer.h>
-#include <thrift/server/TThreadPoolServer.h>
-#include <thrift/server/TThreadedServer.h>
-#include <thrift/transport/TServerSocket.h>
-#include <thrift/transport/TSocket.h>
-#include <thrift/transport/TTransportUtils.h>
-#include <thrift/TToString.h>
-
-#include <boost/make_shared.hpp>
-
 #include <iostream>
-#include <stdexcept>
-#include <sstream>
+#include <memory>
+#include <string>
 
-#include "../gen-cpp/Calculator.h"
+#include <grpc++/grpc++.h>
 
-using namespace std;
-using namespace apache::thrift;
-using namespace apache::thrift::concurrency;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
-using namespace apache::thrift::server;
+#include "gen-cpp/Greeter.grpc.thrift.h"
+#include <grpc++/server_builder.h>
 
-using namespace tutorial;
-using namespace shared;
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
+using test::Greeter;
 
-class CalculatorHandler : public CalculatorIf {
-public:
-  CalculatorHandler() {}
+using namespace grpc;
+using namespace test;
 
-  void ping() { cout << "ping()" << endl; }
+// Logic and data behind the server's behavior.
+class GreeterServiceImpl final : public Greeter::Service {
+  Status SayHello(ServerContext* context,const Greeter::SayHelloReq* request,
+                  Greeter::SayHelloResp* reply) override {
+    std::string prefix("Hello ");
 
-  int32_t add(const int32_t n1, const int32_t n2) {
-    cout << "add(" << n1 << ", " << n2 << ")" << endl;
-    return n1 + n2;
-  }
+    reply->success.message = prefix + request->request.name;
 
-  int32_t calculate(const int32_t logid, const Work& work) {
-    cout << "calculate(" << logid << ", " << work << ")" << endl;
-    int32_t val;
-
-    switch (work.op) {
-    case Operation::ADD:
-      val = work.num1 + work.num2;
-      break;
-    case Operation::SUBTRACT:
-      val = work.num1 - work.num2;
-      break;
-    case Operation::MULTIPLY:
-      val = work.num1 * work.num2;
-      break;
-    case Operation::DIVIDE:
-      if (work.num2 == 0) {
-        InvalidOperation io;
-        io.whatOp = work.op;
-        io.why = "Cannot divide by 0";
-        throw io;
-      }
-      val = work.num1 / work.num2;
-      break;
-    default:
-      InvalidOperation io;
-      io.whatOp = work.op;
-      io.why = "Invalid Operation";
-      throw io;
-    }
-
-    SharedStruct ss;
-    ss.key = logid;
-    ss.value = to_string(val);
-
-    log[logid] = ss;
-
-    return val;
-  }
-
-  void getStruct(SharedStruct& ret, const int32_t logid) {
-    cout << "getStruct(" << logid << ")" << endl;
-    ret = log[logid];
-  }
-
-  void zip() { cout << "zip()" << endl; }
-
-protected:
-  map<int32_t, SharedStruct> log;
-};
-
-/*
-  CalculatorIfFactory is code generated.
-  CalculatorCloneFactory is useful for getting access to the server side of the
-  transport.  It is also useful for making per-connection state.  Without this
-  CloneFactory, all connections will end up sharing the same handler instance.
-*/
-class CalculatorCloneFactory : virtual public CalculatorIfFactory {
- public:
-  virtual ~CalculatorCloneFactory() {}
-  virtual CalculatorIf* getHandler(const ::apache::thrift::TConnectionInfo& connInfo)
-  {
-    boost::shared_ptr<TSocket> sock = boost::dynamic_pointer_cast<TSocket>(connInfo.transport);
-    cout << "Incoming connection\n";
-    cout << "\tSocketInfo: "  << sock->getSocketInfo() << "\n";
-    cout << "\tPeerHost: "    << sock->getPeerHost() << "\n";
-    cout << "\tPeerAddress: " << sock->getPeerAddress() << "\n";
-    cout << "\tPeerPort: "    << sock->getPeerPort() << "\n";
-    return new CalculatorHandler;
-  }
-  virtual void releaseHandler( ::shared::SharedServiceIf* handler) {
-    delete handler;
+    return Status::OK;
   }
 };
+
+void RunServer() {
+  std::string server_address("0.0.0.0:50051");
+  GreeterServiceImpl service;
+
+  ServerBuilder builder;
+  // Listen on the given address without any authentication mechanism.
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  // Register "service" as the instance through which we'll communicate with
+  // clients. In this case it corresponds to an *synchronous* service.
+  builder.RegisterService(&service);
+  // Finally assemble the server.
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::cout << "Server listening on " << server_address << std::endl;
+
+  // Wait for the server to shutdown. Note that some other thread must be
+  // responsible for shutting down the server for this call to ever return.
+  server->Wait();
+}
 
 int main() {
-  TThreadedServer server(
-    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()),
-    boost::make_shared<TServerSocket>(9090), //port
-    boost::make_shared<TBufferedTransportFactory>(),
-    boost::make_shared<TBinaryProtocolFactory>());
+  RunServer();
 
-  /*
-  // if you don't need per-connection state, do the following instead
-  TThreadedServer server(
-    boost::make_shared<CalculatorProcessor>(boost::make_shared<CalculatorHandler>()),
-    boost::make_shared<TServerSocket>(9090), //port
-    boost::make_shared<TBufferedTransportFactory>(),
-    boost::make_shared<TBinaryProtocolFactory>());
-  */
-
-  /**
-   * Here are some alternate server types...
-
-  // This server only allows one connection at a time, but spawns no threads
-  TSimpleServer server(
-    boost::make_shared<CalculatorProcessor>(boost::make_shared<CalculatorHandler>()),
-    boost::make_shared<TServerSocket>(9090),
-    boost::make_shared<TBufferedTransportFactory>(),
-    boost::make_shared<TBinaryProtocolFactory>());
-
-  const int workerCount = 4;
-
-  boost::shared_ptr<ThreadManager> threadManager =
-    ThreadManager::newSimpleThreadManager(workerCount);
-  threadManager->threadFactory(
-    boost::make_shared<PlatformThreadFactory>());
-  threadManager->start();
-
-  // This server allows "workerCount" connection at a time, and reuses threads
-  TThreadPoolServer server(
-    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()),
-    boost::make_shared<TServerSocket>(9090),
-    boost::make_shared<TBufferedTransportFactory>(),
-    boost::make_shared<TBinaryProtocolFactory>(),
-    threadManager);
-  */
-
-  cout << "Starting the server..." << endl;
-  server.serve();
-  cout << "Done." << endl;
   return 0;
 }

@@ -1,80 +1,94 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright 2015, Google Inc.
+ * All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include <iostream>
+#include <memory>
+#include <string>
 
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/transport/TSocket.h>
-#include <thrift/transport/TTransportUtils.h>
+#include <grpc++/grpc++.h>
 
-#include "../gen-cpp/Calculator.h"
+#include "gen-cpp/Greeter.grpc.thrift.h"
 
-using namespace std;
-using namespace apache::thrift;
-using namespace apache::thrift::protocol;
-using namespace apache::thrift::transport;
+using grpc::Channel;
+using grpc::ClientContext;
+using grpc::Status;
+using test::Greeter;
+using namespace test;
 
-using namespace tutorial;
-using namespace shared;
+class GreeterClient {
+ public:
+  GreeterClient(std::shared_ptr<Channel> channel)
+      : stub_(Greeter::NewStub(channel)) {}
+
+  // Assambles the client's payload, sends it and presents the response back
+  // from the server.
+  std::string SayHello(const std::string& user) {
+    // Data we are sending to the server.
+    Greeter::SayHelloReq req;
+    req.request.name = user;
+
+    // Container for the data we expect from the server.
+    Greeter::SayHelloResp reply;
+
+    // Context for the client. It could be used to convey extra information to
+    // the server and/or tweak certain RPC behaviors.
+    ClientContext context;
+
+    // The actual RPC.
+    Status status = stub_->SayHello(&context, req, &reply);
+
+    // Act upon its status.
+    if (status.ok()) {
+      return reply.success.message;
+    } else {
+      return "RPC failed";
+    }
+  }
+
+ private:
+  std::unique_ptr<Greeter::Stub> stub_;
+};
 
 int main() {
-  boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
-  boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-  CalculatorClient client(protocol);
+  // Instantiate the client. It requires a channel, out of which the actual RPCs
+  // are created. This channel models a connection to an endpoint (in this case,
+  // localhost at port 50051). We indicate that the channel isn't authenticated
+  // (use of InsecureChannelCredentials()).
+  GreeterClient greeter(grpc::CreateChannel(
+      "localhost:50051", grpc::InsecureChannelCredentials()));
+  std::string user("world");
+  std::string reply = greeter.SayHello(user);
+  std::cout << "Greeter received: " << reply << std::endl;
 
-  try {
-    transport->open();
-
-    client.ping();
-    cout << "ping()" << endl;
-
-    cout << "1 + 1 = " << client.add(1, 1) << endl;
-
-    Work work;
-    work.op = Operation::DIVIDE;
-    work.num1 = 1;
-    work.num2 = 0;
-
-    try {
-      client.calculate(1, work);
-      cout << "Whoa? We can divide by zero!" << endl;
-    } catch (InvalidOperation& io) {
-      cout << "InvalidOperation: " << io.why << endl;
-      // or using generated operator<<: cout << io << endl;
-      // or by using std::exception native method what(): cout << io.what() << endl;
-    }
-
-    work.op = Operation::SUBTRACT;
-    work.num1 = 15;
-    work.num2 = 10;
-    int32_t diff = client.calculate(1, work);
-    cout << "15 - 10 = " << diff << endl;
-
-    // Note that C++ uses return by reference for complex types to avoid
-    // costly copy construction
-    SharedStruct ss;
-    client.getStruct(ss, 1);
-    cout << "Received log: " << ss << endl;
-
-    transport->close();
-  } catch (TException& tx) {
-    cout << "ERROR: " << tx.what() << endl;
-  }
+  return 0;
 }

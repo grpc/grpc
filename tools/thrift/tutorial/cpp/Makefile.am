@@ -18,44 +18,38 @@
 #
 AUTOMAKE_OPTIONS = subdir-objects serial-tests
 
-BUILT_SOURCES = gen-cpp/shared_types.cpp \
-                gen-cpp/tutorial_types.cpp
+BUILT_SOURCES = gen-cpp/test_types.cpp
 
-noinst_LTLIBRARIES = libtutorialgencpp.la
-nodist_libtutorialgencpp_la_SOURCES = \
-	gen-cpp/Calculator.cpp \
-	gen-cpp/Calculator.h \
-	gen-cpp/SharedService.cpp \
-	gen-cpp/SharedService.h \
-	gen-cpp/shared_constants.cpp \
-	gen-cpp/shared_constants.h \
-	gen-cpp/shared_types.cpp \
-	gen-cpp/shared_types.h \
-	gen-cpp/tutorial_constants.cpp \
-	gen-cpp/tutorial_constants.h \
-	gen-cpp/tutorial_types.cpp \
-	gen-cpp/tutorial_types.h
+#noinst_LTLIBRARIES = libtutorialgencpp.la
+noinst_LTLIBRARIES = libtestgencpp.la
+nodist_libtestgencpp_la_SOURCES = \
+	gen-cpp/Greeter.grpc.thrift.cpp \
+	gen-cpp/Greeter.grpc.thrift.h \
+	gen-cpp/test_constants.cpp \
+	gen-cpp/test_constants.h \
+	gen-cpp/test_types.cpp \
+	gen-cpp/test_types.h
 
 
 
-libtutorialgencpp_la_LIBADD = $(top_builddir)/lib/cpp/libthrift.la
+libtestgencpp_la_LIBADD = $(top_builddir)/lib/cpp/libthrift.la
 
 noinst_PROGRAMS = \
-	TutorialServer \
-	TutorialClient
+	TestServer \
+	TestClient
 
-TutorialServer_SOURCES = \
+TestServer_SOURCES = \
 	CppServer.cpp
 
-TutorialServer_LDADD = \
-	libtutorialgencpp.la \
+TestServer_LDADD = \
+	libtestgencpp.la \
 	$(top_builddir)/lib/cpp/libthrift.la
 
-TutorialClient_SOURCES = \
+TestClient_SOURCES = \
 	CppClient.cpp
 
-TutorialClient_LDADD = \
-	libtutorialgencpp.la \
+TestClient_LDADD = \
+	libtestgencpp.la \
 	$(top_builddir)/lib/cpp/libthrift.la
 
 #
@@ -63,21 +57,21 @@ TutorialClient_LDADD = \
 #
 THRIFT = $(top_builddir)/compiler/cpp/thrift
 
-gen-cpp/Calculator.cpp gen-cpp/SharedService.cpp gen-cpp/shared_constants.cpp gen-cpp/shared_types.cpp gen-cpp/tutorial_constants.cpp gen-cpp/tutorial_types.cpp: $(top_srcdir)/tutorial/tutorial.thrift
+gen-cpp/Greeter.grpc.thrift.cpp gen-cpp/test_constants.cpp gen-cpp/test_types.cpp: $(top_srcdir)/tutorial/cpp/test.thrift
 	$(THRIFT) --gen cpp -r $<
 
 AM_CPPFLAGS = $(BOOST_CPPFLAGS) $(LIBEVENT_CPPFLAGS) -I$(top_srcdir)/lib/cpp/src -Igen-cpp
 AM_CXXFLAGS = -Wall -Wextra -pedantic
-AM_LDFLAGS = $(BOOST_LDFLAGS) $(LIBEVENT_LDFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(LIBEVENT_LDFLAGS) `pkg-config --libs grpc++ grpc` -lpthread -ldl -lgrpc
 
 clean-local:
-	$(RM) gen-cpp/*
+	$(RM) -r gen-cpp
 
-tutorialserver: all
-	./TutorialServer
+testserver: all
+	./TestServer
 
-tutorialclient: all
-	./TutorialClient
+testclient: all
+	./TestClient
 
 style-local:
 	$(CPPSTYLE_CMD)

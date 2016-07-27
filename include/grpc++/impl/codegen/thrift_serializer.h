@@ -31,8 +31,8 @@
  *
  */
 
- #ifndef THRIFT_SERIALIZATION_H
- #define THRIFT_SERIALIZATION_H
+ #ifndef GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
+ #define GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
 
 #include <memory>
 #include <string>
@@ -62,7 +62,6 @@ public:
   ThriftSerializer()
   : prepared_ (false)
   , lastDeserialized_ (false)
-  , setVersion_ (false)
   , serializeVersion_ (false) {}
 
   /**
@@ -95,17 +94,7 @@ public:
   template <typename T>
   uint32_t deserialize(grpc_byte_buffer* buffer, T* msg);
 
-  /**
-   * Set version of protocol data to read/write.  This is only necessary
-   * for data that will be saved to disk between protocol versions!
-   * You probably don't need to use this unless you know what you are doing
-   *
-   */
-  void setVersion(int8_t version);
-
   void setSerializeVersion(bool value);
-
-  //virtual void prepareProtocol(shared_ptr<P> protocol);
 
   virtual ~ThriftSerializer() {}
 
@@ -142,8 +131,6 @@ public:
     bool lastDeserialized_;
     boost::shared_ptr<TMemoryBuffer> buffer_;
     shared_ptr<Protocol> protocol_;
-    int8_t version_;
-    bool setVersion_;
     bool serializeVersion_;
 }; // ThriftSerializer
 

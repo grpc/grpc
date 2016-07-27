@@ -27,18 +27,14 @@ if WITH_C_GLIB
 SUBDIRS += c_glib
 endif
 
-if WITH_CPP
-SUBDIRS += cpp
-endif
-
 if WITH_D
 SUBDIRS += d
 endif
 
-if WITH_JAVA
-SUBDIRS += java
-SUBDIRS += js
-endif
+#if WITH_JAVA
+#SUBDIRS += java
+#SUBDIRS += js
+#endif
 
 if WITH_PYTHON
 SUBDIRS += py
@@ -95,4 +91,5 @@ EXTRA_DIST = \
 	php \
 	shared.thrift \
 	tutorial.thrift \
-	README.md
+	README.md \
+	java

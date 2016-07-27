@@ -31,8 +31,8 @@
  *
  */
 
- #ifndef THRIFT_SERIALIZATION_INL_H
- #define THRIFT_SERIALIZATION_INL_H
+ #ifndef GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_INL_H
+ #define GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_INL_H
 
 #include <stdexcept>
 #include <string>
@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/slice_buffer.h>
-#include <thrift/lib/cpp/protocol/TProtocolException.h>
+#include <thrift/protocol/TProtocolException.h>
 
 namespace apache {
 namespace thrift {
@@ -86,8 +86,8 @@ template <typename Dummy, typename P>
 template <typename T>
 void ThriftSerializer<Dummy, P>::serialize(const T& fields, grpc_byte_buffer** bp) {
 
-  uint8_t* byteBuffer;
-  uint32_t byteBufferSize;
+  const uint8_t* byteBuffer;
+  size_t byteBufferSize;
   serialize(fields, &byteBuffer, &byteBufferSize);
 
   gpr_slice slice = gpr_slice_from_copied_buffer((char*)byteBuffer,byteBufferSize);
@@ -152,13 +152,6 @@ void ThriftSerializer<Dummy, P>::setSerializeVersion(bool value) {
 }
 
 template <typename Dummy, typename P>
-void ThriftSerializer<Dummy, P>::setVersion(int8_t version) {
-  version_ = version;
-  setVersion_ = true;
-}
-
-
-template <typename Dummy, typename P>
 void
 ThriftSerializer<Dummy, P>::prepare()
 {
@@ -167,7 +160,6 @@ ThriftSerializer<Dummy, P>::prepare()
 
   // create a protocol for the memory buffer transport
   protocol_.reset(new Protocol(buffer_));
-  //prepareProtocol(protocol_);
 
   prepared_ = true;
 }

@@ -27,10 +27,6 @@ moc__%.cpp: %.h
 
 SUBDIRS = .
 
-if WITH_TESTS
-SUBDIRS += test
-endif
-
 pkgconfigdir = $(libdir)/pkgconfig
 
 lib_LTLIBRARIES = libthrift.la
