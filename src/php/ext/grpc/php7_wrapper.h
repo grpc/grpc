@@ -50,6 +50,7 @@
 
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val, dup)
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) MAKE_STD_ZVAL(pzv)
+#define PHP_GRPC_DELREF(zv) Z_DELREF_P(zv)
 
 #define PHP_GRPC_WRAP_OBJECT_START(name) \
   typedef struct name { \
@@ -64,6 +65,58 @@
     zend_object_std_dtor(&p->std TSRMLS_CC); \
     efree(p); \
   }
+
+#define PHP_GRPC_ALLOC_CLASS_OBJECT(class_object) \
+  class_object *intern; \
+  zend_object_value retval; \
+  intern = (class_object *)emalloc(sizeof(class_object)); \
+  memset(intern, 0, sizeof(class_object));
+
+#define PHP_GRPC_HASH_FOREACH_VAL_START(ht, data) \
+  zval **tmp_data = NULL; \
+  for (zend_hash_internal_pointer_reset(ht); \
+       zend_hash_get_current_data(ht, (void**)&tmp_data) == SUCCESS; \
+       zend_hash_move_forward(ht)) { \
+    data = *tmp_data;
+
+#define PHP_GRPC_HASH_FOREACH_STR_KEY_VAL_START(ht, key, key_type, data) \
+  zval **tmp##key = NULL; \
+  ulong index##key; \
+  uint len##key; \
+  for (zend_hash_internal_pointer_reset(ht); \
+       zend_hash_get_current_data(ht, (void**)&tmp##key) == SUCCESS; \
+       zend_hash_move_forward(ht)) { \
+    key_type = zend_hash_get_current_key_ex(ht, &key, &len##key, &index##key,\
+                                         0, NULL); \
+    data = *tmp##key;
+
+#define PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(ht, key, key_type, index,\
+                                                 data) \
+  zval **tmp##key = NULL; \
+  uint len##key; \
+  for (zend_hash_internal_pointer_reset(ht); \
+       zend_hash_get_current_data(ht, (void**)&tmp##key) == SUCCESS; \
+       zend_hash_move_forward(ht)) { \
+    key_type = zend_hash_get_current_key_ex(ht, &key, &len##key, &index,\
+                                         0, NULL); \
+    data = *tmp##key;
+
+#define PHP_GRPC_HASH_FOREACH_END() }
+
+static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, void **value) {
+  zval **data = NULL;
+  if (zend_hash_find(ht, key, len, (void **)&data) == SUCCESS) {
+    *value = *data;
+    return SUCCESS;
+  } else {
+    *value = NULL;
+    return FAILURE;
+  }
+}
+
+#define php_grpc_zend_hash_del zend_hash_del
+
+#define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
 #else
 
@@ -82,6 +135,7 @@
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) \
   zval _stack_zval_##pzv; \
   pzv = &(_stack_zval_##pzv)
+#define PHP_GRPC_DELREF(zv)
 
 #define PHP_GRPC_WRAP_OBJECT_START(name) \
   typedef struct name {
@@ -98,6 +152,45 @@
 #define PHP_GRPC_FREE_WRAPPED_FUNC_END() \
     zend_object_std_dtor(&p->std); \
   }
+
+#define PHP_GRPC_ALLOC_CLASS_OBJECT(class_object) \
+  class_object *intern; \
+  intern = ecalloc(1, sizeof(class_object) + \
+                   zend_object_properties_size(class_type));
+
+#define PHP_GRPC_HASH_FOREACH_VAL_START(ht, data) \
+  ZEND_HASH_FOREACH_VAL(ht, data) {
+
+#define PHP_GRPC_HASH_FOREACH_STR_KEY_VAL_START(ht, key, key_type, data) \
+  zend_string *(zs_##key); \
+  ZEND_HASH_FOREACH_STR_KEY_VAL(ht, (zs_##key), data) { \
+    if ((zs_##key) == NULL) {key = NULL; key_type = HASH_KEY_IS_LONG;} \
+    else {key = (zs_##key)->val; key_type = HASH_KEY_IS_STRING;}
+
+#define PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(ht, key, key_type, index, \
+                                                 data) \
+  zend_string *(zs_##key); \
+  ZEND_HASH_FOREACH_KEY_VAL(ht, index, zs_##key, data) { \
+    if ((zs_##key) == NULL) {key = NULL; key_type = HASH_KEY_IS_LONG;} \
+    else {key = (zs_##key)->val; key_type = HASH_KEY_IS_STRING;}
+
+#define PHP_GRPC_HASH_FOREACH_END() } ZEND_HASH_FOREACH_END();
+
+static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, void **value) {
+  zval *value_tmp = zend_hash_str_find(ht, key, len -1);
+  if (value_tmp == NULL) {
+    return FAILURE;
+  } else {
+    *value = (void *)value_tmp;
+    return SUCCESS;
+  }
+}
+
+static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
+  return zend_hash_str_del(ht, key, len - 1);
+}
+
+#define PHP_GRPC_GET_CLASS_ENTRY(object) Z_OBJ_P(object)->ce
 
 #endif /* PHP_MAJOR_VERSION */
 

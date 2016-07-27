@@ -76,15 +76,7 @@ PHP_GRPC_FREE_WRAPPED_FUNC_END()
  * of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
                                                 TSRMLS_DC) {
-  wrapped_grpc_server *intern;
-#if PHP_MAJOR_VERSION < 7
-  zend_object_value retval;
-  intern = (wrapped_grpc_server *)emalloc(sizeof(wrapped_grpc_server));
-  memset(intern, 0, sizeof(wrapped_grpc_server));
-#else
-  intern = ecalloc(1, sizeof(wrapped_grpc_server) +
-                   zend_object_properties_size(class_type));
-#endif
+  PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
 #if PHP_MAJOR_VERSION < 7
