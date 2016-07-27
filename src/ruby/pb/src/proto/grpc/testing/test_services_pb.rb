@@ -35,7 +35,7 @@
 #
 
 require 'grpc'
-require 'src/proto/grpc/testing/test'
+require 'src/proto/grpc/testing/test_pb'
 
 module Grpc
   module Testing
