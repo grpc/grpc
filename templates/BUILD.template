@@ -6,7 +6,7 @@
   # Please look at the templates directory instead.
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
-  
+
   # Copyright 2015, Google Inc.
   # All rights reserved.
   #
@@ -35,13 +35,67 @@
   # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  
+
   licenses(["notice"])  # 3-clause BSD
-  
+
   exports_files(["LICENSE"])
-  
+
   package(default_visibility = ["//visibility:public"])
-  
+
+  load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+
+  cc_proto_library(
+    name = "testing_messages_proto",
+    srcs = [
+      "src/proto/grpc/testing/messages.proto",
+    ],
+    use_grpc_plugin = True,
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+  )
+
+  cc_proto_library(
+    name = "interop_proto",
+    srcs = [
+      "src/proto/grpc/testing/empty.proto",
+      "src/proto/grpc/testing/test.proto",
+    ],
+    deps = [
+      ":testing_messages_proto",
+    ],
+    use_grpc_plugin = True,
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+  )
+
+  cc_proto_library(
+    name = "qps_proto",
+    srcs = [
+      "src/proto/grpc/testing/payloads.proto",
+      "src/proto/grpc/testing/stats.proto",
+      "src/proto/grpc/testing/control.proto",
+      "src/proto/grpc/testing/services.proto",
+    ],
+    deps = [
+      ":testing_messages_proto",
+    ],
+    use_grpc_plugin = True,
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+  )
+
+  cc_proto_library(
+    name = "test_util_proto",
+    srcs = [
+      "src/proto/grpc/testing/echo_messages.proto",
+      "src/proto/grpc/testing/echo.proto",
+      "src/proto/grpc/testing/duplicate/echo_duplicate.proto",
+    ],
+    use_grpc_plugin = True,
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
+  )
+
   <%!
   def get_deps(target_dict):
     deps = []
@@ -57,6 +111,16 @@
       deps.append("//external:protobuf_clib")
     elif target_dict['name'] == 'grpc':
       deps.append("//external:zlib")
+    elif target_dict['name'] == 'grpc++_test_util':
+      deps.append(":test_util_proto")
+      deps.append("//external:googletest")
+    elif target_dict['name'].startswith('interop'):
+      deps.append(":interop_proto")
+    elif target_dict['name'] == 'qps':
+      deps.append(":qps_proto")
+    if (target_dict['name'] in ('grpc++_test_config', 'qps') or
+        target_dict['name'].startswith('interop')):
+      deps.append("//external:gflags")
     for d in target_dict.get('deps', []):
       if d.find('//') == 0 or d[0] == ':':
         deps.append(d)
@@ -65,24 +129,30 @@
     return deps
   %>
 
-  % for lib in libs:
-  % if lib.build in ("all", "protoc"):
+  <%
+  def filter_libs(libs):
+    for lib in libs:
+      if (lib.build in ("all", "protoc", "private") and
+          not lib.name.startswith('boringssl') and
+          not lib.name == 'z'):
+        yield lib
+  %>
+  % for lib in filter_libs(libs):
   ${cc_library(lib)}
-  % endif
   % endfor
-  
+
   % for lib in libs:
   % if lib.name in ("grpc", "gpr"):
   ${objc_library(lib)}
   % endif
   % endfor
-  
+
   % for tgt in targets:
   % if tgt.build == 'protoc':
   ${cc_binary(tgt)}
   % endif
   % endfor
-  
+
   <%def name="cc_library(lib)">
   <%
     lib_hdrs = lib.get("headers", [])
@@ -97,7 +167,9 @@
       "${hdr}",
   % endfor
   % for src in srcs:
+  % if not src.endswith('.proto'):
       "${src}",
+  % endif
   % endfor
     ],
     hdrs = [
@@ -107,24 +179,23 @@
     ],
     includes = [
       "include",
-      ".",
     ],
     deps = [
   % for dep in get_deps(lib):
       "${dep}",
   % endfor
   % if uses_nanopb:
-      "//external:nanopb",
+      "//third_party/nanopb",
   % endif
     ],
-  % if lib.name in ("grpc", "grpc_unsecure"):
+  % if lib.name in ("grpc", "grpc_unsecure", "grpc_test_util"):
     copts = [
       "-std=gnu99",
     ],
   % endif
   )
   </%def>
-  
+
   <%def name="objc_library(lib)">
   <%
     lib_hdrs = lib.get("headers", [])
@@ -149,7 +220,6 @@
     ],
     includes = [
       "include",
-      ".",
     ],
     deps = [
   % for dep in lib.get("deps", []):
@@ -167,7 +237,7 @@
   % endif
   )
   </%def>
-  
+
   <%def name="cc_binary(tgt)">
   cc_binary(
     name = "${tgt.name}",
@@ -183,11 +253,11 @@
     ],
   )
   </%def>
-  
+
   objc_path = "src/objective-c"
-  
+
   rx_library_path = objc_path + "/RxLibrary"
-  
+
   objc_library(
     name = "rx_library",
     hdrs = glob([
@@ -203,16 +273,16 @@
       ":rx_library_private",
     ],
   )
-  
+
   objc_library(
     name = "rx_library_private",
     hdrs = glob([rx_library_path + "/private/*.h"]),
     srcs = glob([rx_library_path + "/private/*.m"]),
     visibility = ["//visibility:private"],
   )
-  
+
   objc_client_path = objc_path + "/GRPCClient"
-  
+
   objc_library(
     name = "grpc_client",
     hdrs = glob([
@@ -230,15 +300,15 @@
       ":rx_library",
     ],
   )
-  
+
   objc_bundle_library(
       # The choice of name is signicant here, since it determines the bundle name.
       name = "gRPCCertificates",
       resources = ["etc/roots.pem"],
   )
-  
+
   proto_objc_rpc_path = objc_path + "/ProtoRPC"
-  
+
   objc_library(
     name = "proto_objc_rpc",
     hdrs = glob([
