@@ -102,7 +102,7 @@
     if(TARGET ZLIB::ZLIB)
       set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
     endif()
-    set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND) find_package(ZLIB) endif()")
+    set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
   endif()
 
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
@@ -135,10 +135,10 @@
       if(TARGET protobuf::libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
       endif()
-      set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND) find_package(protobuf CONFIG) endif()")
+      set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
     else()
       find_package(Protobuf MODULE)
-      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND) find_package(Protobuf) endif()")
+      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
     endif()
   endif()
 
@@ -159,7 +159,7 @@
     if(TARGET OpenSSL::SSL)
       set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
     endif()
-    set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND) find_package(OpenSSL) endif()")
+    set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
   endif()
 
   if(NOT MSVC)
