@@ -149,6 +149,8 @@
 
   NANOPB_DIR := $(abspath third_party/nanopb)
   NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/pb_common.c
+  NANOPB_DEP := $(NANOPB_DIR)/generator/proto/nanopb_pb2.py $(NANOPB_DIR)/generator/proto/plugin_pb2.py
+
   PROTOC ?= protoc
   DTRACE ?= dtrace
   CONFIG ?= opt
@@ -1161,7 +1163,7 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating nanopb C file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
@@ -1808,3 +1810,11 @@
   	@$(foreach V,$(sort $(.VARIABLES)),                 \
   	  $(if $(filter-out environment% default automatic, \
   	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
+
+  # Build Nanopb before using it
+  $(NANOPB_DIR)/generator/proto/nanopb_pb2.py:
+  	$(E) "[NANOPB]  Preparing Nanopb"
+  	$(Q) $(MAKE) -C $(NANOPB_DIR)/generator/proto
+
+  $(NANOPB_DIR)/generator/proto/plugin_pb2.py: $(NANOPB_DIR)/generator/proto/nanopb_pb2.py
+
