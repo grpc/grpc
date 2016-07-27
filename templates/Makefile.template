@@ -1814,7 +1814,7 @@
   # Build Nanopb before using it
   $(NANOPB_DIR)/generator/proto/nanopb_pb2.py:
   	$(E) "[NANOPB]  Preparing Nanopb"
-  	$(Q) $(MAKE) -C $(NANOPB_DIR)/generator/proto
+  	$(Q) PATH=`dirname $(PROTOC)`:$$(dirname `command -v protoc || echo .`):$$PATH $(MAKE) -C $(NANOPB_DIR)/generator/proto
 
   $(NANOPB_DIR)/generator/proto/plugin_pb2.py: $(NANOPB_DIR)/generator/proto/nanopb_pb2.py
 
