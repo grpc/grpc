@@ -29,11 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 set -e
 default_extension_dir=$(php-config --extension-dir)
-if command -v brew > /dev/null && \
-   brew ls --versions | grep php5[56]-grpc > /dev/null; then
-  # the grpc php extension was installed by homebrew
-  :
-elif [ ! -e $default_extension_dir/grpc.so ]; then
+if [ ! -e $default_extension_dir/grpc.so ]; then
   # the grpc extension is not found in the default PHP extension dir
   # try the source modules directory
   module_dir=../ext/grpc/modules
