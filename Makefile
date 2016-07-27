@@ -16167,9 +16167,7 @@ endif
 printvars:
 	@$(foreach V,$(sort $(.VARIABLES)),                 	  $(if $(filter-out environment% default automatic, 	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
 
-# Build Nanopb before using it
-
-$(NANOPB_DIR)/generator/proto/plugin_pb2.py: $(NANOPB_DIR)/generator/proto/nanopb_pb2.py
-
-%_pb2.py: %.proto
-	$(PROTOC) --python_out=$(dir $<) $<
+# Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
+$(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto
+	$(E) "[NANOPB]  Compiling $<"
+	$(Q) $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<
