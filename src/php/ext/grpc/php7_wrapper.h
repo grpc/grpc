@@ -40,6 +40,7 @@
 #define php_grpc_int int
 #define php_grpc_long long
 #define php_grpc_ulong ulong
+#define php_grpc_zend_object zend_object_value
 #define php_grpc_add_property_string(arg, name, context, b) \
   add_property_string(arg, name, context, b)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
@@ -56,9 +57,9 @@
 #define PHP_GRPC_WRAP_OBJECT_END(name) \
   } name;
 
-#define PHP_GRPC_FREE_WRAPPED_FUNC_START(klass) \
-  void free_##klass(void *object TSRMLS_DC) { \
-    klass *p = (klass *)object;
+#define PHP_GRPC_FREE_WRAPPED_FUNC_START(class_object) \
+  void free_##class_object(void *object TSRMLS_DC) { \
+    class_object *p = (class_object *)object;
 #define PHP_GRPC_FREE_WRAPPED_FUNC_END() \
     zend_object_std_dtor(&p->std TSRMLS_CC); \
     efree(p); \
@@ -69,6 +70,7 @@
 #define php_grpc_int size_t
 #define php_grpc_long zend_long
 #define php_grpc_ulong zend_ulong
+#define php_grpc_zend_object zend_object*
 #define php_grpc_add_property_string(arg, name, context, b) \
   add_property_string(arg, name, context)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
@@ -87,12 +89,12 @@
     zend_object std; \
   } name;
 
-#define WRAPPED_OBJECT_FROM_OBJ(klass, obj) \
-          klass##_from_obj(obj);
+#define WRAPPED_OBJECT_FROM_OBJ(class_object, obj) \
+  class_object##_from_obj(obj);
 
-#define PHP_GRPC_FREE_WRAPPED_FUNC_START(klass) \
-  static void free_##klass(zend_object *object) { \
-    klass *p = WRAPPED_OBJECT_FROM_OBJ(klass, object)
+#define PHP_GRPC_FREE_WRAPPED_FUNC_START(class_object) \
+  static void free_##class_object(zend_object *object) { \
+    class_object *p = WRAPPED_OBJECT_FROM_OBJ(class_object, object)
 #define PHP_GRPC_FREE_WRAPPED_FUNC_END() \
     zend_object_std_dtor(&p->std); \
   }

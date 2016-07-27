@@ -50,6 +50,9 @@
 #include <grpc/grpc_security.h>
 
 zend_class_entry *grpc_ce_server_credentials;
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers server_credentials_ce_handlers;
+#endif
 
 /* Frees and destroys an instace of wrapped_grpc_server_credentials */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
@@ -58,46 +61,33 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Initializes an instace of wrapped_grpc_server_credentials to be associated
  * with an object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_server_credentials(
+php_grpc_zend_object create_wrapped_grpc_server_credentials(
     zend_class_entry *class_type TSRMLS_DC) {
-  zend_object_value retval;
   wrapped_grpc_server_credentials *intern;
-
+#if PHP_MAJOR_VERSION < 7
+  zend_object_value retval;
   intern = (wrapped_grpc_server_credentials *)emalloc(
       sizeof(wrapped_grpc_server_credentials));
   memset(intern, 0, sizeof(wrapped_grpc_server_credentials));
-
+#else
+  intern = ecalloc(1, sizeof(wrapped_grpc_server_credentials) +
+                   zend_object_properties_size(class_type));
+#endif
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
+#if PHP_MAJOR_VERSION < 7
   retval.handle = zend_objects_store_put(
       intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
       free_wrapped_grpc_server_credentials, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
   return retval;
-}
-
 #else
-
-static zend_object_handlers server_credentials_ce_handlers;
-
-/* Initializes an instace of wrapped_grpc_server_credentials to be associated
- * with an object of a class specified by class_type */
-zend_object *create_wrapped_grpc_server_credentials(zend_class_entry
-                                                    *class_type) {
-  wrapped_grpc_server_credentials *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_server_credentials) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
   intern->std.handlers = &server_credentials_ce_handlers;
   return &intern->std;
-}
-
 #endif
+}
 
 zval *grpc_php_wrap_server_credentials(grpc_server_credentials
                                        *wrapped TSRMLS_DC) {
