@@ -58,6 +58,9 @@ typedef struct wrapped_grpc_channel_credentials {
   grpc_channel_credentials *wrapped;
 } wrapped_grpc_channel_credentials;
 
+#define Z_WRAPPED_GRPC_CHANNEL_CREDS_P(zv) \
+  (wrapped_grpc_channel_credentials *)zend_object_store_get_object(zv TSRMLS_CC)
+
 #else
 
 /* Wrapper struct for grpc_channel_credentials that can be associated

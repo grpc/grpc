@@ -56,6 +56,9 @@ typedef struct wrapped_grpc_server {
   grpc_server *wrapped;
 } wrapped_grpc_server;
 
+#define Z_WRAPPED_GRPC_SERVER_P(zv) \
+  (wrapped_grpc_server *)zend_object_store_get_object(zv TSRMLS_CC)
+
 #else
 
 /* Wrapper struct for grpc_server that can be associated with a PHP object */

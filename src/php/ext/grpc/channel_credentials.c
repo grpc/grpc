@@ -152,11 +152,7 @@ void grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped,
  */
 PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
   char *pem_roots;
-#if PHP_MAJOR_VERSION < 7
-  int pem_roots_length;
-#else
-  size_t pem_roots_length;
-#endif
+  php_grpc_int pem_roots_length;
 
   /* "s" == 1 string */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &pem_roots,
@@ -197,11 +193,9 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   char *pem_root_certs = NULL;
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
-#if PHP_MAJOR_VERSION < 7
-  int root_certs_length = 0, private_key_length = 0, cert_chain_length = 0;
-#else
-  size_t root_certs_length = 0, private_key_length = 0, cert_chain_length = 0;
-#endif
+  php_grpc_int root_certs_length = 0;
+  php_grpc_int private_key_length = 0;
+  php_grpc_int cert_chain_length = 0;
 
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 
@@ -246,23 +240,17 @@ PHP_METHOD(ChannelCredentials, createComposite) {
                          "createComposite expects 2 Credentials", 1 TSRMLS_CC);
     return;
   }
-#if PHP_MAJOR_VERSION < 7
   wrapped_grpc_channel_credentials *cred1 =
-      (wrapped_grpc_channel_credentials *)zend_object_store_get_object(
-          cred1_obj TSRMLS_CC);
+    Z_WRAPPED_GRPC_CHANNEL_CREDS_P(cred1_obj);
   wrapped_grpc_call_credentials *cred2 =
-      (wrapped_grpc_call_credentials *)zend_object_store_get_object(
-          cred2_obj TSRMLS_CC);
+    Z_WRAPPED_GRPC_CALL_CREDS_P(cred2_obj);
+#if PHP_MAJOR_VERSION < 7
   grpc_channel_credentials *creds =
       grpc_composite_channel_credentials_create(cred1->wrapped, cred2->wrapped,
                                                 NULL);
   zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 #else
-  wrapped_grpc_channel_credentials *cred1 =
-    Z_WRAPPED_GRPC_CHANNEL_CREDS_P(cred1_obj);
-  wrapped_grpc_call_credentials *cred2 =
-    Z_WRAPPED_GRPC_CALL_CREDS_P(cred2_obj);
   grpc_channel_credentials *creds =
     grpc_composite_channel_credentials_create(cred1->wrapped,
                                               cred2->wrapped, NULL);

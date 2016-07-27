@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,20 @@
  *
  */
 
-#ifndef PYGRPC_LOADER_H_
-#define PYGRPC_LOADER_H_
+#import <GRPCClient/GRPCCall+Tests.h>
 
-#include "imports.generated.h"
+#import "InteropTests.h"
 
-/* Additional inclusions not covered by "imports.generated.h" */
-#include <grpc/byte_buffer_reader.h>
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
-/* TODO(atash) remove cruft */
+/** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
+@interface InteropTestsRemoteWithCronet : InteropTests
+@end
 
-#ifdef __cplusplus
-extern "C" {
-#endif  /* __cpluslus */
+@implementation InteropTestsRemoteWithCronet
 
-/* Attempts to load the core if necessary, and return non-zero upon succes. */
-int pygrpc_load_core(char *path);
-
-/* Initializes grpc and registers grpc_shutdown() to be called right before
- * interpreter exit.  Returns non-zero upon success.
- */
-int pygrpc_initialize_core(void);
-
-#ifdef __cplusplus
++ (NSString *)host {
+  return kRemoteSSLHost;
 }
-#endif  /* __cpluslus */
 
-#endif /* GRPC_RB_BYTE_BUFFER_H_ */
-
+@end

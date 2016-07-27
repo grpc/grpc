@@ -102,8 +102,8 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
 
 static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }
 
-void grpc_handshake_manager_add(grpc_handshaker* handshaker,
-                                grpc_handshake_manager* mgr) {
+void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
+                                grpc_handshaker* handshaker) {
   // To avoid allocating memory for each handshaker we add, we double
   // the number of elements every time we need more.
   size_t realloc_count = 0;
@@ -130,8 +130,6 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
 
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr) {
-  // FIXME: maybe check which handshaker is currently in progress, and
-  // only shut down that one?
   for (size_t i = 0; i < mgr->count; ++i) {
     grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[i]);
   }
@@ -145,10 +143,18 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 // handshakers together.
 static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
                                  grpc_endpoint* endpoint,
-                                 grpc_channel_args* args, void* user_data) {
+                                 grpc_channel_args* args, void* user_data,
+                                 grpc_error* error) {
   grpc_handshake_manager* mgr = user_data;
   GPR_ASSERT(mgr->state != NULL);
   GPR_ASSERT(mgr->state->index < mgr->count);
+  // If we got an error, skip all remaining handshakers and invoke the
+  // caller-supplied callback immediately.
+  if (error != GRPC_ERROR_NONE) {
+    mgr->state->final_cb(exec_ctx, endpoint, args, mgr->state->final_user_data,
+                         error);
+    return;
+  }
   grpc_handshaker_done_cb cb = call_next_handshaker;
   // If this is the last handshaker, use the caller-supplied callback
   // and user_data instead of chaining back to this function again.
@@ -177,7 +183,7 @@ void grpc_handshake_manager_do_handshake(
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done
     // callback with the passed-in endpoint.
-    cb(exec_ctx, endpoint, args_copy, user_data);
+    cb(exec_ctx, endpoint, args_copy, user_data, GRPC_ERROR_NONE);
   } else {
     GPR_ASSERT(mgr->state == NULL);
     mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
@@ -186,6 +192,6 @@ void grpc_handshake_manager_do_handshake(
     mgr->state->acceptor = acceptor;
     mgr->state->final_cb = cb;
     mgr->state->final_user_data = user_data;
-    call_next_handshaker(exec_ctx, endpoint, args_copy, mgr);
+    call_next_handshaker(exec_ctx, endpoint, args_copy, mgr, GRPC_ERROR_NONE);
   }
 }

@@ -153,26 +153,17 @@ PHP_METHOD(CallCredentials, createComposite) {
                          1 TSRMLS_CC);
     return;
   }
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call_credentials *cred1 =
-      (wrapped_grpc_call_credentials *)zend_object_store_get_object(
-          cred1_obj TSRMLS_CC);
-  wrapped_grpc_call_credentials *cred2 =
-      (wrapped_grpc_call_credentials *)zend_object_store_get_object(
-          cred2_obj TSRMLS_CC);
-  grpc_call_credentials *creds =
-      grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
-                                             NULL);
-  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
-  RETURN_DESTROY_ZVAL(creds_object);
-#else
   wrapped_grpc_call_credentials *cred1 =
     Z_WRAPPED_GRPC_CALL_CREDS_P(cred1_obj);
   wrapped_grpc_call_credentials *cred2 =
     Z_WRAPPED_GRPC_CALL_CREDS_P(cred2_obj);
   grpc_call_credentials *creds =
-    grpc_composite_call_credentials_create(cred1->wrapped,
-                                           cred2->wrapped, NULL);
+      grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
+                                             NULL);
+#if PHP_MAJOR_VERSION < 7
+  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  RETURN_DESTROY_ZVAL(creds_object);
+#else
   grpc_php_wrap_call_credentials(creds, return_value);
   RETURN_DESTROY_ZVAL(return_value);
 #endif
