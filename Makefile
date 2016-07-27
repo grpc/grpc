@@ -748,8 +748,8 @@ endif
 endif
 else
 PC_LIBS_GRPCXX = -lprotobuf
-PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
 endif
+PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
 else
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a

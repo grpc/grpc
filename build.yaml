@@ -3378,6 +3378,7 @@ php_config_m4:
   - src/php/ext/grpc/channel.h
   - src/php/ext/grpc/channel_credentials.h
   - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php7_wrapper.h
   - src/php/ext/grpc/php_grpc.h
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h

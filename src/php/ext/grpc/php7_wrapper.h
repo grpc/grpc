@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,47 +31,54 @@
  *
  */
 
-#ifndef NET_GRPC_PHP_GRPC_SERVER_H_
-#define NET_GRPC_PHP_GRPC_SERVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include "php_grpc.h"
-
-#include <grpc/grpc.h>
-
-/* Class entry for the Server PHP class */
-extern zend_class_entry *grpc_ce_server;
-
-/* Wrapper struct for grpc_server that can be associated with a PHP object */
-PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_server)
-  grpc_server *wrapped;
-PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_server)
+#ifndef PHP7_WRAPPER_GRPC_H
+#define PHP7_WRAPPER_GRPC_H
 
 #if PHP_MAJOR_VERSION < 7
 
-#define Z_WRAPPED_GRPC_SERVER_P(zv) \
-  (wrapped_grpc_server *)zend_object_store_get_object(zv TSRMLS_CC)
+#define php_grpc_int int
+#define php_grpc_long long
+#define php_grpc_ulong ulong
+#define php_grpc_add_property_string(arg, name, context, b) \
+  add_property_string(arg, name, context, b)
+#define php_grpc_add_property_stringl(res, name, str, len, b) \
+  add_property_stringl(res, name, str, len, b)
+#define php_grpc_add_next_index_stringl(data, str, len, b) \
+  add_next_index_stringl(data, str, len, b)
+
+#define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val, dup)
+#define PHP_GRPC_MAKE_STD_ZVAL(pzv) MAKE_STD_ZVAL(pzv)
+
+#define PHP_GRPC_WRAP_OBJECT_START(name) \
+  typedef struct name { \
+    zend_object std;
+#define PHP_GRPC_WRAP_OBJECT_END(name) \
+  } name;
 
 #else
 
-static inline wrapped_grpc_server
-*wrapped_grpc_server_from_obj(zend_object *obj) {
-  return (wrapped_grpc_server*)((char*)(obj) -
-                                XtOffsetOf(wrapped_grpc_server, std));
-}
+#define php_grpc_int size_t
+#define php_grpc_long zend_long
+#define php_grpc_ulong zend_ulong
+#define php_grpc_add_property_string(arg, name, context, b) \
+  add_property_string(arg, name, context)
+#define php_grpc_add_property_stringl(res, name, str, len, b) \
+  add_property_stringl(res, name, str, len)
+#define php_grpc_add_next_index_stringl(data, str, len, b) \
+  add_next_index_stringl(data, str, len)
 
-#define Z_WRAPPED_GRPC_SERVER_P(zv) \
-  wrapped_grpc_server_from_obj(Z_OBJ_P((zv)))
+#define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val)
+#define PHP_GRPC_MAKE_STD_ZVAL(pzv) \
+  zval _stack_zval_##pzv; \
+  pzv = &(_stack_zval_##pzv)
+
+#define PHP_GRPC_WRAP_OBJECT_START(name) \
+  typedef struct name {
+#define PHP_GRPC_WRAP_OBJECT_END(name) \
+    zend_object std; \
+  } name;
 
 #endif /* PHP_MAJOR_VERSION */
 
-/* Initializes the Server class */
-void grpc_init_server(TSRMLS_D);
-
-#endif /* NET_GRPC_PHP_GRPC_SERVER_H_ */
+#endif /* PHP7_WRAPPER_GRPC_H */

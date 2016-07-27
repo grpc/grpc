@@ -31,47 +31,20 @@
  *
  */
 
-#ifndef NET_GRPC_PHP_GRPC_SERVER_H_
-#define NET_GRPC_PHP_GRPC_SERVER_H_
+#import <GRPCClient/GRPCCall+Tests.h>
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#import "InteropTests.h"
 
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include "php_grpc.h"
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
-#include <grpc/grpc.h>
+/** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
+@interface InteropTestsRemoteWithCronet : InteropTests
+@end
 
-/* Class entry for the Server PHP class */
-extern zend_class_entry *grpc_ce_server;
+@implementation InteropTestsRemoteWithCronet
 
-/* Wrapper struct for grpc_server that can be associated with a PHP object */
-PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_server)
-  grpc_server *wrapped;
-PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_server)
-
-#if PHP_MAJOR_VERSION < 7
-
-#define Z_WRAPPED_GRPC_SERVER_P(zv) \
-  (wrapped_grpc_server *)zend_object_store_get_object(zv TSRMLS_CC)
-
-#else
-
-static inline wrapped_grpc_server
-*wrapped_grpc_server_from_obj(zend_object *obj) {
-  return (wrapped_grpc_server*)((char*)(obj) -
-                                XtOffsetOf(wrapped_grpc_server, std));
++ (NSString *)host {
+  return kRemoteSSLHost;
 }
 
-#define Z_WRAPPED_GRPC_SERVER_P(zv) \
-  wrapped_grpc_server_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
-
-/* Initializes the Server class */
-void grpc_init_server(TSRMLS_D);
-
-#endif /* NET_GRPC_PHP_GRPC_SERVER_H_ */
+@end

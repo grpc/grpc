@@ -84,18 +84,6 @@ zend_object_value create_wrapped_grpc_server_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_server_credentials(grpc_server_credentials
-                                       *wrapped TSRMLS_DC) {
-  zval *server_credentials_object;
-  MAKE_STD_ZVAL(server_credentials_object);
-  object_init_ex(server_credentials_object, grpc_ce_server_credentials);
-  wrapped_grpc_server_credentials *server_credentials =
-      (wrapped_grpc_server_credentials *)zend_object_store_get_object(
-          server_credentials_object TSRMLS_CC);
-  server_credentials->wrapped = wrapped;
-  return server_credentials_object;
-}
-
 #else
 
 static zend_object_handlers server_credentials_ce_handlers;
@@ -123,15 +111,18 @@ zend_object *create_wrapped_grpc_server_credentials(zend_class_entry
   return &intern->std;
 }
 
-void grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped,
-                                      zval *server_credentials_object) {
+#endif
+
+zval *grpc_php_wrap_server_credentials(grpc_server_credentials
+                                       *wrapped TSRMLS_DC) {
+  zval *server_credentials_object;
+  PHP_GRPC_MAKE_STD_ZVAL(server_credentials_object);
   object_init_ex(server_credentials_object, grpc_ce_server_credentials);
   wrapped_grpc_server_credentials *server_credentials =
     Z_WRAPPED_GRPC_SERVER_CREDS_P(server_credentials_object);
   server_credentials->wrapped = wrapped;
+  return server_credentials_object;
 }
-
-#endif
 
 /**
  * Create SSL credentials.
@@ -144,11 +135,9 @@ PHP_METHOD(ServerCredentials, createSsl) {
   char *pem_root_certs = 0;
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
-#if PHP_MAJOR_VERSION < 7
-  int root_certs_length = 0, private_key_length, cert_chain_length;
-#else
-  size_t root_certs_length = 0, private_key_length, cert_chain_length;
-#endif
+  php_grpc_int root_certs_length = 0;
+  php_grpc_int private_key_length;
+  php_grpc_int cert_chain_length;
 
   /* "s!ss" == 1 nullable string, 2 strings */
   /* TODO: support multiple key cert pairs. */
@@ -165,13 +154,10 @@ PHP_METHOD(ServerCredentials, createSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, &pem_key_cert_pair, 1,
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
-#if PHP_MAJOR_VERSION < 7
-  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
+  zval *creds_object;
+  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
+  creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
-#else
-  grpc_php_wrap_server_credentials(creds, return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 static zend_function_entry server_credentials_methods[] = {

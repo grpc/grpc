@@ -50,19 +50,16 @@
 extern zend_class_entry *grpc_ce_timeval;
 
 /* Wrapper struct for timeval that can be associated with a PHP object */
+PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_timeval)
+  gpr_timespec wrapped;
+PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_timeval)
+
 #if PHP_MAJOR_VERSION < 7
 
-typedef struct wrapped_grpc_timeval {
-  zend_object std;
-  gpr_timespec wrapped;
-} wrapped_grpc_timeval;
+#define Z_WRAPPED_GRPC_TIMEVAL_P(zv) \
+  (wrapped_grpc_timeval *)zend_object_store_get_object(zv TSRMLS_CC)
 
 #else
-
-typedef struct wrapped_grpc_timeval {
-  gpr_timespec wrapped;
-  zend_object std;
-} wrapped_grpc_timeval;
 
 static inline wrapped_grpc_timeval
 *wrapped_grpc_timeval_from_obj(zend_object *obj) {
@@ -70,7 +67,7 @@ static inline wrapped_grpc_timeval
                                  XtOffsetOf(wrapped_grpc_timeval, std));
 }
 
-#define Z_WRAPPED_GRPC_TIMEVAL_P(zv)            \
+#define Z_WRAPPED_GRPC_TIMEVAL_P(zv) \
   wrapped_grpc_timeval_from_obj(Z_OBJ_P((zv)))
 
 #endif /* PHP_MAJOR_VERSION */
@@ -82,10 +79,6 @@ void grpc_init_timeval(TSRMLS_D);
 void grpc_shutdown_timeval(TSRMLS_D);
 
 /* Creates a Timeval object that wraps the given timeval struct */
-#if PHP_MAJOR_VERSION < 7
 zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC);
-#else
-void grpc_php_wrap_timeval(gpr_timespec wrapped, zval *timeval_object);
-#endif /* PHP_MAJOR_VERSION */
 
 #endif /* NET_GRPC_PHP_GRPC_TIMEVAL_H_ */
