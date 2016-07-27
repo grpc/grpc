@@ -32,10 +32,17 @@ require 'rbconfig'
 
 require_relative '../os_check'
 
-protoc_name = 'protoc' + RbConfig::CONFIG['EXEEXT']
+ext = RbConfig::CONFIG['EXEEXT']
 
-protoc_path = File.join(File.dirname(__FILE__),
-                        RbConfig::CONFIG['host_cpu'] + '-' + OS.os_name,
-                        protoc_name)
+protoc_name = 'protoc' + ext
 
-exec([ protoc_path, protoc_path ], *ARGV)
+plugin_name = 'grpc_ruby_plugin' + ext
+
+protoc_dir = File.join(File.dirname(__FILE__),
+                       RbConfig::CONFIG['host_cpu'] + '-' + OS.os_name)
+
+protoc_path = File.join(protoc_dir, protoc_name)
+
+plugin_path = File.join(protoc_dir, plugin_name)
+
+exec([ protoc_path, protoc_path ], "--plugin=protoc-gen-grpc=#{plugin_path}", *ARGV)
