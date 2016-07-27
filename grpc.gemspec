@@ -503,6 +503,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/resolver/sockaddr/sockaddr_resolver.c )
   s.files += %w( src/core/ext/load_reporting/load_reporting.c )
   s.files += %w( src/core/ext/load_reporting/load_reporting_filter.c )
+  s.files += %w( src/core/ext/c-ares/wrapper.c )
   s.files += %w( src/core/ext/census/context.c )
   s.files += %w( src/core/ext/census/gen/census.pb.c )
   s.files += %w( src/core/ext/census/grpc_context.c )

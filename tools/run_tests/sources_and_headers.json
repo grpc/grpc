@@ -4173,6 +4173,7 @@
   }, 
   {
     "deps": [
+      "cares_wrapper", 
       "census", 
       "gpr", 
       "grpc_base", 
@@ -5472,6 +5473,17 @@
     ], 
     "third_party": false, 
     "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [], 
+    "language": "c", 
+    "name": "cares_wrapper", 
+    "src": [
+      "src/core/ext/c-ares/wrapper.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
   }, 
   {
     "deps": [

@@ -809,6 +809,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\c-ares\wrapper.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">

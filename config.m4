@@ -257,6 +257,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
+    src/core/ext/c-ares/wrapper.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
     src/core/ext/census/grpc_context.c \
@@ -573,6 +574,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/c-ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)

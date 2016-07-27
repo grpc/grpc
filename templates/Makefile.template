@@ -381,6 +381,7 @@
   OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
   PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
+  CARES_CHECK_CMD = $(PKG_CONFIG) --exists libcares
   else # HAS_PKG_CONFIG
 
   ifeq ($(SYSTEM),MINGW32)
@@ -394,6 +395,7 @@
   BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) ${defaults.boringssl.CPPFLAGS} $(CFLAGS) ${defaults.boringssl.CFLAGS} -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
   ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
   PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
+  CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
 
   endif # HAS_PKG_CONFIG
 
@@ -433,12 +435,17 @@
   ifeq ($(HAS_SYSTEM_PROTOBUF),true)
   CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
   endif
+  HAS_SYSTEM_CARES ?=  $(shell $(CARES_CHECK_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_SYSTEM_CARES),true)
+  CACHE_MK += HAS_SYSTEM_CARES = true,
+  endif
   else
   # override system libraries if the config requires a custom compiled library
   HAS_SYSTEM_OPENSSL_ALPN = false
   HAS_SYSTEM_OPENSSL_NPN = false
   HAS_SYSTEM_ZLIB = false
   HAS_SYSTEM_PROTOBUF = false
+  HAS_SYSTEM_CARES = false
   endif
 
   HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -497,6 +504,12 @@
   HAS_EMBEDDED_PROTOBUF = true
   endif
 
+  ifeq ($(wildcard third_party/c-ares/ares.h),)
+  HAS_EMBEDDED_CARES = false
+  else
+  HAS_EMBEDDED_CARES = true
+  endif
+
   PC_REQUIRES_GRPC =
   PC_LIBS_GRPC =
 
@@ -527,6 +540,41 @@
   PC_LIBS_GRPC += -lz
   LIBS += z
   endif
+  endif
+
+  CARES_PKG_CONFIG = false
+
+  ifeq ($(HAS_SYSTEM_CARES),true)
+  ifeq ($(HAS_PKG_CONFIG),true)
+  CARES_PKG_CONFIG = true
+  PC_REQUIRES_GRPC += libcares
+  CPPFLAGS += $(shell $(PKG_CONFIG) --cflags libcares)
+  LDFLAGS_CARES_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L libcares)
+  ifeq ($(SYSTEM),Linux)
+  ifneq ($(LDFLAGS_CARES_PKG_CONFIG),)
+  LDFLAGS_CARES_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L libcares | sed s/L/Wl,-rpath,/)
+  endif
+  endif
+  else
+  PC_LIBS_GRPC += -lcares
+  LIBS += libcares
+  endif
+  else
+  ifeq ($(HAS_EMBEDDED_CARES),true)
+  CARES_DEP = $(LIBDIR)/$(CONFIG)/c-ares/libcares.a
+  CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
+  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
+  else
+  DEP_MISSING += c-ares
+  endif
+  endif
+
+  LIBS_CARES = cares
+
+  ifeq ($(CARES_PKG_CONFIG),true)
+  LDLIBS_CARES += $(shell $(PKG_CONFIG) --libs-only-l libcares)
+  else
+  LDLIBS_CARES += $(addprefix -l, $(LIBS_CARES))
   endif
 
   OPENSSL_PKG_CONFIG = false
@@ -817,6 +865,7 @@
   	$(PERFTOOLS_CHECK_CMD) || true
   	$(PROTOBUF_CHECK_CMD) || true
   	$(PROTOC_CHECK_VERSION_CMD) || true
+  	$(CARES_CHECK_CMD) || true
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -832,6 +881,18 @@
   	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
+
+  third_party/c-ares/configure:
+  	$(E) "[AUTOGEN] Preparing c-ares"
+  	$(Q)(cd third_party/c-ares; ./buildconf; ./configure)
+
+  $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
+  	$(E) "[MAKE]    Building c-ares"
+  	$(Q)(cd third_party/c-ares ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static)
+  	$(Q)$(MAKE) -C third_party/c-ares clean
+  	$(Q)$(MAKE) -C third_party/c-ares
+  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/c-ares
+  	$(Q)cp third_party/c-ares/.libs/libcares.a $(LIBDIR)/$(CONFIG)/c-ares
 
   static: static_c static_cxx
 
@@ -1411,7 +1472,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)\
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1428,7 +1489,7 @@
   else
 
   % endif
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(CARES_DEP) \
   % if lib.name != 'z':
   $(ZLIB_DEP) \
   % endif
@@ -1474,9 +1535,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
     libs = ''
-    lib_deps = ' $(ZLIB_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1496,7 +1557,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(LDLIBS_CARES)'
 
     if security in [True, 'check']:
       for src in lib.src:

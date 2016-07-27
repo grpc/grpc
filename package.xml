@@ -511,6 +511,7 @@
     <file baseinstalldir="/" name="src/core/ext/resolver/sockaddr/sockaddr_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/c-ares/wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
