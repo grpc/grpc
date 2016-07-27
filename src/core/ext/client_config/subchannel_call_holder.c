@@ -170,7 +170,7 @@ retry:
         &subchannel_call);
     if (error != GRPC_ERROR_NONE) {
       subchannel_call = CANCELLED_CALL;
-      fail_locked(exec_ctx, holder, error);
+      fail_locked(exec_ctx, holder, GRPC_ERROR_REF(error));
       grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
     }
     gpr_atm_rel_store(&holder->subchannel_call,
