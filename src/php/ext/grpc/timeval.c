@@ -52,14 +52,11 @@
 
 zend_class_entry *grpc_ce_timeval;
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Frees and destroys an instance of wrapped_grpc_call */
-void free_wrapped_grpc_timeval(void *object TSRMLS_DC) {
-  wrapped_grpc_timeval *timeval = (wrapped_grpc_timeval *)object;
-  zend_object_std_dtor(&timeval->std TSRMLS_CC);
-  efree(timeval);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_timeval)
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
+
+#if PHP_MAJOR_VERSION < 7
 
 /* Initializes an instance of wrapped_grpc_timeval to be associated with an
  * object of a class specified by class_type */
@@ -81,12 +78,6 @@ zend_object_value create_wrapped_grpc_timeval(zend_class_entry *class_type
 #else
 
 static zend_object_handlers timeval_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_call */
-static void free_wrapped_grpc_timeval(zend_object *object) {
-  wrapped_grpc_timeval *timeval = wrapped_grpc_timeval_from_obj(object);
-  zend_object_std_dtor(&timeval->std);
-}
 
 /* Initializes an instance of wrapped_grpc_timeval to be associated with an
  * object of a class specified by class_type */

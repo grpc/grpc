@@ -63,18 +63,14 @@ static grpc_ssl_roots_override_result get_ssl_roots_override(
   return GRPC_SSL_ROOTS_OVERRIDE_OK;
 }
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Frees and destroys an instance of wrapped_grpc_channel_credentials */
-void free_wrapped_grpc_channel_credentials(void *object TSRMLS_DC) {
-  wrapped_grpc_channel_credentials *creds =
-      (wrapped_grpc_channel_credentials *)object;
-  if (creds->wrapped != NULL) {
-    grpc_channel_credentials_release(creds->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel_credentials)
+  if (p->wrapped != NULL) {
+    grpc_channel_credentials_release(p->wrapped);
   }
-  zend_object_std_dtor(&creds->std TSRMLS_CC);
-  efree(creds);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
+
+#if PHP_MAJOR_VERSION < 7
 
 /* Initializes an instance of wrapped_grpc_channel_credentials to be
  * associated with an object of a class specified by class_type */
@@ -99,16 +95,6 @@ zend_object_value create_wrapped_grpc_channel_credentials(
 #else
 
 static zend_object_handlers channel_credentials_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_channel_credentials */
-static void free_wrapped_grpc_channel_credentials(zend_object *object) {
-  wrapped_grpc_channel_credentials *creds =
-    wrapped_grpc_channel_creds_from_obj(object);
-  if (creds->wrapped != NULL) {
-    grpc_channel_credentials_release(creds->wrapped);
-  }
-  zend_object_std_dtor(&creds->std);
-}
 
 /* Initializes an instance of wrapped_grpc_channel_credentials to be
  * associated with an object of a class specified by class_type */

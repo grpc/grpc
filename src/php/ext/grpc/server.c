@@ -58,21 +58,18 @@
 
 zend_class_entry *grpc_ce_server;
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Frees and destroys an instance of wrapped_grpc_server */
-void free_wrapped_grpc_server(void *object TSRMLS_DC) {
-  wrapped_grpc_server *server = (wrapped_grpc_server *)object;
-  if (server->wrapped != NULL) {
-    grpc_server_shutdown_and_notify(server->wrapped, completion_queue, NULL);
-    grpc_server_cancel_all_calls(server->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server)
+  if (p->wrapped != NULL) {
+    grpc_server_shutdown_and_notify(p->wrapped, completion_queue, NULL);
+    grpc_server_cancel_all_calls(p->wrapped);
     grpc_completion_queue_pluck(completion_queue, NULL,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-    grpc_server_destroy(server->wrapped);
+    grpc_server_destroy(p->wrapped);
   }
-  zend_object_std_dtor(&server->std TSRMLS_CC);
-  efree(server);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
+
+#if PHP_MAJOR_VERSION < 7
 
 /* Initializes an instance of wrapped_grpc_call to be associated with an object
  * of a class specified by class_type */
@@ -96,19 +93,6 @@ zend_object_value create_wrapped_grpc_server(zend_class_entry *class_type
 #else
 
 static zend_object_handlers server_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_server */
-static void free_wrapped_grpc_server(zend_object *object) {
-  wrapped_grpc_server *server = wrapped_grpc_server_from_obj(object);
-  if (server->wrapped != NULL) {
-    grpc_server_shutdown_and_notify(server->wrapped, completion_queue, NULL);
-    grpc_server_cancel_all_calls(server->wrapped);
-    grpc_completion_queue_pluck(completion_queue, NULL,
-                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-    grpc_server_destroy(server->wrapped);
-  }
-  zend_object_std_dtor(&server->std);
-}
 
 /* Initializes an instance of wrapped_grpc_call to be associated with an object
  * of a class specified by class_type */
