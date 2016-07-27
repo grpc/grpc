@@ -43,11 +43,6 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-void (*g_load_reporting_fn)(const grpc_load_reporting_call_data *call_data);
-
-/* The function to be defined */
-void load_reporting_fn(const grpc_load_reporting_call_data *call_data) {}
-
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */
   char *trailing_md_string;
@@ -68,15 +63,6 @@ typedef struct channel_data {
   intptr_t id; /**< an id unique to the channel */
 } channel_data;
 
-static void invoke_lr_fn(grpc_load_reporting_call_data *lr_call_data) {
-  if (g_load_reporting_fn == NULL) {
-    g_load_reporting_fn = load_reporting_fn;
-  }
-  GPR_TIMER_BEGIN("load_reporting_fn", 0);
-  g_load_reporting_fn(lr_call_data);
-  GPR_TIMER_END("load_reporting_fn", 0);
-}
-
 typedef struct {
   grpc_call_element *elem;
   grpc_exec_ctx *exec_ctx;
@@ -91,6 +77,7 @@ static grpc_mdelem *recv_md_filter(void *user_data, grpc_mdelem *md) {
     calld->service_method = grpc_mdstr_as_c_string(md->value);
   } else if (md->key == GRPC_MDSTR_LOAD_REPORTING_INITIAL) {
     calld->initial_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
+    return NULL;
   }
 
   return md;
@@ -122,13 +109,14 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(call_data));
 
   calld->id = (intptr_t)args->call_stack;
   grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem);
 
+  /* TODO(dgq): do something with the data
+  channel_data *chand = elem->channel_data;
   grpc_load_reporting_call_data lr_call_data = {GRPC_LR_POINT_CALL_CREATION,
                                                 (intptr_t)chand->id,
                                                 (intptr_t)calld->id,
@@ -136,16 +124,17 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                                 NULL,
                                                 NULL,
                                                 NULL};
-  invoke_lr_fn(&lr_call_data);
+  */
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 
+  /* TODO(dgq): do something with the data
+  channel_data *chand = elem->channel_data;
   grpc_load_reporting_call_data lr_call_data = {GRPC_LR_POINT_CALL_DESTRUCTION,
                                                 (intptr_t)chand->id,
                                                 (intptr_t)calld->id,
@@ -153,8 +142,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                                 calld->initial_md_string,
                                                 calld->trailing_md_string,
                                                 calld->service_method};
-
-  invoke_lr_fn(&lr_call_data);
+  */
 
   gpr_free(calld->initial_md_string);
   gpr_free(calld->trailing_md_string);
@@ -171,6 +159,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
   chand->id = (intptr_t)args->channel_stack;
 
+  /* TODO(dgq): do something with the data
   grpc_load_reporting_call_data lr_call_data = {GRPC_LR_POINT_CHANNEL_CREATION,
                                                 (intptr_t)chand,
                                                 0,
@@ -178,12 +167,13 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                                                 NULL,
                                                 NULL,
                                                 NULL};
-  invoke_lr_fn(&lr_call_data);
+                                                */
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
+  /* TODO(dgq): do something with the data
   channel_data *chand = elem->channel_data;
   grpc_load_reporting_call_data lr_call_data = {
       GRPC_LR_POINT_CHANNEL_DESTRUCTION,
@@ -193,7 +183,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
       NULL,
       NULL,
       NULL};
-  invoke_lr_fn(&lr_call_data);
+  */
 }
 
 static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
@@ -202,6 +192,7 @@ static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_LOAD_REPORTING_TRAILING) {
     calld->trailing_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
+    return NULL;
   }
 
   return md;

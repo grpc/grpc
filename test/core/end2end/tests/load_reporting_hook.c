@@ -69,44 +69,6 @@ typedef struct {
   bool fully_processed;
 } load_reporting_data;
 
-static load_reporting_data lr_data;
-
-static void load_reporting_test_fn(
-    const grpc_load_reporting_call_data *call_data) {
-  gpr_mu_lock(&lr_data.mu);
-  switch (call_data->source) {
-    case GRPC_LR_POINT_CHANNEL_CREATION:
-      lr_data.channel_id = call_data->channel_id;
-      break;
-    case GRPC_LR_POINT_CHANNEL_DESTRUCTION:
-      break;
-    case GRPC_LR_POINT_CALL_CREATION:
-      lr_data.call_id = call_data->call_id;
-      break;
-    case GRPC_LR_POINT_CALL_DESTRUCTION:
-      if (lr_data.initial_md_str == NULL) {
-        lr_data.initial_md_str = gpr_strdup(call_data->initial_md_string);
-      }
-      if (lr_data.trailing_md_str == NULL) {
-        lr_data.trailing_md_str = gpr_strdup(call_data->trailing_md_string);
-      }
-      if (lr_data.method_name == NULL) {
-        lr_data.method_name = gpr_strdup(call_data->method_name);
-      }
-
-      lr_data.incoming_bytes = call_data->final_info->stats
-                                   .transport_stream_stats.incoming.data_bytes;
-      lr_data.outgoing_bytes = call_data->final_info->stats
-                                   .transport_stream_stats.outgoing.data_bytes;
-      lr_data.call_final_status = call_data->final_info->final_status;
-      lr_data.fully_processed = true;
-      break;
-    default:
-      abort();
-  }
-  gpr_mu_unlock(&lr_data.mu);
-}
-
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
@@ -315,8 +277,8 @@ extern void (*g_load_reporting_fn)(
     const grpc_load_reporting_call_data *call_data);
 
 static void test_load_reporting_hook(grpc_end2end_test_config config) {
-  gpr_mu_init(&lr_data.mu);
-  g_load_reporting_fn = load_reporting_test_fn;
+  /* TODO(dgq): this test is currently a noop until LR is fully defined.
+   * Leaving the rest here, as it'll likely be reusable. */
 
   /* Introduce load reporting for the server through its arguments */
   grpc_arg arg = grpc_load_reporting_enable_arg();
@@ -350,26 +312,6 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   end_test(&f);
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);
-
-  GPR_ASSERT(lr_data.fully_processed);
-  GPR_ASSERT(lr_data.incoming_bytes == strlen(request_msg));
-  GPR_ASSERT(lr_data.outgoing_bytes == strlen(response_msg));
-
-  GPR_ASSERT(lr_data.call_id > 0);
-  GPR_ASSERT(lr_data.channel_id > 0);
-
-  GPR_ASSERT(strcmp(lr_data.method_name, "/gRPCFTW") == 0);
-
-  GPR_ASSERT(lr_data.initial_md_str != NULL);
-  GPR_ASSERT(lr_data.trailing_md_str != NULL);
-  GPR_ASSERT(strcmp(lr_data.initial_md_str, "client-token") == 0);
-  GPR_ASSERT(strcmp(lr_data.trailing_md_str, "server-token") == 0);
-
-  GPR_ASSERT(lr_data.call_final_status == GRPC_STATUS_OK);
-
-  gpr_free(lr_data.initial_md_str);
-  gpr_free(lr_data.trailing_md_str);
-  gpr_free(lr_data.method_name);
 }
 
 void load_reporting_hook(grpc_end2end_test_config config) {

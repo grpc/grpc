@@ -38,9 +38,11 @@
 #include "src/core/lib/channel/channel_stack.h"
 
 /** Metadata key for initial metadata coming from clients */
+/* TODO(dgq): change to the final value TBD */
 #define GRPC_LOAD_REPORTING_INITIAL_MD_KEY "load-reporting-initial"
 
 /** Metadata key for trailing metadata from servers */
+/* TODO(dgq): change to the final value TBD */
 #define GRPC_LOAD_REPORTING_TRAILING_MD_KEY "load-reporting-trailing"
 
 /** Identifiers for the invocation point of the users LR callback */
