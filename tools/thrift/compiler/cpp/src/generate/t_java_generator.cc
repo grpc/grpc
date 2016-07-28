@@ -97,10 +97,10 @@ public:
         } else if(iter->second.compare("suppress") == 0) {
           suppress_generated_annotations_ = true;
         } else {
-          throw "unknown option java:" + iter->first + "=" + iter->second; 
+          throw "unknown option java:" + iter->first + "=" + iter->second;
         }
       } else {
-        throw "unknown option java:" + iter->first; 
+        throw "unknown option java:" + iter->first;
       }
     }
 
@@ -319,6 +319,7 @@ public:
   std::string java_type_imports();
   std::string java_suppressions();
   std::string grpc_imports();
+  std::string import_extended_service(t_service* tservice);
   std::string type_name(t_type* ttype,
                         bool in_container = false,
                         bool in_init = false,
@@ -380,7 +381,7 @@ private:
   bool use_option_type_;
   bool undated_generated_annotations_;
   bool suppress_generated_annotations_;
-  
+
 };
 
 /**
@@ -469,7 +470,7 @@ string t_java_generator::java_suppressions() {
 }
 
 string t_java_generator::grpc_imports() {
-  return 
+  return
     string() +
     "import static io.grpc.stub.ClientCalls.asyncUnaryCall;\n" +
     "import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;\n" +
@@ -486,6 +487,15 @@ string t_java_generator::grpc_imports() {
     "import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;\n" +
     "import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;\n" +
     "import io.grpc.thrift.ThriftUtils;\n\n";
+}
+
+string t_java_generator::import_extended_service(t_service* tservice) {
+  if (tservice == nullptr) {
+    return string() + "\n";
+  }
+  string ns = tservice->get_program()->get_namespace("java");
+  string extend_service_name = tservice->get_name() + "Grpc";
+  return string() + "import " + ns + "." + extend_service_name + ";\n\n";
 }
 
 /**
@@ -2807,24 +2817,24 @@ void t_java_generator::generate_service(t_service* tservice) {
   string f_service_name = package_dir_ + "/" + make_valid_java_filename(service_name_) + "Grpc.java";
   f_service_.open(f_service_name.c_str());
 
-  f_service_ << 
+  f_service_ <<
       autogen_comment() <<
-      java_package() << 
+      java_package() <<
       java_type_imports() <<
-      grpc_imports(); 
+      grpc_imports() <<
+      import_extended_service(tservice->get_extends());
       java_suppressions();
 
   f_service_ <<
     "public class " << service_name_ << "Grpc {" << endl <<
     endl;
+
   indent_up();
 
   // generate constructor
   f_service_ <<
     indent() << "private " << service_name_ <<
     "Grpc() {}" << endl << endl;
-
-  //string namespace = tservice->get_program()->get_namespace("java");
 
   f_service_ <<
     indent() << "public static final String SERVICE_NAME = " <<
@@ -2867,12 +2877,10 @@ void t_java_generator::generate_service_interface(t_service* tservice) {
   generate_java_doc(f_service_, tservice);
   f_service_ << indent() <<
     "@java.lang.Deprecated public static interface " << service_name_;
-  
+
   if (tservice->get_extends() != nullptr) {
-    extends = type_name(tservice->get_extends());
-    extends_iface = " extends " + extends;
-    f_service_ <<
-       extends_iface << endl;
+    f_service_ << " extends " << tservice->get_extends()->get_name() + "Grpc." <<
+      tservice->get_extends()->get_name() << endl;
   }
   f_service_ << " {" << endl;
 
@@ -2885,7 +2893,7 @@ void t_java_generator::generate_service_interface(t_service* tservice) {
       indent() << "public void " << (*f_iter)->get_name() << "(" << (*f_iter)->get_name() <<
       "_args request," << endl <<
       indent() << "    io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() <<
-      "_result> responseObserver);" << endl << endl; 
+      "_result> responseObserver);" << endl << endl;
   }
   indent_down();
   f_service_ << indent() << "}" << endl << endl;
@@ -2904,6 +2912,21 @@ void t_java_generator::generate_arg_ids(t_service* tservice) {
       (*f_iter)->get_name() << " = " << ++i << ";" << endl;
   }
   f_service_ << endl;
+
+  if (tservice->get_extends() != nullptr) {
+    f_service_ << indent() << "// ARG IDs for extended service" << endl;
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ << indent() <<
+        "private static final int ARG_IN_METHOD_" <<
+        (*f_iter)->get_name() << " = " << ++i << ";" << endl;
+      f_service_ << indent() <<
+        "private static final int ARG_OUT_METHOD_" <<
+        (*f_iter)->get_name() << " = " << ++i << ";" << endl;
+    }
+    f_service_ << endl;
+  }
 }
 
 void t_java_generator::generate_message_factory(t_service* tservice) {
@@ -2940,17 +2963,33 @@ void t_java_generator::generate_message_factory(t_service* tservice) {
     f_service_ << indent() <<
       "case ARG_OUT_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
       indent() << " o = new " << (*f_iter)->get_name() << "_result();" <<
-      endl << indent() << "  break;" << endl; 
+      endl << indent() << "  break;" << endl;
+  }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for (f_iter = functions.begin(); f_iter!= functions.end(); ++f_iter) {
+      f_service_ << indent() <<
+        "case ARG_IN_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
+        indent() << "  o = new " << extend_service_name << "." << (*f_iter)->get_name() << "_args();" <<
+        endl << indent() << "  break;" << endl;
+      f_service_ << indent() <<
+        "case ARG_OUT_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
+        indent() << " o = new " << extend_service_name << "." << (*f_iter)->get_name() << "_result();" <<
+        endl << indent() << "  break;" << endl;
+    }
   }
 
   f_service_  << indent() <<
-    "default:" << endl <<
-    "  throw new AssertionError();" << endl <<
+    "default:" << endl << indent() <<
+    "  throw new AssertionError();" << endl << indent() <<
     "}" << endl;
 
   f_service_ << indent() <<
     "@java.lang.SuppressWarnings(\"unchecked\")" << endl <<
-    indent() << "T t = (T) o;" << endl <<
+    indent() << "T t = (T) o;" << endl << indent() <<
     "return t;" << endl;
 
   indent_down();
@@ -2974,15 +3013,37 @@ void t_java_generator::generate_service_impl_base(t_service* tservice) {
       indent() << "@java.lang.Override" << endl <<
       indent() << "public void " << (*f_iter)->get_name() << "(" << (*f_iter)->get_name() <<
       "_args request, " << endl <<
-      indent() << "    io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() << 
+      indent() << "    io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() <<
       "_result> responseObserver) {" << endl;
     indent_up();
     f_service_ <<
-      indent() << "asyncUnimplementedUnaryCall(METHOD_" << (*f_iter)->get_name() << 
+      indent() << "asyncUnimplementedUnaryCall(METHOD_" << (*f_iter)->get_name() <<
       ", responseObserver);" << endl;
     indent_down();
     f_service_ <<
       indent() << "}" << endl << endl;
+  }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc" ;
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "@java.lang.Override" << endl <<
+        indent() << "public void " << (*f_iter)->get_name() << "(" <<
+        extend_service_name << "." << (*f_iter)->get_name() <<
+        "_args request, " << endl <<
+        indent() << "    io.grpc.stub.StreamObserver<" << extend_service_name
+        << "." << (*f_iter)->get_name() << "_result> responseObserver) {" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "asyncUnimplementedUnaryCall(METHOD_" << (*f_iter)->get_name() <<
+        ", responseObserver);" << endl;
+      indent_down();
+      f_service_ <<
+        indent() << "}" << endl << endl;
+    }
   }
 
   f_service_ <<
@@ -2996,7 +3057,7 @@ void t_java_generator::generate_service_impl_base(t_service* tservice) {
     indent() << "}" << endl << endl;
 
   indent_down();
-  f_service_ << 
+  f_service_ <<
     indent() << "}" << endl << endl;
 
   // generate Abstract Service
@@ -3025,17 +3086,43 @@ void t_java_generator::generate_method_descriptors(t_service* tservice) {
       indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
       indent() << "    new ThriftMessageFactory<" << (*f_iter)->get_name() <<
       "_result>( ARG_OUT_METHOD_" << (*f_iter)->get_name() << ")));" << endl << endl;
-    indent_down(); 
+    indent_down();
+  }
+
+  if(tservice->get_extends() != nullptr) {
+    t_service* extends_service = tservice->get_extends();
+    functions = extends_service->get_functions();
+    string extend_service_name = extends_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "public static final io.grpc.MethodDescriptor<" << extend_service_name << "." <<
+        (*f_iter)->get_name() << "_args," << endl <<
+        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() << "_result> METHOD_"
+        << (*f_iter)->get_name() << " = " << endl << indent() <<
+        "    io.grpc.MethodDescriptor.create(" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "    io.grpc.MethodDescriptor.MethodType.UNARY," << endl <<
+        indent() << "    generateFullMethodName(" << "\"" << package_name_ << "." <<
+        service_name_ << "\" , \"" << (*f_iter)->get_name() << "\")," << endl <<
+        indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
+        indent() << "    new ThriftMessageFactory<" << extend_service_name << "." <<
+        (*f_iter)->get_name() << "_args>( ARG_IN_METHOD_" << (*f_iter)->get_name() << "))," << endl <<
+        indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
+        indent() << "    new ThriftMessageFactory<" << extend_service_name << "." << (*f_iter)->get_name() <<
+        "_result>( ARG_OUT_METHOD_" << (*f_iter)->get_name() << ")));" << endl << endl;
+      indent_down();
+    }
   }
 }
 
 void t_java_generator::generate_stub(t_service* tservice) {
   f_service_ <<
-    indent() << 
-    "public static " << service_name_ << 
+    indent() <<
+    "public static " << service_name_ <<
     "Stub newStub(io.grpc.Channel channel) {" <<
     endl;
-  
+
   indent_up();
   f_service_ <<
     indent() <<
@@ -3052,7 +3139,7 @@ void t_java_generator::generate_stub(t_service* tservice) {
     service_name_ << "Stub>" << endl <<
     indent() << "    implements " << service_name_ << "{" << endl;
   indent_up();
-  
+
   f_service_ <<
     indent() << "private " << service_name_ << "Stub(io.grpc.Channel channel) {" << endl;
   indent_up();
@@ -3101,6 +3188,29 @@ void t_java_generator::generate_stub(t_service* tservice) {
     f_service_ <<
       indent() << "}" << endl << endl;
   }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "@java.lang.Override" << endl <<
+        indent() << "public void " << (*f_iter)->get_name() << "(" <<
+        extend_service_name << "." << (*f_iter)->get_name() << "_args request,"
+        << endl << indent() << "    io.grpc.stub.StreamObserver<" <<
+        extend_service_name << "." << (*f_iter)->get_name() <<
+        "_result> responseObserver) {" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "asyncUnaryCall(" << endl <<
+        indent() << "    getChannel().newCall(METHOD_" << (*f_iter)->get_name() <<
+        ", getCallOptions()), request, responseObserver);" << endl;
+      indent_down();
+      f_service_ <<
+        indent() << "}" << endl << endl;
+    }
+  }
   indent_down();
   f_service_ <<
     indent() << "}" << endl << endl;
@@ -3121,7 +3231,16 @@ void t_java_generator::generate_blocking_stub(t_service* tservice) {
   // generate Blocking Client
   f_service_ <<
     indent() << "@java.lang.Deprecated public static interface " << service_name_ <<
-    "BlockingClient {" << endl;
+    "BlockingClient " ;
+  
+  if (tservice->get_extends() != nullptr) {
+    string extend_service_name = tservice->get_extends()->get_name();
+    f_service_ << endl << indent() << "    extends " << extend_service_name << "Grpc." <<
+        extend_service_name << "BlockingClient " ;
+  }
+
+  f_service_ << "{" << endl;
+
   indent_up();
 
   vector<t_function*> functions = tservice->get_functions();
@@ -3129,10 +3248,10 @@ void t_java_generator::generate_blocking_stub(t_service* tservice) {
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     f_service_ <<
       indent() << "public " << (*f_iter)->get_name() << "_result " <<
-      (*f_iter)->get_name() << "(" << (*f_iter)->get_name() << "_args request);" << endl << endl; 
+      (*f_iter)->get_name() << "(" << (*f_iter)->get_name() << "_args request);" << endl << endl;
   }
   indent_down();
-  f_service_ << 
+  f_service_ <<
     indent() << "}" << endl << endl;
 
   // generate Blocking Stub impl
@@ -3141,9 +3260,10 @@ void t_java_generator::generate_blocking_stub(t_service* tservice) {
     indent() << "public static class " <<
     service_name_ << "BlockingStub extends io.grpc.stub.AbstractStub<" <<
     service_name_ << "BlockingStub>" << endl <<
-    indent() << "    implements " << service_name_ << "BlockingClient {" << endl;
+    indent() << "    implements " << service_name_ << "BlockingClient {";
+
   indent_up();
-  
+
   f_service_ <<
     indent() << "private " << service_name_ << "BlockingStub(io.grpc.Channel channel) {" << endl;
   indent_up();
@@ -3188,6 +3308,27 @@ void t_java_generator::generate_blocking_stub(t_service* tservice) {
     f_service_ <<
       indent() << "}" << endl << endl;
   }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "@java.lang.Override" << endl <<
+        indent() << "public " << extend_service_name << "." << (*f_iter)->get_name() <<
+        "_result " << (*f_iter)->get_name() << "(" << extend_service_name << "." <<
+        (*f_iter)->get_name() << "_args request) {" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "return blockingUnaryCall(" << endl <<
+        indent() << "    getChannel(), METHOD_" << (*f_iter)->get_name() <<
+        ", getCallOptions(), request);" << endl;
+      indent_down();
+      f_service_ <<
+        indent() << "}" << endl << endl;
+    }
+  }
   indent_down();
   f_service_ <<
     indent() << "}" << endl << endl;
@@ -3203,12 +3344,20 @@ void t_java_generator::generate_future_stub(t_service* tservice) {
     indent() << "return new " << service_name_ << "FutureStub(channel);" << endl;
   indent_down();
   f_service_ <<
-    indent() << "}" << endl << endl; 
+    indent() << "}" << endl << endl;
 
   // generate Future Client
   f_service_ <<
     indent() << "@java.lang.Deprecated public static interface " << service_name_ <<
-    "FutureClient {" << endl;
+    "FutureClient " ;
+
+  if (tservice->get_extends() != nullptr) {
+    string extend_service_name = tservice->get_extends()->get_name();
+    f_service_ << endl << indent() << "    extends " << extend_service_name << "Grpc." <<
+        extend_service_name << "FutureClient " ; 
+  }
+  f_service_ << "{" << endl;
+
   indent_up();
 
   vector<t_function*> functions = tservice->get_functions();
@@ -3218,6 +3367,20 @@ void t_java_generator::generate_future_stub(t_service* tservice) {
       indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
       (*f_iter)->get_name() << "_result> " << (*f_iter)->get_name() << "(" << endl <<
       indent() << "    " << (*f_iter)->get_name() << "_args request);" << endl << endl;
+  }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
+        extend_service_name << "." << (*f_iter)->get_name() << "_result> " <<
+        (*f_iter)->get_name() << "(" << endl <<
+        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() <<
+        "_args request);" << endl << endl;
+    }
   }
   indent_down();
   f_service_ <<
@@ -3231,7 +3394,7 @@ void t_java_generator::generate_future_stub(t_service* tservice) {
     service_name_ << "FutureStub>" << endl <<
     indent() << "    implements " << service_name_ << "FutureClient {" << endl;
   indent_up();
-  
+
   f_service_ <<
     indent() << "private " << service_name_ << "FutureStub(io.grpc.Channel channel) {" << endl;
   indent_up();
@@ -3278,6 +3441,28 @@ void t_java_generator::generate_future_stub(t_service* tservice) {
     f_service_ <<
       indent() << "}" << endl << endl;
   }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "@java.lang.Override" << endl <<
+        indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
+        extend_service_name << "." << (*f_iter)->get_name() << "_result> " <<
+        (*f_iter)->get_name() << "(" << endl << indent() << "    " <<
+        extend_service_name << "." << (*f_iter)->get_name() << "_args request) {" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "return futureUnaryCall(" << endl <<
+        indent() << "    getChannel().newCall(METHOD_" << (*f_iter)->get_name() <<
+        ", getCallOptions()), request);" << endl;
+      indent_down();
+      f_service_ <<
+        indent() << "}" << endl << endl;
+    }
+  }
   indent_down();
   f_service_ <<
     indent() << "}" << endl << endl;
@@ -3291,6 +3476,16 @@ void t_java_generator::generate_method_ids(t_service* tservice) {
     f_service_ <<
       indent() << "private static final int METHODID_" <<
       (*f_iter)->get_name() << " = " << i << ";" << endl;
+  }
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter, ++i) {
+      f_service_ <<
+        indent() << "private static final int METHODID_" <<
+        (*f_iter)->get_name() << " = " << i << ";" << endl;
+    }
   }
   f_service_ << endl;
 }
@@ -3344,6 +3539,23 @@ void t_java_generator::generate_method_handlers(t_service* tservice) {
       indent() << "break;" << endl << endl;
     indent_down();
   }
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "case METHODID_" << (*f_iter)->get_name() << ":" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "serviceImpl." << (*f_iter)->get_name() << "((" << extend_service_name <<
+        "." << (*f_iter)->get_name() << "_args) request," << endl <<
+        indent() << "    (io.grpc.stub.StreamObserver<" << extend_service_name << "." <<
+        (*f_iter)->get_name() << "_result>)" << " responseObserver);" << endl <<
+        indent() << "break;" << endl << endl;
+      indent_down();
+    }
+  }
   f_service_ <<
     indent() << "default:" << endl <<
     indent() << "  throw new AssertionError();" << endl;
@@ -3390,7 +3602,16 @@ void t_java_generator::generate_service_descriptors(t_service* tservice) {
   for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     f_service_ <<
       indent() << "," << endl <<
-      indent() << "    METHOD_" << (*f_iter)->get_name(); 
+      indent() << "    METHOD_" << (*f_iter)->get_name();
+  }
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "," << endl <<
+        indent() << "    METHOD_" << (*f_iter)->get_name();
+    }
   }
   f_service_ << ");" << endl;
   indent_down();
@@ -3430,6 +3651,34 @@ void t_java_generator::generate_service_builder(t_service* tservice) {
     indent_down();
     indent_down();
     indent_down();
+  }
+
+  if (tservice->get_extends() != nullptr) {
+    t_service* extend_service = tservice->get_extends();
+    functions = extend_service->get_functions();
+    string extend_service_name = extend_service->get_name() + "Grpc";
+    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+      f_service_ <<
+        indent() << "    .addMethod(" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "    METHOD_" << (*f_iter)->get_name() << "," << endl <<
+        indent() << "    asyncUnaryCall(" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "    new MethodHandlers<" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() << "_args," << endl <<
+        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() << "_result>(" << endl;
+      indent_up();
+      f_service_ <<
+        indent() << "    serviceImpl, METHODID_" << (*f_iter)->get_name() << ")))" << endl;
+      indent_down();
+      indent_down();
+      indent_down();
+      indent_down();
+    }
   }
   f_service_ <<
     indent() << "    .build();" << endl;
