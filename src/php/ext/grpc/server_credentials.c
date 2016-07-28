@@ -122,7 +122,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
 static zend_function_entry server_credentials_methods[] = {
   PHP_ME(ServerCredentials, createSsl, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-   PHP_FE_END
+  PHP_FE_END
  };
 
 void grpc_init_server_credentials(TSRMLS_D) {
@@ -130,13 +130,6 @@ void grpc_init_server_credentials(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\ServerCredentials", server_credentials_methods);
   ce.create_object = create_wrapped_grpc_server_credentials;
   grpc_ce_server_credentials = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&server_credentials_ce_handlers,
-         zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  server_credentials_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_server_credentials, std);
-  server_credentials_ce_handlers.free_obj =
-    free_wrapped_grpc_server_credentials;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_server_credentials,
+                        server_credentials_ce_handlers);
 }

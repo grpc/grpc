@@ -278,13 +278,7 @@ void grpc_init_timeval(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Timeval", timeval_methods);
   ce.create_object = create_wrapped_grpc_timeval;
   grpc_ce_timeval = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&timeval_ce_handlers, zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  timeval_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_timeval, std);
-  timeval_ce_handlers.free_obj = free_wrapped_grpc_timeval;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_timeval, timeval_ce_handlers);
 }
 
 void grpc_shutdown_timeval(TSRMLS_D) {}

@@ -64,8 +64,8 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_server_credentials)
 
 static inline wrapped_grpc_server_credentials
 *wrapped_grpc_server_credentials_from_obj(zend_object *obj) {
-  return (wrapped_grpc_server_credentials*)
-    ((char*)(obj) - XtOffsetOf(wrapped_grpc_server_credentials, std));
+  return (wrapped_grpc_server_credentials*)(
+      (char*)(obj) - XtOffsetOf(wrapped_grpc_server_credentials, std));
 }
 
 #define Z_WRAPPED_GRPC_SERVER_CREDS_P(zv) \
