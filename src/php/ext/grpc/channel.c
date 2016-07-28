@@ -256,11 +256,5 @@ void grpc_init_channel(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Channel", channel_methods);
   ce.create_object = create_wrapped_grpc_channel;
   grpc_ce_channel = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&channel_ce_handlers, zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  channel_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_channel, std);
-  channel_ce_handlers.free_obj = free_wrapped_grpc_channel;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel, channel_ce_handlers);
 }

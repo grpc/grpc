@@ -226,13 +226,6 @@ void grpc_init_channel_credentials(TSRMLS_D) {
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
   ce.create_object = create_wrapped_grpc_channel_credentials;
   grpc_ce_channel_credentials = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&channel_credentials_ce_handlers,
-         zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  channel_credentials_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_channel_credentials, std);
-  channel_credentials_ce_handlers.free_obj =
-    free_wrapped_grpc_channel_credentials;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel_credentials,
+                        channel_credentials_ce_handlers);
 }

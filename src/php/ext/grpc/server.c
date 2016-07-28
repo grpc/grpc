@@ -233,7 +233,7 @@ static zend_function_entry server_methods[] = {
   PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
   PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
   PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC)
- PHP_FE_END
+  PHP_FE_END
 };
 
 void grpc_init_server(TSRMLS_D) {
@@ -241,10 +241,5 @@ void grpc_init_server(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Server", server_methods);
   ce.create_object = create_wrapped_grpc_server;
   grpc_ce_server = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&server_ce_handlers, zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  server_ce_handlers.offset = XtOffsetOf(wrapped_grpc_server, std);
-  server_ce_handlers.free_obj = free_wrapped_grpc_server;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_server, server_ce_handlers);
 }

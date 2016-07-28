@@ -105,8 +105,8 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
     memcpy(str_key, elem->key, key_len);
     str_val = ecalloc(elem->value_length + 1, sizeof(char));
     memcpy(str_val, elem->value, elem->value_length);
-    if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data) ==
-        SUCCESS) {
+    if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
+        == SUCCESS) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
         zend_throw_exception(zend_exception_get_default(TSRMLS_C),
                              "Metadata hash somehow contains wrong types.",
@@ -271,7 +271,6 @@ PHP_METHOD(Call, startBatch) {
   char *message_str;
   size_t message_len;
 
-
   grpc_metadata_array_init(&metadata);
   grpc_metadata_array_init(&trailing_metadata);
   grpc_metadata_array_init(&recv_metadata);
@@ -291,7 +290,7 @@ PHP_METHOD(Call, startBatch) {
   char *key = NULL;
   int key_type;
   PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(array_hash, key, key_type, index,
-                                          value)
+                                           value)
     if (key_type != HASH_KEY_IS_LONG || key != NULL) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "batch keys must be integers", 1 TSRMLS_CC);
@@ -304,10 +303,8 @@ PHP_METHOD(Call, startBatch) {
                              "Bad metadata value given", 1 TSRMLS_CC);
         goto cleanup;
       }
-      ops[op_num].data.send_initial_metadata.count =
-          metadata.count;
-      ops[op_num].data.send_initial_metadata.metadata =
-          metadata.metadata;
+      ops[op_num].data.send_initial_metadata.count = metadata.count;
+      ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
       break;
     case GRPC_OP_SEND_MESSAGE:
       if (Z_TYPE_P(value) != IS_ARRAY) {
@@ -562,10 +559,5 @@ void grpc_init_call(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Call", call_methods);
   ce.create_object = create_wrapped_grpc_call;
   grpc_ce_call = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&call_ce_handlers, zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  call_ce_handlers.offset = XtOffsetOf(wrapped_grpc_call, std);
-  call_ce_handlers.free_obj = free_wrapped_grpc_call;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_call, call_ce_handlers);
 }

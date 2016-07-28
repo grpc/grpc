@@ -125,6 +125,8 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, voi
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
+#define PHP_GRPC_INIT_HANDLER(class_object, handler_name)
+
 #else
 
 #define php_grpc_int size_t
@@ -187,7 +189,8 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, voi
 
 #define PHP_GRPC_HASH_FOREACH_END() } ZEND_HASH_FOREACH_END();
 
-static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, void **value) {
+static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
+                                          void **value) {
   zval *value_tmp = zend_hash_str_find(ht, key, len -1);
   if (value_tmp == NULL) {
     return FAILURE;
@@ -202,6 +205,12 @@ static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
 }
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) Z_OBJ_P(object)->ce
+
+#define PHP_GRPC_INIT_HANDLER(class_object, handler_name) \
+  memcpy(&handler_name, zend_get_std_object_handlers(), \
+         sizeof(zend_object_handlers)); \
+  handler_name.offset = XtOffsetOf(class_object, std); \
+  handler_name.free_obj = free_##class_object
 
 #endif /* PHP_MAJOR_VERSION */
 
