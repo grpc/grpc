@@ -38,9 +38,7 @@
 
 namespace grpc {
 
-//
 // MetadataBatch
-//
 
 grpc_linked_mdelem *MetadataBatch::AddMetadata(const string &key,
                                                const string &value) {
@@ -51,9 +49,7 @@ grpc_linked_mdelem *MetadataBatch::AddMetadata(const string &key,
   return storage;
 }
 
-//
 // ChannelData
-//
 
 void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
@@ -61,9 +57,7 @@ void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
   grpc_channel_next_op(exec_ctx, elem, op->op());
 }
 
-//
 // CallData
-//
 
 void CallData::StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
@@ -81,9 +75,7 @@ char *CallData::GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return grpc_call_next_get_peer(exec_ctx, elem);
 }
 
-//
-// RegisterChannelFilter()
-//
+// internal code used by RegisterChannelFilter()
 
 namespace internal {
 

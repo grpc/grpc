@@ -47,7 +47,6 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-///
 /// An interface to define filters.
 ///
 /// To define a filter, implement a subclass of each of \c CallData and
@@ -56,20 +55,22 @@
 ///   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
 ///       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
 /// \endcode
-///
 
 namespace grpc {
 
 /// A C++ wrapper for the \c grpc_metadata_batch struct.
 class MetadataBatch {
  public:
+  /// Borrows a pointer to \a batch, but does NOT take ownership.
+  /// The caller must ensure that \a batch continues to exist for as
+  /// long as the MetadataBatch object does.
   explicit MetadataBatch(grpc_metadata_batch *batch) : batch_(batch) {}
 
   grpc_metadata_batch *batch() const { return batch_; }
 
-  // Adds metadata and returns the newly allocated storage.
-  // The caller takes ownership of the result, which must exist for the
-  // lifetime of the gRPC call.
+  /// Adds metadata and returns the newly allocated storage.
+  /// The caller takes ownership of the result, which must exist for the
+  /// lifetime of the gRPC call.
   grpc_linked_mdelem *AddMetadata(const string &key, const string &value);
 
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
@@ -121,6 +122,9 @@ class MetadataBatch {
 /// A C++ wrapper for the \c grpc_transport_op struct.
 class TransportOp {
  public:
+  /// Borrows a pointer to \a op, but does NOT take ownership.
+  /// The caller must ensure that \a op continues to exist for as
+  /// long as the TransportOp object does.
   explicit TransportOp(grpc_transport_op *op) : op_(op) {}
 
   grpc_transport_op *op() const { return op_; }
@@ -140,6 +144,9 @@ class TransportOp {
 /// A C++ wrapper for the \c grpc_transport_stream_op struct.
 class TransportStreamOp {
  public:
+  /// Borrows a pointer to \a op, but does NOT take ownership.
+  /// The caller must ensure that \a op continues to exist for as
+  /// long as the TransportStreamOp object does.
   explicit TransportStreamOp(grpc_transport_stream_op *op)
       : op_(op),
         send_initial_metadata_(op->send_initial_metadata),
@@ -185,7 +192,7 @@ class TransportStreamOp {
     op_->send_message = send_message;
   }
 
-  // To be called only on clients and servers, respectively.
+  /// To be called only on clients and servers, respectively.
   grpc_client_security_context *client_security_context() const {
     return (grpc_client_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
         .value;
@@ -214,7 +221,7 @@ class ChannelData {
     if (peer_) gpr_free((void *)peer_);
   }
 
-  // Caller does NOT take ownership of result.
+  /// Caller does NOT take ownership of result.
   const char *peer() const { return peer_; }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
@@ -234,18 +241,22 @@ class CallData {
  public:
   virtual ~CallData() {}
 
+  /// Initializes the call data.
   virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
 
+  /// Starts a new stream operation.
   virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
                                       TransportStreamOp *op);
 
+  /// Sets a pollset or pollset set.
   virtual void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
                                       grpc_polling_entity *pollent);
 
+  /// Gets the peer name.
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
  protected:
@@ -255,6 +266,8 @@ class CallData {
 namespace internal {
 
 // Defines static members for passing to C core.
+// Members of this class correspond to the members of the C
+// grpc_channel_filter struct.
 template <typename ChannelDataType, typename CallDataType>
 class ChannelFilter GRPC_FINAL {
  public:
