@@ -35,7 +35,7 @@
 #define GRPC_BYTE_BUFFER_H
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/slice_buffer.h>
+#include <grpc/support/slice_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {

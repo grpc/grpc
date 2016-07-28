@@ -189,7 +189,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
