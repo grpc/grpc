@@ -246,8 +246,10 @@ static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
     grpc_channel_stack_builder_iterator *it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    return grpc_channel_stack_builder_add_filter_before(it, &test_filter, NULL,
-                                                        NULL);
+    const bool retval = grpc_channel_stack_builder_add_filter_before(
+        it, &test_filter, NULL, NULL);
+    grpc_channel_stack_builder_iterator_destroy(it);
+    return retval;
   } else {
     return true;
   }

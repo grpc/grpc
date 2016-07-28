@@ -189,8 +189,13 @@ grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
     call_elems[i].call_data = user_data;
     grpc_error *error =
         call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
-    if (error != GRPC_ERROR_NONE && first_error == GRPC_ERROR_NONE)
-      first_error = error;
+    if (error != GRPC_ERROR_NONE) {
+      if (first_error == GRPC_ERROR_NONE) {
+        first_error = error;
+      } else {
+        GRPC_ERROR_UNREF(error);
+      }
+    }
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
