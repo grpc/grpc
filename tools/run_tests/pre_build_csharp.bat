@@ -43,53 +43,56 @@ if exist %NUGET% (
   @rem Moving into each directory to let the restores work with both nuget 3.4 and 2.8
   %NUGET% restore vsprojects/grpc_csharp_ext.sln || goto :error
 
-  cd src/csharp/Grpc.Auth || goto :error
+  cd src/csharp
+
+  cd Grpc.Auth || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.Core || goto :error
+  cd Grpc.Core || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.Core.Tests || goto :error
+  cd Grpc.Core.Tests || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.Examples.MathClient || goto :error
+  cd Grpc.Examples.MathClient || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.Examples.MathServer || goto :error
+  cd Grpc.Examples.MathServer || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.Examples || goto :error
+  cd Grpc.Examples || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.HealthCheck.Tests || goto :error
+  cd Grpc.HealthCheck.Tests || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.HealthCheck || goto :error
+  cd Grpc.HealthCheck || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.IntegrationTesting.Client || goto :error
+  cd Grpc.IntegrationTesting.Client || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.IntegrationTesting.QpsWorker || goto :error
+  cd Grpc.IntegrationTesting.QpsWorker || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.IntegrationTesting.StressClient || goto :error
+  cd Grpc.IntegrationTesting.StressClient || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
   cd ..
 
-  cd src/csharp/Grpc.IntegrationTesting || goto :error
+  cd Grpc.IntegrationTesting || goto :error
   %NUGET% restore -PackagesDirectory ../packages || goto :error
-  cd ..
+
+  cd /d %~dp0\..\.. || goto :error
 )
 
 endlocal
