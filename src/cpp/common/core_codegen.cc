@@ -131,6 +131,10 @@ gpr_timespec CoreCodegen::gpr_inf_future(gpr_clock_type type) {
   return ::gpr_inf_future(type);
 }
 
+gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
+  return ::gpr_time_0(type);
+}
+
 void CoreCodegen::assert_fail(const char* failed_assertion) {
   gpr_log(GPR_ERROR, "assertion failed: %s", failed_assertion);
   abort();

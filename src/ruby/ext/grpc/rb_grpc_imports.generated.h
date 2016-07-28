@@ -50,7 +50,6 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/slice_buffer.h>
 #include <grpc/impl/codegen/sync.h>
-#include <grpc/impl/codegen/time.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
@@ -61,6 +60,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 
 typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(gpr_slice *slices, size_t nslices);
 extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
@@ -635,69 +635,6 @@ extern gpr_stats_inc_type gpr_stats_inc_import;
 typedef intptr_t(*gpr_stats_read_type)(const gpr_stats_counter *c);
 extern gpr_stats_read_type gpr_stats_read_import;
 #define gpr_stats_read gpr_stats_read_import
-typedef gpr_timespec(*gpr_time_0_type)(gpr_clock_type type);
-extern gpr_time_0_type gpr_time_0_import;
-#define gpr_time_0 gpr_time_0_import
-typedef gpr_timespec(*gpr_inf_future_type)(gpr_clock_type type);
-extern gpr_inf_future_type gpr_inf_future_import;
-#define gpr_inf_future gpr_inf_future_import
-typedef gpr_timespec(*gpr_inf_past_type)(gpr_clock_type type);
-extern gpr_inf_past_type gpr_inf_past_import;
-#define gpr_inf_past gpr_inf_past_import
-typedef void(*gpr_time_init_type)(void);
-extern gpr_time_init_type gpr_time_init_import;
-#define gpr_time_init gpr_time_init_import
-typedef gpr_timespec(*gpr_now_type)(gpr_clock_type clock);
-extern gpr_now_type gpr_now_import;
-#define gpr_now gpr_now_import
-typedef gpr_timespec(*gpr_convert_clock_type_type)(gpr_timespec t, gpr_clock_type target_clock);
-extern gpr_convert_clock_type_type gpr_convert_clock_type_import;
-#define gpr_convert_clock_type gpr_convert_clock_type_import
-typedef int(*gpr_time_cmp_type)(gpr_timespec a, gpr_timespec b);
-extern gpr_time_cmp_type gpr_time_cmp_import;
-#define gpr_time_cmp gpr_time_cmp_import
-typedef gpr_timespec(*gpr_time_max_type)(gpr_timespec a, gpr_timespec b);
-extern gpr_time_max_type gpr_time_max_import;
-#define gpr_time_max gpr_time_max_import
-typedef gpr_timespec(*gpr_time_min_type)(gpr_timespec a, gpr_timespec b);
-extern gpr_time_min_type gpr_time_min_import;
-#define gpr_time_min gpr_time_min_import
-typedef gpr_timespec(*gpr_time_add_type)(gpr_timespec a, gpr_timespec b);
-extern gpr_time_add_type gpr_time_add_import;
-#define gpr_time_add gpr_time_add_import
-typedef gpr_timespec(*gpr_time_sub_type)(gpr_timespec a, gpr_timespec b);
-extern gpr_time_sub_type gpr_time_sub_import;
-#define gpr_time_sub gpr_time_sub_import
-typedef gpr_timespec(*gpr_time_from_micros_type)(int64_t x, gpr_clock_type clock_type);
-extern gpr_time_from_micros_type gpr_time_from_micros_import;
-#define gpr_time_from_micros gpr_time_from_micros_import
-typedef gpr_timespec(*gpr_time_from_nanos_type)(int64_t x, gpr_clock_type clock_type);
-extern gpr_time_from_nanos_type gpr_time_from_nanos_import;
-#define gpr_time_from_nanos gpr_time_from_nanos_import
-typedef gpr_timespec(*gpr_time_from_millis_type)(int64_t x, gpr_clock_type clock_type);
-extern gpr_time_from_millis_type gpr_time_from_millis_import;
-#define gpr_time_from_millis gpr_time_from_millis_import
-typedef gpr_timespec(*gpr_time_from_seconds_type)(int64_t x, gpr_clock_type clock_type);
-extern gpr_time_from_seconds_type gpr_time_from_seconds_import;
-#define gpr_time_from_seconds gpr_time_from_seconds_import
-typedef gpr_timespec(*gpr_time_from_minutes_type)(int64_t x, gpr_clock_type clock_type);
-extern gpr_time_from_minutes_type gpr_time_from_minutes_import;
-#define gpr_time_from_minutes gpr_time_from_minutes_import
-typedef gpr_timespec(*gpr_time_from_hours_type)(int64_t x, gpr_clock_type clock_type);
-extern gpr_time_from_hours_type gpr_time_from_hours_import;
-#define gpr_time_from_hours gpr_time_from_hours_import
-typedef int32_t(*gpr_time_to_millis_type)(gpr_timespec timespec);
-extern gpr_time_to_millis_type gpr_time_to_millis_import;
-#define gpr_time_to_millis gpr_time_to_millis_import
-typedef int(*gpr_time_similar_type)(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
-extern gpr_time_similar_type gpr_time_similar_import;
-#define gpr_time_similar gpr_time_similar_import
-typedef void(*gpr_sleep_until_type)(gpr_timespec until);
-extern gpr_sleep_until_type gpr_sleep_until_import;
-#define gpr_sleep_until gpr_sleep_until_import
-typedef double(*gpr_timespec_to_micros_type)(gpr_timespec t);
-extern gpr_timespec_to_micros_type gpr_timespec_to_micros_import;
-#define gpr_timespec_to_micros gpr_timespec_to_micros_import
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import
@@ -875,6 +812,69 @@ extern gpr_thd_currentid_type gpr_thd_currentid_import;
 typedef void(*gpr_thd_join_type)(gpr_thd_id t);
 extern gpr_thd_join_type gpr_thd_join_import;
 #define gpr_thd_join gpr_thd_join_import
+typedef gpr_timespec(*gpr_time_0_type)(gpr_clock_type type);
+extern gpr_time_0_type gpr_time_0_import;
+#define gpr_time_0 gpr_time_0_import
+typedef gpr_timespec(*gpr_inf_future_type)(gpr_clock_type type);
+extern gpr_inf_future_type gpr_inf_future_import;
+#define gpr_inf_future gpr_inf_future_import
+typedef gpr_timespec(*gpr_inf_past_type)(gpr_clock_type type);
+extern gpr_inf_past_type gpr_inf_past_import;
+#define gpr_inf_past gpr_inf_past_import
+typedef void(*gpr_time_init_type)(void);
+extern gpr_time_init_type gpr_time_init_import;
+#define gpr_time_init gpr_time_init_import
+typedef gpr_timespec(*gpr_now_type)(gpr_clock_type clock);
+extern gpr_now_type gpr_now_import;
+#define gpr_now gpr_now_import
+typedef gpr_timespec(*gpr_convert_clock_type_type)(gpr_timespec t, gpr_clock_type target_clock);
+extern gpr_convert_clock_type_type gpr_convert_clock_type_import;
+#define gpr_convert_clock_type gpr_convert_clock_type_import
+typedef int(*gpr_time_cmp_type)(gpr_timespec a, gpr_timespec b);
+extern gpr_time_cmp_type gpr_time_cmp_import;
+#define gpr_time_cmp gpr_time_cmp_import
+typedef gpr_timespec(*gpr_time_max_type)(gpr_timespec a, gpr_timespec b);
+extern gpr_time_max_type gpr_time_max_import;
+#define gpr_time_max gpr_time_max_import
+typedef gpr_timespec(*gpr_time_min_type)(gpr_timespec a, gpr_timespec b);
+extern gpr_time_min_type gpr_time_min_import;
+#define gpr_time_min gpr_time_min_import
+typedef gpr_timespec(*gpr_time_add_type)(gpr_timespec a, gpr_timespec b);
+extern gpr_time_add_type gpr_time_add_import;
+#define gpr_time_add gpr_time_add_import
+typedef gpr_timespec(*gpr_time_sub_type)(gpr_timespec a, gpr_timespec b);
+extern gpr_time_sub_type gpr_time_sub_import;
+#define gpr_time_sub gpr_time_sub_import
+typedef gpr_timespec(*gpr_time_from_micros_type)(int64_t x, gpr_clock_type clock_type);
+extern gpr_time_from_micros_type gpr_time_from_micros_import;
+#define gpr_time_from_micros gpr_time_from_micros_import
+typedef gpr_timespec(*gpr_time_from_nanos_type)(int64_t x, gpr_clock_type clock_type);
+extern gpr_time_from_nanos_type gpr_time_from_nanos_import;
+#define gpr_time_from_nanos gpr_time_from_nanos_import
+typedef gpr_timespec(*gpr_time_from_millis_type)(int64_t x, gpr_clock_type clock_type);
+extern gpr_time_from_millis_type gpr_time_from_millis_import;
+#define gpr_time_from_millis gpr_time_from_millis_import
+typedef gpr_timespec(*gpr_time_from_seconds_type)(int64_t x, gpr_clock_type clock_type);
+extern gpr_time_from_seconds_type gpr_time_from_seconds_import;
+#define gpr_time_from_seconds gpr_time_from_seconds_import
+typedef gpr_timespec(*gpr_time_from_minutes_type)(int64_t x, gpr_clock_type clock_type);
+extern gpr_time_from_minutes_type gpr_time_from_minutes_import;
+#define gpr_time_from_minutes gpr_time_from_minutes_import
+typedef gpr_timespec(*gpr_time_from_hours_type)(int64_t x, gpr_clock_type clock_type);
+extern gpr_time_from_hours_type gpr_time_from_hours_import;
+#define gpr_time_from_hours gpr_time_from_hours_import
+typedef int32_t(*gpr_time_to_millis_type)(gpr_timespec timespec);
+extern gpr_time_to_millis_type gpr_time_to_millis_import;
+#define gpr_time_to_millis gpr_time_to_millis_import
+typedef int(*gpr_time_similar_type)(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
+extern gpr_time_similar_type gpr_time_similar_import;
+#define gpr_time_similar gpr_time_similar_import
+typedef void(*gpr_sleep_until_type)(gpr_timespec until);
+extern gpr_sleep_until_type gpr_sleep_until_import;
+#define gpr_sleep_until gpr_sleep_until_import
+typedef double(*gpr_timespec_to_micros_type)(gpr_timespec t);
+extern gpr_timespec_to_micros_type gpr_timespec_to_micros_import;
+#define gpr_timespec_to_micros gpr_timespec_to_micros_import
 
 void grpc_rb_load_imports(HMODULE library);
 

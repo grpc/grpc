@@ -143,7 +143,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
   ],
   includes = [
     "include",
@@ -520,7 +519,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
     "include/grpc/census.h",
@@ -877,7 +875,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
     "include/grpc/grpc_cronet.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
@@ -1206,7 +1203,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
     "include/grpc/census.h",
   ],
   includes = [
@@ -1364,7 +1360,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
   ],
   includes = [
     "include",
@@ -1441,7 +1436,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
     "include/grpc++/impl/codegen/config_protobuf.h",
   ],
   includes = [
@@ -1586,7 +1580,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
   ],
   includes = [
     "include",
@@ -1751,7 +1744,6 @@ objc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
     "src/core/lib/profiling/timers.h",
     "src/core/lib/support/backoff.h",
     "src/core/lib/support/block_annotate.h",
@@ -1987,7 +1979,6 @@ objc_library(
     "include/grpc/impl/codegen/sync_generic.h",
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
-    "include/grpc/impl/codegen/time.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
     "include/grpc/census.h",

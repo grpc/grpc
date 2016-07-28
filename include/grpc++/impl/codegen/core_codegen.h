@@ -75,6 +75,7 @@ class CoreCodegen : public CoreCodegenInterface {
   void grpc_metadata_array_destroy(grpc_metadata_array* array) GRPC_OVERRIDE;
 
   gpr_timespec gpr_inf_future(gpr_clock_type type) GRPC_OVERRIDE;
+  gpr_timespec gpr_time_0(gpr_clock_type type) GRPC_OVERRIDE;
 
   virtual const Status& ok() GRPC_OVERRIDE;
   virtual const Status& cancelled() GRPC_OVERRIDE;

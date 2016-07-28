@@ -854,8 +854,7 @@ include/grpc/impl/codegen/slice_buffer.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h \
-include/grpc/impl/codegen/time.h
+include/grpc/impl/codegen/sync_windows.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

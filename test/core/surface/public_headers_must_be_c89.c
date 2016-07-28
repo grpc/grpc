@@ -51,7 +51,6 @@
 #include <grpc/impl/codegen/status.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/impl/codegen/sync_generic.h>
-#include <grpc/impl/codegen/time.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>

@@ -64,7 +64,6 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/impl/codegen/time.h>
 
 struct census_context;
 struct grpc_call;

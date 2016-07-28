@@ -5664,8 +5664,7 @@
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
-      "include/grpc/impl/codegen/sync_windows.h", 
-      "include/grpc/impl/codegen/time.h"
+      "include/grpc/impl/codegen/sync_windows.h"
     ], 
     "language": "c", 
     "name": "gpr_codegen", 
@@ -5681,8 +5680,7 @@
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
-      "include/grpc/impl/codegen/sync_windows.h", 
-      "include/grpc/impl/codegen/time.h"
+      "include/grpc/impl/codegen/sync_windows.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

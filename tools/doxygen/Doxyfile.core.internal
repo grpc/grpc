@@ -784,7 +784,6 @@ include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
-include/grpc/impl/codegen/time.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
 include/grpc/census.h \
@@ -1171,7 +1170,6 @@ include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
-include/grpc/impl/codegen/time.h \
 src/core/lib/profiling/timers.h \
 src/core/lib/support/backoff.h \
 src/core/lib/support/block_annotate.h \
