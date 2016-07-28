@@ -52,6 +52,9 @@
 #include <grpc/grpc_security.h>
 
 zend_class_entry *grpc_ce_channel_credentials;
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers channel_credentials_ce_handlers;
+#endif
 static char *default_pem_root_certs = NULL;
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
@@ -63,67 +66,23 @@ static grpc_ssl_roots_override_result get_ssl_roots_override(
   return GRPC_SSL_ROOTS_OVERRIDE_OK;
 }
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Frees and destroys an instance of wrapped_grpc_channel_credentials */
-void free_wrapped_grpc_channel_credentials(void *object TSRMLS_DC) {
-  wrapped_grpc_channel_credentials *creds =
-      (wrapped_grpc_channel_credentials *)object;
-  if (creds->wrapped != NULL) {
-    grpc_channel_credentials_release(creds->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel_credentials)
+  if (p->wrapped != NULL) {
+    grpc_channel_credentials_release(p->wrapped);
   }
-  zend_object_std_dtor(&creds->std TSRMLS_CC);
-  efree(creds);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
 /* Initializes an instance of wrapped_grpc_channel_credentials to be
  * associated with an object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_channel_credentials(
+php_grpc_zend_object create_wrapped_grpc_channel_credentials(
     zend_class_entry *class_type TSRMLS_DC) {
-  zend_object_value retval;
-  wrapped_grpc_channel_credentials *intern;
-
-  intern = (wrapped_grpc_channel_credentials *)emalloc(
-      sizeof(wrapped_grpc_channel_credentials));
-  memset(intern, 0, sizeof(wrapped_grpc_channel_credentials));
-
+  PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_channel_credentials);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_channel_credentials, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_channel_credentials,
+                             channel_credentials_ce_handlers);
 }
-
-#else
-
-static zend_object_handlers channel_credentials_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_channel_credentials */
-static void free_wrapped_grpc_channel_credentials(zend_object *object) {
-  wrapped_grpc_channel_credentials *creds =
-    wrapped_grpc_channel_creds_from_obj(object);
-  if (creds->wrapped != NULL) {
-    grpc_channel_credentials_release(creds->wrapped);
-  }
-  zend_object_std_dtor(&creds->std);
-}
-
-/* Initializes an instance of wrapped_grpc_channel_credentials to be
- * associated with an object of a class specified by class_type */
-zend_object *create_wrapped_grpc_channel_credentials(zend_class_entry
-                                                     *class_type) {
-  wrapped_grpc_channel_credentials *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_channel_credentials) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
-  intern->std.handlers = &channel_credentials_ce_handlers;
-  return &intern->std;
-}
-
-#endif
 
 zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials
                                         *wrapped TSRMLS_DC) {
@@ -267,13 +226,6 @@ void grpc_init_channel_credentials(TSRMLS_D) {
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
   ce.create_object = create_wrapped_grpc_channel_credentials;
   grpc_ce_channel_credentials = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&channel_credentials_ce_handlers,
-         zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  channel_credentials_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_channel_credentials, std);
-  channel_credentials_ce_handlers.free_obj =
-    free_wrapped_grpc_channel_credentials;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel_credentials,
+                        channel_credentials_ce_handlers);
 }

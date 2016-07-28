@@ -56,77 +56,31 @@
 #include "timeval.h"
 
 zend_class_entry *grpc_ce_channel;
-
-#if PHP_MAJOR_VERSION < 7
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers channel_ce_handlers;
+#endif
 
 /* Frees and destroys an instance of wrapped_grpc_channel */
-void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
-  wrapped_grpc_channel *channel = (wrapped_grpc_channel *)object;
-  if (channel->wrapped != NULL) {
-    grpc_channel_destroy(channel->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
+  if (p->wrapped != NULL) {
+    grpc_channel_destroy(p->wrapped);
   }
-  zend_object_std_dtor(&channel->std TSRMLS_CC);
-  efree(channel);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
 /* Initializes an instance of wrapped_grpc_channel to be associated with an
  * object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_channel(zend_class_entry *class_type
-                                                  TSRMLS_DC) {
-  zend_object_value retval;
-  wrapped_grpc_channel *intern;
-  intern = (wrapped_grpc_channel *)emalloc(sizeof(wrapped_grpc_channel));
-  memset(intern, 0, sizeof(wrapped_grpc_channel));
+php_grpc_zend_object create_wrapped_grpc_channel(zend_class_entry *class_type
+                                                 TSRMLS_DC) {
+  PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_channel);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_channel, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_channel, channel_ce_handlers);
 }
-
-#else
-
-static zend_object_handlers channel_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_channel */
-static void free_wrapped_grpc_channel(zend_object *object) {
-  wrapped_grpc_channel *channel = wrapped_grpc_channel_from_obj(object);
-  if (channel->wrapped != NULL) {
-    grpc_channel_destroy(channel->wrapped);
-  }
-  zend_object_std_dtor(&channel->std);
-}
-
-/* Initializes an instance of wrapped_grpc_channel to be associated with an
- * object of a class specified by class_type */
-zend_object *create_wrapped_grpc_channel(zend_class_entry *class_type) {
-  wrapped_grpc_channel *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_channel) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
-  intern->std.handlers = &channel_ce_handlers;
-  return &intern->std;
-}
-
-#endif
 
 void php_grpc_read_args_array(zval *args_array,
                               grpc_channel_args *args TSRMLS_DC) {
   HashTable *array_hash;
   int args_index;
-#if PHP_MAJOR_VERSION < 7
-  HashPosition array_pointer;
-  zval **data;
-  char *key;
-  uint key_len;
-  ulong index;
-#else
-  zval *data;
-  zend_string *key;
-#endif
   array_hash = Z_ARRVAL_P(args_array);
   if (!array_hash) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -137,41 +91,17 @@ void php_grpc_read_args_array(zval *args_array,
   args->args = ecalloc(args->num_args, sizeof(grpc_arg));
   args_index = 0;
 
-#if PHP_MAJOR_VERSION < 7
-  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
-       zend_hash_get_current_data_ex(array_hash, (void **)&data,
-                                     &array_pointer) == SUCCESS;
-       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
-    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
-                                     &array_pointer) != HASH_KEY_IS_STRING) {
+  char *key = NULL;
+  zval *data;
+  int key_type;
+
+  PHP_GRPC_HASH_FOREACH_STR_KEY_VAL_START(array_hash, key, key_type, data)
+    if (key_type != HASH_KEY_IS_STRING) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "args keys must be strings", 1 TSRMLS_CC);
       return;
     }
     args->args[args_index].key = key;
-    switch (Z_TYPE_P(*data)) {
-    case IS_LONG:
-      args->args[args_index].value.integer = (int)Z_LVAL_P(*data);
-      args->args[args_index].type = GRPC_ARG_INTEGER;
-      break;
-    case IS_STRING:
-      args->args[args_index].value.string = Z_STRVAL_P(*data);
-      args->args[args_index].type = GRPC_ARG_STRING;
-      break;
-    default:
-      zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "args values must be int or string", 1 TSRMLS_CC);
-      return;
-    }
-    args_index++;
-  }
-#else
-  ZEND_HASH_FOREACH_STR_KEY_VAL(array_hash, key, data) {
-    if (key == NULL) {
-      zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "args keys must be strings", 1);
-    }
-    args->args[args_index].key = ZSTR_VAL(key);
     switch (Z_TYPE_P(data)) {
     case IS_LONG:
       args->args[args_index].value.integer = (int)Z_LVAL_P(data);
@@ -183,12 +113,11 @@ void php_grpc_read_args_array(zval *args_array,
       break;
     default:
       zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "args values must be int or string", 1);
+                           "args values must be int or string", 1 TSRMLS_CC);
       return;
     }
     args_index++;
-  } ZEND_HASH_FOREACH_END();
-#endif
+  PHP_GRPC_HASH_FOREACH_END()
 }
 
 /**
@@ -200,11 +129,7 @@ void php_grpc_read_args_array(zval *args_array,
  */
 PHP_METHOD(Channel, __construct) {
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
-#if PHP_MAJOR_VERSION < 7
-  zval **creds_obj = NULL;
-#else
   zval *creds_obj = NULL;
-#endif
   char *target;
   php_grpc_int target_length;
   zval *args_array = NULL;
@@ -219,43 +144,23 @@ PHP_METHOD(Channel, __construct) {
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-#if PHP_MAJOR_VERSION < 7
   array_hash = Z_ARRVAL_P(args_array);
-  if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
+  if (php_grpc_zend_hash_find(array_hash, "credentials", sizeof("credentials"),
                      (void **)&creds_obj) == SUCCESS) {
-    if (Z_TYPE_P(*creds_obj) == IS_NULL) {
+    if (Z_TYPE_P(creds_obj) == IS_NULL) {
       creds = NULL;
-      zend_hash_del(array_hash, "credentials", 12);
-    } else if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
-        grpc_ce_channel_credentials) {
+      php_grpc_zend_hash_del(array_hash, "credentials", sizeof("credentials"));
+    } else if (PHP_GRPC_GET_CLASS_ENTRY(creds_obj) !=
+               grpc_ce_channel_credentials) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "credentials must be a ChannelCredentials object",
                            1 TSRMLS_CC);
       return;
     } else {
-      creds = (wrapped_grpc_channel_credentials *)zend_object_store_get_object(
-          *creds_obj TSRMLS_CC);
-      zend_hash_del(array_hash, "credentials", 12);
-    }
-  }
-#else
-  array_hash = HASH_OF(args_array);
-  if ((creds_obj = zend_hash_str_find(array_hash, "credentials",
-                                      sizeof("credentials") - 1)) != NULL) {
-    if (Z_TYPE_P(creds_obj) == IS_NULL) {
-      creds = NULL;
-      zend_hash_str_del(array_hash, "credentials", sizeof("credentials") - 1);
-    } else if (Z_OBJ_P(creds_obj)->ce != grpc_ce_channel_credentials) {
-      zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "credentials must be a ChannelCredentials object",
-                           1);
-      return;
-    } else {
       creds = Z_WRAPPED_GRPC_CHANNEL_CREDS_P(creds_obj);
-      zend_hash_str_del(array_hash, "credentials", sizeof("credentials") - 1);
+      php_grpc_zend_hash_del(array_hash, "credentials", sizeof("credentials"));
     }
   }
-#endif
   php_grpc_read_args_array(args_array, &args TSRMLS_CC);
   if (creds == NULL) {
     channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
@@ -311,8 +216,7 @@ PHP_METHOD(Channel, watchConnectivityState) {
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lO",
           &last_state, &deadline_obj, grpc_ce_timeval) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-        "watchConnectivityState expects 1 long 1 timeval",
-        1 TSRMLS_CC);
+        "watchConnectivityState expects 1 long 1 timeval", 1 TSRMLS_CC);
     return;
   }
 
@@ -352,11 +256,5 @@ void grpc_init_channel(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Channel", channel_methods);
   ce.create_object = create_wrapped_grpc_channel;
   grpc_ce_channel = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&channel_ce_handlers, zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  channel_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_channel, std);
-  channel_ce_handlers.free_obj = free_wrapped_grpc_channel;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel, channel_ce_handlers);
 }
