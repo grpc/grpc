@@ -38,6 +38,7 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/sync.h>
 
 extern "C" {
 struct grpc_byte_buffer;
@@ -67,6 +68,17 @@ class CoreCodegenInterface {
 
   virtual void* gpr_malloc(size_t size) = 0;
   virtual void gpr_free(void* p) = 0;
+
+  virtual void gpr_mu_init(gpr_mu* mu) = 0;
+  virtual void gpr_mu_destroy(gpr_mu* mu) = 0;
+  virtual void gpr_mu_lock(gpr_mu* mu) = 0;
+  virtual void gpr_mu_unlock(gpr_mu* mu) = 0;
+  virtual void gpr_cv_init(gpr_cv* cv) = 0;
+  virtual void gpr_cv_destroy(gpr_cv* cv) = 0;
+  virtual int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
+                          gpr_timespec abs_deadline) = 0;
+  virtual void gpr_cv_signal(gpr_cv* cv) = 0;
+  virtual void gpr_cv_broadcast(gpr_cv* cv) = 0;
 
   virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
 

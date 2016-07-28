@@ -34,9 +34,11 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SYNC_NO_CXX11_H
 #define GRPCXX_IMPL_CODEGEN_SYNC_NO_CXX11_H
 
-#include <grpc/impl/codegen/sync.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {
+
+extern CoreCodegenInterface *g_core_codegen_interface;
 
 template <class mutex>
 class lock_guard;
@@ -44,8 +46,8 @@ class condition_variable;
 
 class mutex {
  public:
-  mutex() { gpr_mu_init(&mu_); }
-  ~mutex() { gpr_mu_destroy(&mu_); }
+  mutex() { g_core_codegen_interface->gpr_mu_init(&mu_); }
+  ~mutex() { g_core_codegen_interface->gpr_mu_destroy(&mu_); }
 
  private:
   ::gpr_mu mu_;
@@ -57,16 +59,18 @@ class mutex {
 template <class mutex>
 class lock_guard {
  public:
-  lock_guard(mutex &mu) : mu_(mu), locked(true) { gpr_mu_lock(&mu.mu_); }
+  lock_guard(mutex &mu) : mu_(mu), locked(true) {
+    g_core_codegen_interface->gpr_mu_lock(&mu.mu_);
+  }
   ~lock_guard() { unlock_internal(); }
 
  protected:
   void lock_internal() {
-    if (!locked) gpr_mu_lock(&mu_.mu_);
+    if (!locked) g_core_codegen_interface->gpr_mu_lock(&mu_.mu_);
     locked = true;
   }
   void unlock_internal() {
-    if (locked) gpr_mu_unlock(&mu_.mu_);
+    if (locked) g_core_codegen_interface->gpr_mu_unlock(&mu_.mu_);
     locked = false;
   }
 
@@ -86,15 +90,17 @@ class unique_lock : public lock_guard<mutex> {
 
 class condition_variable {
  public:
-  condition_variable() { gpr_cv_init(&cv_); }
-  ~condition_variable() { gpr_cv_destroy(&cv_); }
+  condition_variable() { g_core_codegen_interface->gpr_cv_init(&cv_); }
+  ~condition_variable() { g_core_codegen_interface->gpr_cv_destroy(&cv_); }
   void wait(lock_guard<mutex> &mu) {
     mu.locked = false;
-    gpr_cv_wait(&cv_, &mu.mu_.mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
+    g_core_codegen_interface->gpr_cv_wait(
+        &cv_, &mu.mu_.mu_,
+        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
     mu.locked = true;
   }
-  void notify_one() { gpr_cv_signal(&cv_); }
-  void notify_all() { gpr_cv_broadcast(&cv_); }
+  void notify_one() { g_core_codegen_interface->gpr_cv_signal(&cv_); }
+  void notify_all() { g_core_codegen_interface->gpr_cv_broadcast(&cv_); }
 
  private:
   gpr_cv cv_;

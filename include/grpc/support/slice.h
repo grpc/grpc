@@ -35,7 +35,7 @@
 #define GRPC_SUPPORT_SLICE_H
 
 #include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/sync.h>
+#include <grpc/support/sync.h>
 
 #ifdef __cplusplus
 extern "C" {
