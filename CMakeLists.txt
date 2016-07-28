@@ -51,6 +51,9 @@ project(${PACKAGE_NAME} C CXX)
 if(NOT BORINGSSL_ROOT_DIR)
   set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
 endif()
+if (NOT NANOPB_ROOT_DIR)
+  set(NANOPB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nanopb)
+endif()
 if(NOT PROTOBUF_ROOT_DIR)
   set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
 endif()
@@ -307,9 +310,9 @@ add_library(grpc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  ${NANOPB_ROOT_DIR}/pb_common.c
+  ${NANOPB_ROOT_DIR}/pb_decode.c
+  ${NANOPB_ROOT_DIR}/pb_encode.c
   src/core/ext/lb_policy/pick_first/pick_first.c
   src/core/ext/lb_policy/round_robin/round_robin.c
   src/core/ext/resolver/dns/native/dns_resolver.c
@@ -670,9 +673,9 @@ add_library(grpc_unsecure
   src/core/ext/load_reporting/load_reporting_filter.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  ${NANOPB_ROOT_DIR}/pb_common.c
+  ${NANOPB_ROOT_DIR}/pb_decode.c
+  ${NANOPB_ROOT_DIR}/pb_encode.c
   src/core/ext/lb_policy/pick_first/pick_first.c
   src/core/ext/lb_policy/round_robin/round_robin.c
   src/core/ext/census/context.c

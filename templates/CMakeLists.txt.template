@@ -53,6 +53,9 @@
     for d in target_dict.get('deps', []):
       deps.append(d)
     return deps
+
+  def get_srcs(target_srcs):
+    return [s.replace('third_party/nanopb', '${NANOPB_ROOT_DIR}') for s in target_srcs]
   %>
 
   cmake_minimum_required(VERSION 2.8)
@@ -66,6 +69,9 @@
 
   if(NOT BORINGSSL_ROOT_DIR)
     set(BORINGSSL_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/boringssl)
+  endif()
+  if (NOT NANOPB_ROOT_DIR)
+    set(NANOPB_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/nanopb)
   endif()
   if(NOT PROTOBUF_ROOT_DIR)
     set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
@@ -109,7 +115,7 @@
 
   <%def name="cc_library(lib)">
   add_library(${lib.name}
-  % for src in lib.src:
+  % for src in get_srcs(lib.src):
     ${src}
   % endfor
   )
@@ -134,7 +140,7 @@
 
   <%def name="cc_binary(tgt)">
   add_executable(${tgt.name}
-  % for src in tgt.src:
+  % for src in get_srcs(tgt.src):
     ${src}
   % endfor
   )
