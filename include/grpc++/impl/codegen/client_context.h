@@ -62,7 +62,6 @@
 #include <grpc++/impl/codegen/sync.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 
 struct census_context;

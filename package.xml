@@ -83,7 +83,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice_buffer.h" role="src" />
@@ -163,7 +162,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice_buffer.h" role="src" />

@@ -41,6 +41,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/thd.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"

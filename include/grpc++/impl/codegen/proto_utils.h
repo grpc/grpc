@@ -42,7 +42,6 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/slice.h>
 
 namespace grpc {
