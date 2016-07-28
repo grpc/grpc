@@ -39,12 +39,12 @@ set NUGET=C:\nuget\nuget.exe
 
 if exist %NUGET% (
   @rem Restore Grpc packages by packages since Nuget client 3.4.4 doesnt support restore
-  @ by solution
+  @rem by solution
   %NUGET% restore vsprojects/grpc_csharp_ext.sln || goto :error
   %NUGET% restore src/csharp/Grpc.sln || goto :error
   %NUGET% restore src/csharp/Grpc.Auth -PackagesDirectory src/csharp/packages || goto :error
-  %NUGET% restore src/csharp/Grpc.Core -PackagesDirectory ./packages || goto :error
-  %NUGET% restore src/csharp/Grpc.Core.Tests -PackagesDirectory ./packages || goto :error
+  %NUGET% restore src/csharp/Grpc.Core -PackagesDirectory src/csharp/packages || goto :error
+  %NUGET% restore src/csharp/Grpc.Core.Tests -PackagesDirectory src/csharp/packages || goto :error
   %NUGET% restore src/csharp/Grpc.Examples.MathClient -PackagesDirectory src/csharp/packages || goto :error
   %NUGET% restore src/csharp/Grpc.Examples.MathServer -PackagesDirectory src/csharp/packages || goto :error
   %NUGET% restore src/csharp/Grpc.Examples -PackagesDirectory src/csharp/packages || goto :error
