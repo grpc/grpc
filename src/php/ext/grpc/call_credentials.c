@@ -70,16 +70,8 @@ php_grpc_zend_object create_wrapped_grpc_call_credentials(
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_call_credentials);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-#if PHP_MAJOR_VERSION < 7
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_call_credentials, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
-#else
-  intern->std.handlers = &call_credentials_ce_handlers;
-  return &intern->std;
-#endif
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_call_credentials,
+                             call_credentials_ce_handlers);
 }
 
 zval *grpc_php_wrap_call_credentials(grpc_call_credentials
