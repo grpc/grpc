@@ -40,18 +40,18 @@
 
 #include <windows.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/slice_buffer.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/impl/codegen/time.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
@@ -62,6 +62,36 @@
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
 
+typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(gpr_slice *slices, size_t nslices);
+extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
+#define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
+typedef grpc_byte_buffer *(*grpc_raw_compressed_byte_buffer_create_type)(gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression);
+extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
+#define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
+typedef grpc_byte_buffer *(*grpc_byte_buffer_copy_type)(grpc_byte_buffer *bb);
+extern grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
+#define grpc_byte_buffer_copy grpc_byte_buffer_copy_import
+typedef size_t(*grpc_byte_buffer_length_type)(grpc_byte_buffer *bb);
+extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
+#define grpc_byte_buffer_length grpc_byte_buffer_length_import
+typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
+extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
+#define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
+typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
+extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
+#define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
+typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);
+extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
+#define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
+typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader *reader, gpr_slice *slice);
+extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
+#define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
+typedef gpr_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader *reader);
+extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
+#define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
+typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
+extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
+#define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
 typedef int(*census_initialize_type)(int features);
 extern census_initialize_type census_initialize_import;
 #define census_initialize census_initialize_import
@@ -434,57 +464,6 @@ extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
 typedef void(*grpc_server_credentials_set_auth_metadata_processor_type)(grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 extern grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 #define grpc_server_credentials_set_auth_metadata_processor grpc_server_credentials_set_auth_metadata_processor_import
-typedef void *(*gpr_malloc_type)(size_t size);
-extern gpr_malloc_type gpr_malloc_import;
-#define gpr_malloc gpr_malloc_import
-typedef void(*gpr_free_type)(void *ptr);
-extern gpr_free_type gpr_free_import;
-#define gpr_free gpr_free_import
-typedef void *(*gpr_realloc_type)(void *p, size_t size);
-extern gpr_realloc_type gpr_realloc_import;
-#define gpr_realloc gpr_realloc_import
-typedef void *(*gpr_malloc_aligned_type)(size_t size, size_t alignment_log);
-extern gpr_malloc_aligned_type gpr_malloc_aligned_import;
-#define gpr_malloc_aligned gpr_malloc_aligned_import
-typedef void(*gpr_free_aligned_type)(void *ptr);
-extern gpr_free_aligned_type gpr_free_aligned_import;
-#define gpr_free_aligned gpr_free_aligned_import
-typedef void(*gpr_set_allocation_functions_type)(gpr_allocation_functions functions);
-extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
-#define gpr_set_allocation_functions gpr_set_allocation_functions_import
-typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)();
-extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
-#define gpr_get_allocation_functions gpr_get_allocation_functions_import
-typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(gpr_slice *slices, size_t nslices);
-extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
-#define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
-typedef grpc_byte_buffer *(*grpc_raw_compressed_byte_buffer_create_type)(gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression);
-extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
-#define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
-typedef grpc_byte_buffer *(*grpc_byte_buffer_copy_type)(grpc_byte_buffer *bb);
-extern grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
-#define grpc_byte_buffer_copy grpc_byte_buffer_copy_import
-typedef size_t(*grpc_byte_buffer_length_type)(grpc_byte_buffer *bb);
-extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
-#define grpc_byte_buffer_length grpc_byte_buffer_length_import
-typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
-extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
-#define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
-typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
-extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
-#define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
-typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);
-extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
-#define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
-typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader *reader, gpr_slice *slice);
-extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
-#define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
-typedef gpr_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader *reader);
-extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
-#define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
-typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
-extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
-#define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
 typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
@@ -719,6 +698,27 @@ extern gpr_sleep_until_type gpr_sleep_until_import;
 typedef double(*gpr_timespec_to_micros_type)(gpr_timespec t);
 extern gpr_timespec_to_micros_type gpr_timespec_to_micros_import;
 #define gpr_timespec_to_micros gpr_timespec_to_micros_import
+typedef void *(*gpr_malloc_type)(size_t size);
+extern gpr_malloc_type gpr_malloc_import;
+#define gpr_malloc gpr_malloc_import
+typedef void(*gpr_free_type)(void *ptr);
+extern gpr_free_type gpr_free_import;
+#define gpr_free gpr_free_import
+typedef void *(*gpr_realloc_type)(void *p, size_t size);
+extern gpr_realloc_type gpr_realloc_import;
+#define gpr_realloc gpr_realloc_import
+typedef void *(*gpr_malloc_aligned_type)(size_t size, size_t alignment_log);
+extern gpr_malloc_aligned_type gpr_malloc_aligned_import;
+#define gpr_malloc_aligned gpr_malloc_aligned_import
+typedef void(*gpr_free_aligned_type)(void *ptr);
+extern gpr_free_aligned_type gpr_free_aligned_import;
+#define gpr_free_aligned gpr_free_aligned_import
+typedef void(*gpr_set_allocation_functions_type)(gpr_allocation_functions functions);
+extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
+#define gpr_set_allocation_functions gpr_set_allocation_functions_import
+typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)();
+extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
+#define gpr_get_allocation_functions gpr_get_allocation_functions_import
 typedef gpr_avl(*gpr_avl_create_type)(const gpr_avl_vtable *vtable);
 extern gpr_avl_create_type gpr_avl_create_import;
 #define gpr_avl_create gpr_avl_create_import

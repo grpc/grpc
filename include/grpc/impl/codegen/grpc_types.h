@@ -34,14 +34,124 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* The clocks we support. */
+typedef enum {
+  /* Monotonic clock. Epoch undefined. Always moves forwards. */
+  GPR_CLOCK_MONOTONIC = 0,
+  /* Realtime clock. May jump forwards or backwards. Settable by
+     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
+  GPR_CLOCK_REALTIME,
+  /* CPU cycle time obtained by rdtsc instruction on x86 platforms. Epoch
+     undefined. Degrades to GPR_CLOCK_REALTIME on other platforms. */
+  GPR_CLOCK_PRECISE,
+  /* Unmeasurable clock type: no base, created by taking the difference
+     between two times */
+  GPR_TIMESPAN
+} gpr_clock_type;
+
+/* Analogous to struct timespec. On some machines, absolute times may be in
+ * local time. */
+typedef struct gpr_timespec {
+  int64_t tv_sec;
+  int32_t tv_nsec;
+  /** Against which clock was this time measured? (or GPR_TIMESPAN if
+      this is a relative time meaure) */
+  gpr_clock_type clock_type;
+} gpr_timespec;
+
+/* Slice API
+
+   A slice represents a contiguous reference counted array of bytes.
+   It is cheap to take references to a slice, and it is cheap to create a
+   slice pointing to a subset of another slice.
+
+   The data-structure for slices is exposed here to allow non-gpr code to
+   build slices from whatever data they have available.
+
+   When defining interfaces that handle slices, care should be taken to define
+   reference ownership semantics (who should call unref?) and mutability
+   constraints (is the callee allowed to modify the slice?) */
+
+/* Reference count container for gpr_slice. Contains function pointers to
+   increment and decrement reference counts. Implementations should cleanup
+   when the reference count drops to zero.
+   Typically client code should not touch this, and use gpr_slice_malloc,
+   gpr_slice_new, or gpr_slice_new_with_len instead. */
+typedef struct gpr_slice_refcount {
+  void (*ref)(void *);
+  void (*unref)(void *);
+} gpr_slice_refcount;
+
+#define GPR_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
+
+/* A gpr_slice s, if initialized, represents the byte range
+   s.bytes[0..s.length-1].
+
+   It can have an associated ref count which has a destruction routine to be run
+   when the ref count reaches zero (see gpr_slice_new() and grp_slice_unref()).
+   Multiple gpr_slice values may share a ref count.
+
+   If the slice does not have a refcount, it represents an inlined small piece
+   of data that is copied by value. */
+typedef struct gpr_slice {
+  struct gpr_slice_refcount *refcount;
+  union {
+    struct {
+      uint8_t *bytes;
+      size_t length;
+    } refcounted;
+    struct {
+      uint8_t length;
+      uint8_t bytes[GPR_SLICE_INLINED_SIZE];
+    } inlined;
+  } data;
+} gpr_slice;
+
+#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 8
+
+/* Represents an expandable array of slices, to be interpreted as a
+   single item. */
+typedef struct {
+  /* slices in the array */
+  gpr_slice *slices;
+  /* the number of slices in the array */
+  size_t count;
+  /* the number of slices allocated in the array */
+  size_t capacity;
+  /* the combined length of all slices in the array */
+  size_t length;
+  /* inlined elements to avoid allocations */
+  gpr_slice inlined[GRPC_SLICE_BUFFER_INLINE_ELEMENTS];
+} gpr_slice_buffer;
+
+typedef enum {
+  GRPC_BB_RAW
+  /* Future types may include GRPC_BB_PROTOBUF, etc. */
+} grpc_byte_buffer_type;
+
+typedef struct grpc_byte_buffer {
+  void *reserved;
+  grpc_byte_buffer_type type;
+  union {
+    struct {
+      void *reserved[8];
+    } reserved;
+    struct {
+      grpc_compression_algorithm compression;
+      gpr_slice_buffer slice_buffer;
+    } raw;
+  } data;
+} grpc_byte_buffer;
 
 /** Completion Queues enable notification of the completion of asynchronous
     actions. */
@@ -327,6 +437,8 @@ typedef enum {
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
+struct grpc_byte_buffer;
+
 /** Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT
    which has no arguments) */
 typedef struct grpc_op {
@@ -351,7 +463,7 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    grpc_byte_buffer *send_message;
+    struct grpc_byte_buffer *send_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
@@ -367,7 +479,7 @@ typedef struct grpc_op {
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    grpc_byte_buffer **recv_message;
+    struct grpc_byte_buffer **recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

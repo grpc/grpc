@@ -64,7 +64,7 @@
 #error Unable to determine platform for sync
 #endif
 
-#include <grpc/impl/codegen/time.h> /* for gpr_timespec */
+#include <grpc/impl/codegen/grpc_types.h> /* for gpr_timespec */
 
 #ifdef __cplusplus
 extern "C" {

@@ -40,23 +40,6 @@
 extern "C" {
 #endif
 
-#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 8
-
-/* Represents an expandable array of slices, to be interpreted as a
-   single item. */
-typedef struct {
-  /* slices in the array */
-  gpr_slice *slices;
-  /* the number of slices in the array */
-  size_t count;
-  /* the number of slices allocated in the array */
-  size_t capacity;
-  /* the combined length of all slices in the array */
-  size_t length;
-  /* inlined elements to avoid allocations */
-  gpr_slice inlined[GRPC_SLICE_BUFFER_INLINE_ELEMENTS];
-} gpr_slice_buffer;
-
 /* initialize a slice buffer */
 GPRAPI void gpr_slice_buffer_init(gpr_slice_buffer *sb);
 /* destroy a slice buffer - unrefs any held elements */

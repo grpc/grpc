@@ -364,7 +364,6 @@ filegroups:
   - grpc_base
 - name: grpc_codegen
   public_headers:
-  - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h

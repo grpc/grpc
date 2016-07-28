@@ -146,7 +146,6 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_posix.h )
   s.files += %w( include/grpc/status.h )
-  s.files += %w( include/grpc/impl/codegen/byte_buffer.h )
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
   s.files += %w( include/grpc/impl/codegen/compression_types.h )
   s.files += %w( include/grpc/impl/codegen/connectivity_state.h )

@@ -42,54 +42,6 @@
 extern "C" {
 #endif
 
-/* Slice API
-
-   A slice represents a contiguous reference counted array of bytes.
-   It is cheap to take references to a slice, and it is cheap to create a
-   slice pointing to a subset of another slice.
-
-   The data-structure for slices is exposed here to allow non-gpr code to
-   build slices from whatever data they have available.
-
-   When defining interfaces that handle slices, care should be taken to define
-   reference ownership semantics (who should call unref?) and mutability
-   constraints (is the callee allowed to modify the slice?) */
-
-/* Reference count container for gpr_slice. Contains function pointers to
-   increment and decrement reference counts. Implementations should cleanup
-   when the reference count drops to zero.
-   Typically client code should not touch this, and use gpr_slice_malloc,
-   gpr_slice_new, or gpr_slice_new_with_len instead. */
-typedef struct gpr_slice_refcount {
-  void (*ref)(void *);
-  void (*unref)(void *);
-} gpr_slice_refcount;
-
-#define GPR_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
-
-/* A gpr_slice s, if initialized, represents the byte range
-   s.bytes[0..s.length-1].
-
-   It can have an associated ref count which has a destruction routine to be run
-   when the ref count reaches zero (see gpr_slice_new() and grp_slice_unref()).
-   Multiple gpr_slice values may share a ref count.
-
-   If the slice does not have a refcount, it represents an inlined small piece
-   of data that is copied by value. */
-typedef struct gpr_slice {
-  struct gpr_slice_refcount *refcount;
-  union {
-    struct {
-      uint8_t *bytes;
-      size_t length;
-    } refcounted;
-    struct {
-      uint8_t length;
-      uint8_t bytes[GPR_SLICE_INLINED_SIZE];
-    } inlined;
-  } data;
-} gpr_slice;
-
 #define GPR_SLICE_START_PTR(slice)                  \
   ((slice).refcount ? (slice).data.refcounted.bytes \
                     : (slice).data.inlined.bytes)
