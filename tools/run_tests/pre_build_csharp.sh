@@ -39,16 +39,16 @@ if [ -x "$(command -v nuget)" ]
 then
   # Restoring Nuget packages by packages rather than by solution because of
   # inability to restore by solution with Nuget client 3.4.4
-  nuget restore Grpc.Auth -PackagesDirectory ./packages
-  nuget restore Grpc.Core.Tests -PackagesDirectory ./packages
-  nuget restore Grpc.Core -PackagesDirectory ./packages
-  nuget restore Grpc.Examples.MathClient -PackagesDirectory ./packages
-  nuget restore Grpc.Examples.MathServer -PackagesDirectory ./packages
-  nuget restore Grpc.Examples -PackagesDirectory ./packages
-  nuget restore Grpc.HealthCheck.Tests -PackagesDirectory ./packages
-  nuget restore Grpc.HealthCheck -PackagesDirectory ./packages
-  nuget restore Grpc.IntegrationTesting.Client -PackagesDirectory ./packages
-  nuget restore Grpc.IntegrationTesting.QpsWorker -PackagesDirectory ./packages
-  nuget restore Grpc.IntegrationTesting.StressClient -PackagesDirectory ./packages
-  nuget restore Grpc.IntegrationTesting -PackagesDirectory ./packages
+  nuget restore Grpc.Auth -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.Core.Tests -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.Core -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.Examples.MathClient -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.Examples.MathServer -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.Examples -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.HealthCheck.Tests -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.HealthCheck -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.IntegrationTesting.Client -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.IntegrationTesting.QpsWorker -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.IntegrationTesting.StressClient -PackagesDirectory ./packages -SolutionDirectory .
+  nuget restore Grpc.IntegrationTesting -PackagesDirectory ./packages -SolutionDirectory .
 fi
