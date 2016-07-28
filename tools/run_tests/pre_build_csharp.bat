@@ -40,19 +40,56 @@ set NUGET=C:\nuget\nuget.exe
 if exist %NUGET% (
   @rem Restore Grpc packages by packages since Nuget client 3.4.4 doesnt support restore
   @rem by solution
+  @rem Moving into each directory to let the restores work with both nuget 3.4 and 2.8
   %NUGET% restore vsprojects/grpc_csharp_ext.sln || goto :error
-  %NUGET% restore src/csharp/Grpc.Auth -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.Core -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.Core.Tests -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.Examples.MathClient -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.Examples.MathServer -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.Examples -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.HealthCheck.Tests -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.HealthCheck -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.IntegrationTesting.Client -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.IntegrationTesting.QpsWorker -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.IntegrationTesting.StressClient -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
-  %NUGET% restore src/csharp/Grpc.IntegrationTesting -PackagesDirectory src/csharp/packages -SolutionDirectory src/csharp || goto :error
+
+  cd src/csharp/Grpc.Auth || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.Core || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.Core.Tests || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.Examples.MathClient || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.Examples.MathServer || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.Examples || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.HealthCheck.Tests || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.HealthCheck || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.IntegrationTesting.Client || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.IntegrationTesting.QpsWorker || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.IntegrationTesting.StressClient || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
+
+  cd src/csharp/Grpc.IntegrationTesting || goto :error
+  %NUGET% restore -PackagesDirectory ../packages || goto :error
+  cd ..
 )
 
 endlocal
