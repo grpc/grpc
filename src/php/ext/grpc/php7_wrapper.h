@@ -110,7 +110,8 @@
 
 #define PHP_GRPC_HASH_FOREACH_END() }
 
-static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, void **value) {
+static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
+                                          void **value) {
   zval **data = NULL;
   if (zend_hash_find(ht, key, len, (void **)&data) == SUCCESS) {
     *value = *data;
