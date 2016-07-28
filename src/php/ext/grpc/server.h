@@ -66,8 +66,7 @@ static inline wrapped_grpc_server
                                 XtOffsetOf(wrapped_grpc_server, std));
 }
 
-#define Z_WRAPPED_GRPC_SERVER_P(zv) \
-  wrapped_grpc_server_from_obj(Z_OBJ_P((zv)))
+#define Z_WRAPPED_GRPC_SERVER_P(zv) wrapped_grpc_server_from_obj(Z_OBJ_P((zv)))
 
 #endif /* PHP_MAJOR_VERSION */
 

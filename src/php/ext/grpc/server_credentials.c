@@ -50,68 +50,27 @@
 #include <grpc/grpc_security.h>
 
 zend_class_entry *grpc_ce_server_credentials;
-
-#if PHP_MAJOR_VERSION < 7
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers server_credentials_ce_handlers;
+#endif
 
 /* Frees and destroys an instace of wrapped_grpc_server_credentials */
-void free_wrapped_grpc_server_credentials(void *object TSRMLS_DC) {
-  wrapped_grpc_server_credentials *creds =
-      (wrapped_grpc_server_credentials *)object;
-  if (creds->wrapped != NULL) {
-    grpc_server_credentials_release(creds->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
+  if (p->wrapped != NULL) {
+    grpc_server_credentials_release(p->wrapped);
   }
-  zend_object_std_dtor(&creds->std TSRMLS_CC);
-  efree(creds);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
 /* Initializes an instace of wrapped_grpc_server_credentials to be associated
  * with an object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_server_credentials(
+php_grpc_zend_object create_wrapped_grpc_server_credentials(
     zend_class_entry *class_type TSRMLS_DC) {
-  zend_object_value retval;
-  wrapped_grpc_server_credentials *intern;
-
-  intern = (wrapped_grpc_server_credentials *)emalloc(
-      sizeof(wrapped_grpc_server_credentials));
-  memset(intern, 0, sizeof(wrapped_grpc_server_credentials));
-
+  PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server_credentials);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_server_credentials, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_server_credentials,
+                             server_credentials_ce_handlers);
 }
-
-#else
-
-static zend_object_handlers server_credentials_ce_handlers;
-
-/* Frees and destroys an instace of wrapped_grpc_server_credentials */
-static void free_wrapped_grpc_server_credentials(zend_object *object) {
-  wrapped_grpc_server_credentials *creds =
-    wrapped_grpc_server_creds_from_obj(object);
-  if (creds->wrapped != NULL) {
-    grpc_server_credentials_release(creds->wrapped);
-  }
-  zend_object_std_dtor(&creds->std);
-}
-
-/* Initializes an instace of wrapped_grpc_server_credentials to be associated
- * with an object of a class specified by class_type */
-zend_object *create_wrapped_grpc_server_credentials(zend_class_entry
-                                                    *class_type) {
-  wrapped_grpc_server_credentials *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_server_credentials) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
-  intern->std.handlers = &server_credentials_ce_handlers;
-  return &intern->std;
-}
-
-#endif
 
 zval *grpc_php_wrap_server_credentials(grpc_server_credentials
                                        *wrapped TSRMLS_DC) {
@@ -163,7 +122,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
 static zend_function_entry server_credentials_methods[] = {
   PHP_ME(ServerCredentials, createSsl, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-   PHP_FE_END
+  PHP_FE_END
  };
 
 void grpc_init_server_credentials(TSRMLS_D) {
@@ -171,13 +130,6 @@ void grpc_init_server_credentials(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\ServerCredentials", server_credentials_methods);
   ce.create_object = create_wrapped_grpc_server_credentials;
   grpc_ce_server_credentials = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&server_credentials_ce_handlers,
-         zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  server_credentials_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_server_credentials, std);
-  server_credentials_ce_handlers.free_obj =
-    free_wrapped_grpc_server_credentials;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_server_credentials,
+                        server_credentials_ce_handlers);
 }
