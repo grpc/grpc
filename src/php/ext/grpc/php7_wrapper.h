@@ -72,6 +72,13 @@
   intern = (class_object *)emalloc(sizeof(class_object)); \
   memset(intern, 0, sizeof(class_object));
 
+#define PHP_GRPC_FREE_CLASS_OBJECT(class_object, handler) \
+  retval.handle = zend_objects_store_put( \
+    intern, (zend_objects_store_dtor_t)zend_objects_destroy_object, \
+    free_##class_object, NULL TSRMLS_CC); \
+  retval.handlers = zend_get_std_object_handlers(); \
+  return retval;
+
 #define PHP_GRPC_HASH_FOREACH_VAL_START(ht, data) \
   zval **tmp_data = NULL; \
   for (zend_hash_internal_pointer_reset(ht); \
@@ -157,6 +164,10 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len, voi
   class_object *intern; \
   intern = ecalloc(1, sizeof(class_object) + \
                    zend_object_properties_size(class_type));
+
+#define PHP_GRPC_FREE_CLASS_OBJECT(class_object, handler) \
+  intern->std.handlers = &handler; \
+  return &intern->std;
 
 #define PHP_GRPC_HASH_FOREACH_VAL_START(ht, data) \
   ZEND_HASH_FOREACH_VAL(ht, data) {

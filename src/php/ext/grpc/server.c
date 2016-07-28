@@ -79,16 +79,7 @@ php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-#if PHP_MAJOR_VERSION < 7
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_server, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
-#else
-  intern->std.handlers = &server_ce_handlers;
-  return &intern->std;
-#endif
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_server, server_ce_handlers);
 }
 
 /**
