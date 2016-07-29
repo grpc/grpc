@@ -130,7 +130,13 @@ class ServerContext {
   grpc_compression_level compression_level() const {
     return compression_level_;
   }
-  void set_compression_level(grpc_compression_level level);
+
+  void set_compression_level(grpc_compression_level level) {
+    compression_level_set_ = true;
+    compression_level_ = level;
+  }
+
+  bool compression_level_set() const { return compression_level_set_; }
 
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
@@ -217,6 +223,7 @@ class ServerContext {
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
+  bool compression_level_set_;
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 };
