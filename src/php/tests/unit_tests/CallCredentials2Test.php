@@ -42,8 +42,8 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $credentials = Grpc\ChannelCredentials::createSsl($ca_data);
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
-            array(array('private_key' => $key_data,
-                        'cert_chain' => $pem_data, )));
+            [['private_key' => $key_data,
+              'cert_chain' => $pem_data, ]]);
         $this->server = new Grpc\Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
@@ -83,7 +83,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
                               $this->host_override);
 
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            array($this, 'callbackFunc'));
+            [$this, 'callbackFunc']);
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([

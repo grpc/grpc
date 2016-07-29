@@ -48,8 +48,8 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
         );
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
-            array(array('private_key' => $key_data,
-                        'cert_chain' => $pem_data, )));
+            [['private_key' => $key_data,
+              'cert_chain' => $pem_data, ]]);
         $this->server = new Grpc\Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
