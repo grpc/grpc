@@ -37,7 +37,7 @@
 
 #include <stdlib.h>
 
-void* GRPC_memdup(const void *, size_t);
+void* GRPC_memdup(const void * dst, size_t size);
 
 #define GRPC_ALLOC_STRUCT(type, ...) (type *) GRPC_memdup(&(type)__VA_ARGS__, sizeof(type))
 

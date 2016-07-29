@@ -32,8 +32,8 @@
  */
 
 
-#include "src/c/message.h"
 #include <stdlib.h>
+#include "src/c/message.h"
 
 void GRPC_message_destroy(grpc_message *message) {
   free((void *)message->data);

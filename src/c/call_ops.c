@@ -32,9 +32,9 @@
  */
 
 #include <grpc_c/grpc_c.h>
-#include "src/c/call_ops.h"
 #include <grpc/support/log.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
+#include "src/c/call_ops.h"
 
 static bool op_send_metadata_fill(grpc_op *op, const grpc_method *method, grpc_client_context *context, grpc_call_op_set *set, const grpc_message message, void *response) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

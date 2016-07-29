@@ -49,13 +49,6 @@ typedef struct GRPC_pb_dynamic_array_state {
   size_t capacity;
 } GRPC_pb_dynamic_array_state;
 
-typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
-
-bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count);
-GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc();
-void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state);
-void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state);
-
 static size_t upper_power_of_two(size_t v)
 {
   v--;
