@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,20 @@
  *
  */
 
-#include <Python.h>
-#include "loader.h"
+#import <GRPCClient/GRPCCall+Tests.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif  /* __cpluslus  */
+#import "InteropTests.h"
 
-int pygrpc_load_core(char *path) { return 1; }
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
-// Cython doesn't have Py_AtExit bindings, so we call the C_API directly
-int pygrpc_initialize_core(void) {
-  grpc_init();
-  return Py_AtExit(grpc_shutdown) < 0 ? 0 : 1;
+/** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
+@interface InteropTestsRemoteWithCronet : InteropTests
+@end
+
+@implementation InteropTestsRemoteWithCronet
+
++ (NSString *)host {
+  return kRemoteSSLHost;
 }
 
-#ifdef __cplusplus
-}
-#endif  /* __cpluslus */
-
+@end

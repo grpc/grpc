@@ -35,7 +35,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '0.14.0'
+  version = '1.0.0-pre1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -44,7 +44,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+    :tag => "objective-c-v#{version}",
     # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
     :submodules => true,
   }
@@ -193,7 +193,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 4.0'
+    ss.dependency 'BoringSSL', '~> 5.0'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -258,6 +258,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/compress_filter.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
+                      'src/core/lib/channel/handshaker.h',
                       'src/core/lib/channel/http_client_filter.h',
                       'src/core/lib/channel/http_server_filter.h',
                       'src/core/lib/compression/algorithm_metadata.h',
@@ -413,6 +414,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack_builder.c',
                       'src/core/lib/channel/compress_filter.c',
                       'src/core/lib/channel/connected_channel.c',
+                      'src/core/lib/channel/handshaker.c',
                       'src/core/lib/channel/http_client_filter.c',
                       'src/core/lib/channel/http_server_filter.c',
                       'src/core/lib/compression/compression.c',
@@ -611,6 +613,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/compress_filter.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
+                              'src/core/lib/channel/handshaker.h',
                               'src/core/lib/channel/http_client_filter.h',
                               'src/core/lib/channel/http_server_filter.h',
                               'src/core/lib/compression/algorithm_metadata.h',
