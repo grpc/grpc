@@ -80,10 +80,6 @@
 
 #pragma mark Tests
 
-#ifdef GRPC_COMPILE_WITH_CRONET
-static cronet_engine *cronetEngine = NULL;
-#endif
-
 @implementation InteropTests {
   RMTTestService *_service;
 }
@@ -93,14 +89,17 @@ static cronet_engine *cronetEngine = NULL;
 }
 
 - (void)setUp {
+  self.continueAfterFailure = NO;
+
+  [GRPCCall clearAllConfigurationsForTesting];
+
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
 #ifdef GRPC_COMPILE_WITH_CRONET
   if (cronetEngine == NULL) {
     // Cronet setup
     [Cronet setHttp2Enabled:YES];
     [Cronet start];
-    cronetEngine = [Cronet getGlobalEngine];
-    [GRPCCall useCronetWithEngine:cronetEngine];
+    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
   }
 #endif
 }
@@ -140,6 +139,59 @@ static cronet_engine *cronetEngine = NULL;
     expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
     XCTAssertEqualObjects(response, expectedResponse);
 
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+- (void)test4MBResponsesAreAccepted {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"MaxResponseSize"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  const size_t kPayloadSize = 4 * 1024 * 1024 - 12; // 4MB - 12B of protobuf encoding overhead
+  request.responseSize = kPayloadSize;
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertEqual(response.payload.body.length, kPayloadSize);
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+- (void)testResponsesOverMaxSizeFailWithActionableMessage {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ResponseOverMaxSize"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  const size_t kPayloadSize = 4 * 1024 * 1024 - 11; // 1B over max size (see above test)
+  request.responseSize = kPayloadSize;
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertEqualObjects(error.localizedDescription, @"Max message size exceeded"); // TODO: Improve
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+- (void)testResponsesOver4MBAreAcceptedIfOptedIn {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"HigherResponseSizeLimit"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  const size_t kPayloadSize = 5 * 1024 * 1024; // 5MB
+  request.responseSize = kPayloadSize;
+
+  [GRPCCall setResponseSizeLimit:6 * 1024 * 1024 forHost:self.class.host];
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertEqual(response.payload.body.length, kPayloadSize);
     [expectation fulfill];
   }];
 

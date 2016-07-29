@@ -61,4 +61,7 @@
   hostConfig.secure = NO;
 }
 
++ (void)clearAllConfigurationsForTesting {
+  [GRPCHost clearAllHostsForTesting];
+}
 @end

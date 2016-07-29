@@ -43,7 +43,9 @@
  * Use the provided @c userAgentPrefix at the beginning of the HTTP User Agent string for all calls
  * to the specified @c host.
  */
-+ (void)setUserAgentPrefix:(NSString *)userAgentPrefix forHost:(NSString *)host;
++ (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;
+
++ (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
 
 + (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
                                                       "and might be removed or modified at any "
