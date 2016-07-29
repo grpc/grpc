@@ -358,7 +358,7 @@ void PrintSourceClientMethod(Printer *printer,
         "        $CPrefix$$Response$ *response) {\n"
         "  const GRPC_message request_msg = { &request, sizeof(request) };\n"
         "  GRPC_client_context_set_serialization_impl(context,\n"
-        "        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });\n"
+        "        (grpc_serialization_impl) { GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_unary_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg, response);\n"
         "}\n"
         "\n");
@@ -372,7 +372,7 @@ void PrintSourceClientMethod(Printer *printer,
         "        const $CPrefix$$Request$ request) {\n"
         "  const GRPC_message request_msg = { &request, sizeof(request) };\n"
         "  GRPC_client_context_set_serialization_impl(context,\n"
-        "        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });\n"
+        "        (grpc_serialization_impl) { GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_unary_async_call(cq, GRPC_method_$CPrefix$$Service$_$Method$, request_msg, context);\n"
         "}\n"
         "\n"
@@ -392,7 +392,7 @@ void PrintSourceClientMethod(Printer *printer,
         "        GRPC_client_context *const context,\n"
         "        $CPrefix$$Response$ *response) {\n"
         "  GRPC_client_context_set_serialization_impl(context,\n"
-        "        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });\n"
+        "        (grpc_serialization_impl) { GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_client_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, response);\n"
         "}\n"
         "\n"
@@ -423,7 +423,7 @@ void PrintSourceClientMethod(Printer *printer,
         "        $CPrefix$$Request$ request) {\n"
         "  const GRPC_message request_msg = { &request, sizeof(request) };\n"
         "  GRPC_client_context_set_serialization_impl(context,\n"
-        "        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });\n"
+        "        (grpc_serialization_impl) { GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_server_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg);\n"
         "}\n"
         "\n"
@@ -450,7 +450,7 @@ void PrintSourceClientMethod(Printer *printer,
         "GRPC_client_reader_writer *$CPrefix$$Service$_$Method$(\n"
         "        GRPC_client_context *const context) {\n"
         "  GRPC_client_context_set_serialization_impl(context,\n"
-        "        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });\n"
+        "        (grpc_serialization_impl) { GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_bidi_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context);\n"
         "}\n"
         "\n"
@@ -522,21 +522,6 @@ grpc::string GetHeaderServices(File *file,
     }
     // TODO(yifeit): hook this up to C prefix
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
-
-    // We need to generate a short serialization helper for every message type
-    // This should be handled in protoc but there's nothing we can do at the moment
-    // given we're on nanopb.
-    printer->Print("typedef struct GRPC_message GRPC_message;\n");
-    auto messages = dynamic_cast<CFile*>(file)->messages();
-    for (auto itr = messages.begin(); itr != messages.end(); itr++) {
-      std::map<grpc::string, grpc::string> vars_msg(vars);
-      vars_msg["msgType"] = (*itr)->name();
-      printer->Print(vars_msg, "\n"
-        "GRPC_message $CPrefix$$msgType$_serializer(const GRPC_message input);\n"
-        "void $CPrefix$$msgType$_deserializer(const GRPC_message input, void *output);\n"
-        "\n");
-    }
-    printer->Print("\n");
 
     for (int i = 0; i < file->service_count(); ++i) {
       PrintHeaderService(printer.get(), file->service(i).get(), &vars);
@@ -646,7 +631,8 @@ grpc::string GetSourceIncludes(File *file,
       // Relying on Nanopb for Protobuf serialization for now
       nano_encode.c_str(),
       nano_decode.c_str(),
-      "grpc_c/codegen/pb_compat.h"
+      "grpc_c/codegen/pb_compat.h",
+      "grpc_c/declare_serializer.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
@@ -739,36 +725,56 @@ grpc::string GetSourceServices(File *file,
       vars["Package"].append(".");
     }
     // TODO(yifeit): hook this up to C prefix
+    // TODO(yifeit): what if proto files in the dependency tree had different packages
+    // we are using the same prefix for all referenced type
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
+
+    // We need to generate a declaration of serialization helper for every message type we could use
+    // in this file. The implementations will be scattered across different service implementation files.
+    auto messages = dynamic_cast<CFile*>(file)->messages();
+    std::vector<grpc::string> all_message_names;
+    for (auto itr = messages.begin(); itr != messages.end(); itr++) {
+      all_message_names.push_back((*itr)->name());
+    }
+    for (int i = 0; i < file->service_count(); i++) {
+      auto service = file->service(i);
+      for (int j = 0; j < service->method_count(); j++) {
+        auto method = service->method(j);
+        all_message_names.push_back(method->input_type_name());
+        all_message_names.push_back(method->output_type_name());
+      }
+    }
+    std::set<grpc::string> dedupe_message_names(all_message_names.begin(), all_message_names.end());
+    for (auto itr = dedupe_message_names.begin(); itr != dedupe_message_names.end(); itr++) {
+      std::map<grpc::string, grpc::string> vars_msg(vars);
+      vars_msg["msgType"] = (*itr);
+      printer->Print(vars_msg, "\n"
+        "#ifdef $CPrefix$$msgType$_init_default\n"
+        "GRPC_message $CPrefix$$msgType$_nanopb_serializer(const GRPC_message input);\n"
+        "void $CPrefix$$msgType$_nanopb_deserializer(const GRPC_message input, void *output);\n"
+        "#endif\n"
+        "\n");
+    }
+    printer->Print("\n");
 
     // We need to generate a short serialization helper for every message type
     // This should be handled in protoc but there's nothing we can do at the moment
     // given we're on nanopb.
-    auto messages = dynamic_cast<CFile*>(file)->messages();
     for (auto itr = messages.begin(); itr != messages.end(); itr++) {
       std::map<grpc::string, grpc::string> vars_msg(vars);
       vars_msg["msgType"] = (*itr)->name();
       printer->Print(vars_msg, "\n"
-        "GRPC_message $CPrefix$$msgType$_serializer(const GRPC_message input) {\n"
-        "  pb_ostream_t ostream = {\n"
-        "    .callback = GRPC_pb_compat_dynamic_array_callback,\n"
-        "    .state = GRPC_pb_compat_dynamic_array_alloc(),\n"
-        "    .max_size = SIZE_MAX\n"
-        "  };\n"
-        "  pb_encode(&ostream, $CPrefix$$msgType$_fields, input.data);\n"
-        "  GRPC_message msg = (GRPC_message) {\n"
-        "    GRPC_pb_compat_dynamic_array_get_content(ostream.state),\n"
-        "    ostream.bytes_written\n"
-        "  };\n"
-        "  GRPC_pb_compat_dynamic_array_free(ostream.state);\n"
-        "  return msg;\n"
+        "#ifdef $CPrefix$$msgType$_init_default\n"
+        "GRPC_message $CPrefix$$msgType$_nanopb_serializer(const GRPC_message input) {\n"
+        "  return GRPC_pb_compat_generic_serializer(input, $CPrefix$$msgType$_fields);\n"
         "}\n"
-        "\n");
-      printer->Print(vars_msg, "\n"
-        "void $CPrefix$$msgType$_deserializer(const GRPC_message input, void *output) {\n"
-        "  pb_istream_t istream = pb_istream_from_buffer((void *) input.data, input.length);\n"
-        "  pb_decode(&istream, $CPrefix$$msgType$_fields, output);\n"
+        "\n"
+        "void $CPrefix$$msgType$_nanopb_deserializer(const GRPC_message input, void *output) {\n"
+        "  return GRPC_pb_compat_generic_deserializer(input, output, $CPrefix$$msgType$_fields);\n"
         "}\n"
+        "#define GRPC_C_DECLARE_SERIALIZATION_$CPrefix$$msgType$ \\"
+        "  ($CPrefix$$msgType$_nanopb_serializer, $CPrefix$$msgType$_nanopb_deserializer)\n"
+        "#endif\n"
         "\n");
     }
 

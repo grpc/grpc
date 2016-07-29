@@ -35,15 +35,11 @@
 #define GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/codegen/message.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
-typedef struct pb_ostream_s pb_ostream_t;
-
-bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count);
-GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc();
-void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state);
-void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state);
+GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, void *fields);
+void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, void *fields);
 
 #endif /* GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H */

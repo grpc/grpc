@@ -35,6 +35,7 @@
 #include <grpc_c/codegen/pb_compat.h>
 #include <third_party/nanopb/pb.h>
 #include <third_party/nanopb/pb_encode.h>
+#include <third_party/nanopb/pb_decode.h>
 #include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
 
@@ -47,6 +48,13 @@ typedef struct GRPC_pb_dynamic_array_state {
   size_t size;
   size_t capacity;
 } GRPC_pb_dynamic_array_state;
+
+typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
+
+bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count);
+GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc();
+void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state);
+void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state);
 
 static size_t upper_power_of_two(size_t v)
 {
@@ -86,4 +94,24 @@ bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *
 
 void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state) {
   return state->data;
+}
+
+GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, void *fields) {
+  pb_ostream_t ostream = {
+    .callback = GRPC_pb_compat_dynamic_array_callback,
+    .state = GRPC_pb_compat_dynamic_array_alloc(),
+    .max_size = SIZE_MAX
+  };
+  pb_encode(&ostream, fields, input.data);
+  GRPC_message msg = (GRPC_message) {
+    GRPC_pb_compat_dynamic_array_get_content(ostream.state),
+    ostream.bytes_written
+  };
+  GRPC_pb_compat_dynamic_array_free(ostream.state);
+  return msg;
+}
+
+void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, void *fields) {
+  pb_istream_t istream = pb_istream_from_buffer((void *) input.data, input.length);
+  pb_decode(&istream, fields, output);
 }
