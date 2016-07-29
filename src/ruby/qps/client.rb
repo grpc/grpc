@@ -76,9 +76,9 @@ class BenchmarkClient
     end
     @histres = config.histogram_params.resolution
     @histmax = config.histogram_params.max_possible
-    @start_time = Time.now
     @histogram = Histogram.new(@histres, @histmax)
     @done = false
+    @timer = GRPC::Core::UsageTimer.new
 
     gtsr = Grpc::Testing::SimpleRequest
     gtpt = Grpc::Testing::PayloadType
@@ -153,12 +153,17 @@ class BenchmarkClient
       sum_of_squares: @histogram.sum_of_squares,
       count: @histogram.count
     )
-    elapsed = Time.now-@start_time
     if reset
-      @start_time = Time.now
       @histogram = Histogram.new(@histres, @histmax)
+      @timer.reset
     end
-    Grpc::Testing::ClientStats.new(latencies: lat, time_elapsed: elapsed)
+    time_samples = @timer.sample
+
+    Grpc::Testing::ClientStats.new(
+      latencies: lat,
+      time_elapsed: time_samples['wall_time'],
+      time_user: time_samples['user_time'],
+      time_system: time_samples['system_time'])
   end
   def shutdown
     @done = true
