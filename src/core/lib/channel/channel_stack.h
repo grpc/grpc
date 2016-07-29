@@ -127,7 +127,7 @@ typedef struct {
      is complete. \a final_info contains data about the completed call, mainly
      for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                            const grpc_call_final_info* final_info,
+                            const grpc_call_final_info *final_info,
                             void *and_free_memory);
 
   /* sizeof(per channel data) */

@@ -1614,7 +1614,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->final_info.stats.transport_stream_stats;
+        stream_op.collect_stats =
+            &call->final_info.stats.transport_stream_stats;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         /* Flag validation: currently allow no flags */
@@ -1636,7 +1637,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->final_info.stats.transport_stream_stats;
+        stream_op.collect_stats =
+            &call->final_info.stats.transport_stream_stats;
         break;
     }
   }

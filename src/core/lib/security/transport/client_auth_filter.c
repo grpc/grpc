@@ -282,7 +282,8 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_final_info *final_info, void *ignored) {
+                              const grpc_call_final_info *final_info,
+                              void *ignored) {
   call_data *calld = elem->call_data;
   grpc_call_credentials_unref(calld->creds);
   if (calld->host != NULL) {
