@@ -162,13 +162,13 @@
       ss.source_files = 'include/grpc/grpc_cronet.h'
     end
 
-    s.subspec 'Cronet-Implement' do |ss|
+    s.subspec 'Cronet-Implementation' do |ss|
       ss.header_mappings_dir = '.'
       ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
                         'src/core/ext/transport/cronet/transport/cronet_transport.c'
     end
 
-    s.subspec 'Cronet-Tests' do |ss|
+    s.subspec 'Tests' do |ss|
       ss.header_mappings_dir = '.'
 
       ss.source_files = 'test/core/end2end/cq_verifier.{c,h}',

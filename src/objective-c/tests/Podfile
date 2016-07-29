@@ -32,7 +32,7 @@ GRPC_LOCAL_SRC = '../../..'
 
     if target_name == 'InteropTestsRemoteWithCronet'
       pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-      pod 'gRPC-Core/Cronet-Implement', :path => GRPC_LOCAL_SRC
+      pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
     end
   end
 end
@@ -42,8 +42,8 @@ target 'CoreCronetEnd2EndTests' do
   pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
   pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
   pod 'gRPC-Core/Cronet-Interface', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core/Cronet-Implement', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core/Cronet-Tests', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
 end
 
 # gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
@@ -82,7 +82,7 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
     end
-    if target.name == 'gRPC-Core' or target.name == 'gRPC-Core.default-Cronet-Implement-Cronet-Interface-Cronet-Tests' or target.name == 'gRPC-Core.default-Cronet-Implement'
+    if target.name == 'gRPC-Core' or target.name == 'gRPC-Core.default-Cronet-Implementation-Cronet-Interface-Tests' or target.name == 'gRPC-Core.default-Cronet-Implementation'
       target.build_configurations.each do |config|
         # TODO(zyc): Remove this setting after the issue is resolved
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
