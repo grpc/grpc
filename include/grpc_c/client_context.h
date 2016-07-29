@@ -35,6 +35,7 @@
 #define GRPC_C_CONTEXT_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
 
 GRPC_client_context *GRPC_client_context_create(GRPC_channel *chan);
 void GRPC_client_context_destroy(GRPC_client_context **context);

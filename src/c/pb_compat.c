@@ -96,7 +96,7 @@ void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *stat
   return state->data;
 }
 
-GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, void *fields) {
+GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, const void *fields) {
   pb_ostream_t ostream = {
     .callback = GRPC_pb_compat_dynamic_array_callback,
     .state = GRPC_pb_compat_dynamic_array_alloc(),
@@ -111,7 +111,7 @@ GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, void *f
   return msg;
 }
 
-void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, void *fields) {
+void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, const void *fields) {
   pb_istream_t istream = pb_istream_from_buffer((void *) input.data, input.length);
   pb_decode(&istream, fields, output);
 }

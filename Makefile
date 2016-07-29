@@ -3000,6 +3000,7 @@ PUBLIC_HEADERS_C += \
     include/grpc_c/codegen/unary_async_call.h \
     include/grpc_c/codegen/unary_blocking_call.h \
     include/grpc_c/completion_queue.h \
+    include/grpc_c/declare_serializer.h \
     include/grpc_c/grpc_c.h \
     include/grpc_c/status.h \
 

@@ -39,7 +39,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, void *fields);
-void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, void *fields);
+GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, const void *fields);
+void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, const void *fields);
 
 #endif /* GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H */

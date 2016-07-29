@@ -81,6 +81,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\completion_queue.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\declare_serializer.h">
+      <Filter>include\grpc_c</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\grpc_c.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>

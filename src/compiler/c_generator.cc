@@ -772,8 +772,8 @@ grpc::string GetSourceServices(File *file,
         "void $CPrefix$$msgType$_nanopb_deserializer(const GRPC_message input, void *output) {\n"
         "  return GRPC_pb_compat_generic_deserializer(input, output, $CPrefix$$msgType$_fields);\n"
         "}\n"
-        "#define GRPC_C_DECLARE_SERIALIZATION_$CPrefix$$msgType$ \\"
-        "  ($CPrefix$$msgType$_nanopb_serializer, $CPrefix$$msgType$_nanopb_deserializer)\n"
+        "#define GRPC_C_DECLARE_SERIALIZATION_$CPrefix$$msgType$ \\\n"
+        "  $CPrefix$$msgType$_nanopb_serializer, $CPrefix$$msgType$_nanopb_deserializer\n"
         "#endif\n"
         "\n");
     }
