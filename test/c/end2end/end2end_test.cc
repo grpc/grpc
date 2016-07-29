@@ -191,7 +191,7 @@ TEST(End2endTest, UnaryRpcRacing) {
   std::condition_variable cv;
   bool start_racing = false;
   for (int i = 0; i < kNumThreads; i++) {
-    threads.push_back(std::thread(racing_thread, test, start_racing, mu, cv));
+    threads.push_back(std::thread(racing_thread, std::ref(test), std::ref(start_racing), std::ref(mu), std::ref(cv)));
   }
   {
     std::unique_lock<std::mutex> lock(mu);
