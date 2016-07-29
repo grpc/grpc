@@ -45,6 +45,7 @@
  */
 + (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;
 
+/** The default response size limit is 4MB. Set this to override that default. */
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
 
 + (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
