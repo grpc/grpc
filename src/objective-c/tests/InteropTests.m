@@ -171,7 +171,12 @@
   request.responseSize = kPayloadSize;
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
-    XCTAssertEqualObjects(error.localizedDescription, @"Max message size exceeded"); // TODO: Improve
+    // TODO(jcanizales): Catch the error and rethrow it with an actionable message:
+    // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a higher limit.
+    // - If you're developing the server, consider using response streaming, or let clients filter
+    //   responses by setting a google.protobuf.FieldMask in the request:
+    //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
+    XCTAssertEqualObjects(error.localizedDescription, @"Max message size exceeded");
     [expectation fulfill];
   }];
 
