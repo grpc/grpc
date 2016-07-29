@@ -31,8 +31,24 @@
  *
  */
 
-#include <mutex>
+/**
+ * Compatibility for GCC 4.4
+ */
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ <= 4)
+// Workaround macro bug
+#define _GLIBCXX_USE_NANOSLEEP
+#include <tr1/random>
+using std::tr1::default_random_engine;
+using std::tr1::random_device;
+using std::tr1::uniform_int_distribution;
+#else
 #include <random>
+using std::default_random_engine;
+using std::random_device;
+using std::uniform_int_distribution;
+#endif
+
+#include <mutex>
 #include <chrono>
 #include <thread>
 #include <condition_variable>
@@ -166,8 +182,8 @@ TEST(End2endTest, UnaryRpc) {
 }
 
 void racing_thread(UnaryEnd2endTest& test, bool& start_racing, std::mutex& mu, std::condition_variable& cv) {
-  std::default_random_engine generator( std::random_device{}() );
-  std::uniform_int_distribution<> distrib(1, 3);
+  default_random_engine generator( random_device{}() );
+  uniform_int_distribution<> distrib(1, 3);
   {
     {
       std::unique_lock<std::mutex> lock(mu);
