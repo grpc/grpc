@@ -587,13 +587,13 @@ grpc::string GetSourcePrologue(File *file, const Parameters & /*params*/) {
     printer->Print(vars, "/* Message header */\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "/* Other message dependencies */\n");
-    // include all other service headers on which this one depends
+    // include all other message headers on which this one depends
     auto deps = dynamic_cast<CFile*>(file)->dependencies();
     for (auto itr = deps.begin(); itr != deps.end(); itr++) {
       std::map<grpc::string, grpc::string> depvars(vars);
       depvars["filename_base"] = (*itr)->filename_without_ext();
       depvars["service_header_ext"] = (*itr)->service_header_ext();
-      printer->Print(depvars, "#include \"$filename_base$$service_header_ext$\"\n");
+      printer->Print(depvars, "#include \"$filename_base$$message_header_ext$\"\n");
     }
     printer->Print(vars, "/* Service header */\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
@@ -754,8 +754,9 @@ grpc::string GetSourceServices(File *file,
         "#ifdef $CPrefix$$msgType$_init_default\n"
         "GRPC_message $CPrefix$$msgType$_nanopb_serializer(const GRPC_message input);\n"
         "void $CPrefix$$msgType$_nanopb_deserializer(const GRPC_message input, void *output);\n"
-        "#endif\n"
-        "\n");
+        "#define GRPC_C_DECLARE_SERIALIZATION_$CPrefix$$msgType$ \\\n"
+        "  $CPrefix$$msgType$_nanopb_serializer, $CPrefix$$msgType$_nanopb_deserializer\n"
+        "#endif\n");
     }
     printer->Print("\n");
 
@@ -774,11 +775,9 @@ grpc::string GetSourceServices(File *file,
         "void $CPrefix$$msgType$_nanopb_deserializer(const GRPC_message input, void *output) {\n"
         "  return GRPC_pb_compat_generic_deserializer(input, output, $CPrefix$$msgType$_fields);\n"
         "}\n"
-        "#define GRPC_C_DECLARE_SERIALIZATION_$CPrefix$$msgType$ \\\n"
-        "  $CPrefix$$msgType$_nanopb_serializer, $CPrefix$$msgType$_nanopb_deserializer\n"
-        "#endif\n"
-        "\n");
+        "#endif\n");
     }
+    printer->Print("\n");
 
     // Print service implementations
     for (int i = 0; i < file->service_count(); ++i) {
