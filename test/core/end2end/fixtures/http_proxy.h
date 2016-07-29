@@ -39,5 +39,3 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 
 const char *grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy *proxy);
-
-void grpc_end2end_http_proxy_start_thread(grpc_end2end_http_proxy *proxy);

@@ -52,7 +52,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#if 0
 typedef struct fullstack_fixture_data {
   char *server_addr;
   grpc_end2end_http_proxy *proxy;
@@ -111,24 +110,17 @@ static grpc_end2end_test_config configs[] = {
      chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
-#endif
 
 int main(int argc, char **argv) {
-//  size_t i;
+  size_t i;
 
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 
-  grpc_end2end_http_proxy* proxy = grpc_end2end_http_proxy_create();
-  grpc_end2end_http_proxy_start_thread(proxy);
-  grpc_end2end_http_proxy_destroy(proxy);
-
-#if 0
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(argc, argv, configs[i]);
   }
-#endif
 
   grpc_shutdown();
 
