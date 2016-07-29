@@ -612,9 +612,6 @@ grpc::string GetSourceIncludes(File *file,
     auto printer = file->CreatePrinter(&output);
     std::map<grpc::string, grpc::string> vars;
 
-    grpc::string nano_encode = params.nanopb_headers_prefix + "pb_encode.h";
-    grpc::string nano_decode = params.nanopb_headers_prefix + "pb_decode.h";
-
     static const char *headers_strs[] = {
       "grpc_c/status.h",
       "grpc_c/grpc_c.h",
@@ -629,8 +626,6 @@ grpc::string GetSourceIncludes(File *file,
       "grpc_c/codegen/bidi_streaming_blocking_call.h",
       "grpc_c/codegen/client_context.h",
       // Relying on Nanopb for Protobuf serialization for now
-      nano_encode.c_str(),
-      nano_decode.c_str(),
       "grpc_c/codegen/pb_compat.h",
       "grpc_c/declare_serializer.h"
     };
