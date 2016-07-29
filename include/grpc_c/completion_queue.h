@@ -39,7 +39,7 @@
 
 typedef struct gpr_timespec GRPC_timespec;
 
-/* Tri-state return for GRPC_commit_ops_and_wait */
+/** Tri-state return for GRPC_commit_ops_and_wait */
 typedef enum GRPC_completion_queue_next_status {
   GRPC_COMPLETION_QUEUE_SHUTDOWN,   /* The completion queue has been shutdown. */
   GRPC_COMPLETION_QUEUE_GOT_EVENT,  /* Got a new event; \a tag will be filled in with its */
@@ -47,11 +47,15 @@ typedef enum GRPC_completion_queue_next_status {
   GRPC_COMPLETION_QUEUE_TIMEOUT     /* deadline was reached. */
 } GRPC_completion_queue_operation_status;
 
+/** Creates a completion queue. You can listen for new events about calls on the queue. */
 GRPC_completion_queue *GRPC_completion_queue_create();
+
 void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq);
+
+/** Destroys the completion queue and frees resources. The queue must be fully shutdown before this call. */
 void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
 
-/* Swallows events and blocks until it sees the shutdown event */
+/** Swallows events and blocks until it sees the shutdown event */
 void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq);
 
 GRPC_completion_queue_operation_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok);

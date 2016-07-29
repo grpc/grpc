@@ -39,6 +39,11 @@
 
 GRPC_client_context *GRPC_client_context_create(GRPC_channel *chan);
 void GRPC_client_context_destroy(GRPC_client_context **context);
+
+/**
+ * Gets the status of the RPC call. Use it only after the call terminates.
+ * There is no need to free the returned GRPC_status instance or memory referenced by it.
+ */
 GRPC_status GRPC_get_call_status(GRPC_client_context *context);
 
 #endif /* GRPC_C_CONTEXT_PUBLIC_H */

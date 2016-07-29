@@ -729,7 +729,9 @@ grpc::string GetSourceServices(File *file,
     // we are using the same prefix for all referenced type
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
 
-    // We need to generate a declaration of serialization helper for every message type we could use
+    // The following are Nanopb glue code. Putting them here since we're not going to modify Nanopb.
+
+    // We need to generate a declaration of serialization helper for every nanopb message type we could use
     // in this file. The implementations will be scattered across different service implementation files.
     auto messages = dynamic_cast<CFile*>(file)->messages();
     std::vector<grpc::string> all_message_names;
@@ -778,6 +780,7 @@ grpc::string GetSourceServices(File *file,
         "\n");
     }
 
+    // Print service implementations
     for (int i = 0; i < file->service_count(); ++i) {
       PrintSourceService(printer.get(), file->service(i).get(), &vars);
       printer->Print("\n");

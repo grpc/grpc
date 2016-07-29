@@ -61,4 +61,12 @@
 #define GRPC_C_FETCH_SERIALIZER_PRIMITIVE(x, y)     x
 #define GRPC_C_FETCH_DESERIALIZER_PRIMITIVE(x, y)   y
 
+/**
+ * Syntax: write this before including gRPC service headers.
+ *
+ * #define GRPC_C_DECLARE_SERIALIZATION_Foo foo_serialize, foo_deserialize
+ *
+ * This will cause gRPC-C to invoke foo_serialize when sending Foo, and correspondingly foo_deserialize when receiving Foo.
+ */
+
 #endif /* GRPC_C_DECLARE_SERIALIZER_H */
