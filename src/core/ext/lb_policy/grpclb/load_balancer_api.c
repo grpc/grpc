@@ -109,11 +109,12 @@ void grpc_grpclb_request_destroy(grpc_grpclb_request *request) {
   gpr_free(request);
 }
 
+typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
 grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
-    gpr_slice encoded_response) {
+    gpr_slice encoded_grpc_grpclb_response) {
   pb_istream_t stream =
-      pb_istream_from_buffer(GPR_SLICE_START_PTR(encoded_response),
-                             GPR_SLICE_LENGTH(encoded_response));
+      pb_istream_from_buffer(GPR_SLICE_START_PTR(encoded_grpc_grpclb_response),
+                             GPR_SLICE_LENGTH(encoded_grpc_grpclb_response));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
   if (!pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res)) {
@@ -128,12 +129,12 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
 }
 
 grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
-    gpr_slice encoded_response) {
+    gpr_slice encoded_grpc_grpclb_response) {
   bool status;
   decode_serverlist_arg arg;
   pb_istream_t stream =
-      pb_istream_from_buffer(GPR_SLICE_START_PTR(encoded_response),
-                             GPR_SLICE_LENGTH(encoded_response));
+      pb_istream_from_buffer(GPR_SLICE_START_PTR(encoded_grpc_grpclb_response),
+                             GPR_SLICE_LENGTH(encoded_grpc_grpclb_response));
   pb_istream_t stream_at_start = stream;
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
@@ -219,35 +220,25 @@ int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
                                  const grpc_grpclb_duration *rhs) {
   GPR_ASSERT(lhs && rhs);
   if (lhs->has_seconds && rhs->has_seconds) {
-    if (lhs->seconds < rhs->seconds) {
-      return -1;
-    }
-    if (lhs->seconds > rhs->seconds) {
-      return 1;
-    }
-    goto compare_nanos;
+    if (lhs->seconds < rhs->seconds) return -1;
+    if (lhs->seconds > rhs->seconds) return 1;
+  } else if (lhs->has_seconds) {
+    return 1;
+  } else if (rhs->has_seconds) {
+    return -1;
   }
-  if (lhs->has_seconds + rhs->has_seconds == 0) {
-    goto compare_nanos;
-  }
-  // only lhs or rhs have seconds
-  return rhs->has_seconds ? 1 : -1;
 
-compare_nanos:
+  GPR_ASSERT(lhs->seconds == rhs->seconds);
   if (lhs->has_nanos && rhs->has_nanos) {
-    if (lhs->nanos < rhs->nanos) {
-      return -1;
-    }
-    if (lhs->nanos > rhs->nanos) {
-      return 1;
-    }
-    return 0;
+    if (lhs->nanos < rhs->nanos) return -1;
+    if (lhs->nanos > rhs->nanos) return 1;
+  } else if (lhs->has_nanos) {
+    return 1;
+  } else if (rhs->has_nanos) {
+    return -1;
   }
-  if (lhs->has_nanos + rhs->has_nanos == 0) {
-    return 0;
-  }
-  // only lhs or rhs have nanos
-  return rhs->has_nanos ? 1 : -1;
+
+  return 0;
 }
 
 void grpc_grpclb_initial_response_destroy(

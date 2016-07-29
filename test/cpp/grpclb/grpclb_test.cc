@@ -98,10 +98,6 @@ typedef struct test_fixture {
   int lb_server_update_delay_ms;
 } test_fixture;
 
-static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
-}
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_slice build_response_payload_slice(
@@ -149,7 +145,8 @@ static gpr_slice build_response_payload_slice(
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, n_seconds_time(5), NULL);
+    ev = grpc_completion_queue_next(cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                    NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -296,7 +293,8 @@ static void start_backend_server(server_fixture *sf) {
                                      tag(100));
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
-    ev = grpc_completion_queue_next(sf->cq, n_seconds_time(60), NULL);
+    ev = grpc_completion_queue_next(sf->cq,
+                                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(60), NULL);
     if (!ev.success) {
       gpr_log(GPR_INFO, "Server[%s] being torn down", sf->servers_hostport);
       cq_verifier_destroy(cqv);
@@ -334,7 +332,8 @@ static void start_backend_server(server_fixture *sf) {
       op++;
       error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
       GPR_ASSERT(GRPC_CALL_OK == error);
-      ev = grpc_completion_queue_next(sf->cq, n_seconds_time(3), NULL);
+      ev = grpc_completion_queue_next(
+          sf->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), NULL);
       if (ev.type == GRPC_OP_COMPLETE && ev.success) {
         GPR_ASSERT(ev.tag = tag(102));
         if (request_payload_recv == NULL) {
@@ -363,7 +362,8 @@ static void start_backend_server(server_fixture *sf) {
         error =
             grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
         GPR_ASSERT(GRPC_CALL_OK == error);
-        ev = grpc_completion_queue_next(sf->cq, n_seconds_time(3), NULL);
+        ev = grpc_completion_queue_next(
+            sf->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), NULL);
         if (ev.type == GRPC_OP_COMPLETE && ev.success) {
           GPR_ASSERT(ev.tag = tag(103));
         } else {
@@ -427,7 +427,7 @@ static void perform_request(client_fixture *cf) {
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
-                               n_seconds_time(1000), NULL);
+                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1000), NULL);
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char *peer;

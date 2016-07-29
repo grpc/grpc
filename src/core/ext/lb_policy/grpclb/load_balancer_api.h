@@ -46,7 +46,6 @@ extern "C" {
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
-typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
 typedef grpc_lb_v1_Server grpc_grpclb_server;
 typedef grpc_lb_v1_Duration grpc_grpclb_duration;
@@ -65,14 +64,14 @@ gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
 /** Destroy \a request */
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
 
-/** Parse (ie, decode) the bytes in \a encoded_response as a \a
+/** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
  * grpc_grpclb_initial_response */
 grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
-    gpr_slice encoded_response);
+    gpr_slice encoded_grpc_grpclb_response);
 
 /** Parse the list of servers from an encoded \a grpc_grpclb_response */
 grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
-    gpr_slice encoded_response);
+    gpr_slice encoded_grpc_grpclb_response);
 
 /** Return a copy of \a sl. The caller is responsible for calling \a
  * grpc_grpclb_destroy_serverlist on the returned copy. */

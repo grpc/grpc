@@ -724,7 +724,6 @@ typedef struct lb_client_data {
 static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 static void md_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 static void req_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
-static void req_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error);
@@ -820,6 +819,23 @@ static void query_for_backends(grpc_exec_ctx *exec_ctx,
   call_error = grpc_call_start_batch_and_execute(
       exec_ctx, glb_policy->lb_client->lb_call, ops, (size_t)(op - ops),
       &glb_policy->lb_client->srv_status_rcvd);
+  GPR_ASSERT(GRPC_CALL_OK == call_error);
+}
+
+static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  lb_client_data *lb_client = arg;
+  GPR_ASSERT(lb_client->lb_call);
+  grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
+  grpc_op *op = ops;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &lb_client->initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  grpc_call_error call_error = grpc_call_start_batch_and_execute(
+      exec_ctx, lb_client->lb_call, ops, (size_t)(op - ops),
+      &lb_client->md_rcvd);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
