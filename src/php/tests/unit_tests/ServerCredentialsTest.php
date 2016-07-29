@@ -47,27 +47,32 @@ class ServerCredentialsTest extends PHPUnit_Framework_TestCase
     {
     }
 
-    public function testCreateSsl()
+    public function testCreateSslWithStrAndArray()
     {
-        // accepts a string and array
         $server_creds = Grpc\ServerCredentials::createSsl($this->ca_data,
             [['private_key' => $this->key_data,
               'cert_chain' => $this->pem_data, ]]);
         $this->assertNotNull($server_creds);
+    }
 
-        // accepts a bool as the third argument
+    public function testCreateSslWithStrAndArrayAndBool()
+    {
         $server_creds = Grpc\ServerCredentials::createSsl($this->ca_data,
             [['private_key' => $this->key_data,
               'cert_chain' => $this->pem_data, ]], true);
         $this->assertNotNull($server_creds);
+    }
 
-        // accepts a array with 1 element as the second argument
+    public function testCreateSslWithNullAndArray()
+    {
         $server_creds = Grpc\ServerCredentials::createSsl(null,
             [['private_key' => $this->key_data,
               'cert_chain' => $this->pem_data, ]]);
         $this->assertNotNull($server_creds);
+    }
 
-        // accepts a array with multi elements as the second argument
+    public function testCreateSslWithArrays()
+    {
         $server_creds = Grpc\ServerCredentials::createSsl(null,
             [['private_key' => $this->key_data,
               'cert_chain' => $this->pem_data, ],
@@ -79,7 +84,7 @@ class ServerCredentialsTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testCreateSslInvalidParam1()
+    public function testCreateSslWithStrNotArray()
     {
         $server_creds = Grpc\ServerCredentials::createSsl($this->ca_data,
                                                           'not_array');
@@ -88,7 +93,7 @@ class ServerCredentialsTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testCreateSslInvalidParam2()
+    public function testCreateSslWithNullArray()
     {
         $server_creds = Grpc\ServerCredentials::createSsl('test', []);
     }
@@ -96,7 +101,7 @@ class ServerCredentialsTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testCreateSslInvalidParam3()
+    public function testCreateSslWithNullArrayAndNotBool()
     {
         $server_creds = Grpc\ServerCredentials::createSsl($this->ca_data, [],
                                                           'test');
@@ -105,7 +110,7 @@ class ServerCredentialsTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testCreateSslInvalidParam4()
+    public function testCreateSslWithNotArrayOfArray()
     {
         $server_creds = Grpc\ServerCredentials::createSsl(null, ['test']);
     }
@@ -113,16 +118,7 @@ class ServerCredentialsTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testCreateSslInvalidParam5()
-    {
-        $server_creds = Grpc\ServerCredentials::createSsl(null,
-            [['private_key' => 'test']]);
-    }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testCreateSslInvalidParam6()
+    public function testCreateSslWithNotCertChainOfArray()
     {
         $server_creds = Grpc\ServerCredentials::createSsl(null,
             [['private_key' => $this->key_data]]);
