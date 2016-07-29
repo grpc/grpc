@@ -33,12 +33,11 @@
 
 
 #include <grpc/grpc.h>
-#include <grpc_c/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
+#include <grpc_c/codegen/unary_async_call.h>
 #include "src/c/unary_async_call.h"
 #include "src/c/alloc.h"
-#include <grpc_c/codegen/unary_async_call.h>
-#include <grpc/support/alloc.h>
 
 static void free_reader_and_call(void *arg) {
   GRPC_client_async_response_reader *reader = arg;
@@ -102,10 +101,10 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *
 
 void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag) {
   reader->meta_buf.user_tag = tag;
-  grpc_start_batch_from_op_set(reader->call, &reader->meta_buf, reader->context, (GRPC_message) {0}, NULL);
+  grpc_start_batch_from_op_set(reader->call, &reader->meta_buf, reader->context, (GRPC_message) {0, 0}, NULL);
 }
 
 void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, void *response, void *tag) {
   reader->finish_buf.user_tag = tag;
-  grpc_start_batch_from_op_set(reader->call, &reader->finish_buf, reader->context, (GRPC_message) {0}, response);
+  grpc_start_batch_from_op_set(reader->call, &reader->finish_buf, reader->context, (GRPC_message) {0, 0}, response);
 }

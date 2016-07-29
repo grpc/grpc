@@ -35,6 +35,7 @@
 #define GRPC_C_CODEGEN_UNARY_BLOCKING_CALL_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
 #include <grpc_c/codegen/method.h>
 #include <grpc_c/codegen/message.h>
 

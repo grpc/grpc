@@ -39,15 +39,14 @@
 #include <grpc_c/status.h>
 #include <grpc_c/codegen/client_context.h>
 #include <grpc_c/codegen/serialization.h>
+#include <grpc_c/codegen/method.h>
 #include <grpc/grpc.h>
 #include "src/c/message.h"
-#include "src/c/call_ops.h"
 #include <stdbool.h>
 
-typedef struct grpc_call_op_set grpc_call_op_set;
-typedef struct grpc_serialization_impl grpc_serialization_impl;
+typedef struct grpc_client_context grpc_client_context;
 
-typedef struct grpc_client_context {
+struct grpc_client_context {
   grpc_metadata *send_metadata_array;
   grpc_metadata_array recv_metadata_array;
   grpc_metadata_array trailing_metadata_array;
@@ -64,8 +63,6 @@ typedef struct grpc_client_context {
   grpc_method rpc_method;
   grpc_channel *channel;
   grpc_call *call;
-} grpc_client_context;
-
-typedef grpc_client_context GRPC_client_context;
+};
 
 #endif // GRPC_C_CLIENT_CONTEXT_H

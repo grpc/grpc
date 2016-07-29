@@ -34,11 +34,11 @@
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
+#include <grpc_c/completion_queue.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/c/server_streaming_blocking_call.h"
-#include <grpc_c/completion_queue.h>
 #include <grpc/support/alloc.h>
+#include "src/c/server_streaming_blocking_call.h"
 #include "src/c/alloc.h"
 #include "src/c/completion_queue.h"
 
@@ -101,7 +101,7 @@ bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, void *respo
     pSet = &set_no_meta;
   }
 
-  grpc_start_batch_from_op_set(reader->call, pSet, reader->context, (GRPC_message) {0}, response);
+  grpc_start_batch_from_op_set(reader->call, pSet, reader->context, (GRPC_message) {0, 0}, response);
   return GRPC_completion_queue_pluck_internal(reader->cq, pSet) && pSet->message_received;
 }
 
@@ -113,7 +113,7 @@ GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
     .context = reader->context,
     .user_tag = &set
   };
-  grpc_start_batch_from_op_set(reader->call, &set, reader->context, (GRPC_message) {0}, NULL);
+  grpc_start_batch_from_op_set(reader->call, &set, reader->context, (GRPC_message) {0, 0}, NULL);
   GRPC_completion_queue_pluck_internal(reader->cq, &set);
   GRPC_completion_queue_shutdown(reader->cq);
   GRPC_completion_queue_shutdown_wait(reader->cq);

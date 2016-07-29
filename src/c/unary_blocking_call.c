@@ -31,15 +31,14 @@
  *
  */
 
-#include "src/c/unary_blocking_call.h"
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
 #include <grpc_c/codegen/method.h>
+#include <grpc/support/log.h>
 #include "src/c/client_context.h"
 #include "src/c/call_ops.h"
+#include "src/c/unary_blocking_call.h"
 #include "src/c/completion_queue.h"
-#include <stdio.h>
-#include <grpc/support/log.h>
 
 GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
                                      GRPC_client_context *const context,

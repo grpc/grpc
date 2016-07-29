@@ -35,15 +35,13 @@
 #ifndef GRPC_C_CALL_OPS_H
 #define GRPC_C_CALL_OPS_H
 
+#include <stdbool.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/method.h>
+#include <grpc/grpc.h>
 #include "src/c/message.h"
 #include "src/c/client_context.h"
-#include <grpc/grpc.h>
-#include <stdbool.h>
 
-typedef GRPC_method grpc_method;
-typedef struct grpc_client_context grpc_client_context;
 typedef struct grpc_call_op_set grpc_call_op_set;
 
 typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_client_context *, grpc_call_op_set *, const grpc_message message, void *response);
@@ -61,7 +59,7 @@ typedef struct grpc_closure {
   void (*callback)(void *arg);
 } grpc_closure;
 
-typedef struct grpc_call_op_set {
+struct grpc_call_op_set {
   const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
   grpc_client_context * const context;
 
@@ -78,7 +76,7 @@ typedef struct grpc_call_op_set {
   void *user_tag;
   bool *user_done;    /* for clients reading a stream */
   grpc_closure async_cleanup;   /* will be called when RPC ends */
-} grpc_call_op_set;
+};
 
 void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_client_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops);
