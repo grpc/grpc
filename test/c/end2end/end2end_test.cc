@@ -165,6 +165,23 @@ TEST(End2endTest, UnaryRpc) {
   test.TearDown();
 }
 
+void racing_thread(UnaryEnd2endTest& test, bool& start_racing, std::mutex& mu, std::condition_variable& cv) {
+  std::default_random_engine generator( std::random_device{}() );
+  std::uniform_int_distribution<> distrib(1, 3);
+  {
+    {
+      std::unique_lock<std::mutex> lock(mu);
+      while (!start_racing) {
+        cv.wait(lock);
+      }
+    }
+    for (int j = 0; j < 5; j++) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(distrib(generator)));
+      test_client_send_unary_rpc(test.c_channel_, 5);
+    }
+  }
+}
+
 TEST(End2endTest, UnaryRpcRacing) {
   UnaryEnd2endTest test;
   test.ResetStub();
@@ -174,22 +191,7 @@ TEST(End2endTest, UnaryRpcRacing) {
   std::condition_variable cv;
   bool start_racing = false;
   for (int i = 0; i < kNumThreads; i++) {
-    threads.push_back(std::thread([&test, &start_racing, &mu, &cv](int id) {
-      std::default_random_engine generator( std::random_device{}() );
-      std::uniform_int_distribution<> distrib(1, 3);
-      {
-        {
-          std::unique_lock<std::mutex> lock(mu);
-          while (!start_racing) {
-            cv.wait(lock);
-          }
-        }
-        for (int j = 0; j < 5; j++) {
-          std::this_thread::sleep_for(std::chrono::milliseconds(distrib(generator)));
-          test_client_send_unary_rpc(test.c_channel_, 5);
-        }
-      }
-    }, i));
+    threads.push_back(std::thread(racing_thread, test, start_racing, mu, cv));
   }
   {
     std::unique_lock<std::mutex> lock(mu);
