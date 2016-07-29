@@ -174,7 +174,7 @@ TEST(End2endTest, UnaryRpcRacing) {
   std::condition_variable cv;
   bool start_racing = false;
   for (int i = 0; i < kNumThreads; i++) {
-    threads.push_back(std::move(std::thread([&test, &start_racing, &mu, &cv](int id) {
+    threads.push_back(std::thread([&test, &start_racing, &mu, &cv](int id) {
       std::default_random_engine generator( std::random_device{}() );
       std::uniform_int_distribution<> distrib(1, 3);
       {
@@ -189,7 +189,7 @@ TEST(End2endTest, UnaryRpcRacing) {
           test_client_send_unary_rpc(test.c_channel_, 5);
         }
       }
-    }, i)));
+    }, i));
   }
   {
     std::unique_lock<std::mutex> lock(mu);
