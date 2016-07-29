@@ -32,7 +32,7 @@
 #
 
 require 'grpc'
-require 'math'
+require 'math_pb'
 
 module Math
   module Math
