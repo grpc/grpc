@@ -123,18 +123,12 @@ gpr_log(GPR_ERROR, "==> %s()", __func__);
   const char* msg = grpc_error_string(error);
   gpr_log(GPR_ERROR, "%s: %s", prefix, msg);
   grpc_error_free_string(msg);
-  GRPC_ERROR_UNREF(error);
-gpr_log(GPR_ERROR, "HERE 0");
   grpc_endpoint_shutdown(exec_ctx, cd->client_endpoint);
-gpr_log(GPR_ERROR, "HERE 1");
   if (cd->server_endpoint != NULL)
     grpc_endpoint_shutdown(exec_ctx, cd->server_endpoint);
-gpr_log(GPR_ERROR, "HERE 2");
   if (gpr_unref(&cd->refcount)) {
-gpr_log(GPR_ERROR, "HERE 2.5");
     connection_data_destroy(exec_ctx, cd);
   }
-gpr_log(GPR_ERROR, "HERE 3");
 }
 
 static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
@@ -365,6 +359,7 @@ gpr_log(GPR_ERROR, "Proxy address: %s", proxy->proxy_name);
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
   grpc_pollset_destroy(p);
+  gpr_free(p);
 }
 
 // FIXME: remove (including all references below)
@@ -397,24 +392,17 @@ gpr_log(GPR_ERROR, "==> %s()", __func__);
   grpc_end2end_http_proxy *proxy = arg;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   do {
-gpr_log(GPR_ERROR, "HERE a");
     const gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     const gpr_timespec deadline =
         gpr_time_add(now, gpr_time_from_seconds(5, GPR_TIMESPAN));
     grpc_pollset_worker *worker = NULL;
-gpr_log(GPR_ERROR, "HERE b");
     gpr_mu_lock(proxy->mu);
-gpr_log(GPR_ERROR, "HERE c");
     GRPC_LOG_IF_ERROR("grpc_pollset_work",
                       grpc_pollset_work(&exec_ctx, proxy->pollset, &worker,
                       now, deadline));
-gpr_log(GPR_ERROR, "HERE d");
     gpr_mu_unlock(proxy->mu);
-gpr_log(GPR_ERROR, "HERE e");
     grpc_exec_ctx_flush(&exec_ctx);
-gpr_log(GPR_ERROR, "HERE f");
   } while (!proxy->shutdown);
-gpr_log(GPR_ERROR, "HERE g");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
