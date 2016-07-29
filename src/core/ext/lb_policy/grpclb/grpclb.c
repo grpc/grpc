@@ -222,6 +222,10 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   *root = pping;
 }
 
+
+/*
+ * glb_lb_policy
+ */
 typedef struct rr_connectivity_data rr_connectivity_data;
 typedef struct lb_client_data lb_client_data;
 static const grpc_lb_policy_vtable glb_lb_policy_vtable;
@@ -275,6 +279,7 @@ struct rr_connectivity_data {
   grpc_connectivity_state state;
   glb_lb_policy *glb_policy;
 };
+
 static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
                                  const grpc_grpclb_serverlist *serverlist,
                                  glb_lb_policy *glb_policy) {
@@ -323,6 +328,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   gpr_free(args.addresses);
   return rr;
 }
+
 static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
                         grpc_error *error) {
   GRPC_ERROR_REF(error);
@@ -375,6 +381,7 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
   }
   GRPC_ERROR_UNREF(error);
 }
+
 static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
   rr_connectivity_data *rr_conn_data = arg;
@@ -575,12 +582,14 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
   gpr_mu_unlock(&glb_policy->mu);
 }
+
 static void query_for_backends(grpc_exec_ctx *exec_ctx,
                                glb_lb_policy *glb_policy);
 static void start_picking(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy) {
   glb_policy->started_picking = true;
   query_for_backends(exec_ctx, glb_policy);
 }
+
 static void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
@@ -589,6 +598,7 @@ static void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
   gpr_mu_unlock(&glb_policy->mu);
 }
+
 static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                     grpc_polling_entity *pollent,
                     grpc_metadata_batch *initial_metadata,
@@ -639,6 +649,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&glb_policy->mu);
   return r;
 }
+
 static grpc_connectivity_state glb_check_connectivity(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_error **connectivity_error) {
@@ -650,6 +661,7 @@ static grpc_connectivity_state glb_check_connectivity(
   gpr_mu_unlock(&glb_policy->mu);
   return st;
 }
+
 static void glb_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                          grpc_closure *closure) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
@@ -664,6 +676,7 @@ static void glb_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
   gpr_mu_unlock(&glb_policy->mu);
 }
+
 static void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                        grpc_lb_policy *pol,
                                        grpc_connectivity_state *current,
@@ -676,7 +689,11 @@ static void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&glb_policy->mu);
 }
 
-/* Used internally for the client call to the LB */
+
+/*
+ * lb_client_data
+ *
+ * Used internally for the client call to the LB */
 typedef struct lb_client_data {
   gpr_mu mu;
 
@@ -771,6 +788,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   lb_client->glb_policy = glb_policy;
   return lb_client;
 }
+
 static void lb_client_data_destroy(lb_client_data *lb_client) {
   grpc_metadata_array_destroy(&lb_client->initial_metadata_recv);
   grpc_metadata_array_destroy(&lb_client->trailing_metadata_recv);
@@ -785,6 +803,9 @@ static grpc_call *lb_client_data_get_call(lb_client_data *lb_client) {
   return lb_client->lb_call;
 }
 
+/*
+ * Auxiliary functions and LB client callbacks.
+ */
 static void query_for_backends(grpc_exec_ctx *exec_ctx,
                                glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_channel != NULL);
@@ -992,6 +1013,7 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
    * the original call?) */
 }
 
+/* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,     glb_shutdown,           glb_pick,
     glb_cancel_pick, glb_cancel_picks,       glb_ping_one,
@@ -1011,7 +1033,6 @@ grpc_lb_policy_factory *grpc_glb_lb_factory_create() {
 }
 
 /* Plugin registration */
-
 void grpc_lb_policy_grpclb_init() {
   grpc_register_lb_policy(grpc_glb_lb_factory_create());
   grpc_register_tracer("glb", &grpc_lb_glb_trace);
