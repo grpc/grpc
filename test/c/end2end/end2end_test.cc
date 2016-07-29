@@ -37,15 +37,6 @@
 #if (__GNUC__ == 4) && (__GNUC_MINOR__ <= 4)
 // Workaround macro bug
 #define _GLIBCXX_USE_NANOSLEEP
-#include <tr1/random>
-using std::tr1::default_random_engine;
-using std::tr1::random_device;
-using std::tr1::uniform_int_distribution;
-#else
-#include <random>
-using std::default_random_engine;
-using std::random_device;
-using std::uniform_int_distribution;
 #endif
 
 #include <mutex>
@@ -181,20 +172,19 @@ TEST(End2endTest, UnaryRpc) {
   test.TearDown();
 }
 
-void racing_thread(UnaryEnd2endTest& test, bool& start_racing, std::mutex& mu, std::condition_variable& cv) {
-  default_random_engine generator( random_device{}() );
-  uniform_int_distribution<> distrib(1, 3);
+static const int kNumThreads = 50;
+
+void racing_thread(UnaryEnd2endTest& test, bool& start_racing, std::mutex& mu, std::condition_variable& cv, int id) {
+  unsigned int seed = time(NULL) * kNumThreads + id;
   {
-    {
-      std::unique_lock<std::mutex> lock(mu);
-      while (!start_racing) {
-        cv.wait(lock);
-      }
+    std::unique_lock<std::mutex> lock(mu);
+    while (!start_racing) {
+      cv.wait(lock);
     }
-    for (int j = 0; j < 5; j++) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(distrib(generator)));
-      test_client_send_unary_rpc(test.c_channel_, 5);
-    }
+  }
+  for (int j = 0; j < 5; j++) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(rand_r(&seed) % 3 + 1));
+    test_client_send_unary_rpc(test.c_channel_, 5);
   }
 }
 
@@ -202,12 +192,11 @@ TEST(End2endTest, UnaryRpcRacing) {
   UnaryEnd2endTest test;
   test.ResetStub();
   std::vector<std::thread> threads;
-  const int kNumThreads = 50;
   std::mutex mu;
   std::condition_variable cv;
   bool start_racing = false;
   for (int i = 0; i < kNumThreads; i++) {
-    threads.push_back(std::thread(racing_thread, std::ref(test), std::ref(start_racing), std::ref(mu), std::ref(cv)));
+    threads.push_back(std::thread(racing_thread, std::ref(test), std::ref(start_racing), std::ref(mu), std::ref(cv), i));
   }
   {
     std::unique_lock<std::mutex> lock(mu);
