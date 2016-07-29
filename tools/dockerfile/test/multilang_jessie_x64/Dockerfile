@@ -80,6 +80,8 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     nuget \
     && apt-get clean
 
+RUN nuget update -self
+
 #=================
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
