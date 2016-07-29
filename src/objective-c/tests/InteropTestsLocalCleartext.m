@@ -48,10 +48,10 @@ static NSString * const kLocalCleartextHost = @"localhost:5050";
 }
 
 - (void)setUp {
+  [super setUp];
+
   // Register test server as non-SSL.
   [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
-
-  [super setUp];
 }
 
 @end
