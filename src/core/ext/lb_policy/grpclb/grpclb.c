@@ -61,7 +61,7 @@
  * out, the usual behavior of pick-first applies, continuing to pick from the
  * list {a1..an}.
  *
- * Upon sucesss, a \a LoadBalancingResponse is expected in \a res_rcvd_cb. An
+ * Upon sucesss, a \a LoadBalancingResponse is expected in \a res_recv_cb. An
  * invalid one results in the termination of the streaming call. A new streaming
  * call should be created if possible, failing the original call otherwise.
  * For a valid \a LoadBalancingResponse, the server list of actual backends is
@@ -180,6 +180,25 @@ typedef struct pending_pick {
   wrapped_rr_closure_arg wrapped_on_complete_arg;
 } pending_pick;
 
+static void add_pending_pick(pending_pick **root, grpc_polling_entity *pollent,
+                             grpc_metadata_batch *initial_metadata,
+                             uint32_t initial_metadata_flags,
+                             grpc_connected_subchannel **target,
+                             grpc_closure *on_complete) {
+  pending_pick *pp = gpr_malloc(sizeof(*pp));
+  memset(pp, 0, sizeof(pending_pick));
+  memset(&pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
+  pp->next = *root;
+  pp->pollent = pollent;
+  pp->target = target;
+  pp->initial_metadata = initial_metadata;
+  pp->initial_metadata_flags = initial_metadata_flags;
+  pp->wrapped_on_complete_arg.wrapped_closure = on_complete;
+  grpc_closure_init(&pp->wrapped_on_complete, wrapped_rr_closure,
+                    &pp->wrapped_on_complete_arg);
+  *root = pp;
+}
+
 /* Same as the \a pending_pick struct but for ping operations */
 typedef struct pending_ping {
   struct pending_ping *next;
@@ -192,61 +211,21 @@ typedef struct pending_ping {
   wrapped_rr_closure_arg wrapped_notify_arg;
 } pending_ping;
 
-typedef struct glb_lb_policy glb_lb_policy;
+static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
+  pending_ping *pping = gpr_malloc(sizeof(*pping));
+  memset(pping, 0, sizeof(pending_ping));
+  memset(&pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
+  pping->next = *root;
+  grpc_closure_init(&pping->wrapped_notify, wrapped_rr_closure,
+                    &pping->wrapped_notify_arg);
+  pping->wrapped_notify_arg.wrapped_closure = notify;
+  *root = pping;
+}
 
-/* Used internally for the client call to the LB */
-typedef struct lb_client_data {
-  gpr_mu mu;
-
-  /* called once initial metadata's been sent */
-  grpc_closure md_sent;
-
-  /* called once initial metadata's been received */
-  grpc_closure md_rcvd;
-
-  /* called once the LoadBalanceRequest has been sent to the LB server. See
-   * src/proto/grpc/.../load_balancer.proto */
-  grpc_closure req_sent;
-
-  /* A response from the LB server has been received (or error). Process it */
-  grpc_closure res_rcvd;
-
-  /* After the client has sent a close to the LB server */
-  grpc_closure close_sent;
-
-  /* ... and the status from the LB server has been received */
-  grpc_closure srv_status_rcvd;
-
-  grpc_call *lb_call;    /* streaming call to the LB server, */
-  gpr_timespec deadline; /* for the streaming call to the LB server */
-
-  grpc_metadata_array initial_metadata_recv;  /* initial MD from LB server */
-  grpc_metadata_array trailing_metadata_recv; /* trailing MD from LB server */
-
-  /* what's being sent to the LB server. Note that its value may vary if the LB
-   * server indicates a redirect. */
-  grpc_byte_buffer *request_payload;
-
-  /* response from the LB server, if any. Processed in res_rcvd_cb() */
-  grpc_byte_buffer *response_payload;
-
-  /* the call's status and status detailset in srv_status_rcvd_cb() */
-  grpc_status_code status;
-  char *status_details;
-  size_t status_details_capacity;
-
-  /* pointer back to the enclosing policy */
-  glb_lb_policy *glb_policy;
-} lb_client_data;
-
-/* Keeps track and reacts to changes in connectivity of the RR instance */
-typedef struct rr_connectivity_data {
-  grpc_closure on_change;
-  grpc_connectivity_state state;
-  glb_lb_policy *glb_policy;
-} rr_connectivity_data;
-
-struct glb_lb_policy {
+typedef struct rr_connectivity_data rr_connectivity_data;
+typedef struct lb_client_data lb_client_data;
+static const grpc_lb_policy_vtable glb_lb_policy_vtable;
+typedef struct glb_lb_policy {
   /** base policy: must be first */
   grpc_lb_policy base;
 
@@ -288,10 +267,114 @@ struct glb_lb_policy {
 
   /* arguments for the wrapped_on_complete closure */
   wrapped_rr_closure_arg wc_arg;
-};
+} glb_lb_policy;
 
+/* Keeps track and reacts to changes in connectivity of the RR instance */
+struct rr_connectivity_data {
+  grpc_closure on_change;
+  grpc_connectivity_state state;
+  glb_lb_policy *glb_policy;
+};
+static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
+                                 const grpc_grpclb_serverlist *serverlist,
+                                 glb_lb_policy *glb_policy) {
+  /* TODO(dgq): support mixed ip version */
+  GPR_ASSERT(serverlist != NULL && serverlist->num_servers > 0);
+  char **host_ports = gpr_malloc(sizeof(char *) * serverlist->num_servers);
+  for (size_t i = 0; i < serverlist->num_servers; ++i) {
+    gpr_join_host_port(&host_ports[i], serverlist->servers[i]->ip_address,
+                       serverlist->servers[i]->port);
+  }
+
+  size_t uri_path_len;
+  char *concat_ipports = gpr_strjoin_sep(
+      (const char **)host_ports, serverlist->num_servers, ",", &uri_path_len);
+
+  grpc_lb_policy_args args;
+  args.client_channel_factory = glb_policy->cc_factory;
+  args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
+  args.addresses->naddrs = serverlist->num_servers;
+  args.addresses->addrs =
+      gpr_malloc(sizeof(grpc_resolved_address) * args.addresses->naddrs);
+  size_t out_addrs_idx = 0;
+  for (size_t i = 0; i < serverlist->num_servers; ++i) {
+    grpc_uri uri;
+    struct sockaddr_storage sa;
+    size_t sa_len;
+    uri.path = host_ports[i];
+    if (parse_ipv4(&uri, &sa, &sa_len)) { /* TODO(dgq): add support for ipv6 */
+      memcpy(args.addresses->addrs[out_addrs_idx].addr, &sa, sa_len);
+      args.addresses->addrs[out_addrs_idx].len = sa_len;
+      ++out_addrs_idx;
+    } else {
+      gpr_log(GPR_ERROR, "Invalid LB service address '%s', ignoring.",
+              host_ports[i]);
+    }
+  }
+
+  grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
+
+  gpr_free(concat_ipports);
+  for (size_t i = 0; i < serverlist->num_servers; i++) {
+    gpr_free(host_ports[i]);
+  }
+  gpr_free(host_ports);
+  gpr_free(args.addresses->addrs);
+  gpr_free(args.addresses);
+  return rr;
+}
 static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
-                        grpc_error *error);
+                        grpc_error *error) {
+  GRPC_ERROR_REF(error);
+  glb_policy->rr_policy =
+      create_rr(exec_ctx, glb_policy->serverlist, glb_policy);
+
+  if (grpc_lb_glb_trace) {
+    gpr_log(GPR_INFO, "Created RR policy (0x%" PRIxPTR ")",
+            (intptr_t)glb_policy->rr_policy);
+  }
+  GPR_ASSERT(glb_policy->rr_policy != NULL);
+  glb_policy->rr_connectivity->state = grpc_lb_policy_check_connectivity(
+      exec_ctx, glb_policy->rr_policy, &error);
+  grpc_lb_policy_notify_on_state_change(
+      exec_ctx, glb_policy->rr_policy, &glb_policy->rr_connectivity->state,
+      &glb_policy->rr_connectivity->on_change);
+  grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
+                              glb_policy->rr_connectivity->state, error,
+                              "rr_handover");
+  grpc_lb_policy_exit_idle(exec_ctx, glb_policy->rr_policy);
+
+  /* flush pending ops */
+  pending_pick *pp;
+  while ((pp = glb_policy->pending_picks)) {
+    glb_policy->pending_picks = pp->next;
+    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_pick");
+    pp->wrapped_on_complete_arg.rr_policy = glb_policy->rr_policy;
+    if (grpc_lb_glb_trace) {
+      gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
+              (intptr_t)glb_policy->rr_policy);
+    }
+    grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pp->pollent,
+                        pp->initial_metadata, pp->initial_metadata_flags,
+                        pp->target, &pp->wrapped_on_complete);
+    pp->wrapped_on_complete_arg.owning_pending_node = pp;
+  }
+
+  pending_ping *pping;
+  while ((pping = glb_policy->pending_pings)) {
+    glb_policy->pending_pings = pping->next;
+    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_ping");
+    pping->wrapped_notify_arg.rr_policy = glb_policy->rr_policy;
+    if (grpc_lb_glb_trace) {
+      gpr_log(GPR_INFO, "Pending ping about to PING from 0x%" PRIxPTR "",
+              (intptr_t)glb_policy->rr_policy);
+    }
+    grpc_lb_policy_ping_one(exec_ctx, glb_policy->rr_policy,
+                            &pping->wrapped_notify);
+    pping->wrapped_notify_arg.owning_pending_node = pping;
+  }
+  GRPC_ERROR_UNREF(error);
+}
 static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
   rr_connectivity_data *rr_conn_data = arg;
@@ -322,52 +405,421 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_ERROR_UNREF(error);
 }
 
-static void add_pending_pick(pending_pick **root, grpc_polling_entity *pollent,
-                             grpc_metadata_batch *initial_metadata,
-                             uint32_t initial_metadata_flags,
-                             grpc_connected_subchannel **target,
-                             grpc_closure *on_complete) {
-  pending_pick *pp = gpr_malloc(sizeof(*pp));
-  memset(pp, 0, sizeof(pending_pick));
-  memset(&pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
-  pp->next = *root;
-  pp->pollent = pollent;
-  pp->target = target;
-  pp->initial_metadata = initial_metadata;
-  pp->initial_metadata_flags = initial_metadata_flags;
-  pp->wrapped_on_complete_arg.wrapped_closure = on_complete;
-  grpc_closure_init(&pp->wrapped_on_complete, wrapped_rr_closure,
-                    &pp->wrapped_on_complete_arg);
-  *root = pp;
+static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
+                                  grpc_lb_policy_factory *factory,
+                                  grpc_lb_policy_args *args) {
+  glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
+  memset(glb_policy, 0, sizeof(*glb_policy));
+
+  /* All input addresses in args->addresses come from a resolver that claims
+   * they are LB services. It's the resolver's responsibility to make sure this
+   * policy is only instantiated and used in that case.
+   *
+   * Create a client channel over them to communicate with a LB service */
+  glb_policy->cc_factory = args->client_channel_factory;
+  GPR_ASSERT(glb_policy->cc_factory != NULL);
+  if (args->addresses->naddrs == 0) {
+    return NULL;
+  }
+
+  /* construct a target from the args->addresses, in the form
+   * ipvX://ip1:port1,ip2:port2,...
+   * TODO(dgq): support mixed ip version */
+  char **addr_strs = gpr_malloc(sizeof(char *) * args->addresses->naddrs);
+  addr_strs[0] =
+      grpc_sockaddr_to_uri((const struct sockaddr *)&args->addresses->addrs[0]);
+  for (size_t i = 1; i < args->addresses->naddrs; i++) {
+    GPR_ASSERT(grpc_sockaddr_to_string(
+                   &addr_strs[i],
+                   (const struct sockaddr *)&args->addresses->addrs[i],
+                   true) == 0);
+  }
+  size_t uri_path_len;
+  char *target_uri_str = gpr_strjoin_sep(
+      (const char **)addr_strs, args->addresses->naddrs, ",", &uri_path_len);
+
+  /* will pick using pick_first */
+  glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
+      exec_ctx, glb_policy->cc_factory, target_uri_str,
+      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
+
+  gpr_free(target_uri_str);
+  for (size_t i = 0; i < args->addresses->naddrs; i++) {
+    gpr_free(addr_strs[i]);
+  }
+  gpr_free(addr_strs);
+
+  if (glb_policy->lb_channel == NULL) {
+    gpr_free(glb_policy);
+    return NULL;
+  }
+
+  rr_connectivity_data *rr_connectivity =
+      gpr_malloc(sizeof(rr_connectivity_data));
+  memset(rr_connectivity, 0, sizeof(rr_connectivity_data));
+  grpc_closure_init(&rr_connectivity->on_change, rr_connectivity_changed,
+                    rr_connectivity);
+  rr_connectivity->glb_policy = glb_policy;
+  glb_policy->rr_connectivity = rr_connectivity;
+
+  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable);
+  gpr_mu_init(&glb_policy->mu);
+  grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
+                               "grpclb");
+  return &glb_policy->base;
 }
 
-static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
-  pending_ping *pping = gpr_malloc(sizeof(*pping));
-  memset(pping, 0, sizeof(pending_ping));
-  memset(&pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
-  pping->next = *root;
-  grpc_closure_init(&pping->wrapped_notify, wrapped_rr_closure,
-                    &pping->wrapped_notify_arg);
-  pping->wrapped_notify_arg.wrapped_closure = notify;
-  *root = pping;
+static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  GPR_ASSERT(glb_policy->pending_picks == NULL);
+  GPR_ASSERT(glb_policy->pending_pings == NULL);
+  grpc_channel_destroy(glb_policy->lb_channel);
+  glb_policy->lb_channel = NULL;
+  grpc_connectivity_state_destroy(exec_ctx, &glb_policy->state_tracker);
+  if (glb_policy->serverlist != NULL) {
+    grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
+  }
+  gpr_mu_destroy(&glb_policy->mu);
+  gpr_free(glb_policy);
 }
 
-static void lb_client_data_destroy(lb_client_data *lb_client);
+static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
 
-static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  lb_client_data *lb_client = arg;
-  GPR_ASSERT(lb_client->lb_call);
+  pending_pick *pp = glb_policy->pending_picks;
+  glb_policy->pending_picks = NULL;
+  pending_ping *pping = glb_policy->pending_pings;
+  glb_policy->pending_pings = NULL;
+  gpr_mu_unlock(&glb_policy->mu);
+
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    *pp->target = NULL;
+    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete, GRPC_ERROR_NONE,
+                        NULL);
+    gpr_free(pp);
+    pp = next;
+  }
+
+  while (pping != NULL) {
+    pending_ping *next = pping->next;
+    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify, GRPC_ERROR_NONE,
+                        NULL);
+    pping = next;
+  }
+
+  if (glb_policy->rr_policy) {
+    /* unsubscribe */
+    grpc_lb_policy_notify_on_state_change(
+        exec_ctx, glb_policy->rr_policy, NULL,
+        &glb_policy->rr_connectivity->on_change);
+    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
+  }
+
+  grpc_connectivity_state_set(
+      exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
+      GRPC_ERROR_CREATE("Channel Shutdown"), "glb_shutdown");
+}
+
+static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                            grpc_connected_subchannel **target) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
+  pending_pick *pp = glb_policy->pending_picks;
+  glb_policy->pending_picks = NULL;
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    if (pp->target == target) {
+      grpc_polling_entity_del_from_pollset_set(
+          exec_ctx, pp->pollent, glb_policy->base.interested_parties);
+      *target = NULL;
+      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
+                          GRPC_ERROR_CANCELLED, NULL);
+      gpr_free(pp);
+    } else {
+      pp->next = glb_policy->pending_picks;
+      glb_policy->pending_picks = pp;
+    }
+    pp = next;
+  }
+  gpr_mu_unlock(&glb_policy->mu);
+}
+
+static grpc_call *lb_client_data_get_call(lb_client_data *lb_client);
+static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                             uint32_t initial_metadata_flags_mask,
+                             uint32_t initial_metadata_flags_eq) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
+  if (glb_policy->lb_client != NULL) {
+    /* cancel the call to the load balancer service, if any */
+    grpc_call_cancel(lb_client_data_get_call(glb_policy->lb_client), NULL);
+  }
+  pending_pick *pp = glb_policy->pending_picks;
+  glb_policy->pending_picks = NULL;
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
+        initial_metadata_flags_eq) {
+      grpc_polling_entity_del_from_pollset_set(
+          exec_ctx, pp->pollent, glb_policy->base.interested_parties);
+      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
+                          GRPC_ERROR_CANCELLED, NULL);
+      gpr_free(pp);
+    } else {
+      pp->next = glb_policy->pending_picks;
+      glb_policy->pending_picks = pp;
+    }
+    pp = next;
+  }
+  gpr_mu_unlock(&glb_policy->mu);
+}
+static void query_for_backends(grpc_exec_ctx *exec_ctx,
+                               glb_lb_policy *glb_policy);
+static void start_picking(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy) {
+  glb_policy->started_picking = true;
+  query_for_backends(exec_ctx, glb_policy);
+}
+static void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
+  if (!glb_policy->started_picking) {
+    start_picking(exec_ctx, glb_policy);
+  }
+  gpr_mu_unlock(&glb_policy->mu);
+}
+static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                    grpc_polling_entity *pollent,
+                    grpc_metadata_batch *initial_metadata,
+                    uint32_t initial_metadata_flags,
+                    grpc_connected_subchannel **target,
+                    grpc_closure *on_complete) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
+  int r;
+
+  if (glb_policy->rr_policy != NULL) {
+    if (grpc_lb_glb_trace) {
+      gpr_log(GPR_INFO, "about to PICK from 0x%" PRIxPTR "",
+              (intptr_t)glb_policy->rr_policy);
+    }
+    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
+    memset(&glb_policy->wc_arg, 0, sizeof(wrapped_rr_closure_arg));
+    glb_policy->wc_arg.rr_policy = glb_policy->rr_policy;
+    glb_policy->wc_arg.wrapped_closure = on_complete;
+    grpc_closure_init(&glb_policy->wrapped_on_complete, wrapped_rr_closure,
+                      &glb_policy->wc_arg);
+    r = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pollent,
+                            initial_metadata, initial_metadata_flags, target,
+                            &glb_policy->wrapped_on_complete);
+    if (r != 0) {
+      /* the call to grpc_lb_policy_pick has been sychronous. Unreffing the RR
+       * policy and notify the original callback */
+      glb_policy->wc_arg.wrapped_closure = NULL;
+      if (grpc_lb_glb_trace) {
+        gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
+                (intptr_t)glb_policy->wc_arg.rr_policy);
+      }
+      GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->wc_arg.rr_policy, "glb_pick");
+      grpc_exec_ctx_sched(exec_ctx, glb_policy->wc_arg.wrapped_closure,
+                          GRPC_ERROR_NONE, NULL);
+    }
+  } else {
+    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
+                                           glb_policy->base.interested_parties);
+    add_pending_pick(&glb_policy->pending_picks, pollent, initial_metadata,
+                     initial_metadata_flags, target, on_complete);
+
+    if (!glb_policy->started_picking) {
+      start_picking(exec_ctx, glb_policy);
+    }
+    r = 0;
+  }
+  gpr_mu_unlock(&glb_policy->mu);
+  return r;
+}
+static grpc_connectivity_state glb_check_connectivity(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+    grpc_error **connectivity_error) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  grpc_connectivity_state st;
+  gpr_mu_lock(&glb_policy->mu);
+  st = grpc_connectivity_state_check(&glb_policy->state_tracker,
+                                     connectivity_error);
+  gpr_mu_unlock(&glb_policy->mu);
+  return st;
+}
+static void glb_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                         grpc_closure *closure) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
+  if (glb_policy->rr_policy) {
+    grpc_lb_policy_ping_one(exec_ctx, glb_policy->rr_policy, closure);
+  } else {
+    add_pending_ping(&glb_policy->pending_pings, closure);
+    if (!glb_policy->started_picking) {
+      start_picking(exec_ctx, glb_policy);
+    }
+  }
+  gpr_mu_unlock(&glb_policy->mu);
+}
+static void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx,
+                                       grpc_lb_policy *pol,
+                                       grpc_connectivity_state *current,
+                                       grpc_closure *notify) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+  gpr_mu_lock(&glb_policy->mu);
+  grpc_connectivity_state_notify_on_state_change(
+      exec_ctx, &glb_policy->state_tracker, current, notify);
+
+  gpr_mu_unlock(&glb_policy->mu);
+}
+
+/* Used internally for the client call to the LB */
+typedef struct lb_client_data {
+  gpr_mu mu;
+
+  /* called once initial metadata's been sent */
+  grpc_closure md_sent;
+
+  /* called once initial metadata's been received */
+  grpc_closure md_rcvd;
+
+  /* called once the LoadBalanceRequest has been sent to the LB server. See
+   * src/proto/grpc/.../load_balancer.proto */
+  grpc_closure req_sent;
+
+  /* A response from the LB server has been received (or error). Process it */
+  grpc_closure res_rcvd;
+
+  /* After the client has sent a close to the LB server */
+  grpc_closure close_sent;
+
+  /* ... and the status from the LB server has been received */
+  grpc_closure srv_status_rcvd;
+
+  grpc_call *lb_call;    /* streaming call to the LB server, */
+  gpr_timespec deadline; /* for the streaming call to the LB server */
+
+  grpc_metadata_array initial_metadata_recv;  /* initial MD from LB server */
+  grpc_metadata_array trailing_metadata_recv; /* trailing MD from LB server */
+
+  /* what's being sent to the LB server. Note that its value may vary if the LB
+   * server indicates a redirect. */
+  grpc_byte_buffer *request_payload;
+
+  /* response from the LB server, if any. Processed in res_recv_cb() */
+  grpc_byte_buffer *response_payload;
+
+  /* the call's status and status detailset in srv_status_rcvd_cb() */
+  grpc_status_code status;
+  char *status_details;
+  size_t status_details_capacity;
+
+  /* pointer back to the enclosing policy */
+  glb_lb_policy *glb_policy;
+} lb_client_data;
+
+static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+static void md_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+static void req_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+static void req_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg,
+                          grpc_error *error);
+static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error);
+
+static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
+  lb_client_data *lb_client = gpr_malloc(sizeof(lb_client_data));
+  memset(lb_client, 0, sizeof(lb_client_data));
+
+  gpr_mu_init(&lb_client->mu);
+  grpc_closure_init(&lb_client->md_sent, md_sent_cb, lb_client);
+
+  grpc_closure_init(&lb_client->md_rcvd, md_recv_cb, lb_client);
+  grpc_closure_init(&lb_client->req_sent, req_sent_cb, lb_client);
+  grpc_closure_init(&lb_client->res_rcvd, res_recv_cb, lb_client);
+  grpc_closure_init(&lb_client->close_sent, close_sent_cb, lb_client);
+  grpc_closure_init(&lb_client->srv_status_rcvd, srv_status_rcvd_cb, lb_client);
+
+  /* TODO(dgq): get the deadline from the client config instead of fabricating
+   * one here. */
+  lb_client->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                     gpr_time_from_seconds(3, GPR_TIMESPAN));
+
+  lb_client->lb_call = grpc_channel_create_pollset_set_call(
+      glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
+      glb_policy->base.interested_parties, "/BalanceLoad",
+      NULL, /* FIXME(dgq): which "host" value to use? */
+      lb_client->deadline, NULL);
+
+  grpc_metadata_array_init(&lb_client->initial_metadata_recv);
+  grpc_metadata_array_init(&lb_client->trailing_metadata_recv);
+
+  grpc_grpclb_request *request = grpc_grpclb_request_create(
+      "load.balanced.service.name"); /* FIXME(dgq): get the name of the load
+                                        balanced service from the resolver */
+  gpr_slice request_payload_slice = grpc_grpclb_request_encode(request);
+  lb_client->request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  gpr_slice_unref(request_payload_slice);
+  grpc_grpclb_request_destroy(request);
+
+  lb_client->status_details = NULL;
+  lb_client->status_details_capacity = 0;
+  lb_client->glb_policy = glb_policy;
+  return lb_client;
+}
+static void lb_client_data_destroy(lb_client_data *lb_client) {
+  grpc_metadata_array_destroy(&lb_client->initial_metadata_recv);
+  grpc_metadata_array_destroy(&lb_client->trailing_metadata_recv);
+
+  grpc_byte_buffer_destroy(lb_client->request_payload);
+
+  gpr_free(lb_client->status_details);
+  gpr_mu_destroy(&lb_client->mu);
+  gpr_free(lb_client);
+}
+static grpc_call *lb_client_data_get_call(lb_client_data *lb_client) {
+  return lb_client->lb_call;
+}
+
+static void query_for_backends(grpc_exec_ctx *exec_ctx,
+                               glb_lb_policy *glb_policy) {
+  GPR_ASSERT(glb_policy->lb_channel != NULL);
+
+  glb_policy->lb_client = lb_client_data_create(glb_policy);
+  grpc_call_error call_error;
   grpc_op ops[1];
   memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &lb_client->initial_metadata_recv;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, lb_client->lb_call, ops, (size_t)(op - ops),
-      &lb_client->md_rcvd);
+  call_error = grpc_call_start_batch_and_execute(
+      exec_ctx, glb_policy->lb_client->lb_call, ops, (size_t)(op - ops),
+      &glb_policy->lb_client->md_sent);
+  GPR_ASSERT(GRPC_CALL_OK == call_error);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata =
+      &glb_policy->lb_client->trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &glb_policy->lb_client->status;
+  op->data.recv_status_on_client.status_details =
+      &glb_policy->lb_client->status_details;
+  op->data.recv_status_on_client.status_details_capacity =
+      &glb_policy->lb_client->status_details_capacity;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  call_error = grpc_call_start_batch_and_execute(
+      exec_ctx, glb_policy->lb_client->lb_call, ops, (size_t)(op - ops),
+      &glb_policy->lb_client->srv_status_rcvd);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -407,7 +859,7 @@ static void req_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   lb_client_data *lb_client = arg;
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
@@ -504,8 +956,6 @@ static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
-static void query_for_backends(grpc_exec_ctx *exec_ctx,
-                               glb_lb_policy *glb_policy);
 static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   lb_client_data *lb_client = arg;
@@ -526,408 +976,6 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
    * the original call?) */
 }
 
-static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
-  lb_client_data *lb_client = gpr_malloc(sizeof(lb_client_data));
-  memset(lb_client, 0, sizeof(lb_client_data));
-
-  gpr_mu_init(&lb_client->mu);
-  grpc_closure_init(&lb_client->md_sent, md_sent_cb, lb_client);
-
-  grpc_closure_init(&lb_client->md_rcvd, md_recv_cb, lb_client);
-  grpc_closure_init(&lb_client->req_sent, req_sent_cb, lb_client);
-  grpc_closure_init(&lb_client->res_rcvd, res_rcvd_cb, lb_client);
-  grpc_closure_init(&lb_client->close_sent, close_sent_cb, lb_client);
-  grpc_closure_init(&lb_client->srv_status_rcvd, srv_status_rcvd_cb, lb_client);
-
-  /* TODO(dgq): get the deadline from the client config instead of fabricating
-   * one here. */
-  lb_client->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                     gpr_time_from_seconds(3, GPR_TIMESPAN));
-
-  lb_client->lb_call = grpc_channel_create_pollset_set_call(
-      glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
-      glb_policy->base.interested_parties, "/BalanceLoad",
-      NULL, /* FIXME(dgq): which "host" value to use? */
-      lb_client->deadline, NULL);
-
-  grpc_metadata_array_init(&lb_client->initial_metadata_recv);
-  grpc_metadata_array_init(&lb_client->trailing_metadata_recv);
-
-  grpc_grpclb_request *request = grpc_grpclb_request_create(
-      "load.balanced.service.name"); /* FIXME(dgq): get the name of the load
-                                        balanced service from the resolver */
-  gpr_slice request_payload_slice = grpc_grpclb_request_encode(request);
-  lb_client->request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_slice_unref(request_payload_slice);
-  grpc_grpclb_request_destroy(request);
-
-  lb_client->status_details = NULL;
-  lb_client->status_details_capacity = 0;
-  lb_client->glb_policy = glb_policy;
-  return lb_client;
-}
-
-static void lb_client_data_destroy(lb_client_data *lb_client) {
-  grpc_metadata_array_destroy(&lb_client->initial_metadata_recv);
-  grpc_metadata_array_destroy(&lb_client->trailing_metadata_recv);
-
-  grpc_byte_buffer_destroy(lb_client->request_payload);
-
-  gpr_free(lb_client->status_details);
-  gpr_mu_destroy(&lb_client->mu);
-  gpr_free(lb_client);
-}
-
-static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  GPR_ASSERT(glb_policy->pending_picks == NULL);
-  GPR_ASSERT(glb_policy->pending_pings == NULL);
-  grpc_channel_destroy(glb_policy->lb_channel);
-  glb_policy->lb_channel = NULL;
-  grpc_connectivity_state_destroy(exec_ctx, &glb_policy->state_tracker);
-  if (glb_policy->serverlist != NULL) {
-    grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
-  }
-  gpr_mu_destroy(&glb_policy->mu);
-  gpr_free(glb_policy);
-}
-
-static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-
-  pending_pick *pp = glb_policy->pending_picks;
-  glb_policy->pending_picks = NULL;
-  pending_ping *pping = glb_policy->pending_pings;
-  glb_policy->pending_pings = NULL;
-  gpr_mu_unlock(&glb_policy->mu);
-
-  while (pp != NULL) {
-    pending_pick *next = pp->next;
-    *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete, GRPC_ERROR_NONE,
-                        NULL);
-    gpr_free(pp);
-    pp = next;
-  }
-
-  while (pping != NULL) {
-    pending_ping *next = pping->next;
-    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify, GRPC_ERROR_NONE,
-                        NULL);
-    pping = next;
-  }
-
-  if (glb_policy->rr_policy) {
-    /* unsubscribe */
-    grpc_lb_policy_notify_on_state_change(
-        exec_ctx, glb_policy->rr_policy, NULL,
-        &glb_policy->rr_connectivity->on_change);
-    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
-  }
-
-  grpc_connectivity_state_set(
-      exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE("Channel Shutdown"), "glb_shutdown");
-}
-
-static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                            grpc_connected_subchannel **target) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-  pending_pick *pp = glb_policy->pending_picks;
-  glb_policy->pending_picks = NULL;
-  while (pp != NULL) {
-    pending_pick *next = pp->next;
-    if (pp->target == target) {
-      grpc_polling_entity_del_from_pollset_set(
-          exec_ctx, pp->pollent, glb_policy->base.interested_parties);
-      *target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
-                          GRPC_ERROR_CANCELLED, NULL);
-      gpr_free(pp);
-    } else {
-      pp->next = glb_policy->pending_picks;
-      glb_policy->pending_picks = pp;
-    }
-    pp = next;
-  }
-  gpr_mu_unlock(&glb_policy->mu);
-}
-
-static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                             uint32_t initial_metadata_flags_mask,
-                             uint32_t initial_metadata_flags_eq) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-  if (glb_policy->lb_client != NULL) {
-    /* cancel the call to the load balancer service, if any */
-    grpc_call_cancel(glb_policy->lb_client->lb_call, NULL);
-  }
-  pending_pick *pp = glb_policy->pending_picks;
-  glb_policy->pending_picks = NULL;
-  while (pp != NULL) {
-    pending_pick *next = pp->next;
-    if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
-        initial_metadata_flags_eq) {
-      grpc_polling_entity_del_from_pollset_set(
-          exec_ctx, pp->pollent, glb_policy->base.interested_parties);
-      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
-                          GRPC_ERROR_CANCELLED, NULL);
-      gpr_free(pp);
-    } else {
-      pp->next = glb_policy->pending_picks;
-      glb_policy->pending_picks = pp;
-    }
-    pp = next;
-  }
-  gpr_mu_unlock(&glb_policy->mu);
-}
-
-static void query_for_backends(grpc_exec_ctx *exec_ctx,
-                               glb_lb_policy *glb_policy) {
-  GPR_ASSERT(glb_policy->lb_channel != NULL);
-
-  glb_policy->lb_client = lb_client_data_create(glb_policy);
-  grpc_call_error call_error;
-  grpc_op ops[1];
-  memset(ops, 0, sizeof(ops));
-  grpc_op *op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, glb_policy->lb_client->lb_call, ops, (size_t)(op - ops),
-      &glb_policy->lb_client->md_sent);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata =
-      &glb_policy->lb_client->trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &glb_policy->lb_client->status;
-  op->data.recv_status_on_client.status_details =
-      &glb_policy->lb_client->status_details;
-  op->data.recv_status_on_client.status_details_capacity =
-      &glb_policy->lb_client->status_details_capacity;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, glb_policy->lb_client->lb_call, ops, (size_t)(op - ops),
-      &glb_policy->lb_client->srv_status_rcvd);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-}
-
-static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
-                                 const grpc_grpclb_serverlist *serverlist,
-                                 glb_lb_policy *glb_policy) {
-  /* TODO(dgq): support mixed ip version */
-  GPR_ASSERT(serverlist != NULL && serverlist->num_servers > 0);
-  char **host_ports = gpr_malloc(sizeof(char *) * serverlist->num_servers);
-  for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    gpr_join_host_port(&host_ports[i], serverlist->servers[i]->ip_address,
-                       serverlist->servers[i]->port);
-  }
-
-  size_t uri_path_len;
-  char *concat_ipports = gpr_strjoin_sep(
-      (const char **)host_ports, serverlist->num_servers, ",", &uri_path_len);
-
-  grpc_lb_policy_args args;
-  args.client_channel_factory = glb_policy->cc_factory;
-  args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-  args.addresses->naddrs = serverlist->num_servers;
-  args.addresses->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * args.addresses->naddrs);
-  size_t out_addrs_idx = 0;
-  for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    grpc_uri uri;
-    struct sockaddr_storage sa;
-    size_t sa_len;
-    uri.path = host_ports[i];
-    if (parse_ipv4(&uri, &sa, &sa_len)) { /* TODO(dgq): add support for ipv6 */
-      memcpy(args.addresses->addrs[out_addrs_idx].addr, &sa, sa_len);
-      args.addresses->addrs[out_addrs_idx].len = sa_len;
-      ++out_addrs_idx;
-    } else {
-      gpr_log(GPR_ERROR, "Invalid LB service address '%s', ignoring.",
-              host_ports[i]);
-    }
-  }
-
-  grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
-
-  gpr_free(concat_ipports);
-  for (size_t i = 0; i < serverlist->num_servers; i++) {
-    gpr_free(host_ports[i]);
-  }
-  gpr_free(host_ports);
-  gpr_free(args.addresses->addrs);
-  gpr_free(args.addresses);
-  return rr;
-}
-
-static void start_picking(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy) {
-  glb_policy->started_picking = true;
-  query_for_backends(exec_ctx, glb_policy);
-}
-
-static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
-                        grpc_error *error) {
-  GRPC_ERROR_REF(error);
-  glb_policy->rr_policy =
-      create_rr(exec_ctx, glb_policy->serverlist, glb_policy);
-
-  if (grpc_lb_glb_trace) {
-    gpr_log(GPR_INFO, "Created RR policy (0x%" PRIxPTR ")",
-            (intptr_t)glb_policy->rr_policy);
-  }
-  GPR_ASSERT(glb_policy->rr_policy != NULL);
-  glb_policy->rr_connectivity->state = grpc_lb_policy_check_connectivity(
-      exec_ctx, glb_policy->rr_policy, &error);
-  grpc_lb_policy_notify_on_state_change(
-      exec_ctx, glb_policy->rr_policy, &glb_policy->rr_connectivity->state,
-      &glb_policy->rr_connectivity->on_change);
-  grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
-                              glb_policy->rr_connectivity->state, error,
-                              "rr_handover");
-  grpc_lb_policy_exit_idle(exec_ctx, glb_policy->rr_policy);
-
-  /* flush pending ops */
-  pending_pick *pp;
-  while ((pp = glb_policy->pending_picks)) {
-    glb_policy->pending_picks = pp->next;
-    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_pick");
-    pp->wrapped_on_complete_arg.rr_policy = glb_policy->rr_policy;
-    if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
-              (intptr_t)glb_policy->rr_policy);
-    }
-    grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pp->pollent,
-                        pp->initial_metadata, pp->initial_metadata_flags,
-                        pp->target, &pp->wrapped_on_complete);
-    pp->wrapped_on_complete_arg.owning_pending_node = pp;
-  }
-
-  pending_ping *pping;
-  while ((pping = glb_policy->pending_pings)) {
-    glb_policy->pending_pings = pping->next;
-    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_ping");
-    pping->wrapped_notify_arg.rr_policy = glb_policy->rr_policy;
-    if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Pending ping about to PING from 0x%" PRIxPTR "",
-              (intptr_t)glb_policy->rr_policy);
-    }
-    grpc_lb_policy_ping_one(exec_ctx, glb_policy->rr_policy,
-                            &pping->wrapped_notify);
-    pping->wrapped_notify_arg.owning_pending_node = pping;
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
-static void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-  if (!glb_policy->started_picking) {
-    start_picking(exec_ctx, glb_policy);
-  }
-  gpr_mu_unlock(&glb_policy->mu);
-}
-
-static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                    grpc_polling_entity *pollent,
-                    grpc_metadata_batch *initial_metadata,
-                    uint32_t initial_metadata_flags,
-                    grpc_connected_subchannel **target,
-                    grpc_closure *on_complete) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-  int r;
-
-  if (glb_policy->rr_policy != NULL) {
-    if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "about to PICK from 0x%" PRIxPTR "",
-              (intptr_t)glb_policy->rr_policy);
-    }
-    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
-    memset(&glb_policy->wc_arg, 0, sizeof(wrapped_rr_closure_arg));
-    glb_policy->wc_arg.rr_policy = glb_policy->rr_policy;
-    glb_policy->wc_arg.wrapped_closure = on_complete;
-    grpc_closure_init(&glb_policy->wrapped_on_complete, wrapped_rr_closure,
-                      &glb_policy->wc_arg);
-    r = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pollent,
-                            initial_metadata, initial_metadata_flags, target,
-                            &glb_policy->wrapped_on_complete);
-    if (r != 0) {
-      /* the call to grpc_lb_policy_pick has been sychronous. Unreffing the RR
-       * policy and notify the original callback */
-      glb_policy->wc_arg.wrapped_closure = NULL;
-      if (grpc_lb_glb_trace) {
-        gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
-                (intptr_t)glb_policy->wc_arg.rr_policy);
-      }
-      GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->wc_arg.rr_policy, "glb_pick");
-      grpc_exec_ctx_sched(exec_ctx, glb_policy->wc_arg.wrapped_closure,
-                          GRPC_ERROR_NONE, NULL);
-    }
-  } else {
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
-                                           glb_policy->base.interested_parties);
-    add_pending_pick(&glb_policy->pending_picks, pollent, initial_metadata,
-                     initial_metadata_flags, target, on_complete);
-
-    if (!glb_policy->started_picking) {
-      start_picking(exec_ctx, glb_policy);
-    }
-    r = 0;
-  }
-  gpr_mu_unlock(&glb_policy->mu);
-  return r;
-}
-
-static grpc_connectivity_state glb_check_connectivity(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-    grpc_error **connectivity_error) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  grpc_connectivity_state st;
-  gpr_mu_lock(&glb_policy->mu);
-  st = grpc_connectivity_state_check(&glb_policy->state_tracker,
-                                     connectivity_error);
-  gpr_mu_unlock(&glb_policy->mu);
-  return st;
-}
-
-static void glb_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                         grpc_closure *closure) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-  if (glb_policy->rr_policy) {
-    grpc_lb_policy_ping_one(exec_ctx, glb_policy->rr_policy, closure);
-  } else {
-    add_pending_ping(&glb_policy->pending_pings, closure);
-    if (!glb_policy->started_picking) {
-      start_picking(exec_ctx, glb_policy);
-    }
-  }
-  gpr_mu_unlock(&glb_policy->mu);
-}
-
-static void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx,
-                                       grpc_lb_policy *pol,
-                                       grpc_connectivity_state *current,
-                                       grpc_closure *notify) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  gpr_mu_lock(&glb_policy->mu);
-  grpc_connectivity_state_notify_on_state_change(
-      exec_ctx, &glb_policy->state_tracker, current, notify);
-
-  gpr_mu_unlock(&glb_policy->mu);
-}
-
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,     glb_shutdown,           glb_pick,
     glb_cancel_pick, glb_cancel_picks,       glb_ping_one,
@@ -936,70 +984,6 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
 static void glb_factory_ref(grpc_lb_policy_factory *factory) {}
 
 static void glb_factory_unref(grpc_lb_policy_factory *factory) {}
-
-static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_lb_policy_factory *factory,
-                                  grpc_lb_policy_args *args) {
-  glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
-  memset(glb_policy, 0, sizeof(*glb_policy));
-
-  /* All input addresses in args->addresses come from a resolver that claims
-   * they are LB services. It's the resolver's responsibility to make sure this
-   * policy is only instantiated and used in that case.
-   *
-   * Create a client channel over them to communicate with a LB service */
-  glb_policy->cc_factory = args->client_channel_factory;
-  GPR_ASSERT(glb_policy->cc_factory != NULL);
-  if (args->addresses->naddrs == 0) {
-    return NULL;
-  }
-
-  /* construct a target from the args->addresses, in the form
-   * ipvX://ip1:port1,ip2:port2,...
-   * TODO(dgq): support mixed ip version */
-  char **addr_strs = gpr_malloc(sizeof(char *) * args->addresses->naddrs);
-  addr_strs[0] =
-      grpc_sockaddr_to_uri((const struct sockaddr *)&args->addresses->addrs[0]);
-  for (size_t i = 1; i < args->addresses->naddrs; i++) {
-    GPR_ASSERT(grpc_sockaddr_to_string(
-                   &addr_strs[i],
-                   (const struct sockaddr *)&args->addresses->addrs[i],
-                   true) == 0);
-  }
-  size_t uri_path_len;
-  char *target_uri_str = gpr_strjoin_sep(
-      (const char **)addr_strs, args->addresses->naddrs, ",", &uri_path_len);
-
-  /* will pick using pick_first */
-  glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
-      exec_ctx, glb_policy->cc_factory, target_uri_str,
-      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
-
-  gpr_free(target_uri_str);
-  for (size_t i = 0; i < args->addresses->naddrs; i++) {
-    gpr_free(addr_strs[i]);
-  }
-  gpr_free(addr_strs);
-
-  if (glb_policy->lb_channel == NULL) {
-    gpr_free(glb_policy);
-    return NULL;
-  }
-
-  rr_connectivity_data *rr_connectivity =
-      gpr_malloc(sizeof(rr_connectivity_data));
-  memset(rr_connectivity, 0, sizeof(rr_connectivity_data));
-  grpc_closure_init(&rr_connectivity->on_change, rr_connectivity_changed,
-                    rr_connectivity);
-  rr_connectivity->glb_policy = glb_policy;
-  glb_policy->rr_connectivity = rr_connectivity;
-
-  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable);
-  gpr_mu_init(&glb_policy->mu);
-  grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
-                               "grpclb");
-  return &glb_policy->base;
-}
 
 static const grpc_lb_policy_factory_vtable glb_factory_vtable = {
     glb_factory_ref, glb_factory_unref, glb_create, "grpclb"};
