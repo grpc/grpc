@@ -91,7 +91,7 @@
 - (void)setUp {
   self.continueAfterFailure = NO;
 
-  [GRPCCall clearAllConfigurationsForTesting];
+  [GRPCCall resetHostSettings];
 
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
 #ifdef GRPC_COMPILE_WITH_CRONET

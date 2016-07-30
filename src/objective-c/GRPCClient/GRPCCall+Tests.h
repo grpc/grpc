@@ -62,5 +62,5 @@
  * Resets all host configurations to their default values, and flushes all connections from the
  * cache.
  */
-+ (void)clearAllConfigurationsForTesting;
++ (void)resetHostSettings;
 @end

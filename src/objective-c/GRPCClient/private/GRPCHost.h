@@ -42,7 +42,7 @@ struct grpc_channel_credentials;
 @interface GRPCHost : NSObject
 
 + (void)flushChannelCache;
-+ (void)clearAllHostsForTesting;
++ (void)resetAllHostSettings;
 
 @property(nonatomic, readonly) NSString *address;
 @property(nonatomic, copy, nullable) NSString *userAgentPrefix;

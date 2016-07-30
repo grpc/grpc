@@ -113,7 +113,7 @@ static NSMutableDictionary *kHostCache;
   }
 }
 
-+ (void)clearAllHostsForTesting {
++ (void)resetAllHostSettings {
   @synchronized (kHostCache) {
     kHostCache = [NSMutableDictionary dictionary];
   }
