@@ -92,8 +92,8 @@ static VALUE grpc_rb_usage_timer_reset(VALUE self) {
   gettimeofday(&usage_timer->start_wall_time, NULL);
   getrusage(RUSAGE_SELF, &usage_timer->start_cpu_time);
 
-  usage_timer->last_sample_wall_time = usage_timer->last_sample_wall_time;
-  usage_timer->last_sample_cpu_time = usage_timer->last_sample_cpu_time;
+  usage_timer->last_sample_wall_time = usage_timer->start_wall_time;
+  usage_timer->last_sample_cpu_time = usage_timer->start_cpu_time;
 
   return self;
 }

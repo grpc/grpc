@@ -153,11 +153,12 @@ class BenchmarkClient
       sum_of_squares: @histogram.sum_of_squares,
       count: @histogram.count
     )
+    time_samples = @timer.sample
+
     if reset
       @histogram = Histogram.new(@histres, @histmax)
       @timer.reset
     end
-    time_samples = @timer.sample
 
     Grpc::Testing::ClientStats.new(
       latencies: lat,

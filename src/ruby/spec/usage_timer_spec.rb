@@ -30,12 +30,12 @@
 require 'grpc'
 
 describe GRPC::Core::UsageTimer do
-  it "can be initialized without error" do
+  it 'can be initialized without error' do
     expect { GRPC::Core::UsageTimer.new }.to_not raise_error
   end
 
-  describe "main call pattern" do
-    it "samples the user time, system time, and wall time" do
+  describe 'main call pattern' do
+    it 'samples the user time, system time, and wall time' do
       usage_timer = GRPC::Core::UsageTimer.new
 
       samples = usage_timer.sample
@@ -45,21 +45,23 @@ describe GRPC::Core::UsageTimer do
       expect(samples['system_time']).to be_instance_of(Float)
     end
 
-    it "can be reset without error" do
+    it 'can be reset without error' do
       usage_timer = GRPC::Core::UsageTimer.new
       expect { usage_timer.reset }.to_not raise_error
     end
 
-    it "consecutive samples can only increase" do
+    it 'consecutive samples can only increase' do
       usage_timer = GRPC::Core::UsageTimer.new
 
       first_sample = usage_timer.sample
       second_sample = usage_timer.sample
 
-      expect(second_sample['wall_time'] >= first_sample['wall_time']).to be true
-      expect(second_sample['user_time'] >= first_sample['user_time']).to be true
-      expect(second_sample['system_time'] >= first_sample['system_time']).to be true
+      expect(second_sample['wall_time'] >=
+               first_sample['wall_time']).to be true
+      expect(second_sample['user_time'] >=
+               first_sample['user_time']).to be true
+      expect(second_sample['system_time'] >=
+               first_sample['system_time']).to be true
     end
   end
 end
-

@@ -82,15 +82,14 @@ class BenchmarkServer
     t.abort_on_exception
   end
   def mark(reset)
-    @timer.reset if reset
     time_samples = @timer.sample
 
-    s = Grpc::Testing::ServerStats.new(
+    @timer.reset if reset
+
+    Grpc::Testing::ServerStats.new(
       time_elapsed: time_samples['wall_time'],
       time_user: time_samples['user_time'],
       time_system: time_samples['system_time'])
-
-    s
   end
   def get_port
     @port
