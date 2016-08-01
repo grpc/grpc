@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_COMPLETION_QUEUE_PUBLIC_H
-#define GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#ifndef GRPC_C_COMPLETION_QUEUE_H
+#define GRPC_C_COMPLETION_QUEUE_H
 
 #include <grpc_c/grpc_c.h>
 #include <stdbool.h>
@@ -63,4 +63,4 @@ GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_
                                                                          GRPC_timespec deadline,
                                                                          void **tag, bool *ok);
 
-#endif /* GRPC_C_COMPLETION_QUEUE_PUBLIC_H */
+#endif /* GRPC_C_COMPLETION_QUEUE_H */

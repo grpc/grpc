@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CONTEXT_PUBLIC_H
-#define GRPC_C_CONTEXT_PUBLIC_H
+#ifndef GRPC_C_CLIENT_CONTEXT_H
+#define GRPC_C_CLIENT_CONTEXT_H
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
@@ -46,4 +46,4 @@ void GRPC_client_context_destroy(GRPC_client_context **context);
  */
 GRPC_status GRPC_get_call_status(GRPC_client_context *context);
 
-#endif /* GRPC_C_CONTEXT_PUBLIC_H */
+#endif /* GRPC_C_CLIENT_CONTEXT_H */

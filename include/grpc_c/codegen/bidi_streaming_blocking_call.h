@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
-#define GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_H
+#define GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_H
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/method.h>
@@ -52,4 +52,4 @@ bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_
 
 GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer);
 
-#endif /* GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_H */

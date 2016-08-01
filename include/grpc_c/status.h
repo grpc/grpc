@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_STATUS_PUBLIC_H
-#define GRPC_C_STATUS_PUBLIC_H
+#ifndef GRPC_C_STATUS_H
+#define GRPC_C_STATUS_H
 
 #include <grpc/impl/codegen/status.h>
 #include <stdbool.h>
@@ -61,4 +61,4 @@ typedef struct GRPC_status {
   size_t details_length;
 } GRPC_status;
 
-#endif /* GRPC_C_STATUS_PUBLIC_H */
+#endif /* GRPC_C_STATUS_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CODEGEN_CLIENT_ASYNC_READER_PUBLIC_H
-#define GRPC_C_CODEGEN_CLIENT_ASYNC_READER_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H
+#define GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/method.h>
@@ -48,4 +48,4 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, void *r
 
 void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag);
 
-#endif /* GRPC_C_CODEGEN_CLIENT_ASYNC_READER_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H */

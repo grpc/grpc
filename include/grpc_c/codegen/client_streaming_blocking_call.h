@@ -32,8 +32,8 @@
  */
 
 
-#ifndef GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
-#define GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_H
+#define GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_H
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/method.h>
@@ -50,4 +50,4 @@ bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer, const GRPC
 /* Returns call status in the context object. */
 GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer);
 
-#endif /* GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_H */

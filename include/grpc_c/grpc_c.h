@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_PUBLIC_H
-#define GRPC_C_PUBLIC_H
+#ifndef GRPC_C_GRPC_C_H
+#define GRPC_C_GRPC_C_H
 
 typedef struct grpc_channel GRPC_channel;
 typedef struct grpc_client_context GRPC_client_context;
@@ -46,4 +46,4 @@ typedef struct grpc_client_async_reader GRPC_client_async_reader;
 typedef struct grpc_client_async_writer GRPC_client_async_writer;
 typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
 
-#endif /* GRPC_C_PUBLIC_H */
+#endif /* GRPC_C_GRPC_C_H */

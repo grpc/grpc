@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CODEGEN_METHOD_PUBLIC_H
-#define GRPC_C_CODEGEN_METHOD_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_METHOD_H
+#define GRPC_C_CODEGEN_METHOD_H
 
 typedef struct grpc_method {
   enum RpcType {
@@ -46,4 +46,4 @@ typedef struct grpc_method {
 
 typedef struct grpc_method GRPC_method;
 
-#endif /* GRPC_C_CODEGEN_METHOD_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_METHOD_H */

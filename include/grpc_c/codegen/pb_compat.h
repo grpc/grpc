@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H
-#define GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_PB_COMPAT_H
+#define GRPC_C_CODEGEN_PB_COMPAT_H
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/message.h>
@@ -42,4 +42,4 @@
 GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, const void *fields);
 void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, const void *fields);
 
-#endif /* GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_PB_COMPAT_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CODEGEN_MESSAGE_PUBLIC_H
-#define GRPC_C_CODEGEN_MESSAGE_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_MESSAGE_H
+#define GRPC_C_CODEGEN_MESSAGE_H
 
 #include <stdlib.h>
 
@@ -43,4 +43,4 @@ typedef struct GRPC_message {
 
 void GRPC_message_destroy(GRPC_message *message);
 
-#endif /* GRPC_C_CODEGEN_MESSAGE_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_MESSAGE_H */
