@@ -227,7 +227,7 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
  * glb_lb_policy
  */
 typedef struct rr_connectivity_data rr_connectivity_data;
-typedef struct lb_client_data lb_client_data;
+struct lb_client_data;
 static const grpc_lb_policy_vtable glb_lb_policy_vtable;
 typedef struct glb_lb_policy {
   /** base policy: must be first */
@@ -260,7 +260,7 @@ typedef struct glb_lb_policy {
   pending_ping *pending_pings;
 
   /** client data associated with the LB server communication */
-  lb_client_data *lb_client;
+  struct lb_client_data *lb_client;
 
   /** for tracking of the RR connectivity */
   rr_connectivity_data *rr_connectivity;
@@ -553,7 +553,7 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&glb_policy->mu);
 }
 
-static grpc_call *lb_client_data_get_call(lb_client_data *lb_client);
+static grpc_call *lb_client_data_get_call(struct lb_client_data *lb_client);
 static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                              uint32_t initial_metadata_flags_mask,
                              uint32_t initial_metadata_flags_eq) {
