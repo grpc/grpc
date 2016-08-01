@@ -82,44 +82,47 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
 static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
   http_connect_handshaker* h = arg;
-  if (error == GRPC_ERROR_NONE) {
-    for (size_t i = 0; i < h->response_buffer.count; ++i) {
-      if (GPR_SLICE_LENGTH(h->response_buffer.slices[i]) > 0) {
-        error = grpc_http_parser_parse(
-            &h->http_parser, h->response_buffer.slices[i]);
-        if (error != GRPC_ERROR_NONE)
-          goto done;
-      }
+  if (error != GRPC_ERROR_NONE) {
+    GRPC_ERROR_REF(error);  // Take ref to pass to the handshake-done callback.
+    goto done;
+  }
+  // Add buffer to parser.
+  for (size_t i = 0; i < h->response_buffer.count; ++i) {
+    if (GPR_SLICE_LENGTH(h->response_buffer.slices[i]) > 0) {
+      error = grpc_http_parser_parse(
+          &h->http_parser, h->response_buffer.slices[i]);
+      if (error != GRPC_ERROR_NONE)
+        goto done;
     }
-    // If we're not done reading the response, read more data.
-    // TODO(roth): In practice, I suspect that the response to a CONNECT
-    // request will never include a body, in which case this check is
-    // sufficient.  However, the language of RFC-2817 doesn't explicitly
-    // forbid the response from including a body.  If there is a body,
-    // it's possible that we might have parsed part but not all of the
-    // body, in which case this check will cause us to fail to parse the
-    // remainder of the body.  If that ever becomes an issue, we may
-    // need to fix the HTTP parser to understand when the body is
-    // complete (e.g., handling chunked transfer encoding or looking
-    // at the Content-Length: header).
-    if (h->http_parser.state != GRPC_HTTP_BODY) {
-      gpr_slice_buffer_reset_and_unref(&h->response_buffer);
-      grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
-                         &h->response_read_closure);
-      return;
-    }
-    // Make sure we got a 2xx response.
-    if (h->http_response.status < 200 || h->http_response.status >= 300) {
-      char* msg;
-      gpr_asprintf(&msg, "HTTP proxy returned response code %d",
-                   h->http_response.status);
-      error = GRPC_ERROR_CREATE(msg);
-      gpr_free(msg);
-    }
+  }
+  // If we're not done reading the response, read more data.
+  // TODO(roth): In practice, I suspect that the response to a CONNECT
+  // request will never include a body, in which case this check is
+  // sufficient.  However, the language of RFC-2817 doesn't explicitly
+  // forbid the response from including a body.  If there is a body,
+  // it's possible that we might have parsed part but not all of the
+  // body, in which case this check will cause us to fail to parse the
+  // remainder of the body.  If that ever becomes an issue, we may
+  // need to fix the HTTP parser to understand when the body is
+  // complete (e.g., handling chunked transfer encoding or looking
+  // at the Content-Length: header).
+  if (h->http_parser.state != GRPC_HTTP_BODY) {
+    gpr_slice_buffer_reset_and_unref(&h->response_buffer);
+    grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
+                       &h->response_read_closure);
+    return;
+  }
+  // Make sure we got a 2xx response.
+  if (h->http_response.status < 200 || h->http_response.status >= 300) {
+    char* msg;
+    gpr_asprintf(&msg, "HTTP proxy returned response code %d",
+                 h->http_response.status);
+    error = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
   }
  done:
   // Invoke handshake-done callback.
-  h->cb(exec_ctx, h->endpoint, h->args, h->user_data, GRPC_ERROR_REF(error));
+  h->cb(exec_ctx, h->endpoint, h->args, h->user_data, error);
 }
 
 //
@@ -166,9 +169,9 @@ static void http_connect_handshaker_do_handshake(
           h->server_name, h->proxy_server);
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
-  request.host = gpr_strdup(h->proxy_server);
-  request.http.method = gpr_strdup("CONNECT");
-  request.http.path = gpr_strdup(h->server_name);
+  request.host = h->proxy_server;
+  request.http.method = "CONNECT";
+  request.http.path = h->server_name;
   request.handshaker = &grpc_httpcli_plaintext;
   gpr_slice request_slice = grpc_httpcli_format_connect_request(&request);
   gpr_slice_buffer_add(&h->request_buffer, request_slice);
