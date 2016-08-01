@@ -77,8 +77,6 @@ using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
 
-static bool got_sigint = false;
-
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
 const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
@@ -325,7 +323,7 @@ void grpc::testing::interop::RunServer(
   builder.AddListeningPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (!got_sigint) {
+  while (!g_got_sigint) {
     sleep(5);
   }
 }
