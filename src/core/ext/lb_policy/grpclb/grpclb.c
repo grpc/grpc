@@ -490,6 +490,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_free(glb_policy);
 }
 
+static void lb_client_data_destroy(struct lb_client_data *lb_client);
 static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
@@ -523,6 +524,9 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
         &glb_policy->rr_connectivity->on_change);
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
   }
+
+  lb_client_data_destroy(glb_policy->lb_client);
+  glb_policy->lb_client = NULL;
 
   grpc_connectivity_state_set(
       exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
@@ -790,6 +794,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
 }
 
 static void lb_client_data_destroy(lb_client_data *lb_client) {
+  grpc_call_destroy(lb_client->lb_call);
   grpc_metadata_array_destroy(&lb_client->initial_metadata_recv);
   grpc_metadata_array_destroy(&lb_client->trailing_metadata_recv);
 
@@ -996,7 +1001,6 @@ static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg,
 static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   lb_client_data *lb_client = arg;
-  glb_lb_policy *glb_policy = lb_client->glb_policy;
   if (grpc_lb_glb_trace) {
     gpr_log(GPR_INFO,
             "status from lb server received. Status = %d, Details = '%s', "
@@ -1005,10 +1009,6 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
             lb_client->status, lb_client->status_details,
             lb_client->status_details_capacity);
   }
-
-  grpc_call_destroy(lb_client->lb_call);
-  lb_client_data_destroy(lb_client);
-  glb_policy->lb_client = NULL;
   /* TODO(dgq): deal with stream termination properly (fire up another one? fail
    * the original call?) */
 }
