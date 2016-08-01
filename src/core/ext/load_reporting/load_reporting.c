@@ -42,7 +42,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 
-
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
   if (a == NULL) return false;
   for (size_t i = 0; i < a->num_args; i++) {
