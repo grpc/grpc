@@ -151,6 +151,39 @@
   NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/pb_common.c
   NANOPB_DEP := $(NANOPB_DIR)/generator/proto/nanopb_pb2.py $(NANOPB_DIR)/generator/proto/plugin_pb2.py
 
+  <%text>
+  SYSTEM_PYTHON_PROTOBUF_GOOD := $(shell \
+  version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
+  major=( $${version//./ } );\
+  majordef=$${major:-0};\
+  if [[ $$majordef -ge 3 ]]; then echo true; else echo false; fi;)
+
+  ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
+  # For systems with built-in python-protobuf
+  all: all_after_prereq
+  test: test_after_prereq
+  %:
+  else
+  # We need to install a local python-protobuf
+  NANOPB_VENV_DIR := $(shell mktemp -d)
+  NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF := $(shell pushd $(NANOPB_VENV_DIR); virtualenv $(NANOPB_VENV_DIR); source $(NANOPB_VENV_DIR)/bin/activate; popd; pip install protobuf==3.0.0b2)
+  # Trigger variable evaluation
+  NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF_OUTPUT := $(NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF)
+  all:
+  	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
+  	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
+  	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
+  	$(MAKE) $(MFLAGS) all_after_prereq; \
+  	deactivate
+  test:
+  	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
+  	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
+  	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
+  	$(MAKE) $(MFLAGS) test_after_prereq; \
+  	deactivate
+  endif
+  </%text>
+
   PROTOC ?= protoc
   DTRACE ?= dtrace
   CONFIG ?= opt
@@ -713,8 +746,9 @@
 
   .SECONDARY = %.pb.h %.pb.cc
 
+  # This is the 'all' target to be executed after handling prerequisites
   ifeq ($(DEP_MISSING),)
-  all: static shared plugins\
+  all_after_prereq: static shared plugins\
   % for tgt in targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -724,7 +758,7 @@
   dep_error:
   	@echo "You shouldn't see this message - all of your dependencies are correct."
   else
-  all: dep_error git_update stop
+  all_after_prereq: dep_error git_update stop
 
   dep_error:
   	@echo
@@ -969,8 +1003,8 @@
 
   endif
 
-
-  test: test_c test_cxx
+  # This is the 'test' target to be executed after handling prerequisites
+  test_after_prereq: test_c test_cxx
 
   flaky_test: flaky_test_c flaky_test_cxx
 
@@ -1166,7 +1200,7 @@
   $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating nanopb C file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+  	$(Q) $(NANOPB_PRECOMPILE); $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<; $(NANOPB_POSTCOMPILE)
 
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -1791,7 +1825,7 @@
   % endfor
   endif
 
-  .PHONY: all strip tools \
+  .PHONY: all_after_prereq strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
   test test_c test_cxx \
@@ -1814,4 +1848,4 @@
   # Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
   $(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOBUF_DEP)
   	$(E) "[NANOPB]  Compiling $<"
-  	$(Q) $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<
+  	$(Q) $(NANOPB_PRECOMPILE) $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<; $(NANOPB_POSTCOMPILE)
