@@ -275,7 +275,7 @@ test: test_after_prereq
 %:
 else
 # We need to install a local python-protobuf
-NANOPB_VENV_DIR := $(shell mktemp -d)
+NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX)
 NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF := $(shell pushd $(NANOPB_VENV_DIR); virtualenv $(NANOPB_VENV_DIR); source $(NANOPB_VENV_DIR)/bin/activate; popd; pip install protobuf==3.0.0b2)
 # Trigger variable evaluation
 NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF_OUTPUT := $(NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF)
