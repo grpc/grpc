@@ -31,8 +31,8 @@ GRPC_LOCAL_SRC = '../../..'
     pod 'RemoteTest', :path => "RemoteTestClient"
 
     if target_name == 'InteropTestsRemoteWithCronet'
-      pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
       pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
+      pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
     end
   end
 end
@@ -90,9 +90,14 @@ post_install do |installer|
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
       end
     end
+
+    # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
+    # the test target 'InteropTestsRemoteWithCronet'
     if target.name == 'gRPC'
       target.build_configurations.each do |config|
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1'
+        if config.name == 'Cronet'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1'
+        end
       end
     end
   end
