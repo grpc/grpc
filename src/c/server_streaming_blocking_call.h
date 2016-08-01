@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
-#define GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
+#ifndef GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H
+#define GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H
 
 #include <grpc_c/codegen/server_streaming_blocking_call.h>
 #include "src/c/call_ops.h"
@@ -43,4 +43,4 @@ typedef struct grpc_client_reader {
   grpc_completion_queue *cq;
 } grpc_client_reader;
 
-#endif  // GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
+#endif  // GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H

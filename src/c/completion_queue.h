@@ -31,11 +31,13 @@
  *
  */
 
-#ifndef GRPC_C_COMPLETION_QUEUE_H
-#define GRPC_C_COMPLETION_QUEUE_H
+#ifndef GRPC_C_INTERNAL_COMPLETION_QUEUE_H
+#define GRPC_C_INTERNAL_COMPLETION_QUEUE_H
 
 #include <grpc_c/completion_queue.h>
+#include <grpc_c/grpc_c.h>
+#include <stdbool.h>
 
 bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag);
 
-#endif  // GRPC_C_COMPLETION_QUEUE_H
+#endif  // GRPC_C_INTERNAL_COMPLETION_QUEUE_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CLIENT_ASYNC_READER_H
-#define GRPC_C_CLIENT_ASYNC_READER_H
+#ifndef GRPC_C_INTERNAL_CLIENT_ASYNC_READER_H
+#define GRPC_C_INTERNAL_CLIENT_ASYNC_READER_H
 
 #include "src/c/call_ops.h"
 
@@ -46,4 +46,4 @@ typedef struct grpc_client_async_response_reader {
   grpc_call *call;
 } grpc_client_async_response_reader;
 
-#endif  // GRPC_C_CLIENT_ASYNC_READER_H
+#endif  // GRPC_C_INTERNAL_CLIENT_ASYNC_READER_H

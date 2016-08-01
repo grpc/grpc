@@ -37,6 +37,7 @@
 #include <grpc_c/codegen/message.h>
 #include <grpc_c/codegen/method.h>
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
 #include <stdbool.h>
 
 GRPC_client_writer *GRPC_client_streaming_blocking_call(

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CALL_OPS_H
-#define GRPC_C_CALL_OPS_H
+#ifndef GRPC_C_INTERNAL_CALL_OPS_H
+#define GRPC_C_INTERNAL_CALL_OPS_H
 
 #include <grpc/grpc.h>
 #include <grpc_c/codegen/method.h>
@@ -105,4 +105,4 @@ extern const grpc_op_manager grpc_op_recv_object;
 extern const grpc_op_manager grpc_op_send_close;
 extern const grpc_op_manager grpc_op_recv_status;
 
-#endif /* GRPC_C_CALL_OPS_H */
+#endif /* GRPC_C_INTERNAL_CALL_OPS_H */

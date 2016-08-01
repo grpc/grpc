@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_C_CLIENT_CONTEXT_H
-#define GRPC_C_CLIENT_CONTEXT_H
+#ifndef GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#define GRPC_C_INTERNAL_CLIENT_CONTEXT_H
 
 #include <grpc/grpc.h>
 #include <grpc_c/codegen/client_context.h>
@@ -64,4 +64,4 @@ struct grpc_client_context {
   grpc_call *call;
 };
 
-#endif  // GRPC_C_CLIENT_CONTEXT_H
+#endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H
