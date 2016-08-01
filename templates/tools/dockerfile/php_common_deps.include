@@ -1,0 +1,21 @@
+# ronn: a ruby tool used to convert markdown to man pages, used during the
+# install of Protobuf extensions
+#
+# rake: a ruby version of make used to build the PHP Protobuf extension
+RUN /bin/bash -l -c "rvm all do gem install ronn rake"
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
+
+# Download the patched PHP protobuf so that PHP gRPC clients can be generated
+# from proto3 schemas.
+RUN git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
+
+RUN /bin/bash -l -c "rvm use ruby-2.1 ${'\\'}
+  && cd /var/local/git/protobuf-php ${'\\'}
+  && rvm all do rake pear:package version=1.0 ${'\\'}
+  && pear install Protobuf-1.0.tgz"
+
+# Define the default command.
+CMD ["bash"]

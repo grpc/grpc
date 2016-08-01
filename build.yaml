@@ -7,7 +7,7 @@ settings:
   '#3': Use "-preN" suffixes to identify pre-release versions
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
-  version: 0.16.0-dev
+  version: 1.1.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -156,6 +156,7 @@ filegroups:
   - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
   - src/core/lib/compression/algorithm_metadata.h
@@ -234,6 +235,7 @@ filegroups:
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
+  - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
   - src/core/lib/compression/compression.c
@@ -768,6 +770,16 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/config_protobuf.h
+- name: grpc++_reflection_proto
+  language: c++
+  public_headers:
+  - include/grpc++/ext/reflection.grpc.pb.h
+  - include/grpc++/ext/reflection.pb.h
+  src:
+  - src/cpp/ext/reflection.grpc.pb.cc
+  - src/cpp/ext/reflection.pb.cc
+  uses:
+  - grpc++_codegen_proto
 libs:
 - name: gpr
   build: all
@@ -960,19 +972,20 @@ libs:
   language: c++
   public_headers:
   - include/grpc++/ext/proto_server_reflection_plugin.h
-  - include/grpc++/ext/reflection.grpc.pb.h
-  - include/grpc++/ext/reflection.pb.h
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
-  - src/cpp/ext/reflection.grpc.pb.cc
-  - src/cpp/ext/reflection.pb.cc
   deps:
   - grpc++
   filegroups:
-  - grpc++_codegen_proto
+  - grpc++_reflection_proto
+- name: grpc++_reflection_codegen
+  build: private
+  language: c++
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test_config
   build: private
   language: c++
@@ -1030,10 +1043,13 @@ libs:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_reflection
   - grpc++
   - grpc_plugin_support
 - name: grpc_plugin_support
@@ -2430,20 +2446,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: workqueue_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/workqueue_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test
@@ -2671,6 +2673,7 @@ targets:
   - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
+  - grpc++_reflection
   - grpc++
   - grpc
   - gpr_test_util
@@ -3367,6 +3370,7 @@ php_config_m4:
   - src/php/ext/grpc/channel.h
   - src/php/ext/grpc/channel_credentials.h
   - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php7_wrapper.h
   - src/php/ext/grpc/php_grpc.h
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h

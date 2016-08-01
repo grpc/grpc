@@ -1823,22 +1823,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "workqueue_test", 
-    "src": [
-      "test/core/iomgr/workqueue_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -2149,6 +2133,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_reflection", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_cli_libs", 
@@ -4376,26 +4361,32 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_codegen_proto"
+      "grpc++_reflection_proto"
     ], 
     "headers": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
-      "include/grpc++/ext/reflection.grpc.pb.h", 
-      "include/grpc++/ext/reflection.pb.h", 
       "src/cpp/ext/proto_server_reflection.h"
     ], 
     "language": "c++", 
     "name": "grpc++_reflection", 
     "src": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
-      "include/grpc++/ext/reflection.grpc.pb.h", 
-      "include/grpc++/ext/reflection.pb.h", 
       "src/cpp/ext/proto_server_reflection.cc", 
       "src/cpp/ext/proto_server_reflection.h", 
-      "src/cpp/ext/proto_server_reflection_plugin.cc", 
-      "src/cpp/ext/reflection.grpc.pb.cc", 
-      "src/cpp/ext/reflection.pb.cc"
+      "src/cpp/ext/proto_server_reflection_plugin.cc"
     ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h", 
+      "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc++_reflection_codegen", 
+    "src": [], 
     "third_party": false, 
     "type": "lib"
   }, 
@@ -4476,11 +4467,13 @@
   {
     "deps": [
       "grpc++", 
+      "grpc++_reflection", 
       "grpc_plugin_support"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
-      "test/cpp/util/proto_file_parser.h"
+      "test/cpp/util/proto_file_parser.h", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
     ], 
     "language": "c++", 
     "name": "grpc_cli_libs", 
@@ -4488,7 +4481,9 @@
       "test/cpp/util/cli_call.cc", 
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/proto_file_parser.cc", 
-      "test/cpp/util/proto_file_parser.h"
+      "test/cpp/util/proto_file_parser.h", 
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -5714,6 +5709,7 @@
       "src/core/lib/channel/compress_filter.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
+      "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
@@ -5807,6 +5803,8 @@
       "src/core/lib/channel/connected_channel.c", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
+      "src/core/lib/channel/handshaker.c", 
+      "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/http_client_filter.c", 
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.c", 
@@ -6766,6 +6764,25 @@
     "name": "grpc++_config_proto", 
     "src": [
       "include/grpc++/impl/codegen/config_protobuf.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen_proto"
+    ], 
+    "headers": [
+      "include/grpc++/ext/reflection.grpc.pb.h", 
+      "include/grpc++/ext/reflection.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc++_reflection_proto", 
+    "src": [
+      "include/grpc++/ext/reflection.grpc.pb.h", 
+      "include/grpc++/ext/reflection.pb.h", 
+      "src/cpp/ext/reflection.grpc.pb.cc", 
+      "src/cpp/ext/reflection.pb.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -617,6 +617,8 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   GRPC_FD_UNREF(fd, "poll");
 }
 
+static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
+
 /*******************************************************************************
  * pollset_posix.c
  */
@@ -842,6 +844,11 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   *worker_hdl = &worker;
   grpc_error *error = GRPC_ERROR_NONE;
 
+  /* Avoid malloc for small number of elements. */
+  enum { inline_elements = 96 };
+  struct pollfd pollfd_space[inline_elements];
+  struct grpc_fd_watcher watcher_space[inline_elements];
+
   /* pollset->mu already held */
   int added_worker = 0;
   int locked = 1;
@@ -897,15 +904,23 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       int r;
       size_t i, fd_count;
       nfds_t pfd_count;
-      /* TODO(ctiller): inline some elements to avoid an allocation */
       grpc_fd_watcher *watchers;
       struct pollfd *pfds;
 
       timeout = poll_deadline_to_millis_timeout(deadline, now);
-      /* TODO(ctiller): perform just one malloc here if we exceed the inline
-       * case */
-      pfds = gpr_malloc(sizeof(*pfds) * (pollset->fd_count + 2));
-      watchers = gpr_malloc(sizeof(*watchers) * (pollset->fd_count + 2));
+
+      if (pollset->fd_count + 2 <= inline_elements) {
+        pfds = pollfd_space;
+        watchers = watcher_space;
+      } else {
+        /* Allocate one buffer to hold both pfds and watchers arrays */
+        const size_t pfd_size = sizeof(*pfds) * (pollset->fd_count + 2);
+        const size_t watch_size = sizeof(*watchers) * (pollset->fd_count + 2);
+        void *buf = gpr_malloc(pfd_size + watch_size);
+        pfds = buf;
+        watchers = (void *)((char *)buf + pfd_size);
+      }
+
       fd_count = 0;
       pfd_count = 2;
       pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd);
@@ -972,8 +987,11 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         }
       }
 
-      gpr_free(pfds);
-      gpr_free(watchers);
+      if (pfds != pollfd_space) {
+        /* pfds and watchers are in the same memory block pointed to by pfds */
+        gpr_free(pfds);
+      }
+
       GPR_TIMER_END("maybe_work_and_unlock", 0);
       locked = 0;
     } else {
@@ -1234,6 +1252,7 @@ static const grpc_event_engine_vtable vtable = {
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,

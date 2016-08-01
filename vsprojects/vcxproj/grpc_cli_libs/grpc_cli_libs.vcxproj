@@ -149,14 +149,20 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj">
+      <Project>{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>

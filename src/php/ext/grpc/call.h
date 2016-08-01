@@ -49,22 +49,37 @@
 extern zend_class_entry *grpc_ce_call;
 
 /* Wrapper struct for grpc_call that can be associated with a PHP object */
-typedef struct wrapped_grpc_call {
-  zend_object std;
-
+PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call)
   bool owned;
   grpc_call *wrapped;
-} wrapped_grpc_call;
+PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
 
-/* Initializes the Call PHP class */
-void grpc_init_call(TSRMLS_D);
+#if PHP_MAJOR_VERSION < 7
 
-/* Creates a Call object that wraps the given grpc_call struct */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
+#define Z_WRAPPED_GRPC_CALL_P(zv) \
+  (wrapped_grpc_call *)zend_object_store_get_object(zv TSRMLS_CC)
+
+#else
+
+static inline wrapped_grpc_call
+*wrapped_grpc_call_from_obj(zend_object *obj) {
+  return (wrapped_grpc_call*)((char*)(obj) -
+                              XtOffsetOf(wrapped_grpc_call, std));
+}
+
+#define Z_WRAPPED_GRPC_CALL_P(zv) wrapped_grpc_call_from_obj(Z_OBJ_P((zv)))
+
+#endif /* PHP_MAJOR_VERSION */
 
 /* Creates and returns a PHP associative array of metadata from a C array of
  * call metadata */
 zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC);
+
+/* Creates a Call object that wraps the given grpc_call struct */
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
+
+/* Initializes the Call PHP class */
+void grpc_init_call(TSRMLS_D);
 
 /* Populates a grpc_metadata_array with the data in a PHP array object.
    Returns true on success and false on failure */

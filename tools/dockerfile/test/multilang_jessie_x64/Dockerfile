@@ -100,12 +100,6 @@ RUN /bin/bash -l -c "nvm alias default 4"
 
 # Install dependencies
 
-RUN /bin/bash -l -c "echo 'deb http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN /bin/bash -l -c "echo 'deb-src http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
-
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
 
@@ -137,7 +131,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python packages from PyPI
 RUN pip install pip --upgrade
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

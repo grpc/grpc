@@ -57,6 +57,7 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
                 grpc::string* error) const;
+
  private:
   GeneratorConfiguration config_;
 };

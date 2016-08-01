@@ -34,88 +34,44 @@ from distutils import errors
 from distutils import unixccompiler
 import os
 import os.path
+import shlex
 import shutil
 import sys
 import tempfile
 
+def _unix_commandfile_spawn(self, command):
+  """Wrapper around distutils.util.spawn that attempts to use command files.
 
-def _unix_piecemeal_link(
-    self, target_desc, objects, output_filename, output_dir=None,
-    libraries=None, library_dirs=None, runtime_library_dirs=None,
-    export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None,
-    build_temp=None, target_lang=None):
-  """`link` externalized method taken almost verbatim from UnixCCompiler.
+  Meant to replace the CCompiler method `spawn` on UnixCCompiler and its
+  derivatives (e.g. the MinGW32 compiler).
 
-  Modifies the link command for unix-like compilers by using a command file so
-  that long command line argument strings don't break the command shell's
-  ARG_MAX character limit.
+  Some commands like `gcc` (and friends like `clang`) support command files to
+  work around shell command length limits.
   """
-  objects, output_dir = self._fix_object_args(objects, output_dir)
-  libraries, library_dirs, runtime_library_dirs = self._fix_lib_args(
-      libraries, library_dirs, runtime_library_dirs)
-  # filter out standard library paths, which are not explicitely needed
-  # for linking
-  library_dirs = [dir for dir in library_dirs
-                  if not dir in ('/lib', '/lib64', '/usr/lib', '/usr/lib64')]
-  runtime_library_dirs = [dir for dir in runtime_library_dirs
-                          if not dir in ('/lib', '/lib64', '/usr/lib', '/usr/lib64')]
-  lib_opts = ccompiler.gen_lib_options(self, library_dirs, runtime_library_dirs,
-                             libraries)
-  if (not (isinstance(output_dir, str) or isinstance(output_dir, bytes))
-      and output_dir is not None):
-    raise TypeError("'output_dir' must be a string or None")
-  if output_dir is not None:
-    output_filename = os.path.join(output_dir, output_filename)
-
-  if self._need_link(objects, output_filename):
-    ld_args = (objects + self.objects +
-               lib_opts + ['-o', output_filename])
-    if debug:
-      ld_args[:0] = ['-g']
-    if extra_preargs:
-      ld_args[:0] = extra_preargs
-    if extra_postargs:
-      ld_args.extend(extra_postargs)
-    self.mkpath(os.path.dirname(output_filename))
-    try:
-      if target_desc == ccompiler.CCompiler.EXECUTABLE:
-        linker = self.linker_exe[:]
-      else:
-        linker = self.linker_so[:]
-      if target_lang == "c++" and self.compiler_cxx:
-        # skip over environment variable settings if /usr/bin/env
-        # is used to set up the linker's environment.
-        # This is needed on OSX. Note: this assumes that the
-        # normal and C++ compiler have the same environment
-        # settings.
-        i = 0
-        if os.path.basename(linker[0]) == "env":
-          i = 1
-          while '=' in linker[i]:
-            i = i + 1
-
-        linker[i] = self.compiler_cxx[i]
-
-      if sys.platform == 'darwin':
-        import _osx_support
-        linker = _osx_support.compiler_fixup(linker, ld_args)
-
-      temporary_directory = tempfile.mkdtemp()
-      command_filename = os.path.abspath(
-          os.path.join(temporary_directory, 'command'))
-      with open(command_filename, 'w') as command_file:
-        escaped_ld_args = [arg.replace('\\', '\\\\') for arg in ld_args]
-        command_file.write(' '.join(escaped_ld_args))
-      self.spawn(linker + ['@{}'.format(command_filename)])
-    except errors.DistutilsExecError:
-      raise ccompiler.LinkError
+  # Sometimes distutils embeds the executables as full strings including some
+  # hard-coded flags rather than as lists.
+  command = list(shlex.split(command[0])) + list(command[1:])
+  command_base = os.path.basename(command[0].strip())
+  if command_base == 'ccache':
+    command_base = command[:2]
+    command_args = command[2:]
+  elif command_base.startswith('ccache') or command_base in ['gcc', 'clang', 'clang++', 'g++']:
+    command_base = command[:1]
+    command_args = command[1:]
   else:
-    log.debug("skipping %s (up-to-date)", output_filename)
+    return ccompiler.CCompiler.spawn(self, command)
+  temporary_directory = tempfile.mkdtemp()
+  command_filename = os.path.abspath(os.path.join(temporary_directory, 'command'))
+  with open(command_filename, 'w') as command_file:
+    escaped_args = [arg.replace('\\', '\\\\') for arg in command_args]
+    command_file.write(' '.join(escaped_args))
+  modified_command = command_base + ['@{}'.format(command_filename)]
+  result = ccompiler.CCompiler.spawn(self, modified_command)
+  shutil.rmtree(temporary_directory)
+  return result
 
-# TODO(atash) try replacing this monkeypatch of the compiler harness' link
-# operation with a monkeypatch of the distutils `spawn` that applies
-# command-argument-file hacks where it can. Might be cleaner.
+
 def monkeypatch_unix_compiler():
   """Monkeypatching is dumb, but it's either that or we become maintainers of
      something much, much bigger."""
-  unixccompiler.UnixCCompiler.link = _unix_piecemeal_link
+  unixccompiler.UnixCCompiler.spawn = _unix_commandfile_spawn

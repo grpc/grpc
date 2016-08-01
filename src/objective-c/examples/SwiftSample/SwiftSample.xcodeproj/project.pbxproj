@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2C0B024CB798839E17F76126 /* Pods_SwiftSample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B394F343BDE186C5436DBDB9 /* Pods_SwiftSample.framework */; };
 		633BFFC81B950B210007E424 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633BFFC71B950B210007E424 /* AppDelegate.swift */; };
 		633BFFCA1B950B210007E424 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633BFFC91B950B210007E424 /* ViewController.swift */; };
 		633BFFCD1B950B210007E424 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 633BFFCB1B950B210007E424 /* Main.storyboard */; };
 		633BFFCF1B950B210007E424 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 633BFFCE1B950B210007E424 /* Images.xcassets */; };
-		92EDB1408A1E1E7DDAB25D9C /* libPods-SwiftSample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 69BB5C6CA3C1F97E007AC527 /* libPods-SwiftSample.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,9 +21,8 @@
 		633BFFC91B950B210007E424 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		633BFFCC1B950B210007E424 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		633BFFCE1B950B210007E424 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		6367AD231B951655007FD3A4 /* Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
-		69BB5C6CA3C1F97E007AC527 /* libPods-SwiftSample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SwiftSample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A7E614A494D89D01BB395761 /* Pods-SwiftSample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftSample.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftSample/Pods-SwiftSample.debug.xcconfig"; sourceTree = "<group>"; };
+		B394F343BDE186C5436DBDB9 /* Pods_SwiftSample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftSample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C314E3E246AF23AC29B38FCF /* Pods-SwiftSample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftSample.release.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftSample/Pods-SwiftSample.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -32,7 +31,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				92EDB1408A1E1E7DDAB25D9C /* libPods-SwiftSample.a in Frameworks */,
+				2C0B024CB798839E17F76126 /* Pods_SwiftSample.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,7 +73,6 @@
 				633BFFCB1B950B210007E424 /* Main.storyboard */,
 				633BFFCE1B950B210007E424 /* Images.xcassets */,
 				633BFFC51B950B210007E424 /* Supporting Files */,
-				6367AD231B951655007FD3A4 /* Bridging-Header.h */,
 			);
 			name = SwiftSample;
 			sourceTree = SOURCE_ROOT;
@@ -90,7 +88,7 @@
 		9D63A7F6423989BA306810CA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				69BB5C6CA3C1F97E007AC527 /* libPods-SwiftSample.a */,
+				B394F343BDE186C5436DBDB9 /* Pods_SwiftSample.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -125,7 +123,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0710;
-				LastUpgradeCheck = 0640;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = gRPC;
 				TargetAttributes = {
 					633BFFC11B950B210007E424 = {
@@ -256,6 +254,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -325,8 +324,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Debug;
@@ -338,8 +338,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Release;

@@ -30,3 +30,5 @@
 FROM ubuntu:15.10
 
 RUN apt-get update -y && apt-get install -y python python-pip
+
+RUN pip install virtualenv

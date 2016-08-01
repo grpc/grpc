@@ -127,19 +127,6 @@ if [ $(is_linux) ]; then
     fi
   fi
 fi
-# TODO(atash) consider conceptualizing MinGW as a first-class platform and move
-# these flags into our `setup.py`s
-if [ $(is_mingw) ]; then
-  # We're on MinGW, and our CFLAGS and LDFLAGS will be eaten by the void. Use
-  # our work-around environment variables instead.
-  PYTHON_MSVCR=`$PYTHON -c "from distutils.cygwinccompiler import get_msvcr; print(get_msvcr()[0])"`
-  export GRPC_PYTHON_LDFLAGS="-static-libgcc -static-libstdc++ -mcrtdll=$PYTHON_MSVCR -static -lpthread"
-  # See https://sourceforge.net/p/mingw-w64/bugs/363/
-  export GRPC_PYTHON_CFLAGS="-D_ftime=_ftime64 -D_timeb=__timeb64"
-  # TODO(atash) set these flags for only grpcio-tools (they don't do any harm to
-  # grpcio, but they result in noisy warnings).
-  export GRPC_PYTHON_CFLAGS="-frtti -std=c++11 $GRPC_PYTHON_CFLAGS"
-fi
 
 ############################
 # Perform build operations #
@@ -177,7 +164,8 @@ pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
 # etc...
 pip_install_dir $ROOT
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
+$VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_health_checking
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_proto_modules
+$VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_tests

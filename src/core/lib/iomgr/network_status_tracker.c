@@ -42,9 +42,8 @@ typedef struct endpoint_ll_node {
 
 static endpoint_ll_node *head = NULL;
 static gpr_mu g_endpoint_mutex;
-static gpr_once g_once_init = GPR_ONCE_INIT;
 
-static void destroy_network_status_monitor(void) {
+void grpc_network_status_shutdown(void) {
   if (head != NULL) {
     gpr_log(GPR_ERROR,
             "Memory leaked as all network endpoints were not shut down");
@@ -52,14 +51,21 @@ static void destroy_network_status_monitor(void) {
   gpr_mu_destroy(&g_endpoint_mutex);
 }
 
-static void initialize_network_status_monitor(void) {
+void grpc_network_status_init(void) {
   gpr_mu_init(&g_endpoint_mutex);
-  atexit(destroy_network_status_monitor);
   // TODO(makarandd): Install callback with OS to monitor network status.
 }
 
+void grpc_destroy_network_status_monitor() {
+  for (endpoint_ll_node *curr = head; curr != NULL;) {
+    endpoint_ll_node *next = curr->next;
+    gpr_free(curr);
+    curr = next;
+  }
+  gpr_mu_destroy(&g_endpoint_mutex);
+}
+
 void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
-  gpr_once_init(&g_once_init, initialize_network_status_monitor);
   gpr_mu_lock(&g_endpoint_mutex);
   if (head == NULL) {
     head = (endpoint_ll_node *)gpr_malloc(sizeof(endpoint_ll_node));
