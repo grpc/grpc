@@ -47,6 +47,10 @@ static NSString * const kLocalSSLHost = @"localhost:5051";
   return kLocalSSLHost;
 }
 
+- (int32_t)encodingOverhead {
+  return 10; // bytes
+}
+
 - (void)setUp {
   [super setUp];
 

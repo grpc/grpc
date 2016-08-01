@@ -88,6 +88,10 @@
   return nil;
 }
 
+- (int32_t)encodingOverhead {
+  return 0;
+}
+
 - (void)setUp {
   self.continueAfterFailure = NO;
 
@@ -150,7 +154,7 @@
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"MaxResponseSize"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
-  const size_t kPayloadSize = 4 * 1024 * 1024 - 12; // 4MB - 12B of protobuf encoding overhead
+  const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead; // 4MB - encoding overhead
   request.responseSize = kPayloadSize;
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
@@ -167,7 +171,7 @@
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ResponseOverMaxSize"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
-  const size_t kPayloadSize = 4 * 1024 * 1024 - 11; // 1B over max size (see above test)
+  const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead + 1; // 1B over max size
   request.responseSize = kPayloadSize;
 
   [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
