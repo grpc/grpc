@@ -1200,7 +1200,7 @@
   $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating nanopb C file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(NANOPB_PRECOMPILE); $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<; $(NANOPB_POSTCOMPILE)
+  	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -1848,4 +1848,4 @@
   # Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
   $(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOBUF_DEP)
   	$(E) "[NANOPB]  Compiling $<"
-  	$(Q) $(NANOPB_PRECOMPILE) $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<; $(NANOPB_POSTCOMPILE)
+  	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<;
