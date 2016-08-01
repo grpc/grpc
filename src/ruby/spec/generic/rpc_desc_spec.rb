@@ -83,6 +83,7 @@ describe GRPC::RpcDesc do
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
+        allow(@call).to receive(:output_metadata).and_return(@call)
       end
 
       it_behaves_like 'it handles errors'
@@ -90,10 +91,10 @@ describe GRPC::RpcDesc do
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
         expect(@call).to receive(:remote_read).once.and_return(req)
-        expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:output_metadata).and_return(fake_md)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         metadata: fake_md)
+        expect(@call).to receive(:output_metadata).once.and_return(fake_md)
+        expect(@call).to receive(:server_unary_response).once
+          .with(@ok_response, trailing_metadata: fake_md)
+
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
     end
@@ -117,7 +118,9 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_send).once.and_raise(CallError)
+        expect(@call).to receive(:server_unary_response).once.and_raise(
+          CallError)
+        allow(@call).to receive(:output_metadata).and_return({})
         blk = proc do
           @client_streamer.run_server_method(@call, method(:fake_clstream))
         end
@@ -125,10 +128,11 @@ describe GRPC::RpcDesc do
       end
 
       it 'sends a response and closes the stream if there no errors' do
-        expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:output_metadata).and_return(fake_md)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         metadata: fake_md)
+        expect(@call).to receive(:output_metadata).and_return(
+          fake_md)
+        expect(@call).to receive(:server_unary_response).once
+          .with(@ok_response, trailing_metadata: fake_md)
+
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end

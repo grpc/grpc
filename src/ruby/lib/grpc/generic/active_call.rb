@@ -226,6 +226,23 @@ module GRPC
       nil
     end
 
+    def server_unary_response(req, marshalled: false, trailing_metadata: {},
+                              code: Core::StatusCodes::OK, details: 'OK')
+      @send_initial_md_mutex.synchronize do
+        ops = {}
+        ops[SEND_INITIAL_METADATA] = @metadata_to_send unless @metadata_sent
+        @metadata_sent = true unless @metadata_sent
+
+        payload = marshalled ? req : @marshal.call(req)
+        ops[SEND_MESSAGE] = payload
+        ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
+          code, details, trailing_metadata)
+        ops[RECV_CLOSE_ON_SERVER] = nil
+
+        @call.run_batch(ops)
+      end
+    end
+
     # remote_read reads a response from the remote endpoint.
     #
     # It blocks until the remote endpoint replies with a message or status.
@@ -315,11 +332,31 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
-      merge_metadata_to_send(metadata) && send_initial_metadata
-      remote_send(req)
-      writes_done(false)
-      response = remote_read
-      finished unless response.is_a? Struct::Status
+      batch_result = nil
+      @send_initial_md_mutex.synchronize do
+        fail 'md already sent' if @metadata_sent
+        batch_result = @call.run_batch(
+          SEND_INITIAL_METADATA => metadata,
+          SEND_MESSAGE => req,
+          SEND_CLOSE_FROM_CLIENT => nil,
+          RECV_INITIAL_METADATA => nil,
+          RECV_MESSAGE => nil,
+          RECV_STATUS_ON_CLIENT => nil)
+      end
+
+      response = nil
+      unless batch_result.nil? || batch_result.message.nil?
+        response = @unmarshal.call(batch_result.message)
+      end
+      unless batch_result.status.nil?
+        @call.trailing_metadata = batch_result.status.metadata
+      end
+      @call.status = batch_result.status
+      @call.metadata = batch_result.metadata
+
+      op_is_done
+      batch_result.check_status
+      @call.close
       response
     rescue GRPC::Core::CallError => e
       finished  # checks for Cancelled

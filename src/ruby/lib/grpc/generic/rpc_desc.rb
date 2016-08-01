@@ -62,25 +62,44 @@ module GRPC
       proc { |o| unmarshal_class.method(unmarshal_method).call(o) }
     end
 
+    def handle_request_response(active_call, mth)
+      req = active_call.remote_read
+      resp = mth.call(req, active_call.single_req_view)
+      active_call.server_unary_response(
+        resp, trailing_metadata: active_call.output_metadata)
+    end
+
+    def handle_client_streamer(active_call,  mth)
+      resp = mth.call(active_call.multi_req_view)
+      active_call.server_unary_response(
+        resp, trailing_metadata: active_call.output_metadata)
+    end
+
+    def handle_server_streamer(active_call, mth)
+      req = active_call.remote_read
+      replys = mth.call(req, active_call.single_req_view)
+      replys.each { |r| active_call.remote_send(r) }
+      send_status(active_call, OK, 'OK', active_call.output_metadata)
+    end
+
+    def handle_bidi_streamer(active_call, mth)
+      active_call.run_server_bidi(mth)
+      send_status(active_call, OK, 'OK', active_call.output_metadata)
+    end
+
     def run_server_method(active_call, mth)
       # While a server method is running, it might be cancelled, its deadline
       # might be reached, the handler could throw an unknown error, or a
       # well-behaved handler could throw a StatusError.
       if request_response?
-        req = active_call.remote_read
-        resp = mth.call(req, active_call.single_req_view)
-        active_call.remote_send(resp)
+        handle_request_response(active_call, mth)
       elsif client_streamer?
-        resp = mth.call(active_call.multi_req_view)
-        active_call.remote_send(resp)
+        handle_client_streamer(active_call, mth)
       elsif server_streamer?
-        req = active_call.remote_read
-        replys = mth.call(req, active_call.single_req_view)
-        replys.each { |r| active_call.remote_send(r) }
+        handle_server_streamer(active_call, mth)
       else  # is a bidi_stream
-        active_call.run_server_bidi(mth)
+        handle_bidi_streamer(active_call, mth)
       end
-      send_status(active_call, OK, 'OK', active_call.output_metadata)
     rescue BadStatus => e
       # this is raised by handlers that want GRPC to send an application error
       # code and detail message and some additional app-specific metadata.
@@ -91,7 +110,7 @@ module GRPC
       # Log it, but don't notify the other endpoint..
       GRPC.logger.warn("failed call: #{active_call}\n#{e}")
     rescue Core::OutOfTime
-      # This is raised when active_call#method.call exceeeds the deadline
+      # This is raised when active_call#method.call exceeds the deadline
       # event.  Send a status of deadline exceeded
       GRPC.logger.warn("late call: #{active_call}")
       send_status(active_call, DEADLINE_EXCEEDED, 'late')
