@@ -41,6 +41,7 @@ import json
 import multiprocessing
 import os
 import os.path
+import pipes
 import platform
 import random
 import re
@@ -62,7 +63,9 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 
-_FORCE_ENVIRON_FOR_WRAPPERS = {}
+_FORCE_ENVIRON_FOR_WRAPPERS = {
+  'GRPC_VERBOSITY': 'DEBUG',
+}
 
 
 _POLLING_STRATEGIES = {
@@ -72,6 +75,9 @@ _POLLING_STRATEGIES = {
 
 def platform_string():
   return jobset.platform_string()
+
+
+_DEFAULT_TIMEOUT_SECONDS = 5 * 60
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -86,7 +92,7 @@ class Config(object):
     self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
-  def job_spec(self, cmdline, timeout_seconds=5*60,
+  def job_spec(self, cmdline, timeout_seconds=_DEFAULT_TIMEOUT_SECONDS,
                shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
@@ -160,8 +166,9 @@ class CLanguage(object):
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                  _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
-             'GRPC_POLL_STRATEGY': polling_strategy}
-        shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
+             'GRPC_POLL_STRATEGY': polling_strategy,
+             'GRPC_VERBOSITY': 'DEBUG'}
+        shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.platform == 'windows':
@@ -192,28 +199,26 @@ class CLanguage(object):
                 assert line[1] == ' '
                 test = base + line.strip()
                 cmdline = [binary] + ['--gtest_filter=%s' % test]
-                out.append(self.config.job_spec(cmdline, [binary],
-                                                shortname='%s:%s %s' % (binary, test, shortname_ext),
+                out.append(self.config.job_spec(cmdline,
+                                                shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
                                                 cpu_cost=target['cpu_cost'],
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
-            out.append(self.config.job_spec(cmdline, [binary],
-                                            shortname=' '.join(cmdline) + shortname_ext,
+            out.append(self.config.job_spec(cmdline,
+                                            shortname=' '.join(
+                                                          pipes.quote(arg)
+                                                          for arg in cmdline) +
+                                                      shortname_ext,
                                             cpu_cost=target['cpu_cost'],
                                             flaky=target.get('flaky', False),
+                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS),
                                             environ=env))
         elif self.args.regex == '.*' or self.platform == 'windows':
           print('\nWARNING: binary not found, skipping', binary)
     return sorted(out)
 
   def make_targets(self):
-    test_regex = self.args.regex
-    if self.platform != 'windows' and self.args.regex != '.*':
-      # use the regex to minimize the number of things to build
-      return [os.path.basename(target['name'])
-              for target in get_c_tests(False, self.test_lang)
-              if re.search(test_regex, '/' + target['name'])]
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
@@ -374,6 +379,42 @@ class PhpLanguage(object):
 
   def __str__(self):
     return 'php'
+
+
+class Php7Language(object):
+
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def pre_build_steps(self):
+    return []
+
+  def make_targets(self):
+    return ['static_c', 'shared_c']
+
+  def make_options(self):
+    return []
+
+  def build_steps(self):
+    return [['tools/run_tests/build_php.sh']]
+
+  def post_tests_steps(self):
+    return [['tools/run_tests/post_tests_php.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
+
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/php7_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def __str__(self):
+    return 'php7'
 
 
 class PythonConfig(collections.namedtuple('PythonConfig', [
@@ -744,6 +785,7 @@ _LANGUAGES = {
     'c': CLanguage('c', 'c'),
     'node': NodeLanguage(),
     'php': PhpLanguage(),
+    'php7': Php7Language(),
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
@@ -1294,8 +1336,6 @@ def _build_and_run(
           jobset.message(
               'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
               do_newline=True)
-        else:
-          jobset.message('PASSED', k, do_newline=True)
   finally:
     for antagonist in antagonists:
       antagonist.kill()

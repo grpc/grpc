@@ -186,9 +186,10 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
+  cq_verify(cqv);
+
   // Simulate the network loss event
   grpc_network_status_shutdown_all_endpoints();
-  cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -205,7 +206,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  void shutdown_all_endpoints();
+
   cq_expect_completion(cqv, tag(103), 1);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);

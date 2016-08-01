@@ -22,15 +22,37 @@ GRPC_LOCAL_SRC = '../../..'
     pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
 
     pod 'BoringSSL',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
-    pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
 
     pod 'gRPC',           :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
     pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
     pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
-
     pod 'RemoteTest', :path => "RemoteTestClient"
   end
+end
+
+target 'CoreCronetEnd2EndTests' do
+  pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/Cronet-Interface', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/Cronet-Tests', :path => GRPC_LOCAL_SRC
+end
+
+target 'InteropTestsRemoteWithCronet' do
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
+
+  pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+
+  pod 'BoringSSL',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  
+  pod 'gRPC',           :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
+  pod 'RemoteTest', :path => "RemoteTestClient"
 end
 
 # gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
@@ -69,7 +91,7 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
     end
-    if target.name == 'gRPC-Core'
+    if target.name == 'gRPC-Core' or target.name == 'gRPC-Core.default-Cronet-Interface-Cronet-Tests'
       target.build_configurations.each do |config|
         # TODO(zyc): Remove this setting after the issue is resolved
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void

@@ -491,7 +491,8 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
   }
 
   for (unsigned i = 0; i < count; i++) {
-    int fd, port;
+    int fd = -1;
+    int port = -1;
     grpc_dualstack_mode dsmode;
     err = grpc_create_dualstack_socket(&listener->addr.sockaddr, SOCK_STREAM, 0,
                                        &dsmode, &fd);
@@ -738,6 +739,19 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
       tcp_server_destroy(exec_ctx, s);
     }
   }
+}
+
+void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
+                                        grpc_tcp_server *s) {
+  gpr_mu_lock(&s->mu);
+  /* shutdown all fd's */
+  if (s->active_ports) {
+    grpc_tcp_listener *sp;
+    for (sp = s->head; sp; sp = sp->next) {
+      grpc_fd_shutdown(exec_ctx, sp->emfd);
+    }
+  }
+  gpr_mu_unlock(&s->mu);
 }
 
 #endif

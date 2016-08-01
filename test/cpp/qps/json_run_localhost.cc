@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
   for (int i = 1; i < argc; i++) {
     args.push_back(argv[i]);
   }
-  SubProcess(args).Join();
+  GPR_ASSERT(SubProcess(args).Join() == 0);
 
   for (auto it = jobs.begin(); it != jobs.end(); ++it) {
     (*it)->Interrupt();

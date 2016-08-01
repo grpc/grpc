@@ -172,21 +172,17 @@ module GRPC
     # The RPC server is configured using keyword arguments.
     #
     # There are some specific keyword args used to configure the RpcServer
-    # instance, however other arbitrary are allowed and when present are used
-    # to configure the listeninng connection set up by the RpcServer.
-    #
-    # * poll_period: when present, the server polls for new events with this
-    # period
+    # instance.
     #
     # * pool_size: the size of the thread pool the server uses to run its
     # threads
     #
-    # * creds: [GRPC::Core::ServerCredentials]
-    # the credentials used to secure the server
-    #
     # * max_waiting_requests: the maximum number of requests that are not
     # being handled to allow. When this limit is exceeded, the server responds
     # with not available to new requests
+    #
+    # * poll_period: when present, the server polls for new events with this
+    # period
     #
     # * connect_md_proc:
     # when non-nil is a proc for determining metadata to to send back the client
