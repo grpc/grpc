@@ -40,7 +40,6 @@
 
 namespace grpc_c_generator {
 
-
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
@@ -48,6 +47,6 @@ inline grpc::string GetCComments(const DescriptorType *desc, bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 
-} // namespace grpc_c_generator
+}  // namespace grpc_c_generator
 
-#endif // GRPC_INTERNAL_COMPILER_C_GENERATOR_HELPERS_H
+#endif  // GRPC_INTERNAL_COMPILER_C_GENERATOR_HELPERS_H

@@ -31,21 +31,23 @@
  *
  */
 
-
 #ifndef GRPC_C_CALL_OPS_H
 #define GRPC_C_CALL_OPS_H
 
-#include <stdbool.h>
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/codegen/method.h>
 #include <grpc/grpc.h>
-#include "src/c/message.h"
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/grpc_c.h>
+#include <stdbool.h>
 #include "src/c/client_context.h"
+#include "src/c/message.h"
 
 typedef struct grpc_call_op_set grpc_call_op_set;
 
-typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_client_context *, grpc_call_op_set *, const grpc_message message, void *response);
-typedef void (*grpc_op_finisher)(grpc_client_context *, grpc_call_op_set *, bool *status, int max_message_size);
+typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *,
+                               grpc_client_context *, grpc_call_op_set *,
+                               const grpc_message message, void *response);
+typedef void (*grpc_op_finisher)(grpc_client_context *, grpc_call_op_set *,
+                                 bool *status, int max_message_size);
 
 typedef struct grpc_op_manager {
   const grpc_op_filler fill;
@@ -61,30 +63,37 @@ typedef struct grpc_closure {
 
 struct grpc_call_op_set {
   const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
-  grpc_client_context * const context;
+  grpc_client_context *const context;
 
   /* these are used by individual operations */
   void *response;
   grpc_byte_buffer *recv_buffer;
   bool message_received;
 
-  /* if this is true (default false), the event tagged by this call_op_set will not be emitted
+  /* if this is true (default false), the event tagged by this call_op_set will
+   * not be emitted
    * from the completion queue wrapper. */
   bool hide_from_user;
 
   // used in async calls
   void *user_tag;
-  bool *user_done;    /* for clients reading a stream */
-  grpc_closure async_cleanup;   /* will be called when RPC ends */
+  bool *user_done;            /* for clients reading a stream */
+  grpc_closure async_cleanup; /* will be called when RPC ends */
 };
 
-void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_client_context *context,
-                                const grpc_message message, void *response, grpc_op ops[], size_t *nops);
+void grpc_fill_op_from_call_set(grpc_call_op_set *set,
+                                const grpc_method *rpc_method,
+                                grpc_client_context *context,
+                                const grpc_message message, void *response,
+                                grpc_op ops[], size_t *nops);
 
-/* Runs post processing steps in the call op set. Returns false if something wrong happens e.g. serialization. */
-bool grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_client_context *context);
+/* Runs post processing steps in the call op set. Returns false if something
+ * wrong happens e.g. serialization. */
+bool grpc_finish_op_from_call_set(grpc_call_op_set *set,
+                                  grpc_client_context *context);
 
-void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set, grpc_client_context *context,
+void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set,
+                                  grpc_client_context *context,
                                   const grpc_message message, void *response);
 
 /* list of operations */

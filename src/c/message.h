@@ -31,7 +31,6 @@
  *
  */
 
-
 #ifndef GRPC_C_MESSAGE_H
 #define GRPC_C_MESSAGE_H
 
@@ -39,4 +38,4 @@
 
 typedef GRPC_message grpc_message;
 
-#endif // GRPC_C_MESSAGE_H
+#endif  // GRPC_C_MESSAGE_H

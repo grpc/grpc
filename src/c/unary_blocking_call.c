@@ -31,13 +31,13 @@
  *
  */
 
+#include "src/c/unary_blocking_call.h"
+#include <grpc/support/log.h>
+#include <grpc_c/codegen/method.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
-#include <grpc_c/codegen/method.h>
-#include <grpc/support/log.h>
-#include "src/c/client_context.h"
 #include "src/c/call_ops.h"
-#include "src/c/unary_blocking_call.h"
+#include "src/c/client_context.h"
 #include "src/c/completion_queue.h"
 
 GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
@@ -45,33 +45,22 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
                                      const GRPC_message message,
                                      void *response) {
   grpc_completion_queue *cq = GRPC_completion_queue_create();
-  grpc_call *call = grpc_channel_create_call(context->channel,
-                                             NULL,
-                                             GRPC_PROPAGATE_DEFAULTS,
-                                             cq,
-                                             rpc_method.name,
-                                             "",
-                                             context->deadline,
-                                             NULL);
+  grpc_call *call = grpc_channel_create_call(
+      context->channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rpc_method.name, "",
+      context->deadline, NULL);
   context->call = call;
   grpc_call_op_set set = {
-    {
-      grpc_op_send_metadata,
-      grpc_op_recv_metadata,
-      grpc_op_send_object,
-      grpc_op_recv_object,
-      grpc_op_send_close,
-      grpc_op_recv_status
-    },
-    .context = context,
-    .user_tag = &set
-  };
+      {grpc_op_send_metadata, grpc_op_recv_metadata, grpc_op_send_object,
+       grpc_op_recv_object, grpc_op_send_close, grpc_op_recv_status},
+      .context = context,
+      .user_tag = &set};
 
   grpc_start_batch_from_op_set(call, &set, context, message, response);
   for (;;) {
     void *tag;
     bool ok;
-    GRPC_completion_queue_operation_status status = GRPC_completion_queue_next_deadline(cq, context->deadline, &tag, &ok);
+    GRPC_completion_queue_operation_status status =
+        GRPC_completion_queue_next_deadline(cq, context->deadline, &tag, &ok);
     GPR_ASSERT(status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
     if (tag == &set) {
       context->status.ok &= ok;

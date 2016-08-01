@@ -34,18 +34,19 @@
 #ifndef GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H
 #define GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H
 
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/codegen/method.h>
 #include <grpc_c/codegen/message.h>
+#include <grpc_c/codegen/method.h>
 #include <grpc_c/completion_queue.h>
+#include <grpc_c/grpc_c.h>
 
-GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *cq,
-                                                         const GRPC_method rpc_method,
-                                                         const GRPC_message request,
-                                                         GRPC_client_context *const context);
+GRPC_client_async_response_reader *GRPC_unary_async_call(
+    GRPC_completion_queue *cq, const GRPC_method rpc_method,
+    const GRPC_message request, GRPC_client_context *const context);
 
-void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, void *response, void *tag);
+void GRPC_client_async_finish(GRPC_client_async_response_reader *reader,
+                              void *response, void *tag);
 
-void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag);
+void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader,
+                                     void *tag);
 
 #endif /* GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H */

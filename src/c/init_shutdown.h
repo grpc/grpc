@@ -36,4 +36,4 @@
 
 void grpc_ensure_grpc_init();
 
-#endif // GRPC_C_GRPC_INIT_SHUTDOWN_H
+#endif  // GRPC_C_GRPC_INIT_SHUTDOWN_H

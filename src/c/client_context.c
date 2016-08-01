@@ -31,26 +31,19 @@
  *
  */
 
-#include <grpc/support/alloc.h>
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/client_context.h>
 #include "src/c/client_context.h"
+#include <grpc/support/alloc.h>
+#include <grpc_c/client_context.h>
+#include <grpc_c/grpc_c.h>
 #include "src/c/alloc.h"
 
 grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
   grpc_client_context *context = GRPC_ALLOC_STRUCT(
-    grpc_client_context, {
-    .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
-    .channel = chan,
-    .serialization_impl = {
-      .serialize = NULL,
-      .deserialize = NULL
-    },
-    .status = {
-      .ok = true
-    }
-  }
-  );
+      grpc_client_context,
+      {.deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
+       .channel = chan,
+       .serialization_impl = {.serialize = NULL, .deserialize = NULL},
+       .status = {.ok = true}});
   return context;
 }
 
@@ -71,8 +64,6 @@ GRPC_status GRPC_get_call_status(GRPC_client_context *context) {
 }
 
 void GRPC_client_context_set_serialization_impl(
-  GRPC_client_context *context,
-  grpc_serialization_impl serialization_impl) {
+    GRPC_client_context *context, grpc_serialization_impl serialization_impl) {
   context->serialization_impl = serialization_impl;
 }
-

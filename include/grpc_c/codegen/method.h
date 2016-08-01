@@ -37,9 +37,9 @@
 typedef struct grpc_method {
   enum RpcType {
     NORMAL_RPC = 0,
-    CLIENT_STREAMING,  /* request streaming */
-      SERVER_STREAMING,  /* response streaming */
-      BIDI_STREAMING
+    CLIENT_STREAMING, /* request streaming */
+    SERVER_STREAMING, /* response streaming */
+    BIDI_STREAMING
   } type;
   const char* name;
 } grpc_method;

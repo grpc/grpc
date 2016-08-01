@@ -32,15 +32,16 @@
  */
 
 /**
- * This example shows the async unary API where there are multiple worker threads processing RPCs.
+ * This example shows the async unary API where there are multiple worker
+ * threads processing RPCs.
  */
 
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "helloworld.grpc.pbc.h"
 #include <pb_decode.h>
+#include "helloworld.grpc.pbc.h"
 
 typedef struct async_client {
   GRPC_client_context *context;
@@ -54,19 +55,19 @@ int num_responses;
  * Nanopb callbacks for string encoding/decoding.
  */
 
-static bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
+static bool write_string(pb_ostream_t *stream, const pb_field_t *field,
+                         void *const *arg) {
   char *str = "world";
-  if (!pb_encode_tag_for_field(stream, field))
-    return false;
+  if (!pb_encode_tag_for_field(stream, field)) return false;
 
-  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+  return pb_encode_string(stream, (uint8_t *)str, strlen(str));
 }
 
-static bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+static bool read_string(pb_istream_t *stream, const pb_field_t *field,
+                        void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
-  if(!pb_read(stream, str, len)) return false;
+  if (!pb_read(stream, str, len)) return false;
   str[len] = '\0';
   printf("Server replied %s\n", str);
   free(str);
@@ -76,22 +77,24 @@ static bool read_string(pb_istream_t *stream, const pb_field_t *field, void **ar
 static void async_say_hello(GRPC_channel *chan, GRPC_completion_queue *cq) {
   GRPC_client_context *context = GRPC_client_context_create(chan);
 
-  async_client *client = (async_client *) calloc(1, sizeof(async_client));
+  async_client *client = (async_client *)calloc(1, sizeof(async_client));
   client->context = context;
   client->reply.message.funcs.decode = read_string;
 
-  helloworld_HelloRequest request = { .name.funcs.encode = write_string };
-  GRPC_client_async_response_reader *reader = helloworld_Greeter_SayHello_Async(context, cq, request);
+  helloworld_HelloRequest request = {.name.funcs.encode = write_string};
+  GRPC_client_async_response_reader *reader =
+      helloworld_Greeter_SayHello_Async(context, cq, request);
   helloworld_Greeter_SayHello_Finish(reader, &client->reply, client);
 }
 
 static void *async_say_hello_worker(void *param) {
   int i;
-  GRPC_completion_queue *cq = (GRPC_completion_queue *) param;
-  for (; ; ) {
+  GRPC_completion_queue *cq = (GRPC_completion_queue *)param;
+  for (;;) {
     void *tag;
     bool ok;
-    GRPC_completion_queue_operation_status status = GRPC_completion_queue_next(cq, &tag, &ok);
+    GRPC_completion_queue_operation_status status =
+        GRPC_completion_queue_next(cq, &tag, &ok);
     if (status == GRPC_COMPLETION_QUEUE_SHUTDOWN) {
       printf("Worker thread shutting down\n");
       return NULL;
@@ -104,14 +107,14 @@ static void *async_say_hello_worker(void *param) {
 
     assert(ok);
     assert(tag != NULL);
-    async_client *client = (async_client *) tag;
+    async_client *client = (async_client *)tag;
     GRPC_client_context_destroy(&client->context);
     free(client);
   }
   return NULL;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
   GRPC_client_context *context = GRPC_client_context_create(chan);
   GRPC_completion_queue *cq = GRPC_completion_queue_create();
@@ -119,7 +122,7 @@ int main(int argc, char** argv) {
   num_responses = 0;
   pthread_mutex_init(&num_responses_lock, NULL);
 
-  /* Start worker threads */
+/* Start worker threads */
 #define THREAD_COUNT 3
   pthread_t tids[THREAD_COUNT];
   int i;

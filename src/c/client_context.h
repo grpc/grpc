@@ -31,17 +31,16 @@
  *
  */
 
-
 #ifndef GRPC_C_CLIENT_CONTEXT_H
 #define GRPC_C_CLIENT_CONTEXT_H
 
-#include <stdbool.h>
+#include <grpc/grpc.h>
+#include <grpc_c/codegen/client_context.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/codegen/serialization.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
-#include <grpc_c/codegen/client_context.h>
-#include <grpc_c/codegen/serialization.h>
-#include <grpc_c/codegen/method.h>
-#include <grpc/grpc.h>
+#include <stdbool.h>
 #include "src/c/message.h"
 
 typedef struct grpc_client_context grpc_client_context;
@@ -65,4 +64,4 @@ struct grpc_client_context {
   grpc_call *call;
 };
 
-#endif // GRPC_C_CLIENT_CONTEXT_H
+#endif  // GRPC_C_CLIENT_CONTEXT_H

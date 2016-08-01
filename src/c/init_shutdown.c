@@ -32,9 +32,9 @@
  */
 
 #include "src/c/init_shutdown.h"
-#include <stdlib.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <stdlib.h>
 
 static void perform_grpc_init() {
   grpc_init();
@@ -46,4 +46,3 @@ void grpc_ensure_grpc_init() {
   static gpr_once once_var = GPR_ONCE_INIT;
   gpr_once_init(&once_var, perform_grpc_init);
 }
-

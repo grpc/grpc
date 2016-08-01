@@ -34,26 +34,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "helloworld.grpc.pbc.h"
 #include <pb_decode.h>
+#include "helloworld.grpc.pbc.h"
 
 /**
  * Nanopb callbacks for string encoding/decoding.
  */
 
-static bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
+static bool write_string(pb_ostream_t *stream, const pb_field_t *field,
+                         void *const *arg) {
   char *str = "world";
-  if (!pb_encode_tag_for_field(stream, field))
-    return false;
+  if (!pb_encode_tag_for_field(stream, field)) return false;
 
-  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+  return pb_encode_string(stream, (uint8_t *)str, strlen(str));
 }
 
-static bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+static bool read_string(pb_istream_t *stream, const pb_field_t *field,
+                        void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
-  if(!pb_read(stream, str, len)) return false;
+  if (!pb_read(stream, str, len)) return false;
   str[len] = '\0';
   printf("Server replied %s\n", str);
   free(str);
@@ -64,14 +64,14 @@ static bool read_string(pb_istream_t *stream, const pb_field_t *field, void **ar
  * Fires a single unary RPC and checks the status.
  */
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Instantiate the channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051).
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
   GRPC_client_context *context = GRPC_client_context_create(chan);
-  helloworld_HelloRequest request = { .name.funcs.encode = write_string };
-  helloworld_HelloReply reply = { .message.funcs.decode = read_string };
+  helloworld_HelloRequest request = {.name.funcs.encode = write_string};
+  helloworld_HelloReply reply = {.message.funcs.decode = read_string};
   GRPC_status status = helloworld_Greeter_SayHello(context, request, &reply);
   if (status.code == GRPC_STATUS_OK && status.ok) {
     GRPC_client_context_destroy(&context);

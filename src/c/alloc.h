@@ -31,14 +31,14 @@
  *
  */
 
-
 #ifndef GRPC_C_ALLOC_H
 #define GRPC_C_ALLOC_H
 
 #include <stdlib.h>
 
-void* GRPC_memdup(const void * dst, size_t size);
+void* GRPC_memdup(const void* dst, size_t size);
 
-#define GRPC_ALLOC_STRUCT(type, ...) (type *) GRPC_memdup(&(type)__VA_ARGS__, sizeof(type))
+#define GRPC_ALLOC_STRUCT(type, ...) \
+  (type*)GRPC_memdup(&(type)__VA_ARGS__, sizeof(type))
 
-#endif // GRPC_C_ALLOC_H
+#endif  // GRPC_C_ALLOC_H

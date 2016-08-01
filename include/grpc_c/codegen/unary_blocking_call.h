@@ -34,10 +34,10 @@
 #ifndef GRPC_C_CODEGEN_UNARY_BLOCKING_CALL_H
 #define GRPC_C_CODEGEN_UNARY_BLOCKING_CALL_H
 
+#include <grpc_c/codegen/message.h>
+#include <grpc_c/codegen/method.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
-#include <grpc_c/codegen/method.h>
-#include <grpc_c/codegen/message.h>
 
 GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
                                      GRPC_client_context *const context,

@@ -31,7 +31,6 @@
  *
  */
 
-
 #ifndef GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
 #define GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
 
@@ -47,4 +46,4 @@ typedef struct grpc_client_writer {
   grpc_message *response;
 } grpc_client_writer;
 
-#endif // GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
+#endif  // GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H

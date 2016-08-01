@@ -31,16 +31,17 @@
  *
  */
 
-#include <stddef.h>
-#include <grpc_c/codegen/pb_compat.h>
-#include <third_party/nanopb/pb.h>
-#include <third_party/nanopb/pb_encode.h>
-#include <third_party/nanopb/pb_decode.h>
 #include <grpc/support/alloc.h>
+#include <grpc_c/codegen/pb_compat.h>
+#include <stddef.h>
+#include <third_party/nanopb/pb.h>
+#include <third_party/nanopb/pb_decode.h>
+#include <third_party/nanopb/pb_encode.h>
 #include "src/c/alloc.h"
 
 /**
- * This file implements a Nanopb stream used to collect deserialized data from Nanopb.
+ * This file implements a Nanopb stream used to collect deserialized data from
+ * Nanopb.
  */
 
 typedef struct GRPC_pb_dynamic_array_state {
@@ -49,8 +50,7 @@ typedef struct GRPC_pb_dynamic_array_state {
   size_t capacity;
 } GRPC_pb_dynamic_array_state;
 
-static size_t upper_power_of_two(size_t v)
-{
+static size_t upper_power_of_two(size_t v) {
   v--;
   v |= v >> 1;
   v |= v >> 2;
@@ -62,49 +62,48 @@ static size_t upper_power_of_two(size_t v)
 }
 
 GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc() {
-  return GRPC_ALLOC_STRUCT(GRPC_pb_dynamic_array_state, {
-    .data = NULL,
-    .size = 0,
-    .capacity = 0
-  });
+  return GRPC_ALLOC_STRUCT(GRPC_pb_dynamic_array_state,
+                           {.data = NULL, .size = 0, .capacity = 0});
 }
 
 void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state) {
   gpr_free(state);
 }
 
-bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
+bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream,
+                                           const uint8_t *buf, size_t count) {
   GRPC_pb_dynamic_array_state *state = stream->state;
   if (state->size + count > state->capacity) {
     state->capacity = upper_power_of_two(state->size + count);
     state->data = gpr_realloc(state->data, state->capacity);
   }
   if (state->data == NULL) return false;
-  if (buf) memcpy((char *) state->data + state->size, buf, count);
+  if (buf) memcpy((char *)state->data + state->size, buf, count);
   state->size += count;
   return true;
 }
 
-void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state) {
+void *GRPC_pb_compat_dynamic_array_get_content(
+    GRPC_pb_dynamic_array_state *state) {
   return state->data;
 }
 
-GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input, const void *fields) {
-  pb_ostream_t ostream = {
-    .callback = GRPC_pb_compat_dynamic_array_callback,
-    .state = GRPC_pb_compat_dynamic_array_alloc(),
-    .max_size = SIZE_MAX
-  };
+GRPC_message GRPC_pb_compat_generic_serializer(const GRPC_message input,
+                                               const void *fields) {
+  pb_ostream_t ostream = {.callback = GRPC_pb_compat_dynamic_array_callback,
+                          .state = GRPC_pb_compat_dynamic_array_alloc(),
+                          .max_size = SIZE_MAX};
   pb_encode(&ostream, fields, input.data);
-  GRPC_message msg = (GRPC_message) {
-    GRPC_pb_compat_dynamic_array_get_content(ostream.state),
-    ostream.bytes_written
-  };
+  GRPC_message msg =
+      (GRPC_message){GRPC_pb_compat_dynamic_array_get_content(ostream.state),
+                     ostream.bytes_written};
   GRPC_pb_compat_dynamic_array_free(ostream.state);
   return msg;
 }
 
-void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output, const void *fields) {
-  pb_istream_t istream = pb_istream_from_buffer((void *) input.data, input.length);
+void GRPC_pb_compat_generic_deserializer(const GRPC_message input, void *output,
+                                         const void *fields) {
+  pb_istream_t istream =
+      pb_istream_from_buffer((void *)input.data, input.length);
   pb_decode(&istream, fields, output);
 }

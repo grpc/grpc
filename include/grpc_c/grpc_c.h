@@ -44,6 +44,7 @@ typedef struct grpc_client_writer GRPC_client_writer;
 typedef struct grpc_client_async_reader_writer GRPC_client_async_reader_writer;
 typedef struct grpc_client_async_reader GRPC_client_async_reader;
 typedef struct grpc_client_async_writer GRPC_client_async_writer;
-typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
+typedef struct grpc_client_async_response_reader
+    GRPC_client_async_response_reader;
 
 #endif /* GRPC_C_GRPC_C_H */

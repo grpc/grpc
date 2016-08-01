@@ -34,8 +34,8 @@
 #ifndef GRPC_C_CODEGEN_CLIENT_CONTEXT_H
 #define GRPC_C_CODEGEN_CLIENT_CONTEXT_H
 
-#include <grpc_c/codegen/serialization.h>
 #include <grpc_c/client_context.h>
+#include <grpc_c/codegen/serialization.h>
 
 typedef struct grpc_serialization_impl {
   GRPC_serializer serialize;
@@ -43,7 +43,6 @@ typedef struct grpc_serialization_impl {
 } grpc_serialization_impl;
 
 void GRPC_client_context_set_serialization_impl(
-  GRPC_client_context *context,
-  grpc_serialization_impl serialization_impl);
+    GRPC_client_context *context, grpc_serialization_impl serialization_impl);
 
 #endif /* GRPC_C_CODEGEN_CLIENT_CONTEXT_H */

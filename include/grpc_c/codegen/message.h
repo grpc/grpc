@@ -37,7 +37,7 @@
 #include <stdlib.h>
 
 typedef struct GRPC_message {
-  const void * data;
+  const void *data;
   const size_t length;
 } GRPC_message;
 

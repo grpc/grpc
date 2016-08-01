@@ -34,16 +34,17 @@
 #ifndef GRPC_C_CODEGEN_SERVER_STREAMING_BLOCKING_CALL_H
 #define GRPC_C_CODEGEN_SERVER_STREAMING_BLOCKING_CALL_H
 
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/codegen/method.h>
 #include <grpc_c/codegen/message.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/grpc_c.h>
 #include <stdbool.h>
 
-GRPC_client_reader *GRPC_server_streaming_blocking_call(const GRPC_method rpc_method,
-                                                        GRPC_client_context *const context,
-                                                        const GRPC_message request);
+GRPC_client_reader *GRPC_server_streaming_blocking_call(
+    const GRPC_method rpc_method, GRPC_client_context *const context,
+    const GRPC_message request);
 
-bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, void *response);
+bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader,
+                                         void *response);
 
 /* Terminating the writer takes care of ending the call, freeing the writer. */
 GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);

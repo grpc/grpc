@@ -31,9 +31,9 @@
  *
  */
 
-#include <string.h>
-#include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
+#include <grpc/support/alloc.h>
+#include <string.h>
 
 void *GRPC_memdup(const void *dst, size_t size) {
   void *p = gpr_malloc(size);

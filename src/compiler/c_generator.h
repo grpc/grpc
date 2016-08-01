@@ -54,9 +54,10 @@ struct Parameters {
 };
 
 class CFile : public grpc_cpp_generator::File {
-public:
+ public:
   // List of messages defined in the file
-  virtual std::vector<const google::protobuf::Descriptor *> messages() const = 0;
+  virtual std::vector<const google::protobuf::Descriptor *> messages()
+      const = 0;
   virtual std::vector<std::unique_ptr<CFile> > dependencies() const = 0;
 };
 
@@ -86,4 +87,4 @@ grpc::string GetSourceEpilogue(File *file, const Parameters &params);
 
 }  // namespace grpc_c_generator
 
-#endif // GRPC_INTERNAL_COMPILER_C_GENERATOR_H
+#endif  // GRPC_INTERNAL_COMPILER_C_GENERATOR_H

@@ -36,7 +36,7 @@
 
 #include <grpc_c/grpc_c.h>
 
-GRPC_channel *GRPC_channel_create(const char * const target);
-void GRPC_channel_destroy(GRPC_channel ** channel);
+GRPC_channel *GRPC_channel_create(const char *const target);
+void GRPC_channel_destroy(GRPC_channel **channel);
 
 #endif /* GRPC_C_CHANNEL_H */

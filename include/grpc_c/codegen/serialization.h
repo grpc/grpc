@@ -34,8 +34,8 @@
 #ifndef GRPC_C_CODEGEN_SERIALIZATION_H
 #define GRPC_C_CODEGEN_SERIALIZATION_H
 
-#include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/message.h>
+#include <grpc_c/grpc_c.h>
 
 typedef GRPC_message (*GRPC_serializer)(const GRPC_message input);
 typedef void (*GRPC_deserializer)(const GRPC_message input, void *output);
