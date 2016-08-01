@@ -227,7 +227,8 @@ static void SendServerStreamingRpc(GRPC_channel *channel,
       char *response_string = (char *) malloc(resplength);
       memcpy(response_string, ((char *) resp) + 2, resplength);
       response_string[resplength] = '\0';
-      EXPECT_EQ(grpc::string("gRPC-C") + grpc::to_string(count++), grpc::string(response_string));
+      EXPECT_EQ(grpc::string("gRPC-C") + grpc::to_string(count), grpc::string(response_string));
+      count++;
       free(response_string);
     }
     EXPECT_TRUE(count > 0);
