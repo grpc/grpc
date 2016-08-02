@@ -1377,6 +1377,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   int num_completion_callbacks_needed = 1;
   grpc_call_error error = GRPC_CALL_OK;
 
+  // sent_initial_metadata guards against variable reuse.
+  grpc_metadata compression_md;
+
   GPR_TIMER_BEGIN("grpc_call_start_batch", 0);
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
@@ -1422,8 +1425,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* process compression level */
-        grpc_metadata compression_md;
-        memset(&compression_md, 0, sizeof(grpc_metadata));
+        memset(&compression_md, 0, sizeof(compression_md));
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level;
         bool level_set = false;

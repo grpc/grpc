@@ -182,6 +182,27 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "census_resource_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "channel_create_test", 
     "platforms": [
       "linux", 
