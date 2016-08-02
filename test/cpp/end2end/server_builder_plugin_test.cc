@@ -191,7 +191,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     // we run some tests without a service, and for those we need to supply a
     // frequently polled completion queue
     cq_ = builder_->AddCompletionQueue();
-    cq_thread_ = grpc::thread(std::bind(&ServerBuilderPluginTest::RunCQ, this));
+    cq_thread_ = new grpc::thread(&ServerBuilderPluginTest::RunCQ, this);
     server_ = builder_->BuildAndStart();
     EXPECT_TRUE(CheckPresent());
   }
@@ -209,7 +209,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     EXPECT_TRUE(plugin->finish_is_called());
     server_->Shutdown();
     cq_->Shutdown();
-    cq_thread_.join();
+    cq_thread_->join();
+    delete cq_thread_;
   }
 
   string to_string(const int number) {
@@ -224,7 +225,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
-  grpc::thread cq_thread_;
+  grpc::thread* cq_thread_;
   TestServiceImpl service_;
   int port_;
 

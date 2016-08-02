@@ -48,35 +48,114 @@ set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} C CXX)
 
-if(NOT BORINGSSL_ROOT_DIR)
-  set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
-endif()
-if(NOT PROTOBUF_ROOT_DIR)
-  set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
-endif()
-if(NOT ZLIB_ROOT_DIR)
-  set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
-endif()
+set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
+set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
-# Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
-# Disable them unless they are explicitly requested from the cmake command line (when we assume
-# gmock is downloaded to the right location inside protobuf).
-if(NOT protobuf_BUILD_TESTS)
-  set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
-endif()
+set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
+set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
-add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
-add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
-add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
+set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
+set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
-if (GRPC_USE_PROTO_LITE)
-  set(PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
+if (gRPC_USE_PROTO_LITE)
+  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
   add_definitions("-DGRPC_USE_PROTO_LITE")
 else()
-  set(PROTOBUF_LIBRARY_NAME "libprotobuf")
+  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
+endif()
+
+if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
+  if(NOT ZLIB_ROOT_DIR)
+    set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
+  endif()
+  set(ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}")
+  if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
+      add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
+      if(TARGET zlibstatic)
+          set(_gRPC_ZLIB_LIBRARIES zlibstatic)
+      endif()
+  else()
+      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
+  find_package(ZLIB)
+  if(TARGET ZLIB::ZLIB)
+    set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
+  endif()
+  set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
+endif()
+
+if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
+  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
+  # Disable them unless they are explicitly requested from the cmake command line (when we assume
+  # gmock is downloaded to the right location inside protobuf).
+  if(NOT protobuf_BUILD_TESTS)
+    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+  endif()
+  if(NOT PROTOBUF_ROOT_DIR)
+    set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
+  endif()
+  if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
+    add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
+    if(TARGET ${_gRPC_PROTOBUF_LIBRARY_NAME})
+      set(_gRPC_PROTOBUF_LIBRARIES ${_gRPC_PROTOBUF_LIBRARY_NAME})
+    endif()
+    if(TARGET libprotoc)
+      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
+    endif()
+  else()
+      message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
+  find_package(protobuf CONFIG)
+  if(protobuf_FOUND)
+    if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
+      set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
+    endif()
+    if(TARGET protobuf::libprotoc)
+      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+    endif()
+    set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
+  else()
+    find_package(Protobuf MODULE)
+    set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
+  endif()
+endif()
+
+if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
+  if(NOT BORINGSSL_ROOT_DIR)
+    set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
+  endif()
+  if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
+    add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
+    if(TARGET ssl)
+      set(_gRPC_SSL_LIBRARIES ssl)
+    endif()
+  else()
+      message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
+  find_package(OpenSSL)
+  if(TARGET OpenSSL::SSL)
+    set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
+  endif()
+  set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
+endif()
+
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+if(WIN32 AND MSVC)
+  set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
+endif()
+
+include(GNUInstallDirs)
+if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
+  set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/gRPC")
 endif()
 
   
@@ -133,10 +212,68 @@ target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
+
+foreach(_hdr
+  include/grpc/support/alloc.h
+  include/grpc/support/atm.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/avl.h
+  include/grpc/support/cmdline.h
+  include/grpc/support/cpu.h
+  include/grpc/support/histogram.h
+  include/grpc/support/host_port.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/slice.h
+  include/grpc/support/slice_buffer.h
+  include/grpc/support/string_util.h
+  include/grpc/support/subprocess.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd.h
+  include/grpc/support/time.h
+  include/grpc/support/tls.h
+  include/grpc/support/tls_gcc.h
+  include/grpc/support/tls_msvc.h
+  include/grpc/support/tls_pthread.h
+  include/grpc/support/useful.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS gpr EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
   
 add_library(grpc
@@ -334,14 +471,61 @@ target_include_directories(grpc
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc
-  ssl
-  zlibstatic
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   gpr
+)
+
+foreach(_hdr
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/status.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+  include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/census.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -517,13 +701,60 @@ target_include_directories(grpc_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_cronet
-  ssl
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
   gpr
+)
+
+foreach(_hdr
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/status.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+  include/grpc/grpc_cronet.h
+  include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc_cronet EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -693,12 +924,57 @@ target_include_directories(grpc_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_unsecure
+  ${_gRPC_BASELIB_LIBRARIES}
   gpr
+)
+
+foreach(_hdr
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/status.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+  include/grpc/census.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc_unsecure EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -744,14 +1020,129 @@ target_include_directories(grpc++
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc++
-  ssl
-  ${PROTOBUF_LIBRARY_NAME}
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc
+)
+
+foreach(_hdr
+  include/grpc++/alarm.h
+  include/grpc++/channel.h
+  include/grpc++/client_context.h
+  include/grpc++/completion_queue.h
+  include/grpc++/create_channel.h
+  include/grpc++/create_channel_posix.h
+  include/grpc++/generic/async_generic_service.h
+  include/grpc++/generic/generic_stub.h
+  include/grpc++/grpc++.h
+  include/grpc++/impl/call.h
+  include/grpc++/impl/client_unary_call.h
+  include/grpc++/impl/codegen/core_codegen.h
+  include/grpc++/impl/grpc_library.h
+  include/grpc++/impl/method_handler_impl.h
+  include/grpc++/impl/rpc_method.h
+  include/grpc++/impl/rpc_service_method.h
+  include/grpc++/impl/serialization_traits.h
+  include/grpc++/impl/server_builder_option.h
+  include/grpc++/impl/server_builder_plugin.h
+  include/grpc++/impl/server_initializer.h
+  include/grpc++/impl/service_type.h
+  include/grpc++/impl/sync.h
+  include/grpc++/impl/sync_cxx11.h
+  include/grpc++/impl/sync_no_cxx11.h
+  include/grpc++/impl/thd.h
+  include/grpc++/impl/thd_cxx11.h
+  include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/security/auth_context.h
+  include/grpc++/security/auth_metadata_processor.h
+  include/grpc++/security/credentials.h
+  include/grpc++/security/server_credentials.h
+  include/grpc++/server.h
+  include/grpc++/server_builder.h
+  include/grpc++/server_context.h
+  include/grpc++/server_posix.h
+  include/grpc++/support/async_stream.h
+  include/grpc++/support/async_unary_call.h
+  include/grpc++/support/byte_buffer.h
+  include/grpc++/support/channel_arguments.h
+  include/grpc++/support/config.h
+  include/grpc++/support/slice.h
+  include/grpc++/support/status.h
+  include/grpc++/support/status_code_enum.h
+  include/grpc++/support/string_ref.h
+  include/grpc++/support/stub_options.h
+  include/grpc++/support/sync_stream.h
+  include/grpc++/support/time.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc++ EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -767,12 +1158,84 @@ target_include_directories(grpc++_reflection
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc++_reflection
   grpc++
+)
+
+foreach(_hdr
+  include/grpc++/ext/proto_server_reflection_plugin.h
+  include/grpc++/ext/reflection.grpc.pb.h
+  include/grpc++/ext/reflection.pb.h
+  include/grpc++/impl/codegen/proto_utils.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+  include/grpc++/impl/codegen/config_protobuf.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc++_reflection EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -813,15 +1276,130 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc++_unsecure
-  ${PROTOBUF_LIBRARY_NAME}
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   gpr
   grpc_unsecure
   grpc
+)
+
+foreach(_hdr
+  include/grpc++/alarm.h
+  include/grpc++/channel.h
+  include/grpc++/client_context.h
+  include/grpc++/completion_queue.h
+  include/grpc++/create_channel.h
+  include/grpc++/create_channel_posix.h
+  include/grpc++/generic/async_generic_service.h
+  include/grpc++/generic/generic_stub.h
+  include/grpc++/grpc++.h
+  include/grpc++/impl/call.h
+  include/grpc++/impl/client_unary_call.h
+  include/grpc++/impl/codegen/core_codegen.h
+  include/grpc++/impl/grpc_library.h
+  include/grpc++/impl/method_handler_impl.h
+  include/grpc++/impl/rpc_method.h
+  include/grpc++/impl/rpc_service_method.h
+  include/grpc++/impl/serialization_traits.h
+  include/grpc++/impl/server_builder_option.h
+  include/grpc++/impl/server_builder_plugin.h
+  include/grpc++/impl/server_initializer.h
+  include/grpc++/impl/service_type.h
+  include/grpc++/impl/sync.h
+  include/grpc++/impl/sync_cxx11.h
+  include/grpc++/impl/sync_no_cxx11.h
+  include/grpc++/impl/thd.h
+  include/grpc++/impl/thd_cxx11.h
+  include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/security/auth_context.h
+  include/grpc++/security/auth_metadata_processor.h
+  include/grpc++/security/credentials.h
+  include/grpc++/security/server_credentials.h
+  include/grpc++/server.h
+  include/grpc++/server_builder.h
+  include/grpc++/server_context.h
+  include/grpc++/server_posix.h
+  include/grpc++/support/async_stream.h
+  include/grpc++/support/async_unary_call.h
+  include/grpc++/support/byte_buffer.h
+  include/grpc++/support/channel_arguments.h
+  include/grpc++/support/config.h
+  include/grpc++/support/slice.h
+  include/grpc++/support/status.h
+  include/grpc++/support/status_code_enum.h
+  include/grpc++/support/string_ref.h
+  include/grpc++/support/stub_options.h
+  include/grpc++/support/sync_stream.h
+  include/grpc++/support/time.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc++_unsecure EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -839,12 +1417,29 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_plugin_support
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+)
+
+foreach(_hdr
+  include/grpc++/impl/codegen/config_protobuf.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc_plugin_support EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
   
@@ -857,13 +1452,21 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_csharp_ext
   grpc
   gpr
+)
+
+
+  
+install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -887,6 +1490,13 @@ target_link_libraries(gen_hpack_tables
 )
 
 
+install(TARGETS gen_hpack_tables EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
 add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.c
 )
@@ -900,6 +1510,13 @@ target_include_directories(gen_legal_metadata_characters
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
+
+
+install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 
 add_executable(grpc_create_jwt
@@ -916,9 +1533,16 @@ target_include_directories(grpc_create_jwt
 )
 
 target_link_libraries(grpc_create_jwt
-  ssl
+  ${_gRPC_SSL_LIBRARIES}
   grpc
   gpr
+)
+
+
+install(TARGETS grpc_create_jwt EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -941,6 +1565,13 @@ target_link_libraries(grpc_print_google_default_creds_token
 )
 
 
+install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
 add_executable(grpc_verify_jwt
   test/core/security/verify_jwt.c
 )
@@ -960,6 +1591,13 @@ target_link_libraries(grpc_verify_jwt
 )
 
 
+install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )
@@ -974,8 +1612,15 @@ target_include_directories(grpc_cpp_plugin
 )
 
 target_link_libraries(grpc_cpp_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
+)
+
+
+install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -993,8 +1638,15 @@ target_include_directories(grpc_csharp_plugin
 )
 
 target_link_libraries(grpc_csharp_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
+)
+
+
+install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -1012,8 +1664,15 @@ target_include_directories(grpc_node_plugin
 )
 
 target_link_libraries(grpc_node_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
+)
+
+
+install(TARGETS grpc_node_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -1031,8 +1690,15 @@ target_include_directories(grpc_objective_c_plugin
 )
 
 target_link_libraries(grpc_objective_c_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
+)
+
+
+install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -1050,8 +1716,15 @@ target_include_directories(grpc_python_plugin
 )
 
 target_link_libraries(grpc_python_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
+)
+
+
+install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
@@ -1069,11 +1742,33 @@ target_include_directories(grpc_ruby_plugin
 )
 
 target_link_libraries(grpc_ruby_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
+)
+
+
+install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 
 
 
 
+
+
+
+install(EXPORT gRPCTargets
+  DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+  NAMESPACE gRPC::
+)
+
+foreach(_config gRPCConfig gRPCConfigVersion)
+  configure_file(tools/cmake/${_config}.cmake.in
+    ${_config}.cmake @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${_config}.cmake
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+  )
+endforeach()
