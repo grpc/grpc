@@ -4344,10 +4344,10 @@
       "nanopb"
     ], 
     "headers": [
-      "src/proto/grpc/testing/echo.grpc.pb.h", 
-      "src/proto/grpc/testing/echo.pb.h", 
-      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo.grpc.pbc.h", 
+      "src/proto/grpc/testing/echo.pbc.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pbc.h", 
+      "src/proto/grpc/testing/echo_messages.pbc.h", 
       "test/c/end2end/end2end_test_client.h"
     ], 
     "language": "c", 
