@@ -6792,14 +6792,12 @@
     ], 
     "headers": [
       "include/grpc++/impl/codegen/thrift_serializer.h", 
-      "include/grpc++/impl/codegen/thrift_serializer_inl.h", 
       "include/grpc++/impl/codegen/thrift_utils.h"
     ], 
     "language": "c++", 
     "name": "thrift_util", 
     "src": [
       "include/grpc++/impl/codegen/thrift_serializer.h", 
-      "include/grpc++/impl/codegen/thrift_serializer_inl.h", 
       "include/grpc++/impl/codegen/thrift_utils.h"
     ], 
     "third_party": false, 

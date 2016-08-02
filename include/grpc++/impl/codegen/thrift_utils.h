@@ -44,9 +44,7 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/status_code_enum.h>
 #include <grpc++/impl/codegen/thrift_serializer.h>
-#include <cstdbool>
 #include <cstdint>
-#include <string>
 #include <cstdlib>
 
 namespace grpc {
@@ -62,9 +60,9 @@ class SerializationTraits<T,typename std::enable_if<std::is_base_of<apache::thri
 
     *own_buffer = true;
 
-    ThriftSerializerCompact<T> serializer;
+    ThriftSerializerCompact serializer;
 
-    serializer.serialize(msg, bp);
+    serializer.Serialize(msg, bp);
 
     return Status(StatusCode::OK, "ok");
   }
@@ -76,8 +74,8 @@ class SerializationTraits<T,typename std::enable_if<std::is_base_of<apache::thri
       return Status(StatusCode::INTERNAL, "No payload");
     }
 
-    ThriftSerializerCompact<T> deserializer;
-    deserializer.deserialize(buffer, msg);
+    ThriftSerializerCompact deserializer;
+    deserializer.Deserialize(buffer, msg);
 
     grpc_byte_buffer_destroy(buffer);
 

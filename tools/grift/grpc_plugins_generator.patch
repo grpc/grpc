@@ -1,7 +1,7 @@
 From 0894590b5020c38106d4ebb2291994668c64f9dd Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 15:47:47 -0700
-Subject: [PATCH 1/3] don't build tests
+Subject: [PATCH 1/5] don't build tests
 
 ---
  Makefile.am         | 7 ++-----
@@ -62,7 +62,7 @@ index 6fd15d2..7de1fad 100755
 From 04244fa7805740761db757e4c44251f723d85839 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:16:40 -0700
-Subject: [PATCH 2/3] grpc cpp plugins generator with example
+Subject: [PATCH 2/5] grpc cpp plugins generator with example
 
 ---
  compiler/cpp/src/generate/t_cpp_generator.cc | 476 +++++++++++++++++++++++----
@@ -1401,7 +1401,7 @@ index 0000000..de3c9a4
 From 1d47ed062e62d136c3db9f6fc1dde9e2f794cf22 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:23:53 -0700
-Subject: [PATCH 3/3] grpc java plugins generator
+Subject: [PATCH 3/5] grpc java plugins generator
 
 for examples refer to https://github.com/grpc/grpc-java/tree/master/examples/thrift
 ---
@@ -2412,6 +2412,187 @@ index 5865c54..1cffbe6 100755
 -	README.md
 +	README.md \
 +	java
+-- 
+2.8.0.rc3.226.g39d4020
+
+
+From a9769a0fa08f553da76215ca59a8fd797b92a853 Mon Sep 17 00:00:00 2001
+From: chedeti <chedeti@google.com>
+Date: Mon, 1 Aug 2016 16:56:36 -0700
+Subject: [PATCH 4/5] maintain consistency with grpc
+
+---
+ compiler/cpp/src/generate/t_cpp_generator.cc   | 20 ++++++++++----------
+ tutorial/cpp/{CppClient.cpp => GrpcClient.cpp} |  0
+ tutorial/cpp/{CppServer.cpp => GrpcServer.cpp} |  0
+ tutorial/cpp/Makefile.am                       |  8 ++++----
+ 4 files changed, 14 insertions(+), 14 deletions(-)
+ rename tutorial/cpp/{CppClient.cpp => GrpcClient.cpp} (100%)
+ rename tutorial/cpp/{CppServer.cpp => GrpcServer.cpp} (100%)
+
+diff --git a/compiler/cpp/src/generate/t_cpp_generator.cc b/compiler/cpp/src/generate/t_cpp_generator.cc
+index 9c3399b..4e00129 100644
+--- a/compiler/cpp/src/generate/t_cpp_generator.cc
++++ b/compiler/cpp/src/generate/t_cpp_generator.cc
+@@ -1641,7 +1641,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+             << endl;
+ 
+   t_service* extends_service = tservice->get_extends();
+-  if (extends_service != nullptr) {
++  if (extends_service) {
+     f_header_ << "#include \"" << get_include_prefix(*(extends_service->get_program()))
+               << extends_service->get_name() << ".grpc.thrift.h\"" << endl;
+   }
+@@ -1733,7 +1733,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+       indent() << "\"/" << ns << "." << service_name_ << "/" << (*f_iter)->get_name() << "\"," << endl;
+   }
+ 
+-  if (extends_service != nullptr) {
++  if (extends_service) {
+     vector<t_function*> functions = extends_service->get_functions();
+     vector<t_function*>::iterator f_iter;
+ 
+@@ -1749,9 +1749,9 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+   "};" << endl;
+ 
+   // Generate service class
+-  if ( extends_service != nullptr ) {
++  if ( extends_service) {
+     f_header_ << "class " << service_name_ << " : public " <<
+-      extends_service->get_name() << " {" << endl <<
++      type_name(extends_service) << " {" << endl <<
+       "public:" << endl;
+   }
+   else {
+@@ -1841,7 +1841,7 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
+ void t_cpp_generator::generate_service_stub_interface(t_service* tservice) {
+ 
+     string extends = "";
+-    if (tservice->get_extends() != nullptr) {
++    if (tservice->get_extends()) {
+       extends = " : virtual public " + type_name(tservice->get_extends()) + "::StubInterface";
+     }
+ 
+@@ -1890,7 +1890,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
+     }
+ 
+     t_service* extends_service = tservice->get_extends();
+-    if (extends_service != nullptr) {
++    if (extends_service) {
+       // generate inherited methods
+       vector<t_function*> functions = extends_service->get_functions();
+       vector<t_function*>::iterator f_iter;
+@@ -1914,7 +1914,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
+         indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
+     }
+ 
+-    if (extends_service != nullptr) {
++    if (extends_service) {
+       // generate inherited methods
+       vector<t_function*> functions = extends_service->get_functions();
+       vector<t_function*>::iterator f_iter;
+@@ -1944,7 +1944,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
+         service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
+     }
+ 
+-    if (extends_service != nullptr) {
++    if (extends_service) {
+       // generate inherited methods
+       vector<t_function*> functions = extends_service->get_functions();
+       vector<t_function*>::iterator f_iter;
+@@ -2002,7 +2002,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
+ 
+     }
+ 
+-    if (extends_service != nullptr) {
++    if (extends_service) {
+       vector<t_function*> functions = extends_service->get_functions();
+       vector<t_function*>::iterator f_iter;
+       for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+@@ -2049,7 +2049,7 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+   }
+ 
+   string extends = "";
+-  if (tservice->get_extends() != NULL) {
++  if (tservice->get_extends()) {
+     extends = " : virtual public " + type_name(tservice->get_extends()) + style + "::Service";
+     if (style == "CobCl" && gen_templates_) {
+       // TODO(simpkins): If gen_templates_ is enabled, we currently assume all
+diff --git a/tutorial/cpp/CppClient.cpp b/tutorial/cpp/GrpcClient.cpp
+similarity index 100%
+rename from tutorial/cpp/CppClient.cpp
+rename to tutorial/cpp/GrpcClient.cpp
+diff --git a/tutorial/cpp/CppServer.cpp b/tutorial/cpp/GrpcServer.cpp
+similarity index 100%
+rename from tutorial/cpp/CppServer.cpp
+rename to tutorial/cpp/GrpcServer.cpp
+diff --git a/tutorial/cpp/Makefile.am b/tutorial/cpp/Makefile.am
+index 581f75e..39d85e1 100755
+--- a/tutorial/cpp/Makefile.am
++++ b/tutorial/cpp/Makefile.am
+@@ -39,14 +39,14 @@ noinst_PROGRAMS = \
+ 	TestClient
+ 
+ TestServer_SOURCES = \
+-	CppServer.cpp
++	GrpcServer.cpp
+ 
+ TestServer_LDADD = \
+ 	libtestgencpp.la \
+ 	$(top_builddir)/lib/cpp/libthrift.la
+ 
+ TestClient_SOURCES = \
+-	CppClient.cpp
++	GrpcClient.cpp
+ 
+ TestClient_LDADD = \
+ 	libtestgencpp.la \
+@@ -78,5 +78,5 @@ style-local:
+ 
+ EXTRA_DIST = \
+ 	CMakeLists.txt \
+-	CppClient.cpp \
+-	CppServer.cpp
++	GrpcClient.cpp \
++	GrpcServer.cpp
+-- 
+2.8.0.rc3.226.g39d4020
+
+
+From b4bc0c810f00a1b86516774306ff4017e3d2d252 Mon Sep 17 00:00:00 2001
+From: chedeti <chedeti@google.com>
+Date: Mon, 1 Aug 2016 17:00:17 -0700
+Subject: [PATCH 5/5] fix typo
+
+---
+ tutorial/cpp/GrpcClient.cpp | 2 +-
+ tutorial/cpp/GrpcServer.cpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tutorial/cpp/GrpcClient.cpp b/tutorial/cpp/GrpcClient.cpp
+index c41604e..41a7acf 100644
+--- a/tutorial/cpp/GrpcClient.cpp
++++ b/tutorial/cpp/GrpcClient.cpp
+@@ -1,6 +1,6 @@
+ /*
+  *
+- * Copyright 2015, Google Inc.
++ * Copyright 2016, Google Inc.
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/tutorial/cpp/GrpcServer.cpp b/tutorial/cpp/GrpcServer.cpp
+index c838b61..f63db57 100644
+--- a/tutorial/cpp/GrpcServer.cpp
++++ b/tutorial/cpp/GrpcServer.cpp
+@@ -1,6 +1,6 @@
+ /*
+  *
+- * Copyright 2015, Google Inc.
++ * Copyright 2016, Google Inc.
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
 -- 
 2.8.0.rc3.226.g39d4020
 

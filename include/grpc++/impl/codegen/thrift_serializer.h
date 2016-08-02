@@ -36,12 +36,16 @@
 
 #include <memory>
 #include <string>
-
+#include <stdexcept>
+#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/slice_buffer.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/protocol/TCompactProtocol.h>
+#include <thrift/protocol/TProtocolException.h>
 #include <thrift/transport/TBufferTransports.h>
 #include <thrift/transport/TTransportUtils.h>
-#include <grpc/impl/codegen/byte_buffer.h>
 
 namespace apache {
 namespace thrift {
@@ -49,100 +53,165 @@ namespace util {
 
 using apache::thrift::protocol::TBinaryProtocolT;
 using apache::thrift::protocol::TCompactProtocolT;
+using apache::thrift::protocol::TMessageType;
 using apache::thrift::protocol::TNetworkBigEndian;
 using apache::thrift::transport::TMemoryBuffer;
 using apache::thrift::transport::TBufferBase;
 using apache::thrift::transport::TTransport;
-using std::shared_ptr;
 
-
-template <typename Dummy, typename P>
-class ThriftSerializer {
+template <typename Dummy, typename Protocol> class ThriftSerializer {
 public:
   ThriftSerializer()
-  : prepared_ (false)
-  , lastDeserialized_ (false)
-  , serializeVersion_ (false) {}
-
-  /**
-   * Serialize the passed type into the internal buffer
-   * and returns a pointer to internal buffer and its size
-   *
-   */
-  template <typename T>
-  void serialize(const T& fields, const uint8_t** serializedBuffer,
-      size_t* serializedLen);
-
-  /**
-   * Serialize the passed type into the byte buffer
-   */
-  template <typename T>
-  void serialize(const T& fields, grpc_byte_buffer** bp);
-
-  /**
-   * Deserialize the passed char array into  the passed type, returns the number
-   * of bytes that have been consumed from the passed string.
-   */
-  template <typename T>
-  uint32_t deserialize(const uint8_t* serializedBuffer, size_t length,
-      T* fields);
-
-  /**
-   * Deserialize the passed byte buffer to passed type, returns the number
-   * of bytes consumed from byte buffer
-   */
-  template <typename T>
-  uint32_t deserialize(grpc_byte_buffer* buffer, T* msg);
-
-  void setSerializeVersion(bool value);
+      : prepared_ (false)
+      , last_deserialized_ (false)
+      , serialize_version_ (false) {}
 
   virtual ~ThriftSerializer() {}
 
+  // Serialize the passed type into the internal buffer
+  // and returns a pointer to internal buffer and its size
+  template <typename T> void Serialize(const T& fields, const uint8_t** serializedBuffer,
+      size_t* serializedLen) {
+     // prepare or reset buffer
+    if (!prepared_ || last_deserialized_) {
+      prepare();
+    } else {
+      buffer_->resetBuffer();
+    }
+    last_deserialized_ = false;
 
-  /**
-   * Set the container size limit to deserialize
-   * This function should be called after buffer_ is initialized
-   */
-  void setContainerSizeLimit(int32_t container_limit) {
+    // if required serialize protocol version
+    if (serialize_version_) {
+      protocol_->writeMessageBegin("", TMessageType(0), 0);
+    }
+
+    // serilaize fields into buffer
+    fields.write(protocol_.get());
+
+    // write the end of message
+    if (serialize_version_) {
+      protocol_->writeMessageEnd();
+    }
+
+    uint8_t* byteBuffer;
+    uint32_t byteBufferSize;
+    buffer_->getBuffer(&byteBuffer, &byteBufferSize);
+    *serializedBuffer = byteBuffer;
+    *serializedLen = byteBufferSize; 
+  }
+
+  // Serialize the passed type into the byte buffer
+  template <typename T> void Serialize(const T& fields, grpc_byte_buffer** bp) {
+
+    const uint8_t* byteBuffer;
+    size_t byteBufferSize;
+
+    Serialize(fields, &byteBuffer, &byteBufferSize);
+
+    gpr_slice slice = gpr_slice_from_copied_buffer((char*)byteBuffer,byteBufferSize);
+
+    *bp = grpc_raw_byte_buffer_create(&slice, 1);
+
+    gpr_slice_unref(slice);
+  }
+
+  // Deserialize the passed char array into  the passed type, returns the number
+  // of bytes that have been consumed from the passed string.
+  template <typename T> uint32_t Deserialize(const uint8_t* serializedBuffer, size_t length,
+      T* fields) {
+    // prepare buffer if necessary
+    if (!prepared_) {
+      prepare();
+    }
+    last_deserialized_ = true;
+
+    //reset buffer transport 
+    buffer_->resetBuffer((uint8_t*)serializedBuffer, length);
+
+    // read the protocol version if necessary
+    if (serialize_version_) {
+      std::string name = "";
+      TMessageType mt = (TMessageType) 0;
+      int32_t seq_id = 0;
+      protocol_->readMessageBegin(name, mt, seq_id);
+    }
+
+    // deserialize buffer into fields
+    uint32_t len = fields->read(protocol_.get());
+
+    // read the end of message
+    if (serialize_version_) {
+      protocol_->readMessageEnd();
+    }
+
+    return len;
+  }
+
+
+  // Deserialize the passed byte buffer to passed type, returns the number
+  // of bytes consumed from byte buffer
+  template <typename T> uint32_t Deserialize(grpc_byte_buffer* buffer, T* msg) {
+
+    grpc_byte_buffer_reader reader;
+    grpc_byte_buffer_reader_init(&reader, buffer);
+
+    gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
+
+    uint32_t len = Deserialize(GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice), msg);
+
+    gpr_slice_unref(slice);
+
+    grpc_byte_buffer_reader_destroy(&reader);
+
+    return len;
+  }
+
+  // set serialization version flag
+  void SetSerializeVersion(bool value) {
+    serialize_version_ = value;
+  }
+
+  // Set the container size limit to deserialize
+  // This function should be called after buffer_ is initialized
+  void SetContainerSizeLimit(int32_t container_limit) {
     if (!prepared_) {
       prepare();
     }
     protocol_->setContainerSizeLimit(container_limit);
   }
 
-  /**
-   * Set the string size limit to deserialize
-   * This function should be called after buffer_ is initialized
-   */
-  void setStringSizeLimit(int32_t string_limit) {
+  // Set the string size limit to deserialize
+  // This function should be called after buffer_ is initialized
+  void SetStringSizeLimit(int32_t string_limit) {
     if (!prepared_) {
       prepare();
     }
     protocol_->setStringSizeLimit(string_limit);
   }
 
+private:
+  bool prepared_;
+  bool last_deserialized_;
+  boost::shared_ptr<TMemoryBuffer> buffer_;
+  std::shared_ptr<Protocol> protocol_;
+  bool serialize_version_;
 
-  private:
-    void prepare();
+  void prepare() {
+    buffer_.reset(new TMemoryBuffer());
 
-  private:
-    typedef P Protocol;
-    bool prepared_;
-    bool lastDeserialized_;
-    boost::shared_ptr<TMemoryBuffer> buffer_;
-    shared_ptr<Protocol> protocol_;
-    bool serializeVersion_;
+    // create a protocol for the memory buffer transport
+    protocol_.reset(new Protocol(buffer_));
+
+    prepared_ = true;
+  }
+
 }; // ThriftSerializer
 
-template <typename Dummy = void>
-struct ThriftSerializerBinary : public ThriftSerializer<Dummy, TBinaryProtocolT<TBufferBase, TNetworkBigEndian> > {};
+typedef ThriftSerializer<void, TBinaryProtocolT<TBufferBase, TNetworkBigEndian>> ThriftSerializerBinary;
+typedef ThriftSerializer<void, TCompactProtocolT<TBufferBase>> ThriftSerializerCompact;
 
-
-template <typename Dummy = void>
-struct ThriftSerializerCompact : public ThriftSerializer<Dummy, TCompactProtocolT<TBufferBase> >{ };
-
-}}} // namespace apache::thrift::util
-
-#include <grpc++/impl/codegen/thrift_serializer_inl.h>
+} // namespace util
+} // namespace thrift
+} // namespace apache
 
 #endif

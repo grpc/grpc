@@ -784,7 +784,6 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/thrift_serializer.h
-  - include/grpc++/impl/codegen/thrift_serializer_inl.h
   - include/grpc++/impl/codegen/thrift_utils.h
   uses:
   - grpc++_codegen_base

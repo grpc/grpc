@@ -195,9 +195,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer_inl.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
