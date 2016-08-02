@@ -35,7 +35,12 @@ cd $(dirname $0)/../../src/csharp
 
 root=`pwd`
 
-if [ -x "$(command -v dotnet)" ]
+echo "pre build csharp"
+
+if [ -e ~/dotnet-cli/dotnet ]
+then
+  ~/dotnet-cli/dotnet restore
+elif [ -x "$(command -v dotnet)" ]
 then
   dotnet restore
 else

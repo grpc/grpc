@@ -35,14 +35,14 @@ setlocal
 cd /d %~dp0\..\..
 
 @rem Location of nuget.exe
-set NUGET=C:\nuget\nuget.exe
+set DOTNET=~/dotnet-cli/dotnet
 
-where dotnet
-if ERRORLEVEL 1 (
-  ECHO dotnet cli not found, ensure to this is ran with dotnet cli on PATH 
+cd src/csharp || goto :error
+
+if EXIST %DOTNET% (
+  %DOTNET% restore || goto :error
 ) ELSE (
-  cd src/csharp || goto :error
-  dotnet restore . || goto :error
+  dotnet restore || goto :error
 )
 
 endlocal

@@ -562,6 +562,13 @@ class CSharpLanguage(object):
         assembly_subdir += '/netstandard1.5/win7-x64'
       runtime_cmd = []
     else:
+      if self.platform == 'linux':
+        assembly_subdir += '/net45/debian.8-x64'
+      elif self.platform == 'mac':
+        assembly_subdir += '/net45/osx.10.11-x64'
+      else:
+        assembly_subdir += '/net45/win7-x64'
+
       nunit_args += ['--noresult', '--workers=1']
       if self.platform == 'windows':
         runtime_cmd = []
