@@ -6,10 +6,22 @@ grift is integration of [Apache Thrift](https://github.com/apache/thrift.git) Se
 
 This integration allows you to use grpc to send thrift messages in C++ and java.
 
-By default grift uses Compact Protocol to serialize thrift messages.
+grift uses Compact Protocol to serialize thrift messages. 
+
+##generating grpc plugins for thrift services
+
+###CPP
+```sh
+ $ thrift --gen cpp <thrift-file>
+```
+
+###JAVA
+```sh
+ $ thrift --gen java <thrift-file>
+```
 
 #Installation
 
-Before Installing thrift make sure to apply this [patch](grpc_plugins_generate.patch) to third_party/thrift.
+Before Installing thrift make sure to apply this [patch](grpc_plugins_generator.patch) to third_party/thrift.
 Go to third_party/thrift and follow the [INSTALLATION](https://github.com/apache/thrift.git) instructions to
 install thrift.

@@ -2559,18 +2559,18 @@ index 581f75e..39d85e1 100755
 2.8.0.rc3.226.g39d4020
 
 
-From b4bc0c810f00a1b86516774306ff4017e3d2d252 Mon Sep 17 00:00:00 2001
+From bc74fca1ee73333819724f51d5aaff3546443ed0 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Mon, 1 Aug 2016 17:00:17 -0700
 Subject: [PATCH 5/5] fix typo
 
 ---
- tutorial/cpp/GrpcClient.cpp | 2 +-
+ tutorial/cpp/GrpcClient.cpp | 4 ++--
  tutorial/cpp/GrpcServer.cpp | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/tutorial/cpp/GrpcClient.cpp b/tutorial/cpp/GrpcClient.cpp
-index c41604e..41a7acf 100644
+index c41604e..ab1fe77 100644
 --- a/tutorial/cpp/GrpcClient.cpp
 +++ b/tutorial/cpp/GrpcClient.cpp
 @@ -1,6 +1,6 @@
@@ -2581,6 +2581,15 @@ index c41604e..41a7acf 100644
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without
+@@ -50,7 +50,7 @@ class GreeterClient {
+   GreeterClient(std::shared_ptr<Channel> channel)
+       : stub_(Greeter::NewStub(channel)) {}
+ 
+-  // Assambles the client's payload, sends it and presents the response back
++  // Assembles the client's payload, sends it and presents the response back
+   // from the server.
+   std::string SayHello(const std::string& user) {
+     // Data we are sending to the server.
 diff --git a/tutorial/cpp/GrpcServer.cpp b/tutorial/cpp/GrpcServer.cpp
 index c838b61..f63db57 100644
 --- a/tutorial/cpp/GrpcServer.cpp
