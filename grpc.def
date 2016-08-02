@@ -133,45 +133,6 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
-    gpr_slice_ref
-    gpr_slice_unref
-    gpr_slice_new
-    gpr_slice_new_with_user_data
-    gpr_slice_new_with_len
-    gpr_slice_malloc
-    gpr_slice_from_copied_string
-    gpr_slice_from_copied_buffer
-    gpr_slice_from_static_string
-    gpr_slice_sub
-    gpr_slice_sub_no_ref
-    gpr_slice_split_tail
-    gpr_slice_split_head
-    gpr_empty_slice
-    gpr_slice_cmp
-    gpr_slice_str_cmp
-    gpr_mu_init
-    gpr_mu_destroy
-    gpr_mu_lock
-    gpr_mu_unlock
-    gpr_mu_trylock
-    gpr_cv_init
-    gpr_cv_destroy
-    gpr_cv_wait
-    gpr_cv_signal
-    gpr_cv_broadcast
-    gpr_once_init
-    gpr_event_init
-    gpr_event_set
-    gpr_event_get
-    gpr_event_wait
-    gpr_ref_init
-    gpr_ref
-    gpr_ref_non_zero
-    gpr_refn
-    gpr_unref
-    gpr_stats_init
-    gpr_stats_inc
-    gpr_stats_read
     gpr_malloc
     gpr_free
     gpr_realloc
@@ -221,6 +182,22 @@ EXPORTS
     gpr_log_verbosity_init
     gpr_set_log_function
     gpr_format_message
+    gpr_slice_ref
+    gpr_slice_unref
+    gpr_slice_new
+    gpr_slice_new_with_user_data
+    gpr_slice_new_with_len
+    gpr_slice_malloc
+    gpr_slice_from_copied_string
+    gpr_slice_from_copied_buffer
+    gpr_slice_from_static_string
+    gpr_slice_sub
+    gpr_slice_sub_no_ref
+    gpr_slice_split_tail
+    gpr_slice_split_head
+    gpr_empty_slice
+    gpr_slice_cmp
+    gpr_slice_str_cmp
     gpr_slice_buffer_init
     gpr_slice_buffer_destroy
     gpr_slice_buffer_add
@@ -241,6 +218,29 @@ EXPORTS
     gpr_subprocess_destroy
     gpr_subprocess_join
     gpr_subprocess_interrupt
+    gpr_mu_init
+    gpr_mu_destroy
+    gpr_mu_lock
+    gpr_mu_unlock
+    gpr_mu_trylock
+    gpr_cv_init
+    gpr_cv_destroy
+    gpr_cv_wait
+    gpr_cv_signal
+    gpr_cv_broadcast
+    gpr_once_init
+    gpr_event_init
+    gpr_event_set
+    gpr_event_get
+    gpr_event_wait
+    gpr_ref_init
+    gpr_ref
+    gpr_ref_non_zero
+    gpr_refn
+    gpr_unref
+    gpr_stats_init
+    gpr_stats_inc
+    gpr_stats_read
     gpr_thd_new
     gpr_thd_options_default
     gpr_thd_options_set_detached
