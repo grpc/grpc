@@ -186,6 +186,7 @@ gpr_set_log_function_type gpr_set_log_function_import;
 gpr_slice_ref_type gpr_slice_ref_import;
 gpr_slice_unref_type gpr_slice_unref_import;
 gpr_slice_new_type gpr_slice_new_import;
+gpr_slice_new_with_user_data_type gpr_slice_new_with_user_data_import;
 gpr_slice_new_with_len_type gpr_slice_new_with_len_import;
 gpr_slice_malloc_type gpr_slice_malloc_import;
 gpr_slice_from_copied_string_type gpr_slice_from_copied_string_import;
@@ -458,6 +459,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_slice_ref_import = (gpr_slice_ref_type) GetProcAddress(library, "gpr_slice_ref");
   gpr_slice_unref_import = (gpr_slice_unref_type) GetProcAddress(library, "gpr_slice_unref");
   gpr_slice_new_import = (gpr_slice_new_type) GetProcAddress(library, "gpr_slice_new");
+  gpr_slice_new_with_user_data_import = (gpr_slice_new_with_user_data_type) GetProcAddress(library, "gpr_slice_new_with_user_data");
   gpr_slice_new_with_len_import = (gpr_slice_new_with_len_type) GetProcAddress(library, "gpr_slice_new_with_len");
   gpr_slice_malloc_import = (gpr_slice_malloc_type) GetProcAddress(library, "gpr_slice_malloc");
   gpr_slice_from_copied_string_import = (gpr_slice_from_copied_string_type) GetProcAddress(library, "gpr_slice_from_copied_string");

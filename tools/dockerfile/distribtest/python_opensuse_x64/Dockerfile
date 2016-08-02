@@ -38,3 +38,5 @@ RUN zypper --non-interactive install which
 # Without this, pip won't be able to connect to
 # https://pypi.python.org/simple/
 RUN zypper --non-interactive install ca-certificates-mozilla
+
+RUN pip install virtualenv

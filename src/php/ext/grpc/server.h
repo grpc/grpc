@@ -48,21 +48,17 @@
 /* Class entry for the Server PHP class */
 extern zend_class_entry *grpc_ce_server;
 
+/* Wrapper struct for grpc_server that can be associated with a PHP object */
+PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_server)
+  grpc_server *wrapped;
+PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_server)
+
 #if PHP_MAJOR_VERSION < 7
 
-/* Wrapper struct for grpc_server that can be associated with a PHP object */
-typedef struct wrapped_grpc_server {
-  zend_object std;
-  grpc_server *wrapped;
-} wrapped_grpc_server;
+#define Z_WRAPPED_GRPC_SERVER_P(zv) \
+  (wrapped_grpc_server *)zend_object_store_get_object(zv TSRMLS_CC)
 
 #else
-
-/* Wrapper struct for grpc_server that can be associated with a PHP object */
-typedef struct wrapped_grpc_server {
-  grpc_server *wrapped;
-  zend_object std;
-} wrapped_grpc_server;
 
 static inline wrapped_grpc_server
 *wrapped_grpc_server_from_obj(zend_object *obj) {
@@ -70,8 +66,7 @@ static inline wrapped_grpc_server
                                 XtOffsetOf(wrapped_grpc_server, std));
 }
 
-#define Z_WRAPPED_GRPC_SERVER_P(zv)             \
-  wrapped_grpc_server_from_obj(Z_OBJ_P((zv)))
+#define Z_WRAPPED_GRPC_SERVER_P(zv) wrapped_grpc_server_from_obj(Z_OBJ_P((zv)))
 
 #endif /* PHP_MAJOR_VERSION */
 

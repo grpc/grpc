@@ -48,30 +48,18 @@
 /* Class entry for the Call PHP class */
 extern zend_class_entry *grpc_ce_call;
 
+/* Wrapper struct for grpc_call that can be associated with a PHP object */
+PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call)
+  bool owned;
+  grpc_call *wrapped;
+PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
+
 #if PHP_MAJOR_VERSION < 7
 
-/* Wrapper struct for grpc_call that can be associated with a PHP object */
-typedef struct wrapped_grpc_call {
-  zend_object std;
-  bool owned;
-  grpc_call *wrapped;
-} wrapped_grpc_call;
-
-/* Creates a Call object that wraps the given grpc_call struct */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
-
-/* Creates and returns a PHP associative array of metadata from a C array of
- * call metadata */
-zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC);
+#define Z_WRAPPED_GRPC_CALL_P(zv) \
+  (wrapped_grpc_call *)zend_object_store_get_object(zv TSRMLS_CC)
 
 #else
-
-/* Wrapper struct for grpc_call that can be associated with a PHP object */
-typedef struct wrapped_grpc_call {
-  bool owned;
-  grpc_call *wrapped;
-  zend_object std;
-} wrapped_grpc_call;
 
 static inline wrapped_grpc_call
 *wrapped_grpc_call_from_obj(zend_object *obj) {
@@ -81,15 +69,14 @@ static inline wrapped_grpc_call
 
 #define Z_WRAPPED_GRPC_CALL_P(zv) wrapped_grpc_call_from_obj(Z_OBJ_P((zv)))
 
-/* Creates a Call object that wraps the given grpc_call struct */
-void grpc_php_wrap_call(grpc_call *wrapped, bool owned, zval *call_object);
+#endif /* PHP_MAJOR_VERSION */
 
 /* Creates and returns a PHP associative array of metadata from a C array of
  * call metadata */
-void grpc_parse_metadata_array(grpc_metadata_array *metadata_array,
-                               zval *array);
+zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC);
 
-#endif /* PHP_MAJOR_VERSION */
+/* Creates a Call object that wraps the given grpc_call struct */
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
 
 /* Initializes the Call PHP class */
 void grpc_init_call(TSRMLS_D);
