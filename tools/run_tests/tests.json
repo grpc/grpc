@@ -10679,7 +10679,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_loadreporting_test", 
+    "name": "h2_load_reporting_test", 
     "platforms": [
       "windows", 
       "linux", 
@@ -23915,7 +23915,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_loadreporting_nosec_test", 
+    "name": "h2_load_reporting_nosec_test", 
     "platforms": [
       "windows", 
       "linux", 
