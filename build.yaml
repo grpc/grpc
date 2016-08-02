@@ -156,6 +156,7 @@ filegroups:
   - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
   - src/core/lib/compression/algorithm_metadata.h
@@ -234,6 +235,7 @@ filegroups:
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
+  - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
   - src/core/lib/compression/compression.c
@@ -374,11 +376,14 @@ filegroups:
   - gpr_codegen
 - name: grpc_lb_policy_grpclb
   headers:
+  - src/core/ext/lb_policy/grpclb/grpclb.h
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/lb_policy/grpclb/grpclb.c
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_config
@@ -768,6 +773,16 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/config_protobuf.h
+- name: grpc++_reflection_proto
+  language: c++
+  public_headers:
+  - include/grpc++/ext/reflection.grpc.pb.h
+  - include/grpc++/ext/reflection.pb.h
+  src:
+  - src/cpp/ext/reflection.grpc.pb.cc
+  - src/cpp/ext/reflection.pb.cc
+  uses:
+  - grpc++_codegen_proto
 libs:
 - name: gpr
   build: all
@@ -804,6 +819,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -870,6 +886,7 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
+  - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
@@ -901,6 +918,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
@@ -960,19 +978,20 @@ libs:
   language: c++
   public_headers:
   - include/grpc++/ext/proto_server_reflection_plugin.h
-  - include/grpc++/ext/reflection.grpc.pb.h
-  - include/grpc++/ext/reflection.pb.h
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
-  - src/cpp/ext/reflection.grpc.pb.cc
-  - src/cpp/ext/reflection.pb.cc
   deps:
   - grpc++
   filegroups:
-  - grpc++_codegen_proto
+  - grpc++_reflection_proto
+- name: grpc++_reflection_codegen
+  build: private
+  language: c++
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test_config
   build: private
   language: c++
@@ -1030,10 +1049,13 @@ libs:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_reflection
   - grpc++
   - grpc_plugin_support
 - name: grpc_plugin_support
@@ -2657,6 +2679,7 @@ targets:
   - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
+  - grpc++_reflection
   - grpc++
   - grpc
   - gpr_test_util
@@ -2733,6 +2756,20 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: grpclb_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/grpclb/grpclb_test.cc
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc
+  - grpc++
+  - grpc++_test_util
+  - grpc_test_util
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -3353,6 +3390,7 @@ php_config_m4:
   - src/php/ext/grpc/channel.h
   - src/php/ext/grpc/channel_credentials.h
   - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php7_wrapper.h
   - src/php/ext/grpc/php_grpc.h
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h

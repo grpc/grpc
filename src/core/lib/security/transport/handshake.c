@@ -357,8 +357,9 @@ void grpc_do_security_handshake(
     gpr_mu_unlock(&server_connector->mu);
   }
   send_handshake_bytes_to_peer(exec_ctx, h);
-  grpc_timer_init(exec_ctx, &h->timer, deadline, on_timeout, h,
-                  gpr_now(deadline.clock_type));
+  grpc_timer_init(exec_ctx, &h->timer,
+                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                  on_timeout, h, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx,

@@ -58,10 +58,11 @@ namespace Grpc.Core.Tests
         [Test]
         public void TestsJsonUpToDate()
         {
-            var discoveredTests = DiscoverAllTestClasses();
-            string discoveredTestsJson = JsonConvert.SerializeObject(discoveredTests, Formatting.Indented);
+            Dictionary<string, List<string>> discoveredTests = DiscoverAllTestClasses();
+			Dictionary<string, List<string>> testsFromFile 
+			    = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(ReadTestsJson());
 
-            Assert.AreEqual(discoveredTestsJson, ReadTestsJson());
+            Assert.AreEqual(discoveredTests, testsFromFile);
         }
 
         /// <summary>

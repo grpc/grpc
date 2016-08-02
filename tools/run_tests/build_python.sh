@@ -155,7 +155,9 @@ pip_install_dir() {
   cd $PWD
 }
 
-$VENV_PYTHON -m pip install --upgrade pip setuptools
+$VENV_PYTHON -m pip install --upgrade pip
+# TODO(https://github.com/pypa/setuptools/issues/709) get the latest setuptools
+$VENV_PYTHON -m pip install setuptools==25.1.1
 $VENV_PYTHON -m pip install cython
 pip_install_dir $ROOT
 $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
@@ -164,7 +166,8 @@ pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
 # etc...
 pip_install_dir $ROOT
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
+$VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_health_checking
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_proto_modules
+$VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_tests

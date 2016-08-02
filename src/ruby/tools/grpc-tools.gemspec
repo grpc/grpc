@@ -18,5 +18,5 @@ Gem::Specification.new do |s|
 
   s.platform = Gem::Platform::RUBY
 
-  s.executables = %w( grpc_tools_ruby_protoc.rb grpc_tools_ruby_protoc_plugin.rb )
+  s.executables = %w( grpc_tools_ruby_protoc grpc_tools_ruby_protoc_plugin )
 end
