@@ -38,9 +38,9 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
 require 'qps-common'
-require 'src/proto/grpc/testing/messages'
-require 'src/proto/grpc/testing/services_services'
-require 'src/proto/grpc/testing/stats'
+require 'src/proto/grpc/testing/messages_pb'
+require 'src/proto/grpc/testing/services_services_pb'
+require 'src/proto/grpc/testing/stats_pb'
 
 class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
   def unary_call(req, _call)
@@ -75,13 +75,14 @@ class BenchmarkServer
     @port = @server.add_http2_port("0.0.0.0:" + port.to_s, cred)
     @server.handle(BenchmarkServiceImpl.new)
     @start_time = Time.now
-    Thread.new {
+    t = Thread.new {
       @server.run
     }
+    t.abort_on_exception
   end
   def mark(reset)
     s = Grpc::Testing::ServerStats.new(time_elapsed:
-                                         (Time.now-@start_time).to_f)
+                                       (Time.now-@start_time).to_f)
     @start_time = Time.now if reset
     s
   end

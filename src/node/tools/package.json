@@ -1,6 +1,6 @@
 {
   "name": "grpc-tools",
-  "version": "0.14.0-dev",
+  "version": "1.1.0-dev",
   "author": "Google Inc.",
   "description": "Tools for developing with gRPC on Node.js",
   "homepage": "http://www.grpc.io/",
@@ -16,7 +16,8 @@
     }
   ],
   "bin": {
-    "grpc-tools-protoc": "./bin/protoc.js"
+    "grpc_tools_node_protoc": "./bin/protoc.js",
+    "grpc_tools_node_protoc_plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
     "install": "./node_modules/.bin/node-pre-gyp install"
@@ -32,6 +33,8 @@
   "files": [
     "index.js",
     "bin/protoc.js",
+    "bin/protoc_plugin.js",
+    "bin/google/protobuf",
     "LICENSE"
   ],
   "main": "index.js"

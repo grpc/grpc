@@ -12,19 +12,19 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2016-04-19</date>
+   <date>2016-07-28</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
     <api>${settings.php_version.php()}</api>
    </version>
    <stability>
-    <release>beta</release>
-    <api>beta</api>
+    <release>stable</release>
+    <api>stable</api>
    </stability>
    <license>BSD</license>
    <notes>
-  - destroy grpc_byte_buffer after startBatch #6096
+  - PHP7 Support continued, reduce code duplication #7543
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
@@ -153,6 +153,7 @@
      <license>BSD</license>
      <notes>
   - Simplify gRPC PHP installation #4517
+  - Wrap gRPC core library version 0.13
      </notes>
     </release>
     <release>
@@ -172,8 +173,8 @@
     </release>
     <release>
      <version>
-      <release>${settings.php_version.php()}</release>
-      <api>${settings.php_version.php()}</api>
+      <release>0.14.0</release>
+      <api>0.14.0</api>
      </version>
      <stability>
       <release>beta</release>
@@ -182,7 +183,70 @@
      <date>2016-04-19</date>
      <license>BSD</license>
      <notes>
+  - wrap grpc C core version 0.14.0
   - destroy grpc_byte_buffer after startBatch #6096
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>0.15.0</release>
+      <api>0.15.0</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2016-05-18</date>
+     <license>BSD</license>
+     <notes>
+  - Updated functions with TSRM macros for ZTS support #6607
+  - Load default roots.pem via grpc_set_ssl_roots_override_callback #6848
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC1</release>
+      <api>1.0.0RC1</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-07-13</date>
+     <license>BSD</license>
+     <notes>
+  - GA release
+  - Fix shutdown hang problem #4017
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC2</release>
+      <api>1.0.0RC2</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-07-21</date>
+     <license>BSD</license>
+     <notes>
+  - PHP7 Support #7464
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC3</release>
+      <api>1.0.0RC3</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-07-28</date>
+     <license>BSD</license>
+     <notes>
+  - PHP7 Support continued, reduce code duplication #7543
      </notes>
     </release>
    </changelog>

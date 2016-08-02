@@ -29,11 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#
 # Example usage:
 #   tools/codegen/core/gen_nano_proto.sh \
-#     src/proto/grpc/lb/v0/load_balancer.proto
-#     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0
+#     src/proto/grpc/lb/v1/load_balancer.proto \
+#     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1 \
+#     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1
 #
 # Exit statuses:
 # 1: Incorrect number of arguments
@@ -135,6 +135,13 @@ protoc \
 readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
 sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
   "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+
+# Fix up the include guards such that they pass the check_include_guards.py
+# test. Assumes that the generated files are being placed in gRPC src dir.
+readonly INCLUDE_GUARD_BASE=`echo $GRPC_OUTPUT_DIR | tr [a-z/] [A-Z_] | sed s:^.*SRC_::`
+readonly UC_PROTO_BASENAME=`echo $PROTO_BASENAME | tr [a-z] [A-Z]`
+sed -i "s:PB_${UC_PROTO_BASENAME}_PB_H_INCLUDED:GRPC_${INCLUDE_GUARD_BASE}_${UC_PROTO_BASENAME}_PB_H:g" \
+  "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
 # prepend copyright
 TMPFILE=$(mktemp)

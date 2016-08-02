@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include "rb_grpc_imports.generated.h"
 
@@ -61,15 +61,10 @@ census_trace_print_type census_trace_print_import;
 census_trace_scan_start_type census_trace_scan_start_import;
 census_get_trace_record_type census_get_trace_record_import;
 census_trace_scan_end_type census_trace_scan_end_import;
+census_define_resource_type census_define_resource_import;
+census_delete_resource_type census_delete_resource_import;
+census_resource_id_type census_resource_id_import;
 census_record_values_type census_record_values_import;
-census_view_create_type census_view_create_import;
-census_view_delete_type census_view_delete_import;
-census_view_metric_type census_view_metric_import;
-census_view_naggregations_type census_view_naggregations_import;
-census_view_tags_type census_view_tags_import;
-census_view_aggregrations_type census_view_aggregrations_import;
-census_view_get_data_type census_view_get_data_import;
-census_view_reset_type census_view_reset_import;
 grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
@@ -115,6 +110,7 @@ grpc_server_register_method_type grpc_server_register_method_import;
 grpc_server_request_registered_call_type grpc_server_request_registered_call_import;
 grpc_server_create_type grpc_server_create_import;
 grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
+grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
 grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 grpc_server_start_type grpc_server_start_import;
 grpc_server_shutdown_and_notify_type grpc_server_shutdown_and_notify_import;
@@ -124,6 +120,10 @@ grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 grpc_is_binary_header_type grpc_is_binary_header_import;
+grpc_call_error_to_string_type grpc_call_error_to_string_import;
+grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
+grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
+grpc_use_signal_type grpc_use_signal_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 grpc_auth_context_property_iterator_type grpc_auth_context_property_iterator_import;
 grpc_auth_context_peer_identity_type grpc_auth_context_peer_identity_import;
@@ -181,6 +181,7 @@ gpr_set_log_function_type gpr_set_log_function_import;
 gpr_slice_ref_type gpr_slice_ref_import;
 gpr_slice_unref_type gpr_slice_unref_import;
 gpr_slice_new_type gpr_slice_new_import;
+gpr_slice_new_with_user_data_type gpr_slice_new_with_user_data_import;
 gpr_slice_new_with_len_type gpr_slice_new_with_len_import;
 gpr_slice_malloc_type gpr_slice_malloc_import;
 gpr_slice_from_copied_string_type gpr_slice_from_copied_string_import;
@@ -256,6 +257,8 @@ gpr_avl_unref_type gpr_avl_unref_import;
 gpr_avl_add_type gpr_avl_add_import;
 gpr_avl_remove_type gpr_avl_remove_import;
 gpr_avl_get_type gpr_avl_get_import;
+gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
+gpr_avl_is_empty_type gpr_avl_is_empty_import;
 gpr_cmdline_create_type gpr_cmdline_create_import;
 gpr_cmdline_add_int_type gpr_cmdline_add_int_import;
 gpr_cmdline_add_flag_type gpr_cmdline_add_flag_import;
@@ -326,15 +329,10 @@ void grpc_rb_load_imports(HMODULE library) {
   census_trace_scan_start_import = (census_trace_scan_start_type) GetProcAddress(library, "census_trace_scan_start");
   census_get_trace_record_import = (census_get_trace_record_type) GetProcAddress(library, "census_get_trace_record");
   census_trace_scan_end_import = (census_trace_scan_end_type) GetProcAddress(library, "census_trace_scan_end");
+  census_define_resource_import = (census_define_resource_type) GetProcAddress(library, "census_define_resource");
+  census_delete_resource_import = (census_delete_resource_type) GetProcAddress(library, "census_delete_resource");
+  census_resource_id_import = (census_resource_id_type) GetProcAddress(library, "census_resource_id");
   census_record_values_import = (census_record_values_type) GetProcAddress(library, "census_record_values");
-  census_view_create_import = (census_view_create_type) GetProcAddress(library, "census_view_create");
-  census_view_delete_import = (census_view_delete_type) GetProcAddress(library, "census_view_delete");
-  census_view_metric_import = (census_view_metric_type) GetProcAddress(library, "census_view_metric");
-  census_view_naggregations_import = (census_view_naggregations_type) GetProcAddress(library, "census_view_naggregations");
-  census_view_tags_import = (census_view_tags_type) GetProcAddress(library, "census_view_tags");
-  census_view_aggregrations_import = (census_view_aggregrations_type) GetProcAddress(library, "census_view_aggregrations");
-  census_view_get_data_import = (census_view_get_data_type) GetProcAddress(library, "census_view_get_data");
-  census_view_reset_import = (census_view_reset_type) GetProcAddress(library, "census_view_reset");
   grpc_compression_algorithm_parse_import = (grpc_compression_algorithm_parse_type) GetProcAddress(library, "grpc_compression_algorithm_parse");
   grpc_compression_algorithm_name_import = (grpc_compression_algorithm_name_type) GetProcAddress(library, "grpc_compression_algorithm_name");
   grpc_compression_algorithm_for_level_import = (grpc_compression_algorithm_for_level_type) GetProcAddress(library, "grpc_compression_algorithm_for_level");
@@ -380,6 +378,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_request_registered_call_import = (grpc_server_request_registered_call_type) GetProcAddress(library, "grpc_server_request_registered_call");
   grpc_server_create_import = (grpc_server_create_type) GetProcAddress(library, "grpc_server_create");
   grpc_server_register_completion_queue_import = (grpc_server_register_completion_queue_type) GetProcAddress(library, "grpc_server_register_completion_queue");
+  grpc_server_register_non_listening_completion_queue_import = (grpc_server_register_non_listening_completion_queue_type) GetProcAddress(library, "grpc_server_register_non_listening_completion_queue");
   grpc_server_add_insecure_http2_port_import = (grpc_server_add_insecure_http2_port_type) GetProcAddress(library, "grpc_server_add_insecure_http2_port");
   grpc_server_start_import = (grpc_server_start_type) GetProcAddress(library, "grpc_server_start");
   grpc_server_shutdown_and_notify_import = (grpc_server_shutdown_and_notify_type) GetProcAddress(library, "grpc_server_shutdown_and_notify");
@@ -389,6 +388,10 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_header_key_is_legal_import = (grpc_header_key_is_legal_type) GetProcAddress(library, "grpc_header_key_is_legal");
   grpc_header_nonbin_value_is_legal_import = (grpc_header_nonbin_value_is_legal_type) GetProcAddress(library, "grpc_header_nonbin_value_is_legal");
   grpc_is_binary_header_import = (grpc_is_binary_header_type) GetProcAddress(library, "grpc_is_binary_header");
+  grpc_call_error_to_string_import = (grpc_call_error_to_string_type) GetProcAddress(library, "grpc_call_error_to_string");
+  grpc_insecure_channel_create_from_fd_import = (grpc_insecure_channel_create_from_fd_type) GetProcAddress(library, "grpc_insecure_channel_create_from_fd");
+  grpc_server_add_insecure_channel_from_fd_import = (grpc_server_add_insecure_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_insecure_channel_from_fd");
+  grpc_use_signal_import = (grpc_use_signal_type) GetProcAddress(library, "grpc_use_signal");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");
   grpc_auth_context_property_iterator_import = (grpc_auth_context_property_iterator_type) GetProcAddress(library, "grpc_auth_context_property_iterator");
   grpc_auth_context_peer_identity_import = (grpc_auth_context_peer_identity_type) GetProcAddress(library, "grpc_auth_context_peer_identity");
@@ -446,6 +449,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_slice_ref_import = (gpr_slice_ref_type) GetProcAddress(library, "gpr_slice_ref");
   gpr_slice_unref_import = (gpr_slice_unref_type) GetProcAddress(library, "gpr_slice_unref");
   gpr_slice_new_import = (gpr_slice_new_type) GetProcAddress(library, "gpr_slice_new");
+  gpr_slice_new_with_user_data_import = (gpr_slice_new_with_user_data_type) GetProcAddress(library, "gpr_slice_new_with_user_data");
   gpr_slice_new_with_len_import = (gpr_slice_new_with_len_type) GetProcAddress(library, "gpr_slice_new_with_len");
   gpr_slice_malloc_import = (gpr_slice_malloc_type) GetProcAddress(library, "gpr_slice_malloc");
   gpr_slice_from_copied_string_import = (gpr_slice_from_copied_string_type) GetProcAddress(library, "gpr_slice_from_copied_string");
@@ -521,6 +525,8 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_avl_add_import = (gpr_avl_add_type) GetProcAddress(library, "gpr_avl_add");
   gpr_avl_remove_import = (gpr_avl_remove_type) GetProcAddress(library, "gpr_avl_remove");
   gpr_avl_get_import = (gpr_avl_get_type) GetProcAddress(library, "gpr_avl_get");
+  gpr_avl_maybe_get_import = (gpr_avl_maybe_get_type) GetProcAddress(library, "gpr_avl_maybe_get");
+  gpr_avl_is_empty_import = (gpr_avl_is_empty_type) GetProcAddress(library, "gpr_avl_is_empty");
   gpr_cmdline_create_import = (gpr_cmdline_create_type) GetProcAddress(library, "gpr_cmdline_create");
   gpr_cmdline_add_int_import = (gpr_cmdline_add_int_type) GetProcAddress(library, "gpr_cmdline_add_int");
   gpr_cmdline_add_flag_import = (gpr_cmdline_add_flag_type) GetProcAddress(library, "gpr_cmdline_add_flag");
@@ -567,4 +573,4 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

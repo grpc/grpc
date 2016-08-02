@@ -36,13 +36,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <windows.h>
 
 #include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/byte_buffer.h>
@@ -56,7 +57,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
@@ -133,33 +134,18 @@ extern census_get_trace_record_type census_get_trace_record_import;
 typedef void(*census_trace_scan_end_type)();
 extern census_trace_scan_end_type census_trace_scan_end_import;
 #define census_trace_scan_end census_trace_scan_end_import
+typedef int32_t(*census_define_resource_type)(const uint8_t *resource_pb, size_t resource_pb_size);
+extern census_define_resource_type census_define_resource_import;
+#define census_define_resource census_define_resource_import
+typedef void(*census_delete_resource_type)(int32_t resource_id);
+extern census_delete_resource_type census_delete_resource_import;
+#define census_delete_resource census_delete_resource_import
+typedef int32_t(*census_resource_id_type)(const char *name);
+extern census_resource_id_type census_resource_id_import;
+#define census_resource_id census_resource_id_import
 typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
 extern census_record_values_type census_record_values_import;
 #define census_record_values census_record_values_import
-typedef census_view *(*census_view_create_type)(uint32_t metric_id, const census_context *tags, const census_aggregation *aggregations, size_t naggregations);
-extern census_view_create_type census_view_create_import;
-#define census_view_create census_view_create_import
-typedef void(*census_view_delete_type)(census_view *view);
-extern census_view_delete_type census_view_delete_import;
-#define census_view_delete census_view_delete_import
-typedef size_t(*census_view_metric_type)(const census_view *view);
-extern census_view_metric_type census_view_metric_import;
-#define census_view_metric census_view_metric_import
-typedef size_t(*census_view_naggregations_type)(const census_view *view);
-extern census_view_naggregations_type census_view_naggregations_import;
-#define census_view_naggregations census_view_naggregations_import
-typedef const census_context *(*census_view_tags_type)(const census_view *view);
-extern census_view_tags_type census_view_tags_import;
-#define census_view_tags census_view_tags_import
-typedef const census_aggregation *(*census_view_aggregrations_type)(const census_view *view);
-extern census_view_aggregrations_type census_view_aggregrations_import;
-#define census_view_aggregrations census_view_aggregrations_import
-typedef const census_view_data *(*census_view_get_data_type)(const census_view *view);
-extern census_view_get_data_type census_view_get_data_import;
-#define census_view_get_data census_view_get_data_import
-typedef void(*census_view_reset_type)(census_view *view);
-extern census_view_reset_type census_view_reset_import;
-#define census_view_reset census_view_reset_import
 typedef int(*grpc_compression_algorithm_parse_type)(const char *name, size_t name_length, grpc_compression_algorithm *algorithm);
 extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 #define grpc_compression_algorithm_parse grpc_compression_algorithm_parse_import
@@ -295,6 +281,9 @@ extern grpc_server_create_type grpc_server_create_import;
 typedef void(*grpc_server_register_completion_queue_type)(grpc_server *server, grpc_completion_queue *cq, void *reserved);
 extern grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
 #define grpc_server_register_completion_queue grpc_server_register_completion_queue_import
+typedef void(*grpc_server_register_non_listening_completion_queue_type)(grpc_server *server, grpc_completion_queue *q, void *reserved);
+extern grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
+#define grpc_server_register_non_listening_completion_queue grpc_server_register_non_listening_completion_queue_import
 typedef int(*grpc_server_add_insecure_http2_port_type)(grpc_server *server, const char *addr);
 extern grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 #define grpc_server_add_insecure_http2_port grpc_server_add_insecure_http2_port_import
@@ -322,6 +311,18 @@ extern grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_
 typedef int(*grpc_is_binary_header_type)(const char *key, size_t length);
 extern grpc_is_binary_header_type grpc_is_binary_header_import;
 #define grpc_is_binary_header grpc_is_binary_header_import
+typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
+extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
+#define grpc_call_error_to_string grpc_call_error_to_string_import
+typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
+extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
+#define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
+typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server *server, grpc_completion_queue *cq, int fd);
+extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
+#define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
+typedef void(*grpc_use_signal_type)(int signum);
+extern grpc_use_signal_type grpc_use_signal_import;
+#define grpc_use_signal grpc_use_signal_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
@@ -454,7 +455,7 @@ extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
 typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
 extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
 #define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
-typedef void(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
+typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
 extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
 #define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
 typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);
@@ -469,7 +470,7 @@ extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_impo
 typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
 extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 #define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
-typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...);
+typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
 typedef void(*gpr_log_message_type)(const char *file, int line, gpr_log_severity severity, const char *message);
@@ -493,6 +494,9 @@ extern gpr_slice_unref_type gpr_slice_unref_import;
 typedef gpr_slice(*gpr_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
 extern gpr_slice_new_type gpr_slice_new_import;
 #define gpr_slice_new gpr_slice_new_import
+typedef gpr_slice(*gpr_slice_new_with_user_data_type)(void *p, size_t len, void (*destroy)(void *), void *user_data);
+extern gpr_slice_new_with_user_data_type gpr_slice_new_with_user_data_import;
+#define gpr_slice_new_with_user_data gpr_slice_new_with_user_data_import
 typedef gpr_slice(*gpr_slice_new_with_len_type)(void *p, size_t len, void (*destroy)(void *, size_t));
 extern gpr_slice_new_with_len_type gpr_slice_new_with_len_import;
 #define gpr_slice_new_with_len gpr_slice_new_with_len_import
@@ -718,6 +722,12 @@ extern gpr_avl_remove_type gpr_avl_remove_import;
 typedef void *(*gpr_avl_get_type)(gpr_avl avl, void *key);
 extern gpr_avl_get_type gpr_avl_get_import;
 #define gpr_avl_get gpr_avl_get_import
+typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void *key, void **value);
+extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
+#define gpr_avl_maybe_get gpr_avl_maybe_get_import
+typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);
+extern gpr_avl_is_empty_type gpr_avl_is_empty_import;
+#define gpr_avl_is_empty gpr_avl_is_empty_import
 typedef gpr_cmdline *(*gpr_cmdline_create_type)(const char *description);
 extern gpr_cmdline_create_type gpr_cmdline_create_import;
 #define gpr_cmdline_create gpr_cmdline_create_import
@@ -808,7 +818,7 @@ extern gpr_format_message_type gpr_format_message_import;
 typedef char *(*gpr_strdup_type)(const char *src);
 extern gpr_strdup_type gpr_strdup_import;
 #define gpr_strdup gpr_strdup_import
-typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...);
+typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(2, 3);
 extern gpr_asprintf_type gpr_asprintf_import;
 #define gpr_asprintf gpr_asprintf_import
 typedef const char *(*gpr_subprocess_binary_extension_type)();
@@ -853,6 +863,6 @@ extern gpr_thd_join_type gpr_thd_join_import;
 
 void grpc_rb_load_imports(HMODULE library);
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */
 
 #endif

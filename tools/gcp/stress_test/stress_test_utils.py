@@ -46,6 +46,7 @@ import big_query_utils as bq_utils
 
 class EventType:
   STARTING = 'STARTING'
+  RUNNING = 'RUNNING'
   SUCCESS = 'SUCCESS'
   FAILURE = 'FAILURE'
 
@@ -120,7 +121,7 @@ class BigQueryHelper:
       if not page['jobComplete']:
         print('TIMEOUT ERROR: The query %s timed out. Current timeout value is'
               ' %d msec. Returning False (i.e assuming there are no failures)'
-             ) % (query, timeoout_msec)
+             ) % (query, timeout_msec)
         return False
 
       num_failures = int(page['totalRows'])
@@ -195,11 +196,11 @@ class BigQueryHelper:
         ('image_type', 'STRING', 'Client or Server?'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('event_date', 'STRING', 'The date of this event'),
-        ('event_type', 'STRING', 'STARTED/SUCCESS/FAILURE'),
+        ('event_type', 'STRING', 'STARTING/RUNNING/SUCCESS/FAILURE'),
         ('details', 'STRING', 'Any other relevant details')
     ]
-    desc = ('The table that contains START/SUCCESS/FAILURE events for '
-            ' the stress test clients and servers')
+    desc = ('The table that contains STARTING/RUNNING/SUCCESS/FAILURE events '
+            'for the stress test clients and servers')
     return bq_utils.create_table(self.bq, self.project_id, self.dataset_id,
                                  self.summary_table_id, summary_table_schema,
                                  desc)

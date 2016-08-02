@@ -54,20 +54,28 @@ static int is_compressed(grpc_byte_buffer *buffer) {
   return 1 /* GPR_TRUE */;
 }
 
-void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                  grpc_byte_buffer *buffer) {
+int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                 grpc_byte_buffer *buffer) {
   gpr_slice_buffer decompressed_slices_buffer;
   reader->buffer_in = buffer;
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW:
       gpr_slice_buffer_init(&decompressed_slices_buffer);
       if (is_compressed(reader->buffer_in)) {
-        grpc_msg_decompress(reader->buffer_in->data.raw.compression,
-                            &reader->buffer_in->data.raw.slice_buffer,
-                            &decompressed_slices_buffer);
-        reader->buffer_out =
-            grpc_raw_byte_buffer_create(decompressed_slices_buffer.slices,
-                                        decompressed_slices_buffer.count);
+        if (grpc_msg_decompress(reader->buffer_in->data.raw.compression,
+                                &reader->buffer_in->data.raw.slice_buffer,
+                                &decompressed_slices_buffer) == 0) {
+          gpr_log(GPR_ERROR,
+                  "Unexpected error decompressing data for algorithm with enum "
+                  "value '%d'.",
+                  reader->buffer_in->data.raw.compression);
+          memset(reader, 0, sizeof(*reader));
+          return 0;
+        } else { /* all fine */
+          reader->buffer_out =
+              grpc_raw_byte_buffer_create(decompressed_slices_buffer.slices,
+                                          decompressed_slices_buffer.count);
+        }
         gpr_slice_buffer_destroy(&decompressed_slices_buffer);
       } else { /* not compressed, use the input buffer as output */
         reader->buffer_out = reader->buffer_in;
@@ -75,6 +83,7 @@ void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
       reader->current.index = 0;
       break;
   }
+  return 1;
 }
 
 void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {

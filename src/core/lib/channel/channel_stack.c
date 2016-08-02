@@ -106,6 +106,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
                              const grpc_channel_filter **filters,
                              size_t filter_count,
                              const grpc_channel_args *channel_args,
+                             grpc_transport *optional_transport,
                              const char *name, grpc_channel_stack *stack) {
   size_t call_size =
       ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
@@ -127,6 +128,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = channel_args;
+    args.optional_transport = optional_transport;
     args.is_first = i == 0;
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];
@@ -155,12 +157,13 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack *channel_stack, int initial_refs,
-                          grpc_iomgr_cb_func destroy, void *destroy_arg,
-                          grpc_call_context_element *context,
-                          const void *transport_server_data,
-                          grpc_call_stack *call_stack) {
+grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack *channel_stack,
+                                 int initial_refs, grpc_iomgr_cb_func destroy,
+                                 void *destroy_arg,
+                                 grpc_call_context_element *context,
+                                 const void *transport_server_data,
+                                 grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   grpc_call_element_args args;
   size_t count = channel_stack->count;
@@ -176,6 +179,7 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
+  grpc_error *first_error = GRPC_ERROR_NONE;
   for (i = 0; i < count; i++) {
     args.call_stack = call_stack;
     args.server_transport_data = transport_server_data;
@@ -183,15 +187,24 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
-    call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
+    grpc_error *error =
+        call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
+    if (error != GRPC_ERROR_NONE) {
+      if (first_error == GRPC_ERROR_NONE) {
+        first_error = error;
+      } else {
+        GRPC_ERROR_UNREF(error);
+      }
+    }
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
+  return first_error;
 }
 
-void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
-                                 grpc_call_stack *call_stack,
-                                 grpc_pollset *pollset) {
+void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_stack *call_stack,
+                                                grpc_polling_entity *pollent) {
   size_t count = call_stack->count;
   grpc_call_element *call_elems;
   char *user_data;
@@ -203,24 +216,28 @@ void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
 
   /* init per-filter data */
   for (i = 0; i < count; i++) {
-    call_elems[i].filter->set_pollset(exec_ctx, &call_elems[i], pollset);
+    call_elems[i].filter->set_pollset_or_pollset_set(exec_ctx, &call_elems[i],
+                                                     pollent);
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
 }
 
-void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
-                                        grpc_call_element *elem,
-                                        grpc_pollset *pollset) {}
+void grpc_call_stack_ignore_set_pollset_or_pollset_set(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_polling_entity *pollent) {}
 
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack) {
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             const grpc_call_final_info *final_info,
+                             void *and_free_memory) {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i]);
+    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i], final_info,
+                                       i == count - 1 ? and_free_memory : NULL);
   }
 }
 
@@ -257,6 +274,17 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *cur_elem) {
   grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
-  op.cancel_with_status = GRPC_STATUS_CANCELLED;
+  op.cancel_error = GRPC_ERROR_CANCELLED;
+  grpc_call_next_op(exec_ctx, cur_elem, &op);
+}
+
+void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_element *cur_elem,
+                                                grpc_status_code status,
+                                                gpr_slice *optional_message) {
+  grpc_transport_stream_op op;
+  memset(&op, 0, sizeof(op));
+  grpc_transport_stream_op_add_cancellation_with_message(&op, status,
+                                                         optional_message);
   grpc_call_next_op(exec_ctx, cur_elem, &op);
 }

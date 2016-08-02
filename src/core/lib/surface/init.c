@@ -57,7 +57,6 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/surface/surface_trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -164,10 +163,17 @@ void grpc_init(void) {
     grpc_register_tracer("channel_stack_builder",
                          &grpc_trace_channel_stack_builder);
     grpc_register_tracer("http1", &grpc_http1_trace);
+    grpc_register_tracer("compression", &grpc_compression_trace);
+    grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
+    // Default pluck trace to 1
+    grpc_cq_pluck_trace = 1;
+    grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);
+    // Default timeout trace to 1
+    grpc_cq_event_timeout_trace = 1;
+    grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();
-    grpc_tracer_init("GRPC_TRACE");
     gpr_timers_global_init();
     grpc_cq_global_init();
     for (i = 0; i < g_number_of_plugins; i++) {
@@ -179,6 +185,7 @@ void grpc_init(void) {
      * at the appropriate time */
     grpc_register_security_filters();
     register_builtin_channel_init();
+    grpc_tracer_init("GRPC_TRACE");
     /* no more changes to channel init pipelines */
     grpc_channel_init_finalize();
   }

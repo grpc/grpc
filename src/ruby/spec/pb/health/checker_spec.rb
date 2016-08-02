@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/health/v1/health'
+require 'grpc/health/v1/health_pb'
 require 'grpc/health/checker'
 require 'open3'
 require 'tmpdir'
@@ -43,7 +43,7 @@ describe 'Health protobuf code generation' do
       skip 'protoc || grpc_ruby_plugin missing, cannot verify health code-gen'
     else
       it 'should already be loaded indirectly i.e, used by the other specs' do
-        expect(require('grpc/health/v1/health_services')).to be(false)
+        expect(require('grpc/health/v1/health_services_pb')).to be(false)
       end
 
       it 'should have the same content as created by code generation' do
@@ -52,7 +52,7 @@ describe 'Health protobuf code generation' do
 
         # Get the current content
         service_path = File.join(root_dir, 'ruby', 'pb', 'grpc',
-                                 'health', 'v1', 'health_services.rb')
+                                 'health', 'v1', 'health_services_pb.rb')
         want = nil
         File.open(service_path) { |f| want = f.read }
 
@@ -62,7 +62,7 @@ describe 'Health protobuf code generation' do
         got = nil
         Dir.mktmpdir do |tmp_dir|
           gen_out = File.join(tmp_dir, 'grpc', 'health', 'v1',
-                              'health_services.rb')
+                              'health_services_pb.rb')
           pid = spawn(
             'protoc',
             '-I.',
@@ -168,19 +168,15 @@ describe Grpc::Health::Checker do
     CheckerStub = Grpc::Health::Checker.rpc_stub_class
 
     before(:each) do
-      @server_queue = GRPC::Core::CompletionQueue.new
       server_host = '0.0.0.0:0'
-      @server = GRPC::Core::Server.new(@server_queue, nil)
-      server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
-      @host = "localhost:#{server_port}"
-      @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
       @client_opts = { channel_override: @ch }
       server_opts = {
-        server_override: @server,
-        completion_queue_override: @server_queue,
         poll_period: 1
       }
       @srv = RpcServer.new(**server_opts)
+      server_port = @srv.add_http2_port(server_host, :this_port_is_insecure)
+      @host = "localhost:#{server_port}"
+      @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
     end
 
     after(:each) do

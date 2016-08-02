@@ -45,6 +45,8 @@ namespace Grpc.Core.Tests
 {
     public class SanityTest
     {
+        // TODO: make sanity test work for CoreCLR as well
+#if !NETSTANDARD1_5
         /// <summary>
         /// Because we depend on a native library, sometimes when things go wrong, the
         /// entire NUnit test process crashes. To be able to track down problems better,
@@ -56,10 +58,11 @@ namespace Grpc.Core.Tests
         [Test]
         public void TestsJsonUpToDate()
         {
-            var discoveredTests = DiscoverAllTestClasses();
-            string discoveredTestsJson = JsonConvert.SerializeObject(discoveredTests, Formatting.Indented);
+            Dictionary<string, List<string>> discoveredTests = DiscoverAllTestClasses();
+			Dictionary<string, List<string>> testsFromFile 
+			    = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(ReadTestsJson());
 
-            Assert.AreEqual(discoveredTestsJson, ReadTestsJson());
+            Assert.AreEqual(discoveredTests, testsFromFile);
         }
 
         /// <summary>
@@ -121,5 +124,6 @@ namespace Grpc.Core.Tests
             }
             return result;
         }
+#endif
     }
 }

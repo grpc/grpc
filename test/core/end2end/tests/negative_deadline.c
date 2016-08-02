@@ -112,7 +112,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  gpr_log(GPR_DEBUG, "test with %d ops", num_ops);
+  gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234", deadline,
@@ -122,6 +122,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;

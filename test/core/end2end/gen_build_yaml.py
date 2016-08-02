@@ -39,19 +39,23 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing')
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False)
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [])
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
+fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
+    dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'])
 
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
     'h2_census': default_unsecure_fixture_options,
+    'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
+    'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux']),
@@ -60,7 +64,7 @@ END2END_FIXTURES = {
     'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
                                                           ci_mac=False),
     'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(
-        ci_mac=False),
+        ci_mac=False, exclude_configs=['msan']),
     'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True),
@@ -72,7 +76,8 @@ END2END_FIXTURES = {
 }
 
 TestOptions = collections.namedtuple(
-    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
+    'TestOptions',
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
 default_test_options = TestOptions(False, False, True, False, True, 1.0)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
@@ -84,18 +89,20 @@ END2END_TESTS = {
     'binary_metadata': default_test_options,
     'call_creds': default_test_options._replace(secure=True),
     'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
-    'cancel_after_client_done': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_after_client_done': default_test_options,
     'cancel_after_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
-    'compressed_payload': default_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
-    'connectivity': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
+    'compressed_payload': default_test_options._replace(proxyable=False),
+    'connectivity': connectivity_test_options._replace(proxyable=False,
+                                                       cpu_cost=LOWCPU),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
     'filter_causes_close': default_test_options,
+    'filter_call_init_fails': default_test_options,
     'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False),
@@ -104,21 +111,25 @@ END2END_TESTS = {
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
-    'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
+    'max_message_length': default_test_options,
     'negative_deadline': default_test_options,
+    'network_status_change': default_test_options,
     'no_op': default_test_options,
-    'payload': default_test_options._replace(cpu_cost=LOWCPU),
+    'payload': default_test_options,
+    'load_reporting_hook': default_test_options,
     'ping_pong_streaming': default_test_options,
     'ping': connectivity_test_options._replace(proxyable=False),
     'registered_call': default_test_options,
-    'request_with_flags': default_test_options._replace(proxyable=False),
+    'request_with_flags': default_test_options._replace(
+        proxyable=False, cpu_cost=LOWCPU),
     'request_with_payload': default_test_options,
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
-    'simple_delayed_request': connectivity_test_options._replace(cpu_cost=LOWCPU),
+    'simple_delayed_request': connectivity_test_options,
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
+    'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
 }
 
@@ -246,7 +257,7 @@ def main():
           {
               'name': '%s_nosec_test' % f,
               'args': [t],
-              'exclude_configs': [],
+              'exclude_configs': END2END_FIXTURES[f].exclude_configs,
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(

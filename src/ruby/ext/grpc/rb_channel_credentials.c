@@ -32,13 +32,15 @@
  */
 
 #include <ruby/ruby.h>
+
+#include <string.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_channel_credentials.h"
 
-#include <ruby/ruby.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "rb_call_credentials.h"
@@ -47,6 +49,8 @@
 /* grpc_rb_cChannelCredentials is the ruby class that proxies
    grpc_channel_credentials. */
 static VALUE grpc_rb_cChannelCredentials = Qnil;
+
+static char *pem_root_certs = NULL;
 
 /* grpc_rb_channel_credentials wraps a grpc_channel_credentials.  It provides a
  * mark object that is used to hold references to any objects used to create
@@ -121,36 +125,6 @@ VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c, VALUE mark) 
   wrapper->mark = mark;
   return rb_wrapper;
 }
-
-/* Clones ChannelCredentials instances.
-   Gives ChannelCredentials a consistent implementation of Ruby's object copy/dup
-   protocol. */
-static VALUE grpc_rb_channel_credentials_init_copy(VALUE copy, VALUE orig) {
-  grpc_rb_channel_credentials *orig_cred = NULL;
-  grpc_rb_channel_credentials *copy_cred = NULL;
-
-  if (copy == orig) {
-    return copy;
-  }
-
-  /* Raise an error if orig is not a credentials object or a subclass. */
-  if (TYPE(orig) != T_DATA ||
-      RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_channel_credentials_free) {
-    rb_raise(rb_eTypeError, "not a %s",
-             rb_obj_classname(grpc_rb_cChannelCredentials));
-  }
-
-  TypedData_Get_Struct(orig, grpc_rb_channel_credentials,
-                       &grpc_rb_channel_credentials_data_type, orig_cred);
-  TypedData_Get_Struct(copy, grpc_rb_channel_credentials,
-                       &grpc_rb_channel_credentials_data_type, copy_cred);
-
-  /* use ruby's MEMCPY to make a byte-for-byte copy of the credentials
-   * wrapper object. */
-  MEMCPY(copy_cred, orig_cred, grpc_rb_channel_credentials, 1);
-  return copy;
-}
-
 
 /* The attribute used on the mark object to hold the pem_root_certs. */
 static ID id_pem_root_certs;
@@ -236,6 +210,25 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
   return grpc_rb_wrap_channel_credentials(creds, mark);
 }
 
+static grpc_ssl_roots_override_result get_ssl_roots_override(
+    char **pem_root_certs_ptr) {
+  *pem_root_certs_ptr = pem_root_certs;
+  if (pem_root_certs == NULL) {
+    return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  } else {
+    return GRPC_SSL_ROOTS_OVERRIDE_OK;
+  }
+}
+
+static VALUE grpc_rb_set_default_roots_pem(VALUE self, VALUE roots) {
+  char *roots_ptr = StringValueCStr(roots);
+  size_t length = strlen(roots_ptr);
+  (void)self;
+  pem_root_certs = gpr_malloc((length + 1) * sizeof(char));
+  memcpy(pem_root_certs, roots_ptr, length + 1);
+  return Qnil;
+}
+
 void Init_grpc_channel_credentials() {
   grpc_rb_cChannelCredentials =
       rb_define_class_under(grpc_rb_mGrpcCore, "ChannelCredentials", rb_cObject);
@@ -248,9 +241,14 @@ void Init_grpc_channel_credentials() {
   rb_define_method(grpc_rb_cChannelCredentials, "initialize",
                    grpc_rb_channel_credentials_init, -1);
   rb_define_method(grpc_rb_cChannelCredentials, "initialize_copy",
-                   grpc_rb_channel_credentials_init_copy, 1);
+                   grpc_rb_cannot_init_copy, 1);
   rb_define_method(grpc_rb_cChannelCredentials, "compose",
                    grpc_rb_channel_credentials_compose, -1);
+  rb_define_module_function(grpc_rb_cChannelCredentials,
+                            "set_default_roots_pem",
+                            grpc_rb_set_default_roots_pem, 1);
+
+  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 
   id_pem_cert_chain = rb_intern("__pem_cert_chain");
   id_pem_private_key = rb_intern("__pem_private_key");

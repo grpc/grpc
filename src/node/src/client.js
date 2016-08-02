@@ -815,8 +815,7 @@ exports.waitForClientReady = function(client, deadline, callback) {
  * @return {function(string, Object)} New client constructor
  */
 exports.makeProtobufClientConstructor =  function(service, options) {
-  var method_attrs = common.getProtobufServiceAttrs(service, service.name,
-                                                    options);
+  var method_attrs = common.getProtobufServiceAttrs(service, options);
   var deprecatedArgumentOrder = false;
   if (options) {
     deprecatedArgumentOrder = options.deprecatedArgumentOrder;

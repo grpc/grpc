@@ -94,12 +94,12 @@ class ServerContext {
   ~ServerContext();
 
 #ifndef GRPC_CXX0X_NO_CHRONO
-  std::chrono::system_clock::time_point deadline() {
+  std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
-  gpr_timespec raw_deadline() { return deadline_; }
+  gpr_timespec raw_deadline() const { return deadline_; }
 
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
@@ -122,14 +122,21 @@ class ServerContext {
   // was called.
   void TryCancel() const;
 
-  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata() {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
+      const {
     return client_metadata_;
   }
 
   grpc_compression_level compression_level() const {
     return compression_level_;
   }
-  void set_compression_level(grpc_compression_level level);
+
+  void set_compression_level(grpc_compression_level level) {
+    compression_level_set_ = true;
+    compression_level_ = level;
+  }
+
+  bool compression_level_set() const { return compression_level_set_; }
 
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
@@ -216,6 +223,7 @@ class ServerContext {
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
+  bool compression_level_set_;
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 };

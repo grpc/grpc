@@ -6,8 +6,8 @@ This document specifies the features a stress test client should implement in or
 --------------
 **1.** A stress test client should be able to repeatedly execute one or more of the existing 'interop test cases'. It may just be a wrapper around the existing interop test client. The exact command line arguments the client should support are listed in _Table 1_ below.
 
-**2.** The stress test client must implement a metrics server defined by _[metrics.proto](https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/metrics.proto)_ and must expose _qps_ as a long-valued Gauge. The client can track the overall _qps_ in one Gauge or in multiple Gauges (for example: One per Channel or Stub).
- The framework periodically queries the _qps_ by calling the `GetAllGauges()` method (the framework assumes that all the returned Gauges are _qps_ Gauges) and uses this to determine if the stress test client is running or crashed or stalled.
+**2.** The stress test client must implement a metrics server defined by _[metrics.proto](https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/metrics.proto)_ and must expose _qps_ as a `Long`-valued Gauge. The client can track the overall _qps_ in one Gauge or in multiple Gauges (for example: One per Channel or Stub).
+ The framework periodically queries the _qps_ by calling the `GetAllGauges()` method (the framework assumes that all the returned Gauges are _qps_ Gauges and adds them up to determine the final qps) and uses this to determine if the stress test client is running or crashed or stalled.
 > *Note:* In this context, the term  _**qps**_  means _interop test cases per second_  (not _messages per second_ or _rpc calls per second_)
 
 

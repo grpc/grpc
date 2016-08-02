@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_HELPERS_INL_H
 
 #include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 #include "src/compiler/ruby_generator_string-inl.h"
 
 namespace grpc_ruby_generator {
@@ -47,7 +48,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor *file,
       file->name().find_last_of(".proto") == file->name().size() - 1) {
     *file_name_or_error =
         file->name().substr(0, file->name().size() - proto_suffix_length) +
-        "_services.rb";
+        "_services_pb.rb";
     return true;
   } else {
     *file_name_or_error = "Invalid proto file name:  must end with .proto";
@@ -57,7 +58,14 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor *file,
 
 inline grpc::string MessagesRequireName(
     const grpc::protobuf::FileDescriptor *file) {
-  return Replace(file->name(), ".proto", "");
+  return Replace(file->name(), ".proto", "_pb");
+}
+
+// Get leading or trailing comments in a string. Comment lines start with "# ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetRubyComments(const DescriptorType *desc, bool leading) {
+  return grpc_generator::GetPrefixedComments(desc, leading, "#");
 }
 
 }  // namespace grpc_ruby_generator

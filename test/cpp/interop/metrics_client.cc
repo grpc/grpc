@@ -42,26 +42,32 @@
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_string(metrics_server_address, "",
+int kDeadlineSecs = 10;
+
+DEFINE_string(metrics_server_address, "localhost:8081",
               "The metrics server addresses in the fomrat <hostname>:<port>");
+DEFINE_int32(deadline_secs, kDeadlineSecs,
+             "The deadline (in seconds) for RCP call");
 DEFINE_bool(total_only, false,
             "If true, this prints only the total value of all gauges");
-
-int kDeadlineSecs = 10;
 
 using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 
+// Do not log anything
+void BlackholeLogger(gpr_log_func_args* args) {}
+
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).
-bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
+bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
+                  int deadline_secs) {
   grpc::ClientContext context;
   EmptyMessage message;
 
   std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(kDeadlineSecs);
+      std::chrono::system_clock::now() + std::chrono::seconds(deadline_secs);
 
   context.set_deadline(deadline);
 
@@ -73,21 +79,21 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
       if (!total_only) {
-        gpr_log(GPR_INFO, "%s: %ld", gauge_response.name().c_str(),
-                gauge_response.long_value());
+        std::cout << gauge_response.name() << ": "
+                  << gauge_response.long_value() << std::endl;
       }
       overall_qps += gauge_response.long_value();
     } else {
-      gpr_log(GPR_INFO, "Gauge %s is not a long value",
-              gauge_response.name().c_str());
+      std::cout << "Gauge '" << gauge_response.name() << "' is not long valued"
+                << std::endl;
     }
   }
 
-  gpr_log(GPR_INFO, "%ld", overall_qps);
+  std::cout << overall_qps << std::endl;
 
   const grpc::Status status = reader->Finish();
   if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Error in getting metrics from the client");
+    std::cout << "Error in getting metrics from the client" << std::endl;
   }
 
   return status.ok();
@@ -96,19 +102,16 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  // Make sure server_addresses flag is not empty
-  if (FLAGS_metrics_server_address.empty()) {
-    gpr_log(
-        GPR_ERROR,
-        "Cannot connect to the Metrics server. Please pass the address of the"
-        "metrics server to connect to via the 'metrics_server_address' flag");
-    return 1;
-  }
+  // The output of metrics client is in some cases programatically parsed (for
+  // example by the stress test framework). So, we do not want any of the log
+  // from the grpc library appearing on stdout.
+  gpr_set_log_function(BlackholeLogger);
 
   std::shared_ptr<grpc::Channel> channel(grpc::CreateChannel(
       FLAGS_metrics_server_address, grpc::InsecureChannelCredentials()));
 
-  if (!PrintMetrics(MetricsService::NewStub(channel), FLAGS_total_only)) {
+  if (!PrintMetrics(MetricsService::NewStub(channel), FLAGS_total_only,
+                    FLAGS_deadline_secs)) {
     return 1;
   }
 

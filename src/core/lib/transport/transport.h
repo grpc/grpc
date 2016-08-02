@@ -37,6 +37,7 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -98,6 +99,11 @@ void grpc_transport_move_stats(grpc_transport_stream_stats *from,
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
+  /** Should be enqueued when all requested operations (excluding recv_message
+      and recv_initial_metadata which have their own closures) in a given batch
+      have been completed. */
+  grpc_closure *on_complete;
+
   /** Send initial metadata to the peer, from the provided metadata batch.
       idempotent_request MUST be set if this is non-null */
   grpc_metadata_batch *send_initial_metadata;
@@ -129,18 +135,12 @@ typedef struct grpc_transport_stream_op {
   /** Collect any stats into provided buffer, zero internal stat counters */
   grpc_transport_stream_stats *collect_stats;
 
-  /** Should be enqueued when all requested operations (excluding recv_message
-      and recv_initial_metadata which have their own closures) in a given batch
-      have been completed. */
-  grpc_closure *on_complete;
+  /** If != GRPC_ERROR_NONE, cancel this stream */
+  grpc_error *cancel_error;
 
-  /** If != GRPC_STATUS_OK, cancel this stream */
-  grpc_status_code cancel_with_status;
-
-  /** If != GRPC_STATUS_OK, send grpc-status, grpc-message, and close this
+  /** If != GRPC_ERROR_NONE, send grpc-status, grpc-message, and close this
       stream for both reading and writing */
-  grpc_status_code close_with_status;
-  gpr_slice *optional_close_message;
+  grpc_error *close_error;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
@@ -154,7 +154,7 @@ typedef struct grpc_transport_op {
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
-  int disconnect;
+  grpc_error *disconnect_with_error;
   /** should we send a goaway?
       after a goaway is sent, once there are no more active calls on
       the transport, the transport should disconnect */
@@ -197,9 +197,8 @@ int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_stream_refcount *refcount,
                                const void *server_data);
 
-void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
-                                grpc_transport *transport, grpc_stream *stream,
-                                grpc_pollset *pollset);
+void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
+                             grpc_stream *stream, grpc_polling_entity *pollent);
 
 /* Destroy transport data for a stream.
 
@@ -213,13 +212,18 @@ void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
                  caller, but any child memory must be cleaned up) */
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream);
+                                   grpc_stream *stream, void *and_free_memory);
 
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op);
+                                                  grpc_transport_stream_op *op,
+                                                  grpc_error *error);
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status);
+
+void grpc_transport_stream_op_add_cancellation_with_message(
+    grpc_transport_stream_op *op, grpc_status_code status,
+    gpr_slice *optional_message);
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
                                         grpc_status_code status,

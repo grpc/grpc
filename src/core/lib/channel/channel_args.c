@@ -35,6 +35,7 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/support/string.h"
 
+#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -132,7 +133,8 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }
-  qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
+  if (a->num_args > 1)
+    qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
 
   grpc_channel_args *b = gpr_malloc(sizeof(grpc_channel_args));
   b->num_args = a->num_args;
@@ -147,6 +149,7 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
 
 void grpc_channel_args_destroy(grpc_channel_args *a) {
   size_t i;
+  if (!a) return;
   for (i = 0; i < a->num_args; i++) {
     switch (a->args[i].type) {
       case GRPC_ARG_STRING:
@@ -170,7 +173,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
   if (a == NULL) return 0;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
-        !strcmp(GRPC_COMPRESSION_ALGORITHM_ARG, a->args[i].key)) {
+        !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
       return (grpc_compression_algorithm)a->args[i].value.integer;
       break;
     }
@@ -180,9 +183,10 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
 
 grpc_channel_args *grpc_channel_args_set_compression_algorithm(
     grpc_channel_args *a, grpc_compression_algorithm algorithm) {
+  GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
+  tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -196,9 +200,11 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
     size_t i;
     for (i = 0; i < a->num_args; ++i) {
       if (a->args[i].type == GRPC_ARG_INTEGER &&
-          !strcmp(GRPC_COMPRESSION_ALGORITHM_STATE_ARG, a->args[i].key)) {
+          !strcmp(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                  a->args[i].key)) {
         *states_arg = &a->args[i].value.integer;
-        return 1; /* GPR_TRUE */
+        **states_arg |= 0x1; /* forcefully enable support for no compression */
+        return 1;
       }
     }
   }
@@ -207,27 +213,35 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
-  int *states_arg;
+  int *states_arg = NULL;
   grpc_channel_args *result = *a;
   const int states_arg_found =
       find_compression_algorithm_states_bitset(*a, &states_arg);
 
-  if (states_arg_found) {
+  if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&
+      state == 0) {
+    char *algo_name = NULL;
+    GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name) != 0);
+    gpr_log(GPR_ERROR,
+            "Tried to disable default compression algorithm '%s'. The "
+            "operation has been ignored.",
+            algo_name);
+  } else if (states_arg_found) {
     if (state != 0) {
       GPR_BITSET((unsigned *)states_arg, algorithm);
-    } else {
+    } else if (algorithm != GRPC_COMPRESS_NONE) {
       GPR_BITCLEAR((unsigned *)states_arg, algorithm);
     }
   } else {
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_COMPRESSION_ALGORITHM_STATE_ARG;
+    tmp.key = GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {
       GPR_BITSET((unsigned *)&tmp.value.integer, algorithm);
-    } else {
+    } else if (algorithm != GRPC_COMPRESS_NONE) {
       GPR_BITCLEAR((unsigned *)&tmp.value.integer, algorithm);
     }
     result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
@@ -237,11 +251,11 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
   return result;
 }
 
-int grpc_channel_args_compression_algorithm_get_states(
+uint32_t grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args *a) {
   int *states_arg;
   if (find_compression_algorithm_states_bitset(a, &states_arg)) {
-    return *states_arg;
+    return (uint32_t)*states_arg;
   } else {
     return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
   }

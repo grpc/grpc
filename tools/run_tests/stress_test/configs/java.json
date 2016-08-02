@@ -1,7 +1,7 @@
 {
   "dockerImages": {
     "grpc_stress_java" : {
-      "buildScript": "tools/jenkins/build_interop_stress_image.sh",
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
       "dockerFileDir": "grpc_interop_stress_java"
     }
   },
@@ -10,7 +10,7 @@
     "baseTemplates": {
       "default": {
         "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
-        "pollIntervalSecs": 60,
+        "pollIntervalSecs": 100,
         "clientArgs": {
           "num_channels_per_server":5,
           "num_stubs_per_channel":10,
@@ -20,7 +20,11 @@
         "metricsPort": 8081,
         "metricsArgs": {
           "metrics_server_address": "localhost:8081",
-          "total_only": "true"
+          "total_only": "true",
+          "deadline_secs": 60
+        },
+        "env": {
+          "STRESSTEST_CLIENT_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m -XX:+UseConcMarkSweepGC"
         }
       }
     },
@@ -44,7 +48,10 @@
         "serverPort": 8080,
         "serverArgs": {
           "port": 8080,
-		  "use_tls": "false"
+          "use_tls": "false"
+        },
+        "env": {
+          "TEST_SERVER_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m  -XX:+UseConcMarkSweepGC"
         }
       }
     },
@@ -79,7 +86,7 @@
 
   "globalSettings": {
     "buildDockerImages": true,
-    "pollIntervalSecs": 60,
+    "pollIntervalSecs": 100,
     "testDurationSecs": 7200,
     "kubernetesProxyPort": 8008,
     "datasetIdNamePrefix": "stress_test_java",

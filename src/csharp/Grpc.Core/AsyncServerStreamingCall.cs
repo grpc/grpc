@@ -103,6 +103,10 @@ namespace Grpc.Core
         /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
         /// As a result, all resources being used by the call should be released eventually.
         /// </summary>
+        /// <remarks>
+        /// Normally, there is no need for you to dispose the call unless you want to utilize the
+        /// "Cancel" semantics of invoking <c>Dispose</c>.
+        /// </remarks>
         public void Dispose()
         {
             disposeAction.Invoke();

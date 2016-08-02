@@ -37,7 +37,8 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -48,10 +49,16 @@ void test_unparsable_target(void) {
 }
 
 void test_add_same_port_twice() {
+  grpc_arg a;
+  a.type = GRPC_ARG_INTEGER;
+  a.key = GRPC_ARG_ALLOW_REUSEPORT;
+  a.value.integer = 0;
+  grpc_channel_args args = {1, &a};
+
   int port = grpc_pick_unused_port_or_die();
   char *addr = NULL;
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
-  grpc_server *server = grpc_server_create(NULL, NULL);
+  grpc_server *server = grpc_server_create(&args, NULL);
   grpc_server_credentials *fake_creds =
       grpc_fake_transport_security_server_credentials_create();
   gpr_join_host_port(&addr, "localhost", port);

@@ -60,6 +60,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -81,6 +82,7 @@ typedef struct {
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
+  grpc_udp_server_orphan_cb orphan_cb;
 } server_port;
 
 /* the overall server */
@@ -127,7 +129,7 @@ grpc_udp_server *grpc_udp_server_create(void) {
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
-  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1, NULL);
+  grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
 
   gpr_mu_destroy(&s->mu);
   gpr_cv_destroy(&s->cv);
@@ -137,7 +139,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
 }
 
 static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
-                           bool success) {
+                           grpc_error *error) {
   grpc_udp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -168,6 +170,10 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
       server_port *sp = &s->ports[i];
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
+
+      GPR_ASSERT(sp->orphan_cb);
+      sp->orphan_cb(sp->emfd);
+
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "udp_listener_shutdown");
     }
@@ -205,19 +211,30 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
                           size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
+  /* Set send/receive socket buffers to 1 MB */
+  int buffer_size_bytes = 1024 * 1024;
 
   if (fd < 0) {
     goto error;
   }
 
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
+  if (grpc_set_socket_nonblocking(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set nonblocking %d: %s", fd, strerror(errno));
+    goto error;
+  }
+  if (grpc_set_socket_cloexec(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set cloexec %d: %s", fd, strerror(errno));
+    goto error;
   }
 
-  if (grpc_set_socket_ip_pktinfo_if_possible(fd) &&
-      addr->sa_family == AF_INET6) {
-    grpc_set_socket_ipv6_recvpktinfo_if_possible(fd);
+  if (grpc_set_socket_ip_pktinfo_if_possible(fd) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set ip_pktinfo.");
+    goto error;
+  } else if (addr->sa_family == AF_INET6) {
+    if (grpc_set_socket_ipv6_recvpktinfo_if_possible(fd) != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Unable to set ipv6_recvpktinfo.");
+      goto error;
+    }
   }
 
   GPR_ASSERT(addr_len < ~(socklen_t)0);
@@ -234,6 +251,18 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     goto error;
   }
 
+  if (grpc_set_socket_sndbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
+            buffer_size_bytes);
+    goto error;
+  }
+
+  if (grpc_set_socket_rcvbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
+            buffer_size_bytes);
+    goto error;
+  }
+
   return grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
 
 error:
@@ -244,10 +273,10 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   server_port *sp = arg;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
       gpr_mu_unlock(&sp->server->mu);
@@ -268,7 +297,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 
 static int add_socket_to_server(grpc_udp_server *s, int fd,
                                 const struct sockaddr *addr, size_t addr_len,
-                                grpc_udp_server_read_cb read_cb) {
+                                grpc_udp_server_read_cb read_cb,
+                                grpc_udp_server_orphan_cb orphan_cb) {
   server_port *sp;
   int port;
   char *addr_str;
@@ -292,6 +322,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     memcpy(sp->addr.untyped, addr, addr_len);
     sp->addr_len = addr_len;
     sp->read_cb = read_cb;
+    sp->orphan_cb = orphan_cb;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
     gpr_free(name);
@@ -301,7 +332,8 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
 }
 
 int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
-                             size_t addr_len, grpc_udp_server_read_cb read_cb) {
+                             size_t addr_len, grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_orphan_cb orphan_cb) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   unsigned i;
@@ -347,8 +379,10 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     /* Try listening on IPv6 first. */
     addr = (struct sockaddr *)&wild6;
     addr_len = sizeof(wild6);
-    fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
-    allocated_port1 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
+    // TODO(rjshade): Test and propagate the returned grpc_error*:
+    grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
+    allocated_port1 =
+        add_socket_to_server(s, fd, addr, addr_len, read_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
@@ -361,7 +395,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     addr_len = sizeof(wild4);
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
+  // TODO(rjshade): Test and propagate the returned grpc_error*:
+  grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
   }
@@ -370,7 +405,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     addr = (struct sockaddr *)&addr4_copy;
     addr_len = sizeof(addr4_copy);
   }
-  allocated_port2 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
+  allocated_port2 =
+      add_socket_to_server(s, fd, addr, addr_len, read_cb, orphan_cb);
 
 done:
   gpr_free(allocated_addr);

@@ -37,13 +37,16 @@ cdef class Call:
     self.c_call = NULL
     self.references = []
 
-  def start_batch(self, operations, tag):
+  def _start_batch(self, operations, tag, retain_self):
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
     cdef grpc_call_error result
     cdef Operations cy_operations = Operations(operations)
     cdef OperationTag operation_tag = OperationTag(tag)
-    operation_tag.operation_call = self
+    if retain_self:
+      operation_tag.operation_call = self
+    else:
+      operation_tag.operation_call = None
     operation_tag.batch_operations = cy_operations
     cpython.Py_INCREF(operation_tag)
     with nogil:
@@ -52,9 +55,18 @@ cdef class Call:
           <cpython.PyObject *>operation_tag, NULL)
     return result
 
+  def start_client_batch(self, operations, tag):
+    # We don't reference this call in the operations tag because
+    # it should be cancelled when it goes out of scope
+    return self._start_batch(operations, tag, False)
+
+  def start_server_batch(self, operations, tag):
+    return self._start_batch(operations, tag, True)
+
   def cancel(
       self, grpc_status_code error_code=GRPC_STATUS__DO_NOT_USE,
       details=None):
+    details = str_to_bytes(details)
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
     if (details is None) != (error_code == GRPC_STATUS__DO_NOT_USE):
@@ -63,12 +75,6 @@ cdef class Call:
     cdef grpc_call_error result
     cdef char *c_details = NULL
     if error_code != GRPC_STATUS__DO_NOT_USE:
-      if isinstance(details, bytes):
-        pass
-      elif isinstance(details, basestring):
-        details = details.encode()
-      else:
-        raise TypeError("expected details to be str or bytes")
       self.references.append(details)
       c_details = details
       with nogil:
@@ -99,8 +105,7 @@ cdef class Call:
 
   def __dealloc__(self):
     if self.c_call != NULL:
-      with nogil:
-        grpc_call_destroy(self.c_call)
+      grpc_call_destroy(self.c_call)
 
   # The object *should* always be valid from Python. Used for debugging.
   @property

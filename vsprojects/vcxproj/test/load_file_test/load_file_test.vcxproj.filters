@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\load_file_test.c">
+      <Filter>test\core\iomgr</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{2d5b633c-62d3-3391-6d61-6521bf33e82d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{30d9062f-1ea2-7ee4-249c-0e4220cb5153}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\iomgr">
+      <UniqueIdentifier>{a23b62a8-d5fc-3114-9aa2-8065e49214e8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

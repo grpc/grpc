@@ -29,10 +29,20 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
+SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
 CPPFLAGS += -I/usr/local/include -pthread
 CXXFLAGS += -std=c++11
-LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lprotobuf -lpthread -ldl
+ifeq ($(SYSTEM),Darwin)
+LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
+           -lgrpc++_reflection \
+           -lprotobuf -lpthread -ldl
+else
+LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
+           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed \
+           -lprotobuf -lpthread -ldl
+endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
@@ -41,7 +51,7 @@ PROTOS_PATH = ../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server greeter_async_client greeter_async_server
+all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
 
 greeter_client: helloworld.pb.o helloworld.grpc.pb.o greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
@@ -50,6 +60,9 @@ greeter_server: helloworld.pb.o helloworld.grpc.pb.o greeter_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 greeter_async_client: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+greeter_async_client2: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client2.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.o
@@ -64,7 +77,7 @@ greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_server
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
 
 
 # The following is to test your system and ensure a smoother experience.
@@ -94,7 +107,7 @@ ifneq ($(HAS_VALID_PROTOC),true)
 	@echo "Please install Google protocol buffers 3.0.0 and its compiler."
 	@echo "You can find it here:"
 	@echo
-	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-beta-2"
+	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-beta-3.3"
 	@echo
 	@echo "Here is what I get when trying to evaluate your version of protoc:"
 	@echo

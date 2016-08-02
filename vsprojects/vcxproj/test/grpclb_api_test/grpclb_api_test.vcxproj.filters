@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v0\load_balancer.proto">
-      <Filter>src\proto\grpc\lb\v0</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v1\load_balancer.proto">
+      <Filter>src\proto\grpc\lb\v1</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\grpclb\grpclb_api_test.cc">
       <Filter>test\cpp\grpclb</Filter>
@@ -22,8 +22,8 @@
     <Filter Include="src\proto\grpc\lb">
       <UniqueIdentifier>{2981699e-c196-c599-bc17-c177770f89ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\proto\grpc\lb\v0">
-      <UniqueIdentifier>{3d04774a-1c2f-e100-435e-08af5d539250}</UniqueIdentifier>
+    <Filter Include="src\proto\grpc\lb\v1">
+      <UniqueIdentifier>{6cce8ddf-d9a9-1d71-0810-d1e6f8685d76}</UniqueIdentifier>
     </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{64736e1d-eb77-664f-34ab-6cf41263d3d8}</UniqueIdentifier>

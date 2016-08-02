@@ -77,13 +77,13 @@ task 'dlls' do
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
 
-  env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE" '
+  env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
-  out = '/tmp/libs/opt/grpc-0.dll'
+  out = '/tmp/libs/opt/grpc-1.dll'
 
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }

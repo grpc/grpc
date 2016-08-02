@@ -149,7 +149,8 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   grpc_byte_buffer *rbb;
   int res;
 
-  grpc_byte_buffer_reader_init(&reader, bb);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
+             "Couldn't init byte buffer reader");
   rbb = grpc_raw_byte_buffer_from_reader(&reader);
   res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
   grpc_byte_buffer_reader_destroy(&reader);
@@ -258,9 +259,10 @@ void cq_verify(cq_verifier *v) {
   gpr_strvec_destroy(&have_tags);
 }
 
-void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
+void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec) {
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
@@ -274,6 +276,8 @@ void cq_verify_empty(cq_verifier *v) {
   }
 }
 
+void cq_verify_empty(cq_verifier *v) { cq_verify_empty_timeout(v, 1); }
+
 static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   expectation *e = gpr_malloc(sizeof(expectation));
   e->type = type;
@@ -284,6 +288,6 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, int success) {
+void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
   add(v, GRPC_OP_COMPLETE, tag)->success = success;
 }

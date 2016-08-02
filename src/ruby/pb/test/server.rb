@@ -50,9 +50,9 @@ require 'optparse'
 
 require 'grpc'
 
-require 'test/proto/empty'
-require 'test/proto/messages'
-require 'test/proto/test_services'
+require_relative '../src/proto/grpc/testing/empty_pb'
+require_relative '../src/proto/grpc/testing/messages_pb'
+require_relative '../src/proto/grpc/testing/test_services_pb'
 
 # DebugIsTruncated extends the default Logger to truncate debug messages
 class DebugIsTruncated < Logger
@@ -188,11 +188,13 @@ class TestTarget < Grpc::Testing::TestService::Service
       begin
         GRPC.logger.info('interop-server: started receiving')
         reqs.each do |req|
-          resp_size = req.response_parameters[0].size
-          GRPC.logger.info("read a req, response size is #{resp_size}")
-          resp = cls.new(payload: Payload.new(type: req.response_type,
-                                              body: nulls(resp_size)))
-          q.push(resp)
+          req.response_parameters.each do |params|
+            resp_size = params.size
+            GRPC.logger.info("read a req, response size is #{resp_size}")
+            resp = cls.new(payload: Payload.new(type: req.response_type,
+                                                body: nulls(resp_size)))
+            q.push(resp)
+          end
         end
         GRPC.logger.info('interop-server: finished receiving')
         q.push(self)

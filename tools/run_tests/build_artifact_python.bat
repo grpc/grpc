@@ -28,32 +28,37 @@
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-set NUGET=C:\nuget\nuget.exe
-%NUGET% restore vsprojects\grpc.sln || goto :error
-
-
-@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=Win32 || goto :error
-@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=x64   || goto :error
-
-mkdir src\python\grpcio\grpc\_cython\_windows
-
-copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.32.python || goto :error
-copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
-
-
-set PATH=C:\%1;C:\%1\scripts;%PATH%
+set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;%PATH%
 
 pip install --upgrade six
 pip install --upgrade setuptools
 pip install -rrequirements.txt
 
-set GRPC_PYTHON_USE_CUSTOM_BDIST=0
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
+
+@rem Set up gRPC Python tools
+python tools\distrib\python\make_grpcio_tools.py
+
+@rem Build gRPC Python extensions
+python setup.py build_ext -c mingw32
+
+pushd tools\distrib\python\grpcio_tools
+python setup.py build_ext -c mingw32
+popd
+
+
+@rem Build gRPC Python distributions
 python setup.py bdist_wheel
+
+pushd tools\distrib\python\grpcio_tools
+python setup.py bdist_wheel
+popd
+
 
 mkdir artifacts
 xcopy /Y /I /S dist\* artifacts\ || goto :error
+xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* artifacts\ || goto :error
 
 goto :EOF
 

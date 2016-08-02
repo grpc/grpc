@@ -31,12 +31,15 @@
 
 FROM 32bit/debian:jessie
 
+RUN apt-get update && apt-get install debian-keyring && apt-key update
+
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-key update && apt-get install -y \
   autoconf \
   autotools-dev \
   build-essential \
   bzip2 \
+  clang \
   curl \
   gcc \
   gcc-multilib \
@@ -73,7 +76,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install pip --upgrade
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
 
 
 ##################

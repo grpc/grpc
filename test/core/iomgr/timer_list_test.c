@@ -42,8 +42,8 @@
 
 static int cb_called[MAX_CB][2];
 
-static void cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  cb_called[(intptr_t)arg][success]++;
+static void cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  cb_called[(intptr_t)arg][error == GRPC_ERROR_NONE]++;
 }
 
 static void add_test(void) {

@@ -1,0 +1,15 @@
+framework module grpc {
+  umbrella header "grpc.h"
+
+  header "byte_buffer_reader.h"
+  header "grpc_security.h"
+  header "grpc_security_constants.h"
+  header "impl/codegen/alloc.h"
+  header "impl/codegen/byte_buffer_reader.h"
+  header "support/alloc.h"
+  header "support/port_platform.h"
+  header "support/string_util.h"
+
+  export *
+  module * { export * }
+}

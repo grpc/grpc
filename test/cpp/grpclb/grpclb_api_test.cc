@@ -35,13 +35,13 @@
 #include <string>
 
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
-#include "src/proto/grpc/lb/v0/load_balancer.pb.h"  // C++ version
+#include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
 
 namespace grpc {
 namespace {
 
-using grpc::lb::v0::LoadBalanceRequest;
-using grpc::lb::v0::LoadBalanceResponse;
+using grpc::lb::v1::LoadBalanceRequest;
+using grpc::lb::v1::LoadBalanceResponse;
 
 class GrpclbTest : public ::testing::Test {};
 
@@ -58,31 +58,24 @@ TEST_F(GrpclbTest, CreateRequest) {
   grpc_grpclb_request_destroy(c_req);
 }
 
-TEST_F(GrpclbTest, ParseResponse) {
+TEST_F(GrpclbTest, ParseInitialResponse) {
   LoadBalanceResponse response;
-  const std::string client_config_str = "I'm a client config";
   auto* initial_response = response.mutable_initial_response();
-  initial_response->set_client_config(client_config_str);
   auto* client_stats_report_interval =
       initial_response->mutable_client_stats_report_interval();
   client_stats_report_interval->set_seconds(123);
   client_stats_report_interval->set_nanos(456);
-
   const std::string encoded_response = response.SerializeAsString();
   gpr_slice encoded_slice =
       gpr_slice_from_copied_string(encoded_response.c_str());
-  grpc_grpclb_response* c_response = grpc_grpclb_response_parse(encoded_slice);
-  EXPECT_TRUE(c_response->has_initial_response);
-  EXPECT_TRUE(c_response->initial_response.has_client_config);
-  EXPECT_FALSE(c_response->initial_response.has_load_balancer_delegate);
-  EXPECT_TRUE(strcmp(c_response->initial_response.client_config,
-                     client_config_str.c_str()) == 0);
-  EXPECT_EQ(c_response->initial_response.client_stats_report_interval.seconds,
-            123);
-  EXPECT_EQ(c_response->initial_response.client_stats_report_interval.nanos,
-            456);
+
+  grpc_grpclb_initial_response* c_initial_response =
+      grpc_grpclb_initial_response_parse(encoded_slice);
+  EXPECT_FALSE(c_initial_response->has_load_balancer_delegate);
+  EXPECT_EQ(c_initial_response->client_stats_report_interval.seconds, 123);
+  EXPECT_EQ(c_initial_response->client_stats_report_interval.nanos, 456);
   gpr_slice_unref(encoded_slice);
-  grpc_grpclb_response_destroy(c_response);
+  grpc_grpclb_initial_response_destroy(c_initial_response);
 }
 
 TEST_F(GrpclbTest, ParseResponseServerList) {

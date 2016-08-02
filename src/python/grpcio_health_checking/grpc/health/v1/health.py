@@ -29,22 +29,14 @@
 
 """Reference implementation for health checking in gRPC Python."""
 
-import abc
-import enum
 import threading
+
+import grpc
 
 from grpc.health.v1 import health_pb2
 
 
-@enum.unique
-class HealthStatus(enum.Enum):
-  """Statuses for a service mirroring the reference health.proto's values."""
-  UNKNOWN = health_pb2.HealthCheckResponse.UNKNOWN
-  SERVING = health_pb2.HealthCheckResponse.SERVING
-  NOT_SERVING = health_pb2.HealthCheckResponse.NOT_SERVING
-
-
-class _HealthServicer(health_pb2.EarlyAdopterHealthServicer):
+class HealthServicer(health_pb2.HealthServicer):
   """Servicer handling RPCs for service statuses."""
 
   def __init__(self):
@@ -53,77 +45,21 @@ class _HealthServicer(health_pb2.EarlyAdopterHealthServicer):
 
   def Check(self, request, context):
     with self._server_status_lock:
-      if request.service not in self._server_status:
-        # TODO(atash): once the Python API has a way of setting the server
-        # status, bring us into conformance with the health check spec by
-        # returning the NOT_FOUND status here.
-        raise NotImplementedError()
+      status = self._server_status.get(request.service)
+      if status is None:
+        context.set_code(grpc.StatusCode.NOT_FOUND)
+        return health_pb2.HealthCheckResponse()
       else:
-        return health_pb2.HealthCheckResponse(
-            status=self._server_status[request.service].value)
+        return health_pb2.HealthCheckResponse(status=status)
 
-  def set(service, status):
-    if not isinstance(status, HealthStatus):
-      raise TypeError('expected grpc.health.v1.health.HealthStatus '
-                      'for argument `status` but got {}'.format(status))
-    with self._server_status_lock:
-      self._server_status[service] = status
-
-
-class HealthServer(health_pb2.EarlyAdopterHealthServer):
-  """Interface for the reference gRPC Python health server."""
-  __metaclass__ = abc.ABCMeta
-
-  @abc.abstractmethod
-  def start(self):
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def stop(self):
-    raise NotImplementedError()
-
-  @abc.abstractmethod
   def set(self, service, status):
-    """Set the status of the given service.
+    """Sets the status of a service.
 
     Args:
-      service (str): service name of the service to set the reported status of
-      status (HealthStatus): status to set for the specified service
+        service: string, the name of the service.
+            NOTE, '' must be set.
+        status: HealthCheckResponse.status enum value indicating
+            the status of the service
     """
-    raise NotImplementedError()
-
-
-class _HealthServerImplementation(HealthServer):
-  """Implementation for the reference gRPC Python health server."""
-
-  def __init__(self, server, servicer):
-    self._server = server
-    self._servicer = servicer
-
-  def start(self):
-    self._server.start()
-
-  def stop(self):
-    self._server.stop()
-
-  def set(self, service, status):
-    self._servicer.set(service, status)
-
-
-def create_Health_server(port, private_key=None, certificate_chain=None):
-  """Get a HealthServer instance.
-
-  Args:
-    port (int): port number passed through to health_pb2 server creation
-      routine.
-    private_key (str): to-be-created server's desired private key
-    certificate_chain (str): to-be-created server's desired certificate chain
-
-  Returns:
-    An instance of HealthServer (conforming thus to
-    EarlyAdopterHealthServer and providing a method to set server status)."""
-  servicer = _HealthServicer()
-  server = health_pb2.early_adopter_create_Health_server(
-      servicer, port=port, private_key=private_key,
-      certificate_chain=certificate_chain)
-  return _HealthServerImplementation(server, servicer)
+    with self._server_status_lock:
+      self._server_status[service] = status

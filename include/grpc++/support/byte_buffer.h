@@ -64,7 +64,7 @@ class ByteBuffer GRPC_FINAL {
   ByteBuffer& operator=(const ByteBuffer&);
 
   /// Dump (read) the buffer contents into \a slices.
-  void Dump(std::vector<Slice>* slices) const;
+  Status Dump(std::vector<Slice>* slices) const;
 
   /// Remove all data.
   void Clear();
