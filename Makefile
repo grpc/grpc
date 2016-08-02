@@ -263,7 +263,7 @@ NANOPB_DEP := $(NANOPB_DIR)/generator/proto/nanopb_pb2.py $(NANOPB_DIR)/generato
 
 
 SYSTEM_PYTHON_PROTOBUF_GOOD := $(shell \
-version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
+PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
 major=( $${version//./ } );\
 majordef=$${major:-0};\
 if [[ $$majordef -ge 3 ]]; then echo true; else echo false; fi;)
@@ -272,6 +272,8 @@ ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
 # For systems with built-in python-protobuf
 all: all_after_prereq
 test: test_after_prereq
+test_c: test_c_after_prereq
+test_cxx: test_cxx_after_prereq
 %:
 else
 # We need to install a local python-protobuf
@@ -279,20 +281,16 @@ NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX)
 NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF := $(shell pushd $(NANOPB_VENV_DIR); virtualenv $(NANOPB_VENV_DIR); source $(NANOPB_VENV_DIR)/bin/activate; popd; pip install protobuf==3.0.0b2)
 # Trigger variable evaluation
 NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF_OUTPUT := $(NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF)
-all:
-	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
-	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
-	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
-	$(MAKE) $(MFLAGS) all_after_prereq; \
-	deactivate
-test:
-	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
-	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
-	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
-	$(MAKE) $(MFLAGS) test_after_prereq; \
-	deactivate
-endif
 
+all:
+	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) all_after_prereq; 	deactivate
+test:
+	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) test_after_prereq; 	deactivate
+test_c:
+	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) test_c_after_prereq; 	deactivate
+test_cxx:
+	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) test_cxx_after_prereq; 	deactivate
+endif
 
 PROTOC ?= protoc
 DTRACE ?= dtrace
@@ -1564,7 +1562,7 @@ test_after_prereq: test_c test_cxx
 
 flaky_test: flaky_test_c flaky_test_cxx
 
-test_c: buildtests_c
+test_c_after_prereq: buildtests_c
 	$(E) "[RUN]     Testing alarm_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing algorithm_test"
@@ -1784,7 +1782,7 @@ flaky_test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/mlog_test || ( echo test mlog_test failed ; exit 1 )
 
 
-test_cxx: buildtests_cxx
+test_cxx_after_prereq: buildtests_cxx
 	$(E) "[RUN]     Testing alarm_cpp_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
@@ -16196,7 +16194,7 @@ test/cpp/util/test_config.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 
-.PHONY: all_after_prereq strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
+.PHONY: all all_after_prereq strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_after_prereq test_c test_cxx test_c_after_prereq test_cxx_after_prereq install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
 
 .PHONY: printvars
 printvars:

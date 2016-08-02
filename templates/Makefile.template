@@ -153,7 +153,7 @@
 
   <%text>
   SYSTEM_PYTHON_PROTOBUF_GOOD := $(shell \
-  version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
+  PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
   major=( $${version//./ } );\
   majordef=$${major:-0};\
   if [[ $$majordef -ge 3 ]]; then echo true; else echo false; fi;)
@@ -162,6 +162,8 @@
   # For systems with built-in python-protobuf
   all: all_after_prereq
   test: test_after_prereq
+  test_c: test_c_after_prereq
+  test_cxx: test_cxx_after_prereq
   %:
   else
   # We need to install a local python-protobuf
@@ -169,20 +171,16 @@
   NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF := $(shell pushd $(NANOPB_VENV_DIR); virtualenv $(NANOPB_VENV_DIR); source $(NANOPB_VENV_DIR)/bin/activate; popd; pip install protobuf==3.0.0b2)
   # Trigger variable evaluation
   NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF_OUTPUT := $(NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF)
-  all:
-  	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
-  	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
-  	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
-  	$(MAKE) $(MFLAGS) all_after_prereq; \
-  	deactivate
-  test:
-  	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
-  	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
-  	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
-  	$(MAKE) $(MFLAGS) test_after_prereq; \
-  	deactivate
-  endif
   </%text>
+  %for tgt in ['all', 'test', 'test_c', 'test_cxx']:
+  ${tgt}:
+  	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; \
+  	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; \
+  	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); \
+  	$(MAKE) $(MFLAGS) ${tgt}_after_prereq; \
+  	deactivate
+  %endfor
+  endif
 
   PROTOC ?= protoc
   DTRACE ?= dtrace
@@ -1008,7 +1006,7 @@
 
   flaky_test: flaky_test_c flaky_test_cxx
 
-  test_c: buildtests_c
+  test_c_after_prereq: buildtests_c
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1026,7 +1024,7 @@
   % endfor
 
 
-  test_cxx: buildtests_cxx
+  test_cxx_after_prereq: buildtests_cxx
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1825,10 +1823,11 @@
   % endfor
   endif
 
-  .PHONY: all_after_prereq strip tools \
+  .PHONY: all all_after_prereq strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
-  test test_c test_cxx \
+  test test_after_prereq test_c test_cxx \
+  test_c_after_prereq test_cxx_after_prereq \
   install install_c install_cxx \
   install-headers install-headers_c install-headers_cxx \
   install-shared install-shared_c install-shared_cxx \
