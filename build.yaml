@@ -14,13 +14,16 @@ filegroups:
   - include/grpc/census.h
   headers:
   - src/core/ext/census/aggregation.h
+  - src/core/ext/census/base_resources.h
   - src/core/ext/census/census_interface.h
   - src/core/ext/census/census_rpc_stats.h
   - src/core/ext/census/gen/census.pb.h
   - src/core/ext/census/grpc_filter.h
   - src/core/ext/census/mlog.h
+  - src/core/ext/census/resource.h
   - src/core/ext/census/rpc_metric_id.h
   src:
+  - src/core/ext/census/base_resources.c
   - src/core/ext/census/context.c
   - src/core/ext/census/gen/census.pb.c
   - src/core/ext/census/grpc_context.c
@@ -30,6 +33,7 @@ filegroups:
   - src/core/ext/census/mlog.c
   - src/core/ext/census/operation.c
   - src/core/ext/census/placeholders.c
+  - src/core/ext/census/resource.c
   - src/core/ext/census/tracing.c
   plugin: census_grpc_plugin
   uses:
@@ -1300,6 +1304,16 @@ targets:
   language: c
   src:
   - test/core/census/context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_resource_test
+  build: test
+  language: c
+  src:
+  - test/core/census/resource_test.c
   deps:
   - grpc_test_util
   - grpc

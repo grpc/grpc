@@ -404,11 +404,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/load_reporting/load_reporting.h',
                       'src/core/ext/load_reporting/load_reporting_filter.h',
                       'src/core/ext/census/aggregation.h',
+                      'src/core/ext/census/base_resources.h',
                       'src/core/ext/census/census_interface.h',
                       'src/core/ext/census/census_rpc_stats.h',
                       'src/core/ext/census/gen/census.pb.h',
                       'src/core/ext/census/grpc_filter.h',
                       'src/core/ext/census/mlog.h',
+                      'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
@@ -588,6 +590,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
                       'src/core/ext/load_reporting/load_reporting.c',
                       'src/core/ext/load_reporting/load_reporting_filter.c',
+                      'src/core/ext/census/base_resources.c',
                       'src/core/ext/census/context.c',
                       'src/core/ext/census/gen/census.pb.c',
                       'src/core/ext/census/grpc_context.c',
@@ -597,6 +600,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/mlog.c',
                       'src/core/ext/census/operation.c',
                       'src/core/ext/census/placeholders.c',
+                      'src/core/ext/census/resource.c',
                       'src/core/ext/census/tracing.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
@@ -763,11 +767,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/load_reporting/load_reporting.h',
                               'src/core/ext/load_reporting/load_reporting_filter.h',
                               'src/core/ext/census/aggregation.h',
+                              'src/core/ext/census/base_resources.h',
                               'src/core/ext/census/census_interface.h',
                               'src/core/ext/census/census_rpc_stats.h',
                               'src/core/ext/census/gen/census.pb.h',
                               'src/core/ext/census/grpc_filter.h',
                               'src/core/ext/census/mlog.h',
+                              'src/core/ext/census/resource.h',
                               'src/core/ext/census/rpc_metric_id.h'
   end
 

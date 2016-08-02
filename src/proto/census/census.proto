@@ -33,12 +33,12 @@ package google.census;
 
 // All the census protos.
 //
-// Nomenclature note: capitalized names below (like Metric) are protos.
+// Nomenclature note: capitalized names below (like Resource) are protos.
 //
-// Census lets you define a Metric - something which can be measured, like the
+// Census lets you define a Resource - something which can be measured, like the
 // latency of an RPC, the number of CPU cycles spent on an operation, or
 // anything else you care to measure. You can record individual instances of
-// measurements (a double value) for every metric of interest. These
+// measurements (a double value) for every Resource of interest. These
 // individual measurements are aggregated together into an Aggregation. There
 // are two Aggregation types available: Distribution (describes the
 // distribution of all measurements, possibly with a histogram) and
@@ -47,8 +47,8 @@ package google.census;
 //
 // You can define how your stats are broken down by Tag values and which
 // Aggregations to use through a View. The corresponding combination of
-// Metric/View/Aggregation which is available to census clients is called a
-// ViewAggregation.
+// Resource/View/Aggregation which is available to census clients is called a
+// Metric.
 
 
 // The following two types are copied from
@@ -85,26 +85,23 @@ message Timestamp {
   int32 nanos = 2;
 }
 
-// Describes a metric
-message Metric {
-  // name of metric, e.g. rpc_latency, cpu.
+// Describes a Resource.
+message Resource {
+  // name of resource, e.g. rpc_latency, cpu. Must be unique.
   string name = 1;
 
-  // More detailed description of the metric, used in documentation.
+  // More detailed description of the resource, used in documentation.
   string description = 2;
 
   // Fundamental units of measurement supported by Census
   // TODO(aveitch): expand this to include other S.I. units?
-  message BasicUnit {
-    enum Measure {
-      UNKNOWN = 0;
-      BITS = 1;
-      BYTES = 2;
-      SECS = 3;
-      CORES = 4;
-      MAX_UNITS = 5;
-    }
-    Measure type = 1;
+  enum BasicUnit {
+    UNKNOWN = 0;
+    BITS = 1;
+    BYTES = 2;
+    SECS = 3;
+    CORES = 4;
+    MAX_UNITS = 5;
   }
 
   // MeasurementUnit lets you build compound units of the form
@@ -124,7 +121,7 @@ message Metric {
   //     denominator: SECS
   //     denominator: SECS
   //
-  // To specify multiples (in power of 10) units, specify a non-zero prefix
+  // To specify multiples (in power of 10) of units, specify a non-zero prefix
   // value, for example:
   //
   // - MB/s (i.e. megabytes / s):
@@ -141,32 +138,40 @@ message Metric {
     repeated BasicUnit denominator = 3;
   }
 
-  // The units in which the Metric value is reported.
+  // The units in which Resource values are measured.
   MeasurementUnit unit = 3;
-
-  // Metrics will be assigned an ID when registered. Invalid if <= 0.
-  int32 id = 4;
 }
 
-// An Aggregation summarizes a series of individual Metric measurements, an
+// An Aggregation summarizes a series of individual Resource measurements, an
 // AggregationDescriptor describes an Aggregation.
 message AggregationDescriptor {
-  // At most one set of options. If neither option is set, a default type
-  // of Distribution (without a histogram component) will be used.
+  enum AggregationType {
+    // Unspecified. Should not be used.
+    UNKNOWN = 0;
+    // A count of measurements made.
+    COUNT = 1;
+    // A Distribution.
+    DISTRIBUTION = 2;
+    // Counts over fixed time intervals.
+    INTERVAL = 3;
+  }
+  // The type of Aggregation.
+  AggregationType type = 1;
+
+  // At most one set of options. It is illegal to specifiy an option for
+  // COUNT Aggregations. interval_boundaries must be set for INTERVAL types.
+  // bucket_boundaries are optional for DISTRIBUTION types.
   oneof options {
-    // Defines the histogram bucket boundaries for Distributions.
-    BucketBoundaries bucket_boundaries = 1;
+    // Defines histogram bucket boundaries for Distributions.
+    BucketBoundaries bucket_boundaries = 2;
     // Defines the time windows to record for IntervalStats.
-    IntervalBoundaries interval_boundaries = 2;
+    IntervalBoundaries interval_boundaries = 3;
   }
 
   // A Distribution may optionally contain a histogram of the values in the
-  // population. The bucket boundaries for that histogram is described by
-  // `bucket_boundaries`.
-  //
-  // Describes histogram bucket boundaries. Defines `size(bounds) + 1` (= N)
-  // buckets (for size(bounds) >= 1; if size(bounds) == 0, then no histogram
-  // will be defined. The boundaries for bucket index i are:
+  // population. The bucket boundaries for that histogram are described by
+  // `bucket_boundaries`. This defines `size(bounds) + 1` (= N) buckets. The
+  // boundaries for bucket index i are:
   //
   // [-infinity, bounds[i]) for i == 0
   // [bounds[i-1], bounds[i]) for 0 < i < N-2
@@ -196,8 +201,8 @@ message AggregationDescriptor {
 // a specified set of histogram buckets, as defined in
 // Aggregation.bucket_options.
 //
-// The summary statistics are the count, mean, sum of the squared deviation from
-// the mean, the minimum, and the maximum of the set of population of values.
+// The summary statistics are the count, mean, minimum, and the maximum of the
+// set of population of values.
 //
 // Although it is not forbidden, it is generally a bad idea to include
 // non-finite values (infinities or NaNs) in the population of values, as this
@@ -243,7 +248,7 @@ message Distribution {
 message IntervalStats {
   // Summary statistic over a single time window.
   message Window {
-    // The window duration.
+    // The window duration. Must be positive.
     Duration window_size = 1;
     // The number of measurements in this window.
     int64 count = 2;
@@ -251,7 +256,7 @@ message IntervalStats {
     double mean = 3;
   }
 
-  // Full set of windows for this metric.
+  // Full set of windows for this aggregation.
   repeated Window window = 1;
 }
 
@@ -264,24 +269,24 @@ message Tag {
 // A View specifies an Aggregation and a set of tag keys. The Aggregation will
 // be broken down by the unique set of matching tag values for each measurement.
 message View {
-  // Name of view.
+  // Name of view. Must be unique.
   string name = 1;
 
   // More detailed description, for documentation purposes.
   string description = 2;
 
-  // ID of Metric to associate with this View.
-  int32 metric_id = 3;
+  // Name of Resource to be broken down for this view.
+  string resource_name = 3;
 
   // Aggregation type to associate with this View.
   AggregationDescriptor aggregation = 4;
 
-  // Tag keys to match with a given Metric. If no keys are specified, then all
-  // stats for the Metric are recorded. Keys must be unique.
+  // Tag keys to match with a given Resource measurement. If no keys are
+  // specified, then all stats are recorded. Keys must be unique.
   repeated string tag_key = 5;
 }
 
-// An Aggregation summarizes a series of individual Metric measures.
+// An Aggregation summarizes a series of individual Resource measurements.
 message Aggregation {
   // Name of this aggregation.
   string name = 1;
@@ -291,23 +296,27 @@ message Aggregation {
 
   // The data for this Aggregation.
   oneof data {
-    Distribution distribution = 3;
-    IntervalStats interval_stats = 4;
+    uint64 count = 3;
+    Distribution distribution = 4;
+    IntervalStats interval_stats = 5;
   }
 
   // Tags associated with this Aggregation.
-  repeated Tag tag = 5;
+  repeated Tag tag = 6;
 }
 
-// A ViewAggregations represents all the Aggregations for a particular view.
-message ViewAggregations {
+// A Metric represents all the Aggregations for a particular view.
+message Metric {
+  // View associated with this Metric.
+  string view_name = 1;
+
   // Aggregations - each will have a unique set of tag values for the tag_keys
   // associated with the corresponding View.
-  repeated Aggregation aggregation = 1;
+  repeated Aggregation aggregation = 2;
 
-  // Start and end timestamps over which the value was accumulated. These
+  // Start and end timestamps over which the metric was accumulated. These
   // values are not relevant/defined for IntervalStats aggregations, which are
   // always accumulated over a fixed time period.
-  Timestamp start = 2;
-  Timestamp end = 3;
+  Timestamp start = 3;
+  Timestamp end = 4;
 }
