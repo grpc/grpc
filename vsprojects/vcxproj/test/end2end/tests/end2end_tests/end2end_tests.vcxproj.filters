@@ -46,6 +46,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\empty_batch.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_call_init_fails.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

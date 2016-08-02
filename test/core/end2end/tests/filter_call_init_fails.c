@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -102,7 +103,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Simple request via a server filter that always closes the stream.*/
+// Simple request via a server filter that always fails to initialize
+// the call.
 static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -111,7 +113,7 @@ static void test_request(grpc_end2end_test_config config) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_end2end_test_fixture f =
-      begin_test(config, "filter_causes_close", NULL, NULL);
+      begin_test(config, "filter_call_init_fails", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -176,7 +178,7 @@ static void test_request(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 == strcmp(details, "Failure that's not preventable."));
+  GPR_ASSERT(0 == strcmp(details, "access denied"));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -196,47 +198,15 @@ static void test_request(grpc_end2end_test_config config) {
 }
 
 /*******************************************************************************
- * Test filter - always closes incoming requests
+ * Test filter - always fails to initialize a call
  */
-
-typedef struct { grpc_closure *recv_im_ready; } call_data;
-
-typedef struct { uint8_t unused; } channel_data;
-
-static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
-                          grpc_error *error) {
-  grpc_call_element *elem = arg;
-  call_data *calld = elem->call_data;
-  if (error == GRPC_ERROR_NONE) {
-    // close the stream with an error.
-    gpr_slice message =
-        gpr_slice_from_copied_string("Failure that's not preventable.");
-    grpc_transport_stream_op op;
-    memset(&op, 0, sizeof(op));
-    grpc_transport_stream_op_add_close(&op, GRPC_STATUS_PERMISSION_DENIED,
-                                       &message);
-    grpc_call_next_op(exec_ctx, elem, &op);
-  }
-  grpc_exec_ctx_sched(
-      exec_ctx, calld->recv_im_ready,
-      GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1), NULL);
-}
-
-static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
-                                      grpc_call_element *elem,
-                                      grpc_transport_stream_op *op) {
-  call_data *calld = elem->call_data;
-  if (op->recv_initial_metadata != NULL) {
-    calld->recv_im_ready = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = grpc_closure_create(recv_im_ready, elem);
-  }
-  grpc_call_next_op(exec_ctx, elem, op);
-}
 
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
-  return GRPC_ERROR_NONE;
+  return grpc_error_set_int(GRPC_ERROR_CREATE("access denied"),
+                            GRPC_ERROR_INT_GRPC_STATUS,
+                            GRPC_STATUS_PERMISSION_DENIED);
 }
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -251,17 +221,17 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 static const grpc_channel_filter test_filter = {
-    start_transport_stream_op,
+    grpc_call_next_op,
     grpc_channel_next_op,
-    sizeof(call_data),
+    0,
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
-    sizeof(channel_data),
+    0,
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
-    "filter_causes_close"};
+    "filter_call_init_fails"};
 
 /*******************************************************************************
  * Registration
@@ -269,26 +239,35 @@ static const grpc_channel_filter test_filter = {
 
 static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
   if (g_enable_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     NULL, NULL);
+    // Want to add the filter as close to the end as possible, to make
+    // sure that all of the filters work well together.  However, we
+    // can't add it at the very end, because the connected channel filter
+    // must be the last one.  So we add it right before the last one.
+    grpc_channel_stack_builder_iterator *it =
+        grpc_channel_stack_builder_create_iterator_at_last(builder);
+    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
+    const bool retval = grpc_channel_stack_builder_add_filter_before(
+        it, &test_filter, NULL, NULL);
+    grpc_channel_stack_builder_iterator_destroy(it);
+    return retval;
   } else {
     return true;
   }
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+                                   maybe_add_filter, NULL);
 }
 
 static void destroy_plugin(void) {}
 
-void filter_causes_close(grpc_end2end_test_config config) {
+void filter_call_init_fails(grpc_end2end_test_config config) {
   g_enable_filter = true;
   test_request(config);
   g_enable_filter = false;
 }
 
-void filter_causes_close_pre_init(void) {
+void filter_call_init_fails_pre_init(void) {
   grpc_register_plugin(init_plugin, destroy_plugin);
 }

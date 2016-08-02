@@ -264,9 +264,19 @@ grpc_call *grpc_call_create(
       gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
-                       call->context, server_transport_data,
-                       CALL_STACK_FROM_CALL(call));
+  grpc_error *error = grpc_call_stack_init(
+      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
+      server_transport_data, CALL_STACK_FROM_CALL(call));
+  if (error != GRPC_ERROR_NONE) {
+    intptr_t status;
+    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status))
+      status = GRPC_STATUS_UNKNOWN;
+    const char *error_str =
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
+    close_with_status(&exec_ctx, call, (grpc_status_code)status,
+                      error_str == NULL ? "unknown error" : error_str);
+    GRPC_ERROR_UNREF(error);
+  }
   if (cq != NULL) {
     GPR_ASSERT(
         pollset_set_alternative == NULL &&
