@@ -156,7 +156,7 @@ CENSUSAPI void census_context_destroy(census_context *context);
 CENSUSAPI const census_context_status *census_context_get_status(
     const census_context *context);
 
-/* Structure used for iterating over the tegs in a context. API clients should
+/* Structure used for iterating over the tags in a context. API clients should
    not use or reference internal fields - neither their contents or
    presence/absence are guaranteed. */
 typedef struct {
@@ -180,7 +180,7 @@ CENSUSAPI int census_context_next_tag(census_context_iterator *iterator,
 CENSUSAPI int census_context_get_tag(const census_context *context,
                                      const char *key, census_tag *tag);
 
-/* Tag set encode/decode functionality. These functionas are intended
+/* Tag set encode/decode functionality. These functions are intended
    for use by RPC systems only, for purposes of transmitting/receiving contexts.
    */
 
@@ -205,14 +205,14 @@ enum census_trace_mask_values {
 };
 
 /** Get the current trace mask associated with this context. The value returned
-    will be the logical or of census_trace_mask_values values. */
+    will be the logical OR of census_trace_mask_values values. */
 CENSUSAPI int census_trace_mask(const census_context *context);
 
 /** Set the trace mask associated with a context. */
 CENSUSAPI void census_set_trace_mask(int trace_mask);
 
 /* The concept of "operation" is a fundamental concept for Census. In an RPC
-   system, and operation typcially represents a single RPC, or a significant
+   system, an operation typically represents a single RPC, or a significant
    sub-part thereof (e.g. a single logical "read" RPC to a distributed storage
    system might do several other actions in parallel, from looking up metadata
    indices to making requests of other services - each of these could be a
@@ -362,7 +362,7 @@ CENSUSAPI census_context *census_start_server_rpc_op(
 
    @param context The base context. Can be NULL.
    @param family Family name to associate with the trace
-   @param name Name within family to associated with traces/stats
+   @param name Name within family to associate with traces/stats
    @param trace_mask An OR of census_trace_mask_values values. Only used if
                      context is NULL.
 
@@ -454,7 +454,7 @@ CENSUSAPI void census_trace_scan_end();
    protobuf, `resource_pb_size` being the size of the buffer. Returns a -ve
    value on error, or a positive (>= 0) resource id (for use in
    census_delete_resource() and census_record_values()). In order to be valid, a
-   resource must have a name, and at least one numerator in it's unit type. The
+   resource must have a name, and at least one numerator in its unit type. The
    resource name must be unique, and an error will be returned if it is not. */
 CENSUSAPI int32_t census_define_resource(const uint8_t *resource_pb,
                                          size_t resource_pb_size);
@@ -462,7 +462,7 @@ CENSUSAPI int32_t census_define_resource(const uint8_t *resource_pb,
 /* Delete a resource created by census_define_resource(). */
 CENSUSAPI void census_delete_resource(int32_t resource_id);
 
-/* Determine the id of a resource, given it's name. returns -1 if the resource
+/* Determine the id of a resource, given its name. returns -1 if the resource
    does not exist. */
 CENSUSAPI int32_t census_resource_id(const char *name);
 
