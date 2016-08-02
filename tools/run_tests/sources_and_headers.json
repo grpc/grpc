@@ -3631,9 +3631,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "h2_loadreporting_test", 
+    "name": "h2_load_reporting_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_loadreporting.c"
+      "test/core/end2end/fixtures/h2_load_reporting.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3903,9 +3903,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "h2_loadreporting_nosec_test", 
+    "name": "h2_load_reporting_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_loadreporting.c"
+      "test/core/end2end/fixtures/h2_load_reporting.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5414,6 +5414,7 @@
       "test/core/end2end/tests/idempotent_request.c", 
       "test/core/end2end/tests/invoke_large_request.c", 
       "test/core/end2end/tests/large_metadata.c", 
+      "test/core/end2end/tests/load_reporting_hook.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
@@ -5474,6 +5475,7 @@
       "test/core/end2end/tests/idempotent_request.c", 
       "test/core/end2end/tests/invoke_large_request.c", 
       "test/core/end2end/tests/large_metadata.c", 
+      "test/core/end2end/tests/load_reporting_hook.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 

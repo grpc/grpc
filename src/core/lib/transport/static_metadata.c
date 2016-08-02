@@ -45,10 +45,10 @@ grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 
 grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 4, 8, 6, 2, 4, 8, 6, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 4, 8, 6, 2, 4, 8, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2] =
     {11, 35, 10, 35, 12, 35, 12, 49, 13, 35, 14, 35, 15, 35, 16, 35, 17, 35,
@@ -56,10 +56,10 @@ const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2] =
      30, 18, 30, 35, 31, 35, 32, 35, 36, 35, 37, 35, 38, 35, 39, 35, 42, 33,
      42, 34, 42, 48, 42, 53, 42, 54, 42, 55, 42, 56, 43, 33, 43, 48, 43, 53,
      46, 0,  46, 1,  46, 2,  50, 35, 57, 35, 58, 35, 59, 35, 60, 35, 61, 35,
-     62, 35, 63, 35, 64, 35, 65, 35, 66, 35, 67, 40, 67, 69, 67, 72, 68, 80,
-     68, 81, 70, 35, 71, 35, 73, 35, 74, 35, 75, 35, 76, 35, 77, 41, 77, 51,
-     77, 52, 78, 35, 79, 35, 82, 3,  82, 4,  82, 5,  82, 6,  82, 7,  82, 8,
-     82, 9,  83, 35, 84, 85, 86, 35, 87, 35, 88, 35, 89, 35, 90, 35};
+     62, 35, 63, 35, 64, 35, 65, 35, 66, 35, 67, 35, 68, 40, 68, 70, 68, 73,
+     69, 81, 69, 82, 71, 35, 72, 35, 74, 35, 75, 35, 76, 35, 77, 35, 78, 41,
+     78, 51, 78, 52, 79, 35, 80, 35, 83, 3,  83, 4,  83, 5,  83, 6,  83, 7,
+     83, 8,  83, 9,  84, 35, 85, 86, 87, 35, 88, 35, 89, 35, 90, 35, 91, 35};
 
 const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "0",
@@ -126,7 +126,8 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "if-unmodified-since",
     "last-modified",
     "link",
-    "load-reporting",
+    "load-reporting-initial",
+    "load-reporting-trailing",
     "location",
     "max-forwards",
     ":method",
