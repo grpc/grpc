@@ -31,22 +31,14 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
+#define GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
 
-#include <grpc/support/alloc.h>
+#include "src/core/ext/client_config/lb_policy_factory.h"
 
-#include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
+/** Returns a load balancing factory for the glb policy, which tries to connect
+ * to a load balancing server to decide the next successfully connected
+ * subchannel to pick. */
+grpc_lb_policy_factory *grpc_glb_lb_factory_create();
 
-bool squelch = true;
-bool leak_check = true;
-
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  grpc_grpclb_initial_response *response;
-  if ((response = grpc_grpclb_initial_response_parse(slice))) {
-    grpc_grpclb_initial_response_destroy(response);
-  }
-  gpr_slice_unref(slice);
-  return 0;
-}
+#endif /* GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H */
