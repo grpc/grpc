@@ -3,8 +3,8 @@
 
 require 'google/protobuf'
 
-require 'src/proto/grpc/testing/payloads'
-require 'src/proto/grpc/testing/stats'
+require 'src/proto/grpc/testing/payloads_pb'
+require 'src/proto/grpc/testing/stats_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.PoissonParams" do
     optional :offered_load, :double, 1
@@ -109,6 +109,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     repeated :server_stats, :message, 4, "grpc.testing.ServerStats"
     repeated :server_cores, :int32, 5
     optional :summary, :message, 6, "grpc.testing.ScenarioResultSummary"
+    repeated :client_success, :bool, 7
+    repeated :server_success, :bool, 8
   end
   add_enum "grpc.testing.ClientType" do
     value :SYNC_CLIENT, 0

@@ -346,6 +346,9 @@ class ServerReader GRPC_FINAL : public ReaderInterface<R> {
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      ops.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
@@ -374,6 +377,9 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      ops.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
@@ -388,6 +394,9 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_,
                               ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        ops.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
@@ -412,6 +421,9 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      ops.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
@@ -433,6 +445,9 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_,
                               ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        ops.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);

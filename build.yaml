@@ -372,11 +372,14 @@ filegroups:
   - gpr_codegen
 - name: grpc_lb_policy_grpclb
   headers:
+  - src/core/ext/lb_policy/grpclb/grpclb.h
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/lb_policy/grpclb/grpclb.c
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_config
@@ -812,6 +815,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -878,6 +882,7 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
+  - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
@@ -909,6 +914,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
@@ -2746,6 +2752,20 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: grpclb_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/grpclb/grpclb_test.cc
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc
+  - grpc++
+  - grpc++_test_util
+  - grpc_test_util
 - name: hybrid_end2end_test
   gtest: true
   build: test
