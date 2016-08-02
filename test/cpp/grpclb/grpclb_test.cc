@@ -31,11 +31,11 @@
  *
  */
 
+#include <cinttypes>
 #include <cstdarg>
+#include <cstdint>
 #include <cstring>
 #include <string>
-#include <cstdint>
-#include <cinttypes>
 
 extern "C" {
 #include <grpc/grpc.h>

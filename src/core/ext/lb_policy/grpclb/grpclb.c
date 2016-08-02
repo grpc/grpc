@@ -222,7 +222,6 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   *root = pping;
 }
 
-
 /*
  * glb_lb_policy
  */
@@ -692,7 +691,6 @@ static void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_unlock(&glb_policy->mu);
 }
-
 
 /*
  * lb_client_data
