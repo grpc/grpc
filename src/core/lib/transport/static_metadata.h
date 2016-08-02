@@ -1,11 +1,11 @@
 /*
  * Copyright 2015, Google Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above
@@ -15,7 +15,7 @@
  *     * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,10 +31,10 @@
 
 /*
  * WARNING: Auto-generated code.
- *
+ * 
  * To make changes to this file, change
  * tools/codegen/core/gen_static_metadata.py, and then re-run it.
- *
+ * 
  * See metadata.h for an explanation of the interface here, and metadata.c for
  * an explanation of what's going on.
  */
@@ -90,58 +90,58 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_AUTHORIZATION (&grpc_static_mdstr_table[20])
 /* "cache-control" */
 #define GRPC_MDSTR_CACHE_CONTROL (&grpc_static_mdstr_table[21])
-/* "census-bin" */
-#define GRPC_MDSTR_CENSUS_BIN (&grpc_static_mdstr_table[22])
-/* "census-binary-bin" */
-#define GRPC_MDSTR_CENSUS_BINARY_BIN (&grpc_static_mdstr_table[23])
 /* "content-disposition" */
-#define GRPC_MDSTR_CONTENT_DISPOSITION (&grpc_static_mdstr_table[24])
+#define GRPC_MDSTR_CONTENT_DISPOSITION (&grpc_static_mdstr_table[22])
 /* "content-encoding" */
-#define GRPC_MDSTR_CONTENT_ENCODING (&grpc_static_mdstr_table[25])
+#define GRPC_MDSTR_CONTENT_ENCODING (&grpc_static_mdstr_table[23])
 /* "content-language" */
-#define GRPC_MDSTR_CONTENT_LANGUAGE (&grpc_static_mdstr_table[26])
+#define GRPC_MDSTR_CONTENT_LANGUAGE (&grpc_static_mdstr_table[24])
 /* "content-length" */
-#define GRPC_MDSTR_CONTENT_LENGTH (&grpc_static_mdstr_table[27])
+#define GRPC_MDSTR_CONTENT_LENGTH (&grpc_static_mdstr_table[25])
 /* "content-location" */
-#define GRPC_MDSTR_CONTENT_LOCATION (&grpc_static_mdstr_table[28])
+#define GRPC_MDSTR_CONTENT_LOCATION (&grpc_static_mdstr_table[26])
 /* "content-range" */
-#define GRPC_MDSTR_CONTENT_RANGE (&grpc_static_mdstr_table[29])
+#define GRPC_MDSTR_CONTENT_RANGE (&grpc_static_mdstr_table[27])
 /* "content-type" */
-#define GRPC_MDSTR_CONTENT_TYPE (&grpc_static_mdstr_table[30])
+#define GRPC_MDSTR_CONTENT_TYPE (&grpc_static_mdstr_table[28])
 /* "cookie" */
-#define GRPC_MDSTR_COOKIE (&grpc_static_mdstr_table[31])
+#define GRPC_MDSTR_COOKIE (&grpc_static_mdstr_table[29])
 /* "date" */
-#define GRPC_MDSTR_DATE (&grpc_static_mdstr_table[32])
+#define GRPC_MDSTR_DATE (&grpc_static_mdstr_table[30])
 /* "deflate" */
-#define GRPC_MDSTR_DEFLATE (&grpc_static_mdstr_table[33])
+#define GRPC_MDSTR_DEFLATE (&grpc_static_mdstr_table[31])
 /* "deflate,gzip" */
-#define GRPC_MDSTR_DEFLATE_COMMA_GZIP (&grpc_static_mdstr_table[34])
+#define GRPC_MDSTR_DEFLATE_COMMA_GZIP (&grpc_static_mdstr_table[32])
 /* "" */
-#define GRPC_MDSTR_EMPTY (&grpc_static_mdstr_table[35])
+#define GRPC_MDSTR_EMPTY (&grpc_static_mdstr_table[33])
 /* "etag" */
-#define GRPC_MDSTR_ETAG (&grpc_static_mdstr_table[36])
+#define GRPC_MDSTR_ETAG (&grpc_static_mdstr_table[34])
 /* "expect" */
-#define GRPC_MDSTR_EXPECT (&grpc_static_mdstr_table[37])
+#define GRPC_MDSTR_EXPECT (&grpc_static_mdstr_table[35])
 /* "expires" */
-#define GRPC_MDSTR_EXPIRES (&grpc_static_mdstr_table[38])
+#define GRPC_MDSTR_EXPIRES (&grpc_static_mdstr_table[36])
 /* "from" */
-#define GRPC_MDSTR_FROM (&grpc_static_mdstr_table[39])
+#define GRPC_MDSTR_FROM (&grpc_static_mdstr_table[37])
 /* "GET" */
-#define GRPC_MDSTR_GET (&grpc_static_mdstr_table[40])
+#define GRPC_MDSTR_GET (&grpc_static_mdstr_table[38])
 /* "grpc" */
-#define GRPC_MDSTR_GRPC (&grpc_static_mdstr_table[41])
+#define GRPC_MDSTR_GRPC (&grpc_static_mdstr_table[39])
 /* "grpc-accept-encoding" */
-#define GRPC_MDSTR_GRPC_ACCEPT_ENCODING (&grpc_static_mdstr_table[42])
+#define GRPC_MDSTR_GRPC_ACCEPT_ENCODING (&grpc_static_mdstr_table[40])
+/* "grpc-census-bin" */
+#define GRPC_MDSTR_GRPC_CENSUS_BIN (&grpc_static_mdstr_table[41])
 /* "grpc-encoding" */
-#define GRPC_MDSTR_GRPC_ENCODING (&grpc_static_mdstr_table[43])
+#define GRPC_MDSTR_GRPC_ENCODING (&grpc_static_mdstr_table[42])
 /* "grpc-internal-encoding-request" */
-#define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST (&grpc_static_mdstr_table[44])
+#define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST (&grpc_static_mdstr_table[43])
 /* "grpc-message" */
-#define GRPC_MDSTR_GRPC_MESSAGE (&grpc_static_mdstr_table[45])
+#define GRPC_MDSTR_GRPC_MESSAGE (&grpc_static_mdstr_table[44])
 /* "grpc-status" */
-#define GRPC_MDSTR_GRPC_STATUS (&grpc_static_mdstr_table[46])
+#define GRPC_MDSTR_GRPC_STATUS (&grpc_static_mdstr_table[45])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (&grpc_static_mdstr_table[47])
+#define GRPC_MDSTR_GRPC_TIMEOUT (&grpc_static_mdstr_table[46])
+/* "grpc-tracing-bin" */
+#define GRPC_MDSTR_GRPC_TRACING_BIN (&grpc_static_mdstr_table[47])
 /* "gzip" */
 #define GRPC_MDSTR_GZIP (&grpc_static_mdstr_table[48])
 /* "gzip, deflate" */
@@ -157,8 +157,7 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 /* "identity,deflate" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE (&grpc_static_mdstr_table[54])
 /* "identity,deflate,gzip" */
-#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (&grpc_static_mdstr_table[55])
+#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP (&grpc_static_mdstr_table[55])
 /* "identity,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_GZIP (&grpc_static_mdstr_table[56])
 /* "if-match" */
@@ -240,15 +239,13 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-encoding": "" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_EMPTY (&grpc_static_mdelem_table[2])
 /* "accept-encoding": "gzip, deflate" */
-#define GRPC_MDELEM_ACCEPT_ENCODING_GZIP_COMMA_DEFLATE \
-  (&grpc_static_mdelem_table[3])
+#define GRPC_MDELEM_ACCEPT_ENCODING_GZIP_COMMA_DEFLATE (&grpc_static_mdelem_table[3])
 /* "accept-language": "" */
 #define GRPC_MDELEM_ACCEPT_LANGUAGE_EMPTY (&grpc_static_mdelem_table[4])
 /* "accept-ranges": "" */
 #define GRPC_MDELEM_ACCEPT_RANGES_EMPTY (&grpc_static_mdelem_table[5])
 /* "access-control-allow-origin": "" */
-#define GRPC_MDELEM_ACCESS_CONTROL_ALLOW_ORIGIN_EMPTY \
-  (&grpc_static_mdelem_table[6])
+#define GRPC_MDELEM_ACCESS_CONTROL_ALLOW_ORIGIN_EMPTY (&grpc_static_mdelem_table[6])
 /* "age": "" */
 #define GRPC_MDELEM_AGE_EMPTY (&grpc_static_mdelem_table[7])
 /* "allow": "" */
@@ -272,8 +269,7 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "content-range": "" */
 #define GRPC_MDELEM_CONTENT_RANGE_EMPTY (&grpc_static_mdelem_table[17])
 /* "content-type": "application/grpc" */
-#define GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC \
-  (&grpc_static_mdelem_table[18])
+#define GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC (&grpc_static_mdelem_table[18])
 /* "content-type": "" */
 #define GRPC_MDELEM_CONTENT_TYPE_EMPTY (&grpc_static_mdelem_table[19])
 /* "cookie": "" */
@@ -291,22 +287,17 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "grpc-accept-encoding": "deflate" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE (&grpc_static_mdelem_table[26])
 /* "grpc-accept-encoding": "deflate,gzip" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE_COMMA_GZIP \
-  (&grpc_static_mdelem_table[27])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE_COMMA_GZIP (&grpc_static_mdelem_table[27])
 /* "grpc-accept-encoding": "gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_GZIP (&grpc_static_mdelem_table[28])
 /* "grpc-accept-encoding": "identity" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY \
-  (&grpc_static_mdelem_table[29])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY (&grpc_static_mdelem_table[29])
 /* "grpc-accept-encoding": "identity,deflate" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE \
-  (&grpc_static_mdelem_table[30])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE (&grpc_static_mdelem_table[30])
 /* "grpc-accept-encoding": "identity,deflate,gzip" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (&grpc_static_mdelem_table[31])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP (&grpc_static_mdelem_table[31])
 /* "grpc-accept-encoding": "identity,gzip" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
-  (&grpc_static_mdelem_table[32])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP (&grpc_static_mdelem_table[32])
 /* "grpc-encoding": "deflate" */
 #define GRPC_MDELEM_GRPC_ENCODING_DEFLATE (&grpc_static_mdelem_table[33])
 /* "grpc-encoding": "gzip" */
@@ -388,8 +379,7 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* ":status": "500" */
 #define GRPC_MDELEM_STATUS_500 (&grpc_static_mdelem_table[72])
 /* "strict-transport-security": "" */
-#define GRPC_MDELEM_STRICT_TRANSPORT_SECURITY_EMPTY \
-  (&grpc_static_mdelem_table[73])
+#define GRPC_MDELEM_STRICT_TRANSPORT_SECURITY_EMPTY (&grpc_static_mdelem_table[73])
 /* "te": "trailers" */
 #define GRPC_MDELEM_TE_TRAILERS (&grpc_static_mdelem_table[74])
 /* "transfer-encoding": "" */
@@ -403,10 +393,8 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "www-authenticate": "" */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[79])
 
-extern const uint8_t
-    grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2];
+extern const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];
 extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
-#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) \
-  (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])
+#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */
