@@ -58,8 +58,8 @@ gRPC C Core library.
 
 ##Windows
 
-There are several way to build under Windows, of varying complexity depending on
-experience with the tools involved.
+There are several ways to build under Windows, of varying complexity depending
+on experience with the tools involved.
 
 <!--
 ###Visual Studio
