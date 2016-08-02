@@ -2157,12 +2157,15 @@
       "grpc_c", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/c/end2end/id_serialization.h"
+    ], 
     "language": "c++", 
     "name": "grpc_c_generic_end2end_test", 
     "src": [
       "test/c/end2end/generic_end2end_test.cc", 
-      "test/c/end2end/id_serialization.cc"
+      "test/c/end2end/id_serialization.cc", 
+      "test/c/end2end/id_serialization.h"
     ], 
     "third_party": false, 
     "type": "target"

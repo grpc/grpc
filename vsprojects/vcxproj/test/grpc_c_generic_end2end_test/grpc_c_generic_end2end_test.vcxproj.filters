@@ -8,6 +8,11 @@
       <Filter>test\c\end2end</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\c\end2end\id_serialization.h">
+      <Filter>test\c\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
 
   <ItemGroup>
     <Filter Include="test">

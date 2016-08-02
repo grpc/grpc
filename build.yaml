@@ -2763,6 +2763,8 @@ targets:
   gtest: true
   build: test
   language: c++
+  headers:
+  - test/c/end2end/id_serialization.h
   src:
   - test/c/end2end/generic_end2end_test.cc
   - test/c/end2end/id_serialization.cc
