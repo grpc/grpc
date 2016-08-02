@@ -15,7 +15,7 @@
     }
   ],
   "dependencies": {
-    "grpc": "^1.0.0-pre1",
+    "grpc": "^1.0.0-pre2",
     "lodash": "^3.9.3",
     "google-protobuf": "^3.0.0"
   },
