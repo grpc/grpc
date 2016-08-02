@@ -3,8 +3,8 @@
 
 require 'google/protobuf'
 
-require 'src/proto/grpc/testing/messages'
-require 'src/proto/grpc/testing/control'
+require 'src/proto/grpc/testing/messages_pb'
+require 'src/proto/grpc/testing/control_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 

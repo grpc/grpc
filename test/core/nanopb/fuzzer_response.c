@@ -43,9 +43,9 @@ bool leak_check = true;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  grpc_grpclb_response *response;
-  if ((response = grpc_grpclb_response_parse(slice))) {
-    grpc_grpclb_response_destroy(response);
+  grpc_grpclb_initial_response *response;
+  if ((response = grpc_grpclb_initial_response_parse(slice))) {
+    grpc_grpclb_initial_response_destroy(response);
   }
   gpr_slice_unref(slice);
   return 0;

@@ -52,18 +52,16 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static grpc_load_reporting_config *g_client_lrc;
-static grpc_load_reporting_config *g_server_lrc;
-
-typedef struct fullstack_fixture_data {
+typedef struct load_reporting_fixture_data {
   char *localaddr;
-} fullstack_fixture_data;
+} load_reporting_fixture_data;
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
+static grpc_end2end_test_fixture chttp2_create_fixture_load_reporting(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
+  load_reporting_fixture_data *ffd =
+      gpr_malloc(sizeof(load_reporting_fixture_data));
   memset(&f, 0, sizeof(f));
 
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
@@ -74,47 +72,20 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   return f;
 }
 
-typedef struct {
-  int64_t total_bytes;
-  bool fully_processed;
-  uint32_t initial_token;
-  uint32_t final_token;
-} aggregated_bw_stats;
-
-static void sample_fn(const grpc_load_reporting_call_data *call_data,
-                      void *user_data) {
-  GPR_ASSERT(user_data != NULL);
-  aggregated_bw_stats *custom_stats = (aggregated_bw_stats *)user_data;
-  if (call_data == NULL) {
-    /* initial invocation */
-    custom_stats->initial_token = 0xDEADBEEF;
-  } else {
-    /* final invocation */
-    custom_stats->total_bytes =
-        (int64_t)(call_data->stats->transport_stream_stats.outgoing.data_bytes +
-                  call_data->stats->transport_stream_stats.incoming.data_bytes);
-    custom_stats->final_token = 0xCAFED00D;
-    custom_stats->fully_processed = true;
-  }
-}
-
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *client_args) {
-  fullstack_fixture_data *ffd = f->fixture_data;
-  grpc_arg arg = grpc_load_reporting_config_create_arg(g_client_lrc);
-  client_args = grpc_channel_args_copy_and_add(client_args, &arg, 1);
+void chttp2_init_client_load_reporting(grpc_end2end_test_fixture *f,
+                                       grpc_channel_args *client_args) {
+  load_reporting_fixture_data *ffd = f->fixture_data;
   f->client = grpc_insecure_channel_create(ffd->localaddr, client_args, NULL);
-  grpc_channel_args_destroy(client_args);
   GPR_ASSERT(f->client);
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *server_args) {
-  fullstack_fixture_data *ffd = f->fixture_data;
+void chttp2_init_server_load_reporting(grpc_end2end_test_fixture *f,
+                                       grpc_channel_args *server_args) {
+  load_reporting_fixture_data *ffd = f->fixture_data;
+  grpc_arg arg = grpc_load_reporting_enable_arg();
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  grpc_arg arg = grpc_load_reporting_config_create_arg(g_server_lrc);
   server_args = grpc_channel_args_copy_and_add(server_args, &arg, 1);
   f->server = grpc_server_create(server_args, NULL);
   grpc_channel_args_destroy(server_args);
@@ -123,35 +94,22 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
-  fullstack_fixture_data *ffd = f->fixture_data;
+void chttp2_tear_down_load_reporting(grpc_end2end_test_fixture *f) {
+  load_reporting_fixture_data *ffd = f->fixture_data;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack+loadreporting", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
-     chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
-     chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
+    {"chttp2/fullstack+load_reporting",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+     chttp2_create_fixture_load_reporting, chttp2_init_client_load_reporting,
+     chttp2_init_server_load_reporting, chttp2_tear_down_load_reporting},
 };
 
 int main(int argc, char **argv) {
   size_t i;
-
-  aggregated_bw_stats *aggr_stats_client =
-      gpr_malloc(sizeof(aggregated_bw_stats));
-  aggr_stats_client->total_bytes = -1;
-  aggr_stats_client->fully_processed = false;
-  aggregated_bw_stats *aggr_stats_server =
-      gpr_malloc(sizeof(aggregated_bw_stats));
-  aggr_stats_server->total_bytes = -1;
-  aggr_stats_server->fully_processed = false;
-
-  g_client_lrc =
-      grpc_load_reporting_config_create(sample_fn, aggr_stats_client);
-  g_server_lrc =
-      grpc_load_reporting_config_create(sample_fn, aggr_stats_server);
 
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();
@@ -162,23 +120,6 @@ int main(int argc, char **argv) {
   }
 
   grpc_shutdown();
-
-  grpc_load_reporting_config_destroy(g_client_lrc);
-  grpc_load_reporting_config_destroy(g_server_lrc);
-
-  if (aggr_stats_client->fully_processed) {
-    GPR_ASSERT(aggr_stats_client->total_bytes >= 0);
-    GPR_ASSERT(aggr_stats_client->initial_token == 0xDEADBEEF);
-    GPR_ASSERT(aggr_stats_client->final_token == 0xCAFED00D);
-  }
-  if (aggr_stats_server->fully_processed) {
-    GPR_ASSERT(aggr_stats_server->total_bytes >= 0);
-    GPR_ASSERT(aggr_stats_server->initial_token == 0xDEADBEEF);
-    GPR_ASSERT(aggr_stats_server->final_token == 0xCAFED00D);
-  }
-
-  gpr_free(aggr_stats_client);
-  gpr_free(aggr_stats_server);
 
   return 0;
 }

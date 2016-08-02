@@ -27,8 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require_relative '../pb/grpc/testing/metrics.rb'
-require_relative '../pb/grpc/testing/metrics_services.rb'
+require_relative '../pb/grpc/testing/metrics_pb.rb'
+require_relative '../pb/grpc/testing/metrics_services_pb.rb'
 
 class Gauge
   def get_name
