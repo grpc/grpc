@@ -1,7 +1,7 @@
 From 0894590b5020c38106d4ebb2291994668c64f9dd Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 15:47:47 -0700
-Subject: [PATCH 1/5] don't build tests
+Subject: [PATCH 1/3] don't build tests
 
 ---
  Makefile.am         | 7 ++-----
@@ -59,24 +59,30 @@ index 6fd15d2..7de1fad 100755
 2.8.0.rc3.226.g39d4020
 
 
-From 04244fa7805740761db757e4c44251f723d85839 Mon Sep 17 00:00:00 2001
+From c8577ad5513543c57a81ad1bf4927cc8a78baa03 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:16:40 -0700
-Subject: [PATCH 2/5] grpc cpp plugins generator with example
+Subject: [PATCH 2/3] grpc cpp plugins generator with example
 
 ---
- compiler/cpp/src/generate/t_cpp_generator.cc | 476 +++++++++++++++++++++++----
+ compiler/cpp/src/generate/t_cpp_generator.cc | 478 +++++++++++++++++++++++----
  tutorial/cpp/CMakeLists.txt                  |  53 ---
- tutorial/cpp/CppClient.cpp                   | 134 ++++----
- tutorial/cpp/CppServer.cpp                   | 226 ++++---------
- tutorial/cpp/Makefile.am                     |  58 ++--
+ tutorial/cpp/CppClient.cpp                   |  80 -----
+ tutorial/cpp/CppServer.cpp                   | 181 ----------
+ tutorial/cpp/GrpcClient.cpp                  |  94 ++++++
+ tutorial/cpp/GrpcServer.cpp                  |  87 +++++
+ tutorial/cpp/Makefile.am                     |  66 ++--
  tutorial/cpp/test.thrift                     |  13 +
- 6 files changed, 590 insertions(+), 370 deletions(-)
+ 8 files changed, 636 insertions(+), 416 deletions(-)
  delete mode 100644 tutorial/cpp/CMakeLists.txt
+ delete mode 100644 tutorial/cpp/CppClient.cpp
+ delete mode 100644 tutorial/cpp/CppServer.cpp
+ create mode 100644 tutorial/cpp/GrpcClient.cpp
+ create mode 100644 tutorial/cpp/GrpcServer.cpp
  create mode 100644 tutorial/cpp/test.thrift
 
 diff --git a/compiler/cpp/src/generate/t_cpp_generator.cc b/compiler/cpp/src/generate/t_cpp_generator.cc
-index 6c04899..9c3399b 100644
+index 6c04899..4e00129 100644
 --- a/compiler/cpp/src/generate/t_cpp_generator.cc
 +++ b/compiler/cpp/src/generate/t_cpp_generator.cc
 @@ -162,6 +162,8 @@ public:
@@ -266,7 +272,7 @@ index 6c04899..9c3399b 100644
  
    t_service* extends_service = tservice->get_extends();
 -  if (extends_service != NULL) {
-+  if (extends_service != nullptr) {
++  if (extends_service) {
      f_header_ << "#include \"" << get_include_prefix(*(extends_service->get_program()))
 -              << extends_service->get_name() << ".h\"" << endl;
 +              << extends_service->get_name() << ".grpc.thrift.h\"" << endl;
@@ -355,7 +361,7 @@ index 6c04899..9c3399b 100644
 +      indent() << "\"/" << ns << "." << service_name_ << "/" << (*f_iter)->get_name() << "\"," << endl;
 +  }
 +
-+  if (extends_service != nullptr) {
++  if (extends_service) {
 +    vector<t_function*> functions = extends_service->get_functions();
 +    vector<t_function*>::iterator f_iter;
 +
@@ -371,9 +377,9 @@ index 6c04899..9c3399b 100644
 +  "};" << endl;
 +
 +  // Generate service class
-+  if ( extends_service != nullptr ) {
++  if ( extends_service) {
 +    f_header_ << "class " << service_name_ << " : public " <<
-+      extends_service->get_name() << " {" << endl <<
++      type_name(extends_service) << " {" << endl <<
 +      "public:" << endl;
 +  }
 +  else {
@@ -442,7 +448,7 @@ index 6c04899..9c3399b 100644
 +void t_cpp_generator::generate_service_stub_interface(t_service* tservice) {
 +
 +    string extends = "";
-+    if (tservice->get_extends() != nullptr) {
++    if (tservice->get_extends()) {
 +      extends = " : virtual public " + type_name(tservice->get_extends()) + "::StubInterface";
 +    }
 +
@@ -491,7 +497,7 @@ index 6c04899..9c3399b 100644
 +    }
 +
 +    t_service* extends_service = tservice->get_extends();
-+    if (extends_service != nullptr) {
++    if (extends_service) {
 +      // generate inherited methods
 +      vector<t_function*> functions = extends_service->get_functions();
 +      vector<t_function*>::iterator f_iter;
@@ -515,7 +521,7 @@ index 6c04899..9c3399b 100644
 +        indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
 +    }
 +
-+    if (extends_service != nullptr) {
++    if (extends_service) {
 +      // generate inherited methods
 +      vector<t_function*> functions = extends_service->get_functions();
 +      vector<t_function*>::iterator f_iter;
@@ -545,7 +551,7 @@ index 6c04899..9c3399b 100644
 +        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
 +    }
 +
-+    if (extends_service != nullptr) {
++    if (extends_service) {
 +      // generate inherited methods
 +      vector<t_function*> functions = extends_service->get_functions();
 +      vector<t_function*>::iterator f_iter;
@@ -603,7 +609,7 @@ index 6c04899..9c3399b 100644
 +
 +    }
 +
-+    if (extends_service != nullptr) {
++    if (extends_service) {
 +      vector<t_function*> functions = extends_service->get_functions();
 +      vector<t_function*>::iterator f_iter;
 +      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
@@ -642,11 +648,13 @@ index 6c04899..9c3399b 100644
    if (style == "CobCl") {
      // Forward declare the client.
      string client_name = service_name_ + "CobClient";
-@@ -1765,12 +2050,14 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+@@ -1764,13 +2049,15 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+   }
  
    string extends = "";
-   if (tservice->get_extends() != NULL) {
+-  if (tservice->get_extends() != NULL) {
 -    extends = " : virtual public " + type_name(tservice->get_extends()) + style + "If";
++  if (tservice->get_extends()) {
 +    extends = " : virtual public " + type_name(tservice->get_extends()) + style + "::Service";
      if (style == "CobCl" && gen_templates_) {
        // TODO(simpkins): If gen_templates_ is enabled, we currently assume all
@@ -867,11 +875,12 @@ index 8a3d085..0000000
 -LINK_AGAINST_THRIFT_LIBRARY(TutorialClient thrift)
 -target_link_libraries(TutorialClient ${ZLIB_LIBRARIES})
 diff --git a/tutorial/cpp/CppClient.cpp b/tutorial/cpp/CppClient.cpp
-index 2763fee..c41604e 100644
+deleted file mode 100644
+index 2763fee..0000000
 --- a/tutorial/cpp/CppClient.cpp
-+++ b/tutorial/cpp/CppClient.cpp
-@@ -1,80 +1,94 @@
- /*
++++ /dev/null
+@@ -1,80 +0,0 @@
+-/*
 - * Licensed to the Apache Software Foundation (ASF) under one
 - * or more contributor license agreements. See the NOTICE file
 - * distributed with this work for additional information
@@ -879,106 +888,52 @@ index 2763fee..c41604e 100644
 - * to you under the Apache License, Version 2.0 (the
 - * "License"); you may not use this file except in compliance
 - * with the License. You may obtain a copy of the License at
-  *
+- *
 - *   http://www.apache.org/licenses/LICENSE-2.0
-+ * Copyright 2015, Google Inc.
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *
-+ *     * Redistributions of source code must retain the above copyright
-+ * notice, this list of conditions and the following disclaimer.
-+ *     * Redistributions in binary form must reproduce the above
-+ * copyright notice, this list of conditions and the following disclaimer
-+ * in the documentation and/or other materials provided with the
-+ * distribution.
-+ *     * Neither the name of Google Inc. nor the names of its
-+ * contributors may be used to endorse or promote products derived from
-+ * this software without specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
+- *
 - * Unless required by applicable law or agreed to in writing,
 - * software distributed under the License is distributed on an
 - * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 - * KIND, either express or implied. See the License for the
 - * specific language governing permissions and limitations
 - * under the License.
-  */
- 
- #include <iostream>
-+#include <memory>
-+#include <string>
- 
+- */
+-
+-#include <iostream>
+-
 -#include <thrift/protocol/TBinaryProtocol.h>
 -#include <thrift/transport/TSocket.h>
 -#include <thrift/transport/TTransportUtils.h>
 -
 -#include "../gen-cpp/Calculator.h"
-+#include <grpc++/grpc++.h>
- 
+-
 -using namespace std;
 -using namespace apache::thrift;
 -using namespace apache::thrift::protocol;
 -using namespace apache::thrift::transport;
-+#include "gen-cpp/Greeter.grpc.thrift.h"
- 
+-
 -using namespace tutorial;
 -using namespace shared;
-+using grpc::Channel;
-+using grpc::ClientContext;
-+using grpc::Status;
-+using test::Greeter;
-+using namespace test;
- 
+-
 -int main() {
 -  boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
 -  boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
 -  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 -  CalculatorClient client(protocol);
-+class GreeterClient {
-+ public:
-+  GreeterClient(std::shared_ptr<Channel> channel)
-+      : stub_(Greeter::NewStub(channel)) {}
- 
+-
 -  try {
 -    transport->open();
-+  // Assambles the client's payload, sends it and presents the response back
-+  // from the server.
-+  std::string SayHello(const std::string& user) {
-+    // Data we are sending to the server.
-+    Greeter::SayHelloReq req;
-+    req.request.name = user;
- 
+-
 -    client.ping();
 -    cout << "ping()" << endl;
-+    // Container for the data we expect from the server.
-+    Greeter::SayHelloResp reply;
- 
+-
 -    cout << "1 + 1 = " << client.add(1, 1) << endl;
-+    // Context for the client. It could be used to convey extra information to
-+    // the server and/or tweak certain RPC behaviors.
-+    ClientContext context;
- 
+-
 -    Work work;
 -    work.op = Operation::DIVIDE;
 -    work.num1 = 1;
 -    work.num2 = 0;
-+    // The actual RPC.
-+    Status status = stub_->SayHello(&context, req, &reply);
- 
+-
 -    try {
 -      client.calculate(1, work);
 -      cout << "Whoa? We can divide by zero!" << endl;
@@ -986,51 +941,32 @@ index 2763fee..c41604e 100644
 -      cout << "InvalidOperation: " << io.why << endl;
 -      // or using generated operator<<: cout << io << endl;
 -      // or by using std::exception native method what(): cout << io.what() << endl;
-+    // Act upon its status.
-+    if (status.ok()) {
-+      return reply.success.message;
-+    } else {
-+      return "RPC failed";
-     }
-+  }
- 
+-    }
+-
 -    work.op = Operation::SUBTRACT;
 -    work.num1 = 15;
 -    work.num2 = 10;
 -    int32_t diff = client.calculate(1, work);
 -    cout << "15 - 10 = " << diff << endl;
-+ private:
-+  std::unique_ptr<Greeter::Stub> stub_;
-+};
- 
+-
 -    // Note that C++ uses return by reference for complex types to avoid
 -    // costly copy construction
 -    SharedStruct ss;
 -    client.getStruct(ss, 1);
 -    cout << "Received log: " << ss << endl;
-+int main() {
-+  // Instantiate the client. It requires a channel, out of which the actual RPCs
-+  // are created. This channel models a connection to an endpoint (in this case,
-+  // localhost at port 50051). We indicate that the channel isn't authenticated
-+  // (use of InsecureChannelCredentials()).
-+  GreeterClient greeter(grpc::CreateChannel(
-+      "localhost:50051", grpc::InsecureChannelCredentials()));
-+  std::string user("world");
-+  std::string reply = greeter.SayHello(user);
-+  std::cout << "Greeter received: " << reply << std::endl;
- 
+-
 -    transport->close();
 -  } catch (TException& tx) {
 -    cout << "ERROR: " << tx.what() << endl;
 -  }
-+  return 0;
- }
+-}
 diff --git a/tutorial/cpp/CppServer.cpp b/tutorial/cpp/CppServer.cpp
-index eafffa9..c838b61 100644
+deleted file mode 100644
+index eafffa9..0000000
 --- a/tutorial/cpp/CppServer.cpp
-+++ b/tutorial/cpp/CppServer.cpp
-@@ -1,181 +1,87 @@
- /*
++++ /dev/null
+@@ -1,181 +0,0 @@
+-/*
 - * Licensed to the Apache Software Foundation (ASF) under one
 - * or more contributor license agreements. See the NOTICE file
 - * distributed with this work for additional information
@@ -1038,45 +974,17 @@ index eafffa9..c838b61 100644
 - * to you under the Apache License, Version 2.0 (the
 - * "License"); you may not use this file except in compliance
 - * with the License. You may obtain a copy of the License at
-  *
+- *
 - *   http://www.apache.org/licenses/LICENSE-2.0
-+ * Copyright 2015, Google Inc.
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *
-+ *     * Redistributions of source code must retain the above copyright
-+ * notice, this list of conditions and the following disclaimer.
-+ *     * Redistributions in binary form must reproduce the above
-+ * copyright notice, this list of conditions and the following disclaimer
-+ * in the documentation and/or other materials provided with the
-+ * distribution.
-+ *     * Neither the name of Google Inc. nor the names of its
-+ * contributors may be used to endorse or promote products derived from
-+ * this software without specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
+- *
 - * Unless required by applicable law or agreed to in writing,
 - * software distributed under the License is distributed on an
 - * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 - * KIND, either express or implied. See the License for the
 - * specific language governing permissions and limitations
 - * under the License.
-  */
- 
+- */
+-
 -#include <thrift/concurrency/ThreadManager.h>
 -#include <thrift/concurrency/PlatformThreadFactory.h>
 -#include <thrift/protocol/TBinaryProtocol.h>
@@ -1090,55 +998,37 @@ index eafffa9..c838b61 100644
 -
 -#include <boost/make_shared.hpp>
 -
- #include <iostream>
+-#include <iostream>
 -#include <stdexcept>
 -#include <sstream>
 -
 -#include "../gen-cpp/Calculator.h"
-+#include <memory>
-+#include <string>
- 
+-
 -using namespace std;
 -using namespace apache::thrift;
 -using namespace apache::thrift::concurrency;
 -using namespace apache::thrift::protocol;
 -using namespace apache::thrift::transport;
 -using namespace apache::thrift::server;
-+#include <grpc++/grpc++.h>
- 
+-
 -using namespace tutorial;
 -using namespace shared;
-+#include "gen-cpp/Greeter.grpc.thrift.h"
-+#include <grpc++/server_builder.h>
- 
+-
 -class CalculatorHandler : public CalculatorIf {
 -public:
 -  CalculatorHandler() {}
-+using grpc::Server;
-+using grpc::ServerBuilder;
-+using grpc::ServerContext;
-+using grpc::Status;
-+using test::Greeter;
- 
+-
 -  void ping() { cout << "ping()" << endl; }
-+using namespace grpc;
-+using namespace test;
- 
+-
 -  int32_t add(const int32_t n1, const int32_t n2) {
 -    cout << "add(" << n1 << ", " << n2 << ")" << endl;
 -    return n1 + n2;
 -  }
-+// Logic and data behind the server's behavior.
-+class GreeterServiceImpl final : public Greeter::Service {
-+  Status SayHello(ServerContext* context,const Greeter::SayHelloReq* request,
-+                  Greeter::SayHelloResp* reply) override {
-+    std::string prefix("Hello ");
- 
+-
 -  int32_t calculate(const int32_t logid, const Work& work) {
 -    cout << "calculate(" << logid << ", " << work << ")" << endl;
 -    int32_t val;
-+    reply->success.message = prefix + request->request.name;
- 
+-
 -    switch (work.op) {
 -    case Operation::ADD:
 -      val = work.num1 + work.num2;
@@ -1172,8 +1062,7 @@ index eafffa9..c838b61 100644
 -    log[logid] = ss;
 -
 -    return val;
-+    return Status::OK;
-   }
+-  }
 -
 -  void getStruct(SharedStruct& ret, const int32_t logid) {
 -    cout << "getStruct(" << logid << ")" << endl;
@@ -1184,8 +1073,8 @@ index eafffa9..c838b61 100644
 -
 -protected:
 -  map<int32_t, SharedStruct> log;
- };
- 
+-};
+-
 -/*
 -  CalculatorIfFactory is code generated.
 -  CalculatorCloneFactory is useful for getting access to the server side of the
@@ -1209,26 +1098,8 @@ index eafffa9..c838b61 100644
 -    delete handler;
 -  }
 -};
-+void RunServer() {
-+  std::string server_address("0.0.0.0:50051");
-+  GreeterServiceImpl service;
-+
-+  ServerBuilder builder;
-+  // Listen on the given address without any authentication mechanism.
-+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-+  // Register "service" as the instance through which we'll communicate with
-+  // clients. In this case it corresponds to an *synchronous* service.
-+  builder.RegisterService(&service);
-+  // Finally assemble the server.
-+  std::unique_ptr<Server> server(builder.BuildAndStart());
-+  std::cout << "Server listening on " << server_address << std::endl;
-+
-+  // Wait for the server to shutdown. Note that some other thread must be
-+  // responsible for shutting down the server for this call to ever return.
-+  server->Wait();
-+}
- 
- int main() {
+-
+-int main() {
 -  TThreadedServer server(
 -    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()),
 -    boost::make_shared<TServerSocket>(9090), //port
@@ -1270,15 +1141,207 @@ index eafffa9..c838b61 100644
 -    boost::make_shared<TBinaryProtocolFactory>(),
 -    threadManager);
 -  */
-+  RunServer();
- 
+-
 -  cout << "Starting the server..." << endl;
 -  server.serve();
 -  cout << "Done." << endl;
-   return 0;
- }
+-  return 0;
+-}
+diff --git a/tutorial/cpp/GrpcClient.cpp b/tutorial/cpp/GrpcClient.cpp
+new file mode 100644
+index 0000000..ab1fe77
+--- /dev/null
++++ b/tutorial/cpp/GrpcClient.cpp
+@@ -0,0 +1,94 @@
++/*
++ *
++ * Copyright 2016, Google Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *     * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include <iostream>
++#include <memory>
++#include <string>
++
++#include <grpc++/grpc++.h>
++
++#include "gen-cpp/Greeter.grpc.thrift.h"
++
++using grpc::Channel;
++using grpc::ClientContext;
++using grpc::Status;
++using test::Greeter;
++using namespace test;
++
++class GreeterClient {
++ public:
++  GreeterClient(std::shared_ptr<Channel> channel)
++      : stub_(Greeter::NewStub(channel)) {}
++
++  // Assembles the client's payload, sends it and presents the response back
++  // from the server.
++  std::string SayHello(const std::string& user) {
++    // Data we are sending to the server.
++    Greeter::SayHelloReq req;
++    req.request.name = user;
++
++    // Container for the data we expect from the server.
++    Greeter::SayHelloResp reply;
++
++    // Context for the client. It could be used to convey extra information to
++    // the server and/or tweak certain RPC behaviors.
++    ClientContext context;
++
++    // The actual RPC.
++    Status status = stub_->SayHello(&context, req, &reply);
++
++    // Act upon its status.
++    if (status.ok()) {
++      return reply.success.message;
++    } else {
++      return "RPC failed";
++    }
++  }
++
++ private:
++  std::unique_ptr<Greeter::Stub> stub_;
++};
++
++int main() {
++  // Instantiate the client. It requires a channel, out of which the actual RPCs
++  // are created. This channel models a connection to an endpoint (in this case,
++  // localhost at port 50051). We indicate that the channel isn't authenticated
++  // (use of InsecureChannelCredentials()).
++  GreeterClient greeter(grpc::CreateChannel(
++      "localhost:50051", grpc::InsecureChannelCredentials()));
++  std::string user("world");
++  std::string reply = greeter.SayHello(user);
++  std::cout << "Greeter received: " << reply << std::endl;
++
++  return 0;
++}
+diff --git a/tutorial/cpp/GrpcServer.cpp b/tutorial/cpp/GrpcServer.cpp
+new file mode 100644
+index 0000000..f63db57
+--- /dev/null
++++ b/tutorial/cpp/GrpcServer.cpp
+@@ -0,0 +1,87 @@
++/*
++ *
++ * Copyright 2016, Google Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *     * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include <iostream>
++#include <memory>
++#include <string>
++
++#include <grpc++/grpc++.h>
++
++#include "gen-cpp/Greeter.grpc.thrift.h"
++#include <grpc++/server_builder.h>
++
++using grpc::Server;
++using grpc::ServerBuilder;
++using grpc::ServerContext;
++using grpc::Status;
++using test::Greeter;
++
++using namespace grpc;
++using namespace test;
++
++// Logic and data behind the server's behavior.
++class GreeterServiceImpl final : public Greeter::Service {
++  Status SayHello(ServerContext* context,const Greeter::SayHelloReq* request,
++                  Greeter::SayHelloResp* reply) override {
++    std::string prefix("Hello ");
++
++    reply->success.message = prefix + request->request.name;
++
++    return Status::OK;
++  }
++};
++
++void RunServer() {
++  std::string server_address("0.0.0.0:50051");
++  GreeterServiceImpl service;
++
++  ServerBuilder builder;
++  // Listen on the given address without any authentication mechanism.
++  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
++  // Register "service" as the instance through which we'll communicate with
++  // clients. In this case it corresponds to an *synchronous* service.
++  builder.RegisterService(&service);
++  // Finally assemble the server.
++  std::unique_ptr<Server> server(builder.BuildAndStart());
++  std::cout << "Server listening on " << server_address << std::endl;
++
++  // Wait for the server to shutdown. Note that some other thread must be
++  // responsible for shutting down the server for this call to ever return.
++  server->Wait();
++}
++
++int main() {
++  RunServer();
++
++  return 0;
++}
 diff --git a/tutorial/cpp/Makefile.am b/tutorial/cpp/Makefile.am
-index 184a69d..581f75e 100755
+index 184a69d..39d85e1 100755
 --- a/tutorial/cpp/Makefile.am
 +++ b/tutorial/cpp/Makefile.am
 @@ -18,44 +18,38 @@
@@ -1325,8 +1388,9 @@ index 184a69d..581f75e 100755
 +	TestClient
  
 -TutorialServer_SOURCES = \
+-	CppServer.cpp
 +TestServer_SOURCES = \
- 	CppServer.cpp
++	GrpcServer.cpp
  
 -TutorialServer_LDADD = \
 -	libtutorialgencpp.la \
@@ -1335,8 +1399,9 @@ index 184a69d..581f75e 100755
  	$(top_builddir)/lib/cpp/libthrift.la
  
 -TutorialClient_SOURCES = \
+-	CppClient.cpp
 +TestClient_SOURCES = \
- 	CppClient.cpp
++	GrpcClient.cpp
  
 -TutorialClient_LDADD = \
 -	libtutorialgencpp.la \
@@ -1345,7 +1410,7 @@ index 184a69d..581f75e 100755
  	$(top_builddir)/lib/cpp/libthrift.la
  
  #
-@@ -63,21 +57,21 @@ TutorialClient_LDADD = \
+@@ -63,26 +57,26 @@ TutorialClient_LDADD = \
  #
  THRIFT = $(top_builddir)/compiler/cpp/thrift
  
@@ -1374,6 +1439,13 @@ index 184a69d..581f75e 100755
  
  style-local:
  	$(CPPSTYLE_CMD)
+ 
+ EXTRA_DIST = \
+ 	CMakeLists.txt \
+-	CppClient.cpp \
+-	CppServer.cpp
++	GrpcClient.cpp \
++	GrpcServer.cpp
 diff --git a/tutorial/cpp/test.thrift b/tutorial/cpp/test.thrift
 new file mode 100644
 index 0000000..de3c9a4
@@ -1398,10 +1470,10 @@ index 0000000..de3c9a4
 2.8.0.rc3.226.g39d4020
 
 
-From 1d47ed062e62d136c3db9f6fc1dde9e2f794cf22 Mon Sep 17 00:00:00 2001
+From 096042c132126536870eea118127cf1e608969bc Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:23:53 -0700
-Subject: [PATCH 3/5] grpc java plugins generator
+Subject: [PATCH 3/3] grpc java plugins generator
 
 for examples refer to https://github.com/grpc/grpc-java/tree/master/examples/thrift
 ---
@@ -1410,7 +1482,7 @@ for examples refer to https://github.com/grpc/grpc-java/tree/master/examples/thr
  2 files changed, 887 insertions(+), 27 deletions(-)
 
 diff --git a/compiler/cpp/src/generate/t_java_generator.cc b/compiler/cpp/src/generate/t_java_generator.cc
-index 2db8cb8..95e1ca8 100644
+index 2db8cb8..8b28fe2 100644
 --- a/compiler/cpp/src/generate/t_java_generator.cc
 +++ b/compiler/cpp/src/generate/t_java_generator.cc
 @@ -97,10 +97,10 @@ public:
@@ -1487,7 +1559,7 @@ index 2db8cb8..95e1ca8 100644
 +}
 +
 +string t_java_generator::import_extended_service(t_service* tservice) {
-+  if (tservice == nullptr) {
++  if (!tservice) {
 +    return string() + "\n";
 +  }
 +  string ns = tservice->get_program()->get_namespace("java");
@@ -1575,7 +1647,7 @@ index 2db8cb8..95e1ca8 100644
 +  f_service_ << indent() <<
 +    "@java.lang.Deprecated public static interface " << service_name_;
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    f_service_ << " extends " << tservice->get_extends()->get_name() + "Grpc." <<
 +      tservice->get_extends()->get_name() << endl;
 +  }
@@ -1610,7 +1682,7 @@ index 2db8cb8..95e1ca8 100644
 +  }
 +  f_service_ << endl;
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    f_service_ << indent() << "// ARG IDs for extended service" << endl;
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
@@ -1663,7 +1735,7 @@ index 2db8cb8..95e1ca8 100644
 +      endl << indent() << "  break;" << endl;
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -1721,7 +1793,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "}" << endl << endl;
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc" ;
@@ -1786,7 +1858,7 @@ index 2db8cb8..95e1ca8 100644
 +    indent_down();
 +  }
 +
-+  if(tservice->get_extends() != nullptr) {
++  if(tservice->get_extends()) {
 +    t_service* extends_service = tservice->get_extends();
 +    functions = extends_service->get_functions();
 +    string extend_service_name = extends_service->get_name() + "Grpc";
@@ -1886,7 +1958,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "}" << endl << endl;
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -1930,7 +2002,7 @@ index 2db8cb8..95e1ca8 100644
 +    indent() << "@java.lang.Deprecated public static interface " << service_name_ <<
 +    "BlockingClient " ;
 +  
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    string extend_service_name = tservice->get_extends()->get_name();
 +    f_service_ << endl << indent() << "    extends " << extend_service_name << "Grpc." <<
 +        extend_service_name << "BlockingClient " ;
@@ -2008,7 +2080,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "}" << endl << endl;
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -2050,7 +2122,7 @@ index 2db8cb8..95e1ca8 100644
 +    indent() << "@java.lang.Deprecated public static interface " << service_name_ <<
 +    "FutureClient " ;
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    string extend_service_name = tservice->get_extends()->get_name();
 +    f_service_ << endl << indent() << "    extends " << extend_service_name << "Grpc." <<
 +        extend_service_name << "FutureClient " ; 
@@ -2068,7 +2140,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "    " << (*f_iter)->get_name() << "_args request);" << endl << endl;
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -2141,7 +2213,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "}" << endl << endl;
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -2176,7 +2248,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "private static final int METHODID_" <<
 +      (*f_iter)->get_name() << " = " << i << ";" << endl;
 +  }
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -2238,7 +2310,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "break;" << endl << endl;
 +    indent_down();
 +  }
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -2303,7 +2375,7 @@ index 2db8cb8..95e1ca8 100644
 +      indent() << "," << endl <<
 +      indent() << "    METHOD_" << (*f_iter)->get_name();
 +  }
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
@@ -2352,7 +2424,7 @@ index 2db8cb8..95e1ca8 100644
 +    indent_down();
 +  }
 +
-+  if (tservice->get_extends() != nullptr) {
++  if (tservice->get_extends()) {
 +    t_service* extend_service = tservice->get_extends();
 +    functions = extend_service->get_functions();
 +    string extend_service_name = extend_service->get_name() + "Grpc";
@@ -2412,196 +2484,6 @@ index 5865c54..1cffbe6 100755
 -	README.md
 +	README.md \
 +	java
--- 
-2.8.0.rc3.226.g39d4020
-
-
-From a9769a0fa08f553da76215ca59a8fd797b92a853 Mon Sep 17 00:00:00 2001
-From: chedeti <chedeti@google.com>
-Date: Mon, 1 Aug 2016 16:56:36 -0700
-Subject: [PATCH 4/5] maintain consistency with grpc
-
----
- compiler/cpp/src/generate/t_cpp_generator.cc   | 20 ++++++++++----------
- tutorial/cpp/{CppClient.cpp => GrpcClient.cpp} |  0
- tutorial/cpp/{CppServer.cpp => GrpcServer.cpp} |  0
- tutorial/cpp/Makefile.am                       |  8 ++++----
- 4 files changed, 14 insertions(+), 14 deletions(-)
- rename tutorial/cpp/{CppClient.cpp => GrpcClient.cpp} (100%)
- rename tutorial/cpp/{CppServer.cpp => GrpcServer.cpp} (100%)
-
-diff --git a/compiler/cpp/src/generate/t_cpp_generator.cc b/compiler/cpp/src/generate/t_cpp_generator.cc
-index 9c3399b..4e00129 100644
---- a/compiler/cpp/src/generate/t_cpp_generator.cc
-+++ b/compiler/cpp/src/generate/t_cpp_generator.cc
-@@ -1641,7 +1641,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
-             << endl;
- 
-   t_service* extends_service = tservice->get_extends();
--  if (extends_service != nullptr) {
-+  if (extends_service) {
-     f_header_ << "#include \"" << get_include_prefix(*(extends_service->get_program()))
-               << extends_service->get_name() << ".grpc.thrift.h\"" << endl;
-   }
-@@ -1733,7 +1733,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
-       indent() << "\"/" << ns << "." << service_name_ << "/" << (*f_iter)->get_name() << "\"," << endl;
-   }
- 
--  if (extends_service != nullptr) {
-+  if (extends_service) {
-     vector<t_function*> functions = extends_service->get_functions();
-     vector<t_function*>::iterator f_iter;
- 
-@@ -1749,9 +1749,9 @@ void t_cpp_generator::generate_service(t_service* tservice) {
-   "};" << endl;
- 
-   // Generate service class
--  if ( extends_service != nullptr ) {
-+  if ( extends_service) {
-     f_header_ << "class " << service_name_ << " : public " <<
--      extends_service->get_name() << " {" << endl <<
-+      type_name(extends_service) << " {" << endl <<
-       "public:" << endl;
-   }
-   else {
-@@ -1841,7 +1841,7 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
- void t_cpp_generator::generate_service_stub_interface(t_service* tservice) {
- 
-     string extends = "";
--    if (tservice->get_extends() != nullptr) {
-+    if (tservice->get_extends()) {
-       extends = " : virtual public " + type_name(tservice->get_extends()) + "::StubInterface";
-     }
- 
-@@ -1890,7 +1890,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
-     }
- 
-     t_service* extends_service = tservice->get_extends();
--    if (extends_service != nullptr) {
-+    if (extends_service) {
-       // generate inherited methods
-       vector<t_function*> functions = extends_service->get_functions();
-       vector<t_function*>::iterator f_iter;
-@@ -1914,7 +1914,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
-         indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
-     }
- 
--    if (extends_service != nullptr) {
-+    if (extends_service) {
-       // generate inherited methods
-       vector<t_function*> functions = extends_service->get_functions();
-       vector<t_function*>::iterator f_iter;
-@@ -1944,7 +1944,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
-         service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
-     }
- 
--    if (extends_service != nullptr) {
-+    if (extends_service) {
-       // generate inherited methods
-       vector<t_function*> functions = extends_service->get_functions();
-       vector<t_function*>::iterator f_iter;
-@@ -2002,7 +2002,7 @@ void t_cpp_generator::generate_service_stub(t_service* tservice) {
- 
-     }
- 
--    if (extends_service != nullptr) {
-+    if (extends_service) {
-       vector<t_function*> functions = extends_service->get_functions();
-       vector<t_function*>::iterator f_iter;
-       for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-@@ -2049,7 +2049,7 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
-   }
- 
-   string extends = "";
--  if (tservice->get_extends() != NULL) {
-+  if (tservice->get_extends()) {
-     extends = " : virtual public " + type_name(tservice->get_extends()) + style + "::Service";
-     if (style == "CobCl" && gen_templates_) {
-       // TODO(simpkins): If gen_templates_ is enabled, we currently assume all
-diff --git a/tutorial/cpp/CppClient.cpp b/tutorial/cpp/GrpcClient.cpp
-similarity index 100%
-rename from tutorial/cpp/CppClient.cpp
-rename to tutorial/cpp/GrpcClient.cpp
-diff --git a/tutorial/cpp/CppServer.cpp b/tutorial/cpp/GrpcServer.cpp
-similarity index 100%
-rename from tutorial/cpp/CppServer.cpp
-rename to tutorial/cpp/GrpcServer.cpp
-diff --git a/tutorial/cpp/Makefile.am b/tutorial/cpp/Makefile.am
-index 581f75e..39d85e1 100755
---- a/tutorial/cpp/Makefile.am
-+++ b/tutorial/cpp/Makefile.am
-@@ -39,14 +39,14 @@ noinst_PROGRAMS = \
- 	TestClient
- 
- TestServer_SOURCES = \
--	CppServer.cpp
-+	GrpcServer.cpp
- 
- TestServer_LDADD = \
- 	libtestgencpp.la \
- 	$(top_builddir)/lib/cpp/libthrift.la
- 
- TestClient_SOURCES = \
--	CppClient.cpp
-+	GrpcClient.cpp
- 
- TestClient_LDADD = \
- 	libtestgencpp.la \
-@@ -78,5 +78,5 @@ style-local:
- 
- EXTRA_DIST = \
- 	CMakeLists.txt \
--	CppClient.cpp \
--	CppServer.cpp
-+	GrpcClient.cpp \
-+	GrpcServer.cpp
--- 
-2.8.0.rc3.226.g39d4020
-
-
-From bc74fca1ee73333819724f51d5aaff3546443ed0 Mon Sep 17 00:00:00 2001
-From: chedeti <chedeti@google.com>
-Date: Mon, 1 Aug 2016 17:00:17 -0700
-Subject: [PATCH 5/5] fix typo
-
----
- tutorial/cpp/GrpcClient.cpp | 4 ++--
- tutorial/cpp/GrpcServer.cpp | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/tutorial/cpp/GrpcClient.cpp b/tutorial/cpp/GrpcClient.cpp
-index c41604e..ab1fe77 100644
---- a/tutorial/cpp/GrpcClient.cpp
-+++ b/tutorial/cpp/GrpcClient.cpp
-@@ -1,6 +1,6 @@
- /*
-  *
-- * Copyright 2015, Google Inc.
-+ * Copyright 2016, Google Inc.
-  * All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without
-@@ -50,7 +50,7 @@ class GreeterClient {
-   GreeterClient(std::shared_ptr<Channel> channel)
-       : stub_(Greeter::NewStub(channel)) {}
- 
--  // Assambles the client's payload, sends it and presents the response back
-+  // Assembles the client's payload, sends it and presents the response back
-   // from the server.
-   std::string SayHello(const std::string& user) {
-     // Data we are sending to the server.
-diff --git a/tutorial/cpp/GrpcServer.cpp b/tutorial/cpp/GrpcServer.cpp
-index c838b61..f63db57 100644
---- a/tutorial/cpp/GrpcServer.cpp
-+++ b/tutorial/cpp/GrpcServer.cpp
-@@ -1,6 +1,6 @@
- /*
-  *
-- * Copyright 2015, Google Inc.
-+ * Copyright 2016, Google Inc.
-  * All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without
 -- 
 2.8.0.rc3.226.g39d4020
 
