@@ -67,15 +67,15 @@ grpc::string ModuleAlias(const grpc::string filename) {
 
 // Given a filename like foo/bar/baz.proto, returns the corresponding JavaScript
 // message file foo/bar/baz.js
-grpc::string GetJSMessageFilename(const grpc::string& filename) {
+grpc::string GetJSMessageFilename(const grpc::string &filename) {
   grpc::string name = filename;
   return grpc_generator::StripProto(name) + "_pb.js";
 }
 
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
-grpc::string GetRootPath(const grpc::string& from_filename,
-                         const grpc::string& to_filename) {
+grpc::string GetRootPath(const grpc::string &from_filename,
+                         const grpc::string &to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
     // Well-known types (.proto files in the google/protobuf directory) are
     // assumed to come from the 'google-protobuf' npm package.  We may want to
@@ -96,8 +96,8 @@ grpc::string GetRootPath(const grpc::string& from_filename,
 
 // Return the relative path to load to_file from the directory containing
 // from_file, assuming that both paths are relative to the same directory
-grpc::string GetRelativePath(const grpc::string& from_file,
-                             const grpc::string& to_file) {
+grpc::string GetRelativePath(const grpc::string &from_file,
+                             const grpc::string &to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
@@ -118,7 +118,7 @@ map<grpc::string, const Descriptor*> GetAllMessages(const FileDescriptor *file) 
   return message_types;
 }
 
-grpc::string MessageIdentifierName(const grpc::string& name) {
+grpc::string MessageIdentifierName(const grpc::string &name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
@@ -195,18 +195,18 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
   out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    grpc::string method_name = grpc_generator::LowercaseFirstLetter(
-        service->method(i)->name());
+    grpc::string method_name =
+        grpc_generator::LowercaseFirstLetter(service->method(i)->name());
     out->Print(GetNodeComments(service->method(i), true).c_str());
-    out->Print("$method_name$: ",
-               "method_name", method_name);
+    out->Print("$method_name$: ", "method_name", method_name);
     PrintMethod(service->method(i), out);
     out->Print(",\n");
     out->Print(GetNodeComments(service->method(i), false).c_str());
   }
   out->Outdent();
   out->Print("};\n\n");
-  out->Print(template_vars, "exports.$name$Client = "
+  out->Print(template_vars,
+             "exports.$name$Client = "
              "grpc.makeGenericClientConstructor($name$Service);\n");
   out->Print(GetNodeComments(service, false).c_str());
 }
@@ -214,27 +214,25 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
 void PrintImports(const FileDescriptor *file, Printer *out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
-    grpc::string file_path = GetRelativePath(file->name(),
-                                             GetJSMessageFilename(
-                                                 file->name()));
-    out->Print("var $module_alias$ = require('$file_path$');\n",
-               "module_alias", ModuleAlias(file->name()),
-               "file_path", file_path);
+    grpc::string file_path =
+        GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
+    out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
+               ModuleAlias(file->name()), "file_path", file_path);
   }
 
   for (int i = 0; i < file->dependency_count(); i++) {
     grpc::string file_path = GetRelativePath(
         file->name(), GetJSMessageFilename(file->dependency(i)->name()));
-    out->Print("var $module_alias$ = require('$file_path$');\n",
-               "module_alias", ModuleAlias(file->dependency(i)->name()),
-               "file_path", file_path);
+    out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
+               ModuleAlias(file->dependency(i)->name()), "file_path",
+               file_path);
   }
   out->Print("\n");
 }
 
 void PrintTransformers(const FileDescriptor *file, Printer *out) {
-  map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
-  for (std::map<grpc::string, const Descriptor*>::iterator it =
+  map<grpc::string, const Descriptor *> messages = GetAllMessages(file);
+  for (std::map<grpc::string, const Descriptor *>::iterator it =
            messages.begin();
        it != messages.end(); it++) {
     PrintMessageTransformer(it->second, out);
@@ -247,7 +245,6 @@ void PrintServices(const FileDescriptor *file, Printer *out) {
     PrintService(file->service(i), out);
   }
 }
-
 }
 
 grpc::string GenerateFile(const FileDescriptor *file) {

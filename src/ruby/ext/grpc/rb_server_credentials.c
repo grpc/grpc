@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 
 #include "rb_grpc.h"
 
@@ -46,8 +47,8 @@
 static VALUE grpc_rb_cServerCredentials = Qnil;
 
 /* grpc_rb_server_credentials wraps a grpc_server_credentials.  It provides a
-   peer ruby object, 'mark' to minimize copying when a server credential is
-   created from ruby. */
+   peer ruby object, 'mark' to hold references to objects involved in
+   constructing the server credentials. */
 typedef struct grpc_rb_server_credentials {
   /* Holder of ruby objects involved in constructing the server credentials */
   VALUE mark;
@@ -109,36 +110,6 @@ static VALUE grpc_rb_server_credentials_alloc(VALUE cls) {
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_server_credentials_data_type,
                                wrapper);
-}
-
-/* Clones ServerCredentials instances.
-
-   Gives ServerCredentials a consistent implementation of Ruby's object copy/dup
-   protocol. */
-static VALUE grpc_rb_server_credentials_init_copy(VALUE copy, VALUE orig) {
-  grpc_rb_server_credentials *orig_ch = NULL;
-  grpc_rb_server_credentials *copy_ch = NULL;
-
-  if (copy == orig) {
-    return copy;
-  }
-
-  /* Raise an error if orig is not a server_credentials object or a subclass. */
-  if (TYPE(orig) != T_DATA ||
-      RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_server_credentials_free) {
-    rb_raise(rb_eTypeError, "not a %s",
-             rb_obj_classname(grpc_rb_cServerCredentials));
-  }
-
-  TypedData_Get_Struct(orig, grpc_rb_server_credentials,
-                       &grpc_rb_server_credentials_data_type, orig_ch);
-  TypedData_Get_Struct(copy, grpc_rb_server_credentials,
-                       &grpc_rb_server_credentials_data_type, copy_ch);
-
-  /* use ruby's MEMCPY to make a byte-for-byte copy of the server_credentials
-     wrapper object. */
-  MEMCPY(copy_ch, orig_ch, grpc_rb_server_credentials, 1);
-  return copy;
 }
 
 /* The attribute used on the mark object to preserve the pem_root_certs. */
@@ -270,7 +241,7 @@ void Init_grpc_server_credentials() {
   rb_define_method(grpc_rb_cServerCredentials, "initialize",
                    grpc_rb_server_credentials_init, 3);
   rb_define_method(grpc_rb_cServerCredentials, "initialize_copy",
-                   grpc_rb_server_credentials_init_copy, 1);
+                   grpc_rb_cannot_init_copy, 1);
 
   id_pem_key_certs = rb_intern("__pem_key_certs");
   id_pem_root_certs = rb_intern("__pem_root_certs");

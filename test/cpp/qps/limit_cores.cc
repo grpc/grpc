@@ -68,9 +68,9 @@ int LimitCores(const int* cores, int cores_size) {
       cores_set++;
     }
   }
-  GPR_ASSERT(sched_setaffinity(0, size, cpup) == 0);
+  bool affinity_set = (sched_setaffinity(0, size, cpup) == 0);
   CPU_FREE(cpup);
-  return cores_set;
+  return affinity_set ? cores_set : num_cores;
 }
 
 }  // namespace testing

@@ -1166,6 +1166,9 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
   request.mutable_param()->set_response_message_length(kResponseSize);
 
   ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(20);
+  context.set_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(kResponseSize, response.message().size());
   EXPECT_TRUE(s.ok());
@@ -1411,7 +1414,7 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, tst.size());
+  ASSERT_EQ(1u, tst.size());
   EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
   if (GetParam().credentials_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",

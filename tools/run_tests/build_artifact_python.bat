@@ -28,62 +28,33 @@
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-set NUGET=C:\nuget\nuget.exe
-%NUGET% restore vsprojects\grpc.sln || goto :error
-
-
-@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=Win32 || goto :error
-@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=x64   || goto :error
-
-mkdir src\python\grpcio\grpc\_cython\_windows
-
-@rem TODO(atash): maybe we could avoid the grpc_c.(32|64).python shim below if
-@rem this used the right python build?
-copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.32.python || goto :error
-copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
-
 set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;%PATH%
 
 pip install --upgrade six
 pip install --upgrade setuptools
 pip install -rrequirements.txt
 
-set GRPC_PYTHON_USE_CUSTOM_BDIST=0
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
-@rem Because this is windows and *everything seems to hate Windows* we have to
-@rem set all of these flags ourselves because Python won't help us (see the
-@rem setup.py of the grpcio_tools project).
-set GRPC_PYTHON_CFLAGS=-fno-wrapv -frtti -std=c++11
-@rem Further confusing things, MSYS2's mingw64 tries to dynamically link
-@rem libgcc, libstdc++, and winpthreads. We have to override this or our
-@rem extensions end up linking to MSYS2 DLLs, which the normal Python on
-@rem Windows user won't have... and ON TOP OF THIS, there's MinGW's GCC default
-@rem behavior of linking msvcrt.dll as the C runtime library, which we need to
-@rem override so that Python's distutils doesn't link us against multiple C
-@rem runtimes.
-python -c "from distutils.cygwinccompiler import get_msvcr; print(get_msvcr()[0])" > temp.txt
-set /p PYTHON_MSVCR=<temp.txt
-set GRPC_PYTHON_LDFLAGS=-static-libgcc -static-libstdc++ -mcrtdll=%PYTHON_MSVCR% -static -lpthread
+
+@rem Set up gRPC Python tools
+python tools\distrib\python\make_grpcio_tools.py
+
+@rem Build gRPC Python extensions
+python setup.py build_ext -c mingw32
+
+pushd tools\distrib\python\grpcio_tools
+python setup.py build_ext -c mingw32
+popd
 
 
-@rem Build gRPC
-if %2 == 32 (
-  python setup.py build_ext -c mingw32
-) else (
-  python setup.py build_ext -c mingw32 -DMS_WIN64
-)
+@rem Build gRPC Python distributions
 python setup.py bdist_wheel
 
+pushd tools\distrib\python\grpcio_tools
+python setup.py bdist_wheel
+popd
 
-@rem Build gRPC Python tools
-python tools\distrib\python\make_grpcio_tools.py
-if %2 == 32 (
-  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
-) else (
-  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32 -DMS_WIN64
-)
-python tools\distrib\python\grpcio_tools\setup.py bdist_wheel
 
 mkdir artifacts
 xcopy /Y /I /S dist\* artifacts\ || goto :error

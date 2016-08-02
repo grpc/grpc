@@ -176,7 +176,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
-      bubble_up_error(exec_ctx, elem, GRPC_STATUS_INTERNAL,
+      bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED,
                       "Incompatible credentials set on channel and call.");
       return;
     }
@@ -205,7 +205,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     char *error_msg;
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
-    bubble_up_error(exec_ctx, elem, GRPC_STATUS_INTERNAL, error_msg);
+    bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED, error_msg);
     gpr_free(error_msg);
   }
 }
@@ -267,10 +267,12 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
+  return GRPC_ERROR_NONE;
 }
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -282,7 +284,8 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats, void *ignored) {
+                              const grpc_call_final_info *final_info,
+                              void *ignored) {
   call_data *calld = elem->call_data;
   grpc_call_credentials_unref(calld->creds);
   if (calld->host != NULL) {

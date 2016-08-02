@@ -65,6 +65,9 @@ class RpcMethodHandler : public MethodHandler {
         ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_,
                             param.server_context->initial_metadata_flags());
+    if (param.server_context->compression_level_set()) {
+      ops.set_compression_level(param.server_context->compression_level());
+    }
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
@@ -104,6 +107,9 @@ class ClientStreamingHandler : public MethodHandler {
         ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_,
                             param.server_context->initial_metadata_flags());
+    if (param.server_context->compression_level_set()) {
+      ops.set_compression_level(param.server_context->compression_level());
+    }
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
@@ -144,6 +150,9 @@ class ServerStreamingHandler : public MethodHandler {
     if (!param.server_context->sent_initial_metadata_) {
       ops.SendInitialMetadata(param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
+      if (param.server_context->compression_level_set()) {
+        ops.set_compression_level(param.server_context->compression_level());
+      }
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -177,6 +186,9 @@ class BidiStreamingHandler : public MethodHandler {
     if (!param.server_context->sent_initial_metadata_) {
       ops.SendInitialMetadata(param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
+      if (param.server_context->compression_level_set()) {
+        ops.set_compression_level(param.server_context->compression_level());
+      }
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -199,6 +211,9 @@ class UnknownMethodHandler : public MethodHandler {
     if (!context->sent_initial_metadata_) {
       ops->SendInitialMetadata(context->initial_metadata_,
                                context->initial_metadata_flags());
+      if (context->compression_level_set()) {
+        ops->set_compression_level(context->compression_level());
+      }
       context->sent_initial_metadata_ = true;
     }
     ops->ServerSendStatus(context->trailing_metadata_, status);

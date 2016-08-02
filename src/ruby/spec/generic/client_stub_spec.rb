@@ -29,11 +29,14 @@
 
 require 'grpc'
 
+Thread.abort_on_exception = true
+
 def wakey_thread(&blk)
   n = GRPC::Notifier.new
   t = Thread.new do
     blk.call(n)
   end
+  t.abort_on_exception = true
   n.wait
   t
 end
@@ -54,15 +57,13 @@ describe 'ClientStub' do
   before(:each) do
     Thread.abort_on_exception = true
     @server = nil
-    @server_queue = nil
     @method = 'an_rpc_method'
     @pass = OK
     @fail = INTERNAL
-    @cq = GRPC::Core::CompletionQueue.new
   end
 
   after(:each) do
-    @server.close(@server_queue) unless @server_queue.nil?
+    @server.close(from_relative_time(2)) unless @server.nil?
   end
 
   describe '#new' do
@@ -70,7 +71,7 @@ describe 'ClientStub' do
     it 'can be created from a host and args' do
       opts = { channel_args: { a_channel_arg: 'an_arg' } }
       blk = proc do
-        GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
+        GRPC::ClientStub.new(fake_host, :this_channel_is_insecure, **opts)
       end
       expect(&blk).not_to raise_error
     end
@@ -81,7 +82,7 @@ describe 'ClientStub' do
         channel_override: @ch
       }
       blk = proc do
-        GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
+        GRPC::ClientStub.new(fake_host, :this_channel_is_insecure, **opts)
       end
       expect(&blk).not_to raise_error
     end
@@ -92,7 +93,7 @@ describe 'ClientStub' do
           channel_args: { a_channel_arg: 'an_arg' },
           channel_override: Object.new
         }
-        GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
+        GRPC::ClientStub.new(fake_host, :this_channel_is_insecure, **opts)
       end
       expect(&blk).to raise_error
     end
@@ -100,7 +101,7 @@ describe 'ClientStub' do
     it 'cannot be created with bad credentials' do
       blk = proc do
         opts = { channel_args: { a_channel_arg: 'an_arg' } }
-        GRPC::ClientStub.new(fake_host, @cq, Object.new, **opts)
+        GRPC::ClientStub.new(fake_host, Object.new, **opts)
       end
       expect(&blk).to raise_error
     end
@@ -115,7 +116,7 @@ describe 'ClientStub' do
           }
         }
         creds = GRPC::Core::ChannelCredentials.new(certs[0], nil, nil)
-        GRPC::ClientStub.new(fake_host, @cq, creds,  **opts)
+        GRPC::ClientStub.new(fake_host, creds,  **opts)
       end
       expect(&blk).to_not raise_error
     end
@@ -130,7 +131,7 @@ describe 'ClientStub' do
       it 'should send a request to/receive a reply from a server' do
         server_port = create_test_server
         th = run_request_response(@sent_msg, @resp, @pass)
-        stub = GRPC::ClientStub.new("localhost:#{server_port}", @cq,
+        stub = GRPC::ClientStub.new("localhost:#{server_port}",
                                     :this_channel_is_insecure)
         expect(get_response(stub)).to eq(@resp)
         th.join
@@ -141,7 +142,7 @@ describe 'ClientStub' do
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass,
                                   k1: 'v1', k2: 'v2')
-        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         expect(get_response(stub)).to eq(@resp)
         th.join
       end
@@ -151,7 +152,7 @@ describe 'ClientStub' do
         alt_host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass)
         ch = GRPC::Core::Channel.new(alt_host, nil, :this_channel_is_insecure)
-        stub = GRPC::ClientStub.new('ignored-host', @cq,
+        stub = GRPC::ClientStub.new('ignored-host',
                                     :this_channel_is_insecure,
                                     channel_override: ch)
         expect(get_response(stub)).to eq(@resp)
@@ -162,7 +163,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @fail)
-        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         blk = proc { get_response(stub) }
         expect(&blk).to raise_error(GRPC::BadStatus)
         th.join
@@ -182,7 +183,8 @@ describe 'ClientStub' do
       def get_response(stub)
         op = stub.request_response(@method, @sent_msg, noop, noop,
                                    return_op: true,
-                                   metadata: { k1: 'v1', k2: 'v2' })
+                                   metadata: { k1: 'v1', k2: 'v2' },
+                                   deadline: from_relative_time(2))
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         op.execute
       end
@@ -196,7 +198,7 @@ describe 'ClientStub' do
       before(:each) do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        @stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        @stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         @metadata = { k1: 'v1', k2: 'v2' }
         @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
         @resp = 'a_reply'
@@ -262,7 +264,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_server_streamer(@sent_msg, @replys, @pass)
-        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         expect(get_responses(stub).collect { |r| r }).to eq(@replys)
         th.join
       end
@@ -271,7 +273,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_server_streamer(@sent_msg, @replys, @fail)
-        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
         th.join
@@ -282,7 +284,7 @@ describe 'ClientStub' do
         host = "localhost:#{server_port}"
         th = run_server_streamer(@sent_msg, @replys, @fail,
                                  k1: 'v1', k2: 'v2')
-        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
         th.join
@@ -327,7 +329,7 @@ describe 'ClientStub' do
       it 'supports sending all the requests first', bidi: true do
         th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
                                                    @pass)
-        stub = GRPC::ClientStub.new(@host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@replys)
         th.join
@@ -335,7 +337,7 @@ describe 'ClientStub' do
 
       it 'supports client-initiated ping pong', bidi: true do
         th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, true)
-        stub = GRPC::ClientStub.new(@host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@sent_msgs)
         th.join
@@ -343,7 +345,7 @@ describe 'ClientStub' do
 
       it 'supports a server-initiated ping pong', bidi: true do
         th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, false)
-        stub = GRPC::ClientStub.new(@host, @cq, :this_channel_is_insecure)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@sent_msgs)
         th.join
@@ -371,26 +373,6 @@ describe 'ClientStub' do
       end
 
       it_behaves_like 'bidi streaming'
-    end
-
-    describe 'without enough time to run' do
-      before(:each) do
-        @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
-        @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
-        server_port = create_test_server
-        @host = "localhost:#{server_port}"
-      end
-
-      it 'should fail with DeadlineExceeded', bidi: true do
-        @server.start
-        stub = GRPC::ClientStub.new(@host, @cq, :this_channel_is_insecure)
-        blk = proc do
-          e = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
-                                 deadline: from_relative_time(0.001))
-          e.collect { |r| r }
-        end
-        expect(&blk).to raise_error GRPC::BadStatus, /Deadline Exceeded/
-      end
     end
   end
 
@@ -460,21 +442,18 @@ describe 'ClientStub' do
   end
 
   def create_test_server
-    @server_queue = GRPC::Core::CompletionQueue.new
-    @server = GRPC::Core::Server.new(@server_queue, nil)
+    @server = GRPC::Core::Server.new(nil)
     @server.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
   end
 
   def expect_server_to_be_invoked(notifier)
     @server.start
     notifier.notify(nil)
-    server_tag = Object.new
-    recvd_rpc = @server.request_call(@server_queue, server_tag,
-                                     INFINITE_FUTURE)
+    recvd_rpc = @server.request_call
     recvd_call = recvd_rpc.call
     recvd_call.metadata = recvd_rpc.metadata
-    recvd_call.run_batch(@server_queue, server_tag, Time.now + 2,
-                         SEND_INITIAL_METADATA => nil)
-    GRPC::ActiveCall.new(recvd_call, @server_queue, noop, noop, INFINITE_FUTURE)
+    recvd_call.run_batch(SEND_INITIAL_METADATA => nil)
+    GRPC::ActiveCall.new(recvd_call, noop, noop, INFINITE_FUTURE,
+                         metadata_received: true)
   end
 end

@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/health/v1/health_services'
+require 'grpc/health/v1/health_services_pb'
 require 'thread'
 
 module Grpc

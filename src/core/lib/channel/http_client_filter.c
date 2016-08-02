@@ -76,7 +76,13 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   if (md == GRPC_MDELEM_STATUS_200) {
     return NULL;
   } else if (md->key == GRPC_MDSTR_STATUS) {
-    grpc_call_element_send_cancel(a->exec_ctx, a->elem);
+    char *message_string;
+    gpr_asprintf(&message_string, "Received http2 header with status: %s",
+                 grpc_mdstr_as_c_string(md->value));
+    gpr_slice message = gpr_slice_from_copied_string(message_string);
+    gpr_free(message_string);
+    grpc_call_element_send_cancel_with_message(a->exec_ctx, a->elem,
+                                               GRPC_STATUS_CANCELLED, &message);
     return NULL;
   } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     return NULL;
@@ -169,16 +175,19 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->on_done_recv = NULL;
   grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats, void *ignored) {}
+                              const grpc_call_final_info *final_info,
+                              void *ignored) {}
 
 static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
   unsigned i;

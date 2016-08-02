@@ -11,7 +11,7 @@ INSTALL
  - Install the gRPC PHP extension
 
    ```sh
-   $ [sudo] pecl install grpc-beta
+   $ [sudo] pecl install grpc
    ```
 
  - Clone this repository
@@ -37,7 +37,8 @@ TRY IT!
    ```
    $ cd examples/node
    $ npm install
-   $ nodejs greeter_server.js
+   $ cd dynamic_codegen or cd static_codegen
+   $ node greeter_server.js
    ```
 
  - Run the client
