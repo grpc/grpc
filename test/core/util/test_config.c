@@ -34,7 +34,6 @@
 #include "test/core/util/test_config.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
