@@ -51,56 +51,23 @@
 #include <grpc/support/time.h>
 
 zend_class_entry *grpc_ce_timeval;
-
-#if PHP_MAJOR_VERSION < 7
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers timeval_ce_handlers;
+#endif
 
 /* Frees and destroys an instance of wrapped_grpc_call */
-void free_wrapped_grpc_timeval(void *object TSRMLS_DC) {
-  wrapped_grpc_timeval *timeval = (wrapped_grpc_timeval *)object;
-  zend_object_std_dtor(&timeval->std TSRMLS_CC);
-  efree(timeval);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_timeval)
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
 /* Initializes an instance of wrapped_grpc_timeval to be associated with an
  * object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_timeval(zend_class_entry *class_type
-                                                  TSRMLS_DC) {
-  zend_object_value retval;
-  wrapped_grpc_timeval *intern;
-  intern = (wrapped_grpc_timeval *)emalloc(sizeof(wrapped_grpc_timeval));
-  memset(intern, 0, sizeof(wrapped_grpc_timeval));
+php_grpc_zend_object create_wrapped_grpc_timeval(zend_class_entry *class_type
+                                                 TSRMLS_DC) {
+  PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_timeval);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_timeval, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_timeval, timeval_ce_handlers);
 }
-
-#else
-
-static zend_object_handlers timeval_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_call */
-static void free_wrapped_grpc_timeval(zend_object *object) {
-  wrapped_grpc_timeval *timeval = wrapped_grpc_timeval_from_obj(object);
-  zend_object_std_dtor(&timeval->std);
-}
-
-/* Initializes an instance of wrapped_grpc_timeval to be associated with an
- * object of a class specified by class_type */
-zend_object *create_wrapped_grpc_timeval(zend_class_entry *class_type) {
-  wrapped_grpc_timeval *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_timeval) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
-  intern->std.handlers = &timeval_ce_handlers;
-  return &intern->std;
-}
-
-#endif
 
 zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
   zval *timeval_object;
@@ -311,13 +278,7 @@ void grpc_init_timeval(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Timeval", timeval_methods);
   ce.create_object = create_wrapped_grpc_timeval;
   grpc_ce_timeval = zend_register_internal_class(&ce TSRMLS_CC);
-#if PHP_MAJOR_VERSION >= 7
-  memcpy(&timeval_ce_handlers, zend_get_std_object_handlers(),
-         sizeof(zend_object_handlers));
-  timeval_ce_handlers.offset =
-    XtOffsetOf(wrapped_grpc_timeval, std);
-  timeval_ce_handlers.free_obj = free_wrapped_grpc_timeval;
-#endif
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_timeval, timeval_ce_handlers);
 }
 
 void grpc_shutdown_timeval(TSRMLS_D) {}
