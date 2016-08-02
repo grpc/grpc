@@ -48,11 +48,10 @@ then
 elif [ "$platform" == "macos" ]
 then
   # Install python-protobuf which is needed by nanopb
+  # the other platforms have it installed by default
   MACOS_NANOPB_VIRTUAL_ENV=$(mktemp -d /tmp/grpc-nanopb-XXXXXX)
-  pushd ${MACOS_NANOPB_VIRTUAL_ENV}
   virtualenv ${MACOS_NANOPB_VIRTUAL_ENV}
   source ${MACOS_NANOPB_VIRTUAL_ENV}/bin/activate
-  popd
   pip install protobuf==3.0.0b2
 fi
 
