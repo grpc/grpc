@@ -231,6 +231,7 @@ filegroups:
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/static_metadata.h
+  - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
@@ -320,6 +321,7 @@ filegroups:
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
   - src/core/lib/transport/static_metadata.c
+  - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
   deps:
@@ -536,7 +538,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/status_conversion.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
   - src/core/ext/transport/chttp2/transport/bin_decoder.c
@@ -558,7 +559,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/status_conversion.c
   - src/core/ext/transport/chttp2/transport/stream_lists.c
   - src/core/ext/transport/chttp2/transport/stream_map.c
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.c
   - src/core/ext/transport/chttp2/transport/varint.c
   - src/core/ext/transport/chttp2/transport/writing.c
   plugin: grpc_chttp2_plugin
@@ -2369,7 +2369,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/timeout_encoding_test.c
+  - test/core/transport/timeout_encoding_test.c
   deps:
   - grpc_test_util
   - grpc
