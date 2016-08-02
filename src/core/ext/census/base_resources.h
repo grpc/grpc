@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,36 +30,10 @@
  *
  */
 
-#include <grpc/census.h>
-#include "src/core/ext/census/base_resources.h"
-#include "src/core/ext/census/resource.h"
+#ifndef GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H
+#define GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H
 
-static int features_enabled = CENSUS_FEATURE_NONE;
+/* Define all base resources. This should be called by census initialization. */
+void define_base_resources();
 
-int census_initialize(int features) {
-  if (features_enabled != CENSUS_FEATURE_NONE) {
-    // Must have been a previous call to census_initialize; return error
-    return -1;
-  }
-  features_enabled = features & CENSUS_FEATURE_ALL;
-  if (features & CENSUS_FEATURE_STATS) {
-    initialize_resources();
-    define_base_resources();
-  }
-
-  return features_enabled;
-}
-
-void census_shutdown(void) {
-  if (features_enabled & CENSUS_FEATURE_STATS) {
-    shutdown_resources();
-  }
-  features_enabled = CENSUS_FEATURE_NONE;
-}
-
-int census_supported(void) {
-  /* TODO(aveitch): improve this as we implement features... */
-  return CENSUS_FEATURE_NONE;
-}
-
-int census_enabled(void) { return features_enabled; }
+#endif /* GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H */
