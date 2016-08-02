@@ -557,7 +557,6 @@ cc_library(
     "src/c/init_shutdown.h",
     "src/c/message.h",
     "src/c/server_streaming_blocking_call.h",
-    "src/c/tag.h",
     "src/c/unary_async_call.h",
     "src/c/unary_blocking_call.h",
     "src/c/alloc.c",

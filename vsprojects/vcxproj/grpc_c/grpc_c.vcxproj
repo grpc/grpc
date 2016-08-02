@@ -285,7 +285,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\c\init_shutdown.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\message.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\server_streaming_blocking_call.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c\tag.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\unary_async_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\unary_blocking_call.h" />
   </ItemGroup>
