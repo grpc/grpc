@@ -40,8 +40,8 @@
         "portable-net45"
       ],
       "dependencies": {
-        "NETStandard.Library": "1.5.0-rc2-24027",
-        "System.Threading.Thread": "4.0.0-rc2-24027"
+        "NETStandard.Library": "1.6.0",
+        "System.Threading.Thread": "4.0.0"
       }
     }
   }
