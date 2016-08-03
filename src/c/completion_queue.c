@@ -79,18 +79,21 @@ GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(
         GPR_ASSERT(set->context != NULL);
         // run post-processing for async operations
         bool status = grpc_finish_op_from_call_set(set, set->context);
+        bool hide_from_user = set->hide_from_user;
+        void *user_tag = set->user_tag;
 
         // run user-defined cleanup
         if (set->async_cleanup.callback) {
           set->async_cleanup.callback(set->async_cleanup.arg);
         }
+        // set could be freed from this point onwards
 
-        if (set->hide_from_user) {
+        if (hide_from_user) {
           // don't touch user supplied pointers
           continue;
         }
 
-        *tag = set->user_tag;
+        *tag = user_tag;
         *ok = (ev.success != 0) && status;
 
         return GRPC_COMPLETION_QUEUE_GOT_EVENT;
