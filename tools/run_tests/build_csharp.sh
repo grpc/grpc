@@ -34,4 +34,6 @@ cd $(dirname $0)/../../src/csharp
 
 # TODO: @apolcyn, make gcov code coverage work, with replacement for
 # previous NativeDependenciesConfigurationUnix arg to xbuild
-dotnet build --configuration $MSBUILD_CONFIG **/project.json
+
+# All non-coreclr builds use net45 framework currently
+dotnet build -f net45 --configuration $MSBUILD_CONFIG **/project.json
