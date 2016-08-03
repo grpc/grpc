@@ -68,6 +68,9 @@ struct grpc_call_op_set {
   /* these are used by individual operations */
   void *response;
   grpc_byte_buffer *recv_buffer;
+
+  /* Holding onto the buffer to free it later */
+  grpc_byte_buffer *send_buffer;
   bool message_received;
 
   /* if this is true (default false), the event tagged by this call_op_set will

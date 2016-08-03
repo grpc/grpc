@@ -35,6 +35,7 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/log.h>
 #include <grpc_c/grpc_c.h>
+#include <include/grpc/impl/codegen/grpc_types.h>
 
 static bool op_send_metadata_fill(grpc_op *op, const grpc_method *method,
                                   grpc_client_context *context,
@@ -65,6 +66,7 @@ static bool op_send_object_fill(grpc_op *op, const grpc_method *method,
   gpr_slice slice =
       gpr_slice_from_copied_buffer(serialized.data, serialized.length);
   op->data.send_message = grpc_raw_byte_buffer_create(&slice, 1);
+  set->send_buffer = op->data.send_message;
   GPR_ASSERT(op->data.send_message != NULL);
 
   GRPC_message_destroy(&serialized);
@@ -76,7 +78,10 @@ static bool op_send_object_fill(grpc_op *op, const grpc_method *method,
 
 static void op_send_object_finish(grpc_client_context *context,
                                   grpc_call_op_set *set, bool *status,
-                                  int max_message_size) {}
+                                  int max_message_size) {
+  if (set->send_buffer)
+    grpc_byte_buffer_destroy(set->send_buffer);
+}
 
 const grpc_op_manager grpc_op_send_object = {op_send_object_fill,
                                              op_send_object_finish};
