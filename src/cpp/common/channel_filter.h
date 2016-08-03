@@ -311,7 +311,7 @@ class ChannelFilter GRPC_FINAL {
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem,
-                                 const grpc_call_final_info* final_info,
+                                 const grpc_call_final_info *final_info,
                                  void *and_free_memory) {
     reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
   }
