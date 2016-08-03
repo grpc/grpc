@@ -159,13 +159,13 @@ static void SendUnaryRpc(GRPC_channel *channel,
 
     // manually deserializing
     int resplength = (int) resp[1];
-    char *response_string = (char *) malloc(resplength);
+    char *response_string = new char[resplength + 1];
     memcpy(response_string, ((char *) resp) + 2, resplength);
     response_string[resplength] = '\0';
 
     EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
 
-    free(response_string);
+    delete []response_string;
     GRPC_client_context_destroy(&context);
   }
 }
@@ -194,13 +194,13 @@ static void SendClientStreamingRpc(GRPC_channel *channel,
 
     // manually deserializing
     int resplength = (int) resp[1];
-    char *response_string = (char *) malloc(resplength);
+    char *response_string = new char[resplength + 1];
     memcpy(response_string, ((char *) resp) + 2, resplength);
     response_string[resplength] = '\0';
 
     EXPECT_EQ(grpc::string("gRPC-CgRPC-CgRPC-C"), grpc::string(response_string));
 
-    free(response_string);
+    delete []response_string;
     GRPC_client_context_destroy(&context);
   }
 }
@@ -224,12 +224,12 @@ static void SendServerStreamingRpc(GRPC_channel *channel,
     while (GRPC_server_streaming_blocking_read(reader, resp)) {
       // manually deserializing
       int resplength = (int) resp[1];
-      char *response_string = (char *) malloc(resplength);
+      char *response_string = new char[resplength + 1];
       memcpy(response_string, ((char *) resp) + 2, resplength);
       response_string[resplength] = '\0';
       EXPECT_EQ(grpc::string("gRPC-C") + grpc::to_string(count), grpc::string(response_string));
       count++;
-      free(response_string);
+      delete []response_string;
     }
     EXPECT_TRUE(count > 0);
 
@@ -267,11 +267,11 @@ static void SendBidiStreamingRpc(GRPC_channel *channel,
       received_num++;
       // manually deserializing
       int resplength = (int) resp[1];
-      char *response_string = (char *) malloc(resplength);
+      char *response_string = new char[resplength + 1];
       memcpy(response_string, ((char *) resp) + 2, resplength);
       response_string[resplength] = '\0';
       EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
-      free(response_string);
+      delete []response_string;
     }
     EXPECT_EQ(kNumMsgToSend, received_num);
 
@@ -310,13 +310,13 @@ static void SendAsyncUnaryRpc(GRPC_channel *channel,
 
     // manually deserializing
     int resplength = (int) resp[1];
-    char *response_string = (char *) malloc(resplength);
+    char *response_string = new char[resplength + 1];
     memcpy(response_string, ((char *) resp) + 2, resplength);
     response_string[resplength] = '\0';
 
     EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
 
-    free(response_string);
+    delete []response_string;
     GRPC_client_context_destroy(&context);
     GRPC_completion_queue_shutdown(cq);
     GRPC_completion_queue_shutdown_wait(cq);
