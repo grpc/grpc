@@ -41,9 +41,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 #define TRANSPORT_FROM_PARSING(tp)                                        \
   ((grpc_chttp2_transport *)((char *)(tp)-offsetof(grpc_chttp2_transport, \
@@ -668,8 +668,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
     if (!cached_timeout) {
       /* not already parsed: parse it now, and store the result away */
       cached_timeout = gpr_malloc(sizeof(gpr_timespec));
-      if (!grpc_chttp2_decode_timeout(grpc_mdstr_as_c_string(md->value),
-                                      cached_timeout)) {
+      if (!grpc_http2_decode_timeout(grpc_mdstr_as_c_string(md->value),
+                                     cached_timeout)) {
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
                 grpc_mdstr_as_c_string(md->value));
         *cached_timeout = gpr_inf_future(GPR_TIMESPAN);
