@@ -274,6 +274,8 @@ all: all_after_prereq
 test: test_after_prereq
 test_c: test_c_after_prereq
 test_cxx: test_cxx_after_prereq
+buildtests_c: buildtests_c_after_prereq
+buildtests_cxx: buildtests_cxx_after_prereq
 %:
 else
 # We need to install a local python-protobuf
@@ -294,6 +296,14 @@ test_cxx:
 	$(E) "[NANOPB]  Installing Nanopb dependencies"
 	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
 	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_cxx_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
+buildtests_c:
+	$(E) "[NANOPB]  Installing Nanopb dependencies"
+	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) buildtests_c_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
+buildtests_cxx:
+	$(E) "[NANOPB]  Installing Nanopb dependencies"
+	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) buildtests_cxx_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
 endif
 
 PROTOC ?= protoc
@@ -1276,7 +1286,7 @@ endif
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: privatelibs_c \
+buildtests_c_after_prereq: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
@@ -1436,7 +1446,7 @@ buildtests_c: privatelibs_c \
 
 
 ifeq ($(EMBED_OPENSSL),true)
-buildtests_cxx: privatelibs_cxx \
+buildtests_cxx_after_prereq: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
@@ -1523,7 +1533,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
 
 else
-buildtests_cxx: privatelibs_cxx \
+buildtests_cxx_after_prereq: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
@@ -16423,13 +16433,13 @@ test/cpp/util/test_config.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 
-.PHONY: all all_after_prereq strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_after_prereq test_c test_cxx test_c_after_prereq test_cxx_after_prereq install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
+.PHONY: all all_after_prereq strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx buildtests_c_after_prereq buildtests_cxx_after_prereq test test_after_prereq test_c test_cxx test_c_after_prereq test_cxx_after_prereq install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
 
 .PHONY: printvars
 printvars:
 	@$(foreach V,$(sort $(.VARIABLES)),                 	  $(if $(filter-out environment% default automatic, 	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
 
 # Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
-$(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOBUF_DEP)
+$(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOC_DEP)
 	$(E) "[NANOPB]  Compiling $<"
 	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<;

@@ -164,11 +164,13 @@
   test: test_after_prereq
   test_c: test_c_after_prereq
   test_cxx: test_cxx_after_prereq
+  buildtests_c: buildtests_c_after_prereq
+  buildtests_cxx: buildtests_cxx_after_prereq
   %:
   else
   # We need to install a local python-protobuf
   </%text>
-  %for tgt in ['all', 'test', 'test_c', 'test_cxx']:
+  %for tgt in ['all', 'test', 'test_c', 'test_cxx', 'buildtests_c', 'buildtests_cxx']:
   ${tgt}:
   	$(E) "[NANOPB]  Installing Nanopb dependencies"
   	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
@@ -983,7 +985,7 @@
 
   buildtests: buildtests_c buildtests_cxx
 
-  buildtests_c: privatelibs_c <%text>\</%text>
+  buildtests_c_after_prereq: privatelibs_c <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -992,7 +994,7 @@
 
 
   ifeq ($(EMBED_OPENSSL),true)
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
+  buildtests_cxx_after_prereq: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -1000,7 +1002,7 @@
   % endfor
 
   else
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
+  buildtests_cxx_after_prereq: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -1835,6 +1837,7 @@
   .PHONY: all all_after_prereq strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
+  buildtests_c_after_prereq buildtests_cxx_after_prereq \
   test test_after_prereq test_c test_cxx \
   test_c_after_prereq test_cxx_after_prereq \
   install install_c install_cxx \
@@ -1854,6 +1857,6 @@
   	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
 
   # Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
-  $(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOBUF_DEP)
+  $(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOC_DEP)
   	$(E) "[NANOPB]  Compiling $<"
   	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<;
