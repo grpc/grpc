@@ -34,15 +34,18 @@ setlocal
 @rem enter repo root
 cd /d %~dp0\..\..
 
-@rem Location of dotnet.exe
-set DOTNET=C:\dotnet\dotnet
+@rem Location of dotnet.exe and nuget.exe
+set NUGET=C:\nuget\nuget.exe
+set DOTNET=C:\dotnet\dotnet.exe
 
-cd src/csharp || goto :error
+if exist %NUGET% (
+  %NUGET% restore vsprojects/grpc_csharp_ext.sln || goto :error
+)
 
-if EXIST %DOTNET% (
+if exist %DOTNET% (
+  cd src/csharp || goto :error
   %DOTNET% restore || goto :error
-) ELSE (
-  dotnet restore || goto :error
+  cd ../.. || goto :error
 )
 
 endlocal
