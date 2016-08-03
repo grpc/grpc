@@ -67,6 +67,15 @@ static void test_should_not_log(gpr_log_func_args *args) { GPR_ASSERT(false); }
   gpr_log_message(SEVERITY, "hello 1 2 3");   \
   gpr_log(SEVERITY, "hello %d %d %d", 1, 2, 3);
 
+#define test_placeholder(type, SPECIFIER)                                   \
+  {                                                                         \
+    type num1 = 1;                                                          \
+    type num2 = 2;                                                          \
+    type num3 = 3;                                                          \
+    gpr_log(GPR_INFO, "hello " SPECIFIER " " SPECIFIER " " SPECIFIER, num1, \
+            num2, num3);                                                    \
+  }
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   /* test logging at various verbosity levels */
@@ -79,6 +88,13 @@ int main(int argc, char **argv) {
   gpr_log_message(GPR_INFO, "hello 1 2 3");
   gpr_log(GPR_INFO, "hello %d %d %d", 1, 2, 3);
   gpr_set_log_function(NULL);
+
+  /* Test placeholder macros */
+  test_placeholder(size_t, GPR_SIZE_T_SPECIFIER);
+  test_placeholder(ptrdiff_t, GPR_PTRDIFF_T_SPECIFIER);
+  test_placeholder(size_t, "%"PRIuPTR);
+  test_placeholder(intptr_t, "%"PRIdPTR);
+  test_placeholder(uintptr_t, "%"PRIuPTR);
 
   /* gpr_log_verbosity_init() will be effective only once, and only before
    * gpr_set_log_verbosity() is called */

@@ -37,6 +37,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
+#include <inttypes.h>
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -71,6 +72,14 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
 #define GPR_DEBUG __FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG
 #define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO
 #define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
+
+#ifdef GPR_WINDOWS_LOG
+#define GPR_SIZE_T_SPECIFIER "%Iu"
+#define GPR_PTRDIFF_T_SPECIFIER "%Id"
+#else
+#define GPR_SIZE_T_SPECIFIER "%zu"
+#define GPR_PTRDIFF_T_SPECIFIER "%zd"
+#endif /* GPR_WINDOWS_LOG */
 
 /* Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
