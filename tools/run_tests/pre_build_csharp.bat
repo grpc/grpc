@@ -34,8 +34,8 @@ setlocal
 @rem enter repo root
 cd /d %~dp0\..\..
 
-@rem Location of nuget.exe
-set DOTNET=~/dotnet-cli/dotnet
+@rem Location of dotnet.exe
+set DOTNET=C:\dotnet\dotnet
 
 cd src/csharp || goto :error
 

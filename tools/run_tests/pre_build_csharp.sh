@@ -35,15 +35,13 @@ cd $(dirname $0)/../../src/csharp
 
 root=`pwd`
 
-echo "pre build csharp"
-
-if [ -e ~/dotnet-cli/dotnet ]
+if [ -e /usr/local/bin/dotnet ]
 then
-  ~/dotnet-cli/dotnet restore
+  /usr/local/bin/dotnet restore
 elif [ -x "$(command -v dotnet)" ]
 then
   dotnet restore
 else
-  echo "dotnet cli not found, ensure this is ran with dotnet cli on PATH"
+  echo "dotnet cli not found"
   exit -1
 fi
