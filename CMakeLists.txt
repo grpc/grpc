@@ -158,7 +158,6 @@ if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
   set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/gRPC")
 endif()
 
-  
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
   src/core/lib/profiling/stap_timers.c
