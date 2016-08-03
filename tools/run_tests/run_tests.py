@@ -551,12 +551,14 @@ class CSharpLanguage(object):
     assembly_subdir = 'bin/%s' % msbuild_config
     assembly_extension = '.exe'
 
+    # Assembly subdirs for build outputs. Using wildcards in osx
+    # version to run tests on osx 10.10 and 10.11
     if self.args.compiler == 'coreclr':
       if self.platform == 'linux':
         assembly_subdir += '/netstandard1.5/debian.8-x64'
         assembly_extension = ''
       elif self.platform == 'mac':
-        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
+        assembly_subdir += '/netstandard1.5/osx.10.*-x64'
         assembly_extension = ''
       else:
         assembly_subdir += '/netstandard1.5/win7-x64'
@@ -565,7 +567,7 @@ class CSharpLanguage(object):
       if self.platform == 'linux':
         assembly_subdir += '/net45/debian.8-x64'
       elif self.platform == 'mac':
-        assembly_subdir += '/net45/osx.10.11-x64'
+        assembly_subdir += '/net45/osx.10.*-x64'
       else:
         assembly_subdir += '/net45/win7-x64'
 

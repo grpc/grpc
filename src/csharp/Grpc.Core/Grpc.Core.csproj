@@ -41,8 +41,8 @@
     <Reference Include="System" />
     <Reference Include="System.Interactive.Async">
       <!-- Support package restores in solution or project directories -->
-      <HintPath Condition="Exists('..\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll')">..\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
-      <HintPath Condition="Exists('.\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll')">.\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
+      <HintPath>..\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
+      <HintPath>.\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
