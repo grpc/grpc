@@ -160,7 +160,8 @@ int grpc_chttp2_unlocking_check_writes(
 
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
      also; 3/4 is a magic number that will likely get tuned soon */
-  if (transport_global->announce_incoming_window > 0) {
+  if (transport_global->sent_local_settings &&
+      transport_global->announce_incoming_window > 0) {
     uint32_t announced = (uint32_t)GPR_MIN(
         transport_global->announce_incoming_window, UINT32_MAX);
     GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", transport_global,
