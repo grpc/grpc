@@ -277,19 +277,23 @@ test_cxx: test_cxx_after_prereq
 %:
 else
 # We need to install a local python-protobuf
-NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX)
-NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF := $(shell pushd $(NANOPB_VENV_DIR); virtualenv $(NANOPB_VENV_DIR); source $(NANOPB_VENV_DIR)/bin/activate; popd; pip install protobuf==3.0.0b2)
-# Trigger variable evaluation
-NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF_OUTPUT := $(NANOPB_PRECOMPILE_INSTALL_PIP_PROTOBUF)
 
 all:
-	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) all_after_prereq; 	deactivate
+	$(E) "[NANOPB]  Installing Nanopb dependencies"
+	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) all_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
 test:
-	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) test_after_prereq; 	deactivate
+	$(E) "[NANOPB]  Installing Nanopb dependencies"
+	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
 test_c:
-	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) test_c_after_prereq; 	deactivate
+	$(E) "[NANOPB]  Installing Nanopb dependencies"
+	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_c_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
 test_cxx:
-	$(Q) source $(NANOPB_VENV_DIR)/bin/activate; 	trap 'rm -rf "$(NANOPB_VENV_DIR)"' EXIT; 	NANOPB_VENV_DIR_PARAM=$(NANOPB_VENV_DIR); 	$(MAKE) $(MFLAGS) test_cxx_after_prereq; 	deactivate
+	$(E) "[NANOPB]  Installing Nanopb dependencies"
+	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_cxx_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
 endif
 
 PROTOC ?= protoc
