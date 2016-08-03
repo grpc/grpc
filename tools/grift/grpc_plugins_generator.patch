@@ -59,7 +59,7 @@ index 6fd15d2..7de1fad 100755
 2.8.0.rc3.226.g39d4020
 
 
-From c8577ad5513543c57a81ad1bf4927cc8a78baa03 Mon Sep 17 00:00:00 2001
+From e724d3abf096278615085bd58217321e32b43fd8 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:16:40 -0700
 Subject: [PATCH 2/3] grpc cpp plugins generator with example
@@ -69,16 +69,16 @@ Subject: [PATCH 2/3] grpc cpp plugins generator with example
  tutorial/cpp/CMakeLists.txt                  |  53 ---
  tutorial/cpp/CppClient.cpp                   |  80 -----
  tutorial/cpp/CppServer.cpp                   | 181 ----------
- tutorial/cpp/GrpcClient.cpp                  |  94 ++++++
- tutorial/cpp/GrpcServer.cpp                  |  87 +++++
+ tutorial/cpp/GriftClient.cpp                 |  93 ++++++
+ tutorial/cpp/GriftServer.cpp                 |  93 ++++++
  tutorial/cpp/Makefile.am                     |  66 ++--
  tutorial/cpp/test.thrift                     |  13 +
- 8 files changed, 636 insertions(+), 416 deletions(-)
+ 8 files changed, 641 insertions(+), 416 deletions(-)
  delete mode 100644 tutorial/cpp/CMakeLists.txt
  delete mode 100644 tutorial/cpp/CppClient.cpp
  delete mode 100644 tutorial/cpp/CppServer.cpp
- create mode 100644 tutorial/cpp/GrpcClient.cpp
- create mode 100644 tutorial/cpp/GrpcServer.cpp
+ create mode 100644 tutorial/cpp/GriftClient.cpp
+ create mode 100644 tutorial/cpp/GriftServer.cpp
  create mode 100644 tutorial/cpp/test.thrift
 
 diff --git a/compiler/cpp/src/generate/t_cpp_generator.cc b/compiler/cpp/src/generate/t_cpp_generator.cc
@@ -1147,12 +1147,12 @@ index eafffa9..0000000
 -  cout << "Done." << endl;
 -  return 0;
 -}
-diff --git a/tutorial/cpp/GrpcClient.cpp b/tutorial/cpp/GrpcClient.cpp
+diff --git a/tutorial/cpp/GriftClient.cpp b/tutorial/cpp/GriftClient.cpp
 new file mode 100644
-index 0000000..ab1fe77
+index 0000000..647a683
 --- /dev/null
-+++ b/tutorial/cpp/GrpcClient.cpp
-@@ -0,0 +1,94 @@
++++ b/tutorial/cpp/GriftClient.cpp
+@@ -0,0 +1,93 @@
 +/*
 + *
 + * Copyright 2016, Google Inc.
@@ -1198,7 +1198,6 @@ index 0000000..ab1fe77
 +using grpc::ClientContext;
 +using grpc::Status;
 +using test::Greeter;
-+using namespace test;
 +
 +class GreeterClient {
 + public:
@@ -1247,12 +1246,12 @@ index 0000000..ab1fe77
 +
 +  return 0;
 +}
-diff --git a/tutorial/cpp/GrpcServer.cpp b/tutorial/cpp/GrpcServer.cpp
+diff --git a/tutorial/cpp/GriftServer.cpp b/tutorial/cpp/GriftServer.cpp
 new file mode 100644
-index 0000000..f63db57
+index 0000000..7c01606
 --- /dev/null
-+++ b/tutorial/cpp/GrpcServer.cpp
-@@ -0,0 +1,87 @@
++++ b/tutorial/cpp/GriftServer.cpp
+@@ -0,0 +1,93 @@
 +/*
 + *
 + * Copyright 2016, Google Inc.
@@ -1301,11 +1300,14 @@ index 0000000..f63db57
 +using grpc::Status;
 +using test::Greeter;
 +
-+using namespace grpc;
-+using namespace test;
-+
 +// Logic and data behind the server's behavior.
 +class GreeterServiceImpl final : public Greeter::Service {
++ public:
++  ~GreeterServiceImpl() {
++    // shutdown server
++    server->Shutdown();
++  }
++
 +  Status SayHello(ServerContext* context,const Greeter::SayHelloReq* request,
 +                  Greeter::SayHelloResp* reply) override {
 +    std::string prefix("Hello ");
@@ -1314,34 +1316,37 @@ index 0000000..f63db57
 +
 +    return Status::OK;
 +  }
++
++  void RunServer() {
++    std::string server_address("0.0.0.0:50051");
++
++    ServerBuilder builder;
++    // Listen on the given address without any authentication mechanism.
++    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
++    // Register "service" as the instance through which we'll communicate with
++    // clients. In this case it corresponds to an *synchronous* service.
++    builder.RegisterService(this);
++    // Finally assemble the server.
++    server = builder.BuildAndStart();
++    std::cout << "Server listening on " << server_address << std::endl;
++
++    // Wait for the server to shutdown. Note that some other thread must be
++    // responsible for shutting down the server for this call to ever return.
++    server->Wait();
++  }
++
++ private:
++  std::unique_ptr<Server> server;
 +};
 +
-+void RunServer() {
-+  std::string server_address("0.0.0.0:50051");
-+  GreeterServiceImpl service;
-+
-+  ServerBuilder builder;
-+  // Listen on the given address without any authentication mechanism.
-+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-+  // Register "service" as the instance through which we'll communicate with
-+  // clients. In this case it corresponds to an *synchronous* service.
-+  builder.RegisterService(&service);
-+  // Finally assemble the server.
-+  std::unique_ptr<Server> server(builder.BuildAndStart());
-+  std::cout << "Server listening on " << server_address << std::endl;
-+
-+  // Wait for the server to shutdown. Note that some other thread must be
-+  // responsible for shutting down the server for this call to ever return.
-+  server->Wait();
-+}
-+
 +int main() {
-+  RunServer();
++  GreeterServiceImpl service;
++  service.RunServer();
 +
 +  return 0;
 +}
 diff --git a/tutorial/cpp/Makefile.am b/tutorial/cpp/Makefile.am
-index 184a69d..39d85e1 100755
+index 184a69d..6f91e28 100755
 --- a/tutorial/cpp/Makefile.am
 +++ b/tutorial/cpp/Makefile.am
 @@ -18,44 +18,38 @@
@@ -1390,7 +1395,7 @@ index 184a69d..39d85e1 100755
 -TutorialServer_SOURCES = \
 -	CppServer.cpp
 +TestServer_SOURCES = \
-+	GrpcServer.cpp
++	GriftServer.cpp
  
 -TutorialServer_LDADD = \
 -	libtutorialgencpp.la \
@@ -1401,7 +1406,7 @@ index 184a69d..39d85e1 100755
 -TutorialClient_SOURCES = \
 -	CppClient.cpp
 +TestClient_SOURCES = \
-+	GrpcClient.cpp
++	GriftClient.cpp
  
 -TutorialClient_LDADD = \
 -	libtutorialgencpp.la \
@@ -1444,8 +1449,8 @@ index 184a69d..39d85e1 100755
  	CMakeLists.txt \
 -	CppClient.cpp \
 -	CppServer.cpp
-+	GrpcClient.cpp \
-+	GrpcServer.cpp
++	GriftClient.cpp \
++	GriftServer.cpp
 diff --git a/tutorial/cpp/test.thrift b/tutorial/cpp/test.thrift
 new file mode 100644
 index 0000000..de3c9a4
@@ -1470,7 +1475,7 @@ index 0000000..de3c9a4
 2.8.0.rc3.226.g39d4020
 
 
-From 096042c132126536870eea118127cf1e608969bc Mon Sep 17 00:00:00 2001
+From f991f33dd6461eae197b6ad0e7088b571f2a7b22 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:23:53 -0700
 Subject: [PATCH 3/3] grpc java plugins generator

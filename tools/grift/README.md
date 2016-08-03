@@ -2,7 +2,7 @@ Copyright 2016 Google Inc.
 
 #Documentation
 
-grift is integration of [Apache Thrift](https://github.com/apache/thrift.git) Serializer with GRPC.
+grift is integration of [Apache Thrift](https://github.com/apache/thrift.git) Serializer with gRPC.
 
 This integration allows you to use grpc to send thrift messages in C++ and java.
 

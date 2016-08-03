@@ -46,8 +46,8 @@ RUN apt-get update && \
   curl make automake libtool
 
 # Configure git
-RUN git config --global user.name " " && \
-  git config --global user.email " "
+RUN git config --global user.name "Jenkins" && \
+  git config --global user.email "jenkins@grpc"
 
 RUN git clone https://github.com/grpc/grpc
 
