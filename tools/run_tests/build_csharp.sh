@@ -36,4 +36,4 @@ cd $(dirname $0)/../../src/csharp
 # previous NativeDependenciesConfigurationUnix arg to xbuild
 
 # All non-coreclr builds use net45 framework currently
-dotnet build -f net45 --configuration $MSBUILD_CONFIG **/project.json
+dotnet build -f net45 --output . --configuration $MSBUILD_CONFIG **/project.json
