@@ -59,7 +59,6 @@
     "OpenCover": "4.6.519",
     "ReportGenerator": "2.4.4.0"
   },
-
   "frameworks": {
     "net45": { },
     "netcoreapp1.0": {
