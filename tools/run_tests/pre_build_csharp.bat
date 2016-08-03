@@ -35,7 +35,8 @@ setlocal
 cd /d %~dp0\..\..
 
 @rem Location of nuget.exe
-set NUGET=C:\nuget\nuget.exe
+@rem TODO: change this before submitting. This is only for migrating nuget
+set NUGET=C:\nuget_temp\nuget.exe
 
 if exist %NUGET% (
   @rem Restore Grpc packages by packages since Nuget client 3.4.4 doesnt support restore
