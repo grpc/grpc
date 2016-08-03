@@ -364,6 +364,7 @@ add_library(grpc
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
@@ -386,7 +387,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
-  src/core/ext/transport/chttp2/transport/timeout_encoding.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
@@ -442,6 +442,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/lb_policy/grpclb/grpclb.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
@@ -453,6 +454,7 @@ add_library(grpc
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
   src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
   src/core/ext/census/grpc_context.c
@@ -462,6 +464,7 @@ add_library(grpc
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
+  src/core/ext/census/resource.c
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
@@ -617,6 +620,7 @@ add_library(grpc_cronet
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
@@ -642,7 +646,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
-  src/core/ext/transport/chttp2/transport/timeout_encoding.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
@@ -847,6 +850,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
@@ -870,7 +874,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/status_conversion.c
   src/core/ext/transport/chttp2/transport/stream_lists.c
   src/core/ext/transport/chttp2/transport/stream_map.c
-  src/core/ext/transport/chttp2/transport/timeout_encoding.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
@@ -899,6 +902,7 @@ add_library(grpc_unsecure
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
   src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/ext/lb_policy/grpclb/grpclb.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
@@ -906,6 +910,7 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_encode.c
   src/core/ext/lb_policy/pick_first/pick_first.c
   src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
   src/core/ext/census/grpc_context.c
@@ -915,6 +920,7 @@ add_library(grpc_unsecure
   src/core/ext/census/mlog.c
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
+  src/core/ext/census/resource.c
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )

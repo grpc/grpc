@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,33 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H
+/* Census-internal resource definition and manipluation functions. */
+#ifndef GRPC_CORE_EXT_CENSUS_RESOURCE_H
+#define GRPC_CORE_EXT_CENSUS_RESOURCE_H
 
-#include <grpc/support/time.h>
-#include "src/core/lib/support/string.h"
+#include <grpc/grpc.h>
+#include "src/core/ext/census/gen/census.pb.h"
 
-#define GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
+/* Internal representation of a resource. */
+typedef struct {
+  char *name;
+  char *description;
+  int32_t prefix;
+  int n_numerators;
+  google_census_Resource_BasicUnit *numerators;
+  int n_denominators;
+  google_census_Resource_BasicUnit *denominators;
+} resource;
 
-/* Encode/decode timeouts to the GRPC over HTTP2 format;
-   encoding may round up arbitrarily */
-void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer);
-int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout);
+/* Initialize and shutdown the resources subsystem. */
+void initialize_resources(void);
+void shutdown_resources(void);
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H */
+/* Add a new resource, given a proposed resource structure. Returns the
+   resource ID, or -ve on failure.
+   TODO(aveitch): this function exists to support addition of the base
+   resources. It should be removed when we have the ability to add resources
+   from configuration files. */
+int32_t define_resource(const resource *base);
+
+#endif /* GRPC_CORE_EXT_CENSUS_RESOURCE_H */

@@ -107,8 +107,9 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(call_data));
 
@@ -125,6 +126,8 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                                 NULL,
                                                 NULL};
   */
+
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */

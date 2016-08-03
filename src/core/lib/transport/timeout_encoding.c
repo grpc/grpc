@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -117,7 +117,7 @@ static void enc_micros(char *buffer, int64_t x) {
   }
 }
 
-void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer) {
+void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer) {
   if (timeout.tv_sec < 0) {
     enc_tiny(buffer);
   } else if (timeout.tv_sec == 0) {
@@ -136,7 +136,7 @@ static int is_all_whitespace(const char *p) {
   return *p == 0;
 }
 
-int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
+int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
   int32_t x = 0;
   const uint8_t *p = (const uint8_t *)buffer;
   int have_digit = 0;
