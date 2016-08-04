@@ -43,8 +43,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/profiling/timers.h"
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
@@ -131,7 +131,7 @@ static void wakeup(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   GPR_TIMER_BEGIN("workqueue.on_readable", 0);
-  
+
   grpc_workqueue *workqueue = arg;
 
   if (error != GRPC_ERROR_NONE) {
@@ -176,7 +176,7 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       GRPC_ERROR_UNREF(clerr);
     }
   }
-  
+
   GPR_TIMER_END("workqueue.on_readable", 0);
 }
 

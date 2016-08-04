@@ -42,11 +42,19 @@ python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build gRPC Python extensions
 python setup.py build_ext -c mingw32
-python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
+
+pushd tools\distrib\python\grpcio_tools
+python setup.py build_ext -c mingw32
+popd
+
 
 @rem Build gRPC Python distributions
 python setup.py bdist_wheel
-python tools\distrib\python\grpcio_tools\setup.py bdist_wheel
+
+pushd tools\distrib\python\grpcio_tools
+python setup.py bdist_wheel
+popd
+
 
 mkdir artifacts
 xcopy /Y /I /S dist\* artifacts\ || goto :error

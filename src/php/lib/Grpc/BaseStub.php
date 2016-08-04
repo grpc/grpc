@@ -84,8 +84,8 @@ class BaseStub
         }
         if ($channel) {
             if (!is_a($channel, 'Channel')) {
-                throw new \Exception("The channel argument is not a".
-                                     "Channel object");
+                throw new \Exception('The channel argument is not a'.
+                                     'Channel object');
             }
             $this->channel = $channel;
         } else {

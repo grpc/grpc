@@ -46,12 +46,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
@@ -1940,6 +1940,7 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
 static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
   grpc_chttp2_transport *t = arg;
+  grpc_error *err = GRPC_ERROR_NONE;
   GPR_TIMER_BEGIN("reading_action.parse", 0);
   size_t i = 0;
   grpc_error *errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
@@ -1948,15 +1949,13 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
     errors[1] = grpc_chttp2_perform_read(exec_ctx, &t->parsing,
                                          t->read_buffer.slices[i]);
   };
-  if (i != t->read_buffer.count) {
+  if (errors[1] == GRPC_ERROR_NONE) {
+    err = GRPC_ERROR_REF(error);
+  } else {
     errors[2] = try_http_parsing(exec_ctx, t);
+    err = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
+                                        GPR_ARRAY_SIZE(errors));
   }
-  grpc_error *err =
-      errors[0] == GRPC_ERROR_NONE && errors[1] == GRPC_ERROR_NONE &&
-              errors[2] == GRPC_ERROR_NONE
-          ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
-                                          GPR_ARRAY_SIZE(errors));
   for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
     GRPC_ERROR_UNREF(errors[i]);
   }
@@ -2144,9 +2143,12 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_global *stream_global = &bs->stream->global;
 
   if (bs->is_tail) {
+    gpr_mu_lock(&bs->slice_mu);
+    size_t cur_length = bs->slices.length;
+    gpr_mu_unlock(&bs->slice_mu);
     incoming_byte_stream_update_flow_control(
         exec_ctx, transport_global, stream_global,
-        bs->next_action.max_size_hint, bs->slices.length);
+        bs->next_action.max_size_hint, cur_length);
   }
   gpr_mu_lock(&bs->slice_mu);
   if (bs->slices.count > 0) {
