@@ -297,7 +297,8 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
   // We've established a connection, so send back a 200 response code to
   // the client.
   // The write callback inherits our reference to conn.
-  gpr_slice slice = gpr_slice_from_copied_string("200 connected\r\n\r\n");
+  gpr_slice slice =
+      gpr_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
   gpr_slice_buffer_add(&conn->client_write_buffer, slice);
   grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                       &conn->client_write_buffer,
@@ -323,7 +324,7 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
     if (GPR_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
       error = grpc_http_parser_parse(
-          &conn->http_parser, conn->client_read_buffer.slices[i]);
+          &conn->http_parser, conn->client_read_buffer.slices[i], NULL);
       if (error != GRPC_ERROR_NONE) {
         proxy_connection_failed(exec_ctx, conn, true /* is_client */,
                                 "HTTP proxy request parse", error);
