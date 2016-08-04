@@ -122,8 +122,7 @@ class ThriftSerializer {
   // Deserialize the passed char array into  the passed type, returns the number
   // of bytes that have been consumed from the passed string.
   template <typename T>
-  uint32_t Deserialize(const uint8_t* serialized_buffer, size_t length,
-                       T* fields) {
+  uint32_t Deserialize(uint8_t* serialized_buffer, size_t length, T* fields) {
     // prepare buffer if necessary
     if (!prepared_) {
       prepare();
@@ -131,7 +130,7 @@ class ThriftSerializer {
     last_deserialized_ = true;
 
     // reset buffer transport
-    buffer_->resetBuffer(const_cast<uint8_t*>(serialized_buffer), length);
+    buffer_->resetBuffer(serialized_buffer, length);
 
     // read the protocol version if necessary
     if (serialize_version_) {
@@ -200,10 +199,9 @@ class ThriftSerializer {
   bool serialize_version_;
 
   void prepare() {
-    buffer_ = boost::make_shared<TMemoryBuffer>(*(new TMemoryBuffer()));
+    buffer_ = boost::make_shared<TMemoryBuffer>();
     // create a protocol for the memory buffer transport
-    protocol_ = std::make_shared<Protocol>(*(new Protocol(buffer_)));
-
+    protocol_ = std::make_shared<Protocol>(buffer_);
     prepared_ = true;
   }
 
