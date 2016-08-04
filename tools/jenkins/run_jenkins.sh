@@ -53,6 +53,7 @@ then
   virtualenv ${MACOS_NANOPB_VIRTUAL_ENV}
   source ${MACOS_NANOPB_VIRTUAL_ENV}/bin/activate
   pip install protobuf==3.0.0b2
+  pip install virtualenv
 fi
 
 unset platform  # variable named 'platform' breaks the windows build
