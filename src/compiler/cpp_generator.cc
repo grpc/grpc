@@ -826,6 +826,22 @@ void PrintHeaderService(Printer *printer, const Service *service,
     PrintHeaderServerMethodFCUnary(printer, service->method(i).get(), vars);
   }
 
+  printer->Print("typedef ");
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i).get()->name();
+    if (service->method(i)->NoStreaming()) {
+      printer->Print(*vars, "WithFCUnaryMethod_$method_name$<");
+    }
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    if (service->method(i)->NoStreaming()) {
+      printer->Print(" >");
+    }
+  }
+  printer->Print(" FCUnaryService;\n");
+
+
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(service->GetTrailingComments().c_str());
