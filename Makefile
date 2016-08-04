@@ -263,9 +263,9 @@ NANOPB_DEP := $(NANOPB_DIR)/generator/proto/nanopb_pb2.py $(NANOPB_DIR)/generato
 
 
 SYSTEM_PYTHON_PROTOBUF_GOOD := $(shell \
-PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
-major=( $${version//./ } );\
-majordef=$${major:-0};\
+PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null || true`; \
+major=`echo $$version | sed 's/\([0-9]*\).*/\1/'`; \
+majordef=$${major:-0}; \
 if [[ $$majordef -ge 3 ]]; then echo true; else echo false; fi;)
 
 ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
