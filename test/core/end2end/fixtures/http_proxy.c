@@ -77,15 +77,6 @@ typedef struct proxy_connection {
   grpc_endpoint* server_endpoint;
 
   gpr_refcount refcount;
-  bool client_shutdown;
-  bool server_shutdown;
-  bool client_write_pending;
-  bool server_write_pending;
-
-size_t client_bytes_read;
-size_t client_bytes_written;
-size_t server_bytes_read;
-size_t server_bytes_written;
 
   grpc_pollset_set* pollset_set;
 
@@ -109,26 +100,23 @@ size_t server_bytes_written;
 } proxy_connection;
 
 // Helper function to destroy the proxy connection.
-static void proxy_connection_destroy(grpc_exec_ctx* exec_ctx,
-                                     proxy_connection* conn) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
-gpr_log(GPR_INFO, "client_bytes_read=%lu", conn->client_bytes_read);
-gpr_log(GPR_INFO, "server_bytes_written=%lu", conn->server_bytes_written);
-gpr_log(GPR_INFO, "server_bytes_read=%lu", conn->server_bytes_read);
-gpr_log(GPR_INFO, "client_bytes_written=%lu", conn->client_bytes_written);
-  // Tell the server to shut down when this connection is closed.
-  conn->proxy->shutdown = true;
-  grpc_endpoint_destroy(exec_ctx, conn->client_endpoint);
-  if (conn->server_endpoint != NULL)
-    grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
-  grpc_pollset_set_destroy(conn->pollset_set);
-  gpr_slice_buffer_destroy(&conn->client_read_buffer);
-  gpr_slice_buffer_destroy(&conn->client_write_buffer);
-  gpr_slice_buffer_destroy(&conn->server_read_buffer);
-  gpr_slice_buffer_destroy(&conn->server_write_buffer);
-  grpc_http_parser_destroy(&conn->http_parser);
-  grpc_http_request_destroy(&conn->http_request);
-  gpr_free(conn);
+static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
+                                   proxy_connection* conn) {
+  if (gpr_unref(&conn->refcount)) {
+    // Tell the server to shut down when this connection is closed.
+    conn->proxy->shutdown = true;
+    grpc_endpoint_destroy(exec_ctx, conn->client_endpoint);
+    if (conn->server_endpoint != NULL)
+      grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
+    grpc_pollset_set_destroy(conn->pollset_set);
+    gpr_slice_buffer_destroy(&conn->client_read_buffer);
+    gpr_slice_buffer_destroy(&conn->client_write_buffer);
+    gpr_slice_buffer_destroy(&conn->server_read_buffer);
+    gpr_slice_buffer_destroy(&conn->server_write_buffer);
+    grpc_http_parser_destroy(&conn->http_parser);
+    grpc_http_request_destroy(&conn->http_request);
+    gpr_free(conn);
+  }
 }
 
 // Helper function to shut down the proxy connection.
@@ -136,20 +124,13 @@ gpr_log(GPR_INFO, "client_bytes_written=%lu", conn->client_bytes_written);
 static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
                                     proxy_connection* conn, bool is_client,
                                     const char* prefix, grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   const char* msg = grpc_error_string(error);
   gpr_log(GPR_ERROR, "%s: %s", prefix, msg);
   grpc_error_free_string(msg);
-  if (is_client || !conn->client_write_pending) {
-    grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint);
-    conn->client_shutdown = true;
-  }
-  if (!is_client || !conn->server_write_pending) {
+  grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint);
+  if (conn->server_endpoint != NULL)
     grpc_endpoint_shutdown(exec_ctx, conn->server_endpoint);
-    conn->server_shutdown = true;
-  }
-  if (gpr_unref(&conn->refcount))
-    proxy_connection_destroy(exec_ctx, conn);
+  proxy_connection_unref(exec_ctx, conn);
 }
 
 // Forward declarations.
@@ -159,50 +140,37 @@ static void do_server_read(grpc_exec_ctx* exec_ctx, proxy_connection* conn);
 // Callback for writing proxy data to the client.
 static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                                  grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
-  conn->client_write_pending = false;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(exec_ctx, conn, true /* is_client */,
                             "HTTP proxy client write", error);
     return;
   }
-  gpr_unref(&conn->refcount);
   // Clear write buffer.
-gpr_log(GPR_INFO, "wrote %lu bytes to client", conn->client_write_buffer.length);
-conn->client_bytes_written += conn->client_write_buffer.length;
   gpr_slice_buffer_reset_and_unref(&conn->client_write_buffer);
-  // If the server has been shut down, shut down the client now.
-  if (conn->server_shutdown)
-    grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint);
+  // Unref the connection.
+  proxy_connection_unref(exec_ctx, conn);
 }
 
 // Callback for writing proxy data to the backend server.
 static void on_server_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                                  grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
-  conn->server_write_pending = false;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(exec_ctx, conn, false /* is_client */,
                             "HTTP proxy server write", error);
     return;
   }
-  gpr_unref(&conn->refcount);
   // Clear write buffer.
-gpr_log(GPR_INFO, "wrote %lu bytes to server", conn->server_write_buffer.length);
-conn->server_bytes_written += conn->server_write_buffer.length;
   gpr_slice_buffer_reset_and_unref(&conn->server_write_buffer);
-  // If the client has been shut down, shut down the server now.
-  if (conn->client_shutdown)
-    grpc_endpoint_shutdown(exec_ctx, conn->server_endpoint);
+  // Unref the connection.
+  proxy_connection_unref(exec_ctx, conn);
 }
 
 // Callback for reading data from the client, which will be proxied to
 // the backend server.
 static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(exec_ctx, conn, true /* is_client */,
@@ -211,11 +179,8 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
   }
   // Move read data into write buffer and write it.
   // The write operation inherits our reference to conn.
-gpr_log(GPR_INFO, "read %lu bytes from client", conn->client_read_buffer.length);
-conn->client_bytes_read += conn->client_read_buffer.length;
   gpr_slice_buffer_move_into(&conn->client_read_buffer,
                              &conn->server_write_buffer);
-  conn->server_write_pending = true;
   grpc_endpoint_write(exec_ctx, conn->server_endpoint,
                       &conn->server_write_buffer, &conn->on_server_write_done);
   // Read more data.
@@ -226,7 +191,6 @@ conn->client_bytes_read += conn->client_read_buffer.length;
 // proxied to the client.
 static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(exec_ctx, conn, false /* is_client */,
@@ -235,11 +199,8 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
   }
   // Move read data into write buffer and write it.
   // The write operation inherits our reference to conn.
-gpr_log(GPR_INFO, "read %lu bytes from server", conn->server_read_buffer.length);
-conn->server_bytes_read += conn->server_read_buffer.length;
   gpr_slice_buffer_move_into(&conn->server_read_buffer,
                              &conn->client_write_buffer);
-  conn->client_write_pending = true;
   grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                       &conn->client_write_buffer, &conn->on_client_write_done);
   // Read more data.
@@ -249,7 +210,6 @@ conn->server_bytes_read += conn->server_read_buffer.length;
 // Callback to write the HTTP response for the CONNECT request.
 static void on_write_response_done(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(exec_ctx, conn, true /* is_client */,
@@ -282,7 +242,6 @@ static void do_server_read(grpc_exec_ctx* exec_ctx, proxy_connection* conn) {
 // CONNECT request.
 static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
   if (error != GRPC_ERROR_NONE) {
     // TODO(roth): Technically, in this case, we should handle the error
@@ -313,7 +272,6 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
 // which will cause the client connection to be dropped.
 static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
                                  grpc_error* error) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   proxy_connection* conn = arg;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(exec_ctx, conn, true /* is_client */,
@@ -377,7 +335,6 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
 static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
                       grpc_endpoint* endpoint, grpc_pollset* accepting_pollset,
                       grpc_tcp_server_acceptor* acceptor) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   grpc_end2end_http_proxy* proxy = arg;
   // Instantiate proxy_connection.
   proxy_connection* conn = gpr_malloc(sizeof(*conn));
