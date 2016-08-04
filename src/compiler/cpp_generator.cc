@@ -131,6 +131,7 @@ grpc::string GetHeaderIncludes(File *file, const Parameters &params) {
         "grpc++/impl/codegen/async_stream.h",
         "grpc++/impl/codegen/async_unary_call.h",
         "grpc++/impl/codegen/fc_unary.h",
+        "grpc++/impl/codegen/method_handler_impl.h",
         "grpc++/impl/codegen/proto_utils.h",
         "grpc++/impl/codegen/rpc_method.h",
         "grpc++/impl/codegen/service_type.h",

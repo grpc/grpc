@@ -37,11 +37,10 @@
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/completion_queue.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc++/impl/codegen/method_handler_impl.h>
 #include <grpc++/impl/codegen/server_context.h>
+#include <grpc++/impl/codegen/sync_stream.h>
 
 namespace grpc {
-
 /// A class to represent a flow-controlled unary call. This is something
 /// of a hybrid between conventional unary and streaming. This is invoked
 /// through a unary call on the client side, but the server responds to it
@@ -52,51 +51,32 @@ namespace grpc {
 /// and exactly 1 Write, in that order, to function correctly.
 /// Otherwise, the RPC is in error.
 template <class RequestType, class ResponseType>
-  class FCUnary GRPC_FINAL {
- public:
- FCUnary(Call* call, ServerContext* ctx): call_(call), ctx_(ctx), read_done_(false), write_done_(false) {}
+  class FCUnary GRPC_FINAL : public ServerReaderWriterInterface<ResponseType, RequestType> {
+public:
+  FCUnary(Call* call, ServerContext* ctx): ServerReaderWriterInterface<ResponseType,RequestType>(call, ctx) , read_done_(false), write_done_(false) {}
+
   ~FCUnary() {}
-  bool NextMessageSize(uint32_t *sz) {
-    *sz = call_->max_message_size();
-    return true;
-  }
-  bool Read(RequestType *request) {
+
+  bool Read(RequestType *request) GRPC_OVERRIDE {
     if (read_done_) {
       return false;      
     }
     read_done_ = true;
-    CallOpSet<CallOpRecvMessage<RequestType>> ops;
-    ops.RecvMessage(request);
-    call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops) && ops.got_message;
+    return ServerReaderWriterInterface<ResponseType,RequestType>::Read(request);
   }
-  bool Write(const ResponseType& response) {return Write(response, WriteOptions());}
-  bool Write(const ResponseType& response, const WriteOptions& options) {
+
+  using WriterInterface<ResponseType>::Write;
+  bool Write(const ResponseType& response, const WriteOptions& options) GRPC_OVERRIDE {
     if (write_done_ || !read_done_) {
       return false;      
     }
     write_done_ = true;
-    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
-    if (!ops.SendMessage(response, options).ok()) {
-      return false;
-    }
-    if (!ctx_->sent_initial_metadata_) {
-      ops.SendInitialMetadata(ctx_->initial_metadata_,
-                              ctx_->initial_metadata_flags());
-      ctx_->sent_initial_metadata_ = true;
-    } else {
-      return false;
-    }
-    call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops);    
+    return ServerReaderWriterInterface<ResponseType,RequestType>::Write(response, options);
   }
  private:
-  Call* const call_;
-  ServerContext* const ctx_;
   bool read_done_;
   bool write_done_;
 };
-
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_FC_UNARY_H

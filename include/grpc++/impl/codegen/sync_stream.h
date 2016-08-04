@@ -429,12 +429,11 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
 
 /// Server-side interface for bi-directional streaming.
 template <class W, class R>
-class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
-                                      public ReaderInterface<R> {
- public:
-  ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
-
-  void SendInitialMetadata() {
+class ServerReaderWriterInterface : public WriterInterface<W>,
+                                    public ReaderInterface<R> {
+public:
+  ServerReaderWriterInterface(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  virtual void SendInitialMetadata() {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -448,12 +447,12 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     call_->cq()->Pluck(&ops);
   }
 
-  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+  virtual bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
     *sz = call_->max_message_size();
     return true;
   }
 
-  bool Read(R* msg) GRPC_OVERRIDE {
+  virtual bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
@@ -461,7 +460,7 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  virtual bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return false;
@@ -477,10 +476,15 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     call_->PerformOps(&ops);
     return call_->cq()->Pluck(&ops);
   }
-
- private:
+private:
   Call* const call_;
   ServerContext* const ctx_;
+};
+
+template <class W, class R>
+class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W,R> {
+public:  
+  ServerReaderWriter(Call* call, ServerContext* ctx) : ServerReaderWriterInterface<W,R>(call, ctx) {}
 };
 
 }  // namespace grpc
