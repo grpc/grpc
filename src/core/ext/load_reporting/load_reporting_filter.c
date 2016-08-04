@@ -45,7 +45,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-int grpc_load_reporting_trace = 0;
+extern int grpc_load_reporting_trace;
 
 typedef struct call_data {
   /* an id unique to the call */

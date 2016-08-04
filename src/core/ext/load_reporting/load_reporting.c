@@ -42,6 +42,8 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 
+int grpc_load_reporting_trace = 0;
+
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
   if (a == NULL) return false;
   for (size_t i = 0; i < a->num_args; i++) {
@@ -58,6 +60,7 @@ static bool maybe_add_load_reporting_filter(grpc_channel_stack_builder *builder,
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (is_load_reporting_enabled(args)) {
+    grpc_register_tracer("load_reporting", &grpc_load_reporting_trace);
     return grpc_channel_stack_builder_prepend_filter(
         builder, (const grpc_channel_filter *)arg, NULL, NULL);
   }
