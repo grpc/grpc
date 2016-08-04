@@ -6164,7 +6164,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "grpc_secure"
     ], 
     "headers": [
       "src/core/ext/load_reporting/load_reporting.h", 

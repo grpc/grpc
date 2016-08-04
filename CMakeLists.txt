@@ -902,6 +902,34 @@ add_library(grpc_unsecure
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
   src/core/ext/load_reporting/load_reporting_filter.c
+  src/core/lib/http/httpcli_security_connector.c
+  src/core/lib/security/context/security_context.c
+  src/core/lib/security/credentials/composite/composite_credentials.c
+  src/core/lib/security/credentials/credentials.c
+  src/core/lib/security/credentials/credentials_metadata.c
+  src/core/lib/security/credentials/fake/fake_credentials.c
+  src/core/lib/security/credentials/google_default/credentials_posix.c
+  src/core/lib/security/credentials/google_default/credentials_windows.c
+  src/core/lib/security/credentials/google_default/google_default_credentials.c
+  src/core/lib/security/credentials/iam/iam_credentials.c
+  src/core/lib/security/credentials/jwt/json_token.c
+  src/core/lib/security/credentials/jwt/jwt_credentials.c
+  src/core/lib/security/credentials/jwt/jwt_verifier.c
+  src/core/lib/security/credentials/oauth2/oauth2_credentials.c
+  src/core/lib/security/credentials/plugin/plugin_credentials.c
+  src/core/lib/security/credentials/ssl/ssl_credentials.c
+  src/core/lib/security/transport/client_auth_filter.c
+  src/core/lib/security/transport/handshake.c
+  src/core/lib/security/transport/secure_endpoint.c
+  src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/server_auth_filter.c
+  src/core/lib/security/transport/tsi_error.c
+  src/core/lib/security/util/b64.c
+  src/core/lib/security/util/json_util.c
+  src/core/lib/surface/init_secure.c
+  src/core/lib/tsi/fake_transport_security.c
+  src/core/lib/tsi/ssl_transport_security.c
+  src/core/lib/tsi/transport_security.c
   src/core/ext/lb_policy/grpclb/grpclb.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
@@ -967,6 +995,8 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
   include/grpc/impl/codegen/time.h
+  include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})

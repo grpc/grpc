@@ -40,6 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -164,6 +165,7 @@ void grpc_init(void) {
                          &grpc_trace_channel_stack_builder);
     grpc_register_tracer("http1", &grpc_http1_trace);
     grpc_register_tracer("compression", &grpc_compression_trace);
+    grpc_register_tracer("load_reporting", &grpc_load_reporting_trace);
     grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
     // Default pluck trace to 1
     grpc_cq_pluck_trace = 1;

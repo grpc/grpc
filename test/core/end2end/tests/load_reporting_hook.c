@@ -312,6 +312,9 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   end_test(&f);
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);
+
+  /* TODO(dgq): here we should be checking all the values captured by the LR
+   * filter and propagated by census */
 }
 
 void load_reporting_hook(grpc_end2end_test_config config) {
