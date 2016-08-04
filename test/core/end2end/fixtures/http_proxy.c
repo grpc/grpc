@@ -281,8 +281,8 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // Read request and feed it to the parser.
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
     if (GPR_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
-      error = grpc_http_parser_parse(
-          &conn->http_parser, conn->client_read_buffer.slices[i], NULL);
+      error = grpc_http_parser_parse(&conn->http_parser,
+                                     conn->client_read_buffer.slices[i], NULL);
       if (error != GRPC_ERROR_NONE) {
         proxy_connection_failed(exec_ctx, conn, true /* is_client */,
                                 "HTTP proxy request parse", error);
@@ -368,17 +368,17 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
 //
 
 static void thread_main(void* arg) {
-  grpc_end2end_http_proxy *proxy = arg;
+  grpc_end2end_http_proxy* proxy = arg;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   do {
     const gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     const gpr_timespec deadline =
         gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
-    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_worker* worker = NULL;
     gpr_mu_lock(proxy->mu);
-    GRPC_LOG_IF_ERROR("grpc_pollset_work",
-                      grpc_pollset_work(&exec_ctx, proxy->pollset, &worker,
-                                        now, deadline));
+    GRPC_LOG_IF_ERROR(
+        "grpc_pollset_work",
+        grpc_pollset_work(&exec_ctx, proxy->pollset, &worker, now, deadline));
     gpr_mu_unlock(proxy->mu);
     grpc_exec_ctx_flush(&exec_ctx);
   } while (!proxy->shutdown);
@@ -394,8 +394,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create() {
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name);
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(NULL);
-  grpc_error* error = grpc_tcp_server_create(
-      NULL, proxy->channel_args, &proxy->server);
+  grpc_error* error =
+      grpc_tcp_server_create(NULL, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   struct sockaddr_in addr;
@@ -403,16 +403,16 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create() {
   addr.sin_family = AF_INET;
   grpc_sockaddr_set_port((struct sockaddr*)&addr, proxy_port);
   int port;
-  error = grpc_tcp_server_add_port(
-      proxy->server, (struct sockaddr*)&addr, sizeof(addr), &port);
+  error = grpc_tcp_server_add_port(proxy->server, (struct sockaddr*)&addr,
+                                   sizeof(addr), &port);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port == proxy_port);
   // Start server.
   proxy->pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(proxy->pollset, &proxy->mu);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp_server_start(&exec_ctx, proxy->server, &proxy->pollset, 1,
-                        on_accept, proxy);
+  grpc_tcp_server_start(&exec_ctx, proxy->server, &proxy->pollset, 1, on_accept,
+                        proxy);
   grpc_exec_ctx_finish(&exec_ctx);
   // Start proxy thread.
   gpr_thd_options opt = gpr_thd_options_default();
@@ -421,8 +421,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create() {
   return proxy;
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *arg,
-                            grpc_error *error) {
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* arg,
+                            grpc_error* error) {
   grpc_pollset* pollset = arg;
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
@@ -442,7 +442,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-const char *grpc_end2end_http_proxy_get_proxy_name(
-    grpc_end2end_http_proxy *proxy) {
+const char* grpc_end2end_http_proxy_get_proxy_name(
+    grpc_end2end_http_proxy* proxy) {
   return proxy->proxy_name;
 }

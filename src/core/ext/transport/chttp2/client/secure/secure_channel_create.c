@@ -242,8 +242,7 @@ static void client_channel_factory_unref(
                                   "client_channel_factory");
     }
     grpc_channel_args_destroy(f->merge_args);
-    if (f->http_proxy != NULL)
-      gpr_free(f->http_proxy);
+    if (f->http_proxy != NULL) gpr_free(f->http_proxy);
     gpr_free(f);
   }
 }
@@ -285,8 +284,8 @@ static grpc_channel *client_channel_factory_create_channel(
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(final_args);
 
-  grpc_resolver *resolver = grpc_resolver_create(target, &f->base,
-                                                 &f->http_proxy);
+  grpc_resolver *resolver =
+      grpc_resolver_create(target, &f->base, &f->http_proxy);
   if (resolver != NULL) {
     grpc_client_channel_set_resolver(
         exec_ctx, grpc_channel_get_channel_stack(channel), resolver);

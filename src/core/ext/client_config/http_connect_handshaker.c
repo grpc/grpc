@@ -31,6 +31,8 @@
  *
  */
 
+#include "src/core/ext/client_config/http_connect_handshaker.h"
+
 #include <string.h>
 
 #include <grpc/impl/codegen/alloc.h>
@@ -40,7 +42,6 @@
 
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
-#include "src/core/ext/client_config/http_connect_handshaker.h"
 
 typedef struct http_connect_handshaker {
   // Base class.  Must be first.
@@ -91,10 +92,9 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   for (size_t i = 0; i < h->read_buffer->count; ++i) {
     if (GPR_SLICE_LENGTH(h->read_buffer->slices[i]) > 0) {
       size_t body_start_offset = 0;
-      error = grpc_http_parser_parse(
-          &h->http_parser, h->read_buffer->slices[i], &body_start_offset);
-      if (error != GRPC_ERROR_NONE)
-        goto done;
+      error = grpc_http_parser_parse(&h->http_parser, h->read_buffer->slices[i],
+                                     &body_start_offset);
+      if (error != GRPC_ERROR_NONE) goto done;
       if (h->http_parser.state == GRPC_HTTP_BODY) {
         // Remove the data we've already read from the read buffer,
         // leaving only the leftover bytes (if any).
@@ -138,7 +138,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     error = GRPC_ERROR_CREATE(msg);
     gpr_free(msg);
   }
- done:
+done:
   // Invoke handshake-done callback.
   h->cb(exec_ctx, h->endpoint, h->args, h->read_buffer, h->user_data, error);
 }
@@ -159,8 +159,7 @@ static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                                             grpc_handshaker* handshaker) {
-}
+                                             grpc_handshaker* handshaker) {}
 
 // FIXME BEFORE MERGING: apply deadline
 static void http_connect_handshaker_do_handshake(
@@ -180,11 +179,10 @@ static void http_connect_handshaker_do_handshake(
   h->read_buffer = read_buffer;
   grpc_closure_init(&h->request_done_closure, on_write_done, h);
   grpc_closure_init(&h->response_read_closure, on_read_done, h);
-  grpc_http_parser_init(&h->http_parser, GRPC_HTTP_RESPONSE,
-                        &h->http_response);
+  grpc_http_parser_init(&h->http_parser, GRPC_HTTP_RESPONSE, &h->http_response);
   // Send HTTP CONNECT request.
-  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s",
-          h->server_name, h->proxy_server);
+  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", h->server_name,
+          h->proxy_server);
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
   request.host = h->proxy_server;
