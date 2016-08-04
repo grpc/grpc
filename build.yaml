@@ -1140,7 +1140,7 @@ libs:
   - grpc++
   - grpc
   - gpr
-- name: interop_server_main
+- name: interop_server_lib
   build: private
   language: c++
   src:
@@ -1157,6 +1157,13 @@ libs:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: interop_server_main
+  build: private
+  language: c++
+  src:
+  - test/cpp/interop/interop_server_bootstrap.cc
+  deps:
+  - interop_server_lib
 - name: qps
   build: private
   language: c++
@@ -2824,6 +2831,7 @@ targets:
   deps:
   - interop_server_main
   - interop_server_helper
+  - interop_server_lib
   - grpc++_test_util
   - grpc_test_util
   - grpc++
