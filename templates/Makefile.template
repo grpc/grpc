@@ -47,6 +47,12 @@
         return filename
       return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
 
+    def proto_to_nanoc(filename):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '$(GENDIR)/' + m.group(1) + '.pbc.c $(GENDIR)/' + m.group(1) + '.grpc.pbc.c'
+
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
@@ -140,6 +146,44 @@
   # You may want to change these depending on your system.
 
   prefix ?= /usr/local
+
+  NANOPB_DIR := $(abspath third_party/nanopb)
+  NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/pb_common.c
+  NANOPB_DEP := $(NANOPB_DIR)/generator/proto/nanopb_pb2.py $(NANOPB_DIR)/generator/proto/plugin_pb2.py
+
+  <%text>
+  SYSTEM_PYTHON_PROTOBUF_GOOD := $(shell \
+  PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null` || true;\
+  major=( $${version//./ } );\
+  majordef=$${major:-0};\
+  if [[ $$majordef -ge 3 ]]; then echo true; else echo false; fi;)
+
+  ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
+  # For systems with built-in python-protobuf
+  all: all_after_prereq
+  test: test_after_prereq
+  test_c: test_c_after_prereq
+  test_cxx: test_cxx_after_prereq
+  buildtests_c: buildtests_c_after_prereq
+  buildtests_cxx: buildtests_cxx_after_prereq
+  %:
+  else
+  # We need to install a local python-protobuf
+  </%text>
+  %for tgt in ['all', 'test', 'test_c', 'test_cxx', 'buildtests_c', 'buildtests_cxx']:
+  ${tgt}:
+  	$(E) "[NANOPB]  Installing Nanopb dependencies"
+  	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
+  	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; \
+  	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; \
+  	. $($@_NANOPB_VENV_DIR)/bin/activate; \
+  	pip install protobuf==3.0.0b2 >/dev/null; \
+  	$(MAKE) $(MFLAGS) ${tgt}_after_prereq; \
+  	EXIT_CODE=$$?; \
+  	deactivate; \
+  	<%text>exit $${EXIT_CODE}</%text>
+  %endfor
+  endif
 
   PROTOC ?= protoc
   DTRACE ?= dtrace
@@ -650,7 +694,8 @@
   CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
   ifneq ($(USE_BUILT_PROTOC),false)
-  PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
+  PROTOC = $(BINDIR)/opt/protobuf/protoc
+  PROTOC_DEP = $(PROTOC)
   PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
   else
   PROTOC_PLUGINS =
@@ -703,8 +748,9 @@
 
   .SECONDARY = %.pb.h %.pb.cc
 
+  # This is the 'all' target to be executed after handling prerequisites
   ifeq ($(DEP_MISSING),)
-  all: static shared plugins\
+  all_after_prereq: static shared plugins\
   % for tgt in targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -714,7 +760,7 @@
   dep_error:
   	@echo "You shouldn't see this message - all of your dependencies are correct."
   else
-  all: dep_error git_update stop
+  all_after_prereq: dep_error git_update stop
 
   dep_error:
   	@echo
@@ -822,16 +868,22 @@
   	$(E) "[AUTOGEN] Preparing protobuf"
   	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
 
-  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
+  $(BINDIR)/opt/protobuf/protoc: third_party/protobuf/configure
+  	$(E) "[MAKE]    Building protoc"
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_opt) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_opt) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)$(MAKE) -C third_party/protobuf clean
+  	$(Q)$(MAKE) -C third_party/protobuf
+  	$(Q)mkdir -p $(BINDIR)/opt/protobuf
+  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/opt/protobuf
+
+  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure $(BINDIR)/opt/protobuf/protoc
   	$(E) "[MAKE]    Building protobuf"
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static --with-protoc=$(BINDIR)/opt/protobuf/protoc $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
+  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 
   static: static_c static_cxx
 
@@ -933,7 +985,7 @@
 
   buildtests: buildtests_c buildtests_cxx
 
-  buildtests_c: privatelibs_c <%text>\</%text>
+  buildtests_c_after_prereq: privatelibs_c <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -942,7 +994,7 @@
 
 
   ifeq ($(EMBED_OPENSSL),true)
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
+  buildtests_cxx_after_prereq: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -950,7 +1002,7 @@
   % endfor
 
   else
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
+  buildtests_cxx_after_prereq: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -959,12 +1011,12 @@
 
   endif
 
-
-  test: test_c test_cxx
+  # This is the 'test' target to be executed after handling prerequisites
+  test_after_prereq: test_c test_cxx
 
   flaky_test: flaky_test_c flaky_test_cxx
 
-  test_c: buildtests_c
+  test_c_after_prereq: buildtests_c_after_prereq
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -982,7 +1034,7 @@
   % endfor
 
 
-  test_cxx: buildtests_cxx
+  test_cxx_after_prereq: buildtests_cxx_after_prereq
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1148,15 +1200,25 @@
   $(GENDIR)/${p}.pb.cc: protoc_dep_error
   $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
   else
-  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
+  	$(E) "[PROTOC]  Generating nanopb C file from $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+
+  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+  $(GENDIR)/${p}.grpc.pbc.c: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/${p}.pbc.c ${' '.join('$(GENDIR)/%s.pbc.c $(GENDIR)/%s.grpc.pbc.c' % (q,q) for q in proto_deps.get(p, []))}
+  	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
   endif
 
   % endfor
@@ -1354,12 +1416,20 @@
   % endfor
 
   <%def name="makelib(lib)">
+  # Using nanopb for C files right now
   LIB${lib.name.upper()}_SRC = \\
 
+  % if lib.language == "c++":
   % for src in lib.src:
       ${proto_to_cc(src)} \\
 
   % endfor
+  % else:
+  % for src in lib.src:
+      ${proto_to_nanoc(src)} \\
+
+  % endfor
+  % endif
 
   % if "public_headers" in lib:
   % if lib.language == "c++":
@@ -1559,9 +1629,15 @@
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   endif
   % endif
+
+  # Force compilation of proto files before building code that could potentially depend on them
   % for src in lib.src:
   % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % if lib.language == 'c++':
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % else:
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_nanoc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % endif
   % endif
   % endfor
   </%def>
@@ -1570,10 +1646,17 @@
   % if not has_no_sources:
   ${tgt.name.upper()}_SRC = \\
 
+  % if tgt.language == "c++":
   % for src in tgt.src:
       ${proto_to_cc(src)} \\
 
   % endfor
+  % else:
+   % for src in tgt.src:
+      ${proto_to_nanoc(src)} \\
+
+  % endfor
+  % endif
 
   ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
   % endif
@@ -1619,7 +1702,8 @@
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: \
   % if not has_no_sources:
-  $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+  $(PROTOBUF_DEP) \
+  $(${tgt.name.upper()}_OBJS)\
   % endif
   % else:
   $(BINDIR)/$(CONFIG)/${tgt.name}: \
@@ -1726,9 +1810,15 @@
   endif
   % endif
   % endif
+
+  # Force compilation of proto files before building code that could potentially depend on them
   % for src in tgt.src:
   % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in tgt.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % if tgt.language == 'c++':
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % else:
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_nanoc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % endif
   % endif
   % endfor
   </%def>
@@ -1744,10 +1834,12 @@
   % endfor
   endif
 
-  .PHONY: all strip tools \
+  .PHONY: all all_after_prereq strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
-  test test_c test_cxx \
+  buildtests_c_after_prereq buildtests_cxx_after_prereq \
+  test test_after_prereq test_c test_cxx \
+  test_c_after_prereq test_cxx_after_prereq \
   install install_c install_cxx \
   install-headers install-headers_c install-headers_cxx \
   install-shared install-shared_c install-shared_cxx \
@@ -1763,3 +1855,8 @@
   	@$(foreach V,$(sort $(.VARIABLES)),                 \
   	  $(if $(filter-out environment% default automatic, \
   	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
+
+  # Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
+  $(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOC_DEP)
+  	$(E) "[NANOPB]  Compiling $<"
+  	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<;

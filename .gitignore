@@ -100,5 +100,12 @@ artifacts/
 # Git generated files for conflicting
 *.orig
 
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
 # IDE specific folder for JetBrains IDEs
 .idea/

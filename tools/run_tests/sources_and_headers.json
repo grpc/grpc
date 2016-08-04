@@ -2149,6 +2149,62 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_c", 
+      "grpc_c_end2end_client_lib", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc_c_end2end_test", 
+    "src": [
+      "test/c/end2end/end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_c", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/c/end2end/id_serialization.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc_c_generic_end2end_test", 
+    "src": [
+      "test/c/end2end/generic_end2end_test.cc", 
+      "test/c/end2end/id_serialization.cc", 
+      "test/c/end2end/id_serialization.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc_plugin_support"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc_c_plugin", 
+    "src": [
+      "src/compiler/c_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_reflection", 
       "grpc++_test_config", 
       "grpc++_test_util", 
@@ -4238,6 +4294,112 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [
+      "include/grpc_c/channel.h", 
+      "include/grpc_c/client_context.h", 
+      "include/grpc_c/codegen/bidi_streaming_blocking_call.h", 
+      "include/grpc_c/codegen/client_context.h", 
+      "include/grpc_c/codegen/client_streaming_blocking_call.h", 
+      "include/grpc_c/codegen/message.h", 
+      "include/grpc_c/codegen/method.h", 
+      "include/grpc_c/codegen/pb_compat.h", 
+      "include/grpc_c/codegen/serialization.h", 
+      "include/grpc_c/codegen/server_streaming_blocking_call.h", 
+      "include/grpc_c/codegen/unary_async_call.h", 
+      "include/grpc_c/codegen/unary_blocking_call.h", 
+      "include/grpc_c/completion_queue.h", 
+      "include/grpc_c/declare_serializer.h", 
+      "include/grpc_c/grpc_c.h", 
+      "include/grpc_c/status.h", 
+      "src/c/alloc.h", 
+      "src/c/bidi_streaming_blocking_call.h", 
+      "src/c/call_ops.h", 
+      "src/c/client_context.h", 
+      "src/c/client_streaming_blocking_call.h", 
+      "src/c/completion_queue.h", 
+      "src/c/init_shutdown.h", 
+      "src/c/message.h", 
+      "src/c/server_streaming_blocking_call.h", 
+      "src/c/unary_async_call.h", 
+      "src/c/unary_blocking_call.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_c", 
+    "src": [
+      "include/grpc_c/channel.h", 
+      "include/grpc_c/client_context.h", 
+      "include/grpc_c/codegen/bidi_streaming_blocking_call.h", 
+      "include/grpc_c/codegen/client_context.h", 
+      "include/grpc_c/codegen/client_streaming_blocking_call.h", 
+      "include/grpc_c/codegen/message.h", 
+      "include/grpc_c/codegen/method.h", 
+      "include/grpc_c/codegen/pb_compat.h", 
+      "include/grpc_c/codegen/serialization.h", 
+      "include/grpc_c/codegen/server_streaming_blocking_call.h", 
+      "include/grpc_c/codegen/unary_async_call.h", 
+      "include/grpc_c/codegen/unary_blocking_call.h", 
+      "include/grpc_c/completion_queue.h", 
+      "include/grpc_c/declare_serializer.h", 
+      "include/grpc_c/grpc_c.h", 
+      "include/grpc_c/status.h", 
+      "src/c/alloc.c", 
+      "src/c/alloc.h", 
+      "src/c/bidi_streaming_blocking_call.c", 
+      "src/c/bidi_streaming_blocking_call.h", 
+      "src/c/call_ops.c", 
+      "src/c/call_ops.h", 
+      "src/c/channel.c", 
+      "src/c/client_context.c", 
+      "src/c/client_context.h", 
+      "src/c/client_streaming_blocking_call.c", 
+      "src/c/client_streaming_blocking_call.h", 
+      "src/c/completion_queue.c", 
+      "src/c/completion_queue.h", 
+      "src/c/init_shutdown.c", 
+      "src/c/init_shutdown.h", 
+      "src/c/message.c", 
+      "src/c/message.h", 
+      "src/c/pb_compat.c", 
+      "src/c/server_streaming_blocking_call.c", 
+      "src/c/server_streaming_blocking_call.h", 
+      "src/c/unary_async_call.c", 
+      "src/c/unary_async_call.h", 
+      "src/c/unary_blocking_call.c", 
+      "src/c/unary_blocking_call.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_c", 
+      "grpc_test_util", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pbc.h", 
+      "src/proto/grpc/testing/echo.pbc.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pbc.h", 
+      "src/proto/grpc/testing/echo_messages.pbc.h", 
+      "test/c/end2end/end2end_test_client.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_c_end2end_client_lib", 
+    "src": [
+      "test/c/end2end/end2end_test_client.c", 
+      "test/c/end2end/end2end_test_client.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
@@ -4533,6 +4695,8 @@
       "grpc++_config_proto"
     ], 
     "headers": [
+      "src/compiler/c_generator.h", 
+      "src/compiler/c_generator_helpers.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
@@ -4552,6 +4716,9 @@
     "language": "c++", 
     "name": "grpc_plugin_support", 
     "src": [
+      "src/compiler/c_generator.cc", 
+      "src/compiler/c_generator.h", 
+      "src/compiler/c_generator_helpers.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 

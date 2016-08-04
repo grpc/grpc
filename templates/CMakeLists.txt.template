@@ -48,7 +48,7 @@
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.get('secure', False):
       deps.append("${_gRPC_SSL_LIBRARIES}")
-    if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
+    if target_dict['name'] in ['grpc_c', 'grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     elif target_dict['name'] in ['grpc']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")

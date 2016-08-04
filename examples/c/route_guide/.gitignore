@@ -1,0 +1,8 @@
+route_guide.grpc.pbc.c
+route_guide.grpc.pbc.h
+route_guide.pbc.c
+route_guide.pbc.h
+route_guide.pb.c
+route_guide.pb.h
+*.o
+route_guide_client

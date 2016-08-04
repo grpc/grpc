@@ -532,6 +532,72 @@ install(TARGETS grpc EXPORT gRPCTargets
 )
 
   
+add_library(grpc_c
+  src/c/alloc.c
+  src/c/bidi_streaming_blocking_call.c
+  src/c/call_ops.c
+  src/c/channel.c
+  src/c/client_context.c
+  src/c/client_streaming_blocking_call.c
+  src/c/completion_queue.c
+  src/c/init_shutdown.c
+  src/c/message.c
+  src/c/pb_compat.c
+  src/c/server_streaming_blocking_call.c
+  src/c/unary_async_call.c
+  src/c/unary_blocking_call.c
+)
+
+target_include_directories(grpc_c
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_c
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc
+  gpr
+)
+
+foreach(_hdr
+  include/grpc_c/channel.h
+  include/grpc_c/client_context.h
+  include/grpc_c/codegen/bidi_streaming_blocking_call.h
+  include/grpc_c/codegen/client_context.h
+  include/grpc_c/codegen/client_streaming_blocking_call.h
+  include/grpc_c/codegen/message.h
+  include/grpc_c/codegen/method.h
+  include/grpc_c/codegen/pb_compat.h
+  include/grpc_c/codegen/serialization.h
+  include/grpc_c/codegen/server_streaming_blocking_call.h
+  include/grpc_c/codegen/unary_async_call.h
+  include/grpc_c/codegen/unary_blocking_call.h
+  include/grpc_c/completion_queue.h
+  include/grpc_c/declare_serializer.h
+  include/grpc_c/grpc_c.h
+  include/grpc_c/status.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc_c EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+  
 add_library(grpc_cronet
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -1408,6 +1474,7 @@ install(TARGETS grpc++_unsecure EXPORT gRPCTargets
 
   
 add_library(grpc_plugin_support
+  src/compiler/c_generator.cc
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
   src/compiler/node_generator.cc
@@ -1596,6 +1663,32 @@ target_link_libraries(grpc_verify_jwt
 
 
 install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_c_plugin
+  src/compiler/c_plugin.cc
+)
+
+target_include_directories(grpc_c_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_c_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_c_plugin EXPORT gRPCTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

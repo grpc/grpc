@@ -39,7 +39,7 @@ with open(os.path.join(root, 'tools', 'run_tests', 'sources_and_headers.json')) 
 
 re_inc1 = re.compile(r'^#\s*include\s*"([^"]*)"')
 assert re_inc1.match('#include "foo"').group(1) == 'foo'
-re_inc2 = re.compile(r'^#\s*include\s*<((grpc|grpc\+\+)/[^"]*)>')
+re_inc2 = re.compile(r'^#\s*include\s*<((grpc|grpc\+\+|grpc_c)/[^"]*)>')
 assert re_inc2.match('#include <grpc++/foo>').group(1) == 'grpc++/foo'
 
 def get_target(name):
