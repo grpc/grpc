@@ -228,6 +228,7 @@ class ServiceA GRPC_FINAL {
     // replace default version of this method with FCUnary
     virtual ::grpc::Status FCMethodA1(::grpc::ServerContext* context, ::grpc::FCUnary< ::grpc::testing::Request,::grpc::testing::Response>* fc_unary) = 0;
   };
+  typedef WithFCUnaryMethod_MethodA1<Service > FCUnaryService;
 };
 
 // ServiceB leading comment 1
@@ -326,6 +327,7 @@ class ServiceB GRPC_FINAL {
     // replace default version of this method with FCUnary
     virtual ::grpc::Status FCMethodB1(::grpc::ServerContext* context, ::grpc::FCUnary< ::grpc::testing::Request,::grpc::testing::Response>* fc_unary) = 0;
   };
+  typedef WithFCUnaryMethod_MethodB1<Service > FCUnaryService;
 };
 // ServiceB trailing comment 1
 
