@@ -2143,9 +2143,12 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_global *stream_global = &bs->stream->global;
 
   if (bs->is_tail) {
+    gpr_mu_lock(&bs->slice_mu);
+    size_t cur_length = bs->slices.length;
+    gpr_mu_unlock(&bs->slice_mu);
     incoming_byte_stream_update_flow_control(
         exec_ctx, transport_global, stream_global,
-        bs->next_action.max_size_hint, bs->slices.length);
+        bs->next_action.max_size_hint, cur_length);
   }
   gpr_mu_lock(&bs->slice_mu);
   if (bs->slices.count > 0) {
