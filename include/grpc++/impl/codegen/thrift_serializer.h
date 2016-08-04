@@ -111,8 +111,8 @@ class ThriftSerializer {
 
     Serialize(fields, &byte_buffer, &byte_buffer_size);
 
-    gpr_slice slice =
-        gpr_slice_from_copied_buffer((char*)byte_buffer, byte_buffer_size);
+    gpr_slice slice = gpr_slice_from_copied_buffer(
+        reinterpret_cast<const char*>(byte_buffer), byte_buffer_size);
 
     *bp = grpc_raw_byte_buffer_create(&slice, 1);
 
@@ -131,12 +131,12 @@ class ThriftSerializer {
     last_deserialized_ = true;
 
     // reset buffer transport
-    buffer_->resetBuffer((uint8_t*)serialized_buffer, length);
+    buffer_->resetBuffer(const_cast<uint8_t*>(serialized_buffer), length);
 
     // read the protocol version if necessary
     if (serialize_version_) {
       std::string name = "";
-      TMessageType mt = (TMessageType)0;
+      TMessageType mt = static_cast<TMessageType>(0);
       int32_t seq_id = 0;
       protocol_->readMessageBegin(name, mt, seq_id);
     }
@@ -200,11 +200,9 @@ class ThriftSerializer {
   bool serialize_version_;
 
   void prepare() {
-
-    buffer_.reset(new TMemoryBuffer());
-
+    buffer_ = boost::make_shared<TMemoryBuffer>(*(new TMemoryBuffer()));
     // create a protocol for the memory buffer transport
-    protocol_.reset(new Protocol(buffer_));
+    protocol_ = std::make_shared<Protocol>(*(new Protocol(buffer_)));
 
     prepared_ = true;
   }
