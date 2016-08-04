@@ -1016,7 +1016,7 @@
 
   flaky_test: flaky_test_c flaky_test_cxx
 
-  test_c_after_prereq: buildtests_c
+  test_c_after_prereq: buildtests_c_after_prereq
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1034,7 +1034,7 @@
   % endfor
 
 
-  test_cxx_after_prereq: buildtests_cxx
+  test_cxx_after_prereq: buildtests_cxx_after_prereq
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"

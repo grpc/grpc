@@ -1588,7 +1588,7 @@ test_after_prereq: test_c test_cxx
 
 flaky_test: flaky_test_c flaky_test_cxx
 
-test_c_after_prereq: buildtests_c
+test_c_after_prereq: buildtests_c_after_prereq
 	$(E) "[RUN]     Testing alarm_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing algorithm_test"
@@ -1810,7 +1810,7 @@ flaky_test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/mlog_test || ( echo test mlog_test failed ; exit 1 )
 
 
-test_cxx_after_prereq: buildtests_cxx
+test_cxx_after_prereq: buildtests_cxx_after_prereq
 	$(E) "[RUN]     Testing alarm_cpp_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
