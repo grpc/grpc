@@ -325,14 +325,11 @@ static void fake_channel_do_handshake(grpc_exec_ctx *exec_ctx,
                              cb, user_data);
 }
 
-static void fake_server_do_handshake(grpc_exec_ctx *exec_ctx,
-                                     grpc_server_security_connector *sc,
-                                     grpc_tcp_server_acceptor *acceptor,
-                                     grpc_endpoint *nonsecure_endpoint,
-                                     gpr_slice_buffer *read_buffer,
-                                     gpr_timespec deadline,
-                                     grpc_security_handshake_done_cb cb,
-                                     void *user_data) {
+static void fake_server_do_handshake(
+    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
+    grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
+    gpr_slice_buffer *read_buffer, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data) {
   grpc_do_security_handshake(exec_ctx, tsi_create_fake_handshaker(0), &sc->base,
                              false, nonsecure_endpoint, read_buffer, deadline,
                              cb, user_data);
@@ -447,14 +444,11 @@ static void ssl_channel_do_handshake(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void ssl_server_do_handshake(grpc_exec_ctx *exec_ctx,
-                                    grpc_server_security_connector *sc,
-                                    grpc_tcp_server_acceptor *acceptor,
-                                    grpc_endpoint *nonsecure_endpoint,
-                                    gpr_slice_buffer *read_buffer,
-                                    gpr_timespec deadline,
-                                    grpc_security_handshake_done_cb cb,
-                                    void *user_data) {
+static void ssl_server_do_handshake(
+    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
+    grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
+    gpr_slice_buffer *read_buffer, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
   tsi_handshaker *handshaker;

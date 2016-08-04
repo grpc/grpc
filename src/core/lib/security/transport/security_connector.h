@@ -158,8 +158,7 @@ void grpc_channel_security_connector_check_call_host(
 void grpc_channel_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
     grpc_endpoint *nonsecure_endpoint, gpr_slice_buffer *read_buffer,
-    gpr_timespec deadline, grpc_security_handshake_done_cb cb,
-    void *user_data);
+    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
 
 /* --- server_security_connector object. ---
 

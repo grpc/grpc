@@ -146,8 +146,8 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
                                  grpc_endpoint* endpoint,
                                  grpc_channel_args* args,
-                                 gpr_slice_buffer* read_buffer,
-                                 void* user_data, grpc_error* error) {
+                                 gpr_slice_buffer* read_buffer, void* user_data,
+                                 grpc_error* error) {
   grpc_handshake_manager* mgr = user_data;
   GPR_ASSERT(mgr->state != NULL);
   GPR_ASSERT(mgr->state->index < mgr->count);
@@ -166,10 +166,9 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
     user_data = mgr->state->final_user_data;
   }
   // Invoke handshaker.
-  grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->state->index],
-                               endpoint, args, read_buffer,
-                               mgr->state->deadline, mgr->state->acceptor,
-                               cb, user_data);
+  grpc_handshaker_do_handshake(
+      exec_ctx, mgr->handshakers[mgr->state->index], endpoint, args,
+      read_buffer, mgr->state->deadline, mgr->state->acceptor, cb, user_data);
   ++mgr->state->index;
   // If this is the last handshaker, clean up state.
   if (mgr->state->index == mgr->count) {
