@@ -75,6 +75,8 @@ struct grpc_exec_ctx {
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 };
 
+/* initializer for grpc_exec_ctx:
+   prefer to use GRPC_EXEC_CTX_INIT whenever possible */
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
   {                                                                          \
     GRPC_CLOSURE_LIST_INIT, NULL, NULL, NULL, false, finish_check_arg,       \
@@ -90,8 +92,10 @@ struct grpc_exec_ctx {
   { false, finish_check_arg, finish_check }
 #endif
 
+/* initialize an execution context at the top level of an API call into grpc
+   (this is safe to use elsewhere, though possibly not as efficient) */
 #define GRPC_EXEC_CTX_INIT \
-  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_never_ready_to_finish, NULL)
+  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_always_ready_to_finish, NULL)
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.
