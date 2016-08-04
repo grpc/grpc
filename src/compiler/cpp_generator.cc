@@ -607,8 +607,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
 }
 
 void PrintHeaderServerMethodFCUnary(
-    Printer *printer,
-    const Method *method,
+    Printer *printer, const Method *method,
     std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
@@ -616,24 +615,27 @@ void PrintHeaderServerMethodFCUnary(
   if (method->NoStreaming()) {
     printer->Print(*vars, "template <class BaseClass>\n");
     printer->Print(*vars,
-		   "class WithFCUnaryMethod_$Method$ : public BaseClass {\n");
+                   "class WithFCUnaryMethod_$Method$ : public BaseClass {\n");
     printer->Print(
-      " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+        " private:\n"
+        "  void BaseClassMustBeDerivedFromService(const Service *service) "
+        "{}\n");
     printer->Print(" public:\n");
     printer->Indent();
     printer->Print(*vars,
-		   "WithFCUnaryMethod_$Method$() {\n"
-		   "  ::grpc::Service::MarkMethodFCUnary($Idx$,\n"
-		   "    new ::grpc::FCUnaryMethodHandler<Service, "
-		   "$Request$, "
-		   "$Response$>("
-		   "std::bind(&WithFCUnaryMethod_$Method$<BaseClass>::FC$Method$, this, std::placeholders::_1, std::placeholders::_2)));\n"
-		   "}\n");
+                   "WithFCUnaryMethod_$Method$() {\n"
+                   "  ::grpc::Service::MarkMethodFCUnary($Idx$,\n"
+                   "    new ::grpc::FCUnaryMethodHandler<Service, "
+                   "$Request$, "
+                   "$Response$>("
+                   "std::bind(&WithFCUnaryMethod_$Method$<BaseClass>::FC$"
+                   "Method$, this, std::placeholders::_1, "
+                   "std::placeholders::_2)));\n"
+                   "}\n");
     printer->Print(*vars,
-		   "~WithFCUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
-		   "  BaseClassMustBeDerivedFromService(this);\n"
-		   "}\n");
+                   "~WithFCUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
+                   "  BaseClassMustBeDerivedFromService(this);\n"
+                   "}\n");
     printer->Print(
         *vars,
         "// disable regular version of this method\n"
@@ -643,12 +645,12 @@ void PrintHeaderServerMethodFCUnary(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(
-        *vars,
-        "// replace default version of this method with FCUnary\n"
-        "virtual ::grpc::Status FC$Method$("
-        "::grpc::ServerContext* context, ::grpc::FCUnary< $Request$,$Response$>* fc_unary)"
-        " = 0;\n");
+    printer->Print(*vars,
+                   "// replace default version of this method with FCUnary\n"
+                   "virtual ::grpc::Status FC$Method$("
+                   "::grpc::ServerContext* context, ::grpc::FCUnary< "
+                   "$Request$,$Response$>* fc_unary)"
+                   " = 0;\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
   }
@@ -840,7 +842,6 @@ void PrintHeaderService(Printer *printer, const Service *service,
     }
   }
   printer->Print(" FCUnaryService;\n");
-
 
   printer->Outdent();
   printer->Print("};\n");

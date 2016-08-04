@@ -199,7 +199,8 @@ class HybridEnd2endTest : public ::testing::Test {
   HybridEnd2endTest() {}
 
   void SetUpServer(::grpc::Service* service1, ::grpc::Service* service2,
-                   AsyncGenericService* generic_service, int max_message_size = 0) {
+                   AsyncGenericService* generic_service,
+                   int max_message_size = 0) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
@@ -421,9 +422,11 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
 }
 
 // Add a second service with one sync FCUnary method.
-class FCUnaryDupPkg : public duplicate::EchoTestService::WithFCUnaryMethod_Echo<TestServiceImplDupPkg> {
-public:
-  Status FCEcho(ServerContext* context, FCUnary<EchoRequest,EchoResponse>* fc_unary) GRPC_OVERRIDE {
+class FCUnaryDupPkg : public duplicate::EchoTestService::WithFCUnaryMethod_Echo<
+                          TestServiceImplDupPkg> {
+ public:
+  Status FCEcho(ServerContext* context,
+                FCUnary<EchoRequest, EchoResponse>* fc_unary) GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -436,7 +439,8 @@ public:
   }
 };
 
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncFCUnaryDupService) {
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncFCUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -456,8 +460,9 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncFCUnaryDupService
 
 // Add a second service that is fully FCUnary
 class FullyFCUnaryDupPkg : public duplicate::EchoTestService::FCUnaryService {
-public:
-  Status FCEcho(ServerContext* context, FCUnary<EchoRequest,EchoResponse>* fc_unary) GRPC_OVERRIDE {
+ public:
+  Status FCEcho(ServerContext* context,
+                FCUnary<EchoRequest, EchoResponse>* fc_unary) GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -470,7 +475,8 @@ public:
   }
 };
 
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncFullyFCUnaryDupService) {
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncFullyFCUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;

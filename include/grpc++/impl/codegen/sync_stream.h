@@ -71,7 +71,7 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Upper bound on the next message size available for reading on this stream
-  virtual bool NextMessageSize(uint32_t *sz) = 0;
+  virtual bool NextMessageSize(uint32_t* sz) = 0;
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
   /// This is thread-safe with respect to \a Write or \WritesDone methods on
@@ -151,7 +151,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);  /// status ignored
   }
 
-  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
     *sz = call_.max_message_size();
     return true;
   }
@@ -301,7 +301,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);  // status ignored
   }
 
-  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
     *sz = call_.max_message_size();
     return true;
   }
@@ -368,7 +368,7 @@ class ServerReader GRPC_FINAL : public ReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
-  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
     *sz = call_->max_message_size();
     return true;
   }
@@ -431,8 +431,9 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
 template <class W, class R>
 class ServerReaderWriterInterface : public WriterInterface<W>,
                                     public ReaderInterface<R> {
-public:
-  ServerReaderWriterInterface(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+ public:
+  ServerReaderWriterInterface(Call* call, ServerContext* ctx)
+      : call_(call), ctx_(ctx) {}
   virtual void SendInitialMetadata() {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
@@ -447,7 +448,7 @@ public:
     call_->cq()->Pluck(&ops);
   }
 
-  virtual bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+  virtual bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
     *sz = call_->max_message_size();
     return true;
   }
@@ -476,15 +477,17 @@ public:
     call_->PerformOps(&ops);
     return call_->cq()->Pluck(&ops);
   }
-private:
+
+ private:
   Call* const call_;
   ServerContext* const ctx_;
 };
 
 template <class W, class R>
-class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W,R> {
-public:  
-  ServerReaderWriter(Call* call, ServerContext* ctx) : ServerReaderWriterInterface<W,R>(call, ctx) {}
+class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
+ public:
+  ServerReaderWriter(Call* call, ServerContext* ctx)
+      : ServerReaderWriterInterface<W, R>(call, ctx) {}
 };
 
 }  // namespace grpc

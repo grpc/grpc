@@ -51,28 +51,36 @@ namespace grpc {
 /// and exactly 1 Write, in that order, to function correctly.
 /// Otherwise, the RPC is in error.
 template <class RequestType, class ResponseType>
-  class FCUnary GRPC_FINAL : public ServerReaderWriterInterface<ResponseType, RequestType> {
-public:
-  FCUnary(Call* call, ServerContext* ctx): ServerReaderWriterInterface<ResponseType,RequestType>(call, ctx) , read_done_(false), write_done_(false) {}
+class FCUnary GRPC_FINAL
+    : public ServerReaderWriterInterface<ResponseType, RequestType> {
+ public:
+  FCUnary(Call* call, ServerContext* ctx)
+      : ServerReaderWriterInterface<ResponseType, RequestType>(call, ctx),
+        read_done_(false),
+        write_done_(false) {}
 
   ~FCUnary() {}
 
-  bool Read(RequestType *request) GRPC_OVERRIDE {
+  bool Read(RequestType* request) GRPC_OVERRIDE {
     if (read_done_) {
-      return false;      
+      return false;
     }
     read_done_ = true;
-    return ServerReaderWriterInterface<ResponseType,RequestType>::Read(request);
+    return ServerReaderWriterInterface<ResponseType, RequestType>::Read(
+        request);
   }
 
   using WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response, const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const ResponseType& response,
+             const WriteOptions& options) GRPC_OVERRIDE {
     if (write_done_ || !read_done_) {
-      return false;      
+      return false;
     }
     write_done_ = true;
-    return ServerReaderWriterInterface<ResponseType,RequestType>::Write(response, options);
+    return ServerReaderWriterInterface<ResponseType, RequestType>::Write(
+        response, options);
   }
+
  private:
   bool read_done_;
   bool write_done_;

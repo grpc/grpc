@@ -47,7 +47,7 @@ class RpcMethod {
     CLIENT_STREAMING,  // request streaming
     SERVER_STREAMING,  // response streaming
     BIDI_STREAMING,
-    FC_UNARY // flow-controlled unary call
+    FC_UNARY  // flow-controlled unary call
   };
 
   RpcMethod(const char* name, RpcType type)
