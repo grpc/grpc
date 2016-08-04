@@ -155,12 +155,11 @@ static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
       gpr_log(GPR_DEBUG,
               "C:%p start_execute_final take_async_break_before_final_list=%d",
               lock, lock->take_async_break_before_final_list));
-  if (lock->optional_workqueue != NULL &&
-      lock->take_async_break_before_final_list) {
+  if (lock->take_async_break_before_final_list) {
     grpc_closure_init(&lock->continue_finishing, continue_executing_final,
                       lock);
-    grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue,
-                           &lock->continue_finishing, GRPC_ERROR_NONE);
+    grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
+                        GRPC_WORKQUEUE_REF(lock->optional_workqueue, "sched"));
     GPR_TIMER_END("combiner.start_execute_final", 0);
     return false;
   } else {
@@ -201,9 +200,9 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   do {
     executor = maybe_finish_one;
     gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -2);
-    GRPC_COMBINER_TRACE(gpr_log(
-        GPR_DEBUG, "C:%p finish[%d] old_state=%" PRIdPTR " cl=[%p,%p]", lock,
-        loops, old_state, lock->final_list.head, lock->final_list.tail));
+    GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
+                                "C:%p finish[%d] old_state=%" PRIdPTR, lock,
+                                loops, old_state));
     switch (old_state) {
       case 5:  // we're down to one queued item: if it's the final list we
       case 4:  // should do that
