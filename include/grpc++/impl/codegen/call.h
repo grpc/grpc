@@ -180,17 +180,23 @@ class CallNoOp {
 
 class CallOpSendInitialMetadata {
  public:
-  CallOpSendInitialMetadata() : send_(false) {}
+  CallOpSendInitialMetadata() : send_(false) {
+    maybe_compression_level_.is_set = false;
+  }
 
   void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
+    maybe_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
-    // TODO(dgq): expose compression level in API so it can be properly set.
-    maybe_compression_level_.is_set = false;
+  }
+
+  void set_compression_level(grpc_compression_level level) {
+    maybe_compression_level_.is_set = true;
+    maybe_compression_level_.level = level;
   }
 
  protected:

@@ -55,7 +55,8 @@ def target_has_header(target, name):
   for dep in target['deps']:
     if target_has_header(get_target(dep), name):
       return True
-  if name == 'src/core/lib/profiling/stap_probes.h':
+  if name in ['src/core/lib/profiling/stap_probes.h',
+              'src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h']:
     return True
   return False
 

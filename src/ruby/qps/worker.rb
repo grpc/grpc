@@ -44,7 +44,7 @@ require 'facter'
 require 'client'
 require 'qps-common'
 require 'server'
-require 'src/proto/grpc/testing/services_services'
+require 'src/proto/grpc/testing/services_services_pb'
 
 class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
   def cpu_cores

@@ -55,6 +55,9 @@ void cq_verify(cq_verifier *v);
 /* ensure that the completion queue is empty */
 void cq_verify_empty(cq_verifier *v);
 
+/* ensure that the completion queue is empty, waiting up to \a timeout secs. */
+void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec);
+
 /* Various expectation matchers
    Any functions taking ... expect a NULL terminated list of key/value pairs
    (each pair using two parameter slots) of metadata that MUST be present in
