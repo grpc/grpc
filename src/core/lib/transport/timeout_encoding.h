@@ -31,17 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
+#define GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
 #include <grpc/support/time.h>
 #include "src/core/lib/support/string.h"
 
-#define GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
+#define GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
 
-/* Encode/decode timeouts to the GRPC over HTTP2 format;
+/* Encode/decode timeouts to the GRPC over HTTP/2 format;
    encoding may round up arbitrarily */
-void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer);
-int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout);
+void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer);
+int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout);
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H */
