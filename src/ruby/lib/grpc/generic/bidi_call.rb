@@ -76,7 +76,7 @@ module GRPC
     # block that can be invoked with each response.
     #
     # @param requests the Enumerable of requests to send
-    # @op_notifier a Notifier used to signal completion
+    # @param op_notifier a Notifier used to signal completion
     # @return an Enumerator of requests to yield
     def run_on_client(requests, op_notifier, &blk)
       @op_notifier = op_notifier

@@ -49,7 +49,7 @@ namespace Grpc.IntegrationTesting
         {
             // Make logger immune to NUnit capturing stdout and stderr to workaround https://github.com/nunit/nunit/issues/1406.
             GrpcEnvironment.SetLogger(new TextWriterLogger(Console.Error));
-#if NETSTANDARD1_5
+#if NETCOREAPP1_0
             return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
 #else
             return new AutoRun().Execute(args);

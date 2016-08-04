@@ -67,7 +67,7 @@ def _abortion(rpc_error_call):
   error_kind = face.Abortion.Kind.LOCAL_FAILURE if pair is None else pair[0]
   return face.Abortion(
       error_kind, rpc_error_call.initial_metadata(),
-      rpc_error_call.trailing_metadata(), code, rpc_error_code.details())
+      rpc_error_call.trailing_metadata(), code, rpc_error_call.details())
 
 
 def _abortion_error(rpc_error_call):
@@ -159,9 +159,11 @@ class _Rendezvous(future.Future, face.Call):
     return self._call.time_remaining()
 
   def add_abortion_callback(self, abortion_callback):
-    registered = self._call.add_callback(
-        lambda: abortion_callback(_abortion(self._call)))
-    return None if registered else _abortion(self._call)
+    def done_callback():
+      if self.code() is not grpc.StatusCode.OK:
+        abortion_callback(_abortion(self._call))
+    registered = self._call.add_callback(done_callback)
+    return None if registered else done_callback()
 
   def protocol_context(self):
     return _InvocationProtocolContext()

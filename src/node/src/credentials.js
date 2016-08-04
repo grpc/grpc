@@ -92,7 +92,8 @@ exports.createSsl = ChannelCredentials.createSsl;
  * @return {CallCredentials} The credentials object
  */
 exports.createFromMetadataGenerator = function(metadata_generator) {
-  return CallCredentials.createFromPlugin(function(service_url, callback) {
+  return CallCredentials.createFromPlugin(function(service_url, cb_data,
+                                                   callback) {
     metadata_generator({service_url: service_url}, function(error, metadata) {
       var code = grpc.status.OK;
       var message = '';
@@ -107,7 +108,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
           metadata = new Metadata();
         }
       }
-      callback(code, message, metadata._getCoreRepresentation());
+      callback(code, message, metadata._getCoreRepresentation(), cb_data);
     });
   });
 };

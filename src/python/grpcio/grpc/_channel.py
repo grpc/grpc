@@ -353,12 +353,12 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
     else:
       return max(self._deadline - time.time(), 0)
 
-  def add_cancellation_callback(self, callback):
+  def add_callback(self, callback):
     with self._state.condition:
       if self._state.callbacks is None:
         return False
       else:
-        self._state.callbacks.append(lambda unused_future: callback())
+        self._state.callbacks.append(lambda: callback())
         return True
 
   def initial_metadata(self):

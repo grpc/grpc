@@ -1414,7 +1414,7 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, tst.size());
+  ASSERT_EQ(1u, tst.size());
   EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
   if (GetParam().credentials_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",
