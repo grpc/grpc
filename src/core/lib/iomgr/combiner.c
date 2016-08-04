@@ -171,10 +171,21 @@ static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 
 static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   GPR_TIMER_BEGIN("combiner.maybe_finish_one", 0);
+  GPR_ASSERT(exec_ctx->active_combiner == lock);
+  if (lock->optional_workqueue != NULL &&
+      grpc_exec_ctx_ready_to_finish(exec_ctx)) {
+    // this execution context wants to move on, and we have a workqueue (and so
+    // can help the execution context out): schedule remaining work to be picked
+    // up on the workqueue
+    grpc_closure_init(&lock->continue_finishing, continue_finishing_mainline,
+                      lock);
+    grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue,
+                           &lock->continue_finishing, GRPC_ERROR_NONE);
+    return false;
+  }
   gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
   GRPC_COMBINER_TRACE(
       gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
-  GPR_ASSERT(exec_ctx->active_combiner == lock);
   if (n == NULL) {
     // queue is in an inconsistant state: use this as a cue that we should
     // go off and do something else for a while (and come back later)

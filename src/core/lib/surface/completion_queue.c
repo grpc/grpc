@@ -521,7 +521,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cc->mu);
-      grpc_cq_completion *c = is_finished_arg.stolen_completion;
+      c = is_finished_arg.stolen_completion;
       is_finished_arg.stolen_completion = NULL;
       ret.type = GRPC_OP_COMPLETE;
       ret.success = c->next & 1u;
