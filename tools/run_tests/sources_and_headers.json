@@ -2359,6 +2359,7 @@
       "grpc++_test_util", 
       "grpc_test_util", 
       "interop_server_helper", 
+      "interop_server_lib", 
       "interop_server_main"
     ], 
     "headers": [], 
@@ -4698,9 +4699,22 @@
       "src/proto/grpc/testing/test.pb.h"
     ], 
     "language": "c++", 
-    "name": "interop_server_main", 
+    "name": "interop_server_lib", 
     "src": [
       "test/cpp/interop/interop_server.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "interop_server_lib"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "interop_server_main", 
+    "src": [
+      "test/cpp/interop/interop_server_bootstrap.cc"
     ], 
     "third_party": false, 
     "type": "lib"
