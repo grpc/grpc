@@ -36,8 +36,8 @@ set -e
 # to test instead of using "go get" to download from Github directly.
 git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
 
-# Get all gRPC Go dependencies
-(cd src/google.golang.org/grpc && go get -t .)
+# Get all gRPC Go interop dependencies
+(cd src/google.golang.org/grpc/interop && go get -t .)
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
