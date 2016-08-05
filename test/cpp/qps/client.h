@@ -179,6 +179,7 @@ class Client {
 
  protected:
   bool closed_loop_;
+  gpr_atm thread_pool_done_;
 
   void StartThreads(size_t num_threads) {
     gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(0));
@@ -304,7 +305,6 @@ class Client {
   InterarrivalTimer interarrival_timer_;
   std::vector<gpr_timespec> next_time_;
 
-  gpr_atm thread_pool_done_;
   std::mutex thread_completion_mu_;
   size_t threads_remaining_;
   std::condition_variable threads_complete_;
