@@ -180,6 +180,9 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
             err, GRPC_ERROR_CREATE("Missing te: trailers header"));
       }
       /* Error this call out */
+      const char *error_str = grpc_error_string(err);
+      gpr_log(GPR_ERROR, "Invalid http2 headers: %s", error_str);
+      grpc_error_free_string(error_str);
       grpc_call_element_send_cancel(exec_ctx, elem);
     }
   } else {
