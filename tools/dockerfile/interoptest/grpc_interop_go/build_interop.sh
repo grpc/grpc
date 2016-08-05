@@ -31,7 +31,7 @@
 # Builds Go interop server and client in a base image.
 set -e
 
-go get google.golang.org/grpc
+go get google.golang.org/grpc/interop
 
 # Clone just the grpc-go source code without any dependencies.
 # We are cloning from a local git repo that contains the right revision
