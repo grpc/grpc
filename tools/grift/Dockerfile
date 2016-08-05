@@ -43,21 +43,25 @@ RUN apt-get update && \
   cmake \
   libiberty-dev \
   g++ unzip \
-  curl make automake libtool
+  curl make automake libtool libboost-dev
 
 # Configure git
 RUN git config --global user.name "Jenkins" && \
   git config --global user.email "jenkins@grpc"
 
+# Clone gRPC
 RUN git clone https://github.com/grpc/grpc
 
+# Update Submodules
 RUN cd grpc && git submodule update --init
 
-RUN cd grpc/third_party/thrift && git am --signoff < ../../tools/grift/grpc_plugins_generator.patch
-
+# Install protobuf
 RUN cd grpc/third_party/protobuf && ./autogen.sh && ./configure && \
   make -j && make check -j && make install && ldconfig
 
+# Install gRPC
 RUN cd grpc && make -j && make install
 
-RUN cd grpc/third_party/thrift && ./bootstrap.sh && ./configure && make -j && make install
+# Install thrift
+RUN cd grpc/third_party/thrift && git am --signoff < ../../tools/grift/grpc_plugins_generator.patch && \
+  ./bootstrap.sh && ./configure && make -j && make install
