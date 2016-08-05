@@ -84,7 +84,7 @@ void php_grpc_read_args_array(zval *args_array,
   array_hash = Z_ARRVAL_P(args_array);
   if (!array_hash) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "array_hash is NULL", 1);
+                         "array_hash is NULL", 1 TSRMLS_CC);
     return;
   }
   args->num_args = zend_hash_num_elements(array_hash);

@@ -470,7 +470,8 @@ PHP_METHOD(Call, startBatch) {
 #endif
       PHP_GRPC_DELREF(array);
       add_property_long(recv_status, "code", status);
-      php_grpc_add_property_string(recv_status, "details", status_details, true);
+      php_grpc_add_property_string(recv_status, "details", status_details,
+                                   true);
       add_property_zval(result, "status", recv_status);
       PHP_GRPC_DELREF(recv_status);
       break;

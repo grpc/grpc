@@ -202,6 +202,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_BEGIN("finalize_outbuf", 0);
 
+  bool is_first_data_frame = true;
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
     uint32_t max_outgoing =
@@ -266,6 +267,11 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
             stream_writing->id, &stream_writing->flow_controlled_buffer,
             send_bytes, is_last_frame, &stream_writing->stats,
             &transport_writing->outbuf);
+        if (is_first_data_frame) {
+          /* TODO(dgq): this is a hack. It'll be fix in a future refactoring */
+          stream_writing->stats.data_bytes -= 5; /* discount grpc framing */
+          is_first_data_frame = false;
+        }
         GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", transport_writing,
                                       stream_writing, outgoing_window,
                                       send_bytes);

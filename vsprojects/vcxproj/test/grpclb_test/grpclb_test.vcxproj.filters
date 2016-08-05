@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v1\load_balancer.proto">
+      <Filter>src\proto\grpc\lb\v1</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\grpclb\grpclb_test.cc">
+      <Filter>test\cpp\grpclb</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{082bbcbc-bbd8-db7d-afe9-fa0fec76863d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{7c61995a-80c2-ef3d-0a4b-baf2221c12f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{fc2920d4-902c-fdf0-d4b8-6b22e1361105}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\lb">
+      <UniqueIdentifier>{4778352a-559f-b008-e3d2-4ae9181260df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\lb\v1">
+      <UniqueIdentifier>{36a4326b-4f2a-4720-b730-e40fe078fd40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{e0ba55a2-37d9-5029-6f4e-64f097307340}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{ad67d6ba-d08b-7879-2929-20f0f01c9918}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\grpclb">
+      <UniqueIdentifier>{4498fa30-2dab-584c-5711-a1055cec30f6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

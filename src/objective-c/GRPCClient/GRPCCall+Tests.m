@@ -61,4 +61,7 @@
   hostConfig.secure = NO;
 }
 
++ (void)resetHostSettings {
+  [GRPCHost resetAllHostSettings];
+}
 @end
