@@ -31,11 +31,13 @@
 # Builds Go interop server and client in a base image.
 set -e
 
-
 # Clone just the grpc-go source code without any dependencies.
 # We are cloning from a local git repo that contains the right revision
 # to test instead of using "go get" to download from Github directly.
 git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
+
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
 # Get dependencies from GitHub
 # NOTE: once grpc-go dependencies change, this needs to be updated manually
@@ -46,9 +48,6 @@ go get golang.org/x/net/trace
 go get golang.org/x/oauth2
 go get golang.org/x/oauth2/google
 go get google.golang.org/cloud
-
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
 
 # Build the interop client and server
 (cd src/google.golang.org/grpc/interop/client && go install)
