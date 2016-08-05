@@ -937,6 +937,7 @@ third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.h \
 third_party/nanopb/pb_decode.h \
 third_party/nanopb/pb_encode.h \
+src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h \
 src/core/ext/load_reporting/load_reporting.h \
 src/core/ext/load_reporting/load_reporting_filter.h \
 src/core/ext/census/aggregation.h \
@@ -1118,7 +1119,8 @@ third_party/nanopb/pb_decode.c \
 third_party/nanopb/pb_encode.c \
 src/core/ext/lb_policy/pick_first/pick_first.c \
 src/core/ext/lb_policy/round_robin/round_robin.c \
-src/core/ext/resolver/dns/native/dns_resolver.c \
+src/core/ext/resolver/dns/c_ares/dns_resolver.c \
+src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
 src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
 src/core/ext/load_reporting/load_reporting.c \
 src/core/ext/load_reporting/load_reporting_filter.c \

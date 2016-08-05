@@ -4181,7 +4181,7 @@
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
-      "grpc_resolver_dns_native", 
+      "grpc_resolver_dns_ares", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_transport_chttp2_client_insecure", 
@@ -4275,7 +4275,7 @@
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
-      "grpc_resolver_dns_native", 
+      "grpc_resolver_dns_ares", 
       "grpc_resolver_sockaddr", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure"
@@ -6133,6 +6133,25 @@
       "src/core/ext/load_reporting/load_reporting.h", 
       "src/core/ext/load_reporting/load_reporting_filter.c", 
       "src/core/ext/load_reporting/load_reporting_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_config"
+    ], 
+    "headers": [
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_resolver_dns_ares", 
+    "src": [
+      "src/core/ext/resolver/dns/c_ares/dns_resolver.c", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c", 
+      "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

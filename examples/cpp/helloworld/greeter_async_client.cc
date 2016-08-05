@@ -79,17 +79,19 @@ class GreeterClient {
     // hold on to the "rpc" instance in order to get updates on the ongoing RPC.
     std::unique_ptr<ClientAsyncResponseReader<HelloReply> > rpc(
         stub_->AsyncSayHello(&context, request, &cq));
-
+    std::cout << "after AsyncSayHello\n";
     // Request that, upon completion of the RPC, "reply" be updated with the
     // server's response; "status" with the indication of whether the operation
     // was successful. Tag the request with the integer 1.
     rpc->Finish(&reply, &status, (void*)1);
+    std::cout << "after Finish\n";
     void* got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".
     // The return value of Next should always be checked. This return value
     // tells us whether there is any kind of event or the cq_ is shutting down.
     GPR_ASSERT(cq.Next(&got_tag, &ok));
+    std::cout << "after Next\n";
 
     // Verify that the result from "cq" corresponds, by its tag, our previous
     // request.
@@ -117,8 +119,8 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
-  GreeterClient greeter(grpc::CreateChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials()));
+  GreeterClient greeter(
+      grpc::CreateChannel("[::1]:50051", grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);  // The actual RPC call!
   std::cout << "Greeter received: " << reply << std::endl;

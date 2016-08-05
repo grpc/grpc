@@ -174,7 +174,7 @@ static bool is_special(grpc_error *err) {
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (is_special(err)) return err;
-  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+  gpr_log(GPR_ERROR, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           err->refs.count, err->refs.count + 1, file, line, func);
   gpr_ref(&err->refs);
   return err;
@@ -200,7 +200,7 @@ static void error_destroy(grpc_error *err) {
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (is_special(err)) return;
-  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+  gpr_log(GPR_ERROR, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
           err->refs.count, err->refs.count - 1, file, line, func);
   if (gpr_unref(&err->refs)) {
     error_destroy(err);

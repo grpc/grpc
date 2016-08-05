@@ -1691,6 +1691,7 @@
   % for dep in tgt.deps:
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
+   $(CARES_DEP)\
 
   % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
   ## C++ targets specificies.
@@ -1721,6 +1722,7 @@
   % for dep in tgt.deps:
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
+   $(LDLIBS_CARES)\
   % if tgt.language == "c++":
   % if tgt.build == 'protoc':
    $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\
