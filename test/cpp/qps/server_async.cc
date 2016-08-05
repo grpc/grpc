@@ -108,14 +108,14 @@ class AsyncQpsServerTest : public Server {
           auto request_unary =
               std::bind(request_unary_function, &async_service_, _1, _2, _3,
                         srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
-          contexts_.push_front(
+          contexts_.emplace_back(
               new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
         }
         if (request_streaming_function) {
           auto request_streaming =
               std::bind(request_streaming_function, &async_service_, _1, _2,
                         srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
-          contexts_.push_front(new ServerRpcContextStreamingImpl(
+          contexts_.emplace_back(new ServerRpcContextStreamingImpl(
               request_streaming, process_rpc_bound));
         }
       }
@@ -145,10 +145,6 @@ class AsyncQpsServerTest : public Server {
       void *got_tag;
       while ((*cq)->Next(&got_tag, &ok))
         ;
-    }
-    while (!contexts_.empty()) {
-      delete contexts_.front();
-      contexts_.pop_front();
     }
   }
 
@@ -336,7 +332,7 @@ class AsyncQpsServerTest : public Server {
   std::unique_ptr<grpc::Server> server_;
   std::vector<std::unique_ptr<grpc::ServerCompletionQueue>> srv_cqs_;
   ServiceType async_service_;
-  std::forward_list<ServerRpcContext *> contexts_;
+  std::vector<std::unique_ptr<ServerRpcContext>> contexts_;
 
   struct PerThreadShutdownState {
     mutable std::mutex mutex;
