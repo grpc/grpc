@@ -244,13 +244,9 @@ class Client {
   class Thread {
    public:
     Thread(Client* client, size_t idx)
-        : client_(client),
-          idx_(idx),
-          impl_(&Thread::ThreadFunc, this) {}
+        : client_(client), idx_(idx), impl_(&Thread::ThreadFunc, this) {}
 
-    ~Thread() {
-      impl_.join();
-    }
+    ~Thread() { impl_.join(); }
 
     void BeginSwap(Histogram* n) {
       std::lock_guard<std::mutex> g(mu_);
@@ -278,13 +274,13 @@ class Client {
         if (entry.used()) {
           histogram_.Add(entry.value());
         }
-	bool done = false;
+        bool done = false;
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
           done = true;
         }
-	done = done || (gpr_atm_acq_load(&client_->thread_pool_done_) !=
-			static_cast<gpr_atm>(0));
+        done = done || (gpr_atm_acq_load(&client_->thread_pool_done_) !=
+                        static_cast<gpr_atm>(0));
         if (done) {
           client_->CompleteThread();
           return;

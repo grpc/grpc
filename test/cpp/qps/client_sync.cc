@@ -87,18 +87,18 @@ class SynchronousClient
       // need to terminate before then. This is an issue since
       // exponential distribution can occasionally produce bad outliers
       while (true) {
-	gpr_timespec one_sec_delay =
-	  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-		       gpr_time_from_seconds(1, GPR_TIMESPAN));
-	if (gpr_time_cmp(next_issue_time, one_sec_delay) <= 0) {
-	  gpr_sleep_until(next_issue_time);
-	  return true;
-	} else {
-	  gpr_sleep_until(one_sec_delay);
-	  if (gpr_atm_acq_load(&thread_pool_done_) != static_cast<gpr_atm>(0)) {
-	    return false;
-	  }
-	}
+        gpr_timespec one_sec_delay =
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                         gpr_time_from_seconds(1, GPR_TIMESPAN));
+        if (gpr_time_cmp(next_issue_time, one_sec_delay) <= 0) {
+          gpr_sleep_until(next_issue_time);
+          return true;
+        } else {
+          gpr_sleep_until(one_sec_delay);
+          if (gpr_atm_acq_load(&thread_pool_done_) != static_cast<gpr_atm>(0)) {
+            return false;
+          }
+        }
       }
     }
     return true;
