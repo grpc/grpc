@@ -59,21 +59,21 @@ index 6fd15d2..7de1fad 100755
 2.8.0.rc3.226.g39d4020
 
 
-From e724d3abf096278615085bd58217321e32b43fd8 Mon Sep 17 00:00:00 2001
+From 387e4300bc9d98176a92a7c010621443a538e7f2 Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:16:40 -0700
 Subject: [PATCH 2/3] grpc cpp plugins generator with example
 
 ---
- compiler/cpp/src/generate/t_cpp_generator.cc | 478 +++++++++++++++++++++++----
+ compiler/cpp/src/generate/t_cpp_generator.cc | 489 +++++++++++++++++++++++----
  tutorial/cpp/CMakeLists.txt                  |  53 ---
  tutorial/cpp/CppClient.cpp                   |  80 -----
  tutorial/cpp/CppServer.cpp                   | 181 ----------
- tutorial/cpp/GriftClient.cpp                 |  93 ++++++
- tutorial/cpp/GriftServer.cpp                 |  93 ++++++
+ tutorial/cpp/GriftClient.cpp                 |  93 +++++
+ tutorial/cpp/GriftServer.cpp                 |  93 +++++
  tutorial/cpp/Makefile.am                     |  66 ++--
  tutorial/cpp/test.thrift                     |  13 +
- 8 files changed, 641 insertions(+), 416 deletions(-)
+ 8 files changed, 652 insertions(+), 416 deletions(-)
  delete mode 100644 tutorial/cpp/CMakeLists.txt
  delete mode 100644 tutorial/cpp/CppClient.cpp
  delete mode 100644 tutorial/cpp/CppServer.cpp
@@ -82,7 +82,7 @@ Subject: [PATCH 2/3] grpc cpp plugins generator with example
  create mode 100644 tutorial/cpp/test.thrift
 
 diff --git a/compiler/cpp/src/generate/t_cpp_generator.cc b/compiler/cpp/src/generate/t_cpp_generator.cc
-index 6c04899..4e00129 100644
+index 6c04899..1557241 100644
 --- a/compiler/cpp/src/generate/t_cpp_generator.cc
 +++ b/compiler/cpp/src/generate/t_cpp_generator.cc
 @@ -162,6 +162,8 @@ public:
@@ -328,7 +328,7 @@ index 6c04899..4e00129 100644
                     << endl;
  
      f_service_tcc_ << "#ifndef " << svcname << "_TCC" << endl << "#define " << svcname << "_TCC"
-@@ -1663,19 +1704,66 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+@@ -1663,19 +1704,69 @@ void t_cpp_generator::generate_service(t_service* tservice) {
      }
    }
  
@@ -361,15 +361,18 @@ index 6c04899..4e00129 100644
 +      indent() << "\"/" << ns << "." << service_name_ << "/" << (*f_iter)->get_name() << "\"," << endl;
 +  }
 +
-+  if (extends_service) {
-+    vector<t_function*> functions = extends_service->get_functions();
++
++  t_service* service_iter = extends_service;  
++  while (service_iter) {
++    vector<t_function*> functions = service_iter->get_functions();
 +    vector<t_function*>::iterator f_iter;
 +
 +    for ( f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
 +      f_service_ <<
-+      indent() << "\"/" << extends_service->get_program()->get_namespace("cpp") <<
-+      "." << extends_service->get_name() << "/" << (*f_iter)->get_name() << "\"," << endl;
++      indent() << "\"/" << service_iter->get_program()->get_namespace("cpp") <<
++      "." << service_iter->get_name() << "/" << (*f_iter)->get_name() << "\"," << endl;
 +    }
++    service_iter = service_iter->get_extends();
 +  }
 +
 +  indent_down();
@@ -403,7 +406,7 @@ index 6c04899..4e00129 100644
  
    // Generate all the cob components
    if (gen_cob_style_) {
-@@ -1688,10 +1776,14 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+@@ -1688,10 +1779,14 @@ void t_cpp_generator::generate_service(t_service* tservice) {
      generate_service_async_skeleton(tservice);
    }
  
@@ -418,7 +421,7 @@ index 6c04899..4e00129 100644
    // Close the namespace
    f_service_ << ns_close_ << endl << endl;
    f_service_tcc_ << ns_close_ << endl << endl;
-@@ -1729,15 +1821,11 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
+@@ -1729,15 +1824,11 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
      string name_orig = ts->get_name();
  
      // TODO(dreiss): Why is this stuff not in generate_function_helpers?
@@ -436,7 +439,7 @@ index 6c04899..4e00129 100644
      ts->set_name(name_orig);
  
      generate_function_helpers(tservice, *f_iter);
-@@ -1745,13 +1833,210 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
+@@ -1745,13 +1836,218 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
  }
  
  /**
@@ -497,9 +500,10 @@ index 6c04899..4e00129 100644
 +    }
 +
 +    t_service* extends_service = tservice->get_extends();
-+    if (extends_service) {
++    t_service* service_iter = extends_service;
++    while (service_iter) {
 +      // generate inherited methods
-+      vector<t_function*> functions = extends_service->get_functions();
++      vector<t_function*> functions = service_iter->get_functions();
 +      vector<t_function*>::iterator f_iter;
 +      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
 +        string function_name = (*f_iter)->get_name();
@@ -508,6 +512,7 @@ index 6c04899..4e00129 100644
 +          "(::grpc::ClientContext* context, const " << function_name <<
 +          "Req& request, " << function_name << "Resp* response) override;" << endl;
 +      }
++      service_iter = service_iter->get_extends();
 +    }
 +
 +    f_header_ <<
@@ -521,14 +526,16 @@ index 6c04899..4e00129 100644
 +        indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
 +    }
 +
-+    if (extends_service) {
++    service_iter = extends_service;
++    while (service_iter) {
 +      // generate inherited methods
-+      vector<t_function*> functions = extends_service->get_functions();
++      vector<t_function*> functions = service_iter->get_functions();
 +      vector<t_function*>::iterator f_iter;
 +      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
 +        f_header_ <<
 +          indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
 +      }
++      service_iter = service_iter->get_extends();
 +    }
 +
 +    indent_down();
@@ -551,9 +558,10 @@ index 6c04899..4e00129 100644
 +        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
 +    }
 +
-+    if (extends_service) {
++    service_iter = extends_service;
++    while (service_iter) {
 +      // generate inherited methods
-+      vector<t_function*> functions = extends_service->get_functions();
++      vector<t_function*> functions = service_iter->get_functions();
 +      vector<t_function*>::iterator f_iter;
 +      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter, ++i) {
 +        f_service_ <<
@@ -561,6 +569,7 @@ index 6c04899..4e00129 100644
 +        ", rpcmethod_" << (*f_iter)->get_name() << "_(" <<
 +        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
 +      }
++      service_iter = service_iter->get_extends();
 +    }
 +    f_service_ <<
 +    indent() << "{}" << endl;
@@ -609,8 +618,9 @@ index 6c04899..4e00129 100644
 +
 +    }
 +
-+    if (extends_service) {
-+      vector<t_function*> functions = extends_service->get_functions();
++    service_iter = extends_service;
++    while (service_iter) {
++      vector<t_function*> functions = service_iter->get_functions();
 +      vector<t_function*>::iterator f_iter;
 +      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
 +        string function_name = (*f_iter)->get_name();
@@ -631,6 +641,7 @@ index 6c04899..4e00129 100644
 +        "}" << endl;
 +
 +      }
++      service_iter = service_iter->get_extends();
 +    }
 +
 +}
@@ -648,7 +659,7 @@ index 6c04899..4e00129 100644
    if (style == "CobCl") {
      // Forward declare the client.
      string client_name = service_name_ + "CobClient";
-@@ -1764,13 +2049,15 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+@@ -1764,13 +2060,15 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
    }
  
    string extends = "";
@@ -666,7 +677,7 @@ index 6c04899..4e00129 100644
    }
  
    if (style == "CobCl" && gen_templates_) {
-@@ -1778,7 +2065,9 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+@@ -1778,7 +2076,9 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
    }
    f_header_ << "class " << service_if_name << extends << " {" << endl << " public:" << endl;
    indent_up();
@@ -677,7 +688,7 @@ index 6c04899..4e00129 100644
  
    vector<t_function*> functions = tservice->get_functions();
    vector<t_function*>::iterator f_iter;
-@@ -1786,7 +2075,12 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+@@ -1786,7 +2086,12 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
      if ((*f_iter)->has_doc())
        f_header_ << endl;
      generate_java_doc(f_header_, *f_iter);
@@ -691,7 +702,7 @@ index 6c04899..4e00129 100644
    }
    indent_down();
    f_header_ << "};" << endl << endl;
-@@ -1797,6 +2091,66 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+@@ -1797,6 +2102,66 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
      f_header_ << "typedef " << service_if_name << "< ::apache::thrift::protocol::TProtocol> "
                << service_name_ << style << "If;" << endl << endl;
    }
@@ -758,7 +769,7 @@ index 6c04899..4e00129 100644
  }
  
  /**
-@@ -3095,7 +3449,7 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
+@@ -3095,7 +3460,7 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
  
    std::ofstream& out = (gen_templates_ ? f_service_tcc_ : f_service_);
  
@@ -767,7 +778,7 @@ index 6c04899..4e00129 100644
    t_field success(tfunction->get_returntype(), "success", 0);
    if (!tfunction->get_returntype()->is_void()) {
      result.append(&success);
-@@ -3109,17 +3463,9 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
+@@ -3109,17 +3474,9 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
    }
  
    generate_struct_declaration(f_header_, &result, false);
@@ -786,7 +797,7 @@ index 6c04899..4e00129 100644
  }
  
  /**
-@@ -3162,8 +3508,8 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
+@@ -3162,8 +3519,8 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
          << endl;
      scope_up(out);
  
@@ -797,7 +808,7 @@ index 6c04899..4e00129 100644
  
      if (tfunction->is_oneway() && !unnamed_oprot_seqid) {
        out << indent() << "(void) seqid;" << endl << indent() << "(void) oprot;" << endl;
-@@ -3320,7 +3666,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
+@@ -3320,7 +3677,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
        out << indent() << "(void) seqid;" << endl << indent() << "(void) oprot;" << endl;
      }
  
@@ -806,7 +817,7 @@ index 6c04899..4e00129 100644
          << indent() << "void* ctx = NULL;" << endl << indent()
          << "if (this->eventHandler_.get() != NULL) {" << endl << indent()
          << "  ctx = this->eventHandler_->getContext(" << service_func_name << ", NULL);" << endl
-@@ -3487,7 +3833,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
+@@ -3487,7 +3844,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
            << "this->eventHandler_.get(), ctx, " << service_func_name << ");" << endl << endl;
  
        // Throw the TDelayedException, and catch the result
@@ -1475,7 +1486,7 @@ index 0000000..de3c9a4
 2.8.0.rc3.226.g39d4020
 
 
-From f991f33dd6461eae197b6ad0e7088b571f2a7b22 Mon Sep 17 00:00:00 2001
+From 3e4d75a2e2c474ee7700e7c9acaf89fdb768bedc Mon Sep 17 00:00:00 2001
 From: chedeti <chedeti@google.com>
 Date: Sun, 31 Jul 2016 16:23:53 -0700
 Subject: [PATCH 3/3] grpc java plugins generator
