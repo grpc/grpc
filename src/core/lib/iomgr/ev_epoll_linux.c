@@ -927,7 +927,8 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     fd->polling_island = NULL;
   }
 
-  grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error),
+                      NULL);
 
   gpr_mu_unlock(&fd->mu);
   UNREF_BY(fd, 2, reason); /* Drop the reference */
@@ -939,6 +940,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     PI_UNREF(exec_ctx, unref_pi, "fd_orphan");
   }
   GRPC_LOG_IF_ERROR("fd_orphan", GRPC_ERROR_REF(error));
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_error *fd_shutdown_error(bool shutdown) {
