@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
-  grpc_blocking_resolve_address = my_resolve_address;
+  grpc_customized_resolve_address = my_resolve_address;
 
   grpc_resolver *resolver = create_resolver("dns:test");
 
