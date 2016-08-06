@@ -185,7 +185,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   request *r;
   grpc_error *err;
 
-  if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
+  if ((err = grpc_customized_resolve_address(name, default_port, addresses)) !=
       GRPC_ERROR_CANCELLED) {
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
     return;
