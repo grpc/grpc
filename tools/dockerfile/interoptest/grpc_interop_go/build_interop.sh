@@ -42,7 +42,6 @@ cp -r /var/local/jenkins/service_account $HOME || true
 # Get dependencies from GitHub
 # NOTE: once grpc-go dependencies change, this needs to be updated manually
 # but we don't expect this to happen any time soon.
-go get google.golang.org/cloud/compute/metadata
 go get github.com/golang/protobuf/proto
 go get golang.org/x/net/context
 go get golang.org/x/net/trace
