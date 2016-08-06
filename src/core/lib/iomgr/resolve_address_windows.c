@@ -143,6 +143,17 @@ grpc_error *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port,
     grpc_resolved_addresses **addresses) = blocking_resolve_address_impl;
 
+static grpc_error *default_customized_resolve_address_impl(
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) {
+  return GRPC_ERROR_CANCELLED;
+}
+
+grpc_error *(*grpc_customized_resolve_address)(
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) =
+    default_customized_resolve_address_impl;
+
 /* Callback to be passed to grpc_executor to asynch-ify
  * grpc_blocking_resolve_address */
 static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
@@ -171,7 +182,16 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  const char *default_port,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addresses) {
-  request *r = gpr_malloc(sizeof(request));
+  request *r;
+  grpc_error *err;
+
+  if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
+      GRPC_ERROR_CANCELLED) {
+    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    return;
+  }
+
+  r = gpr_malloc(sizeof(request));
   grpc_closure_init(&r->request_closure, do_request_thread, r);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);

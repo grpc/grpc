@@ -66,4 +66,11 @@ extern grpc_error *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port,
     grpc_resolved_addresses **addresses);
 
+/* Returns GRPC_ERROR_CANCELLED by default. If it's overriden and returns
+   error other than GRPC_ERROR_CANCELLED, grpc_resolve_address will use its
+   result. Result must be freed with grpc_resolved_addresses_destroy. */
+extern grpc_error *(*grpc_customized_resolve_address)(
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses);
+
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */
