@@ -95,8 +95,13 @@ static void pipe_destroy(grpc_wakeup_fd* fd_info) {
 }
 
 static int pipe_check_availability(void) {
-  /* Assume that pipes are always available. */
-  return 1;
+  grpc_wakeup_fd fd;
+  if (pipe_init(&fd) == GRPC_ERROR_NONE) {
+    pipe_destroy(&fd);
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
