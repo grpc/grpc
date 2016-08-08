@@ -71,19 +71,6 @@ namespace Grpc.IntegrationTesting
 
             [Option("metrics_port", Default = 8081)]
             public int MetricsPort { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# stress test client",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ClientOptions options;
@@ -105,23 +92,21 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ClientOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
+            var parserResult = Parser.Default.ParseArguments<ClientOptions>(args)
+                .WithNotParsed((x) => Environment.Exit(1))
+                .WithParsed(options => {
+                    GrpcPreconditions.CheckArgument(options.NumChannelsPerServer > 0);
+                    GrpcPreconditions.CheckArgument(options.NumStubsPerChannel > 0);
 
-            GrpcPreconditions.CheckArgument(options.NumChannelsPerServer > 0);
-            GrpcPreconditions.CheckArgument(options.NumStubsPerChannel > 0);
+                    var serverAddresses = options.ServerAddresses.Split(',');
+                    GrpcPreconditions.CheckArgument(serverAddresses.Length > 0, "You need to provide at least one server address");
 
-            var serverAddresses = options.ServerAddresses.Split(',');
-            GrpcPreconditions.CheckArgument(serverAddresses.Length > 0, "You need to provide at least one server address");
+                    var testCases = ParseWeightedTestCases(options.TestCases);
+                    GrpcPreconditions.CheckArgument(testCases.Count > 0, "You need to provide at least one test case");
 
-            var testCases = ParseWeightedTestCases(options.TestCases);
-            GrpcPreconditions.CheckArgument(testCases.Count > 0, "You need to provide at least one test case");
-
-            var interopClient = new StressTestClient(options, serverAddresses.ToList(), testCases);
-            interopClient.Run().Wait();
+                    var interopClient = new StressTestClient(options, serverAddresses.ToList(), testCases);
+                    interopClient.Run().Wait();
+                });
         }
 
         async Task Run()

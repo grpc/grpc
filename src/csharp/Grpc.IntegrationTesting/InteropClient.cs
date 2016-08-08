@@ -84,19 +84,6 @@ namespace Grpc.IntegrationTesting
 
             [Option("service_account_key_file", Required = false)]
             public string ServiceAccountKeyFile { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# interop testing client",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ClientOptions options;
@@ -108,14 +95,13 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ClientOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
-
-            var interopClient = new InteropClient(options);
-            interopClient.Run().Wait();
+            var parserResult = Parser.Default.ParseArguments<ClientOptions>(args)
+                .WithNotParsed(errors => Environment.Exit(1))
+                .WithParsed(options =>
+                {
+                    var interopClient = new InteropClient(options);
+                    interopClient.Run().Wait();
+                });
         }
 
         private async Task Run()
