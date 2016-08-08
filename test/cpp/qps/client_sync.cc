@@ -82,12 +82,12 @@ class SynchronousClient
   // WaitToIssue returns false if we realize that we need to break out
   bool WaitToIssue(int thread_idx) {
     if (!closed_loop_) {
-      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
+      const gpr_timespec next_issue_time = NextIssueTime(thread_idx);
       // Avoid sleeping for too long continuously because we might
       // need to terminate before then. This is an issue since
       // exponential distribution can occasionally produce bad outliers
       while (true) {
-        gpr_timespec one_sec_delay =
+        const gpr_timespec one_sec_delay =
             gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                          gpr_time_from_seconds(1, GPR_TIMESPAN));
         if (gpr_time_cmp(next_issue_time, one_sec_delay) <= 0) {

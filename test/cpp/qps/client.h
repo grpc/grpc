@@ -169,7 +169,7 @@ class Client {
   // Must call AwaitThreadsCompletion before destructor to avoid a race
   // between destructor and invocation of virtual ThreadFunc
   void AwaitThreadsCompletion() {
-    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(1));
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(true));
     DestroyMultithreading();
     std::unique_lock<std::mutex> g(thread_completion_mu_);
     while (threads_remaining_ != 0) {
@@ -182,7 +182,7 @@ class Client {
   gpr_atm thread_pool_done_;
 
   void StartThreads(size_t num_threads) {
-    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(0));
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
     threads_remaining_ = num_threads;
     for (size_t i = 0; i < num_threads; i++) {
       threads_.emplace_back(new Thread(this, i));
@@ -274,14 +274,11 @@ class Client {
         if (entry.used()) {
           histogram_.Add(entry.value());
         }
-        bool done = false;
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-          done = true;
         }
-        done = done || (gpr_atm_acq_load(&client_->thread_pool_done_) !=
-                        static_cast<gpr_atm>(0));
-        if (done) {
+        if (!thread_still_ok ||
+            static_cast<bool>(gpr_atm_acq_load(&client_->thread_pool_done_))) {
           client_->CompleteThread();
           return;
         }
