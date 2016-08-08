@@ -560,8 +560,10 @@ cc_library(
     "src/c/client_context.h",
     "src/c/client_streaming_blocking_call.h",
     "src/c/completion_queue.h",
+    "src/c/context.h",
     "src/c/init_shutdown.h",
     "src/c/message.h",
+    "src/c/server_context.h",
     "src/c/server_streaming_blocking_call.h",
     "src/c/unary_async_call.h",
     "src/c/unary_blocking_call.h",
@@ -595,6 +597,7 @@ cc_library(
     "include/grpc_c/completion_queue.h",
     "include/grpc_c/declare_serializer.h",
     "include/grpc_c/grpc_c.h",
+    "include/grpc_c/server.h",
     "include/grpc_c/status.h",
   ],
   includes = [

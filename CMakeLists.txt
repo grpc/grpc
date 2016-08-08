@@ -581,6 +581,7 @@ foreach(_hdr
   include/grpc_c/completion_queue.h
   include/grpc_c/declare_serializer.h
   include/grpc_c/grpc_c.h
+  include/grpc_c/server.h
   include/grpc_c/status.h
 )
   string(REPLACE "include/" "" _path ${_hdr})

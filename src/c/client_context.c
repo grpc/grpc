@@ -40,10 +40,10 @@
 grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
   grpc_client_context *context = GRPC_ALLOC_STRUCT(
       grpc_client_context,
-      {.deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
+      {{.deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
        .channel = chan,
        .serialization_impl = {.serialize = NULL, .deserialize = NULL},
-       .status = {.ok = true}});
+       .status = {.ok = true}}});
   return context;
 }
 

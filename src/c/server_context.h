@@ -31,16 +31,16 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CLIENT_CONTEXT_H
-#define GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#ifndef GRPC_C_INTERNAL_SERVER_CONTEXT_H
+#define GRPC_C_INTERNAL_SERVER_CONTEXT_H
 
 #include "src/c/context.h"
 
-typedef struct grpc_client_context grpc_client_context;
+typedef struct grpc_server_context grpc_server_context;
 
-struct grpc_client_context {
+struct grpc_server_context {
   // Anonymous struct emulating inheritance
   struct GRPC_C_CONTEXT_BASE_MEMBERS;
 };
 
-#endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#endif  // GRPC_C_INTERNAL_SERVER_CONTEXT_H

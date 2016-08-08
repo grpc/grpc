@@ -3067,6 +3067,7 @@ PUBLIC_HEADERS_C += \
     include/grpc_c/completion_queue.h \
     include/grpc_c/declare_serializer.h \
     include/grpc_c/grpc_c.h \
+    include/grpc_c/server.h \
     include/grpc_c/status.h \
 
 LIBGRPC_C_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_C_SRC))))

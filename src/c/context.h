@@ -31,16 +31,41 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CLIENT_CONTEXT_H
-#define GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#ifndef GRPC_C_INTERNAL_CONTEXT_H
+#define GRPC_C_INTERNAL_CONTEXT_H
 
-#include "src/c/context.h"
+#include <grpc/grpc.h>
+#include <grpc_c/codegen/client_context.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/codegen/serialization.h>
+#include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
+#include <stdbool.h>
+#include "src/c/message.h"
 
-typedef struct grpc_client_context grpc_client_context;
+typedef struct grpc_context grpc_context;
 
-struct grpc_client_context {
-  // Anonymous struct emulating inheritance
-  struct GRPC_C_CONTEXT_BASE_MEMBERS;
-};
+/**
+ * Both client and server context shares this common stub.
+ */
+#define GRPC_C_CONTEXT_BASE_MEMBERS { \
+  grpc_metadata *send_metadata_array; \
+  grpc_metadata_array recv_metadata_array; \
+  grpc_metadata_array trailing_metadata_array; \
+  gpr_timespec deadline; \
+\
+  /* serialization mechanism used in this call */ \
+  grpc_serialization_impl serialization_impl; \
+\
+  /* status of the call */ \
+  GRPC_status status; \
+\
+  /* state tracking */ \
+  bool initial_metadata_received; \
+  grpc_method rpc_method; \
+  grpc_channel *channel; \
+  grpc_call *call; };
 
-#endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+struct grpc_context GRPC_C_CONTEXT_BASE_MEMBERS;
+
+#endif // GRPC_C_INTERNAL_CONTEXT_H
