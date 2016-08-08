@@ -447,6 +447,7 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h" />
@@ -809,6 +810,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
@@ -816,8 +819,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\c-ares\wrapper.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\base_resources.c">
     </ClCompile>

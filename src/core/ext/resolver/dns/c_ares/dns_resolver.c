@@ -271,6 +271,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
+  grpc_ares_cleanup();
   if (r->resolved_config) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
@@ -285,10 +286,17 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
                                  const char *default_port,
                                  const char *lb_policy_name) {
   dns_resolver *r;
+  grpc_error *error;
   const char *path = args->uri->path;
 
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
+    return NULL;
+  }
+
+  error = grpc_ares_init();
+  if (error != GRPC_ERROR_NONE) {
+    GRPC_LOG_IF_ERROR("fd_orphan", error);
     return NULL;
   }
 
@@ -306,7 +314,6 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
   grpc_client_channel_factory_ref(r->client_channel_factory);
   r->lb_policy_name = gpr_strdup(lb_policy_name);
-  grpc_ares_init();
   return &r->base;
 }
 

@@ -9,9 +9,6 @@ settings:
   '#5': See the expand_version.py for all the quirks here
   version: 1.1.0-dev
 filegroups:
-- name: cares_wrapper
-  src:
-  - src/core/ext/c-ares/wrapper.c
 - name: census
   public_headers:
   - include/grpc/census.h
@@ -423,9 +420,11 @@ filegroups:
   - grpc_base
 - name: grpc_resolver_dns_ares
   headers:
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h
   src:
   - src/core/ext/resolver/dns/c_ares/dns_resolver.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
   - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
   plugin: grpc_resolver_dns_ares
   uses:
@@ -840,7 +839,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_resolver_sockaddr
   - grpc_load_reporting
-  - cares_wrapper
   - grpc_secure
   - census
   generate_plugin_registry: true

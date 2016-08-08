@@ -894,6 +894,7 @@
   	$(Q)cp third_party/c-ares/.libs/libcares.a $(LIBDIR)/$(CONFIG)/c-ares
 
   $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.o: third_party/c-ares/configure
+  $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.o: third_party/c-ares/configure
 
   static: static_c static_cxx
 

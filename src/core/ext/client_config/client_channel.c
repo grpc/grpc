@@ -36,9 +36,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -84,22 +81,6 @@ typedef struct client_channel_channel_data {
   /** interested parties (owned) */
   grpc_pollset_set *interested_parties;
 } channel_data;
-
-struct grpc_pollset_set {
-  gpr_mu mu;
-
-  size_t pollset_count;
-  size_t pollset_capacity;
-  grpc_pollset **pollsets;
-
-  size_t pollset_set_count;
-  size_t pollset_set_capacity;
-  struct grpc_pollset_set **pollset_sets;
-
-  size_t fd_count;
-  size_t fd_capacity;
-  grpc_fd **fds;
-};
 
 /** We create one watcher for each new lb_policy that is returned from a
    resolver,

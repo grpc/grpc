@@ -255,11 +255,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/c_ares/dns_resolver.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
-    src/core/ext/c-ares/wrapper.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -578,7 +578,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/c-ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)

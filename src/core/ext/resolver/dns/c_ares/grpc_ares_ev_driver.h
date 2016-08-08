@@ -31,13 +31,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
 #include <ares.h>
 
-int cares(void) {
-  ares_channel channelptr;
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
-  ares_init(&channelptr);
-  ares_destroy(channelptr);
-  return 0;
-}
+typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
+
+void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx, grpc_ares_ev_driver *ev_driver);
+
+grpc_ares_ev_driver *grpc_ares_ev_driver_create(ares_channel *channel, grpc_pollset_set *pollset_set);

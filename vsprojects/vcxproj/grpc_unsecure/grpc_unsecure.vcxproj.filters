@@ -412,6 +412,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver.c">
       <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
       <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClCompile>
@@ -925,6 +928,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h">
       <Filter>src\core\ext\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h">
       <Filter>src\core\ext\resolver\dns\c_ares</Filter>

@@ -31,24 +31,4 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_RESOLVER_DNS_CARES_RESOLVE_ADDRESS_CARES_H
-#define GRPC_CORE_EXT_RESOLVER_DNS_CARES_RESOLVE_ADDRESS_CARES_H
-
-#include <stddef.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-
-typedef struct grpc_ares_request grpc_ares_request;
-
-grpc_ares_request *grpc_resolve_address_ares(
-    grpc_exec_ctx *exec_ctx, const char *addr, const char *default_port,
-    grpc_pollset_set *pollset_set, grpc_closure *on_done,
-    grpc_resolved_addresses **addresses);
-
-grpc_error *grpc_ares_init(void);
-
-void grpc_ares_cleanup(void);
-
-#endif /* GRPC_CORE_EXT_RESOLVER_DNS_CARES_RESOLVE_ADDRESS_CARES_H */
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"

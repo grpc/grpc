@@ -327,6 +327,7 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.h" role="src" />
@@ -513,11 +514,11 @@
     <file baseinstalldir="/" name="src/core/ext/lb_policy/pick_first/pick_first.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/round_robin/round_robin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/dns_resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/sockaddr/sockaddr_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/c-ares/wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />

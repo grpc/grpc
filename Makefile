@@ -1251,6 +1251,7 @@ $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
 	$(Q)cp third_party/c-ares/.libs/libcares.a $(LIBDIR)/$(CONFIG)/c-ares
 
 $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.o: third_party/c-ares/configure
+$(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.o: third_party/c-ares/configure
 
 static: static_c static_cxx
 
@@ -2761,11 +2762,11 @@ LIBGRPC_SRC = \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/c_ares/dns_resolver.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
-    src/core/ext/c-ares/wrapper.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -3459,6 +3460,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/resolver/dns/c_ares/dns_resolver.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
@@ -15238,7 +15240,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/c-ares/wrapper.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
