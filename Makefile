@@ -3047,6 +3047,7 @@ LIBGRPC_C_SRC = \
     src/c/init_shutdown.c \
     src/c/message.c \
     src/c/pb_compat.c \
+    src/c/server_context.c \
     src/c/server_streaming_blocking_call.c \
     src/c/unary_async_call.c \
     src/c/unary_blocking_call.c \
@@ -16345,6 +16346,7 @@ src/c/completion_queue.c: $(OPENSSL_DEP)
 src/c/init_shutdown.c: $(OPENSSL_DEP)
 src/c/message.c: $(OPENSSL_DEP)
 src/c/pb_compat.c: $(OPENSSL_DEP)
+src/c/server_context.c: $(OPENSSL_DEP)
 src/c/server_streaming_blocking_call.c: $(OPENSSL_DEP)
 src/c/unary_async_call.c: $(OPENSSL_DEP)
 src/c/unary_blocking_call.c: $(OPENSSL_DEP)

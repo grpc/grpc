@@ -31,20 +31,11 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CLIENT_ASYNC_READER_H
-#define GRPC_C_INTERNAL_CLIENT_ASYNC_READER_H
+#include "src/c/server_context.h"
 
-#include "src/c/call_ops.h"
-#include "src/c/client_context.h"
+// We define a conversion function instead of type-casting, which lets the user convert
+// from any pointer to a grpc_context.
+grpc_context *GRPC_server_context_to_base(grpc_server_context *server_context) {
+  return (grpc_context *) server_context;
+}
 
-typedef struct grpc_client_async_response_reader {
-  grpc_call_op_set init_buf;
-  grpc_call_op_set meta_buf;
-  grpc_call_op_set finish_buf;
-
-  grpc_completion_queue *cq;
-  grpc_client_context *context;
-  grpc_call *call;
-} grpc_client_async_response_reader;
-
-#endif  // GRPC_C_INTERNAL_CLIENT_ASYNC_READER_H

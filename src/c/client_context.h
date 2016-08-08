@@ -43,4 +43,6 @@ struct grpc_client_context {
   struct GRPC_C_CONTEXT_BASE_MEMBERS;
 };
 
+grpc_context *GRPC_client_context_to_base(grpc_client_context *client_context);
+
 #endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H

@@ -34,4 +34,6 @@
 #ifndef GRPC_C_INTERNAL_UNARY_BLOCKING_CALL_H
 #define GRPC_C_INTERNAL_UNARY_BLOCKING_CALL_H
 
+#include "src/c/client_context.h"
+
 #endif  // GRPC_C_INTERNAL_UNARY_BLOCKING_CALL_H

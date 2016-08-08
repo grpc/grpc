@@ -36,6 +36,7 @@
 
 #include <grpc_c/codegen/client_streaming_blocking_call.h>
 #include "src/c/call_ops.h"
+#include "src/c/client_context.h"
 
 typedef struct grpc_client_writer {
   grpc_call_op_set finish_ops;

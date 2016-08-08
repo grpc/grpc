@@ -36,6 +36,7 @@
 
 #include <grpc_c/codegen/server_streaming_blocking_call.h>
 #include "src/c/call_ops.h"
+#include "src/c/client_context.h"
 
 typedef struct grpc_client_reader {
   grpc_client_context *context;

@@ -52,10 +52,10 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
   grpc_call_op_set set = {
       {grpc_op_send_metadata, grpc_op_recv_metadata, grpc_op_send_object,
        grpc_op_recv_object, grpc_op_send_close, grpc_op_client_recv_status},
-      .context = context,
+      .context = GRPC_client_context_to_base(context),
       .user_tag = &set};
 
-  grpc_start_batch_from_op_set(call, &set, context, message, response);
+  grpc_start_batch_from_op_set(call, &set, GRPC_client_context_to_base(context), message, response);
   for (;;) {
     void *tag;
     bool ok;

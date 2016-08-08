@@ -31,6 +31,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\c\pb_compat.c">
       <Filter>src\c</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\server_context.c">
+      <Filter>src\c</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\server_streaming_blocking_call.c">
       <Filter>src\c</Filter>
     </ClCompile>
