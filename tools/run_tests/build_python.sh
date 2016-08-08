@@ -111,6 +111,7 @@ TOOLCHAIN=${4:-$(toolchain)}
 ROOT=`pwd`
 export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export LANG=en_US.UTF-8
 
 # Default python on the host to fall back to when instantiating e.g. the
 # virtualenv.
