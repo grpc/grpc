@@ -64,7 +64,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
                     .context = context,
                     .response = NULL},
        .finish_buf = {
-           {grpc_op_recv_metadata, grpc_op_recv_object, grpc_op_recv_status},
+           {grpc_op_recv_metadata, grpc_op_recv_object, grpc_op_client_recv_status},
            .context = context,
            .response = NULL,
        }});

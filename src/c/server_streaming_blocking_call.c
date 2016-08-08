@@ -90,7 +90,7 @@ bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader,
 
 GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
   grpc_call_op_set set = {
-      {grpc_op_recv_status}, .context = reader->context, .user_tag = &set};
+      {grpc_op_client_recv_status}, .context = reader->context, .user_tag = &set};
   grpc_start_batch_from_op_set(reader->call, &set, reader->context,
                                (GRPC_message){0, 0}, NULL);
   GRPC_completion_queue_pluck_internal(reader->cq, &set);

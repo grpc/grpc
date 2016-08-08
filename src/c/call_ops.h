@@ -43,7 +43,7 @@
 
 typedef struct grpc_call_op_set grpc_call_op_set;
 
-typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *,
+typedef bool (*grpc_op_filler)(grpc_op *op,
                                grpc_client_context *, grpc_call_op_set *,
                                const grpc_message message, void *response);
 typedef void (*grpc_op_finisher)(grpc_client_context *, grpc_call_op_set *,
@@ -85,7 +85,6 @@ struct grpc_call_op_set {
 };
 
 void grpc_fill_op_from_call_set(grpc_call_op_set *set,
-                                const grpc_method *rpc_method,
                                 grpc_client_context *context,
                                 const grpc_message message, void *response,
                                 grpc_op ops[], size_t *nops);
@@ -106,6 +105,7 @@ extern const grpc_op_manager grpc_op_recv_metadata;
 extern const grpc_op_manager grpc_op_send_object;
 extern const grpc_op_manager grpc_op_recv_object;
 extern const grpc_op_manager grpc_op_send_close;
-extern const grpc_op_manager grpc_op_recv_status;
+extern const grpc_op_manager grpc_op_client_recv_status;
+extern const grpc_op_manager grpc_op_server_send_status;
 
 #endif /* GRPC_C_INTERNAL_CALL_OPS_H */

@@ -58,7 +58,7 @@ grpc_client_writer *GRPC_client_streaming_blocking_call(
                            .finish_ops =
                                {
                                    {grpc_op_recv_metadata, grpc_op_recv_object,
-                                    grpc_op_send_close, grpc_op_recv_status},
+                                    grpc_op_send_close, grpc_op_client_recv_status},
                                    .context = context,
                                },
                            .cq = cq,

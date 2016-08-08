@@ -121,7 +121,7 @@ bool GRPC_bidi_streaming_blocking_writes_done(
 
 GRPC_status GRPC_client_reader_writer_terminate(
     GRPC_client_reader_writer *reader_writer) {
-  grpc_call_op_set set = {{grpc_op_recv_status},
+  grpc_call_op_set set = {{grpc_op_client_recv_status},
                           .context = reader_writer->context,
                           .user_tag = &set};
   grpc_start_batch_from_op_set(reader_writer->call, &set,
