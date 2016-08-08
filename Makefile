@@ -2566,6 +2566,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
     src/core/lib/iomgr/tcp_client_windows.c \
@@ -2842,6 +2843,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
     src/core/lib/iomgr/tcp_client_windows.c \
@@ -3108,6 +3110,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
     src/core/lib/iomgr/tcp_client_windows.c \
@@ -3300,6 +3303,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
     src/core/lib/iomgr/tcp_client_windows.c \

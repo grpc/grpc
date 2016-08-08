@@ -35,6 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <arpa/inet.h>
@@ -294,6 +295,11 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = socket(family, type, protocol);
   return error_for_fd(*newfd, addr);
+}
+
+const char *grpc_inet_ntop(int af, const void *src,
+                           char *dst, socklen_t size) {
+  return inet_ntop(af, src, dst, size);
 }
 
 #endif
