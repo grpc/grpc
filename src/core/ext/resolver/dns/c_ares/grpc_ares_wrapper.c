@@ -244,7 +244,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
         gpr_log(GPR_ERROR, "addr: %s", output);
         gpr_log(GPR_ERROR, "port: %s", r->port);
         addr->sin6_family = (sa_family_t)hostent->h_addrtype;
-        addr->sin6_port = htons(atoi(r->port));  // TODO: port
+        addr->sin6_port = htons((unsigned short)atoi(r->port));
       } else {
         gpr_log(GPR_ERROR, "AF_INET");
         struct sockaddr_in *addr;
@@ -255,7 +255,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
         memcpy(&addr->sin_addr, hostent->h_addr_list[i],
                sizeof(struct in_addr));
         addr->sin_family = (sa_family_t)hostent->h_addrtype;
-        addr->sin_port = htons(atoi(r->port));  // TODO: port
+        addr->sin_port = htons((unsigned short)atoi(r->port));
       }
     }
     // ares_destroy(r->channel);
@@ -311,7 +311,7 @@ static int try_fake_resolve(const char *name, const char *port,
         gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
     (*addresses)->addrs[0].len = sizeof(struct sockaddr_in);
     sa.sin_family = AF_INET;
-    sa.sin_port = htons(atoi(port));  // TODO: port
+    sa.sin_port = htons((unsigned short)atoi(port));
     memcpy(&(*addresses)->addrs[0].addr, &sa, sizeof(struct sockaddr_in));
     return 1;
   }
@@ -324,7 +324,7 @@ static int try_fake_resolve(const char *name, const char *port,
         gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
     (*addresses)->addrs[0].len = sizeof(struct sockaddr_in6);
     sa6.sin6_family = AF_INET6;
-    sa6.sin6_port = htons(atoi(port));  // TODO: port
+    sa6.sin6_port = htons((unsigned short)atoi(port));
     memcpy(&(*addresses)->addrs[0].addr, &sa6, sizeof(struct sockaddr_in6));
     ares_inet_ntop(AF_INET6, &sa6.sin6_addr, output, INET6_ADDRSTRLEN);
     gpr_log(GPR_ERROR, "addr: %s", output);
