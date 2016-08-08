@@ -54,22 +54,22 @@ namespace Grpc.IntegrationTesting
 
         private class ClientOptions
         {
-            [Option("server_addresses", DefaultValue = "localhost:8080")]
+            [Option("server_addresses", Default = "localhost:8080")]
             public string ServerAddresses { get; set; }
 
-            [Option("test_cases", DefaultValue = "large_unary:100")]
+            [Option("test_cases", Default = "large_unary:100")]
             public string TestCases { get; set; }
 
-            [Option("test_duration_secs", DefaultValue = -1)]
+            [Option("test_duration_secs", Default = -1)]
             public int TestDurationSecs { get; set; }
 
-            [Option("num_channels_per_server", DefaultValue = 1)]
+            [Option("num_channels_per_server", Default = 1)]
             public int NumChannelsPerServer { get; set; }
 
-            [Option("num_stubs_per_channel", DefaultValue = 1)]
+            [Option("num_stubs_per_channel", Default = 1)]
             public int NumStubsPerChannel { get; set; }
 
-            [Option("metrics_port", DefaultValue = 8081)]
+            [Option("metrics_port", Default = 8081)]
             public int MetricsPort { get; set; }
 
             [HelpOption]

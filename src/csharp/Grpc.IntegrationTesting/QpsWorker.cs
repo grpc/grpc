@@ -52,7 +52,7 @@ namespace Grpc.IntegrationTesting
     {
         private class ServerOptions
         {
-            [Option("driver_port", DefaultValue = 0)]
+            [Option("driver_port", Default = 0)]
             public int DriverPort { get; set; }
 
             [HelpOption]

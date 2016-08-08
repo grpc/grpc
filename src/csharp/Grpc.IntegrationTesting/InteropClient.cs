@@ -56,24 +56,24 @@ namespace Grpc.IntegrationTesting
     {
         private class ClientOptions
         {
-            [Option("server_host", DefaultValue = "127.0.0.1")]
+            [Option("server_host", Default = "127.0.0.1")]
             public string ServerHost { get; set; }
 
-            [Option("server_host_override", DefaultValue = TestCredentials.DefaultHostOverride)]
+            [Option("server_host_override", Default = TestCredentials.DefaultHostOverride)]
             public string ServerHostOverride { get; set; }
 
             [Option("server_port", Required = true)]
             public int ServerPort { get; set; }
 
-            [Option("test_case", DefaultValue = "large_unary")]
+            [Option("test_case", Default = "large_unary")]
             public string TestCase { get; set; }
 
             // Deliberately using nullable bool type to allow --use_tls=true syntax (as opposed to --use_tls)
-            [Option("use_tls", DefaultValue = false)]
+            [Option("use_tls", Default = false)]
             public bool? UseTls { get; set; }
 
             // Deliberately using nullable bool type to allow --use_test_ca=true syntax (as opposed to --use_test_ca)
-            [Option("use_test_ca", DefaultValue = false)]
+            [Option("use_test_ca", Default = false)]
             public bool? UseTestCa { get; set; }
 
             [Option("default_service_account", Required = false)]

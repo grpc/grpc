@@ -51,11 +51,11 @@ namespace Grpc.IntegrationTesting
     {
         private class ServerOptions
         {
-            [Option("port", DefaultValue = 8070)]
+            [Option("port", Default = 8070)]
             public int Port { get; set; }
 
             // Deliberately using nullable bool type to allow --use_tls=true syntax (as opposed to --use_tls)
-            [Option("use_tls", DefaultValue = false)]
+            [Option("use_tls", Default = false)]
             public bool? UseTls { get; set; }
 
             [HelpOption]
