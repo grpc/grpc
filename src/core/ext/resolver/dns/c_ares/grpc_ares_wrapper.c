@@ -32,11 +32,18 @@
  */
 
 #include <grpc/support/port_platform.h>
-#ifdef GPR_POSIX_SOCKET
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+
+#ifdef GPR_POSIX_SOCKET
+#include <arpa/inet.h>
+#endif
+
+#ifdef GPR_WINSOCK_SOCKET
+#include <winsock2.h>
+#endif
 
 #include <string.h>
 #include <sys/types.h>
@@ -55,8 +62,6 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
-
-#include <arpa/inet.h>
 
 typedef struct fd_pair {
   grpc_fd *grpc_fd;
@@ -386,5 +391,3 @@ void grpc_ares_init(void) {
     gpr_log(GPR_ERROR, "ares_library_init failed");
   }
 }
-
-#endif

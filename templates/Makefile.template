@@ -884,15 +884,16 @@
 
   third_party/c-ares/configure:
   	$(E) "[AUTOGEN] Preparing c-ares"
-  	$(Q)(cd third_party/c-ares; ./buildconf; ./configure)
+  	$(Q)(cd third_party/c-ares; ./buildconf; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure)
 
   $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
   	$(E) "[MAKE]    Building c-ares"
-  	$(Q)(cd third_party/c-ares ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static)
   	$(Q)$(MAKE) -C third_party/c-ares clean
   	$(Q)$(MAKE) -C third_party/c-ares
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/c-ares
   	$(Q)cp third_party/c-ares/.libs/libcares.a $(LIBDIR)/$(CONFIG)/c-ares
+
+  $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.o: third_party/c-ares/configure
 
   static: static_c static_cxx
 

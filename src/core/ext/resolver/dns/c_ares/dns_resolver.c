@@ -38,7 +38,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include <ares.h>
 #include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
