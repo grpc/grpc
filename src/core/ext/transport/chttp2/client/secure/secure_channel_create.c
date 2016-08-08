@@ -91,11 +91,13 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   connector *c = arg;
   grpc_closure *notify;
   gpr_mu_lock(&c->mu);
+  grpc_error *error = GRPC_ERROR_NONE;
   if (c->connecting_endpoint == NULL) {
     memset(c->result, 0, sizeof(*c->result));
     gpr_mu_unlock(&c->mu);
   } else if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
+    error = grpc_error_set_int(GRPC_ERROR_CREATE("Secure handshake failed"),
+                               GRPC_ERROR_INT_SECURITY_STATUS, status);
     memset(c->result, 0, sizeof(*c->result));
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
@@ -113,7 +115,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   }
   notify = c->notify;
   c->notify = NULL;
-  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,

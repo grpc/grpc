@@ -434,11 +434,13 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = _Callback()
+        abortion_callback = _Callback()
 
         with self._control.fail():
           response_future = self._invoker.future(group, method)(
               request, _3069_test_constant.REALLY_SHORT_TIMEOUT)
           response_future.add_done_callback(callback)
+          response_future.add_abortion_callback(abortion_callback)
 
           self.assertIs(callback.future(), response_future)
           # Because the servicer fails outside of the thread from which the
@@ -450,6 +452,7 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
           with self.assertRaises(face.ExpirationError):
             response_future.result()
           self.assertIsNotNone(response_future.traceback())
+          self.assertIsNotNone(abortion_callback.future())
 
   def testFailedUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -472,11 +475,13 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = _Callback()
+        abortion_callback = _Callback()
 
         with self._control.fail():
           response_future = self._invoker.future(group, method)(
               iter(requests), _3069_test_constant.REALLY_SHORT_TIMEOUT)
           response_future.add_done_callback(callback)
+          response_future.add_abortion_callback(abortion_callback)
 
           self.assertIs(callback.future(), response_future)
           # Because the servicer fails outside of the thread from which the
@@ -488,6 +493,7 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
           with self.assertRaises(face.ExpirationError):
             response_future.result()
           self.assertIsNotNone(response_future.traceback())
+          self.assertIsNotNone(abortion_callback.future())
 
   def testFailedStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (

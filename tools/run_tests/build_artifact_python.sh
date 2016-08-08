@@ -39,15 +39,6 @@ export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
 
-if [ "$SKIP_PIP_INSTALL" == "" ]
-then
-  ${PIP} install --upgrade six
-  # There's a bug in newer versions of setuptools (see
-  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
-  ${PIP} pip install --upgrade 'setuptools==18'
-  ${PIP} install -rrequirements.txt
-fi
-
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
@@ -71,14 +62,32 @@ CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
   ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
 mkdir -p artifacts
-if command -v ${AUDITWHEEL}
+if [ "$BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w artifacts/
+    rm $wheel
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w artifacts/
+    rm $wheel
   done
+fi
+
+# We need to use the built grpcio-tools/grpcio to compile the health proto
+# Wheels are not supported by setup_requires/dependency_links, so we
+# manually install the dependency.  Note we should only do this if we
+# are in a docker image or in a virtualenv.
+if [ "$BUILD_HEALTH_CHECKING" != "" ]
+then
+  ${PIP} install -rrequirements.txt
+  ${PIP} install grpcio --no-index --find-links "file://${PWD}/artifacts/"
+  ${PIP} install grpcio-tools --no-index --find-links "file://${PWD}/artifacts/"
+
+  # Build gRPC health check source distribution
+  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_health_checking/setup.py \
+      preprocess build_package_protos sdist
+  cp -r src/python/grpcio_health_checking/dist/* artifacts
 fi
 
 cp -r dist/* artifacts

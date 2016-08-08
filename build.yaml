@@ -7,7 +7,7 @@ settings:
   '#3': Use "-preN" suffixes to identify pre-release versions
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
-  version: 1.0.0-pre1
+  version: 1.0.0-pre2
 filegroups:
 - name: census
   public_headers:
@@ -2430,20 +2430,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: workqueue_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/workqueue_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test
@@ -3367,6 +3353,7 @@ php_config_m4:
   - src/php/ext/grpc/channel.h
   - src/php/ext/grpc/channel_credentials.h
   - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php7_wrapper.h
   - src/php/ext/grpc/php_grpc.h
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h
