@@ -318,6 +318,12 @@ grpc_ares_request *grpc_resolve_address_ares(grpc_exec_ctx *exec_ctx,
   grpc_error *err;
   int status;
 
+  if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
+      GRPC_ERROR_CANCELLED) {
+    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    return NULL;
+  }
+
   grpc_ares_request *r = gpr_malloc(sizeof(grpc_ares_request));
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
