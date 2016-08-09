@@ -335,7 +335,7 @@ static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
     return true;
   }
   gpr_mu_unlock(cq->mu);
-  return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) > 0;
+  return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
 }
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
@@ -484,7 +484,7 @@ static bool cq_is_pluck_finished(grpc_exec_ctx *exec_ctx, void *arg) {
     prev = c;
   }
   gpr_mu_unlock(cq->mu);
-  return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) > 0;
+  return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
 }
 
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,

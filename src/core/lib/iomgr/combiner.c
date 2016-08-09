@@ -181,6 +181,7 @@ static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
                       lock);
     grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue,
                            &lock->continue_finishing, GRPC_ERROR_NONE);
+    GPR_TIMER_END("combiner.maybe_finish_one", 0);
     return false;
   }
   gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);

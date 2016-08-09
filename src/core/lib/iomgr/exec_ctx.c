@@ -95,6 +95,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       GRPC_ERROR_UNREF(error);
       GPR_TIMER_END("grpc_exec_ctx_flush.stolen_cb", 0);
       grpc_exec_ctx_flush(exec_ctx);
+      GPR_TIMER_END("grpc_exec_ctx_flush", 0);
       return true;
     }
   }
@@ -110,6 +111,7 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
 void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_error *error,
                          grpc_workqueue *offload_target_or_null) {
+  GPR_TIMER_BEGIN("grpc_exec_ctx_sched", 0);
   if (offload_target_or_null == NULL) {
     grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
   } else if (exec_ctx->stealing_from_workqueue == NULL) {
@@ -127,6 +129,7 @@ void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     exec_ctx->stolen_closure = closure;
     GRPC_WORKQUEUE_UNREF(exec_ctx, offload_target_or_null, "exec_ctx_sched");
   }
+  GPR_TIMER_END("grpc_exec_ctx_sched", 0);
 }
 
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
