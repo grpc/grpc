@@ -43,20 +43,23 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 extern int grpc_load_reporting_trace;
 
 typedef struct call_data {
-  /* an id unique to the call */
-  intptr_t id;
-  char *trailing_md_string;
-  gpr_slice initial_md; /* TODO(dgq): turn into a "token" type once defined */
+  /* load reporting token from the initial metadata */
+  gpr_slice initial_lr_token;
+
+  /* load reporting token from the trailing metadata */
+  gpr_slice trailing_lr_token;
 
   /* stores the recv_initial_metadata op's ready closure, which we wrap with our
    * own (on_initial_md_ready) in order to capture the incoming initial metadata
    * */
   grpc_closure *ops_recv_initial_metadata_ready;
+
   /* copy of the op's initial metadata. We need it because we wrap its callback
    * (see \a ops_recv_initial_metadata_ready). */
   grpc_metadata_batch *recv_initial_metadata;
@@ -75,9 +78,6 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  /* an id unique to the channel */
-  intptr_t id;
-
   /* peer's authenticated identity if available. NULL otherwise */
   char *peer_identity;
 } channel_data;
@@ -101,11 +101,13 @@ static grpc_mdelem *recv_md_filter(void *user_data, grpc_mdelem *md) {
     calld->target_host = grpc_mdstr_as_c_string(md->value);
     if (grpc_load_reporting_trace)
       gpr_log(GPR_DEBUG, "[LR] Target host: '%s'", calld->target_host);
-  } else if (md->key == GRPC_MDSTR_LOAD_REPORTING_INITIAL) {
-    calld->initial_md = gpr_slice_ref(md->value->slice);
-    if (grpc_load_reporting_trace)
-      gpr_log(GPR_DEBUG, "[LR] Initial MD size: '%ld'",
-              GPR_SLICE_LENGTH(calld->initial_md));
+  } else if (md->key == GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN) {
+    calld->initial_lr_token = gpr_slice_ref(md->value->slice);
+    if (grpc_load_reporting_trace) {
+      char *hexdump = gpr_dump_slice(calld->initial_lr_token, GPR_DUMP_HEX);
+      gpr_log(GPR_DEBUG, "[LR] Initial token: '%s'", hexdump);
+      gpr_free(hexdump);
+    }
     return NULL;
   }
 
@@ -138,7 +140,6 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(call_data));
 
-  calld->id = (intptr_t)args->call_stack;
   grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem);
   return GRPC_ERROR_NONE;
 }
@@ -149,8 +150,8 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {
   call_data *calld = elem->call_data;
 
-  gpr_slice_unref(calld->initial_md);
-  gpr_free(calld->trailing_md_string);
+  gpr_slice_unref(calld->initial_lr_token);
+  gpr_slice_unref(calld->trailing_lr_token);
 }
 
 /* Constructor for channel_data */
@@ -179,8 +180,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_DEBUG, "[LR] Authenticated user: %s",
             chand->peer_identity ? chand->peer_identity : "<n/a>");
   }
-
-  chand->id = (intptr_t)args->channel_stack;
 }
 
 /* Destructor for channel data */
@@ -194,8 +193,11 @@ static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
-  if (md->key == GRPC_MDSTR_LOAD_REPORTING_TRAILING) {
-    calld->trailing_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
+  if (md->key == GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN) {
+    calld->trailing_lr_token = gpr_slice_ref(md->value->slice);
+    if (grpc_load_reporting_trace)
+      gpr_log(GPR_DEBUG, "[LR] Trailing token: '%s'",
+              gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_HEX));
     return NULL;
   }
 

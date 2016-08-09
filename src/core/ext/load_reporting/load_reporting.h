@@ -37,14 +37,6 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include "src/core/lib/channel/channel_stack.h"
 
-/** Metadata key for initial metadata coming from clients */
-/* TODO(dgq): change to the final value TBD */
-#define GRPC_LOAD_REPORTING_INITIAL_MD_KEY "load-reporting-initial"
-
-/** Metadata key for trailing metadata from servers */
-/* TODO(dgq): change to the final value TBD */
-#define GRPC_LOAD_REPORTING_TRAILING_MD_KEY "load-reporting-trailing"
-
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {
   GRPC_LR_POINT_UNKNOWN = 0,
@@ -57,13 +49,6 @@ typedef enum grpc_load_reporting_source {
 /** Call information to be passed to the provided LR callback. */
 typedef struct grpc_load_reporting_call_data {
   const grpc_load_reporting_source source; /**< point of last data update. */
-
-  /** Unique identifier for the channel associated with the data */
-  intptr_t channel_id;
-
-  /** Unique identifier for the call associated with the data. If the call
-   * hasn't been created yet, it'll have a value of zero. */
-  intptr_t call_id;
 
   /** Only valid when \a source is \a GRPC_LR_POINT_CALL_DESTRUCTION, that is,
    * once the call has completed */
