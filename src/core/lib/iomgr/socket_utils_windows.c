@@ -39,7 +39,7 @@
 
 #include <grpc/support/log.h>
 
-const char *grpc_inet_ntop(int af, const void *src,
+const char *grpc_inet_ntop(int af, void *src,
                            char *dst, socklen_t size) {
   GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
   return InetNtopA(af, src, dst, (size_t)size);
