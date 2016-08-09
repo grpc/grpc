@@ -13,6 +13,9 @@
       "frameworkAssemblies": {
         "System.Runtime": "",
         "System.IO": ""
+      },
+      "dependencies": {
+	"Microsoft.NETCore.Platforms": "1.0.1" 
       }
     }
   }
