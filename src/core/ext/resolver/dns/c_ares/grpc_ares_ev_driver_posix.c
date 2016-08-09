@@ -35,7 +35,6 @@
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
-
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
@@ -52,19 +51,19 @@
 #include "src/core/lib/support/string.h"
 
 typedef struct fd_pair {
- grpc_fd *grpc_fd;
- int fd;
- struct fd_pair *next;
+  grpc_fd *grpc_fd;
+  int fd;
+  struct fd_pair *next;
 } fd_pair;
 
 struct grpc_ares_ev_driver {
- int id;
- ares_socket_t socks[ARES_GETSOCK_MAXNUM];
- int bitmask;
- grpc_closure driver_closure;
- grpc_pollset_set *pollset_set;
- ares_channel *channel;
- fd_pair *fds;
+  int id;
+  ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+  int bitmask;
+  grpc_closure driver_closure;
+  grpc_pollset_set *pollset_set;
+  ares_channel *channel;
+  fd_pair *fds;
 };
 
 static fd_pair *get_fd(fd_pair **head, int fd) {
@@ -101,7 +100,8 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_exec_ctx_flush(exec_ctx);
 }
 
-void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx, grpc_ares_ev_driver *ev_driver) {
+void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
+                               grpc_ares_ev_driver *ev_driver) {
   size_t i;
   fd_pair *new_list = NULL;
   ev_driver->bitmask =
@@ -163,9 +163,8 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx, grpc_ares_ev_driver *ev_
   gpr_log(GPR_ERROR, "eof notify_on_event");
 }
 
-
-
-grpc_ares_ev_driver *grpc_ares_ev_driver_create(ares_channel *channel, grpc_pollset_set *pollset_set) {
+grpc_ares_ev_driver *grpc_ares_ev_driver_create(ares_channel *channel,
+                                                grpc_pollset_set *pollset_set) {
   grpc_ares_ev_driver *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
   ev_driver->channel = channel;
   ev_driver->pollset_set = pollset_set;

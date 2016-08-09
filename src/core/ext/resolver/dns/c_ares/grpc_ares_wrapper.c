@@ -75,7 +75,7 @@ struct grpc_ares_request {
   grpc_closure request_closure;
   void *arg;
   ares_channel channel;
-  grpc_ares_ev_driver* ev_driver;
+  grpc_ares_ev_driver *ev_driver;
 };
 
 // struct grpc_pollset_set {
@@ -117,7 +117,8 @@ struct grpc_ares_request {
 //   size_t i;
 //   fd_pair *new_list = NULL;
 //   ev_driver->bitmask =
-//       ares_getsock(*ev_driver->channel, ev_driver->socks, ARES_GETSOCK_MAXNUM);
+//       ares_getsock(*ev_driver->channel, ev_driver->socks,
+//       ARES_GETSOCK_MAXNUM);
 //   grpc_closure_init(&ev_driver->driver_closure, driver_cb, ev_driver);
 //   for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
 //     char *final_name;
@@ -132,7 +133,8 @@ struct grpc_ares_request {
 //         fdp = gpr_malloc(sizeof(fd_pair));
 //         fdp->grpc_fd = grpc_fd_create(ev_driver->socks[i], final_name);
 //         fdp->fd = ev_driver->socks[i];
-//         grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set, fdp->grpc_fd);
+//         grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
+//         fdp->grpc_fd);
 //         // new_fd_pair->grpc_fd = fd;
 //         // new_fd_pair->next = ev_driver->fds;
 //       }
@@ -175,7 +177,8 @@ struct grpc_ares_request {
 //   gpr_log(GPR_ERROR, "eof notify_on_event");
 // }
 //
-// static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+// static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error)
+// {
 //   driver *d = arg;
 //   size_t i;
 //   gpr_log(GPR_ERROR, "driver_cb");
@@ -184,8 +187,10 @@ struct grpc_ares_request {
 //     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
 //       ares_process_fd(
 //           *d->channel,
-//           ARES_GETSOCK_READABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD,
-//           ARES_GETSOCK_WRITABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD);
+//           ARES_GETSOCK_READABLE(d->bitmask, i) ? d->socks[i] :
+//           ARES_SOCKET_BAD,
+//           ARES_GETSOCK_WRITABLE(d->bitmask, i) ? d->socks[i] :
+//           ARES_SOCKET_BAD);
 //     }
 //   }
 //   notify_on_event(exec_ctx, d);
@@ -332,7 +337,8 @@ grpc_ares_request *grpc_resolve_address_ares(grpc_exec_ctx *exec_ctx,
 
   status = ares_init(&r->channel);
   if (status != ARES_SUCCESS) {
-    grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_CREATE("Failed to init ares"), NULL);
+    grpc_exec_ctx_sched(exec_ctx, on_done,
+                        GRPC_ERROR_CREATE("Failed to init ares"), NULL);
     return r;
   }
 
@@ -378,6 +384,4 @@ grpc_error *grpc_ares_init(void) {
   return GRPC_ERROR_NONE;
 }
 
-void grpc_ares_cleanup(void) {
-  ares_library_cleanup();
-}
+void grpc_ares_cleanup(void) { ares_library_cleanup(); }
