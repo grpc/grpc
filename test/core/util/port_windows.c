@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 #if defined(GPR_WINSOCK_SOCKET) && defined(GRPC_TEST_PICK_PORT)
 

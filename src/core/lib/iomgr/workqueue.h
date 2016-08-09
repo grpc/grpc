@@ -39,6 +39,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/lib/iomgr/workqueue_posix.h"

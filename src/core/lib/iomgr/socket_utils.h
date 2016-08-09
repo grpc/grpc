@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 
+#include "src/core/lib/iomgr/port.h"
+
 #ifdef GPR_WINSOCK_SOCKET
 #include "sockaddr_windows.h"
 #else

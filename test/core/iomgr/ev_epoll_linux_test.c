@@ -30,7 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 /* This test only relevant on linux systems where epoll() is available */
 #ifdef GPR_LINUX_EPOLL

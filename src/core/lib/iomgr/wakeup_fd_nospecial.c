@@ -36,7 +36,7 @@
  * systems without anything better than pipe.
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GPR_POSIX_NO_SPECIAL_WAKEUP_FD
 

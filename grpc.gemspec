@@ -207,6 +207,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/pollset_set.h )
   s.files += %w( src/core/lib/iomgr/pollset_set_windows.h )
   s.files += %w( src/core/lib/iomgr/pollset_windows.h )
+  s.files += %w( src/core/lib/iomgr/port.h )
   s.files += %w( src/core/lib/iomgr/resolve_address.h )
   s.files += %w( src/core/lib/iomgr/sockaddr.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_posix.h )

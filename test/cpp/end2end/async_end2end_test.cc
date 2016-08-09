@@ -47,6 +47,7 @@
 #include <grpc/support/tls.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"

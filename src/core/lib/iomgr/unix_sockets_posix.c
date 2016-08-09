@@ -30,8 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GPR_HAVE_UNIX_SOCKET
 
@@ -39,6 +38,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/un.h>
+
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

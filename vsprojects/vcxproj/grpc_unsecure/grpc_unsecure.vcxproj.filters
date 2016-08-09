@@ -683,6 +683,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\port.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>

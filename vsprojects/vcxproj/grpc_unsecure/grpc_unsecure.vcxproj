@@ -324,6 +324,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\port.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />

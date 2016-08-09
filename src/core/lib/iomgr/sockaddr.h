@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"

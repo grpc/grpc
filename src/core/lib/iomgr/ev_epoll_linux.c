@@ -32,7 +32,7 @@
  */
 
 #include <grpc/grpc_posix.h>
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GPR_LINUX_EPOLL

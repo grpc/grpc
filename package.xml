@@ -215,6 +215,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />

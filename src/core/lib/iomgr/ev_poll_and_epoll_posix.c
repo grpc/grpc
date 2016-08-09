@@ -42,7 +42,7 @@
  *  - ev_epoll_posix.{h,c}
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GPR_POSIX_SOCKET
 
