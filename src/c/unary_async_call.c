@@ -38,7 +38,11 @@
 #include <grpc_c/codegen/unary_async_call.h>
 #include "src/c/alloc.h"
 
-static void free_reader_and_call(void *arg) {
+//
+// Client
+//
+
+static void free_client_reader_and_call(void *arg) {
   GRPC_client_async_response_reader *reader = arg;
   gpr_free(reader);
 }
@@ -56,7 +60,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
       {.context = context,
        .call = call,
        .init_buf = {{grpc_op_send_metadata, grpc_op_send_object,
-                     grpc_op_send_close},
+                     grpc_op_client_send_close},
                     .context = GRPC_client_context_to_base(context),
                     .response = NULL,
                     .hide_from_user = true},
@@ -72,7 +76,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
   // Different from blocking call, we need to inform completion queue to run
   // cleanup for us
   reader->finish_buf.async_cleanup =
-      (grpc_closure){.arg = reader, .callback = free_reader_and_call};
+      (grpc_closure){.arg = reader, .callback = free_client_reader_and_call};
 
   grpc_start_batch_from_op_set(reader->call, &reader->init_buf, GRPC_client_context_to_base(reader->context),
                                request, NULL);
@@ -92,3 +96,7 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader,
   grpc_start_batch_from_op_set(reader->call, &reader->finish_buf,
                                GRPC_client_context_to_base(reader->context), (GRPC_message){0, 0}, response);
 }
+
+//
+// Server
+//

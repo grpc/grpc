@@ -52,7 +52,7 @@ GRPC_client_reader *GRPC_server_streaming_blocking_call(
   context->rpc_method = rpc_method;
 
   grpc_call_op_set set = {
-      {grpc_op_send_metadata, grpc_op_send_object, grpc_op_send_close},
+      {grpc_op_send_metadata, grpc_op_send_object, grpc_op_client_send_close},
       .context = GRPC_client_context_to_base(context),
       .user_tag = &set};
 

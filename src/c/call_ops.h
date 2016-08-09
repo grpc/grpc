@@ -104,8 +104,9 @@ extern const grpc_op_manager grpc_op_send_metadata;
 extern const grpc_op_manager grpc_op_recv_metadata;
 extern const grpc_op_manager grpc_op_send_object;
 extern const grpc_op_manager grpc_op_recv_object;
-extern const grpc_op_manager grpc_op_send_close;
+extern const grpc_op_manager grpc_op_client_send_close;
 extern const grpc_op_manager grpc_op_client_recv_status;
+extern const grpc_op_manager grpc_op_server_recv_close;
 extern const grpc_op_manager grpc_op_server_send_status;
 
 #endif /* GRPC_C_INTERNAL_CALL_OPS_H */

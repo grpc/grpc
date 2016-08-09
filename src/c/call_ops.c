@@ -32,8 +32,11 @@
  */
 
 #include "src/c/call_ops.h"
+#include "src/c/client_context.h"
+#include "src/c/server_context.h"
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/log.h>
+#include <include/grpc/impl/codegen/grpc_types.h>
 
 static bool op_send_metadata_fill(grpc_op *op,
                                   grpc_context *context,
@@ -147,38 +150,57 @@ static void op_recv_object_finish(grpc_context *context,
 const grpc_op_manager grpc_op_recv_object = {op_recv_object_fill,
                                              op_recv_object_finish};
 
-static bool op_send_close_fill(grpc_op *op,
-                               grpc_context *context,
-                               grpc_call_op_set *set,
-                               const grpc_message message, void *response) {
+static bool op_client_send_close_fill(grpc_op *op,
+                                      grpc_context *context,
+                                      grpc_call_op_set *set,
+                                      const grpc_message message, void *response) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
   return true;
 }
 
-static void op_send_close_finish(grpc_context *context,
-                                 grpc_call_op_set *set, bool *status,
-                                 int max_message_size) {}
+static void op_client_send_close_finish(grpc_context *context,
+                                        grpc_call_op_set *set, bool *status,
+                                        int max_message_size) {}
 
-const grpc_op_manager grpc_op_send_close = {op_send_close_fill,
-                                            op_send_close_finish};
+const grpc_op_manager grpc_op_client_send_close = {op_client_send_close_fill,
+                                            op_client_send_close_finish};
+
+static bool op_server_recv_close_fill(grpc_op *op,
+                                      grpc_context *context,
+                                      grpc_call_op_set *set,
+                                      const grpc_message message, void *response) {
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->flags = 0;
+  op->reserved = NULL;
+  return true;
+}
+
+static void op_server_recv_close_finish(grpc_context *context,
+                                        grpc_call_op_set *set, bool *status,
+                                        int max_message_size) {}
+
+const grpc_op_manager grpc_op_server_recv_close = {op_server_recv_close_fill,
+                                                   op_server_recv_close_finish};
 
 static bool op_client_recv_status_fill(grpc_op *op,
                                        grpc_context *context,
                                        grpc_call_op_set *set,
                                        const grpc_message message, void *response) {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  grpc_metadata_array_init(&context->trailing_metadata_array);
-  context->status.details = NULL;
-  context->status.details_length = 0;
+
+  grpc_client_context *client_context = (grpc_client_context *) context;
+  grpc_metadata_array_init(&client_context->recv_trailing_metadata_array);
+  client_context->status.details = NULL;
+  client_context->status.details_length = 0;
 
   op->data.recv_status_on_client.trailing_metadata =
-      &context->trailing_metadata_array;
-  op->data.recv_status_on_client.status = &context->status.code;
-  op->data.recv_status_on_client.status_details = &context->status.details;
+      &client_context->recv_trailing_metadata_array;
+  op->data.recv_status_on_client.status = &client_context->status.code;
+  op->data.recv_status_on_client.status_details = &client_context->status.details;
   op->data.recv_status_on_client.status_details_capacity =
-      &context->status.details_length;
+      &client_context->status.details_length;
   op->flags = 0;
   op->reserved = NULL;
   return true;
@@ -195,10 +217,12 @@ static bool op_server_send_status_fill(grpc_op *op,
                                        grpc_context *context,
                                        grpc_call_op_set *set,
                                        const grpc_message message, void *response) {
+  // TODO(yifeit): hook up to server handlers
+  grpc_server_context *server_context = (grpc_server_context *) context;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.trailing_metadata = NULL;
-  op->data.send_status_from_server.status = context->status.code;
+  op->data.send_status_from_server.trailing_metadata_count = server_context->send_trailing_metadata_array.count;
+  op->data.send_status_from_server.trailing_metadata = server_context->send_trailing_metadata_array.metadata;
+  op->data.send_status_from_server.status = server_context->server_return_status;
   op->data.send_status_from_server.status_details = NULL;
   op->flags = 0;
   op->reserved = NULL;

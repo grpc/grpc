@@ -40,6 +40,12 @@ typedef struct grpc_server_context grpc_server_context;
 
 struct grpc_server_context {
   GRPC_C_CONTEXT_BASE_MEMBERS;
+
+  // server-side specific
+  // trailing metadata
+  grpc_metadata_array send_trailing_metadata_array;
+  // status code to be sent to the client
+  grpc_status_code server_return_status;
 };
 
 grpc_context *GRPC_server_context_to_base(grpc_server_context *server_context);

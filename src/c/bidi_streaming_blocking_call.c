@@ -107,7 +107,7 @@ bool GRPC_bidi_streaming_blocking_write(
 
 bool GRPC_bidi_streaming_blocking_writes_done(
     GRPC_client_reader_writer *reader_writer) {
-  grpc_call_op_set set = {{grpc_op_send_close},
+  grpc_call_op_set set = {{grpc_op_client_send_close},
                           .context = GRPC_client_context_to_base(reader_writer->context),
                           .user_tag = &set};
 

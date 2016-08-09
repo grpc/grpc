@@ -51,14 +51,10 @@ typedef struct grpc_context grpc_context;
 #define GRPC_C_CONTEXT_BASE_MEMBERS \
   grpc_metadata *send_metadata_array; \
   grpc_metadata_array recv_metadata_array; \
-  grpc_metadata_array trailing_metadata_array; \
   gpr_timespec deadline; \
 \
   /* serialization mechanism used in this call */ \
   grpc_serialization_impl serialization_impl; \
-\
-  /* status of the call */ \
-  GRPC_status status; \
 \
   /* state tracking */ \
   bool initial_metadata_received; \
