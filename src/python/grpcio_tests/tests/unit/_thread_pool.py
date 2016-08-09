@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,28 +26,23 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Builds Go interop server and client in a base image.
-set -e
 
-# Clone just the grpc-go source code without any dependencies.
-# We are cloning from a local git repo that contains the right revision
-# to test instead of using "go get" to download from Github directly.
-git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
+import threading
+from concurrent import futures
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
 
-# Get dependencies from GitHub
-# NOTE: once grpc-go dependencies change, this needs to be updated manually
-# but we don't expect this to happen any time soon.
-go get github.com/golang/protobuf/proto
-go get golang.org/x/net/context
-go get golang.org/x/net/trace
-go get golang.org/x/oauth2
-go get golang.org/x/oauth2/google
-go get google.golang.org/cloud
+class RecordingThreadPool(futures.Executor):
+  """A thread pool that records if used."""
+  def __init__(self, max_workers):
+    self._tp_executor = futures.ThreadPoolExecutor(max_workers=max_workers)
+    self._lock = threading.Lock()
+    self._was_used = False
 
-# Build the interop client and server
-(cd src/google.golang.org/grpc/interop/client && go install)
-(cd src/google.golang.org/grpc/interop/server && go install)
+  def submit(self, fn, *args, **kwargs):
+    with self._lock:
+      self._was_used = True
+    self._tp_executor.submit(fn, *args, **kwargs)
+
+  def was_used(self):
+    with self._lock:
+      return self._was_used

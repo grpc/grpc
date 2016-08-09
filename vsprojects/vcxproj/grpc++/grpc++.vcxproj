@@ -363,6 +363,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\channel_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>
@@ -396,6 +397,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_filter.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
     </ClCompile>

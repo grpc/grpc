@@ -37,6 +37,10 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
 
@@ -163,5 +167,9 @@ void grpc_mdctx_global_shutdown(void);
 /* Implementation provided by chttp2_transport */
 extern gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
     gpr_slice input);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */
