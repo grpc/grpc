@@ -16,7 +16,7 @@
 	<dependencies>
 	  <dependency id="Google.Protobuf" version="$ProtobufVersion$" />
 	  <dependency id="Grpc.Core" version="$version$" />
-	  <dependency id="Ix-Async" version="1.2.3" />
+	  <dependency id="System.Interactive.Async" version="3.0.0" />
     </dependencies>
   </metadata>
   <files>
