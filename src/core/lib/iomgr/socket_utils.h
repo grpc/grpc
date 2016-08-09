@@ -43,7 +43,7 @@
 #endif
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
-const char *grpc_inet_ntop(int af, void *src,
+const char *grpc_inet_ntop(int af, const void *src,
                            char *dst, socklen_t size);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H */
