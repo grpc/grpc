@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <winsock2.h>
 
@@ -166,4 +166,4 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
   GPR_ASSERT(ret == g_iocp);
 }
 
-#endif /* GPR_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

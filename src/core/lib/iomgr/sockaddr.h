@@ -40,7 +40,7 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #endif
 
-#ifdef GPR_POSIX_SOCKETADDR
+#ifdef GRPC_POSIX_SOCKETADDR
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #endif
 

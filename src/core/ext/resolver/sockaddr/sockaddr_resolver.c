@@ -163,7 +163,7 @@ static char *ipv6_get_default_authority(grpc_resolver_factory *factory,
   return ip_get_default_authority(uri);
 }
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 char *unix_get_default_authority(grpc_resolver_factory *factory,
                                  grpc_uri *uri) {
   return gpr_strdup("localhost");
@@ -271,7 +271,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver_factory name##_resolver_factory = {                  \
       &name##_factory_vtable}
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 DECL_FACTORY(unix);
 #endif
 DECL_FACTORY(ipv4);
@@ -280,7 +280,7 @@ DECL_FACTORY(ipv6);
 void grpc_resolver_sockaddr_init(void) {
   grpc_register_resolver_type(&ipv4_resolver_factory);
   grpc_register_resolver_type(&ipv6_resolver_factory);
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_register_resolver_type(&unix_resolver_factory);
 #endif
 }

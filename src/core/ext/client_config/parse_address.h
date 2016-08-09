@@ -39,7 +39,7 @@
 #include "src/core/ext/client_config/uri_parser.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 /** Populate \a addr and \a len from \a uri, whose path is expected to contain a
  * unix socket path. Returns true upon success. */
 int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);

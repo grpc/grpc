@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
      code paths in trace.c to be taken */
   gpr_setenv("GRPC_TRACE", "doesnt-exist,http,all");
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10.0 : 1.0;
 #else
   g_fixture_slowdown_factor = 10.0;

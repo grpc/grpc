@@ -55,7 +55,7 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif
 
@@ -74,7 +74,7 @@ namespace {
 void* tag(int i) { return (void*)(intptr_t)i; }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 static int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
                                           int timeout) {
   if (gpr_tls_get(&g_is_async_end2end_test)) {

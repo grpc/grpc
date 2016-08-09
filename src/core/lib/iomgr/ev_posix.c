@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -258,4 +258,4 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 
 grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
 
-#endif  // GPR_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET

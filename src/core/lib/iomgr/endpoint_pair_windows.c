@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 

@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_LINUX_SOCKETUTILS
+#ifdef GRPC_LINUX_SOCKETUTILS
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 

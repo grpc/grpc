@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKETUTILS
+#ifdef GRPC_POSIX_SOCKETUTILS
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
@@ -67,4 +67,4 @@ close_and_error:
   return -1;
 }
 
-#endif /* GPR_POSIX_SOCKETUTILS */
+#endif /* GRPC_POSIX_SOCKETUTILS */

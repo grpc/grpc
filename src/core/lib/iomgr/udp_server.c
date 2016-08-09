@@ -39,7 +39,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_NEED_UDP
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/udp_server.h"
 

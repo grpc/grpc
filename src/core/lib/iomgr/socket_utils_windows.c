@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINDOWS_SOCKETUTILS
+#ifdef GRPC_WINDOWS_SOCKETUTILS
 
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -45,4 +45,4 @@ const char *grpc_inet_ntop(int af, const void *src,
   return InetNtop(af, src, dst, (size_t)size);
 }
 
-#endif /* GPR_WINDOWS_SOCKETUTILS */
+#endif /* GRPC_WINDOWS_SOCKETUTILS */

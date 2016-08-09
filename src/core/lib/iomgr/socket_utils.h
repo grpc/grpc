@@ -36,7 +36,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 #include "sockaddr_windows.h"
 #else
 #include "sockaddr_posix.h"

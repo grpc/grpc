@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -79,7 +79,7 @@ grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking) {
 }
 
 grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
-#ifdef GPR_HAVE_SO_NOSIGPIPE
+#ifdef GRPC_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -97,7 +97,7 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
-#ifdef GPR_HAVE_IP_PKTINFO
+#ifdef GRPC_HAVE_IP_PKTINFO
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
@@ -108,7 +108,7 @@ grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
-#ifdef GPR_HAVE_IPV6_RECVPKTINFO
+#ifdef GRPC_HAVE_IPV6_RECVPKTINFO
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {

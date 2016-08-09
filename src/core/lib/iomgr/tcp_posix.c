@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -58,14 +58,14 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 
-#ifdef GPR_HAVE_MSG_NOSIGNAL
+#ifdef GRPC_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL
 #else
 #define SENDMSG_FLAGS 0
 #endif
 
-#ifdef GPR_MSG_IOVLEN_TYPE
-typedef GPR_MSG_IOVLEN_TYPE msg_iovlen_type;
+#ifdef GRPC_MSG_IOVLEN_TYPE
+typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif

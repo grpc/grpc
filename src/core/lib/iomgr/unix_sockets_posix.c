@@ -32,7 +32,7 @@
  */
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 
 #include <string.h>
 #include <sys/stat.h>

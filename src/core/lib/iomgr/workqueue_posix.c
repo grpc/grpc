@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/workqueue.h"
 
@@ -148,4 +148,4 @@ void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
   gpr_mu_unlock(&workqueue->mu);
 }
 
-#endif /* GPR_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET */

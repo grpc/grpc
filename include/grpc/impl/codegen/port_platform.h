@@ -178,8 +178,8 @@
 #define GPR_LINUX_LOG
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #define GPR_LINUX_ENV 1
-#ifndef GPR_LINUX_EVENTFD
-#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#ifndef GRPC_LINUX_EVENTFD
+#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #endif
 #define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
@@ -346,10 +346,6 @@ typedef unsigned __int64 uint64_t;
         defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \
     1
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
-#endif
-
-#if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
-#error Must define GPR_POSIX_SOCKET to use GPR_POSIX_MULTIPOLL_WITH_POLL
 #endif
 
 #if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
