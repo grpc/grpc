@@ -39,8 +39,7 @@
 typedef struct grpc_server_context grpc_server_context;
 
 struct grpc_server_context {
-  // Anonymous struct emulating inheritance
-  struct GRPC_C_CONTEXT_BASE_MEMBERS;
+  GRPC_C_CONTEXT_BASE_MEMBERS;
 };
 
 grpc_context *GRPC_server_context_to_base(grpc_server_context *server_context);

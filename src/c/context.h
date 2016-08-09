@@ -48,7 +48,7 @@ typedef struct grpc_context grpc_context;
 /**
  * Both client and server context shares this common stub.
  */
-#define GRPC_C_CONTEXT_BASE_MEMBERS { \
+#define GRPC_C_CONTEXT_BASE_MEMBERS \
   grpc_metadata *send_metadata_array; \
   grpc_metadata_array recv_metadata_array; \
   grpc_metadata_array trailing_metadata_array; \
@@ -64,8 +64,10 @@ typedef struct grpc_context grpc_context;
   bool initial_metadata_received; \
   grpc_method rpc_method; \
   grpc_channel *channel; \
-  grpc_call *call; };
+  grpc_call *call;
 
-struct grpc_context GRPC_C_CONTEXT_BASE_MEMBERS;
+struct grpc_context {
+  GRPC_C_CONTEXT_BASE_MEMBERS;
+};
 
 #endif // GRPC_C_INTERNAL_CONTEXT_H
