@@ -460,8 +460,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_generic.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/iam/iam_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/json_token.c" role="src" />

@@ -2645,8 +2645,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/credentials.c \
     src/core/lib/security/credentials/credentials_metadata.c \
     src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
+    src/core/lib/security/credentials/google_default/credentials_generic.c \
     src/core/lib/security/credentials/google_default/google_default_credentials.c \
     src/core/lib/security/credentials/iam/iam_credentials.c \
     src/core/lib/security/credentials/jwt/json_token.c \
@@ -2944,8 +2943,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/credentials.c \
     src/core/lib/security/credentials/credentials_metadata.c \
     src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
+    src/core/lib/security/credentials/google_default/credentials_generic.c \
     src/core/lib/security/credentials/google_default/google_default_credentials.c \
     src/core/lib/security/credentials/iam/iam_credentials.c \
     src/core/lib/security/credentials/jwt/json_token.c \
@@ -15188,8 +15186,7 @@ src/core/lib/security/credentials/composite/composite_credentials.c: $(OPENSSL_D
 src/core/lib/security/credentials/credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_posix.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_windows.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_generic.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)

@@ -397,8 +397,7 @@ add_library(grpc
   src/core/lib/security/credentials/credentials.c
   src/core/lib/security/credentials/credentials_metadata.c
   src/core/lib/security/credentials/fake/fake_credentials.c
-  src/core/lib/security/credentials/google_default/credentials_posix.c
-  src/core/lib/security/credentials/google_default/credentials_windows.c
+  src/core/lib/security/credentials/google_default/credentials_generic.c
   src/core/lib/security/credentials/google_default/google_default_credentials.c
   src/core/lib/security/credentials/iam/iam_credentials.c
   src/core/lib/security/credentials/jwt/json_token.c
@@ -676,8 +675,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/credentials.c
   src/core/lib/security/credentials/credentials_metadata.c
   src/core/lib/security/credentials/fake/fake_credentials.c
-  src/core/lib/security/credentials/google_default/credentials_posix.c
-  src/core/lib/security/credentials/google_default/credentials_windows.c
+  src/core/lib/security/credentials/google_default/credentials_generic.c
   src/core/lib/security/credentials/google_default/google_default_credentials.c
   src/core/lib/security/credentials/iam/iam_credentials.c
   src/core/lib/security/credentials/jwt/json_token.c
