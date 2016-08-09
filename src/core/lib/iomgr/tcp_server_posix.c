@@ -306,7 +306,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
 
   GPR_ASSERT(fd >= 0);
 
-  if (so_reuseport) {
+  if (so_reuseport && !grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_reuse_port(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
   }
