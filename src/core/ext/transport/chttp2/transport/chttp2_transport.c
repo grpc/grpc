@@ -802,6 +802,8 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+/* error may be GRPC_ERROR_NONE if there is no error allocated yet.
+   In that case, use "reason" as the text for a new error. */
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_transport *t, grpc_error *error) {
   grpc_chttp2_stream_global *stream_global;
@@ -826,7 +828,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx, void *tp,
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
 
-  end_waiting_for_write(exec_ctx, t, GRPC_ERROR_REF(error));
+  end_waiting_for_write(exec_ctx, t, error);
 
   switch (t->executor.write_state) {
     case GRPC_CHTTP2_WRITES_CORKED:

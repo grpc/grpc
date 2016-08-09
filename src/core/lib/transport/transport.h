@@ -43,6 +43,10 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
 
@@ -169,7 +173,7 @@ typedef struct grpc_transport_op {
   /** should we send a goaway?
       after a goaway is sent, once there are no more active calls on
       the transport, the transport should disconnect */
-  int send_goaway;
+  bool send_goaway;
   /** what should the goaway contain? */
   grpc_status_code goaway_status;
   gpr_slice *goaway_message;
@@ -288,5 +292,9 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
 grpc_transport_op *grpc_make_transport_op(grpc_closure *on_consumed);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */
