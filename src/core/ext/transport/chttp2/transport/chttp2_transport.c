@@ -95,7 +95,7 @@ static void initiate_writing(grpc_exec_ctx *exec_ctx, void *t,
 static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_transport *t, grpc_error *error,
-				  const char *reason);
+                                  const char *reason);
 
 /** Set a transport level setting, and push it to our peer */
 static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -930,7 +930,7 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
    In that case, use "reason" as the text for a new error. */
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_transport *t, grpc_error *error,
-				  const char *reason) {
+                                  const char *reason) {
   grpc_chttp2_stream_global *stream_global;
   while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
                                                          &stream_global)) {
