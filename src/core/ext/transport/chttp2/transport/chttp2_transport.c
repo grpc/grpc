@@ -828,7 +828,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx, void *tp,
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
 
-  end_waiting_for_write(exec_ctx, t, error);
+  end_waiting_for_write(exec_ctx, t, GRPC_ERROR_REF(error));
 
   switch (t->executor.write_state) {
     case GRPC_CHTTP2_WRITES_CORKED:
