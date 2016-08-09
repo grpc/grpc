@@ -5,16 +5,12 @@
   "keywords": ["rpc"],
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/stanley-cheung/Protobuf-PHP"
-    }
-  ],
   "require": {
     "php": ">=5.5.0",
-    "datto/protobuf-php": "dev-master",
-    "google/auth": "v0.7"
+    "stanley-cheung/protobuf-php": "v0.6"
+  },
+  "require-dev": {
+    "google/auth": "v0.9"
   },
   "autoload": {
     "psr-4": {

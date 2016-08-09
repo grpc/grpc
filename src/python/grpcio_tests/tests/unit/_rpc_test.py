@@ -184,7 +184,7 @@ class RPCTest(unittest.TestCase):
     self._handler = _Handler(self._control)
     self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-    self._server = grpc.server((), self._server_pool)
+    self._server = grpc.server(self._server_pool)
     port = self._server.add_insecure_port('[::]:0')
     self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
     self._server.start()
@@ -233,7 +233,11 @@ class RPCTest(unittest.TestCase):
             ('test', 'SuccessfulUnaryRequestFutureUnaryResponse'),))
     response = response_future.result()
 
+    self.assertIsInstance(response_future, grpc.Future)
+    self.assertIsInstance(response_future, grpc.Call)
     self.assertEqual(expected_response, response)
+    self.assertIsNone(response_future.exception())
+    self.assertIsNone(response_future.traceback())
 
   def testSuccessfulUnaryRequestStreamResponse(self):
     request = b'\x37\x58'
@@ -287,6 +291,8 @@ class RPCTest(unittest.TestCase):
     response = response_future.result()
 
     self.assertEqual(expected_response, response)
+    self.assertIsNone(response_future.exception())
+    self.assertIsNone(response_future.traceback())
 
   def testSuccessfulStreamRequestStreamResponse(self):
     requests = tuple(b'\x77\x58' for _ in range(test_constants.STREAM_LENGTH))
@@ -459,6 +465,10 @@ class RPCTest(unittest.TestCase):
     self.assertTrue(response_future.cancelled())
     with self.assertRaises(grpc.FutureCancelledError):
       response_future.result()
+    with self.assertRaises(grpc.FutureCancelledError):
+      response_future.exception()
+    with self.assertRaises(grpc.FutureCancelledError):
+      response_future.traceback()
     self.assertIs(grpc.StatusCode.CANCELLED, response_future.code())
 
   def testCancelledUnaryRequestStreamResponse(self):
@@ -495,6 +505,10 @@ class RPCTest(unittest.TestCase):
     self.assertTrue(response_future.cancelled())
     with self.assertRaises(grpc.FutureCancelledError):
       response_future.result()
+    with self.assertRaises(grpc.FutureCancelledError):
+      response_future.exception()
+    with self.assertRaises(grpc.FutureCancelledError):
+      response_future.traceback()
     self.assertIsNotNone(response_future.initial_metadata())
     self.assertIs(grpc.StatusCode.CANCELLED, response_future.code())
     self.assertIsNotNone(response_future.details())
@@ -528,6 +542,7 @@ class RPCTest(unittest.TestCase):
             request, timeout=test_constants.SHORT_TIMEOUT,
             metadata=(('test', 'ExpiredUnaryRequestBlockingUnaryResponse'),))
 
+    self.assertIsInstance(exception_context.exception, grpc.Call)
     self.assertIsNotNone(exception_context.exception.initial_metadata())
     self.assertIs(
         grpc.StatusCode.DEADLINE_EXCEEDED, exception_context.exception.code())
@@ -556,6 +571,7 @@ class RPCTest(unittest.TestCase):
     self.assertIs(
         grpc.StatusCode.DEADLINE_EXCEEDED, exception_context.exception.code())
     self.assertIsInstance(response_future.exception(), grpc.RpcError)
+    self.assertIsNotNone(response_future.traceback())
     self.assertIs(
         grpc.StatusCode.DEADLINE_EXCEEDED, response_future.exception().code())
 
@@ -585,6 +601,8 @@ class RPCTest(unittest.TestCase):
             request_iterator, timeout=test_constants.SHORT_TIMEOUT,
             metadata=(('test', 'ExpiredStreamRequestBlockingUnaryResponse'),))
 
+    self.assertIsInstance(exception_context.exception, grpc.RpcError)
+    self.assertIsInstance(exception_context.exception, grpc.Call)
     self.assertIsNotNone(exception_context.exception.initial_metadata())
     self.assertIs(
         grpc.StatusCode.DEADLINE_EXCEEDED, exception_context.exception.code())
@@ -601,6 +619,8 @@ class RPCTest(unittest.TestCase):
       response_future = multi_callable.future(
           request_iterator, timeout=test_constants.SHORT_TIMEOUT,
           metadata=(('test', 'ExpiredStreamRequestFutureUnaryResponse'),))
+      with self.assertRaises(grpc.FutureTimeoutError):
+        response_future.result(timeout=test_constants.SHORT_TIMEOUT / 2.0)
       response_future.add_done_callback(callback)
       value_passed_to_callback = callback.value()
 
@@ -610,6 +630,7 @@ class RPCTest(unittest.TestCase):
     self.assertIs(
         grpc.StatusCode.DEADLINE_EXCEEDED, exception_context.exception.code())
     self.assertIsInstance(response_future.exception(), grpc.RpcError)
+    self.assertIsNotNone(response_future.traceback())
     self.assertIs(response_future, value_passed_to_callback)
     self.assertIsNotNone(response_future.initial_metadata())
     self.assertIs(grpc.StatusCode.DEADLINE_EXCEEDED, response_future.code())
@@ -656,11 +677,14 @@ class RPCTest(unittest.TestCase):
       response_future.add_done_callback(callback)
       value_passed_to_callback = callback.value()
 
+    self.assertIsInstance(response_future, grpc.Future)
+    self.assertIsInstance(response_future, grpc.Call)
     with self.assertRaises(grpc.RpcError) as exception_context:
       response_future.result()
     self.assertIs(
         grpc.StatusCode.UNKNOWN, exception_context.exception.code())
     self.assertIsInstance(response_future.exception(), grpc.RpcError)
+    self.assertIsNotNone(response_future.traceback())
     self.assertIs(grpc.StatusCode.UNKNOWN, response_future.exception().code())
     self.assertIs(response_future, value_passed_to_callback)
 
@@ -709,6 +733,7 @@ class RPCTest(unittest.TestCase):
     self.assertIs(
         grpc.StatusCode.UNKNOWN, exception_context.exception.code())
     self.assertIsInstance(response_future.exception(), grpc.RpcError)
+    self.assertIsNotNone(response_future.traceback())
     self.assertIs(response_future, value_passed_to_callback)
 
   def testFailedStreamRequestStreamResponse(self):

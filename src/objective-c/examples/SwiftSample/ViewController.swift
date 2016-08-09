@@ -33,6 +33,8 @@
 
 import UIKit
 
+import RemoteTest
+
 class ViewController: UIViewController {
 
   override func viewDidLoad() {
@@ -60,7 +62,7 @@ class ViewController: UIViewController {
 
     // Same but manipulating headers:
 
-    var RPC : ProtoRPC! // Needed to convince Swift to capture by reference (__block)
+    var RPC : GRPCProtoCall! // Needed to convince Swift to capture by reference (__block)
     RPC = service.RPCToUnaryCallWithRequest(request) { response, error in
       if let response = response {
         NSLog("2. Finished successfully with response:\n\(response)")
@@ -79,7 +81,7 @@ class ViewController: UIViewController {
 
     // Same example call using the generic gRPC client library:
 
-    let method = ProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
+    let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
 
     let requestsWriter = GRXWriter(value: request.data())
 

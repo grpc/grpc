@@ -90,10 +90,12 @@ struct grpc_tcp_listener {
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   struct grpc_tcp_listener *next;
-  /* When we add a listener, more than one can be created, mainly because of
-     IPv6. A sibling will still be in the normal list, but will be flagged
-     as such. Any action, such as ref or unref, will affect all of the
-     siblings in the list. */
+  /* sibling is a linked list of all listeners for a given port. add_port and
+     clone_port place all new listeners in the same sibling list. A member of
+     the 'sibling' list is also a member of the 'next' list. The head of each
+     sibling list has is_sibling==0, and subsequent members of sibling lists
+     have is_sibling==1. is_sibling allows separate sibling lists to be
+     identified while iterating through 'next'. */
   struct grpc_tcp_listener *sibling;
   int is_sibling;
 };
@@ -480,6 +482,9 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
   return err;
 }
 
+/* Insert count new listeners after listener. Every new listener will have the
+   same listen address as listener (SO_REUSEPORT must be enabled). Every new
+   listener is a sibling of listener. */
 static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
   grpc_tcp_listener *sp = NULL;
   char *addr_str;
@@ -491,7 +496,8 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
   }
 
   for (unsigned i = 0; i < count; i++) {
-    int fd, port;
+    int fd = -1;
+    int port = -1;
     grpc_dualstack_mode dsmode;
     err = grpc_create_dualstack_socket(&listener->addr.sockaddr, SOCK_STREAM, 0,
                                        &dsmode, &fd);
@@ -505,6 +511,11 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     sp = gpr_malloc(sizeof(grpc_tcp_listener));
     sp->next = listener->next;
     listener->next = sp;
+    /* sp (the new listener) is a sibling of 'listener' (the original
+       listener). */
+    sp->is_sibling = 1;
+    sp->sibling = listener->sibling;
+    listener->sibling = sp;
     sp->server = listener->server;
     sp->fd = fd;
     sp->emfd = grpc_fd_create(fd, name);
@@ -513,8 +524,6 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     sp->port = port;
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
-    sp->is_sibling = 1;
-    sp->sibling = listener->is_sibling ? listener->sibling : listener;
     GPR_ASSERT(sp->emfd);
     while (listener->server->tail->next != NULL) {
       listener->server->tail = listener->server->tail->next;
@@ -738,6 +747,19 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
       tcp_server_destroy(exec_ctx, s);
     }
   }
+}
+
+void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
+                                        grpc_tcp_server *s) {
+  gpr_mu_lock(&s->mu);
+  /* shutdown all fd's */
+  if (s->active_ports) {
+    grpc_tcp_listener *sp;
+    for (sp = s->head; sp; sp = sp->next) {
+      grpc_fd_shutdown(exec_ctx, sp->emfd);
+    }
+  }
+  gpr_mu_unlock(&s->mu);
 }
 
 #endif

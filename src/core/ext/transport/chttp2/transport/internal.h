@@ -305,6 +305,22 @@ typedef struct grpc_chttp2_executor_action_header {
   void *arg;
 } grpc_chttp2_executor_action_header;
 
+typedef enum {
+  /** no writing activity */
+  GRPC_CHTTP2_WRITING_INACTIVE,
+  /** write has been requested, but not scheduled yet */
+  GRPC_CHTTP2_WRITE_REQUESTED_WITH_POLLER,
+  GRPC_CHTTP2_WRITE_REQUESTED_NO_POLLER,
+  /** write has been requested and scheduled against the workqueue */
+  GRPC_CHTTP2_WRITE_SCHEDULED,
+  /** write has been initiated after being reaped from the workqueue */
+  GRPC_CHTTP2_WRITING,
+  /** write has been initiated, AND another write needs to be started once it's
+      done */
+  GRPC_CHTTP2_WRITING_STALE_WITH_POLLER,
+  GRPC_CHTTP2_WRITING_STALE_NO_POLLER,
+} grpc_chttp2_write_state;
+
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
@@ -319,10 +335,10 @@ struct grpc_chttp2_transport {
 
     /** is a thread currently in the global lock */
     bool global_active;
-    /** is a thread currently writing */
-    bool writing_active;
     /** is a thread currently parsing */
     bool parsing_active;
+    /** write execution state of the transport */
+    grpc_chttp2_write_state write_state;
 
     grpc_chttp2_executor_action_header *pending_actions_head;
     grpc_chttp2_executor_action_header *pending_actions_tail;
@@ -342,7 +358,8 @@ struct grpc_chttp2_transport {
   /** global state for reading/writing */
   grpc_chttp2_transport_global global;
   /** state only accessible by the chain of execution that
-      set writing_active=1 */
+      set writing_state >= GRPC_WRITING, and only by the writing closure
+      chain. */
   grpc_chttp2_transport_writing writing;
   /** state only accessible by the chain of execution that
       set parsing_active=1 */
@@ -363,6 +380,8 @@ struct grpc_chttp2_transport {
   grpc_closure reading_action;
   /** closure to actually do parsing */
   grpc_closure parsing_action;
+  /** closure to initiate writing */
+  grpc_closure initiate_writing;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -436,8 +455,10 @@ typedef struct {
   bool seen_error;
   bool exceeded_metadata_size;
 
-  /** the error that resulted in this stream being removed */
-  grpc_error *removal_error;
+  /** the error that resulted in this stream being read-closed */
+  grpc_error *read_closed_error;
+  /** the error that resulted in this stream being write-closed */
+  grpc_error *write_closed_error;
 
   bool published_initial_metadata;
   bool published_trailing_metadata;
@@ -514,15 +535,20 @@ struct grpc_chttp2_stream {
 };
 
 /** Transport writing call flow:
-    chttp2_transport.c calls grpc_chttp2_unlocking_check_writes to see if writes
-   are required;
-    if they are, chttp2_transport.c calls grpc_chttp2_perform_writes to do the
-   writes.
-    Once writes have been completed (meaning another write could potentially be
-   started),
-    grpc_chttp2_terminate_writing is called. This will call
-   grpc_chttp2_cleanup_writing, at which
-    point the write phase is complete. */
+    grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
+    go out on the wire.
+    If no other write has been started, a task is enqueued onto our workqueue.
+    When that task executes, it obtains the global lock, and gathers the data
+    to write.
+    The global lock is dropped and we do the syscall to write.
+    After writing, a follow-up check is made to see if another round of writing
+    should be performed.
+
+    The actual call chain is documented in the implementation of this function.
+    */
+void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_transport_global *transport_global,
+                                bool covered_by_poller, const char *reason);
 
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
@@ -610,9 +636,8 @@ int grpc_chttp2_list_pop_check_read_ops(
 void grpc_chttp2_list_add_writing_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_writing *stream_writing);
-void grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
-    bool is_window_available);
+bool grpc_chttp2_list_flush_writing_stalled_by_transport(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing);
 
 void grpc_chttp2_list_add_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
@@ -822,7 +847,9 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
 
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
-void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
-                                 grpc_chttp2_stream_global *stream_global);
+void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport_global *transport_global,
+                                 grpc_chttp2_stream_global *stream_global,
+                                 bool covered_by_poller, const char *reason);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

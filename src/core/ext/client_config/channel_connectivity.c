@@ -59,7 +59,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   }
   gpr_log(GPR_ERROR,
           "grpc_channel_check_connectivity_state called on something that is "
-          "not a (u)client channel, but '%s'",
+          "not a client channel, but '%s'",
           client_channel_elem->filter->name);
   grpc_exec_ctx_finish(&exec_ctx);
   return GRPC_CHANNEL_SHUTDOWN;

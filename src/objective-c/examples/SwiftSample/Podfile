@@ -3,6 +3,8 @@ platform :ios, '8.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
+use_frameworks!
+
 # Location of gRPC's repo root relative to this file.
 GRPC_LOCAL_SRC = '../../../..'
 
@@ -12,6 +14,9 @@ target 'SwiftSample' do
 
   # Use the local versions of Protobuf, BoringSSL, and gRPC. You don't need any of the following
   # lines in your application.
+  pod '!ProtoCompiler',  :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
 
   pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"

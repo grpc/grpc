@@ -11,18 +11,30 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.9'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
+  s.dependency "!ProtoCompiler-gRPCPlugin", "~> 1.0.0-pre1"
+
+  repo_root = '../../../..'
+  bin_dir = "#{repo_root}/bins/$CONFIG"
+
+  protoc = "#{bin_dir}/protobuf/protoc"
+  well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
+  plugin = "#{bin_dir}/grpc_objective_c_plugin"
+
   s.prepare_command = <<-CMD
-    BINDIR=../../../../bins/$CONFIG
-    PROTOC=$BINDIR/protobuf/protoc
-    PLUGIN=$BINDIR/grpc_objective_c_plugin
-    $PROTOC --plugin=protoc-gen-grpc=$PLUGIN --objc_out=. --grpc_out=. *.proto
+    #{protoc} \
+        --plugin=protoc-gen-grpc=#{plugin} \
+        --objc_out=. \
+        --grpc_out=. \
+        -I . \
+        -I #{well_known_types_dir} \
+        *.proto
   CMD
 
   s.subspec "Messages" do |ms|
     ms.source_files = "*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
-    ms.dependency "Protobuf", "~> 3.0.0-beta-3.1"
+    ms.dependency "Protobuf"
     # This is needed by all pods that depend on Protobuf:
     ms.pod_target_xcconfig = {
       'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
@@ -33,7 +45,7 @@ Pod::Spec.new do |s|
     ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency "gRPC-ProtoRPC", "~> 0.14"
+    ss.dependency "gRPC-ProtoRPC"
     ss.dependency "#{s.name}/Messages"
   end
 end

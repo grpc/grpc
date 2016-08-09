@@ -37,6 +37,10 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* --- grpc_auth_context ---
 
    High level authentication context object. Can optionally be chained. */
@@ -110,5 +114,9 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context *c);
 grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg);
 grpc_auth_context *grpc_find_auth_context_in_args(
     const grpc_channel_args *args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H */

@@ -284,7 +284,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 /* returns true if done, false if pending; if returning true, *error is set */
-#define MAX_WRITE_IOVEC 16
+#define MAX_WRITE_IOVEC 1000
 static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
@@ -450,9 +450,19 @@ static char *tcp_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static const grpc_endpoint_vtable vtable = {
-    tcp_read,     tcp_write,   tcp_add_to_pollset, tcp_add_to_pollset_set,
-    tcp_shutdown, tcp_destroy, tcp_get_peer};
+static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  return grpc_fd_get_workqueue(tcp->em_fd);
+}
+
+static const grpc_endpoint_vtable vtable = {tcp_read,
+                                            tcp_write,
+                                            tcp_get_workqueue,
+                                            tcp_add_to_pollset,
+                                            tcp_add_to_pollset_set,
+                                            tcp_shutdown,
+                                            tcp_destroy,
+                                            tcp_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
                                const char *peer_string) {

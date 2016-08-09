@@ -41,9 +41,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 #define TRANSPORT_FROM_PARSING(tp)                                        \
   ((grpc_chttp2_transport *)((char *)(tp)-offsetof(grpc_chttp2_transport, \
@@ -87,8 +87,8 @@ void grpc_chttp2_prepare_to_read(
          transport_global->settings[GRPC_SENT_SETTINGS],
          sizeof(transport_parsing->last_sent_settings));
   transport_parsing->max_frame_size =
-      transport_global
-          ->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      transport_global->settings[GRPC_ACKED_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -154,10 +154,8 @@ void grpc_chttp2_publish_reads(
                                   transport_parsing, outgoing_window);
   is_zero = transport_global->outgoing_window <= 0;
   if (was_zero && !is_zero) {
-    while (grpc_chttp2_list_pop_stalled_by_transport(transport_global,
-                                                     &stream_global)) {
-      grpc_chttp2_become_writable(transport_global, stream_global);
-    }
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "new_global_flow_control");
   }
 
   if (transport_parsing->incoming_window <
@@ -168,6 +166,8 @@ void grpc_chttp2_publish_reads(
                                       announce_incoming_window, announce_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parsed", transport_parsing,
                                       incoming_window, announce_bytes);
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "global incoming window");
   }
 
   /* for each stream that saw an update, fixup global state */
@@ -190,7 +190,8 @@ void grpc_chttp2_publish_reads(
                                  outgoing_window);
     is_zero = stream_global->outgoing_window <= 0;
     if (was_zero && !is_zero) {
-      grpc_chttp2_become_writable(transport_global, stream_global);
+      grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
+                                  false, "stream.read_flow_control");
     }
 
     stream_global->max_recv_bytes -= (uint32_t)GPR_MIN(
@@ -667,8 +668,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
     if (!cached_timeout) {
       /* not already parsed: parse it now, and store the result away */
       cached_timeout = gpr_malloc(sizeof(gpr_timespec));
-      if (!grpc_chttp2_decode_timeout(grpc_mdstr_as_c_string(md->value),
-                                      cached_timeout)) {
+      if (!grpc_http2_decode_timeout(grpc_mdstr_as_c_string(md->value),
+                                     cached_timeout)) {
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
                 grpc_mdstr_as_c_string(md->value));
         *cached_timeout = gpr_inf_future(GPR_TIMESPAN);

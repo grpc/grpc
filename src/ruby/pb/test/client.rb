@@ -52,9 +52,9 @@ require_relative '../../lib/grpc'
 require 'googleauth'
 require 'google/protobuf'
 
-require_relative 'proto/empty'
-require_relative 'proto/messages'
-require_relative 'proto/test_services'
+require_relative '../src/proto/grpc/testing/empty_pb'
+require_relative '../src/proto/grpc/testing/messages_pb'
+require_relative '../src/proto/grpc/testing/test_services_pb'
 
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
@@ -111,6 +111,18 @@ end
 # creates a test stub that accesses host:port securely.
 def create_stub(opts)
   address = "#{opts.host}:#{opts.port}"
+
+  # Provide channel args that request compression by default
+  # for compression interop tests
+  if ['client_compressed_unary',
+      'client_compressed_streaming'].include?(opts.test_case)
+    compression_options =
+      GRPC::Core::CompressionOptions.new(default_algorithm: :gzip)
+    compression_channel_args = compression_options.to_channel_arg_hash
+  else
+    compression_channel_args = {}
+  end
+
   if opts.secure
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
@@ -145,10 +157,15 @@ def create_stub(opts)
     end
 
     GRPC.logger.info("... connecting securely to #{address}")
+    stub_opts[:channel_args].merge!(compression_channel_args)
     Grpc::Testing::TestService::Stub.new(address, creds, **stub_opts)
   else
     GRPC.logger.info("... connecting insecurely to #{address}")
-    Grpc::Testing::TestService::Stub.new(address, :this_channel_is_insecure)
+    Grpc::Testing::TestService::Stub.new(
+      address,
+      :this_channel_is_insecure,
+      channel_args: compression_channel_args
+    )
   end
 end
 
@@ -216,10 +233,28 @@ class BlockingEnumerator
   end
 end
 
+# Intended to be used to wrap a call_op, and to adjust
+# the write flag of the call_op in between messages yielded to it.
+class WriteFlagSettingStreamingInputEnumerable
+  attr_accessor :call_op
+
+  def initialize(requests_and_write_flags)
+    @requests_and_write_flags = requests_and_write_flags
+  end
+
+  def each
+    @requests_and_write_flags.each do |request_and_flag|
+      @call_op.write_flag = request_and_flag[:write_flag]
+      yield request_and_flag[:request]
+    end
+  end
+end
+
 # defines methods corresponding to each interop test case.
 class NamedTests
   include Grpc::Testing
   include Grpc::Testing::PayloadType
+  include GRPC::Core::MetadataKeys
 
   def initialize(stub, args)
     @stub = stub
@@ -233,6 +268,48 @@ class NamedTests
 
   def large_unary
     perform_large_unary
+  end
+
+  def client_compressed_unary
+    # first request used also for the probe
+    req_size, wanted_response_size = 271_828, 314_159
+    expect_compressed = BoolValue.new(value: true)
+    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
+    req = SimpleRequest.new(response_type: :COMPRESSABLE,
+                            response_size: wanted_response_size,
+                            payload: payload,
+                            expect_compressed: expect_compressed)
+
+    # send a probe to see if CompressedResponse is supported on the server
+    send_probe_for_compressed_request_support do
+      request_uncompressed_args = {
+        COMPRESSION_REQUEST_ALGORITHM => 'identity'
+      }
+      @stub.unary_call(req, metadata: request_uncompressed_args)
+    end
+
+    # make a call with a compressed message
+    resp = @stub.unary_call(req)
+    assert('Expected second unary call with compression to work') do
+      resp.payload.body.length == wanted_response_size
+    end
+
+    # make a call with an uncompressed message
+    stub_options = {
+      COMPRESSION_REQUEST_ALGORITHM => 'identity'
+    }
+
+    req = SimpleRequest.new(
+      response_type: :COMPRESSABLE,
+      response_size: wanted_response_size,
+      payload: payload,
+      expect_compressed: BoolValue.new(value: false)
+    )
+
+    resp = @stub.unary_call(req, metadata: stub_options)
+    assert('Expected second unary call with compression to work') do
+      resp.payload.body.length == wanted_response_size
+    end
   end
 
   def service_account_creds
@@ -304,6 +381,50 @@ class NamedTests
       StreamingInputCallRequest.new(payload: req)
     end
     resp = @stub.streaming_input_call(reqs)
+    assert("#{__callee__}: aggregate payload size is incorrect") do
+      wanted_aggregate_size == resp.aggregated_payload_size
+    end
+  end
+
+  def client_compressed_streaming
+    # first request used also by the probe
+    first_request = StreamingInputCallRequest.new(
+      payload: Payload.new(type: :COMPRESSABLE, body: nulls(27_182)),
+      expect_compressed: BoolValue.new(value: true)
+    )
+
+    # send a probe to see if CompressedResponse is supported on the server
+    send_probe_for_compressed_request_support do
+      request_uncompressed_args = {
+        COMPRESSION_REQUEST_ALGORITHM => 'identity'
+      }
+      @stub.streaming_input_call([first_request],
+                                 metadata: request_uncompressed_args)
+    end
+
+    second_request = StreamingInputCallRequest.new(
+      payload: Payload.new(type: :COMPRESSABLE, body: nulls(45_904)),
+      expect_compressed: BoolValue.new(value: false)
+    )
+
+    # Create the requests messages and the corresponding write flags
+    # for each message
+    requests = WriteFlagSettingStreamingInputEnumerable.new([
+      { request: first_request,
+        write_flag: 0 },
+      { request: second_request,
+        write_flag: GRPC::Core::WriteFlags::NO_COMPRESS }
+    ])
+
+    # Create the call_op, pass it to the requests enumerable, and
+    # run the call
+    call_op = @stub.streaming_input_call(requests,
+                                         return_op: true)
+    requests.call_op = call_op
+    resp = call_op.execute
+
+    wanted_aggregate_size = 73_086
+
     assert("#{__callee__}: aggregate payload size is incorrect") do
       wanted_aggregate_size == resp.aggregated_payload_size
     end
@@ -415,6 +536,29 @@ class NamedTests
     end
     resp
   end
+
+  # Send probing message for compressed request on the server, to see
+  # if it's implemented.
+  def send_probe_for_compressed_request_support(&send_probe)
+    bad_status_occured = false
+
+    begin
+      send_probe.call
+    rescue GRPC::BadStatus => e
+      if e.code == GRPC::Core::StatusCodes::INVALID_ARGUMENT
+        bad_status_occured = true
+      else
+        fail AssertionError, "Bad status received but code is #{e.code}"
+      end
+    rescue Exception => e
+      fail AssertionError, "Expected BadStatus. Received: #{e.inspect}"
+    end
+
+    assert('CompressedRequest probe failed') do
+      bad_status_occured
+    end
+  end
+
 end
 
 # Args is used to hold the command line info.

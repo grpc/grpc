@@ -450,7 +450,7 @@ function statusCodeAndMessage($stub)
 {
     $echo_status = new grpc\testing\EchoStatus();
     $echo_status->setCode(2);
-    $echo_status->setMessage("test status message");
+    $echo_status->setMessage('test status message');
 
     $request = new grpc\testing\SimpleRequest();
     $request->setResponseStatus($echo_status);
@@ -460,7 +460,7 @@ function statusCodeAndMessage($stub)
 
     hardAssert($status->code === 2,
                'Received unexpected status code');
-    hardAssert($status->details === "test status message",
+    hardAssert($status->details === 'test status message',
                'Received unexpected status details');
 
     $streaming_call = $stub->FullDuplexCall();
@@ -473,7 +473,7 @@ function statusCodeAndMessage($stub)
     $status = $streaming_call->getStatus();
     hardAssert($status->code === 2,
                'Received unexpected status code');
-    hardAssert($status->details === "test status message",
+    hardAssert($status->details === 'test status message',
                'Received unexpected status details');
 }
 
@@ -570,9 +570,9 @@ function _makeStub($args)
     }
 
     if ($test_case == 'unimplemented_method') {
-      $stub = new grpc\testing\UnimplementedServiceClient($server_address, $opts);
+        $stub = new grpc\testing\UnimplementedServiceClient($server_address, $opts);
     } else {
-      $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+        $stub = new grpc\testing\TestServiceClient($server_address, $opts);
     }
 
     return $stub;
