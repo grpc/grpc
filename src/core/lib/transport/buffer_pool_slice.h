@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,10 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_TCP_POSIX_H
-/*
-   Low level TCP "bottom half" implementation, for use by transports built on
-   top of a TCP connection.
+#ifndef GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H
+#define GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H
 
-   Note that this file does not (yet) include APIs for creating the socket in
-   the first place.
+void grpc_buffer_pool_slice_alloc(gpr_slice_buffer *buffer, size_t num_slices,
+                                  size_t slice_size, grpc_closure *on_ready);
 
-   All calls passing slice transfer ownership of a slice refcount unless
-   otherwise specified.
-*/
-
-#include "src/core/lib/iomgr/buffer_pool.h"
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/ev_posix.h"
-
-#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
-
-extern int grpc_tcp_trace;
-
-/* Create a tcp endpoint given a file desciptor and a read slice size.
-   Takes ownership of fd. */
-grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size,
-                               const char *peer_string);
-
-/* Return the tcp endpoint's fd, or -1 if this is not available. Does not
-   release the fd.
-   Requires: ep must be a tcp endpoint.
- */
-int grpc_tcp_fd(grpc_endpoint *ep);
-
-/* Destroy the tcp endpoint without closing its fd. *fd will be set and done
- * will be called when the endpoint is destroyed.
- * Requires: ep must be a tcp endpoint and fd must not be NULL. */
-void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                     int *fd, grpc_closure *done);
-
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */
+#endif  // GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H

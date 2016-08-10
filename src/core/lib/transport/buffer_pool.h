@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,27 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_TCP_POSIX_H
-/*
-   Low level TCP "bottom half" implementation, for use by transports built on
-   top of a TCP connection.
+#ifndef GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H
+#define GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H
 
-   Note that this file does not (yet) include APIs for creating the socket in
-   the first place.
+#include "src/core/lib/iomgr/exec_ctx.h"
 
-   All calls passing slice transfer ownership of a slice refcount unless
-   otherwise specified.
-*/
+#define GRPC_MEMORY_MIN 0
+#define GRPC_MEMORY_MAX 10000
+#define GRPC_MEMORY_DONT_CARE -1
 
-#include "src/core/lib/iomgr/buffer_pool.h"
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/ev_posix.h"
+typedef struct grpc_buffer_pool_user grpc_buffer_pool_user;
+typedef struct grpc_buffer_pool grpc_buffer_pool;
 
-#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
+grpc_buffer_pool_user *grpc_buffer_pool_register_user(grpc_buffer_pool *pool);
+void grpc_buffer_pool_unregister_user(grpc_buffer_pool *pool,
+                                      grpc_buffer_pool_user *user);
 
-extern int grpc_tcp_trace;
+void grpc_buffer_pool_acquire(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *pool,
+                              size_t amount, grpc_closure *on_ready);
+void grpc_buffer_pool_release(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *pool,
+                              size_t amount);
 
-/* Create a tcp endpoint given a file desciptor and a read slice size.
-   Takes ownership of fd. */
-grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size,
-                               const char *peer_string);
+int16_t grpc_buffer_pool_query(grpc_buffer_pool *pool);
 
-/* Return the tcp endpoint's fd, or -1 if this is not available. Does not
-   release the fd.
-   Requires: ep must be a tcp endpoint.
- */
-int grpc_tcp_fd(grpc_endpoint *ep);
-
-/* Destroy the tcp endpoint without closing its fd. *fd will be set and done
- * will be called when the endpoint is destroyed.
- * Requires: ep must be a tcp endpoint and fd must not be NULL. */
-void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                     int *fd, grpc_closure *done);
-
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */
+#endif
