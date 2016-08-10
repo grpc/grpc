@@ -1126,18 +1126,17 @@ static void test_metadata_plugin_failure(void) {
 static void test_get_well_known_google_credentials_file_path(void) {
   char *path;
   char *home = gpr_getenv("HOME");
-  char *appdata = gpr_getenv("APPDATA");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != NULL);
+  gpr_free(path);
+#if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
   unsetenv("HOME");
-  unsetenv("APPDATA");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == NULL);
   gpr_setenv("HOME", home);
-  gpr_setenv("APPDATA", appdata);
-  gpr_free(home);
-  gpr_free(appdata);
   gpr_free(path);
+#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  gpr_free(home);
 }
 
 int main(int argc, char **argv) {
