@@ -34,17 +34,21 @@
 #ifndef GRPC_C_GRPC_C_H
 #define GRPC_C_GRPC_C_H
 
-typedef struct grpc_channel GRPC_channel;
-typedef struct grpc_client_context GRPC_client_context;
-typedef struct grpc_completion_queue GRPC_completion_queue;
+typedef struct grpc_channel GRPC_channel;                   /* using core data type */
+typedef struct GRPC_context GRPC_context;                   /* base class for client and server context */
+typedef struct GRPC_client_context GRPC_client_context;
+typedef struct GRPC_server_context GRPC_server_context;
+typedef struct grpc_completion_queue GRPC_completion_queue; /* using core data type */
+typedef struct GRPC_incoming_notification_queue GRPC_incoming_notification_queue;
+typedef struct GRPC_server GRPC_server;
 
-typedef struct grpc_client_reader_writer GRPC_client_reader_writer;
-typedef struct grpc_client_reader GRPC_client_reader;
-typedef struct grpc_client_writer GRPC_client_writer;
-typedef struct grpc_client_async_reader_writer GRPC_client_async_reader_writer;
-typedef struct grpc_client_async_reader GRPC_client_async_reader;
-typedef struct grpc_client_async_writer GRPC_client_async_writer;
-typedef struct grpc_client_async_response_reader
+typedef struct GRPC_client_reader_writer GRPC_client_reader_writer;
+typedef struct GRPC_client_reader GRPC_client_reader;
+typedef struct GRPC_client_writer GRPC_client_writer;
+typedef struct GRPC_client_async_reader_writer GRPC_client_async_reader_writer;
+typedef struct GRPC_client_async_reader GRPC_client_async_reader;
+typedef struct GRPC_client_async_writer GRPC_client_async_writer;
+typedef struct GRPC_client_async_response_reader
     GRPC_client_async_response_reader;
 
 #endif /* GRPC_C_GRPC_C_H */

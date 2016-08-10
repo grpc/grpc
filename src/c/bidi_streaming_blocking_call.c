@@ -52,7 +52,7 @@ GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(
   grpc_call_op_set set = {
       {grpc_op_send_metadata}, .context = GRPC_client_context_to_base(context), .user_tag = &set};
 
-  grpc_client_reader_writer *reader_writer = GRPC_ALLOC_STRUCT(
+  GRPC_client_reader_writer *reader_writer = GRPC_ALLOC_STRUCT(
       grpc_client_reader_writer, {
                                      .context = context, .call = call, .cq = cq,
                                  });
@@ -133,7 +133,7 @@ GRPC_status GRPC_client_reader_writer_terminate(
   GRPC_completion_queue_destroy(reader_writer->cq);
   grpc_call_destroy(reader_writer->call);
   reader_writer->context->call = NULL;
-  grpc_client_context *context = reader_writer->context;
+  GRPC_client_context *context = reader_writer->context;
   gpr_free(reader_writer);
   context->status.ok &= ok;
   return context->status;

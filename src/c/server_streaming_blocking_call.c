@@ -56,7 +56,7 @@ GRPC_client_reader *GRPC_server_streaming_blocking_call(
       .context = GRPC_client_context_to_base(context),
       .user_tag = &set};
 
-  grpc_client_reader *reader = GRPC_ALLOC_STRUCT(
+  GRPC_client_reader *reader = GRPC_ALLOC_STRUCT(
       grpc_client_reader, {
                               .context = context, .call = call, .cq = cq,
                           });
@@ -99,7 +99,7 @@ GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
   GRPC_completion_queue_destroy(reader->cq);
   grpc_call_destroy(reader->call);
   reader->context->call = NULL;
-  grpc_client_context *context = reader->context;
+  GRPC_client_context *context = reader->context;
   gpr_free(reader);
   return context->status;
 }

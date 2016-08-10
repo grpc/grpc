@@ -39,7 +39,7 @@
 #include "src/c/alloc.h"
 #include "src/c/completion_queue.h"
 
-grpc_client_writer *GRPC_client_streaming_blocking_call(
+GRPC_client_writer *GRPC_client_streaming_blocking_call(
     const GRPC_method rpc_method, GRPC_client_context *const context,
     void *response) {
   grpc_completion_queue *cq = GRPC_completion_queue_create();
@@ -52,7 +52,7 @@ grpc_client_writer *GRPC_client_streaming_blocking_call(
   grpc_call_op_set set = {
       {grpc_op_send_metadata}, .context = GRPC_client_context_to_base(context), .user_tag = &set};
 
-  grpc_client_writer *writer = GRPC_ALLOC_STRUCT(
+  GRPC_client_writer *writer = GRPC_ALLOC_STRUCT(
       grpc_client_writer, {.context = context,
                            .call = call,
                            .finish_ops =
@@ -71,7 +71,7 @@ grpc_client_writer *GRPC_client_streaming_blocking_call(
   return writer;
 }
 
-bool GRPC_client_streaming_blocking_write(grpc_client_writer *writer,
+bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer,
                                           const GRPC_message request) {
   grpc_call_op_set set = {
       {grpc_op_send_object}, .context = GRPC_client_context_to_base(writer->context), .user_tag = &set};
@@ -81,7 +81,7 @@ bool GRPC_client_streaming_blocking_write(grpc_client_writer *writer,
   return GRPC_completion_queue_pluck_internal(writer->cq, &set);
 }
 
-GRPC_status GRPC_client_writer_terminate(grpc_client_writer *writer) {
+GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer) {
   grpc_start_batch_from_op_set(writer->call, &writer->finish_ops,
                                GRPC_client_context_to_base(writer->context), (GRPC_message){0, 0},
                                writer->response);
@@ -91,7 +91,7 @@ GRPC_status GRPC_client_writer_terminate(grpc_client_writer *writer) {
   GRPC_completion_queue_destroy(writer->cq);
   grpc_call_destroy(writer->call);
   writer->context->call = NULL;
-  grpc_client_context *context = writer->context;
+  GRPC_client_context *context = writer->context;
   gpr_free(writer);
   return context->status;
 }

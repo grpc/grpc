@@ -31,23 +31,18 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CLIENT_CONTEXT_H
-#define GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#include <grpc_c/server.h>
+#include "src/c/server.h"
+#include "src/c/alloc.h"
 
-#include "src/c/context.h"
+GRPC_server *GRPC_build_server(GRPC_build_server_options options) {
+  grpc_server *core_server = grpc_server_create(NULL, NULL);
+  GRPC_server *server = GRPC_ALLOC_STRUCT(GRPC_server, {
+    .core_server = core_server
+  });
+  return server;
+}
 
-typedef struct GRPC_client_context grpc_client_context;
-
-struct GRPC_client_context {
-  // Emulating inheritance
-  GRPC_C_CONTEXT_BASE_MEMBERS;
-
-  // client-side specific
-  grpc_metadata_array recv_trailing_metadata_array;
-  // status of the call
-  GRPC_status status;
-};
-
-GRPC_context *GRPC_client_context_to_base(GRPC_client_context *client_context);
-
-#endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+void GRPC_server_start(GRPC_server *server) {
+  grpc_server_start(server->core_server);
+}

@@ -32,10 +32,20 @@
  */
 
 #include "src/c/server_context.h"
+#include "src/c/alloc.h"
+
+GRPC_server_context *GRPC_server_context_create() {
+  GRPC_server_context *context = GRPC_ALLOC_STRUCT(GRPC_server_context, {
+    .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
+    .serialization_impl = {.serialize = NULL, .deserialize = NULL}
+  });
+
+  grpc_metadata_array_init(&context->send_trailing_metadata_array);
+  return context;
+}
 
 // We define a conversion function instead of type-casting, which lets the user convert
 // from any pointer to a grpc_context.
-grpc_context *GRPC_server_context_to_base(grpc_server_context *server_context) {
-  return (grpc_context *) server_context;
+GRPC_context *GRPC_server_context_to_base(GRPC_server_context *server_context) {
+  return (GRPC_context *) server_context;
 }
-

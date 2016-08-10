@@ -38,10 +38,10 @@
 #include "src/c/call_ops.h"
 #include "src/c/client_context.h"
 
-typedef struct grpc_client_writer {
+typedef struct GRPC_client_writer {
   grpc_call_op_set finish_ops;
 
-  grpc_client_context *context;
+  GRPC_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
   grpc_message *response;

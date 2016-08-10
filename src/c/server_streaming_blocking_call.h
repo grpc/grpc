@@ -38,8 +38,8 @@
 #include "src/c/call_ops.h"
 #include "src/c/client_context.h"
 
-typedef struct grpc_client_reader {
-  grpc_client_context *context;
+typedef struct GRPC_client_reader {
+  GRPC_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
 } grpc_client_reader;

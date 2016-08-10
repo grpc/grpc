@@ -31,23 +31,22 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CLIENT_CONTEXT_H
-#define GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#ifndef GRPC_C_INTERNAL_SERVER_H
+#define GRPC_C_INTERNAL_SERVER_H
 
-#include "src/c/context.h"
+#include <grpc/grpc.h>
+#include <grpc_c/grpc_c.h>
+#include <grpc_c/server.h>
+#include "src/c/server_incoming_queue.h"
 
-typedef struct GRPC_client_context grpc_client_context;
+typedef struct GRPC_server GRPC_server;
 
-struct GRPC_client_context {
-  // Emulating inheritance
-  GRPC_C_CONTEXT_BASE_MEMBERS;
+struct GRPC_server {
+  grpc_server *core_server;
 
-  // client-side specific
-  grpc_metadata_array recv_trailing_metadata_array;
-  // status of the call
-  GRPC_status status;
+  // async
+
+  //TODO(yifeit): synchronous server state
 };
 
-GRPC_context *GRPC_client_context_to_base(GRPC_client_context *client_context);
-
-#endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#endif // GRPC_C_INTERNAL_SERVER_H

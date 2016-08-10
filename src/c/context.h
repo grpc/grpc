@@ -43,7 +43,7 @@
 #include <stdbool.h>
 #include "src/c/message.h"
 
-typedef struct grpc_context grpc_context;
+typedef struct GRPC_context GRPC_context;
 
 /**
  * Both client and server context shares this common stub.
@@ -62,7 +62,7 @@ typedef struct grpc_context grpc_context;
   grpc_channel *channel; \
   grpc_call *call;
 
-struct grpc_context {
+struct GRPC_context {
   GRPC_C_CONTEXT_BASE_MEMBERS;
 };
 

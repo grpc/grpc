@@ -37,8 +37,8 @@
 #include <grpc_c/grpc_c.h>
 #include "src/c/alloc.h"
 
-grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
-  grpc_client_context *context = GRPC_ALLOC_STRUCT(
+GRPC_client_context *GRPC_client_context_create(grpc_channel *chan) {
+  GRPC_client_context *context = GRPC_ALLOC_STRUCT(
       grpc_client_context,
       {.deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
        .channel = chan,
@@ -70,6 +70,6 @@ void GRPC_client_context_set_serialization_impl(
 
 // We define a conversion function instead of type-casting, which lets the user convert
 // from any pointer to a grpc_context.
-grpc_context *GRPC_client_context_to_base(grpc_client_context *client_context) {
-  return (grpc_context *) client_context;
+GRPC_context *GRPC_client_context_to_base(GRPC_client_context *client_context) {
+  return (GRPC_context *) client_context;
 }

@@ -31,23 +31,15 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CLIENT_CONTEXT_H
-#define GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#ifndef GRPC_C_SERVER_INCOMING_QUEUE_H
+#define GRPC_C_SERVER_INCOMING_QUEUE_H
 
-#include "src/c/context.h"
+#include <grpc_c/grpc_c.h>
 
-typedef struct GRPC_client_context grpc_client_context;
+typedef struct GRPC_incoming_notification_queue grpc_incoming_notification_queue;
 
-struct GRPC_client_context {
-  // Emulating inheritance
-  GRPC_C_CONTEXT_BASE_MEMBERS;
-
-  // client-side specific
-  grpc_metadata_array recv_trailing_metadata_array;
-  // status of the call
-  GRPC_status status;
+struct GRPC_incoming_notification_queue {
+  GRPC_completion_queue *cq;
 };
 
-GRPC_context *GRPC_client_context_to_base(GRPC_client_context *client_context);
-
-#endif  // GRPC_C_INTERNAL_CLIENT_CONTEXT_H
+#endif /* GRPC_C_SERVER_INCOMING_QUEUE_H */
