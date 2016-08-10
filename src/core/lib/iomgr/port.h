@@ -119,4 +119,4 @@
 #error Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GPR_CUSTOM_SOCKET
 #endif
 
-#endif  /* GRPC_CORE_LIB_IOMGR_PORT_H */
+#endif /* GRPC_CORE_LIB_IOMGR_PORT_H */

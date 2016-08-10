@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
 #include <stdint.h>
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
 

@@ -157,8 +157,7 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
     port = ntohs(addr6->sin6_port);
   }
   if (ip != NULL &&
-      grpc_inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) !=
-          NULL) {
+      grpc_inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
     ret = gpr_join_host_port(out, ntop_buf, port);
   } else {
     ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);

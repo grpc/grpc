@@ -39,11 +39,10 @@
 
 #include <grpc/support/log.h>
 
-const char *grpc_inet_ntop(int af, const void *src,
-                           char *dst, socklen_t size) {
+const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
   GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
   /* Windows InetNtopA wants a mutable ip pointer */
-  return InetNtopA(af, (void*)src, dst, (size_t)size);
+  return InetNtopA(af, (void *)src, dst, (size_t)size);
 }
 
 #endif /* GRPC_WINDOWS_SOCKETUTILS */

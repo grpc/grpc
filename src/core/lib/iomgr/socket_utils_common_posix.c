@@ -297,8 +297,7 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   return error_for_fd(*newfd, addr);
 }
 
-const char *grpc_inet_ntop(int af, const void *src,
-                           char *dst, socklen_t size) {
+const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
   return inet_ntop(af, src, dst, size);
 }
 
