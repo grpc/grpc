@@ -177,6 +177,11 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_client_config_set_lb_policy(config, lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
     }
+    if (r->pollent) {
+    grpc_polling_entity_del_from_pollset_set(exec_ctx, r->pollent,
+                                             r->base.pollset_set);
+                                             r->pollent = NULL;
+    }
     grpc_resolved_addresses_destroy(addresses);
   } else {
     gpr_log(GPR_ERROR, "addresses == NULL");
@@ -228,6 +233,9 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
       r->pollent = pollent;
       grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
                                              r->base.pollset_set);
+    } else {
+      gpr_log(GPR_ERROR, "pollent is NULL");
+      r->pollent = NULL;
     }
     r->resolving = 1;
     r->addresses = NULL;

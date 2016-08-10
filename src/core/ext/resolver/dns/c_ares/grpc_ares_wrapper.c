@@ -242,14 +242,18 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
     err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
                              GRPC_ERROR_STR_TARGET_ADDRESS, name);
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    goto done;
   } else if (port == NULL) {
     if (default_port == NULL) {
       err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
                                GRPC_ERROR_STR_TARGET_ADDRESS, name);
       grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+      goto done;
     }
     port = gpr_strdup(default_port);
-  } else if (try_fake_resolve(host, port, addrs)) {
+  }
+
+  if (try_fake_resolve(host, port, addrs)) {
     grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   } else {
     err = grpc_ares_ev_driver_create(&ev_driver, pollset_set);
@@ -269,6 +273,7 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
     grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
   }
 
+done:
   gpr_free(host);
   gpr_free(port);
   return r;

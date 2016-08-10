@@ -485,6 +485,7 @@
     }]
   ],
   'targets': [
+
     {
       'cflags': [
         '-std=c99',
@@ -562,6 +563,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
@@ -819,6 +821,7 @@
       "dependencies": [
         "grpc",
         "gpr",
+        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {
