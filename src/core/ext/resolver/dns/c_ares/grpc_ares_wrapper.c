@@ -77,12 +77,22 @@ struct grpc_ares_request {
   grpc_resolved_addresses **addrs_out;
   grpc_closure request_closure;
   void *arg;
-  ares_channel channel;
   grpc_ares_ev_driver *ev_driver;
 };
 
 static void do_basic_init(void) {
   gpr_mu_init(&g_init_mu);
+}
+
+static void destroy_request(grpc_ares_request *request) {
+  grpc_ares_ev_driver_destroy(request->ev_driver);
+
+  // ares_cancel(request->channel);
+  // ares_destroy(request->channel);
+  gpr_free(request->name);
+  gpr_free(request->host);
+  gpr_free(request->port);
+  gpr_free(request->default_port);
 }
 
 static void on_done_cb(void *arg, int status, int timeouts,
@@ -147,20 +157,24 @@ static void on_done_cb(void *arg, int status, int timeouts,
             GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
         GRPC_ERROR_STR_TARGET_ADDRESS, r->name);
   }
+
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx_sched(&exec_ctx, r->on_done, err, NULL);
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  destroy_request(r);
+  gpr_free(r);
 }
 
-static void resolve_address_impl(grpc_exec_ctx *exec_ctx, void *arg,
-                                 grpc_error *error) {
+static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_error *error) {
   grpc_ares_request *r = (grpc_ares_request *)arg;
-
+  grpc_ares_ev_driver *ev_driver = r->ev_driver;
   gpr_log(GPR_ERROR, "before ares_gethostbyname %s", r->host);
-  ares_gethostbyname(r->channel, r->host, AF_UNSPEC, on_done_cb, r);
+  grpc_ares_gethostbyname(r->ev_driver, r->host, on_done_cb, r);
   gpr_log(GPR_ERROR, "before ares_getsock");
-  grpc_ares_notify_on_event(exec_ctx, r->ev_driver);
+  grpc_ares_notify_on_event(exec_ctx, ev_driver);
   gpr_log(GPR_ERROR, "eof resolve_address_impl");
 }
 
@@ -200,16 +214,13 @@ static int try_fake_resolve(const char *name, const char *port,
   return 0;
 }
 
-grpc_ares_request *grpc_resolve_address_ares(grpc_exec_ctx *exec_ctx,
-                                             const char *name,
-                                             const char *default_port,
-                                             grpc_pollset_set *pollset_set,
-                                             grpc_closure *on_done,
-                                             grpc_resolved_addresses **addrs) {
+grpc_ares_request *grpc_resolve_address_ares_impl(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *pollset_set, grpc_closure *on_done,
+    grpc_resolved_addresses **addrs) {
   char *host;
   char *port;
   grpc_error *err;
-  int status;
 
   if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
       GRPC_ERROR_CANCELLED) {
@@ -222,19 +233,20 @@ grpc_ares_request *grpc_resolve_address_ares(grpc_exec_ctx *exec_ctx,
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addrs_out = addrs;
+  err = grpc_ares_ev_driver_create(&r->ev_driver, pollset_set);
 
-  status = ares_init(&r->channel);
-  if (status != ARES_SUCCESS) {
-    grpc_exec_ctx_sched(exec_ctx, on_done,
-                        GRPC_ERROR_CREATE("Failed to init ares"), NULL);
-    return r;
+  if (err != GRPC_ERROR_NONE) {
+    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+    return NULL;
   }
 
-  r->ev_driver = grpc_ares_ev_driver_create(&r->channel, pollset_set);
 
   if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
       name[4] == ':' && name[5] != 0) {
-    grpc_resolve_unix_domain_address(name + 5, addrs);
+    grpc_exec_ctx_sched(exec_ctx, on_done,
+                        grpc_resolve_unix_domain_address(name + 5, addrs),
+                        NULL);
+    return r;
   }
 
   /* parse name, splitting it into host and port parts */
@@ -255,7 +267,7 @@ grpc_ares_request *grpc_resolve_address_ares(grpc_exec_ctx *exec_ctx,
   } else {
     r->port = gpr_strdup(port);
     r->host = gpr_strdup(host);
-    grpc_closure_init(&r->request_closure, resolve_address_impl, r);
+    grpc_closure_init(&r->request_closure, request_resolving_address, r);
     grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
   }
 
@@ -263,6 +275,11 @@ grpc_ares_request *grpc_resolve_address_ares(grpc_exec_ctx *exec_ctx,
   gpr_free(port);
   return r;
 }
+
+grpc_ares_request *(*grpc_resolve_address_ares)(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *pollset_set, grpc_closure *on_done,
+    grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 grpc_error *grpc_ares_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);

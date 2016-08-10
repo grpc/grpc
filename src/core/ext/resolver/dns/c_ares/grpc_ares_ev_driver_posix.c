@@ -58,13 +58,34 @@ typedef struct fd_pair {
 
 struct grpc_ares_ev_driver {
   int id;
+  bool closing;
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
   int bitmask;
   grpc_closure driver_closure;
   grpc_pollset_set *pollset_set;
-  ares_channel *channel;
+  ares_channel channel;
   fd_pair *fds;
 };
+
+grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
+                                       grpc_pollset_set *pollset_set) {
+  int status;
+  *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
+  status = ares_init(&(*ev_driver)->channel);
+  if (status != ARES_SUCCESS) {
+    gpr_free(*ev_driver);
+    return GRPC_ERROR_CREATE("Failed to init ares channel");
+  }
+  (*ev_driver)->pollset_set = pollset_set;
+  (*ev_driver)->fds = NULL;
+  (*ev_driver)->closing = false;
+  return GRPC_ERROR_NONE;
+}
+
+void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
+  // ev_driver->pollset_set = NULL;
+  ev_driver->closing = true;
+}
 
 static fd_pair *get_fd(fd_pair **head, int fd) {
   fd_pair dummy_head;
@@ -91,7 +112,7 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     gpr_log(GPR_ERROR, "GRPC_ERROR_NONE");
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       ares_process_fd(
-          *d->channel,
+          d->channel,
           ARES_GETSOCK_READABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD,
           ARES_GETSOCK_WRITABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD);
     }
@@ -100,47 +121,56 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_exec_ctx_flush(exec_ctx);
 }
 
+void grpc_ares_gethostbyname(grpc_ares_ev_driver *ev_driver, const char *host,
+                             ares_host_callback on_done_cb, void *arg) {
+  ares_gethostbyname(ev_driver->channel, host, AF_UNSPEC, on_done_cb, arg);
+}
+
 void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver) {
   size_t i;
   fd_pair *new_list = NULL;
-  ev_driver->bitmask =
-      ares_getsock(*ev_driver->channel, ev_driver->socks, ARES_GETSOCK_MAXNUM);
-  grpc_closure_init(&ev_driver->driver_closure, driver_cb, ev_driver);
-  for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-    char *final_name;
-    gpr_asprintf(&final_name, "host1%" PRIuPTR, i);
+  gpr_log(GPR_ERROR, "\n\n notify_on_event");
+  if (!ev_driver->closing) {
+    ev_driver->bitmask =
+        ares_getsock(ev_driver->channel, ev_driver->socks, ARES_GETSOCK_MAXNUM);
+    grpc_closure_init(&ev_driver->driver_closure, driver_cb, ev_driver);
+    for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
+      char *final_name;
+      gpr_asprintf(&final_name, "host1%" PRIuPTR, i);
 
-    if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i) ||
-        ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
-      gpr_log(GPR_ERROR, "%d", ev_driver->socks[i]);
-      fd_pair *fdp = get_fd(&ev_driver->fds, ev_driver->socks[i]);
-      if (!fdp) {
-        gpr_log(GPR_ERROR, "new fd");
-        fdp = gpr_malloc(sizeof(fd_pair));
-        fdp->grpc_fd = grpc_fd_create(ev_driver->socks[i], final_name);
-        fdp->fd = ev_driver->socks[i];
-        grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set, fdp->grpc_fd);
-        // new_fd_pair->grpc_fd = fd;
-        // new_fd_pair->next = ev_driver->fds;
+      if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i) ||
+          ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
+        gpr_log(GPR_ERROR, "%d", ev_driver->socks[i]);
+        fd_pair *fdp = get_fd(&ev_driver->fds, ev_driver->socks[i]);
+        if (!fdp) {
+          gpr_log(GPR_ERROR, "new fd");
+          fdp = gpr_malloc(sizeof(fd_pair));
+          fdp->grpc_fd = grpc_fd_create(ev_driver->socks[i], final_name);
+          fdp->fd = ev_driver->socks[i];
+          grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
+                                  fdp->grpc_fd);
+          // new_fd_pair->grpc_fd = fd;
+          // new_fd_pair->next = ev_driver->fds;
+        }
+        fdp->next = new_list;
+        new_list = fdp;
+
+        if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i)) {
+          gpr_log(GPR_ERROR, "READABLE");
+
+          grpc_fd_notify_on_read(exec_ctx, fdp->grpc_fd,
+                                 &ev_driver->driver_closure);
+        }
+        if (ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
+          gpr_log(GPR_ERROR, "writable");
+
+          grpc_fd_notify_on_write(exec_ctx, fdp->grpc_fd,
+                                  &ev_driver->driver_closure);
+        }
       }
-      fdp->next = new_list;
-      new_list = fdp;
-
-      if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i)) {
-        gpr_log(GPR_ERROR, "READABLE");
-
-        grpc_fd_notify_on_read(exec_ctx, fdp->grpc_fd,
-                               &ev_driver->driver_closure);
-      }
-      if (ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
-        gpr_log(GPR_ERROR, "writable");
-
-        grpc_fd_notify_on_write(exec_ctx, fdp->grpc_fd,
-                                &ev_driver->driver_closure);
-      }
+      gpr_free(final_name);
     }
-    gpr_free(final_name);
   }
 
   while (ev_driver->fds != NULL) {
@@ -159,17 +189,12 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
   }
 
   ev_driver->fds = new_list;
+  if (ev_driver->closing) {
+    ares_destroy(ev_driver->channel);
+    gpr_free(ev_driver);
+  }
 
   gpr_log(GPR_ERROR, "eof notify_on_event");
-}
-
-grpc_ares_ev_driver *grpc_ares_ev_driver_create(ares_channel *channel,
-                                                grpc_pollset_set *pollset_set) {
-  grpc_ares_ev_driver *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
-  ev_driver->channel = channel;
-  ev_driver->pollset_set = pollset_set;
-  ev_driver->fds = NULL;
-  return ev_driver;
 }
 
 #endif

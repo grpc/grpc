@@ -42,7 +42,7 @@
 
 typedef struct grpc_ares_request grpc_ares_request;
 
-grpc_ares_request *grpc_resolve_address_ares(
+extern grpc_ares_request *(*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *addr, const char *default_port,
     grpc_pollset_set *pollset_set, grpc_closure *on_done,
     grpc_resolved_addresses **addresses);

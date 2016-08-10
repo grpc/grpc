@@ -38,6 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -223,6 +224,14 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
                   gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(1, GPR_TIMESPAN)),
                   finish_resolve, r, gpr_now(GPR_CLOCK_MONOTONIC));
+}
+
+grpc_ares_request *my_resolve_address_async(
+    grpc_exec_ctx *exec_ctx, const char *addr, const char *default_port,
+    grpc_pollset_set *pollset_set, grpc_closure *on_done,
+    grpc_resolved_addresses **addresses) {
+  my_resolve_address(exec_ctx, addr, default_port, on_done, addresses);
+  return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -507,6 +516,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
   grpc_resolve_address = my_resolve_address;
+  grpc_resolve_address_ares = my_resolve_address_async;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();
