@@ -280,7 +280,7 @@ static void on_succeeded(cronet_bidirectional_stream *stream) {
   CRONET_LOG(GPR_DEBUG, "on_succeeded(%p)", stream);
   stream_obj *s = (stream_obj *)stream->annotation;
   cronet_bidirectional_stream_destroy(s->cbs);
-  s->state.state_callback_received[OP_FAILED] = true;
+  s->state.state_callback_received[OP_SUCCEEDED] = true;
   s->cbs = NULL;
   execute_from_storage(s);
 }
@@ -480,8 +480,8 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op, struct op_state *st
     // we haven't received headers yet.
     else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA]) result = false;
   } else if (op_id == OP_SEND_MESSAGE) {
-    // already executed
-    if (stream_state->state_op_done[OP_SEND_MESSAGE]) result = false;
+    // already executed (note we're checking op specific state, not stream state)
+    if (op_state->state_op_done[OP_SEND_MESSAGE]) result = false;
     // we haven't sent headers yet.
     else if (!stream_state->state_callback_received[OP_SEND_INITIAL_METADATA]) result = false;
   } else if (op_id == OP_RECV_MESSAGE) {
@@ -599,6 +599,7 @@ static enum OP_RESULT execute_stream_op(struct op_and_state *oas) {
       result = ACTION_TAKEN_WITH_CALLBACK;
     }
     stream_state->state_op_done[OP_SEND_MESSAGE] = true;
+    oas->state.state_op_done[OP_SEND_MESSAGE] = true;
   } else if (stream_op->recv_message && op_can_be_run(stream_op, stream_state, &oas->state, OP_RECV_MESSAGE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_MESSAGE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
