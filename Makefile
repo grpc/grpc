@@ -676,6 +676,7 @@ ifeq ($(HAS_EMBEDDED_CARES),true)
 CARES_DEP = $(LIBDIR)/$(CONFIG)/c-ares/libcares.a
 CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
+CARES_CFLAGS_EXTRA = -Wno-invalid-source-encoding
 else
 DEP_MISSING += c-ares
 endif
@@ -1242,7 +1243,7 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 third_party/c-ares/configure:
 	$(E) "[AUTOGEN] Preparing c-ares"
-	$(Q)(cd third_party/c-ares; ./buildconf; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure)
+	$(Q)(cd third_party/c-ares; ./buildconf; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CFLAGS="-g $(CARES_CFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure)
 
 $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
 	$(E) "[MAKE]    Building c-ares"

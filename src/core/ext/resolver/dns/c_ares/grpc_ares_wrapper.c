@@ -221,6 +221,8 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
   char *host;
   char *port;
   grpc_error *err;
+  grpc_ares_request *r = NULL;
+  grpc_ares_ev_driver *ev_driver;
 
   if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
       GRPC_ERROR_CANCELLED) {
@@ -228,25 +230,12 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
     return NULL;
   }
 
-  grpc_ares_request *r = gpr_malloc(sizeof(grpc_ares_request));
-  r->name = gpr_strdup(name);
-  r->default_port = gpr_strdup(default_port);
-  r->on_done = on_done;
-  r->addrs_out = addrs;
-  err = grpc_ares_ev_driver_create(&r->ev_driver, pollset_set);
-
-  if (err != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-    return NULL;
-  }
-
-
   if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
       name[4] == ':' && name[5] != 0) {
     grpc_exec_ctx_sched(exec_ctx, on_done,
                         grpc_resolve_unix_domain_address(name + 5, addrs),
                         NULL);
-    return r;
+    return NULL;
   }
 
   /* parse name, splitting it into host and port parts */
@@ -265,6 +254,17 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
   } else if (try_fake_resolve(host, port, addrs)) {
     grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   } else {
+    err = grpc_ares_ev_driver_create(&ev_driver, pollset_set);
+    if (err != GRPC_ERROR_NONE) {
+      grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
+      return NULL;
+    }
+    r = gpr_malloc(sizeof(grpc_ares_request));
+    r->ev_driver = ev_driver;
+    r->on_done = on_done;
+    r->addrs_out = addrs;
+    r->name = gpr_strdup(name);
+    r->default_port = gpr_strdup(default_port);
     r->port = gpr_strdup(port);
     r->host = gpr_strdup(host);
     grpc_closure_init(&r->request_closure, request_resolving_address, r);
