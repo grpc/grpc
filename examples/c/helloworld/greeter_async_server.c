@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <pb_decode.h>
 #include "helloworld.grpc.pbc.h"
@@ -69,6 +70,82 @@ static bool read_string_store_in_arg(pb_istream_t *stream,
   return true;
 }
 
+typedef struct async_server_data {
+  GRPC_server_context *context;
+  helloworld_HelloRequest request;
+  helloworld_HelloReply reply;
+} async_server_data;
+
 int main(int argc, char **argv) {
+  GRPC_server *server = GRPC_build_server({
+    .async_services = { helloworld_Greeter_Service, NULL }
+  });
+  GRPC_incoming_notification_queue incoming =
+    GRPC_server_new_notification_queue(server);
+  GRPC_server_start(server);
+  // Run server
+  for (;;) {
+    async_server_data *data = calloc(sizeof(async_server_data));
+    data->context = GRPC_server_context_create();
+    data->request.name.funcs.decode = read_string_store_in_arg;
+    data->response.message.funcs.encode = write_string_from_arg;
+
+    // Listen for this method
+    helloworld_Greeter_SayHello_ServerRequest(
+      &data->context,
+      &data->request,
+      &data->response,
+      incoming,           // incoming queue
+      incoming.cq,        // processing queue
+      data
+    );
+
+    // Wait for incoming call
+    void *tag;
+    bool ok;
+    GRPC_completion_queue_operation_status queue_status =
+      GRPC_completion_queue_next(incoming.cq, &tag, &ok);
+
+    if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
+    assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
+    assert(ok);
+
+    // Process the request
+    {
+      async_server_data *data = (async_server_data *) tag;
+      char *input_str = data->request.name.arg;
+      size_t output_len = strlen(input_str) + 6;
+      char *output_str = malloc(output_len + 1);
+      sprintf(output_str, "Hello %s", input_str);
+      data->reply.message.arg = output_str;
+
+      helloworld_Greeter_SayHello_ServerFinish(
+        &data->context,
+        &data->reply,
+        GRPC_STATUS_OK,
+        data
+      );
+    }
+
+    // Wait for request termination
+    GRPC_completion_queue_operation_status queue_status =
+      GRPC_completion_queue_next(incoming.cq, &tag, &ok);
+
+    if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
+    assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
+    assert(ok);
+
+    // Clean up
+    {
+      async_server_data *data = (async_server_data *) tag;
+      free(data->request.name.arg);
+      free(data->reply.message.arg);
+      GRPC_server_context_destroy(data->context);
+      free(data);
+    }
+  }
+  GRPC_completion_queue_destroy(cq);
+  GRPC_server_shutdown(server);
+  GRPC_server_destroy(server);
   return 0;
 }
