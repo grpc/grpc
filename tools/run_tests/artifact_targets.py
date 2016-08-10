@@ -31,6 +31,8 @@
 """Definition of targets to build artifacts."""
 
 import os.path
+import random
+import string
 import sys
 
 import jobset
@@ -79,27 +81,16 @@ _ARCH_FLAG_MAP = {
   'x64': '-m64'
 }
 
-python_windows_version_arch_map = {
-  ('x86', '2.7'): 'Python27_32bits',
-  ('x64', '2.7'): 'Python27',
-  ('x86', '3.4'): 'Python34_32bits',
-  ('x64', '3.4'): 'Python34',
-}
 
 class PythonArtifact:
   """Builds Python artifacts."""
 
-  def __init__(self, platform, arch, python_version, manylinux_build=None):
-    if manylinux_build:
-      self.name = 'python%s_%s_%s_%s' % (python_version, platform, arch, manylinux_build)
-    else:
-      self.name = 'python%s_%s_%s' % (python_version, platform, arch)
+  def __init__(self, platform, arch, py_version):
+    self.name = 'python_%s_%s_%s' % (platform, arch, py_version)
     self.platform = platform
     self.arch = arch
-    self.labels = ['artifact', 'python', python_version, platform, arch]
-    self.python_version = python_version
-    self.python_windows_prefix = python_windows_version_arch_map[arch, python_version]
-    self.manylinux_build = manylinux_build
+    self.labels = ['artifact', 'python', platform, arch, py_version]
+    self.py_version = py_version
 
   def pre_build_jobspecs(self):
     return []
@@ -111,8 +102,8 @@ class PythonArtifact:
         environ['SETARCH_CMD'] = 'linux32'
       # Inside the manylinux container, the python installations are located in
       # special places...
-      environ['PYTHON'] = '/opt/python/{}/bin/python'.format(self.manylinux_build)
-      environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.manylinux_build)
+      environ['PYTHON'] = '/opt/python/{}/bin/python'.format(self.py_version)
+      environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
       # Platform autodetection for the manylinux1 image breaks so we set the
       # defines ourselves.
       # TODO(atash) get better platform-detection support in core so we don't
@@ -126,14 +117,24 @@ class PythonArtifact:
           environ=environ,
           timeout_seconds=60*60)
     elif self.platform == 'windows':
+      if 'Python27' in self.py_version or 'Python34' in self.py_version:
+        environ['EXT_COMPILER'] = 'mingw32'
+      else:
+        environ['EXT_COMPILER'] = 'msvc'
+      # For some reason, the batch script %random% always runs with the same
+      # seed.  We create a random temp-dir here
+      dir = ''.join(random.choice(string.ascii_uppercase) for _ in range(10))
       return create_jobspec(self.name,
                             ['tools\\run_tests\\build_artifact_python.bat',
-                             self.python_windows_prefix,
-                             '32' if self.arch == 'x86' else '64'
+                             self.py_version,
+                             '32' if self.arch == 'x86' else '64',
+                             dir
                             ],
+                            environ=environ,
                             shell=True)
     else:
-      environ['PYTHON'] = 'python{}'.format(self.python_version)
+      environ['PYTHON'] = self.py_version
+      environ['SKIP_PIP_INSTALL'] = 'TRUE'
       return create_jobspec(self.name,
                             ['tools/run_tests/build_artifact_python.sh'],
                             environ=environ)
@@ -330,18 +331,23 @@ def targets():
            for Cls in (CSharpExtArtifact, NodeExtArtifact, ProtocArtifact)
            for platform in ('linux', 'macos', 'windows')
            for arch in ('x86', 'x64')] +
-          [PythonArtifact('linux', 'x86', '2.7', 'cp27-cp27m'),
-           PythonArtifact('linux', 'x86', '2.7', 'cp27-cp27mu'),
-           PythonArtifact('linux', 'x64', '2.7', 'cp27-cp27m'),
-           PythonArtifact('linux', 'x64', '2.7', 'cp27-cp27mu'),
-           PythonArtifact('macos', 'x64', '2.7'),
-           PythonArtifact('windows', 'x86', '2.7'),
-           PythonArtifact('windows', 'x64', '2.7'),
-           PythonArtifact('linux', 'x86', '3.4', 'cp34-cp34m'),
-           PythonArtifact('linux', 'x64', '3.4', 'cp34-cp34m'),
-           PythonArtifact('macos', 'x64', '3.4'),
-           PythonArtifact('windows', 'x86', '3.4'),
-           PythonArtifact('windows', 'x64', '3.4'),
+          [PythonArtifact('linux', 'x86', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
+           PythonArtifact('linux', 'x86', 'cp34-cp34m'),
+           PythonArtifact('linux', 'x86', 'cp35-cp35m'),
+           PythonArtifact('linux', 'x64', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
+           PythonArtifact('linux', 'x64', 'cp34-cp34m'),
+           PythonArtifact('linux', 'x64', 'cp35-cp35m'),
+           PythonArtifact('macos', 'x64', 'python2.7'),
+           PythonArtifact('macos', 'x64', 'python3.4'),
+           PythonArtifact('macos', 'x64', 'python3.5'),
+           PythonArtifact('windows', 'x86', 'Python27_32bits'),
+           PythonArtifact('windows', 'x86', 'Python34_32bits'),
+           PythonArtifact('windows', 'x86', 'Python35_32bits'),
+           PythonArtifact('windows', 'x64', 'Python27'),
+           PythonArtifact('windows', 'x64', 'Python34'),
+           PythonArtifact('windows', 'x64', 'Python35'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64'),
