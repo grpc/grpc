@@ -767,13 +767,6 @@ ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
 endif
 
-INSTALL_OK = false
-ifeq ($(HAS_VALID_PROTOC),true)
-ifeq ($(HAS_SYSTEM_PROTOBUF_VERIFY),true)
-INSTALL_OK = true
-endif
-endif
-
 .SECONDARY = %.pb.h %.pb.cc
 
 PROTOC_PLUGINS = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
@@ -2284,28 +2277,6 @@ install-certs: etc/roots.pem
 	$(E) "[INSTALL] Installing root certificates"
 	$(Q) $(INSTALL) -d $(prefix)/share/grpc
 	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
-
-verify-install:
-ifeq ($(INSTALL_OK),true)
-	@echo "Your system looks ready to go."
-	@echo
-else
-	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
-	@echo "which means that you won't be able to compile .proto files for use"
-	@echo "with gRPC."
-	@echo
-	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
-	@echo "have no need to compile .proto files, you can ignore this."
-	@echo
-	@echo "If you do need protobuf for some reason, you can download and install"
-	@echo "it from:"
-	@echo
-	@echo "   https://github.com/google/protobuf/releases"
-	@echo
-	@echo "Once you've done so, you can re-run this check by doing:"
-	@echo
-	@echo "   make verify-install"
-endif
 
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
