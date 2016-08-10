@@ -80,9 +80,7 @@ struct grpc_ares_request {
   grpc_ares_ev_driver *ev_driver;
 };
 
-static void do_basic_init(void) {
-  gpr_mu_init(&g_init_mu);
-}
+static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
 static void destroy_request(grpc_ares_request *request) {
   grpc_ares_ev_driver_destroy(request->ev_driver);

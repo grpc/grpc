@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_RESOLVER_DNS_CARES_RESOLVE_ADDRESS_CARES_H
-#define GRPC_CORE_EXT_RESOLVER_DNS_CARES_RESOLVE_ADDRESS_CARES_H
+#ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
+#define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -51,4 +51,4 @@ grpc_error *grpc_ares_init(void);
 
 void grpc_ares_cleanup(void);
 
-#endif /* GRPC_CORE_EXT_RESOLVER_DNS_CARES_RESOLVE_ADDRESS_CARES_H */
+#endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */

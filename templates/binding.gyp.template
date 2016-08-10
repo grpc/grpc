@@ -48,7 +48,8 @@
         ['OS == "win"', {
           "include_dirs": [
             "third_party/boringssl/include",
-            "third_party/zlib"
+            "third_party/zlib",
+            "third_party/c-ares"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -86,7 +87,8 @@
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
-            '<(node_root_dir)/deps/zlib'
+            '<(node_root_dir)/deps/zlib',
+            '<(node_root_dir)/deps/cares/include'
           ],
           'conditions': [
             ['config=="gcov"', {
