@@ -2095,7 +2095,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-install: install_c install_cxx install-plugins install-certs verify-install
+install: install_c install_cxx install-plugins install-certs
 
 install_c: install-headers_c install-static_c install-shared_c
 
