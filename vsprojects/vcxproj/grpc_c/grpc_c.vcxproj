@@ -274,6 +274,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\declare_serializer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\grpc_c.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\server.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\server_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\server_incoming_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\status.h" />
   </ItemGroup>
   <ItemGroup>
@@ -286,7 +288,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\c\context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\init_shutdown.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\message.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\c\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\server_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\c\server_incoming_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\server_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\unary_async_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\unary_blocking_call.h" />
@@ -312,7 +316,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\pb_compat.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\server.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\server_context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\server_incoming_queue.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\server_streaming_blocking_call.c">
     </ClCompile>

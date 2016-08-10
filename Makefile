@@ -3047,7 +3047,9 @@ LIBGRPC_C_SRC = \
     src/c/init_shutdown.c \
     src/c/message.c \
     src/c/pb_compat.c \
+    src/c/server.c \
     src/c/server_context.c \
+    src/c/server_incoming_queue.c \
     src/c/server_streaming_blocking_call.c \
     src/c/unary_async_call.c \
     src/c/unary_blocking_call.c \
@@ -3069,6 +3071,8 @@ PUBLIC_HEADERS_C += \
     include/grpc_c/declare_serializer.h \
     include/grpc_c/grpc_c.h \
     include/grpc_c/server.h \
+    include/grpc_c/server_context.h \
+    include/grpc_c/server_incoming_queue.h \
     include/grpc_c/status.h \
 
 LIBGRPC_C_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_C_SRC))))
@@ -16346,7 +16350,9 @@ src/c/completion_queue.c: $(OPENSSL_DEP)
 src/c/init_shutdown.c: $(OPENSSL_DEP)
 src/c/message.c: $(OPENSSL_DEP)
 src/c/pb_compat.c: $(OPENSSL_DEP)
+src/c/server.c: $(OPENSSL_DEP)
 src/c/server_context.c: $(OPENSSL_DEP)
+src/c/server_incoming_queue.c: $(OPENSSL_DEP)
 src/c/server_streaming_blocking_call.c: $(OPENSSL_DEP)
 src/c/unary_async_call.c: $(OPENSSL_DEP)
 src/c/unary_blocking_call.c: $(OPENSSL_DEP)

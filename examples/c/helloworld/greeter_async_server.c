@@ -80,8 +80,8 @@ int main(int argc, char **argv) {
   GRPC_server *server = GRPC_build_server({
     .async_services = { helloworld_Greeter_Service, NULL }
   });
-  GRPC_incoming_notification_queue incoming =
-    GRPC_server_new_notification_queue(server);
+  GRPC_incoming_notification_queue *incoming =
+    GRPC_server_new_incoming_queue(server);
   GRPC_server_start(server);
   // Run server
   for (;;) {
@@ -96,15 +96,17 @@ int main(int argc, char **argv) {
       &data->request,
       &data->response,
       incoming,           // incoming queue
-      incoming.cq,        // processing queue
-      data
+      incoming.cq,        // processing queue - we can reuse the
+                          // same underlying completion queue, or
+                          // specify a different one here
+      data                // tag for the completion queues
     );
 
     // Wait for incoming call
     void *tag;
     bool ok;
     GRPC_completion_queue_operation_status queue_status =
-      GRPC_completion_queue_next(incoming.cq, &tag, &ok);
+      GRPC_completion_queue_next(incoming->cq, &tag, &ok);
 
     if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
     assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
@@ -129,7 +131,7 @@ int main(int argc, char **argv) {
 
     // Wait for request termination
     GRPC_completion_queue_operation_status queue_status =
-      GRPC_completion_queue_next(incoming.cq, &tag, &ok);
+      GRPC_completion_queue_next(incoming->cq, &tag, &ok);
 
     if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
     assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
@@ -144,7 +146,6 @@ int main(int argc, char **argv) {
       free(data);
     }
   }
-  GRPC_completion_queue_destroy(cq);
   GRPC_server_shutdown(server);
   GRPC_server_destroy(server);
   return 0;

@@ -543,7 +543,9 @@ add_library(grpc_c
   src/c/init_shutdown.c
   src/c/message.c
   src/c/pb_compat.c
+  src/c/server.c
   src/c/server_context.c
+  src/c/server_incoming_queue.c
   src/c/server_streaming_blocking_call.c
   src/c/unary_async_call.c
   src/c/unary_blocking_call.c
@@ -583,6 +585,8 @@ foreach(_hdr
   include/grpc_c/declare_serializer.h
   include/grpc_c/grpc_c.h
   include/grpc_c/server.h
+  include/grpc_c/server_context.h
+  include/grpc_c/server_incoming_queue.h
   include/grpc_c/status.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
