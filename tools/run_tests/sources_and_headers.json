@@ -6558,7 +6558,8 @@
   }, 
   {
     "deps": [
-      "gpr"
+      "gpr", 
+      "grpc_base"
     ], 
     "headers": [
       "src/core/lib/tsi/fake_transport_security.h", 

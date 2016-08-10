@@ -37,9 +37,9 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
-#include "sockaddr_windows.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #else
-#include "sockaddr_posix.h"
+#include "src/core/lib/iomgr/sockaddr_posix.h"
 #endif
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
