@@ -1003,6 +1003,7 @@ add_library(grpc++
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
@@ -1258,6 +1259,7 @@ add_library(grpc++_unsecure
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
