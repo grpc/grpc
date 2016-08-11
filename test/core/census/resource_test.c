@@ -95,7 +95,7 @@ static void test_define_single_resource(const char *file, const char *name,
 }
 
 // Try deleting various resources (both those that exist and those that don't).
-static void test_delete_resource(char* minimal_good, char* full) {
+static void test_delete_resource(const char *minimal_good, const char *full) {
   initialize_resources();
   // Try deleting resource before any are defined.
   census_delete_resource(0);
@@ -133,9 +133,9 @@ static void test_base_resources() {
 }
 
 int main(int argc, char **argv) {
-  char *resource_empty_name_pb, *resource_full_pb, *resource_minimal_good_pb,
+  const char *resource_empty_name_pb, *resource_full_pb, *resource_minimal_good_pb,
   *resource_no_name_pb, *resource_no_numerator_pb, *resource_no_unit_pb;
-  if (argc >= 7) {
+  if (argc == 7) {
     resource_empty_name_pb = argv[1];
     resource_full_pb = argv[2];
     resource_minimal_good_pb = argv[3];
@@ -143,6 +143,7 @@ int main(int argc, char **argv) {
     resource_no_numerator_pb = argv[5];
     resource_no_unit_pb = argv[6];
   } else {
+    GPR_ASSERT(argc == 1);
     resource_empty_name_pb = "test/core/census/data/resource_empty_name.pb";
     resource_full_pb = "test/core/census/data/resource_full.pb";
     resource_minimal_good_pb = "test/core/census/data/resource_minimal_good.pb";
