@@ -94,7 +94,8 @@ static void initiate_writing(grpc_exec_ctx *exec_ctx, void *t,
 
 static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_transport *t, grpc_error *error);
+                                  grpc_chttp2_transport *t, grpc_error *error,
+                                  const char *reason);
 
 /** Set a transport level setting, and push it to our peer */
 static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -876,7 +877,7 @@ static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
       set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE,
                       "start_writing:nothing_to_write");
     }
-    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_CREATE("Nothing to write"));
+    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_NONE, "Nothing to write");
     if (t->ep && !t->endpoint_reading) {
       destroy_endpoint(exec_ctx, t);
     }
@@ -925,11 +926,18 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+/* error may be GRPC_ERROR_NONE if there is no error allocated yet.
+   In that case, use "reason" as the text for a new error. */
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_transport *t, grpc_error *error) {
+                                  grpc_chttp2_transport *t, grpc_error *error,
+                                  const char *reason) {
   grpc_chttp2_stream_global *stream_global;
   while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
                                                          &stream_global)) {
+    if (error == GRPC_ERROR_NONE && reason != NULL) {
+      /* create error object. */
+      error = GRPC_ERROR_CREATE(reason);
+    }
     fail_pending_writes(exec_ctx, &t->global, stream_global,
                         GRPC_ERROR_REF(error));
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
@@ -951,7 +959,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
 
-  end_waiting_for_write(exec_ctx, t, error);
+  end_waiting_for_write(exec_ctx, t, error, NULL);
 
   switch (t->executor.write_state) {
     case GRPC_CHTTP2_WRITING_INACTIVE:

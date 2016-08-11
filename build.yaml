@@ -838,7 +838,6 @@ libs:
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - grpc_resolver_dns_ares
-  - grpc_lb_policy_grpclb
   - grpc_resolver_sockaddr
   - grpc_load_reporting
   - grpc_secure
@@ -936,7 +935,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
