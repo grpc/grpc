@@ -117,10 +117,10 @@ module GRPC
     end
 
     # Sends the initial metadata that has yet to be sent.
-    # Fails if metadata has already been sent for this call.
+    # Does nothing if metadata has already been sent for this call.
     def send_initial_metadata
       @send_initial_md_mutex.synchronize do
-        fail('Already send initial metadata') if @metadata_sent
+        return if @metadata_sent
         @metadata_tag = ActiveCall.client_invoke(@call, @metadata_to_send)
         @metadata_sent = true
       end
@@ -201,7 +201,7 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      send_initial_metadata unless @metadata_sent
+      send_initial_metadata
       GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
       payload = marshalled ? req : @marshal.call(req)
       @call.run_batch(SEND_MESSAGE => payload)
@@ -217,7 +217,7 @@ module GRPC
     # list, mulitple metadata for its key are sent
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
-      send_initial_metadata unless @metadata_sent
+      send_initial_metadata
       ops = {
         SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
@@ -318,8 +318,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
-      merge_metadata_to_send(metadata) &&
-        send_initial_metadata unless @metadata_sent
+      merge_metadata_to_send(metadata) && send_initial_metadata
       remote_send(req)
       writes_done(false)
       response = remote_read
@@ -343,8 +342,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
-      merge_metadata_to_send(metadata) &&
-        send_initial_metadata unless @metadata_sent
+      merge_metadata_to_send(metadata) && send_initial_metadata
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
@@ -370,8 +368,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
-      merge_metadata_to_send(metadata) &&
-        send_initial_metadata unless @metadata_sent
+      merge_metadata_to_send(metadata) && send_initial_metadata
       remote_send(req)
       writes_done(false)
       replies = enum_for(:each_remote_read_then_finish)
@@ -410,8 +407,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
-      merge_metadata_to_send(metadata) &&
-        send_initial_metadata unless @metadata_sent
+      merge_metadata_to_send(metadata) && send_initial_metadata
       bd = BidiCall.new(@call,
                         @marshal,
                         @unmarshal,
@@ -470,9 +466,7 @@ module GRPC
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
     def start_call(metadata = {})
-      return if @metadata_sent
       merge_metadata_to_send(metadata) && send_initial_metadata
-      @metadata_sent = true
     end
 
     def self.view_class(*visible_methods)

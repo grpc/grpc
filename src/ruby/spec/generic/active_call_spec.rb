@@ -221,7 +221,7 @@ describe GRPC::ActiveCall do
       @client_call.send_initial_metadata
     end
 
-    it 'explicit sending fails if metadata has already been sent' do
+    it 'explicit sending does nothing if metadata has already been sent' do
       call = make_test_call
 
       @client_call = ActiveCall.new(call,
@@ -235,7 +235,7 @@ describe GRPC::ActiveCall do
         @client_call.send_initial_metadata
       end
 
-      expect { blk.call }.to raise_error
+      expect { blk.call }.to_not raise_error
     end
   end
 

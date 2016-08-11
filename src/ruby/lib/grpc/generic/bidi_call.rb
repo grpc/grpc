@@ -172,8 +172,7 @@ module GRPC
         payload = @marshal.call(req)
         # Fails if status already received
         begin
-          @req_view.send_initial_metadata unless
-            @req_view.nil? || @req_view.metadata_sent
+          @req_view.send_initial_metadata unless @req_view.nil?
           @call.run_batch(SEND_MESSAGE => payload)
         rescue GRPC::Core::CallError => e
           # This is almost definitely caused by a status arriving while still
