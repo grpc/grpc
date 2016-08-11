@@ -40,7 +40,7 @@
 
 static bool op_send_metadata_fill(grpc_op *op,
                                   GRPC_context *context,
-                                  grpc_call_op_set *set,
+                                  GRPC_call_op_set *set,
                                   const grpc_message message, void *response) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -50,15 +50,15 @@ static bool op_send_metadata_fill(grpc_op *op,
 }
 
 static void op_send_metadata_finish(GRPC_context *context,
-                                    grpc_call_op_set *set, bool *status,
+                                    GRPC_call_op_set *set, bool *status,
                                     int max_message_size) {}
 
-const grpc_op_manager grpc_op_send_metadata = {op_send_metadata_fill,
+const GRPC_op_manager grpc_op_send_metadata = {op_send_metadata_fill,
                                                op_send_metadata_finish};
 
 static bool op_send_object_fill(grpc_op *op,
                                 GRPC_context *context,
-                                grpc_call_op_set *set,
+                                GRPC_call_op_set *set,
                                 const grpc_message message, void *response) {
   op->op = GRPC_OP_SEND_MESSAGE;
 
@@ -78,18 +78,18 @@ static bool op_send_object_fill(grpc_op *op,
 }
 
 static void op_send_object_finish(GRPC_context *context,
-                                  grpc_call_op_set *set, bool *status,
+                                  GRPC_call_op_set *set, bool *status,
                                   int max_message_size) {
   if (set->send_buffer)
     grpc_byte_buffer_destroy(set->send_buffer);
 }
 
-const grpc_op_manager grpc_op_send_object = {op_send_object_fill,
+const GRPC_op_manager grpc_op_send_object = {op_send_object_fill,
                                              op_send_object_finish};
 
 static bool op_recv_metadata_fill(grpc_op *op,
                                   GRPC_context *context,
-                                  grpc_call_op_set *set,
+                                  GRPC_call_op_set *set,
                                   const grpc_message message, void *response) {
   if (context->initial_metadata_received) return false;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -101,17 +101,17 @@ static bool op_recv_metadata_fill(grpc_op *op,
 }
 
 static void op_recv_metadata_finish(GRPC_context *context,
-                                    grpc_call_op_set *set, bool *status,
+                                    GRPC_call_op_set *set, bool *status,
                                     int max_message_size) {
   context->initial_metadata_received = true;
 }
 
-const grpc_op_manager grpc_op_recv_metadata = {op_recv_metadata_fill,
+const GRPC_op_manager grpc_op_recv_metadata = {op_recv_metadata_fill,
                                                op_recv_metadata_finish};
 
 static bool op_recv_object_fill(grpc_op *op,
                                 GRPC_context *context,
-                                grpc_call_op_set *set,
+                                GRPC_call_op_set *set,
                                 const grpc_message message, void *response) {
   set->message_received = false;
   set->response = response;
@@ -124,7 +124,7 @@ static bool op_recv_object_fill(grpc_op *op,
 }
 
 static void op_recv_object_finish(GRPC_context *context,
-                                  grpc_call_op_set *set, bool *status,
+                                  GRPC_call_op_set *set, bool *status,
                                   int max_message_size) {
   if (set->recv_buffer) {
     GPR_ASSERT(set->message_received == false);
@@ -147,12 +147,12 @@ static void op_recv_object_finish(GRPC_context *context,
   }
 }
 
-const grpc_op_manager grpc_op_recv_object = {op_recv_object_fill,
+const GRPC_op_manager grpc_op_recv_object = {op_recv_object_fill,
                                              op_recv_object_finish};
 
 static bool op_client_send_close_fill(grpc_op *op,
                                       GRPC_context *context,
-                                      grpc_call_op_set *set,
+                                      GRPC_call_op_set *set,
                                       const grpc_message message, void *response) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
@@ -161,15 +161,15 @@ static bool op_client_send_close_fill(grpc_op *op,
 }
 
 static void op_client_send_close_finish(GRPC_context *context,
-                                        grpc_call_op_set *set, bool *status,
+                                        GRPC_call_op_set *set, bool *status,
                                         int max_message_size) {}
 
-const grpc_op_manager grpc_op_client_send_close = {op_client_send_close_fill,
+const GRPC_op_manager grpc_op_client_send_close = {op_client_send_close_fill,
                                             op_client_send_close_finish};
 
 static bool op_server_recv_close_fill(grpc_op *op,
                                       GRPC_context *context,
-                                      grpc_call_op_set *set,
+                                      GRPC_call_op_set *set,
                                       const grpc_message message, void *response) {
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->flags = 0;
@@ -178,15 +178,15 @@ static bool op_server_recv_close_fill(grpc_op *op,
 }
 
 static void op_server_recv_close_finish(GRPC_context *context,
-                                        grpc_call_op_set *set, bool *status,
+                                        GRPC_call_op_set *set, bool *status,
                                         int max_message_size) {}
 
-const grpc_op_manager grpc_op_server_recv_close = {op_server_recv_close_fill,
+const GRPC_op_manager grpc_op_server_recv_close = {op_server_recv_close_fill,
                                                    op_server_recv_close_finish};
 
 static bool op_client_recv_status_fill(grpc_op *op,
                                        GRPC_context *context,
-                                       grpc_call_op_set *set,
+                                       GRPC_call_op_set *set,
                                        const grpc_message message, void *response) {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
 
@@ -207,15 +207,15 @@ static bool op_client_recv_status_fill(grpc_op *op,
 }
 
 static void op_client_recv_status_finish(GRPC_context *context,
-                                         grpc_call_op_set *set, bool *status,
+                                         GRPC_call_op_set *set, bool *status,
                                          int max_message_size) {}
 
-const grpc_op_manager grpc_op_client_recv_status = {op_client_recv_status_fill,
+const GRPC_op_manager grpc_op_client_recv_status = {op_client_recv_status_fill,
                                              op_client_recv_status_finish};
 
 static bool op_server_send_status_fill(grpc_op *op,
                                        GRPC_context *context,
-                                       grpc_call_op_set *set,
+                                       GRPC_call_op_set *set,
                                        const grpc_message message, void *response) {
   // TODO(yifeit): hook up to server handlers
   GRPC_server_context *server_context = (GRPC_server_context *) context;
@@ -230,24 +230,24 @@ static bool op_server_send_status_fill(grpc_op *op,
 }
 
 static void op_server_send_status_finish(GRPC_context *context,
-                                         grpc_call_op_set *set, bool *status,
+                                         GRPC_call_op_set *set, bool *status,
                                          int max_message_size) {}
 
-const grpc_op_manager grpc_op_server_send_status = {op_server_send_status_fill,
+const GRPC_op_manager grpc_op_server_send_status = {op_server_send_status_fill,
                                              op_server_send_status_finish};
 
-void grpc_fill_op_from_call_set(grpc_call_op_set *set,
+void GRPC_fill_op_from_call_set(GRPC_call_op_set *set,
                                 GRPC_context *context,
                                 const grpc_message message, void *response,
-                                grpc_op ops[], size_t *nops) {
+                                grpc_op *ops, size_t *nops) {
   size_t manager = 0;
   size_t filled = 0;
   while (manager < GRPC_MAX_OP_COUNT) {
-    if (set->op_managers[manager].fill == NULL &&
-        set->op_managers[manager].finish == NULL)
+    if (set->operations[manager].fill == NULL &&
+        set->operations[manager].finish == NULL)
       break;  // end of call set
-    if (set->op_managers[manager].fill == NULL) continue;
-    bool result = set->op_managers[manager].fill(
+    if (set->operations[manager].fill == NULL) continue;
+    bool result = set->operations[manager].fill(
         &ops[filled], context, set, message, response);
     manager++;
     if (result) filled++;
@@ -255,29 +255,29 @@ void grpc_fill_op_from_call_set(grpc_call_op_set *set,
   *nops = filled;
 }
 
-bool grpc_finish_op_from_call_set(grpc_call_op_set *set,
+bool GRPC_finish_op_from_call_set(GRPC_call_op_set *set,
                                   GRPC_context *context) {
   size_t count = 0;
   bool allStatus = true;
   while (count < GRPC_MAX_OP_COUNT) {
-    if (set->op_managers[count].fill == NULL &&
-        set->op_managers[count].finish == NULL)
+    if (set->operations[count].fill == NULL &&
+        set->operations[count].finish == NULL)
       break;  // end of call set
-    if (set->op_managers[count].finish == NULL) continue;
+    if (set->operations[count].finish == NULL) continue;
     int size = 100;  // todo(yifeit): hook up this value
     bool status = true;
-    set->op_managers[count].finish(context, set, &status, size);
+    set->operations[count].finish(context, set, &status, size);
     allStatus &= status;
     count++;
   }
   return allStatus;
 }
 
-void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set,
+void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   GRPC_context *context,
                                   const grpc_message request, void *response) {
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(set, context, request, response, ops, &nops);
+  GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, set, NULL));
 }

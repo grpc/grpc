@@ -51,4 +51,7 @@ typedef struct GRPC_client_async_writer GRPC_client_async_writer;
 typedef struct GRPC_client_async_response_reader
     GRPC_client_async_response_reader;
 
+typedef struct GRPC_server_async_response_writer
+  GRPC_server_async_response_writer;
+
 #endif /* GRPC_C_GRPC_C_H */

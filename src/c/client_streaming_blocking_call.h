@@ -39,12 +39,12 @@
 #include "src/c/client_context.h"
 
 typedef struct GRPC_client_writer {
-  grpc_call_op_set finish_ops;
+  GRPC_call_op_set finish_ops;
 
   GRPC_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
   grpc_message *response;
-} grpc_client_writer;
+} GRPC_client_writer;
 
 #endif  // GRPC_C_INTERNAL_CLIENT_STREAMING_BLOCKING_CALL_H

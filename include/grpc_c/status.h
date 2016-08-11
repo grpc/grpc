@@ -38,6 +38,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+typedef grpc_status_code GRPC_status_code;
+
 typedef struct GRPC_status {
   /**
    * Indicator of success for the entire RPC operation, including network,
@@ -48,7 +50,7 @@ typedef struct GRPC_status {
   /**
    * Status code coming from the remote server.
    */
-  grpc_status_code code;
+  GRPC_status_code code;
 
   /**
    * Detailed status string from the server.

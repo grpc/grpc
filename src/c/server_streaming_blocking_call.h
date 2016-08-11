@@ -42,6 +42,6 @@ typedef struct GRPC_client_reader {
   GRPC_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
-} grpc_client_reader;
+} GRPC_client_reader;
 
 #endif  // GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H

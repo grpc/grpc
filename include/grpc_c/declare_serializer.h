@@ -39,28 +39,11 @@
  * ======================================================================
  *
  * First take a look at
- * https://github.com/google/flatbuffers/blob/48f37f9e0a04f2b60046dda7fef20a8b0ebc1a70/include/flatbuffers/grpc.h
- * which glues FlatBuffers to gRPC-C++. For every new serialization algorithm,
- * we need to create a similar file that
- * imports this declare_serializer.h, and partially specializes the
- * GRPC_SERIALIZATION_IMPL_MSGTYPE macro defined here. This mirrors
- * the C++ template partial specialization method and allows plugging in new
- * serialization implementations with
- * zero knowledge from the gRPC library. Of course we need to include this file
- * in our message header, which is in turn
- * referenced by the generated service implementation. This will typically be
- * controlled by a switch in the codegen, so
- * as to avoid constantly pulling in the gRPC dependency in any other use cases
- * of the serialization library.
+ * https://github.com/google/flatbuffers/blob/48f37f9e0a04f2b60046dda7fef20a8b0ebc1a70/include/flatbuffers/grpc.h which glues FlatBuffers to gRPC-C++. For every new serialization algorithm, we need to create a similar file that imports this declare_serializer.h, and partially specializes the GRPC_SERIALIZATION_IMPL_MSGTYPE macro defined here. This mirrors the C++ template partial specialization method and allows plugging in new serialization implementations with zero knowledge from the gRPC library. Of course we need to include this file in our message header, which is in turn referenced by the generated service implementation. This will typically be controlled by a switch in the codegen, so as to avoid constantly pulling in the gRPC dependency in any other use cases of the serialization library.
  *
- * Because we wouldn't want to hack the Nanopb, specializations for Nanopb are
- * hardcoded in the gRPC library, and are
- * automatically activated when Nanopb objects are detected.
+ * Because we wouldn't want to hack the Nanopb, specializations for Nanopb are hardcoded in the gRPC library, and are automatically activated when Nanopb objects are detected.
  *
- * The service implementation expands the GRPC_C_RESOLVE_SERIALIZER(MessageType)
- * macro, which is expected to provide the
- * grpc_serialization_impl struct instance that handles serialization for that
- * particular message type.
+ * The service implementation expands the GRPC_C_RESOLVE_SERIALIZER(MessageType) macro, which is expected to provide the grpc_serialization_impl struct instance that handles serialization for that particular message type.
  */
 
 #define GRPC_C_RESOLVE_SERIALIZER(msgType) \

@@ -42,7 +42,7 @@ static void perform_grpc_init() {
   GPR_ASSERT(atexit(grpc_shutdown) == 0);
 }
 
-void grpc_ensure_grpc_init() {
+void GRPC_ensure_grpc_init() {
   static gpr_once once_var = GPR_ONCE_INIT;
   gpr_once_init(&once_var, perform_grpc_init);
 }

@@ -31,6 +31,7 @@
  *
  */
 
+#include <grpc/support/alloc.h>
 #include <grpc_c/server_incoming_queue.h>
 #include <grpc_c/completion_queue.h>
 #include "src/c/server_incoming_queue.h"
@@ -42,4 +43,9 @@ GRPC_incoming_notification_queue *GRPC_incoming_notification_queue_create() {
     .cq = cq
   });
   return queue;
+}
+
+void GRPC_incoming_notification_queue_destroy(GRPC_incoming_notification_queue *queue) {
+  GRPC_completion_queue_destroy(queue->cq);
+  gpr_free(queue);
 }

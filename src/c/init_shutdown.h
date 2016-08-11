@@ -34,6 +34,6 @@
 #ifndef GRPC_C_INTERNAL_GRPC_INIT_SHUTDOWN_H
 #define GRPC_C_INTERNAL_GRPC_INIT_SHUTDOWN_H
 
-void grpc_ensure_grpc_init();
+void GRPC_ensure_grpc_init();
 
 #endif  // GRPC_C_INTERNAL_GRPC_INIT_SHUTDOWN_H

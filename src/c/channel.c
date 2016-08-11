@@ -37,7 +37,7 @@
 #include "src/c/init_shutdown.h"
 
 GRPC_channel *GRPC_channel_create(const char *const target) {
-  grpc_ensure_grpc_init();
+  GRPC_ensure_grpc_init();
   return grpc_insecure_channel_create(target, NULL, NULL);
 }
 

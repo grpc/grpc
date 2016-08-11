@@ -41,28 +41,28 @@
 #include "src/c/context.h"
 #include "src/c/message.h"
 
-typedef struct grpc_call_op_set grpc_call_op_set;
+typedef struct GRPC_call_op_set GRPC_call_op_set;
 
-typedef bool (*grpc_op_filler)(grpc_op *op,
-                               GRPC_context *, grpc_call_op_set *,
+typedef bool (*GRPC_op_filler)(grpc_op *op,
+                               GRPC_context *, GRPC_call_op_set *,
                                const grpc_message message, void *response);
-typedef void (*grpc_op_finisher)(GRPC_context *, grpc_call_op_set *,
+typedef void (*GRPC_op_finisher)(GRPC_context *, GRPC_call_op_set *,
                                  bool *status, int max_message_size);
 
-typedef struct grpc_op_manager {
-  const grpc_op_filler fill;
-  const grpc_op_finisher finish;
-} grpc_op_manager;
+typedef struct GRPC_op_manager {
+  const GRPC_op_filler fill;
+  const GRPC_op_finisher finish;
+} GRPC_op_manager;
 
 enum { GRPC_MAX_OP_COUNT = 8 };
 
-typedef struct grpc_closure {
+typedef struct GRPC_closure {
   void *arg;
   void (*callback)(void *arg);
-} grpc_closure;
+} GRPC_closure;
 
-struct grpc_call_op_set {
-  const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
+struct GRPC_call_op_set {
+  const GRPC_op_manager operations[GRPC_MAX_OP_COUNT];
   GRPC_context *const context;
 
   /* these are used by individual operations */
@@ -81,32 +81,33 @@ struct grpc_call_op_set {
   // used in async calls
   void *user_tag;
   bool *user_done;            /* for clients reading a stream */
-  grpc_closure async_cleanup; /* will be called when RPC ends */
+  GRPC_closure async_cleanup; /* will be called when the op_set finishes */
+                              /* used to cleanup after RPC */
 };
 
-void grpc_fill_op_from_call_set(grpc_call_op_set *set,
+void GRPC_fill_op_from_call_set(GRPC_call_op_set *set,
                                 GRPC_context *context,
                                 const grpc_message message, void *response,
-                                grpc_op ops[], size_t *nops);
+                                grpc_op *ops, size_t *nops);
 
 /* Runs post processing steps in the call op set. Returns false if something
  * wrong happens e.g. serialization. */
-bool grpc_finish_op_from_call_set(grpc_call_op_set *set,
+bool GRPC_finish_op_from_call_set(GRPC_call_op_set *set,
                                   GRPC_context *context);
 
-void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set,
+void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   GRPC_context *context,
                                   const grpc_message message, void *response);
 
 /* list of operations */
 
-extern const grpc_op_manager grpc_op_send_metadata;
-extern const grpc_op_manager grpc_op_recv_metadata;
-extern const grpc_op_manager grpc_op_send_object;
-extern const grpc_op_manager grpc_op_recv_object;
-extern const grpc_op_manager grpc_op_client_send_close;
-extern const grpc_op_manager grpc_op_client_recv_status;
-extern const grpc_op_manager grpc_op_server_recv_close;
-extern const grpc_op_manager grpc_op_server_send_status;
+extern const GRPC_op_manager grpc_op_send_metadata;
+extern const GRPC_op_manager grpc_op_recv_metadata;
+extern const GRPC_op_manager grpc_op_send_object;
+extern const GRPC_op_manager grpc_op_recv_object;
+extern const GRPC_op_manager grpc_op_client_send_close;
+extern const GRPC_op_manager grpc_op_client_recv_status;
+extern const GRPC_op_manager grpc_op_server_recv_close;
+extern const GRPC_op_manager grpc_op_server_send_status;
 
 #endif /* GRPC_C_INTERNAL_CALL_OPS_H */

@@ -34,10 +34,11 @@
 #include "src/c/server_context.h"
 #include "src/c/alloc.h"
 
-GRPC_server_context *GRPC_server_context_create() {
+GRPC_server_context *GRPC_server_context_create(GRPC_server *server) {
   GRPC_server_context *context = GRPC_ALLOC_STRUCT(GRPC_server_context, {
     .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
-    .serialization_impl = {.serialize = NULL, .deserialize = NULL}
+    .serialization_impl = {.serialize = NULL, .deserialize = NULL},
+    .server = server
   });
 
   grpc_metadata_array_init(&context->send_trailing_metadata_array);

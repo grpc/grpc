@@ -36,7 +36,7 @@
 
 #include <grpc_c/grpc_c.h>
 
-GRPC_server_context *GRPC_server_context_create();
+GRPC_server_context *GRPC_server_context_create(GRPC_server *server);
 
 GRPC_context *GRPC_server_context_to_base(GRPC_server_context *server_context);
 

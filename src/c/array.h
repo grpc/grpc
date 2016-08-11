@@ -31,27 +31,40 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_SERVER_H
-#define GRPC_C_INTERNAL_SERVER_H
+#ifndef GRPC_C_INTERNAL_ARRAY_H
+#define GRPC_C_INTERNAL_ARRAY_H
 
-#include <grpc/grpc.h>
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/server.h>
-#include "src/c/array.h"
-#include "src/c/server_incoming_queue.h"
+#include <stdlib.h>
+#include <stddef.h>
 
-typedef struct GRPC_server GRPC_server;
+/**
+ * Implements a generic array structure
+ * Usage:
+ * GRPC_array(int) arr;
+ * GRPC_array_init(arr);
+ * GRPC_array_push_back(arr, 5);
+ * // arr.data[0] == 5;
+ * GRPC_array_deinit(arr);
+ */
 
-struct GRPC_server {
-  grpc_server *core_server;
-  GRPC_array(GRPC_incoming_notification_queue*) registered_queues;
+typedef struct GRPC_array_state {
+  size_t size;
+  size_t capacity;
+} GRPC_array_state;
 
-  // used to monitor server events
-  grpc_completion_queue *internal_queue;
+void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size);
+void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size);
+void GRPC_array_deinit_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size);
+void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr, size_t elem_size, size_t target_size);
 
-  // async
+#define GRPC_array(type) struct { type *data; GRPC_array_state state; }
+#define GRPC_array_init(arr) GRPC_array_init_impl(&arr.state, &arr.data, sizeof(*arr.data));
+// Cannot delegate to a function since we do not know the type of input
+#define GRPC_array_push_back(arr, ...) { \
+  GRPC_array_ensure_capacity(&arr.state, &arr.data, sizeof(*arr.data), arr.state.size + 1); \
+  arr.data[arr.state.size++] = (__VA_ARGS__); \
+}
+#define GRPC_array_pop_back(arr) GRPC_array_pop_back_impl(&arr.state, &arr.data, sizeof(*arr.data));
+#define GRPC_array_deinit(arr) GRPC_array_deinit_impl(&arr.state, &arr.data, sizeof(*arr.data));
 
-  //TODO(yifeit): synchronous server state
-};
-
-#endif // GRPC_C_INTERNAL_SERVER_H
+#endif // GRPC_C_INTERNAL_ARRAY_H

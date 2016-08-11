@@ -31,27 +31,38 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_SERVER_H
-#define GRPC_C_INTERNAL_SERVER_H
-
-#include <grpc/grpc.h>
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/server.h>
+#include <grpc/support/alloc.h>
 #include "src/c/array.h"
-#include "src/c/server_incoming_queue.h"
 
-typedef struct GRPC_server GRPC_server;
+void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size) {
+  void **data = data_ptr;
+  state->capacity = 4;
+  state->size = 0;
+  *data = gpr_malloc(elem_size * 4);
+}
 
-struct GRPC_server {
-  grpc_server *core_server;
-  GRPC_array(GRPC_incoming_notification_queue*) registered_queues;
+void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size) {
+  if (state->size == 0) return;
+  void **data = data_ptr;
+  state->size--;
+  while (state->size * 2 + 1 <= state->capacity) {
+    *data = gpr_realloc(*data, state->capacity / 2);
+    state->capacity /= 2;
+  }
+}
 
-  // used to monitor server events
-  grpc_completion_queue *internal_queue;
+void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr, size_t elem_size, size_t target_size) {
+  if (target_size <= state->capacity) return;
+  void **data = data_ptr;
+  while (state->capacity < target_size) {
+    *data = realloc(*data, state->capacity * 2);
+    state->capacity *= 2;
+  }
+}
 
-  // async
-
-  //TODO(yifeit): synchronous server state
-};
-
-#endif // GRPC_C_INTERNAL_SERVER_H
+void GRPC_array_deinit_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size) {
+  void **data = data_ptr;
+  if (*data) {
+    gpr_free(*data);
+  }
+}

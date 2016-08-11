@@ -49,11 +49,11 @@ GRPC_client_writer *GRPC_client_streaming_blocking_call(
   context->call = call;
   context->rpc_method = rpc_method;
 
-  grpc_call_op_set set = {
+  GRPC_call_op_set set = {
       {grpc_op_send_metadata}, .context = GRPC_client_context_to_base(context), .user_tag = &set};
 
   GRPC_client_writer *writer = GRPC_ALLOC_STRUCT(
-      grpc_client_writer, {.context = context,
+      GRPC_client_writer, {.context = context,
                            .call = call,
                            .finish_ops =
                                {
@@ -65,25 +65,25 @@ GRPC_client_writer *GRPC_client_streaming_blocking_call(
                            .response = response});
   writer->finish_ops.user_tag = &writer->finish_ops;
 
-  grpc_start_batch_from_op_set(writer->call, &set, GRPC_client_context_to_base(writer->context),
-                               (GRPC_message){0, 0}, NULL);
+  GRPC_start_batch_from_op_set(writer->call, &set, GRPC_client_context_to_base(writer->context),
+                               (GRPC_message) {0, 0}, NULL);
   GRPC_completion_queue_pluck_internal(cq, &set);
   return writer;
 }
 
 bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer,
                                           const GRPC_message request) {
-  grpc_call_op_set set = {
+  GRPC_call_op_set set = {
       {grpc_op_send_object}, .context = GRPC_client_context_to_base(writer->context), .user_tag = &set};
 
-  grpc_start_batch_from_op_set(writer->call, &set, GRPC_client_context_to_base(writer->context), request,
+  GRPC_start_batch_from_op_set(writer->call, &set, GRPC_client_context_to_base(writer->context), request,
                                NULL);
   return GRPC_completion_queue_pluck_internal(writer->cq, &set);
 }
 
 GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer) {
-  grpc_start_batch_from_op_set(writer->call, &writer->finish_ops,
-                               GRPC_client_context_to_base(writer->context), (GRPC_message){0, 0},
+  GRPC_start_batch_from_op_set(writer->call, &writer->finish_ops,
+                               GRPC_client_context_to_base(writer->context), (GRPC_message) {0, 0},
                                writer->response);
   GRPC_completion_queue_pluck_internal(writer->cq, &writer->finish_ops);
   GRPC_completion_queue_shutdown(writer->cq);

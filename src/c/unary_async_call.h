@@ -39,24 +39,17 @@
 #include "src/c/server_context.h"
 
 typedef struct GRPC_client_async_response_reader {
-  grpc_call_op_set init_buf;
-  grpc_call_op_set meta_buf;
-  grpc_call_op_set finish_buf;
+  GRPC_call_op_set init_buf;
+  GRPC_call_op_set meta_buf;
+  GRPC_call_op_set finish_buf;
 
   grpc_completion_queue *cq;
   GRPC_client_context *context;
   grpc_call *call;
-} grpc_client_async_response_reader;
+} GRPC_client_async_response_reader;
 
-typedef struct grpc_server_async_response_writer {
-  grpc_call_op_set init_buf;
-  grpc_call_op_set meta_buf;
-  grpc_call_op_set finish_buf;
-
-  grpc_completion_queue *cq;
+typedef struct GRPC_server_async_response_writer {
   GRPC_server_context *context;
-  grpc_call *call;
-} grpc_server_async_response_writer;
-
+} GRPC_server_async_response_writer;
 
 #endif  // GRPC_C_INTERNAL_UNARY_ASYNC_CALL_H

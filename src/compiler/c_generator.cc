@@ -131,6 +131,40 @@ void PrintIncludes(Printer *printer, const std::vector<grpc::string> &headers,
   }
 }
 
+// Prints declaration of a single server method
+void PrintHeaderServerMethod(Printer *printer, const Method *method,
+                             std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+
+  if (method->NoStreaming()) {
+    // Unary
+
+    printer->Print(
+        *vars,
+        "/* Async */\n"
+        "void $CPrefix$$Service$_$Method$_ServerRequest(\n"
+        "        GRPC_server_context *const context,\n"
+        "        $CPrefix$$Request$ *request,\n"
+        "        GRPC_incoming_notification_queue *incoming_queue,\n"
+        "        GRPC_completion_queue *processing_queue,\n"
+        "        void *tag);\n"
+        "\n");
+
+    printer->Print(
+        *vars,
+        "void $CPrefix$$Service$_$Method$_ServerFinish(\n"
+        "        GRPC_server_context *const context,\n"
+        "        $CPrefix$$Response$ *response,\n"
+        "        GRPC_status_code server_status,\n"
+        "        void *tag);\n"
+        "\n");
+  }
+
+  printer->Print("\n\n");
+}
+
 // Prints declaration of a single client method
 void PrintHeaderClientMethod(Printer *printer, const Method *method,
                              std::map<grpc::string, grpc::string> *vars) {
@@ -141,12 +175,15 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
   if (method->NoStreaming()) {
     // Unary
 
-    printer->Print(*vars,
-                   "/* Sync */\n"
-                   "GRPC_status $CPrefix$$Service$_$Method$(\n"
-                   "        GRPC_client_context *const context,\n"
-                   "        const $CPrefix$$Request$ request,\n"
-                   "        $CPrefix$$Response$ *response);\n");
+    printer->Print(
+        *vars,
+        "/* Sync */\n"
+        "GRPC_status $CPrefix$$Service$_$Method$(\n"
+        "        GRPC_client_context *const context,\n"
+        "        const $CPrefix$$Request$ request,\n"
+        "        $CPrefix$$Response$ *response);\n"
+        "\n");
+
     printer->Print(
         *vars,
         "\n"
@@ -162,7 +199,6 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
         "        $CPrefix$$Response$ *response,\n"
         "        void *tag);\n"
         "/* call GRPC_completion_queue_next on the cq to wait for result */\n"
-        "\n"
         "\n");
 
   } else if (method->ClientOnlyStreaming()) {
@@ -209,7 +245,6 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
         "*/\n"
         "/* The writer object is automatically freed when the request ends. "
         "*/\n"
-        "\n"
         "\n");
 
   } else if (method->ServerOnlyStreaming()) {
@@ -253,7 +288,6 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
         "        void *tag);\n"
         "/* call GRPC_completion_queue_next on the cq to wait for result */\n"
         "/* the reader object is automatically freed when the request ends */\n"
-        "\n"
         "\n");
 
   } else if (method->BidiStreaming()) {
@@ -309,9 +343,10 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
         "/* call GRPC_completion_queue_next on the cq to wait for result */\n"
         "/* the reader-writer object is automatically freed when the request "
         "ends */\n"
-        "\n"
         "\n");
   }
+
+  printer->Print("\n\n");
 }
 
 // Prints declaration of a single service
@@ -325,6 +360,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
   printer->Print(BlockifyComments(service->GetLeadingComments()).c_str());
 
   // Client side
+  printer->Print("/* Client */\n");
   for (int i = 0; i < service->method_count(); ++i) {
     printer->Print(
         BlockifyComments(service->method(i)->GetLeadingComments()).c_str());
@@ -334,9 +370,68 @@ void PrintHeaderService(Printer *printer, const Service *service,
   }
   printer->Print("\n\n");
 
-  // Server side - TBD
+  // Server side
+  printer->Print("/* Server */\n");
+  for (int i = 0; i < service->method_count(); ++i) {
+    printer->Print(
+      BlockifyComments(service->method(i)->GetLeadingComments()).c_str());
+    PrintHeaderServerMethod(printer, service->method(i).get(), vars);
+    printer->Print(
+      BlockifyComments(service->method(i)->GetTrailingComments()).c_str());
+  }
+  printer->Print("\n\n");
 
   printer->Print(BlockifyComments(service->GetTrailingComments()).c_str());
+}
+
+void PrintSourceServerMethod(Printer *printer, const Method *method,
+                             std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+
+  if (method->NoStreaming()) {
+    // Unary
+
+    printer->Print(
+        *vars,
+        "GRPC_server_async_response_writer *"
+        "$CPrefix$$Service$_$Method$_ServerRequest(\n"
+        "        GRPC_server_context *const context,\n"
+        "        $CPrefix$$Request$ *request,\n"
+        "        GRPC_incoming_notification_queue *incoming_queue,\n"
+        "        GRPC_completion_queue *processing_queue,\n"
+        "        void *tag) {\n"
+        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "        (grpc_serialization_impl) { "
+        "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
+        "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
+        "  return GRPC_unary_async_server_request(\n"
+        "        GRPC_method_$CPrefix$$Service$_$Method$,\n"
+        "        context,\n"
+        "        request,\n"
+        "        incoming_queue,\n"
+        "        processing_queue,\n"
+        "        tag);\n"
+        "}\n"
+        "\n");
+
+    printer->Print(
+        *vars,
+        "void $CPrefix$$Service$_$Method$_ServerFinish(\n"
+        "        GRPC_server_async_response_writer *writer,\n"
+        "        $CPrefix$$Response$ *response,\n"
+        "        GRPC_status_code server_status,\n"
+        "        void *tag) {\n"
+        "  const GRPC_message response_msg = { response, sizeof(*response) };\n"
+        "  GRPC_unary_async_server_finish(\n"
+        "        writer,\n"
+        "        response_msg,\n"
+        "        server_status,\n"
+        "        tag);\n"
+        "}\n"
+        "\n");
+  }
 }
 
 // Prints implementation of a single client method
@@ -356,13 +451,14 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
     (*vars)["MethodEnum"] = "BIDI_STREAMING";
   }
 
-  printer->Print(*vars,
-                 "\n"
-                 "GRPC_method GRPC_method_$CPrefix$$Service$_$Method$ = {\n"
-                 "  $MethodEnum$,\n"
-                 "  \"/$Package$$Service$/$Method$\"\n"
-                 "};\n"
-                 "\n");
+  printer->Print(
+      *vars,
+      "\n"
+      "GRPC_method GRPC_method_$CPrefix$$Service$_$Method$ = {\n"
+      "      $MethodEnum$,\n"
+      "      \"/$Package$$Service$/$Method$\"\n"
+      "};\n"
+      "\n");
 
   if (method->NoStreaming()) {
     // Unary
@@ -522,11 +618,6 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
                    "/* Async TBD */\n"
                    "\n");
   }
-}
-
-void PrintSourceServerMethod(Printer *printer, const Method *method,
-                             std::map<grpc::string, grpc::string> *vars) {
-  // TBD
 }
 
 // Prints implementation of all methods in a service

@@ -31,13 +31,10 @@
  *
  */
 
+#include <grpc_c/grpc_c.h>
 #include "src/c/unary_blocking_call.h"
 #include <grpc/support/log.h>
-#include <grpc_c/codegen/method.h>
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/status.h>
 #include "src/c/call_ops.h"
-#include "src/c/client_context.h"
 #include "src/c/completion_queue.h"
 
 GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
@@ -49,13 +46,13 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
       context->channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rpc_method.name, "",
       context->deadline, NULL);
   context->call = call;
-  grpc_call_op_set set = {
+  GRPC_call_op_set set = {
       {grpc_op_send_metadata, grpc_op_recv_metadata, grpc_op_send_object,
        grpc_op_recv_object, grpc_op_client_send_close, grpc_op_client_recv_status},
       .context = GRPC_client_context_to_base(context),
       .user_tag = &set};
 
-  grpc_start_batch_from_op_set(call, &set, GRPC_client_context_to_base(context), message, response);
+  GRPC_start_batch_from_op_set(call, &set, GRPC_client_context_to_base(context), message, response);
   for (;;) {
     void *tag;
     bool ok;

@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   // Run server
   for (;;) {
     async_server_data *data = calloc(sizeof(async_server_data));
-    data->context = GRPC_server_context_create();
+    data->context = GRPC_server_context_create(server);
     data->request.name.funcs.decode = read_string_store_in_arg;
     data->response.message.funcs.encode = write_string_from_arg;
 
@@ -94,7 +94,6 @@ int main(int argc, char **argv) {
     helloworld_Greeter_SayHello_ServerRequest(
       &data->context,
       &data->request,
-      &data->response,
       incoming,           // incoming queue
       incoming.cq,        // processing queue - we can reuse the
                           // same underlying completion queue, or

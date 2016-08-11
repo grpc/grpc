@@ -37,12 +37,14 @@
 #include "src/c/context.h"
 #include <grpc_c/server_context.h>
 
-typedef struct GRPC_server_context grpc_server_context;
+typedef struct GRPC_server_context GRPC_server_context;
 
 struct GRPC_server_context {
   GRPC_C_CONTEXT_BASE_MEMBERS;
 
   // server-side specific
+  GRPC_server *server;
+  grpc_call_details call_details;
   // trailing metadata
   grpc_metadata_array send_trailing_metadata_array;
   // status code to be sent to the client
