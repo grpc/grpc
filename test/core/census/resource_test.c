@@ -133,8 +133,9 @@ static void test_base_resources() {
 }
 
 int main(int argc, char **argv) {
-  const char *resource_empty_name_pb, *resource_full_pb, *resource_minimal_good_pb,
-  *resource_no_name_pb, *resource_no_numerator_pb, *resource_no_unit_pb;
+  const char *resource_empty_name_pb, *resource_full_pb,
+      *resource_minimal_good_pb, *resource_no_name_pb,
+      *resource_no_numerator_pb, *resource_no_unit_pb;
   if (argc == 7) {
     resource_empty_name_pb = argv[1];
     resource_full_pb = argv[2];
@@ -157,10 +158,11 @@ int main(int argc, char **argv) {
   test_define_single_resource(resource_minimal_good_pb, "minimal_good", true);
   test_define_single_resource(resource_full_pb, "full_resource", true);
   test_define_single_resource(resource_no_name_pb, "resource_no_name", false);
-  test_define_single_resource(resource_no_numerator_pb,
-                              "resource_no_numerator", false);
+  test_define_single_resource(resource_no_numerator_pb, "resource_no_numerator",
+                              false);
   test_define_single_resource(resource_no_unit_pb, "resource_no_unit", false);
-  test_define_single_resource(resource_empty_name_pb, "resource_empty_name", false);
+  test_define_single_resource(resource_empty_name_pb, "resource_empty_name",
+                              false);
   test_delete_resource(resource_minimal_good_pb, resource_full_pb);
   test_base_resources();
   return 0;
