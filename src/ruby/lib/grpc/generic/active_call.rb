@@ -113,11 +113,17 @@ module GRPC
 
       fail(ArgumentError, 'Already sent md') if started && metadata_to_send
       @metadata_to_send = metadata_to_send || {} unless started
+      @send_initial_md_mutex = Mutex.new
     end
 
+    # Sends the initial metadata that has yet to be sent.
+    # Fails if metadata has already been sent for this call.
     def send_initial_metadata
-      fail 'Already sent metadata' if @metadata_sent
-      start_call(@metadata_to_send)
+      @send_initial_md_mutex.synchronize do
+        fail('Already send initial metadata') if @metadata_sent
+        @metadata_tag = ActiveCall.client_invoke(@call, @metadata_to_send)
+        @metadata_sent = true
+      end
     end
 
     # output_metadata are provides access to hash that can be used to
@@ -195,7 +201,7 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      start_call(@metadata_to_send) unless @metadata_sent
+      send_initial_metadata unless @metadata_sent
       GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
       payload = marshalled ? req : @marshal.call(req)
       @call.run_batch(SEND_MESSAGE => payload)
@@ -211,7 +217,7 @@ module GRPC
     # list, mulitple metadata for its key are sent
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
-      start_call unless @metadata_sent
+      send_initial_metadata unless @metadata_sent
       ops = {
         SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
@@ -312,7 +318,8 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
-      start_call(metadata)
+      merge_metadata_to_send(metadata) &&
+        send_initial_metadata unless @metadata_sent
       remote_send(req)
       writes_done(false)
       response = remote_read
@@ -336,7 +343,8 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
-      start_call(metadata)
+      merge_metadata_to_send(metadata) &&
+        send_initial_metadata unless @metadata_sent
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
@@ -362,7 +370,8 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
-      start_call(metadata)
+      merge_metadata_to_send(metadata) &&
+        send_initial_metadata unless @metadata_sent
       remote_send(req)
       writes_done(false)
       replies = enum_for(:each_remote_read_then_finish)
@@ -401,7 +410,8 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
-      start_call(metadata) unless @metadata_sent
+      merge_metadata_to_send(metadata) &&
+        send_initial_metadata unless @metadata_sent
       bd = BidiCall.new(@call,
                         @marshal,
                         @unmarshal,
@@ -444,9 +454,14 @@ module GRPC
       @op_notifier.notify(self)
     end
 
+    # Add to the metadata that will be sent from the server.
+    # Fails if metadata has already been sent.
+    # Unused by client calls.
     def merge_metadata_to_send(new_metadata = {})
-      fail('cant change metadata after already sent') if @metadata_sent
-      @metadata_to_send.merge!(new_metadata)
+      @send_initial_md_mutex.synchronize do
+        fail('cant change metadata after already sent') if @metadata_sent
+        @metadata_to_send.merge!(new_metadata)
+      end
     end
 
     private
@@ -456,7 +471,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     def start_call(metadata = {})
       return if @metadata_sent
-      @metadata_tag = ActiveCall.client_invoke(@call, metadata)
+      merge_metadata_to_send(metadata) && send_initial_metadata
       @metadata_sent = true
     end
 
