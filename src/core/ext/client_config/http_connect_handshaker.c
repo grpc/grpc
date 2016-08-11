@@ -59,7 +59,7 @@ typedef struct http_connect_handshaker {
 
   // Objects for processing the HTTP CONNECT request and response.
   gpr_slice_buffer write_buffer;
-  gpr_slice_buffer* read_buffer;
+  gpr_slice_buffer* read_buffer;  // Ownership passes through this object.
   grpc_closure request_done_closure;
   grpc_closure response_read_closure;
   grpc_http_parser http_parser;
@@ -84,8 +84,9 @@ static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
 // Callback invoked when deadline is exceeded.
 static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   http_connect_handshaker* handshaker = arg;
-  if (error == GRPC_ERROR_NONE)  // Timer fired, rather than being cancelled.
+  if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled.
     grpc_endpoint_shutdown(exec_ctx, handshaker->endpoint);
+  }
   http_connect_handshaker_unref(handshaker);
 }
 
@@ -244,5 +245,5 @@ grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
   grpc_http_parser_init(&handshaker->http_parser, GRPC_HTTP_RESPONSE,
                         &handshaker->http_response);
   gpr_ref_init(&handshaker->refcount, 1);
-  return (grpc_handshaker*)handshaker;
+  return &handshaker->base;
 }
