@@ -178,9 +178,9 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
     }
     if (r->pollent) {
-    grpc_polling_entity_del_from_pollset_set(exec_ctx, r->pollent,
-                                             r->base.pollset_set);
-                                             r->pollent = NULL;
+      grpc_polling_entity_del_from_pollset_set(exec_ctx, r->pollent,
+                                               r->base.pollset_set);
+      r->pollent = NULL;
     }
     grpc_resolved_addresses_destroy(addresses);
   } else {
@@ -304,7 +304,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
 
   error = grpc_ares_init();
   if (error != GRPC_ERROR_NONE) {
-    GRPC_LOG_IF_ERROR("fd_orphan", error);
+    GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
     return NULL;
   }
 

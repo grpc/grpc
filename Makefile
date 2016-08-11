@@ -676,7 +676,8 @@ ifeq ($(HAS_EMBEDDED_CARES),true)
 CARES_DEP = $(LIBDIR)/$(CONFIG)/c-ares/libcares.a
 CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
-CARES_CFLAGS_EXTRA = -Wno-invalid-source-encoding
+CARES_CFLAGS_EXTRA += $(findstring -m32,$(CFLAGS))
+CARES_CFLAGS_EXTRA += -Wno-invalid-source-encoding
 else
 DEP_MISSING += c-ares
 endif
