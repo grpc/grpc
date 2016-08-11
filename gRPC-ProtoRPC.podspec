@@ -1,9 +1,3 @@
-# GRPC CocoaPods podspec
-# This file has been automatically generated from a template file.
-# Please look at the templates directory instead.
-# This file can be regenerated from the template by running
-# tools/buildgen/generate_projects.sh
-
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -61,7 +55,7 @@ Pod::Spec.new do |s|
 
   s.dependency 'gRPC', version
   s.dependency 'gRPC-RxLibrary', version
-  s.dependency 'Protobuf', '~> 3.0.0-beta-3.1'
+  s.dependency 'Protobuf', '~> 3.0'
   # This is needed by all pods that depend on Protobuf:
   s.pod_target_xcconfig = {
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',

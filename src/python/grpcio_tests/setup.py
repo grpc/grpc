@@ -63,7 +63,7 @@ INSTALL_REQUIRES = (
     'grpcio>=0.14.0',
     'grpcio-health-checking>=0.14.0',
     'oauth2client>=1.4.7',
-    'protobuf>=3.0.0a3',
+    'protobuf>=3.0.0',
     'six>=1.10',
 )
 
