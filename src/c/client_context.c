@@ -68,8 +68,9 @@ void GRPC_client_context_set_serialization_impl(
   context->serialization_impl = serialization_impl;
 }
 
-// We define a conversion function instead of type-casting, which lets the user convert
+// We define a conversion function instead of type-casting, which lets the user
+// convert
 // from any pointer to a grpc_context.
 GRPC_context *GRPC_client_context_to_base(GRPC_client_context *client_context) {
-  return (GRPC_context *) client_context;
+  return (GRPC_context *)client_context;
 }

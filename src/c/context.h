@@ -48,22 +48,22 @@ typedef struct GRPC_context GRPC_context;
 /**
  * Both client and server context shares this common stub.
  */
-#define GRPC_C_CONTEXT_BASE_MEMBERS \
-  grpc_metadata *send_metadata_array; \
-  grpc_metadata_array recv_metadata_array; \
-  gpr_timespec deadline; \
-\
+#define GRPC_C_CONTEXT_BASE_MEMBERS               \
+  grpc_metadata *send_metadata_array;             \
+  grpc_metadata_array recv_metadata_array;        \
+  gpr_timespec deadline;                          \
+                                                  \
   /* serialization mechanism used in this call */ \
-  grpc_serialization_impl serialization_impl; \
-\
-  /* state tracking */ \
-  bool initial_metadata_received; \
-  grpc_method rpc_method; \
-  grpc_channel *channel; \
+  grpc_serialization_impl serialization_impl;     \
+                                                  \
+  /* state tracking */                            \
+  bool initial_metadata_received;                 \
+  grpc_method rpc_method;                         \
+  grpc_channel *channel;                          \
   grpc_call *call;
 
 struct GRPC_context {
   GRPC_C_CONTEXT_BASE_MEMBERS;
 };
 
-#endif // GRPC_C_INTERNAL_CONTEXT_H
+#endif  // GRPC_C_INTERNAL_CONTEXT_H

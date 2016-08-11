@@ -40,4 +40,4 @@ GRPC_server_context *GRPC_server_context_create(GRPC_server *server);
 
 GRPC_context *GRPC_server_context_to_base(GRPC_server_context *server_context);
 
-#endif  /* GRPC_C_SERVER_CONTEXT_H */
+#endif /* GRPC_C_SERVER_CONTEXT_H */

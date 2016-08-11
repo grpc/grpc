@@ -34,8 +34,8 @@
 #ifndef GRPC_C_INTERNAL_SERVER_CONTEXT_H
 #define GRPC_C_INTERNAL_SERVER_CONTEXT_H
 
-#include "src/c/context.h"
 #include <grpc_c/server_context.h>
+#include "src/c/context.h"
 
 typedef struct GRPC_server_context GRPC_server_context;
 

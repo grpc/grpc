@@ -44,7 +44,8 @@ typedef struct GRPC_build_server_options {
 } GRPC_build_server_options;
 
 GRPC_server *GRPC_build_server(GRPC_build_server_options options);
-GRPC_incoming_notification_queue *GRPC_server_new_incoming_queue(GRPC_server *server);
+GRPC_incoming_notification_queue *GRPC_server_new_incoming_queue(
+    GRPC_server *server);
 void GRPC_server_start(GRPC_server *server);
 void GRPC_server_shutdown(GRPC_server *server);
 void GRPC_server_destroy(GRPC_server *server);

@@ -68,7 +68,8 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
                     .context = GRPC_client_context_to_base(context),
                     .response = NULL},
        .finish_buf = {
-           {grpc_op_recv_metadata, grpc_op_recv_object, grpc_op_client_recv_status},
+           {grpc_op_recv_metadata, grpc_op_recv_object,
+            grpc_op_client_recv_status},
            .context = GRPC_client_context_to_base(context),
            .response = NULL,
        }});
@@ -78,7 +79,8 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
   reader->finish_buf.async_cleanup =
       (GRPC_closure){.arg = reader, .callback = free_client_reader_and_call};
 
-  GRPC_start_batch_from_op_set(reader->call, &reader->init_buf, GRPC_client_context_to_base(reader->context),
+  GRPC_start_batch_from_op_set(reader->call, &reader->init_buf,
+                               GRPC_client_context_to_base(reader->context),
                                request, NULL);
   return reader;
 }
@@ -86,15 +88,17 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
 void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader,
                                      void *tag) {
   reader->meta_buf.user_tag = tag;
-  GRPC_start_batch_from_op_set(reader->call, &reader->meta_buf, GRPC_client_context_to_base(reader->context),
-                               (GRPC_message) {0, 0}, NULL);
+  GRPC_start_batch_from_op_set(reader->call, &reader->meta_buf,
+                               GRPC_client_context_to_base(reader->context),
+                               (GRPC_message){0, 0}, NULL);
 }
 
 void GRPC_client_async_finish(GRPC_client_async_response_reader *reader,
                               void *response, void *tag) {
   reader->finish_buf.user_tag = tag;
   GRPC_start_batch_from_op_set(reader->call, &reader->finish_buf,
-                               GRPC_client_context_to_base(reader->context), (GRPC_message) {0, 0}, response);
+                               GRPC_client_context_to_base(reader->context),
+                               (GRPC_message){0, 0}, response);
 }
 
 //
@@ -102,19 +106,11 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader,
 //
 
 GRPC_server_async_response_writer *GRPC_unary_async_server_request(
-  const GRPC_method rpc_method,
-  GRPC_server_context *const context,
-  void* request,
-  GRPC_incoming_notification_queue *incoming_queue,
-  GRPC_completion_queue *processing_queue,
-  void *tag) {
+    const GRPC_method rpc_method, GRPC_server_context *const context,
+    void *request, GRPC_incoming_notification_queue *incoming_queue,
+    GRPC_completion_queue *processing_queue, void *tag) {}
 
-}
-
-void GRPC_unary_async_server_finish(
-  GRPC_server_async_response_writer *writer,
-  const GRPC_message response,
-  const grpc_status_code server_status,
-  void *tag) {
-
-}
+void GRPC_unary_async_server_finish(GRPC_server_async_response_writer *writer,
+                                    const GRPC_message response,
+                                    const grpc_status_code server_status,
+                                    void *tag) {}

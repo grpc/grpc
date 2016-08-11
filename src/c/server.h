@@ -44,14 +44,14 @@ typedef struct GRPC_server GRPC_server;
 
 struct GRPC_server {
   grpc_server *core_server;
-  GRPC_array(GRPC_incoming_notification_queue*) registered_queues;
+  GRPC_array(GRPC_incoming_notification_queue *) registered_queues;
 
   // used to monitor server events
   grpc_completion_queue *internal_queue;
 
   // async
 
-  //TODO(yifeit): synchronous server state
+  // TODO(yifeit): synchronous server state
 };
 
-#endif // GRPC_C_INTERNAL_SERVER_H
+#endif  // GRPC_C_INTERNAL_SERVER_H

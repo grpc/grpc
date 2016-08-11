@@ -31,17 +31,19 @@
  *
  */
 
-#include <grpc/support/alloc.h>
 #include "src/c/array.h"
+#include <grpc/support/alloc.h>
 
-void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size) {
+void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr,
+                          size_t elem_size) {
   void **data = data_ptr;
   state->capacity = 4;
   state->size = 0;
   *data = gpr_malloc(elem_size * 4);
 }
 
-void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size) {
+void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr,
+                              size_t elem_size) {
   if (state->size == 0) return;
   void **data = data_ptr;
   state->size--;
@@ -51,7 +53,8 @@ void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr, size_t el
   }
 }
 
-void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr, size_t elem_size, size_t target_size) {
+void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr,
+                                size_t elem_size, size_t target_size) {
   if (target_size <= state->capacity) return;
   void **data = data_ptr;
   while (state->capacity < target_size) {
@@ -60,7 +63,8 @@ void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr, size_t 
   }
 }
 
-void GRPC_array_deinit_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size) {
+void GRPC_array_deinit_impl(GRPC_array_state *state, void *data_ptr,
+                            size_t elem_size) {
   void **data = data_ptr;
   if (*data) {
     gpr_free(*data);

@@ -49,17 +49,19 @@ GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(
   context->call = call;
   context->rpc_method = rpc_method;
 
-  GRPC_call_op_set set = {
-      {grpc_op_send_metadata}, .context = GRPC_client_context_to_base(context), .user_tag = &set};
+  GRPC_call_op_set set = {{grpc_op_send_metadata},
+                          .context = GRPC_client_context_to_base(context),
+                          .user_tag = &set};
 
   GRPC_client_reader_writer *reader_writer = GRPC_ALLOC_STRUCT(
       GRPC_client_reader_writer, {
                                      .context = context, .call = call, .cq = cq,
                                  });
 
-  GRPC_start_batch_from_op_set(reader_writer->call, &set,
-                               GRPC_client_context_to_base(reader_writer->context), (GRPC_message) {0, 0},
-                               NULL);
+  GRPC_start_batch_from_op_set(
+      reader_writer->call, &set,
+      GRPC_client_context_to_base(reader_writer->context), (GRPC_message){0, 0},
+      NULL);
   bool ok = GRPC_completion_queue_pluck_internal(cq, &set);
   if (!ok) {
     GRPC_client_reader_writer_terminate(reader_writer);
@@ -71,12 +73,14 @@ GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(
 
 bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer,
                                        void *response) {
-  GRPC_call_op_set set_meta = {{grpc_op_recv_metadata, grpc_op_recv_object},
-                               .context = GRPC_client_context_to_base(reader_writer->context),
-                               .user_tag = &set_meta};
-  GRPC_call_op_set set_no_meta = {{grpc_op_recv_object},
-                                  .context = GRPC_client_context_to_base(reader_writer->context),
-                                  .user_tag = &set_no_meta};
+  GRPC_call_op_set set_meta = {
+      {grpc_op_recv_metadata, grpc_op_recv_object},
+      .context = GRPC_client_context_to_base(reader_writer->context),
+      .user_tag = &set_meta};
+  GRPC_call_op_set set_no_meta = {
+      {grpc_op_recv_object},
+      .context = GRPC_client_context_to_base(reader_writer->context),
+      .user_tag = &set_no_meta};
   GRPC_call_op_set *pSet = NULL;
   if (reader_writer->context->initial_metadata_received == false) {
     pSet = &set_meta;
@@ -84,9 +88,10 @@ bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer,
     pSet = &set_no_meta;
   }
 
-  GRPC_start_batch_from_op_set(reader_writer->call, pSet,
-                               GRPC_client_context_to_base(reader_writer->context), (GRPC_message) {0, 0},
-                               response);
+  GRPC_start_batch_from_op_set(
+      reader_writer->call, pSet,
+      GRPC_client_context_to_base(reader_writer->context), (GRPC_message){0, 0},
+      response);
   bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, pSet);
   reader_writer->context->status.ok &= ok;
   return ok && pSet->message_received;
@@ -94,12 +99,14 @@ bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer,
 
 bool GRPC_bidi_streaming_blocking_write(
     GRPC_client_reader_writer *reader_writer, const GRPC_message request) {
-  GRPC_call_op_set set = {{grpc_op_send_object},
-                          .context = GRPC_client_context_to_base(reader_writer->context),
-                          .user_tag = &set};
+  GRPC_call_op_set set = {
+      {grpc_op_send_object},
+      .context = GRPC_client_context_to_base(reader_writer->context),
+      .user_tag = &set};
 
-  GRPC_start_batch_from_op_set(reader_writer->call, &set,
-                               GRPC_client_context_to_base(reader_writer->context), request, NULL);
+  GRPC_start_batch_from_op_set(
+      reader_writer->call, &set,
+      GRPC_client_context_to_base(reader_writer->context), request, NULL);
   bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, &set);
   reader_writer->context->status.ok &= ok;
   return ok;
@@ -107,13 +114,15 @@ bool GRPC_bidi_streaming_blocking_write(
 
 bool GRPC_bidi_streaming_blocking_writes_done(
     GRPC_client_reader_writer *reader_writer) {
-  GRPC_call_op_set set = {{grpc_op_client_send_close},
-                          .context = GRPC_client_context_to_base(reader_writer->context),
-                          .user_tag = &set};
+  GRPC_call_op_set set = {
+      {grpc_op_client_send_close},
+      .context = GRPC_client_context_to_base(reader_writer->context),
+      .user_tag = &set};
 
-  GRPC_start_batch_from_op_set(reader_writer->call, &set,
-                               GRPC_client_context_to_base(reader_writer->context), (GRPC_message) {0, 0},
-                               NULL);
+  GRPC_start_batch_from_op_set(
+      reader_writer->call, &set,
+      GRPC_client_context_to_base(reader_writer->context), (GRPC_message){0, 0},
+      NULL);
   bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, (&set));
   reader_writer->context->status.ok &= ok;
   return ok;
@@ -121,12 +130,14 @@ bool GRPC_bidi_streaming_blocking_writes_done(
 
 GRPC_status GRPC_client_reader_writer_terminate(
     GRPC_client_reader_writer *reader_writer) {
-  GRPC_call_op_set set = {{grpc_op_client_recv_status},
-                          .context = GRPC_client_context_to_base(reader_writer->context),
-                          .user_tag = &set};
-  GRPC_start_batch_from_op_set(reader_writer->call, &set,
-                               GRPC_client_context_to_base(reader_writer->context), (GRPC_message) {0, 0},
-                               NULL);
+  GRPC_call_op_set set = {
+      {grpc_op_client_recv_status},
+      .context = GRPC_client_context_to_base(reader_writer->context),
+      .user_tag = &set};
+  GRPC_start_batch_from_op_set(
+      reader_writer->call, &set,
+      GRPC_client_context_to_base(reader_writer->context), (GRPC_message){0, 0},
+      NULL);
   bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, &set);
   GRPC_completion_queue_shutdown(reader_writer->cq);
   GRPC_completion_queue_shutdown_wait(reader_writer->cq);

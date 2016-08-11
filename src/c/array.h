@@ -34,8 +34,8 @@
 #ifndef GRPC_C_INTERNAL_ARRAY_H
 #define GRPC_C_INTERNAL_ARRAY_H
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 /**
  * Implements a generic array structure
@@ -52,19 +52,32 @@ typedef struct GRPC_array_state {
   size_t capacity;
 } GRPC_array_state;
 
-void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size);
-void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size);
-void GRPC_array_deinit_impl(GRPC_array_state *state, void *data_ptr, size_t elem_size);
-void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr, size_t elem_size, size_t target_size);
+void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr,
+                          size_t elem_size);
+void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr,
+                              size_t elem_size);
+void GRPC_array_deinit_impl(GRPC_array_state *state, void *data_ptr,
+                            size_t elem_size);
+void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr,
+                                size_t elem_size, size_t target_size);
 
-#define GRPC_array(type) struct { type *data; GRPC_array_state state; }
-#define GRPC_array_init(arr) GRPC_array_init_impl(&arr.state, &arr.data, sizeof(*arr.data));
+#define GRPC_array(type)    \
+  struct {                  \
+    type *data;             \
+    GRPC_array_state state; \
+  }
+#define GRPC_array_init(arr) \
+  GRPC_array_init_impl(&arr.state, &arr.data, sizeof(*arr.data));
 // Cannot delegate to a function since we do not know the type of input
-#define GRPC_array_push_back(arr, ...) { \
-  GRPC_array_ensure_capacity(&arr.state, &arr.data, sizeof(*arr.data), arr.state.size + 1); \
-  arr.data[arr.state.size++] = (__VA_ARGS__); \
-}
-#define GRPC_array_pop_back(arr) GRPC_array_pop_back_impl(&arr.state, &arr.data, sizeof(*arr.data));
-#define GRPC_array_deinit(arr) GRPC_array_deinit_impl(&arr.state, &arr.data, sizeof(*arr.data));
+#define GRPC_array_push_back(arr, ...)                                   \
+  {                                                                      \
+    GRPC_array_ensure_capacity(&arr.state, &arr.data, sizeof(*arr.data), \
+                               arr.state.size + 1);                      \
+    arr.data[arr.state.size++] = (__VA_ARGS__);                          \
+  }
+#define GRPC_array_pop_back(arr) \
+  GRPC_array_pop_back_impl(&arr.state, &arr.data, sizeof(*arr.data));
+#define GRPC_array_deinit(arr) \
+  GRPC_array_deinit_impl(&arr.state, &arr.data, sizeof(*arr.data));
 
-#endif // GRPC_C_INTERNAL_ARRAY_H
+#endif  // GRPC_C_INTERNAL_ARRAY_H

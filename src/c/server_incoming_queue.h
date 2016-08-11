@@ -38,6 +38,7 @@
 #include <grpc_c/server_incoming_queue.h>
 
 GRPC_incoming_notification_queue *GRPC_incoming_notification_queue_create();
-void GRPC_incoming_notification_queue_destroy(GRPC_incoming_notification_queue *queue);
+void GRPC_incoming_notification_queue_destroy(
+    GRPC_incoming_notification_queue *queue);
 
-#endif // GRPC_C_INTERNAL_SERVER_INCOMING_QUEUE_H
+#endif  // GRPC_C_INTERNAL_SERVER_INCOMING_QUEUE_H

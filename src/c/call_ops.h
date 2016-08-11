@@ -43,8 +43,7 @@
 
 typedef struct GRPC_call_op_set GRPC_call_op_set;
 
-typedef bool (*GRPC_op_filler)(grpc_op *op,
-                               GRPC_context *, GRPC_call_op_set *,
+typedef bool (*GRPC_op_filler)(grpc_op *op, GRPC_context *, GRPC_call_op_set *,
                                const grpc_message message, void *response);
 typedef void (*GRPC_op_finisher)(GRPC_context *, GRPC_call_op_set *,
                                  bool *status, int max_message_size);
@@ -85,15 +84,13 @@ struct GRPC_call_op_set {
                               /* used to cleanup after RPC */
 };
 
-void GRPC_fill_op_from_call_set(GRPC_call_op_set *set,
-                                GRPC_context *context,
+void GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
                                 const grpc_message message, void *response,
                                 grpc_op *ops, size_t *nops);
 
 /* Runs post processing steps in the call op set. Returns false if something
  * wrong happens e.g. serialization. */
-bool GRPC_finish_op_from_call_set(GRPC_call_op_set *set,
-                                  GRPC_context *context);
+bool GRPC_finish_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context);
 
 void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   GRPC_context *context,

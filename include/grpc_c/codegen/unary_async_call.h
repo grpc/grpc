@@ -50,17 +50,13 @@ void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader,
                                      void *tag);
 
 GRPC_server_async_response_writer *GRPC_unary_async_server_request(
-    const GRPC_method rpc_method,
-    GRPC_server_context *const context,
-    void* request,
-    GRPC_incoming_notification_queue *incoming_queue,
-    GRPC_completion_queue *processing_queue,
-    void *tag);
+    const GRPC_method rpc_method, GRPC_server_context *const context,
+    void *request, GRPC_incoming_notification_queue *incoming_queue,
+    GRPC_completion_queue *processing_queue, void *tag);
 
-void GRPC_unary_async_server_finish(
-    GRPC_server_async_response_writer *writer,
-    const GRPC_message response,
-    const grpc_status_code server_status,
-    void *tag);
+void GRPC_unary_async_server_finish(GRPC_server_async_response_writer *writer,
+                                    const GRPC_message response,
+                                    const grpc_status_code server_status,
+                                    void *tag);
 
 #endif /* GRPC_C_CODEGEN_UNARY_ASYNC_CALL_H */
