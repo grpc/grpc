@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,24 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
-#define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#include <signal.h>
+#include <unistd.h>
 
-/// Call object context pointers.
+#include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
 
-/// Call context is represented as an array of \a grpc_call_context_elements.
-/// This enum represents the indexes into the array, where each index
-/// contains a different type of value.
-typedef enum {
-  /// Value is either a \a grpc_client_security_context or a
-  /// \a grpc_server_security_context.
-  GRPC_CONTEXT_SECURITY = 0,
+bool grpc::testing::interop::g_got_sigint = false;
 
-  /// Value is a \a census_context.
-  GRPC_CONTEXT_TRACING,
+static void sigint_handler(int x) {
+  grpc::testing::interop::g_got_sigint = true;
+}
 
-  GRPC_CONTEXT_COUNT
-} grpc_context_index;
+int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+  signal(SIGINT, sigint_handler);
 
-typedef struct {
-  void *value;
-  void (*destroy)(void *);
-} grpc_call_context_element;
+  grpc::testing::interop::RunServer(
+      grpc::testing::CreateInteropServerCredentials());
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */
+  return 0;
+}

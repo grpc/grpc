@@ -706,7 +706,7 @@ class ObjCLanguage(object):
                                  shortname='objc-tests',
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS),
             self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                                 timeout_seconds=15*60,
+                                 timeout_seconds=30*60,
                                  shortname='objc-examples-build',
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
