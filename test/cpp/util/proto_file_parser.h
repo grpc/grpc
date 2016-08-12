@@ -53,41 +53,57 @@ class ProtoFileParser {
   // The given proto file_name will be searched in a source tree rooted from
   // proto_path. The method could be a partial string such as Service.Method or
   // even just Method. It will log an error if there is ambiguity.
-  ProtoFileParser(const grpc::string& proto_path, const grpc::string& file_name,
-                  const grpc::string& method);
-
   ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
-                  const grpc::string& method);
+                  const grpc::string& proto_path,
+                  const grpc::string& protofiles);
+
   ~ProtoFileParser();
 
-  grpc::string GetFullMethodName() const { return full_method_name_; }
+  // Full method name is in the form of Service.Method, it's good to be used in
+  // descriptor database queries.
+  grpc::string GetFullMethodName(const grpc::string& method);
 
-  grpc::string GetSerializedProto(const grpc::string& text_format_proto,
-                                  bool is_request);
+  // Formated method name is in the form of /Service/Method, it's good to be
+  // used as the argument of Stub::Call()
+  grpc::string GetFormatedMethodName(const grpc::string& method);
 
-  grpc::string GetTextFormat(const grpc::string& serialized_proto,
-                             bool is_request);
+  grpc::string GetSerializedProtoFromMethod(
+      const grpc::string& method, const grpc::string& text_format_proto,
+      bool is_request);
+
+  grpc::string GetTextFormatFromMethod(const grpc::string& method,
+                                       const grpc::string& serialized_proto,
+                                       bool is_request);
+
+  grpc::string GetSerializedProtoFromMessageType(
+      const grpc::string& message_type_name,
+      const grpc::string& text_format_proto);
+
+  grpc::string GetTextFormatFromMessageType(
+      const grpc::string& message_type_name,
+      const grpc::string& serialized_proto);
 
   bool HasError() const { return has_error_; }
 
   void LogError(const grpc::string& error_msg);
 
  private:
-  void InitProtoFileParser(
-      const grpc::string& method,
-      const std::vector<const google::protobuf::ServiceDescriptor*> services);
+  grpc::string GetMessageTypeFromMethod(const grpc::string& method,
+                                        bool is_request);
 
   bool has_error_;
   grpc::string request_text_;
-  grpc::string full_method_name_;
   google::protobuf::compiler::DiskSourceTree source_tree_;
   std::unique_ptr<ErrorPrinter> error_printer_;
   std::unique_ptr<google::protobuf::compiler::Importer> importer_;
-  std::unique_ptr<grpc::ProtoReflectionDescriptorDatabase> desc_db_;
+  std::unique_ptr<grpc::ProtoReflectionDescriptorDatabase> reflection_db_;
+  std::unique_ptr<google::protobuf::DescriptorPoolDatabase> file_db_;
+  std::unique_ptr<google::protobuf::DescriptorDatabase> desc_db_;
   std::unique_ptr<google::protobuf::DescriptorPool> desc_pool_;
   std::unique_ptr<google::protobuf::DynamicMessageFactory> dynamic_factory_;
   std::unique_ptr<grpc::protobuf::Message> request_prototype_;
   std::unique_ptr<grpc::protobuf::Message> response_prototype_;
+  std::vector<const google::protobuf::ServiceDescriptor*> service_desc_list_;
 };
 
 }  // namespace testing

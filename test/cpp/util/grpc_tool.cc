@@ -31,7 +31,7 @@
  *
  */
 
-#include "test/cpp/util/grpc_tool.h"
+#include "grpc_tool.h"
 
 #include <unistd.h>
 #include <fstream>
@@ -55,15 +55,14 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
-DEFINE_string(input_binary_file, "",
-              "Path to input file containing serialized request.");
-DEFINE_string(output_binary_file, "",
-              "Path to output file to write serialized response.");
+DEFINE_bool(remotedb, true, "Use server types to parse and format messages");
 DEFINE_string(metadata, "",
               "Metadata to send to server, in the form of key1:val1:key2:val2");
 DEFINE_string(proto_path, ".", "Path to look for the proto file.");
-// TODO(zyc): support a list of input proto files
-DEFINE_string(protofiles, "", "Name of the proto file.");
+DEFINE_string(proto_file, "", "Name of the proto file.");
+DEFINE_bool(binary_input, false, "Input in binary format");
+DEFINE_bool(binary_output, false, "Output in binary format");
+DEFINE_string(infile, "", "Input file (default is stdin)");
 
 namespace grpc {
 namespace testing {
@@ -73,8 +72,22 @@ class GrpcTool {
  public:
   explicit GrpcTool();
   virtual ~GrpcTool() {}
+
   bool Help(int argc, const char** argv, GrpcToolOutputCallback callback);
   bool CallMethod(int argc, const char** argv, GrpcToolOutputCallback callback);
+  // TODO(zyc): implement the following methods
+  // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
+  // callback);
+  // bool PrintType(int argc, const char** argv, GrpcToolOutputCallback
+  // callback);
+  // bool PrintTypeId(int argc, const char** argv, GrpcToolOutputCallback
+  // callback);
+  // bool ParseMessage(int argc, const char** argv, GrpcToolOutputCallback
+  // callback);
+  // bool ToText(int argc, const char** argv, GrpcToolOutputCallback callback);
+  // bool ToBinary(int argc, const char** argv, GrpcToolOutputCallback
+  // callback);
+
   void SetPrintCommandMode(int exit_status) {
     print_command_usage_ = true;
     usage_exit_status_ = exit_status;
@@ -82,6 +95,7 @@ class GrpcTool {
 
  private:
   void CommandUsage(const grpc::string& usage) const;
+  std::shared_ptr<grpc::Channel> NewChannel(const grpc::string& server_address);
   bool print_command_usage_;
   int usage_exit_status_;
 };
@@ -222,6 +236,21 @@ void GrpcTool::CommandUsage(const grpc::string& usage) const {
   }
 }
 
+std::shared_ptr<grpc::Channel> GrpcTool::NewChannel(
+    const grpc::string& server_address) {
+  std::shared_ptr<grpc::ChannelCredentials> creds;
+  if (!FLAGS_enable_ssl) {
+    creds = grpc::InsecureChannelCredentials();
+  } else {
+    if (FLAGS_use_auth) {
+      creds = grpc::GoogleDefaultCredentials();
+    } else {
+      creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
+    }
+  }
+  return grpc::CreateChannel(server_address, creds);
+}
+
 bool GrpcTool::Help(int argc, const char** argv,
                     GrpcToolOutputCallback callback) {
   CommandUsage(
@@ -250,17 +279,18 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    <service>                ; Exported service name\n"
       "    <method>                 ; Method name\n"
       "    <request>                ; Text protobuffer (overrides infile)\n"
-      "    --protofiles             ; Comma separated proto files used as a"
+      "    --proto_file             ; Comma separated proto files used as a"
       " fallback when parsing request/response\n"
       "    --proto_path             ; The search path of proto files, valid"
-      " only when --protofiles is given\n"
+      " only when --proto_file is given\n"
       "    --metadata               ; The metadata to be sent to the server\n"
       "    --enable_ssl             ; Set whether to use tls\n"
       "    --use_auth               ; Set whether to create default google"
       " credentials\n"
+      "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
-      "    --input_binary_file      ; Path to input file in binary format\n"
-      "    --binary_output          ; Path to output file in binary format\n");
+      "    --binary_input           ; Input in binary format\n"
+      "    --binary_output          ; Output in binary format\n");
 
   std::stringstream output_ss;
   grpc::string request_text;
@@ -271,63 +301,44 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   if (argc == 3) {
     request_text = argv[2];
-  }
-
-  std::shared_ptr<grpc::ChannelCredentials> creds;
-  if (!FLAGS_enable_ssl) {
-    creds = grpc::InsecureChannelCredentials();
+    if (!FLAGS_infile.empty()) {
+      fprintf(stderr, "warning: request given in argv, ignoring --infile\n");
+    }
   } else {
-    if (FLAGS_use_auth) {
-      creds = grpc::GoogleDefaultCredentials();
-    } else {
-      creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
-    }
-  }
-  std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, creds);
-
-  if (request_text.empty() && FLAGS_input_binary_file.empty()) {
-    if (isatty(STDIN_FILENO)) {
-      std::cout << "reading request message from stdin..." << std::endl;
-    }
     std::stringstream input_stream;
-    input_stream << std::cin.rdbuf();
+    if (FLAGS_infile.empty()) {
+      if (isatty(STDIN_FILENO)) {
+        fprintf(stderr, "reading request message from stdin...\n");
+      }
+      input_stream << std::cin.rdbuf();
+    } else {
+      std::ifstream input_file(FLAGS_infile, std::ios::in | std::ios::binary);
+      input_stream << input_file.rdbuf();
+      input_file.close();
+    }
     request_text = input_stream.str();
   }
 
-  if (!request_text.empty()) {
-    if (!FLAGS_protofiles.empty()) {
-      parser.reset(new grpc::testing::ProtoFileParser(
-          FLAGS_proto_path, FLAGS_protofiles, method_name));
-    } else {
-      parser.reset(new grpc::testing::ProtoFileParser(channel, method_name));
-    }
-    method_name = parser->GetFullMethodName();
+  std::shared_ptr<grpc::Channel> channel = NewChannel(server_address);
+  if (!FLAGS_binary_input || !FLAGS_binary_output) {
+    parser.reset(
+        new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
+                                           FLAGS_proto_path, FLAGS_proto_file));
     if (parser->HasError()) {
-      return 1;
-    }
-
-    if (!FLAGS_input_binary_file.empty()) {
-      std::cout
-          << "warning: request given in argv, ignoring --input_binary_file"
-          << std::endl;
+      return false;
     }
   }
 
-  if (parser) {
-    serialized_request_proto =
-        parser->GetSerializedProto(request_text, true /* is_request */);
+  if (FLAGS_binary_input) {
+    serialized_request_proto = request_text;
+  } else {
+    serialized_request_proto = parser->GetSerializedProtoFromMethod(
+        method_name, request_text, true /* is_request */);
     if (parser->HasError()) {
-      return 1;
+      return false;
     }
-  } else if (!FLAGS_input_binary_file.empty()) {
-    std::ifstream input_file(FLAGS_input_binary_file,
-                             std::ios::in | std::ios::binary);
-    std::stringstream input_stream;
-    input_stream << input_file.rdbuf();
-    serialized_request_proto = input_stream.str();
   }
-  std::cout << "connecting to " << server_address << std::endl;
+  std::cerr << "connecting to " << server_address << std::endl;
 
   grpc::string serialized_response_proto;
   std::multimap<grpc::string, grpc::string> client_metadata;
@@ -336,30 +347,27 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   ParseMetadataFlag(&client_metadata);
   PrintMetadata(client_metadata, "Sending client initial metadata:");
   grpc::Status s = grpc::testing::CliCall::Call(
-      channel, method_name, serialized_request_proto,
-      &serialized_response_proto, client_metadata, &server_initial_metadata,
-      &server_trailing_metadata);
+      channel, parser->GetFormatedMethodName(method_name),
+      serialized_request_proto, &serialized_response_proto, client_metadata,
+      &server_initial_metadata, &server_trailing_metadata);
   PrintMetadata(server_initial_metadata,
                 "Received initial metadata from server:");
   PrintMetadata(server_trailing_metadata,
                 "Received trailing metadata from server:");
   if (s.ok()) {
-    std::cout << "Rpc succeeded with OK status" << std::endl;
-    if (parser) {
-      grpc::string response_text = parser->GetTextFormat(
-          serialized_response_proto, false /* is_request */);
+    std::cerr << "Rpc succeeded with OK status" << std::endl;
+    if (FLAGS_binary_output) {
+      output_ss << serialized_response_proto;
+    } else {
+      grpc::string response_text = parser->GetTextFormatFromMethod(
+          method_name, serialized_response_proto, false /* is_request */);
       if (parser->HasError()) {
         return false;
       }
       output_ss << "Response: \n " << response_text << std::endl;
     }
-    if (!FLAGS_output_binary_file.empty()) {
-      std::ofstream output_file(FLAGS_output_binary_file,
-                                std::ios::trunc | std::ios::binary);
-      output_file << serialized_response_proto;
-    }
   } else {
-    std::cout << "Rpc failed with status code " << s.error_code()
+    std::cerr << "Rpc failed with status code " << s.error_code()
               << ", error message: " << s.error_message() << std::endl;
   }
 
