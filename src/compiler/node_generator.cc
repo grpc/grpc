@@ -103,14 +103,17 @@ grpc::string GetRelativePath(const grpc::string &from_file,
 
 /* Finds all message types used in all services in the file, and returns them
  * as a map of fully qualified message type name to message descriptor */
-map<grpc::string, const Descriptor*> GetAllMessages(const FileDescriptor *file) {
-  map<grpc::string, const Descriptor*> message_types;
-  for (int service_num = 0; service_num < file->service_count(); service_num++) {
-    const ServiceDescriptor* service = file->service(service_num);
-    for (int method_num = 0; method_num < service->method_count(); method_num++) {
-      const MethodDescriptor* method = service->method(method_num);
-      const Descriptor* input_type = method->input_type();
-      const Descriptor* output_type = method->output_type();
+map<grpc::string, const Descriptor *> GetAllMessages(
+    const FileDescriptor *file) {
+  map<grpc::string, const Descriptor *> message_types;
+  for (int service_num = 0; service_num < file->service_count();
+       service_num++) {
+    const ServiceDescriptor *service = file->service(service_num);
+    for (int method_num = 0; method_num < service->method_count();
+         method_num++) {
+      const MethodDescriptor *method = service->method(method_num);
+      const Descriptor *input_type = method->input_type();
+      const Descriptor *output_type = method->output_type();
       message_types[input_type->full_name()] = input_type;
       message_types[output_type->full_name()] = output_type;
     }
