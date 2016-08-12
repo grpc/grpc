@@ -35,7 +35,7 @@
 #define GRPC_C_INTERNAL_CONTEXT_H
 
 #include <grpc/grpc.h>
-#include <grpc_c/codegen/client_context.h>
+#include <grpc_c/codegen/context.h>
 #include <grpc_c/codegen/method.h>
 #include <grpc_c/codegen/serialization.h>
 #include <grpc_c/grpc_c.h>

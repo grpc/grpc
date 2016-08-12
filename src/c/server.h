@@ -61,7 +61,7 @@ struct GRPC_registered_service {
 
 struct GRPC_server {
   grpc_server *core_server;
-  char *host;
+  GRPC_array(char *) listen_hosts;
   GRPC_array(GRPC_incoming_notification_queue *) registered_queues;
   GRPC_array(GRPC_registered_service) registered_services;
 

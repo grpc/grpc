@@ -144,7 +144,9 @@ void PrintHeaderServerMethod(Printer *printer, const Method *method,
     printer->Print(
         *vars,
         "/* Async */\n"
-        "void $CPrefix$$Service$_$Method$_ServerRequest(\n"
+        "GRPC_server_async_response_writer *"
+        "$CPrefix$$Service$_$Method$_ServerRequest(\n"
+        "        GRPC_registered_service *service,\n"
         "        GRPC_server_context *const context,\n"
         "        $CPrefix$$Request$ *request,\n"
         "        GRPC_incoming_notification_queue *incoming_queue,\n"
@@ -155,7 +157,7 @@ void PrintHeaderServerMethod(Printer *printer, const Method *method,
     printer->Print(
         *vars,
         "void $CPrefix$$Service$_$Method$_ServerFinish(\n"
-        "        GRPC_server_context *const context,\n"
+        "        GRPC_server_async_response_writer *writer,\n"
         "        $CPrefix$$Response$ *response,\n"
         "        GRPC_status_code server_status,\n"
         "        void *tag);\n"
@@ -349,10 +351,22 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
   printer->Print("\n\n");
 }
 
+void PrintHeaderServiceDeclaration(Printer *printer, const Service *service, std::map<grpc::string, grpc::string> *vars) {
+  // Register method
+  printer->Print(
+    *vars,
+    "/* Call this to handle this service in the server */\n"
+      "GRPC_registered_service *$CPrefix$$Service$_Register(GRPC_server *server);\n\n"
+  );
+}
+
 // Prints declaration of a single service
 void PrintHeaderService(Printer *printer, const Service *service,
                         std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
+
+  printer->Print(*vars, BlockifyComments("Service metadata for " + service->name() + "\n\n").c_str());
+  PrintHeaderServiceDeclaration(printer, service, vars);
 
   printer->Print(*vars, BlockifyComments("Service declaration for " +
                                          service->name() + "\n")
@@ -397,16 +411,18 @@ void PrintSourceServerMethod(Printer *printer, const Method *method,
         *vars,
         "GRPC_server_async_response_writer *"
         "$CPrefix$$Service$_$Method$_ServerRequest(\n"
+        "        GRPC_registered_service *service,\n"
         "        GRPC_server_context *const context,\n"
         "        $CPrefix$$Request$ *request,\n"
         "        GRPC_incoming_notification_queue *incoming_queue,\n"
         "        GRPC_completion_queue *processing_queue,\n"
         "        void *tag) {\n"
-        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "  GRPC_context_set_serialization_impl((GRPC_context *) context,\n"
         "        (grpc_serialization_impl) { "
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_unary_async_server_request(\n"
+        "        service,\n"
         "        GRPC_METHOD_INDEX_$CPrefix$$Service$_$Method$,\n"
         "        context,\n"
         "        request,\n"
@@ -498,6 +514,14 @@ void PrintSourceServiceDeclaration(Printer *printer, const Service *service, std
       "        GRPC_METHOD_COUNT_$CPrefix$$Service$_$Method$ = $MethodCount$\n"
       "};\n"
       "\n");
+
+  printer->Print(
+      *vars,
+      "GRPC_registered_service *$CPrefix$$Service$_Register(GRPC_server *server) {\n"
+      "        return GRPC_server_add_service(server, GRPC_service_$CPrefix$$Service$, GRPC_METHOD_COUNT_$CPrefix$$Service$_$Method$);\n"
+      "}\n"
+      "\n"
+  );
 }
 
 // Prints implementation of a single client method
@@ -517,7 +541,7 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "        const $CPrefix$$Request$ request,\n"
         "        $CPrefix$$Response$ *response) {\n"
         "  const GRPC_message request_msg = { &request, sizeof(request) };\n"
-        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "  GRPC_context_set_serialization_impl((GRPC_context *) context,\n"
         "        (grpc_serialization_impl) { "
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
@@ -536,7 +560,7 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "        GRPC_completion_queue *cq,\n"
         "        const $CPrefix$$Request$ request) {\n"
         "  const GRPC_message request_msg = { &request, sizeof(request) };\n"
-        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "  GRPC_context_set_serialization_impl((GRPC_context *) context,\n"
         "        (grpc_serialization_impl) { "
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
@@ -559,7 +583,7 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "GRPC_client_writer *$CPrefix$$Service$_$Method$(\n"
         "        GRPC_client_context *const context,\n"
         "        $CPrefix$$Response$ *response) {\n"
-        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "  GRPC_context_set_serialization_impl((GRPC_context *) context,\n"
         "        (grpc_serialization_impl) { "
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
@@ -595,7 +619,7 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "        GRPC_client_context *const context,\n"
         "        $CPrefix$$Request$ request) {\n"
         "  const GRPC_message request_msg = { &request, sizeof(request) };\n"
-        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "  GRPC_context_set_serialization_impl((GRPC_context *) context,\n"
         "        (grpc_serialization_impl) { "
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
@@ -627,7 +651,7 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "\n"
         "GRPC_client_reader_writer *$CPrefix$$Service$_$Method$(\n"
         "        GRPC_client_context *const context) {\n"
-        "  GRPC_client_context_set_serialization_impl(context,\n"
+        "  GRPC_context_set_serialization_impl((GRPC_context *) context,\n"
         "        (grpc_serialization_impl) { "
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
@@ -678,9 +702,11 @@ void PrintSourceService(Printer *printer, const Service *service,
   printer->Print(*vars, BlockifyComments("Service metadata for " + service->name() + "\n\n").c_str());
   PrintSourceServiceDeclaration(printer, service, vars);
 
-  printer->Print(*vars, BlockifyComments("Service implementation for " +
-                                         service->name() + "\n\n")
-                            .c_str());
+  printer->Print(
+      *vars,
+      BlockifyComments(
+          "Service implementation for " + service->name() + "\n\n"
+      ).c_str());
   for (int i = 0; i < service->method_count(); ++i) {
     PrintSourceClientMethod(printer, service->method(i).get(), vars);
     PrintSourceServerMethod(printer, service->method(i).get(), vars);
@@ -802,13 +828,15 @@ grpc::string GetSourceIncludes(File *file, const Parameters &params) {
 
     static const char *headers_strs[] = {
         "grpc_c/status.h", "grpc_c/grpc_c.h", "grpc_c/channel.h",
-        "grpc_c/client_context.h", "grpc_c/codegen/message.h",
+        "grpc_c/server.h", "grpc_c/server_incoming_queue.h",
+        "grpc_c/client_context.h", "grpc_c/server_context.h", "grpc_c/codegen/message.h",
         "grpc_c/codegen/method.h", "grpc_c/codegen/unary_blocking_call.h",
         "grpc_c/codegen/unary_async_call.h",
+        "grpc_c/codegen/server.h",
         "grpc_c/codegen/client_streaming_blocking_call.h",
         "grpc_c/codegen/server_streaming_blocking_call.h",
         "grpc_c/codegen/bidi_streaming_blocking_call.h",
-        "grpc_c/codegen/client_context.h",
+        "grpc_c/codegen/context.h",
         // Relying on Nanopb for Protobuf serialization for now
         "grpc_c/codegen/pb_compat.h", "grpc_c/declare_serializer.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
@@ -841,11 +869,12 @@ grpc::string GetHeaderPrologue(File *file, const Parameters & /*params*/) {
 
     printer->Print(
         vars,
-        BlockifyComments("\n"
-                         "// Generated by the gRPC protobuf plugin.\n"
-                         "// If you make any local change, they will be lost.\n"
-                         "\n")
-            .c_str());
+        BlockifyComments(
+          "\n"
+          "// Generated by the gRPC protobuf plugin.\n"
+          "// If you make any local change, they will be lost.\n"
+          "\n"
+        ).c_str());
 
     grpc::string filename;
     {
@@ -878,7 +907,9 @@ grpc::string GetHeaderIncludes(File *file, const Parameters &params) {
 
     static const char *headers_strs[] = {
         "grpc_c/grpc_c.h", "grpc_c/status.h", "grpc_c/channel.h",
-        "grpc_c/client_context.h", "grpc_c/completion_queue.h"};
+        "grpc_c/client_context.h", "grpc_c/completion_queue.h",
+        "grpc_c/server_context.h",  "grpc_c/server.h",
+        "grpc_c/server_incoming_queue.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
     printer->Print(vars, "\n");
@@ -953,20 +984,21 @@ grpc::string GetSourceServices(File *file, const Parameters &params) {
     for (auto itr = messages.begin(); itr != messages.end(); itr++) {
       std::map<grpc::string, grpc::string> vars_msg(vars);
       vars_msg["msgType"] = (*itr)->name();
-      printer->Print(vars_msg,
-                     "\n"
-                     "#ifdef $CPrefix$$msgType$_init_default\n"
-                     "GRPC_message $CPrefix$$msgType$_nanopb_serializer(const "
-                     "GRPC_message input) {\n"
-                     "  return GRPC_pb_compat_generic_serializer(input, "
-                     "$CPrefix$$msgType$_fields);\n"
-                     "}\n"
-                     "void $CPrefix$$msgType$_nanopb_deserializer(const "
-                     "GRPC_message input, void *output) {\n"
-                     "  return GRPC_pb_compat_generic_deserializer(input, "
-                     "output, $CPrefix$$msgType$_fields);\n"
-                     "}\n"
-                     "#endif\n");
+      printer->Print(
+          vars_msg,
+          "\n"
+          "#ifdef $CPrefix$$msgType$_init_default\n"
+          "GRPC_message $CPrefix$$msgType$_nanopb_serializer(const "
+          "GRPC_message input) {\n"
+          "  return GRPC_pb_compat_generic_serializer(input, "
+          "$CPrefix$$msgType$_fields);\n"
+          "}\n"
+          "void $CPrefix$$msgType$_nanopb_deserializer(const "
+          "GRPC_message input, void *output) {\n"
+          "  return GRPC_pb_compat_generic_deserializer(input, "
+          "output, $CPrefix$$msgType$_fields);\n"
+          "}\n"
+          "#endif\n");
     }
     printer->Print("\n");
 

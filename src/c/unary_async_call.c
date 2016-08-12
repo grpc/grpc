@@ -108,13 +108,17 @@ GRPC_server_async_response_writer *GRPC_unary_async_server_request(
     GRPC_server_context *const context, void *request,
     GRPC_incoming_notification_queue *incoming_queue,
     GRPC_completion_queue *processing_queue, void *tag) {
-  GRPC_call_op_set set = {
-    // deserialize from the payload read by core after the request comes in
-    .operations = { grpc_op_server_decode_context_payload },
-    .context = GRPC_server_context_to_base(context)
-  };
-  GPR_ASSERT(GRPC_server_request_call(service, method_index, context, incoming_queue, processing_queue, tag) == GRPC_CALL_OK);
-  return NULL;
+  GRPC_server_async_response_writer *writer = GRPC_ALLOC_STRUCT(GRPC_server_async_response_writer, {
+    .context = context,
+    .receive_set = {
+      // deserialize from the payload read by core after the request comes in
+      .operations = { grpc_op_server_decode_context_payload },
+      .context = GRPC_server_context_to_base(context),
+      .user_tag = tag
+    }
+  });
+  GPR_ASSERT(GRPC_server_request_call(service, method_index, context, incoming_queue, processing_queue, &writer->receive_set) == GRPC_CALL_OK);
+  return writer;
 }
 
 void GRPC_unary_async_server_finish(GRPC_server_async_response_writer *writer,

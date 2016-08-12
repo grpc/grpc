@@ -116,7 +116,8 @@ GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_servi
     } else {
       handling = GRPC_SRM_PAYLOAD_NONE;
     }
-    registered_method.core_method_handle = grpc_server_register_method(server->core_server, registered_method.method.name, server->host, handling, 0);
+    // TODO(yifeit): per-method host
+    registered_method.core_method_handle = grpc_server_register_method(server->core_server, registered_method.method.name, NULL, handling, 0);
     GRPC_array_push_back(registered_service.registered_methods, registered_method);
   }
   GRPC_array_push_back(server->registered_services, registered_service);

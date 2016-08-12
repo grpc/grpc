@@ -31,15 +31,9 @@
  *
  */
 
-#ifndef GRPC_C_CODEGEN_SERVER_H
-#define GRPC_C_CODEGEN_SERVER_H
+#include "src/c/context.h"
 
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/server.h>
-#include <grpc_c/codegen/method.h>
-#include <stddef.h>
-
-typedef GRPC_method* GRPC_service_declaration[];
-GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_service_declaration service_declaration, size_t num_methods);
-
-#endif /* GRPC_C_CODEGEN_SERVER_H */
+void GRPC_context_set_serialization_impl(
+  GRPC_context *context, grpc_serialization_impl serialization_impl) {
+  context->serialization_impl = serialization_impl;
+}

@@ -78,7 +78,6 @@ typedef struct async_server_data {
 
 int main(int argc, char **argv) {
   GRPC_server *server = GRPC_build_server({
-    .async_services = { helloworld_Greeter_Service, NULL }
   });
   GRPC_incoming_notification_queue *incoming =
     GRPC_server_new_incoming_queue(server);

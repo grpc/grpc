@@ -3045,6 +3045,7 @@ LIBGRPC_C_SRC = \
     src/c/client_context.c \
     src/c/client_streaming_blocking_call.c \
     src/c/completion_queue.c \
+    src/c/context.c \
     src/c/init_shutdown.c \
     src/c/message.c \
     src/c/pb_compat.c \
@@ -3059,12 +3060,13 @@ PUBLIC_HEADERS_C += \
     include/grpc_c/channel.h \
     include/grpc_c/client_context.h \
     include/grpc_c/codegen/bidi_streaming_blocking_call.h \
-    include/grpc_c/codegen/client_context.h \
     include/grpc_c/codegen/client_streaming_blocking_call.h \
+    include/grpc_c/codegen/context.h \
     include/grpc_c/codegen/message.h \
     include/grpc_c/codegen/method.h \
     include/grpc_c/codegen/pb_compat.h \
     include/grpc_c/codegen/serialization.h \
+    include/grpc_c/codegen/server.h \
     include/grpc_c/codegen/server_streaming_blocking_call.h \
     include/grpc_c/codegen/unary_async_call.h \
     include/grpc_c/codegen/unary_blocking_call.h \
@@ -16349,6 +16351,7 @@ src/c/channel.c: $(OPENSSL_DEP)
 src/c/client_context.c: $(OPENSSL_DEP)
 src/c/client_streaming_blocking_call.c: $(OPENSSL_DEP)
 src/c/completion_queue.c: $(OPENSSL_DEP)
+src/c/context.c: $(OPENSSL_DEP)
 src/c/init_shutdown.c: $(OPENSSL_DEP)
 src/c/message.c: $(OPENSSL_DEP)
 src/c/pb_compat.c: $(OPENSSL_DEP)
