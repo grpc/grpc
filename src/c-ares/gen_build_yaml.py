@@ -59,10 +59,9 @@ try:
       gen_ares_build(x)
     return 'third_party/c-ares/ares_build.h'
 
-
-
   out['libs'] = [{
       'name': 'ares',
+      'defaults': 'ares',
       'build': 'private',
       'language': 'c',
       'secure': 'no',

@@ -1252,8 +1252,6 @@ $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
 	$(Q)$(MAKE) -C third_party/c-ares
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/c-ares
 	$(Q)cp third_party/c-ares/.libs/libcares.a $(LIBDIR)/$(CONFIG)
-	# $(Q)[ -f third_party/c-ares/.libs/libcares.2.dylib ] && cp third_party/c-ares/.libs/libcares.2.dylib $(LIBDIR)/$(CONFIG)/c-ares
-	# $(Q)[ -f third_party/c-ares/.libs/libcares.dylib ] && cp third_party/c-ares/.libs/libcares.dylib $(LIBDIR)/$(CONFIG)/c-ares
 
 $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.o: third_party/c-ares/configure
 $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.o: third_party/c-ares/configure
@@ -6615,8 +6613,10 @@ PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/c-ares -Isrc/c-ares $(if $(subst Linux,,$(SYSTEM)),,-Isrc/c-ares/config_linux) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding
 
-$(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS)  $(CARES_DEP)
+$(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP) third_party/c-ares/configure  $(LIBARES_OBJS)  $(CARES_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libares.a

@@ -20,3 +20,4 @@
 [submodule "third_party/c-ares"]
 	path = third_party/c-ares
 	url = https://github.com/c-ares/c-ares.git
+	branch = cares-1_11_0
