@@ -160,8 +160,12 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
 
   /* TODO(yangg) check error, maybe bail out early */
   for (i = 0; i < ep->source_buffer.count; i++) {
+    if (ep->protector == NULL || cur == NULL) break;
+
     gpr_slice encrypted = ep->source_buffer.slices[i];
     uint8_t *message_bytes = GPR_SLICE_START_PTR(encrypted);
+    if (message_bytes == NULL) break;
+
     size_t message_size = GPR_SLICE_LENGTH(encrypted);
 
     while (message_size > 0 || keep_looping) {
@@ -180,6 +184,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
       message_bytes += processed_message_size;
       message_size -= processed_message_size;
       cur += unprotected_buffer_size_written;
+      if (message_bytes == NULL || cur == NULL) break;
 
       if (cur == end) {
         flush_read_staging_buffer(ep, &cur, &end);
