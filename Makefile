@@ -1251,6 +1251,8 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 third_party/c-ares/configure:
 	$(E) "[AUTOGEN] Preparing c-ares"
+	# Walkaround for github.com/c-ares/c-ares/issues/44
+	$(Q)sed -i 's/AC_CONFIG_SUBDIRS(\[test\])/{}/g' third_party/c-ares/configure.ac
 	$(Q)(cd third_party/c-ares; ./buildconf; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CFLAGS="-g $(CARES_CFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure)
 
 $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
