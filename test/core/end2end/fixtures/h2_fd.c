@@ -66,6 +66,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create(NULL);
+  f.expected_target = NULL;
 
   create_sockets(fixture_data->fd_pair);
 

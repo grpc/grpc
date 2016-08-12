@@ -176,7 +176,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT(0 == strcmp(call_details.host,
+      f->expected_target ? f->expected_target : "foo.test.google.fr:1234"));
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
