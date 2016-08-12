@@ -44,7 +44,8 @@ struct GRPC_server_context {
 
   // server-side specific
   GRPC_server *server;
-  grpc_call_details call_details;
+  // optional payload (for unary call) to get from core
+  grpc_byte_buffer *payload;
   // trailing metadata
   grpc_metadata_array send_trailing_metadata_array;
   // status code to be sent to the client

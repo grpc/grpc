@@ -37,14 +37,33 @@
 #include <grpc/grpc.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/server.h>
+#include <grpc_c/codegen/method.h>
 #include "src/c/array.h"
 #include "src/c/server_incoming_queue.h"
 
 typedef struct GRPC_server GRPC_server;
+typedef struct GRPC_registered_service GRPC_registered_service;
+typedef struct GRPC_registered_method GRPC_registered_method;
+
+struct GRPC_registered_method {
+  GRPC_method method;
+  // An opaque structure used by core to identify this method
+  void *core_method_handle;
+};
+
+struct GRPC_registered_service {
+  GRPC_server *server;
+  // Index of myself in the server-side service array
+  size_t index;
+
+  GRPC_array(GRPC_registered_method) registered_methods;
+};
 
 struct GRPC_server {
   grpc_server *core_server;
+  char *host;
   GRPC_array(GRPC_incoming_notification_queue *) registered_queues;
+  GRPC_array(GRPC_registered_service) registered_services;
 
   // used to monitor server events
   grpc_completion_queue *internal_queue;
@@ -53,5 +72,12 @@ struct GRPC_server {
 
   // TODO(yifeit): synchronous server state
 };
+
+grpc_call_error GRPC_server_request_call(
+  GRPC_registered_service *service,
+  size_t method_index,
+  GRPC_server_context *context,
+  GRPC_incoming_notification_queue *incoming_queue,
+  GRPC_completion_queue *processing_queue, void *tag);
 
 #endif  // GRPC_C_INTERNAL_SERVER_H

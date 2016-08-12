@@ -44,6 +44,7 @@ typedef struct grpc_completion_queue
 typedef struct GRPC_incoming_notification_queue
     GRPC_incoming_notification_queue;
 typedef struct GRPC_server GRPC_server;
+typedef struct GRPC_registered_service GRPC_registered_service;
 
 typedef struct GRPC_client_reader_writer GRPC_client_reader_writer;
 typedef struct GRPC_client_reader GRPC_client_reader;

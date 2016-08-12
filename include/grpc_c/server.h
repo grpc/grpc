@@ -36,11 +36,7 @@
 
 #include <grpc_c/grpc_c.h>
 
-typedef struct GRPC_service_definition {
-} GRPC_service_definition;
-
 typedef struct GRPC_build_server_options {
-  GRPC_service_definition *async_services;
 } GRPC_build_server_options;
 
 GRPC_server *GRPC_build_server(GRPC_build_server_options options);

@@ -44,7 +44,7 @@ typedef struct GRPC_client_writer {
   GRPC_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
-  grpc_message *response;
+  void *response;
 } GRPC_client_writer;
 
 #endif  // GRPC_C_INTERNAL_CLIENT_STREAMING_BLOCKING_CALL_H

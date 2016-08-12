@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc_c/codegen/unary_async_call.h>
 #include "src/c/alloc.h"
+#include "server.h"
 
 //
 // Client
@@ -62,16 +63,13 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
        .init_buf = {{grpc_op_send_metadata, grpc_op_send_object,
                      grpc_op_client_send_close},
                     .context = GRPC_client_context_to_base(context),
-                    .response = NULL,
                     .hide_from_user = true},
        .meta_buf = {{grpc_op_recv_metadata},
-                    .context = GRPC_client_context_to_base(context),
-                    .response = NULL},
+                    .context = GRPC_client_context_to_base(context)},
        .finish_buf = {
            {grpc_op_recv_metadata, grpc_op_recv_object,
             grpc_op_client_recv_status},
            .context = GRPC_client_context_to_base(context),
-           .response = NULL,
        }});
 
   // Different from blocking call, we need to inform completion queue to run
@@ -106,11 +104,22 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader,
 //
 
 GRPC_server_async_response_writer *GRPC_unary_async_server_request(
-    const GRPC_method rpc_method, GRPC_server_context *const context,
-    void *request, GRPC_incoming_notification_queue *incoming_queue,
-    GRPC_completion_queue *processing_queue, void *tag) {}
+    GRPC_registered_service* service, size_t method_index,
+    GRPC_server_context *const context, void *request,
+    GRPC_incoming_notification_queue *incoming_queue,
+    GRPC_completion_queue *processing_queue, void *tag) {
+  GRPC_call_op_set set = {
+    // deserialize from the payload read by core after the request comes in
+    .operations = { grpc_op_server_decode_context_payload },
+    .context = GRPC_server_context_to_base(context)
+  };
+  GPR_ASSERT(GRPC_server_request_call(service, method_index, context, incoming_queue, processing_queue, tag) == GRPC_CALL_OK);
+  return NULL;
+}
 
 void GRPC_unary_async_server_finish(GRPC_server_async_response_writer *writer,
                                     const GRPC_message response,
                                     const grpc_status_code server_status,
-                                    void *tag) {}
+                                    void *tag) {
+
+}

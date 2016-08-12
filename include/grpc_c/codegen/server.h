@@ -31,39 +31,15 @@
  *
  */
 
-#ifndef GRPC_C_INTERNAL_CONTEXT_H
-#define GRPC_C_INTERNAL_CONTEXT_H
+#ifndef GRPC_C_CODEGEN_SERVER_H
+#define GRPC_C_CODEGEN_SERVER_H
 
-#include <grpc/grpc.h>
-#include <grpc_c/codegen/client_context.h>
-#include <grpc_c/codegen/method.h>
-#include <grpc_c/codegen/serialization.h>
 #include <grpc_c/grpc_c.h>
-#include <grpc_c/status.h>
-#include <stdbool.h>
-#include "src/c/message.h"
+#include <grpc_c/server.h>
+#include <grpc_c/codegen/method.h>
+#include <stddef.h>
 
-typedef struct GRPC_context GRPC_context;
+typedef GRPC_method** GRPC_service_declaration;
+GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_service_declaration service_declaration, size_t num_methods);
 
-/**
- * Both client and server context shares this common stub.
- */
-#define GRPC_C_CONTEXT_BASE_MEMBERS               \
-  grpc_metadata *send_metadata_array;             \
-  grpc_metadata_array recv_metadata_array;        \
-  gpr_timespec deadline;                          \
-                                                  \
-  /* serialization mechanism used in this call */ \
-  grpc_serialization_impl serialization_impl;     \
-                                                  \
-  /* state tracking */                            \
-  bool initial_metadata_received;                 \
-  GRPC_method rpc_method;                         \
-  grpc_channel *channel;                          \
-  grpc_call *call;
-
-struct GRPC_context {
-  GRPC_C_CONTEXT_BASE_MEMBERS;
-};
-
-#endif  // GRPC_C_INTERNAL_CONTEXT_H
+#endif /* GRPC_C_CODEGEN_SERVER_H */

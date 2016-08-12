@@ -64,14 +64,9 @@ struct GRPC_call_op_set {
   const GRPC_op_manager operations[GRPC_MAX_OP_COUNT];
   GRPC_context *const context;
 
-  /* these are used by individual operations */
-  void *response;
-  grpc_byte_buffer *recv_buffer;
-
-  /* Holding onto the buffer to free it later */
-  grpc_byte_buffer *send_buffer;
-  bool message_received;
-
+  /*
+   * These are used to work with completion queue.
+   */
   /* if this is true (default false), the event tagged by this call_op_set will
    * not be emitted
    * from the completion queue wrapper. */
@@ -82,9 +77,21 @@ struct GRPC_call_op_set {
   bool *user_done;            /* for clients reading a stream */
   GRPC_closure async_cleanup; /* will be called when the op_set finishes */
                               /* used to cleanup after RPC */
+
+  /*
+   * these are used by individual operations.
+   * don't initialize them by hand
+   */
+  /* pointer to the user-supplied object which shall receive deserialized data */
+  void *received_object;
+  grpc_byte_buffer *recv_buffer;
+  /* Holding onto the buffer to free it later */
+  grpc_byte_buffer *send_buffer;
+  bool message_received;
+
 };
 
-void GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
+size_t GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
                                 const grpc_message message, void *response,
                                 grpc_op *ops, size_t *nops);
 
@@ -106,5 +113,6 @@ extern const GRPC_op_manager grpc_op_client_send_close;
 extern const GRPC_op_manager grpc_op_client_recv_status;
 extern const GRPC_op_manager grpc_op_server_recv_close;
 extern const GRPC_op_manager grpc_op_server_send_status;
+extern const GRPC_op_manager grpc_op_server_decode_context_payload;
 
 #endif /* GRPC_C_INTERNAL_CALL_OPS_H */

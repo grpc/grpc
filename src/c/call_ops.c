@@ -108,7 +108,7 @@ static bool op_recv_object_fill(grpc_op *op, GRPC_context *context,
                                 GRPC_call_op_set *set,
                                 const grpc_message message, void *response) {
   set->message_received = false;
-  set->response = response;
+  set->received_object = response;
   op->op = GRPC_OP_RECV_MESSAGE;
   set->recv_buffer = NULL;
   op->data.recv_message = &set->recv_buffer;
@@ -131,7 +131,7 @@ static void op_recv_object_finish(GRPC_context *context, GRPC_call_op_set *set,
     size_t len = GPR_SLICE_LENGTH(slice_recv);
 
     context->serialization_impl.deserialize((grpc_message){resp, len},
-                                            set->response);
+                                            set->received_object);
 
     gpr_slice_unref(slice_recv);
     grpc_byte_buffer_reader_destroy(&reader);
@@ -233,7 +233,46 @@ static void op_server_send_status_finish(GRPC_context *context,
 const GRPC_op_manager grpc_op_server_send_status = {
     op_server_send_status_fill, op_server_send_status_finish};
 
-void GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
+static bool op_server_decode_context_payload_fill(grpc_op *op, GRPC_context *context,
+                                       GRPC_call_op_set *set,
+                                       const grpc_message message,
+                                       void *response) {
+  set->message_received = false;
+  set->received_object = response;
+  return false;   // don't fill hence won't trigger grpc_call_start_batch
+}
+
+static void op_server_decode_context_payload_finish(GRPC_context *context,
+                                         GRPC_call_op_set *set, bool *status,
+                                         int max_message_size) {
+  // decode payload in server context
+  GRPC_server_context *server_context = (GRPC_server_context *) context;
+  grpc_byte_buffer *buffer = server_context->payload;
+  GPR_ASSERT(buffer != NULL);
+
+  if (!set->message_received) {
+      set->message_received = true;
+
+      grpc_byte_buffer_reader reader;
+      grpc_byte_buffer_reader_init(&reader, buffer);
+      gpr_slice slice_recv = grpc_byte_buffer_reader_readall(&reader);
+      uint8_t *resp = GPR_SLICE_START_PTR(slice_recv);
+      size_t len = GPR_SLICE_LENGTH(slice_recv);
+
+      context->serialization_impl.deserialize((grpc_message){resp, len},
+                                              set->received_object);
+
+      gpr_slice_unref(slice_recv);
+      grpc_byte_buffer_reader_destroy(&reader);
+      grpc_byte_buffer_destroy(buffer);
+  }
+}
+
+const GRPC_op_manager grpc_op_server_decode_context_payload = {
+  op_server_decode_context_payload_fill, op_server_decode_context_payload_finish
+};
+
+size_t GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
                                 const grpc_message message, void *response,
                                 grpc_op *ops, size_t *nops) {
   size_t manager = 0;
@@ -249,6 +288,7 @@ void GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
     if (result) filled++;
   }
   *nops = filled;
+  return filled;
 }
 
 bool GRPC_finish_op_from_call_set(GRPC_call_op_set *set,
@@ -274,6 +314,8 @@ void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   const grpc_message request, void *response) {
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
-  GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, set, NULL));
+  size_t num_ops = GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
+  if (num_ops > 0) {
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, set, NULL));
+  }
 }

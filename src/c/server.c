@@ -32,10 +32,12 @@
  */
 
 #include "src/c/server.h"
+#include <grpc_c/codegen/server.h>
 #include <grpc_c/completion_queue.h>
-#include <grpc_c/server.h>
 #include "src/c/alloc.h"
 #include "src/c/init_shutdown.h"
+#include "src/c/server_context.h"
+#include "server.h"
 
 GRPC_server *GRPC_build_server(GRPC_build_server_options options) {
   GRPC_ensure_grpc_init();
@@ -44,6 +46,7 @@ GRPC_server *GRPC_build_server(GRPC_build_server_options options) {
       GRPC_server, {.core_server = core_server,
                     .internal_queue = grpc_completion_queue_create(NULL)});
   GRPC_array_init(server->registered_queues);
+  GRPC_array_init(server->registered_services);
   return server;
 }
 
@@ -71,7 +74,7 @@ void GRPC_server_shutdown(GRPC_server *server) {
     if (ev.type == GRPC_OP_COMPLETE) break;
   }
   // Shutdown all registered queues
-  int i;
+  size_t i;
   for (i = 0; i < server->registered_queues.state.size; i++) {
     GRPC_completion_queue_shutdown(server->registered_queues.data[i]->cq);
   }
@@ -87,7 +90,7 @@ void GRPC_server_shutdown(GRPC_server *server) {
 }
 
 void GRPC_server_destroy(GRPC_server *server) {
-  int i;
+  size_t i;
   for (i = 0; i < server->registered_queues.state.size; i++) {
     GRPC_incoming_notification_queue_destroy(server->registered_queues.data[i]);
   }
@@ -96,4 +99,45 @@ void GRPC_server_destroy(GRPC_server *server) {
   grpc_completion_queue_destroy(server->internal_queue);
 
   grpc_server_destroy(server->core_server);
+}
+
+GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_service_declaration service_declaration, size_t num_methods) {
+  // register every method in the service
+  size_t i;
+  GRPC_registered_service registered_service;
+  GRPC_array_init(registered_service.registered_methods);
+  for (i = 0; i < num_methods; i++) {
+    GRPC_registered_method registered_method;
+    registered_method.method = *service_declaration[i];
+    grpc_server_register_method_payload_handling handling;
+    // Let core read the payload for us only in unary case
+    if (registered_method.method.type == GRPC_NORMAL_RPC) {
+      handling = GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
+    } else {
+      handling = GRPC_SRM_PAYLOAD_NONE;
+    }
+    registered_method.core_method_handle = grpc_server_register_method(server->core_server, registered_method.method.name, server->host, handling, 0);
+    GRPC_array_push_back(registered_service.registered_methods, registered_method);
+  }
+  GRPC_array_push_back(server->registered_services, registered_service);
+  return &server->registered_services.data[server->registered_services.state.size - 1];
+}
+
+grpc_call_error GRPC_server_request_call(
+  GRPC_registered_service *service,
+  size_t method_index,
+  GRPC_server_context *context,
+  GRPC_incoming_notification_queue *incoming_queue,
+  GRPC_completion_queue *processing_queue, void *tag) {
+  void *core_method_handle = service->registered_methods.data[method_index].core_method_handle;
+  return grpc_server_request_registered_call(
+    context->server->core_server,
+    core_method_handle,
+    &context->call,
+    &context->deadline,
+    &context->recv_metadata_array,
+    &context->payload,
+    processing_queue,
+    incoming_queue->cq,
+    tag);
 }

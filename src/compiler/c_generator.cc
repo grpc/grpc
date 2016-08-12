@@ -407,7 +407,7 @@ void PrintSourceServerMethod(Printer *printer, const Method *method,
         "GRPC_C_RESOLVE_SERIALIZER($CPrefix$$Request$), "
         "GRPC_C_RESOLVE_DESERIALIZER($CPrefix$$Response$) });\n"
         "  return GRPC_unary_async_server_request(\n"
-        "        GRPC_method_$CPrefix$$Service$_$Method$,\n"
+        "        GRPC_METHOD_INDEX_$CPrefix$$Service$_$Method$,\n"
         "        context,\n"
         "        request,\n"
         "        incoming_queue,\n"
@@ -434,31 +434,78 @@ void PrintSourceServerMethod(Printer *printer, const Method *method,
   }
 }
 
+void PrintSourceServiceDeclaration(Printer *printer, const Service *service, std::map<grpc::string, grpc::string> *vars) {
+  for (int i = 0; i < service->method_count(); i++) {
+    auto method = service->method(i);
+
+    (*vars)["Method"] = method->name();
+
+    if (method->NoStreaming()) {
+      (*vars)["MethodEnum"] = "GRPC_NORMAL_RPC";
+    } else if (method->ClientOnlyStreaming()) {
+      (*vars)["MethodEnum"] = "GRPC_CLIENT_STREAMING";
+    } else if (method->ServerOnlyStreaming()) {
+      (*vars)["MethodEnum"] = "GRPC_SERVER_STREAMING";
+    } else if (method->BidiStreaming()) {
+      (*vars)["MethodEnum"] = "GRPC_BIDI_STREAMING";
+    }
+
+    printer->Print(
+        *vars,
+        "GRPC_method GRPC_method_$CPrefix$$Service$_$Method$ = {\n"
+        "        $MethodEnum$,\n"
+        "        \"/$Package$$Service$/$Method$\"\n"
+        "};\n"
+        "\n");
+  }
+
+  printer->Print(
+      *vars,
+      "GRPC_service_declaration GRPC_service_$CPrefix$$Service$ = {\n");
+
+  // Insert each method definition in the service
+  for (int i = 0; i < service->method_count(); i++) {
+    auto method = service->method(i);
+    (*vars)["Method"] = method->name();
+    (*vars)["Terminator"] = i == service->method_count() - 1 ? "" : ",";
+    printer->Print(
+        *vars,
+        "        &GRPC_method_$CPrefix$$Service$_$Method$$Terminator$\n");
+  }
+
+  printer->Print(
+      *vars,
+      "};\n"
+      "\n");
+
+  // Array index of each method inside the service declaration array
+  printer->Print(
+      *vars,
+      "enum {\n");
+
+  for (int i = 0; i < service->method_count(); i++) {
+    auto method = service->method(i);
+    (*vars)["Method"] = method->name();
+    (*vars)["Index"] = std::to_string(i);
+    printer->Print(
+        *vars,
+        "        GRPC_METHOD_INDEX_$CPrefix$$Service$_$Method$ = $Index$,\n");
+  }
+
+  (*vars)["MethodCount"] = std::to_string(service->method_count());
+  printer->Print(
+      *vars,
+      "        GRPC_METHOD_COUNT_$CPrefix$$Service$_$Method$ = $MethodCount$\n"
+      "};\n"
+      "\n");
+}
+
 // Prints implementation of a single client method
 void PrintSourceClientMethod(Printer *printer, const Method *method,
                              std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
-
-  if (method->NoStreaming()) {
-    (*vars)["MethodEnum"] = "NORMAL_RPC";
-  } else if (method->ClientOnlyStreaming()) {
-    (*vars)["MethodEnum"] = "CLIENT_STREAMING";
-  } else if (method->ServerOnlyStreaming()) {
-    (*vars)["MethodEnum"] = "SERVER_STREAMING";
-  } else if (method->BidiStreaming()) {
-    (*vars)["MethodEnum"] = "BIDI_STREAMING";
-  }
-
-  printer->Print(
-      *vars,
-      "\n"
-      "GRPC_method GRPC_method_$CPrefix$$Service$_$Method$ = {\n"
-      "      $MethodEnum$,\n"
-      "      \"/$Package$$Service$/$Method$\"\n"
-      "};\n"
-      "\n");
 
   if (method->NoStreaming()) {
     // Unary
@@ -534,10 +581,11 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "}\n"
         "\n");
 
-    printer->Print(*vars,
-                   "\n"
-                   "/* Async TBD */\n"
-                   "\n");
+    printer->Print(
+        *vars,
+        "\n"
+        "/* Async TBD */\n"
+        "\n");
 
   } else if (method->ServerOnlyStreaming()) {
     printer->Print(
@@ -567,10 +615,11 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "  return GRPC_client_reader_terminate(reader);\n"
         "}\n"
         "\n");
-    printer->Print(*vars,
-                   "\n"
-                   "/* Async TBD */\n"
-                   "\n");
+    printer->Print(
+        *vars,
+        "\n"
+        "/* Async TBD */\n"
+        "\n");
 
   } else if (method->BidiStreaming()) {
     printer->Print(
@@ -613,10 +662,11 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
         "  return GRPC_client_reader_writer_terminate(reader_writer);\n"
         "}\n"
         "\n");
-    printer->Print(*vars,
-                   "\n"
-                   "/* Async TBD */\n"
-                   "\n");
+    printer->Print(
+        *vars,
+        "\n"
+        "/* Async TBD */\n"
+        "\n");
   }
 }
 
@@ -625,13 +675,18 @@ void PrintSourceService(Printer *printer, const Service *service,
                         std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
 
+  printer->Print(*vars, BlockifyComments("Service metadata for " + service->name() + "\n\n").c_str());
+  PrintSourceServiceDeclaration(printer, service, vars);
+
   printer->Print(*vars, BlockifyComments("Service implementation for " +
                                          service->name() + "\n\n")
                             .c_str());
   for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["Idx"] = as_string(i);
     PrintSourceClientMethod(printer, service->method(i).get(), vars);
+    PrintSourceServerMethod(printer, service->method(i).get(), vars);
   }
+
+  printer->Print("\n");
 }
 
 //

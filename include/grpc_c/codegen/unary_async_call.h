@@ -50,8 +50,9 @@ void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader,
                                      void *tag);
 
 GRPC_server_async_response_writer *GRPC_unary_async_server_request(
-    const GRPC_method rpc_method, GRPC_server_context *const context,
-    void *request, GRPC_incoming_notification_queue *incoming_queue,
+    GRPC_registered_service*service, size_t method_index,
+    GRPC_server_context *const context, void *request,
+    GRPC_incoming_notification_queue *incoming_queue,
     GRPC_completion_queue *processing_queue, void *tag);
 
 void GRPC_unary_async_server_finish(GRPC_server_async_response_writer *writer,
