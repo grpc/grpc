@@ -71,6 +71,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create(NULL);
+  f.expected_target = NULL;
 
   return f;
 }

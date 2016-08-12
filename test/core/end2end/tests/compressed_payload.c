@@ -244,7 +244,8 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(0 == strcmp(details, expected_details));
   gpr_free(expected_details);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  GPR_ASSERT(0 == strcmp(call_details.host,
+      f.expected_target ? f.expected_target : "foo.test.google.fr"));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

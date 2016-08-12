@@ -50,6 +50,7 @@ struct grpc_end2end_test_fixture {
   grpc_server *server;
   grpc_channel *client;
   void *fixture_data;
+  char *expected_target;
 };
 
 struct grpc_end2end_test_config {
