@@ -544,7 +544,24 @@
 
   CARES_PKG_CONFIG = false
 
-  ifeq ($(HAS_SYSTEM_CARES),true)
+  ifeq ($(HAS_SYSTEM_CARES),false)
+  ifeq ($(HAS_EMBEDDED_CARES), true)
+  EMBED_CARES ?= true
+  else
+  DEP_MISSING += cares
+  EMBED_CARES ?= broken
+  endif
+  else
+  EMBED_CARES ?= false
+  endif
+
+  ifeq ($(EMBED_CARES),true)
+  CARES_DEP = $(LIBDIR)/$(CONFIG)/c-ares/libcares.a
+  CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
+  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
+  CARES_CFLAGS_EXTRA += $(findstring -m32,$(CFLAGS))
+  CARES_CFLAGS_EXTRA += -Wno-invalid-source-encoding
+  else
   ifeq ($(HAS_PKG_CONFIG),true)
   CARES_PKG_CONFIG = true
   PC_REQUIRES_GRPC += libcares
@@ -558,16 +575,6 @@
   else
   PC_LIBS_GRPC += -lcares
   LIBS += libcares
-  endif
-  else
-  ifeq ($(HAS_EMBEDDED_CARES),true)
-  CARES_DEP = $(LIBDIR)/$(CONFIG)/c-ares/libcares.a
-  CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
-  CARES_CFLAGS_EXTRA += $(findstring -m32,$(CFLAGS))
-  CARES_CFLAGS_EXTRA += -Wno-invalid-source-encoding
-  else
-  DEP_MISSING += c-ares
   endif
   endif
 
