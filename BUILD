@@ -555,6 +555,7 @@ cc_library(
   name = "grpc_c",
   srcs = [
     "src/c/alloc.h",
+    "src/c/array.h",
     "src/c/bidi_streaming_blocking_call.h",
     "src/c/call_ops.h",
     "src/c/client_context.h",
@@ -570,6 +571,7 @@ cc_library(
     "src/c/unary_async_call.h",
     "src/c/unary_blocking_call.h",
     "src/c/alloc.c",
+    "src/c/array.c",
     "src/c/bidi_streaming_blocking_call.c",
     "src/c/call_ops.c",
     "src/c/channel.c",

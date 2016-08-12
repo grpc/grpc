@@ -860,6 +860,7 @@ libs:
   - include/grpc_c/status.h
   headers:
   - src/c/alloc.h
+  - src/c/array.h
   - src/c/bidi_streaming_blocking_call.h
   - src/c/call_ops.h
   - src/c/client_context.h
@@ -876,6 +877,7 @@ libs:
   - src/c/unary_blocking_call.h
   src:
   - src/c/alloc.c
+  - src/c/array.c
   - src/c/bidi_streaming_blocking_call.c
   - src/c/call_ops.c
   - src/c/channel.c

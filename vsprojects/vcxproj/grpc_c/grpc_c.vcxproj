@@ -280,6 +280,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\c\alloc.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\c\array.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\bidi_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\call_ops.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\client_context.h" />
@@ -297,6 +298,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\c\alloc.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\array.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\bidi_streaming_blocking_call.c">
     </ClCompile>

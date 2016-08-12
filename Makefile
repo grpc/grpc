@@ -3038,6 +3038,7 @@ endif
 # Using nanopb for C files right now
 LIBGRPC_C_SRC = \
     src/c/alloc.c \
+    src/c/array.c \
     src/c/bidi_streaming_blocking_call.c \
     src/c/call_ops.c \
     src/c/channel.c \
@@ -16341,6 +16342,7 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/c/alloc.c: $(OPENSSL_DEP)
+src/c/array.c: $(OPENSSL_DEP)
 src/c/bidi_streaming_blocking_call.c: $(OPENSSL_DEP)
 src/c/call_ops.c: $(OPENSSL_DEP)
 src/c/channel.c: $(OPENSSL_DEP)

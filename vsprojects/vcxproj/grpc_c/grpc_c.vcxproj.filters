@@ -4,6 +4,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\c\alloc.c">
       <Filter>src\c</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\array.c">
+      <Filter>src\c</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\bidi_streaming_blocking_call.c">
       <Filter>src\c</Filter>
     </ClCompile>
@@ -111,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\c\alloc.h">
+      <Filter>src\c</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\c\array.h">
       <Filter>src\c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\c\bidi_streaming_blocking_call.h">

@@ -534,6 +534,7 @@ install(TARGETS grpc EXPORT gRPCTargets
   
 add_library(grpc_c
   src/c/alloc.c
+  src/c/array.c
   src/c/bidi_streaming_blocking_call.c
   src/c/call_ops.c
   src/c/channel.c
