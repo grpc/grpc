@@ -49,7 +49,7 @@ namespace Grpc.IntegrationTesting
         TestService.TestServiceClient unimplementedClient = new UnimplementedTestServiceClient();
 
         // TODO: replace Moq by some mocking library with CoreCLR support.
-#if !NETSTANDARD1_5
+#if !NETCOREAPP1_0
         [Test]
         public void ExpandedParamOverloadCanBeMocked()
         {

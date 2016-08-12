@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
   v = '1.0.0-pre1'
-  s.version  = v
+  s.version  = "#{v}.2" # .2 to depend on protoc 3.0.0
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
     This podspec only downloads the gRPC protoc plugin so that local pods generating protos can use
@@ -96,7 +96,7 @@ Pod::Spec.new do |s|
   s.preserve_paths = plugin
 
   # Restrict the protoc version to the one supported by this plugin.
-  s.dependency '!ProtoCompiler', '3.0.0-beta-3.1'
+  s.dependency '!ProtoCompiler', '3.0.0'
   # For the Protobuf dependency not to complain:
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
