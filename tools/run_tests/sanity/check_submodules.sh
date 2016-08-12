@@ -47,9 +47,9 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  f8ac463766281625ad710900479130c7fcb4d63b third_party/nanopb (nanopb-0.3.4-29-gf8ac463)
  bdeb215cab2985195325fcd5e70c3fa751f46e0f third_party/protobuf (v3.0.0-beta-3.3)
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
+ e7fe2744db383c4489b7adc2b74f8ec3069367e4 third_party/c-ares (1.11.0)
 EOF
 
 diff -u $submodules $want_submodules
 
 rm $submodules $want_submodules
-
