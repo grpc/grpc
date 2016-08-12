@@ -6,8 +6,8 @@
     "emitEntryPoint": "true"
   },
   "dependencies": {
-    "Google.Protobuf": "3.0.0-beta3",
-    "Grpc": "1.0.0-pre1",
+    "Google.Protobuf": "3.0.0",
+    "Grpc": "1.0.0",
     "Greeter": {
       "target": "project"
     }
