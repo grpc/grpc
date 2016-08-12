@@ -52,6 +52,11 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+CARES_INCLUDE = (os.path.join('third_party', 'c-ares'), os.path.join('src', 'c-ares'),)
+if "linux" in sys.platform:
+    CARES_INCLUDE += (os.path.join('src', 'c-ares', 'config_linux'),)
+if "darwin" in sys.platform:
+    CARES_INCLUDE += (os.path.join('src', 'c-ares', 'config_darwin'),)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -129,7 +134,7 @@ CYTHON_HELPER_C_FILES = ()
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE + CARES_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -141,7 +146,7 @@ if "win32" in sys.platform:
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
-    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1), ('HAVE_CONFIG_H', 1),)
 if "win32" in sys.platform:
   DEFINE_MACROS += (('OPENSSL_WINDOWS', 1), ('WIN32_LEAN_AND_MEAN', 1),)
   if '64bit' in platform.architecture()[0]:

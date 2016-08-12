@@ -1276,7 +1276,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
@@ -6557,6 +6557,79 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBZ_OBJS:.o=.dep)
+endif
+
+
+LIBARES_SRC = \
+    third_party/c-ares/ares__close_sockets.c \
+    third_party/c-ares/ares__get_hostent.c \
+    third_party/c-ares/ares__read_line.c \
+    third_party/c-ares/ares__timeval.c \
+    third_party/c-ares/ares_cancel.c \
+    third_party/c-ares/ares_create_query.c \
+    third_party/c-ares/ares_data.c \
+    third_party/c-ares/ares_destroy.c \
+    third_party/c-ares/ares_expand_name.c \
+    third_party/c-ares/ares_expand_string.c \
+    third_party/c-ares/ares_fds.c \
+    third_party/c-ares/ares_free_hostent.c \
+    third_party/c-ares/ares_free_string.c \
+    third_party/c-ares/ares_getenv.c \
+    third_party/c-ares/ares_gethostbyaddr.c \
+    third_party/c-ares/ares_gethostbyname.c \
+    third_party/c-ares/ares_getnameinfo.c \
+    third_party/c-ares/ares_getopt.c \
+    third_party/c-ares/ares_getsock.c \
+    third_party/c-ares/ares_init.c \
+    third_party/c-ares/ares_library_init.c \
+    third_party/c-ares/ares_llist.c \
+    third_party/c-ares/ares_mkquery.c \
+    third_party/c-ares/ares_nowarn.c \
+    third_party/c-ares/ares_options.c \
+    third_party/c-ares/ares_parse_a_reply.c \
+    third_party/c-ares/ares_parse_aaaa_reply.c \
+    third_party/c-ares/ares_parse_mx_reply.c \
+    third_party/c-ares/ares_parse_naptr_reply.c \
+    third_party/c-ares/ares_parse_ns_reply.c \
+    third_party/c-ares/ares_parse_ptr_reply.c \
+    third_party/c-ares/ares_parse_soa_reply.c \
+    third_party/c-ares/ares_parse_srv_reply.c \
+    third_party/c-ares/ares_parse_txt_reply.c \
+    third_party/c-ares/ares_platform.c \
+    third_party/c-ares/ares_process.c \
+    third_party/c-ares/ares_query.c \
+    third_party/c-ares/ares_search.c \
+    third_party/c-ares/ares_send.c \
+    third_party/c-ares/ares_strcasecmp.c \
+    third_party/c-ares/ares_strdup.c \
+    third_party/c-ares/ares_strerror.c \
+    third_party/c-ares/ares_timeout.c \
+    third_party/c-ares/ares_version.c \
+    third_party/c-ares/ares_writev.c \
+    third_party/c-ares/bitncmp.c \
+    third_party/c-ares/inet_net_pton.c \
+    third_party/c-ares/inet_ntop.c \
+    third_party/c-ares/windows_port.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
+
+
+$(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS)  $(CARES_DEP)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libares.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libares.a $(LIBARES_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libares.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBARES_OBJS:.o=.dep)
 endif
 
 
