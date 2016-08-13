@@ -11,5 +11,5 @@ state (CONNECTING, READY, or IDLE) the request should not be terminated.
 Fail fast SHOULD be the default for gRPC implementations, with an option to
 switch to non fail fast.
 
-The opposite of fail fast is 'ignore connectivity'.
+The opposite of fail fast is 'wait for READY'.
 
