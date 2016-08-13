@@ -43,7 +43,7 @@
 // Client
 //
 
-static void free_client_reader_and_call(void *arg) {
+static void free_client_reader(void *arg) {
   GRPC_client_async_response_reader *reader = arg;
   gpr_free(reader);
 }
@@ -75,7 +75,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(
   // Different from blocking call, we need to inform completion queue to run
   // cleanup for us
   reader->finish_buf.async_cleanup =
-      (GRPC_closure){.arg = reader, .callback = free_client_reader_and_call};
+      (GRPC_closure){.arg = reader, .callback = free_client_reader};
 
   GRPC_start_batch_from_op_set(reader->call, &reader->init_buf,
                                GRPC_client_context_to_base(reader->context),
@@ -103,6 +103,11 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader,
 // Server
 //
 
+static void free_server_writer(void *arg) {
+  GRPC_server_async_response_writer *writer = arg;
+  gpr_free(writer);
+}
+
 GRPC_server_async_response_writer *GRPC_unary_async_server_request(
     GRPC_registered_service* service, size_t method_index,
     GRPC_server_context *const context, void *request,
@@ -115,9 +120,20 @@ GRPC_server_async_response_writer *GRPC_unary_async_server_request(
       .operations = { grpc_op_server_decode_context_payload },
       .context = GRPC_server_context_to_base(context),
       .user_tag = tag
+    },
+    .finish_set = {
+      .operations = { grpc_op_send_metadata, grpc_op_send_object, grpc_op_server_recv_close, grpc_op_server_send_status },
+      .context = GRPC_server_context_to_base(context)
     }
   });
+
+  writer->finish_set.async_cleanup = (GRPC_closure) {
+    .arg = writer,
+    .callback = free_server_writer
+  };
+
   GPR_ASSERT(GRPC_server_request_call(service, method_index, context, incoming_queue, processing_queue, &writer->receive_set) == GRPC_CALL_OK);
+  GRPC_start_batch_from_op_set(NULL, &writer->receive_set, GRPC_server_context_to_base(context), (GRPC_message) {0, 0}, request);
   return writer;
 }
 
@@ -125,5 +141,7 @@ void GRPC_unary_async_server_finish(GRPC_server_async_response_writer *writer,
                                     const GRPC_message response,
                                     const grpc_status_code server_status,
                                     void *tag) {
-
+  writer->finish_set.user_tag = tag;
+  writer->context->server_return_status = server_status;
+  GRPC_start_batch_from_op_set(writer->context->call, &writer->finish_set, GRPC_server_context_to_base(writer->context), response, NULL);
 }

@@ -34,14 +34,15 @@
 #ifndef GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H
 #define GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H
 
+#include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/server_streaming_blocking_call.h>
 #include "src/c/call_ops.h"
 #include "src/c/client_context.h"
 
-typedef struct GRPC_client_reader {
+struct GRPC_client_reader {
   GRPC_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
-} GRPC_client_reader;
+};
 
 #endif  // GRPC_C_INTERNAL_SERVER_STREAMING_BLOCKING_CALL_H

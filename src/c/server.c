@@ -34,10 +34,14 @@
 #include "src/c/server.h"
 #include <grpc_c/codegen/server.h>
 #include <grpc_c/completion_queue.h>
+#include <grpc/support/log.h>
 #include "src/c/alloc.h"
 #include "src/c/init_shutdown.h"
 #include "src/c/server_context.h"
-#include "server.h"
+
+void GRPC_server_listen_host(GRPC_server *server, const char *host) {
+  grpc_server_add_insecure_http2_port(server->core_server, host);
+}
 
 GRPC_server *GRPC_build_server(GRPC_build_server_options options) {
   GRPC_ensure_grpc_init();
@@ -110,8 +114,9 @@ GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_servi
     GRPC_registered_method registered_method;
     registered_method.method = *service_declaration[i];
     grpc_server_register_method_payload_handling handling;
-    // Let core read the payload for us only in unary case
-    if (registered_method.method.type == GRPC_NORMAL_RPC) {
+    // Let core read the payload for us only in unary or server streaming case
+    if (registered_method.method.type == GRPC_NORMAL_RPC
+        || registered_method.method.type == GRPC_SERVER_STREAMING) {
       handling = GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
     } else {
       handling = GRPC_SRM_PAYLOAD_NONE;
@@ -131,6 +136,7 @@ grpc_call_error GRPC_server_request_call(
   GRPC_incoming_notification_queue *incoming_queue,
   GRPC_completion_queue *processing_queue, void *tag) {
   void *core_method_handle = service->registered_methods.data[method_index].core_method_handle;
+  GPR_ASSERT(core_method_handle != NULL);
   return grpc_server_request_registered_call(
     context->server->core_server,
     core_method_handle,

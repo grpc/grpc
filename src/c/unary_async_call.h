@@ -34,11 +34,12 @@
 #ifndef GRPC_C_INTERNAL_UNARY_ASYNC_CALL_H
 #define GRPC_C_INTERNAL_UNARY_ASYNC_CALL_H
 
+#include <grpc_c/grpc_c.h>
 #include "src/c/call_ops.h"
 #include "src/c/client_context.h"
 #include "src/c/server_context.h"
 
-typedef struct GRPC_client_async_response_reader {
+struct GRPC_client_async_response_reader {
   GRPC_call_op_set init_buf;
   GRPC_call_op_set meta_buf;
   GRPC_call_op_set finish_buf;
@@ -46,11 +47,12 @@ typedef struct GRPC_client_async_response_reader {
   grpc_completion_queue *cq;
   GRPC_client_context *context;
   grpc_call *call;
-} GRPC_client_async_response_reader;
+};
 
-typedef struct GRPC_server_async_response_writer {
+struct GRPC_server_async_response_writer {
   GRPC_server_context *context;
   GRPC_call_op_set receive_set;
-} GRPC_server_async_response_writer;
+  GRPC_call_op_set finish_set;
+};
 
 #endif  // GRPC_C_INTERNAL_UNARY_ASYNC_CALL_H

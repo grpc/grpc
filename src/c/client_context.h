@@ -40,7 +40,7 @@ typedef struct GRPC_client_context grpc_client_context;
 
 struct GRPC_client_context {
   // Emulating inheritance
-  GRPC_C_CONTEXT_BASE_MEMBERS;
+  GRPC_C_CONTEXT_BASE_MEMBERS
 
   // client-side specific
   grpc_metadata_array recv_trailing_metadata_array;

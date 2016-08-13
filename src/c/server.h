@@ -41,8 +41,6 @@
 #include "src/c/array.h"
 #include "src/c/server_incoming_queue.h"
 
-typedef struct GRPC_server GRPC_server;
-typedef struct GRPC_registered_service GRPC_registered_service;
 typedef struct GRPC_registered_method GRPC_registered_method;
 
 struct GRPC_registered_method {

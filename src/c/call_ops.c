@@ -34,7 +34,6 @@
 #include "src/c/call_ops.h"
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/log.h>
-#include <include/grpc/impl/codegen/grpc_types.h>
 #include "src/c/client_context.h"
 #include "src/c/server_context.h"
 
@@ -239,12 +238,14 @@ static bool op_server_decode_context_payload_fill(grpc_op *op, GRPC_context *con
                                        void *response) {
   set->message_received = false;
   set->received_object = response;
+  ((GRPC_server_context *) context)->payload = NULL;
   return false;   // don't fill hence won't trigger grpc_call_start_batch
 }
 
 static void op_server_decode_context_payload_finish(GRPC_context *context,
                                          GRPC_call_op_set *set, bool *status,
                                          int max_message_size) {
+
   // decode payload in server context
   GRPC_server_context *server_context = (GRPC_server_context *) context;
   grpc_byte_buffer *buffer = server_context->payload;
@@ -264,8 +265,10 @@ static void op_server_decode_context_payload_finish(GRPC_context *context,
 
       gpr_slice_unref(slice_recv);
       grpc_byte_buffer_reader_destroy(&reader);
-      grpc_byte_buffer_destroy(buffer);
   }
+
+  grpc_byte_buffer_destroy(buffer);
+  server_context->payload = NULL;
 }
 
 const GRPC_op_manager grpc_op_server_decode_context_payload = {
@@ -313,9 +316,9 @@ void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   GRPC_context *context,
                                   const grpc_message request, void *response) {
   size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT];
+  grpc_op ops[GRPC_MAX_OP_COUNT] = {};
   size_t num_ops = GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
-  if (num_ops > 0) {
+  if (num_ops > 0 && call != NULL) {
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, set, NULL));
   }
 }

@@ -40,6 +40,8 @@
 #include <stddef.h>
 
 typedef GRPC_method* GRPC_service_declaration[];
+
+/** Called by generated service code to register themselves on the server */
 GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_service_declaration service_declaration, size_t num_methods);
 
 #endif /* GRPC_C_CODEGEN_SERVER_H */

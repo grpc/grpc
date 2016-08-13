@@ -31,6 +31,7 @@
  *
  */
 
+#include <grpc/support/alloc.h>
 #include "src/c/server_context.h"
 #include "src/c/alloc.h"
 
@@ -50,4 +51,13 @@ GRPC_server_context *GRPC_server_context_create(GRPC_server *server) {
 // from any pointer to a grpc_context.
 GRPC_context *GRPC_server_context_to_base(GRPC_server_context *server_context) {
   return (GRPC_context *)server_context;
+}
+
+void GRPC_server_context_destroy(GRPC_server_context **context) {
+  if ((*context)->call) {
+    grpc_call_destroy((*context)->call);
+    (*context)->call = NULL;
+  }
+  gpr_free(*context);
+  *context = NULL;
 }

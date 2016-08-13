@@ -34,14 +34,15 @@
 #ifndef GRPC_C_INTERNAL_BIDI_STREAMING_BLOCKING_CALL_H
 #define GRPC_C_INTERNAL_BIDI_STREAMING_BLOCKING_CALL_H
 
+#include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/bidi_streaming_blocking_call.h>
 #include "src/c/call_ops.h"
 #include "src/c/client_context.h"
 
-typedef struct GRPC_client_reader_writer {
+struct GRPC_client_reader_writer {
   GRPC_client_context *const context;
   grpc_call *call;
   grpc_completion_queue *cq;
-} GRPC_client_reader_writer;
+};
 
 #endif /* GRPC_C_INTERNAL_BIDI_STREAMING_BLOCKING_CALL_H */

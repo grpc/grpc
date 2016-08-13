@@ -36,9 +36,6 @@
 
 #include <grpc_c/grpc_c.h>
 
-typedef struct GRPC_incoming_notification_queue
-    GRPC_incoming_notification_queue;
-
 struct GRPC_incoming_notification_queue {
   GRPC_completion_queue *cq;
 };

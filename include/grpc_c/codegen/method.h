@@ -34,6 +34,8 @@
 #ifndef GRPC_C_CODEGEN_METHOD_H
 #define GRPC_C_CODEGEN_METHOD_H
 
+#include <grpc_c/grpc_c.h>
+
 typedef enum GRPC_rpc_type {
   GRPC_NORMAL_RPC = 0,
   GRPC_CLIENT_STREAMING, /* request streaming */
@@ -41,10 +43,10 @@ typedef enum GRPC_rpc_type {
   GRPC_BIDI_STREAMING
 } GRPC_rpc_type;
 
-typedef struct GRPC_method {
+struct GRPC_method {
   GRPC_rpc_type type;
   const char* name;
-} GRPC_method;
+};
 
 typedef struct GRPC_method GRPC_method;
 

@@ -39,7 +39,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
+#include <pb.h>
+#include <pb_encode.h>
 #include <pb_decode.h>
 #include "helloworld.grpc.pbc.h"
 
@@ -77,24 +80,27 @@ typedef struct async_server_data {
 } async_server_data;
 
 int main(int argc, char **argv) {
-  GRPC_server *server = GRPC_build_server({
+  GRPC_server *server = GRPC_build_server((GRPC_build_server_options) {
   });
   GRPC_incoming_notification_queue *incoming =
     GRPC_server_new_incoming_queue(server);
+  GRPC_server_listen_host(server, "0.0.0.0:50051");
+  GRPC_registered_service *service = helloworld_Greeter_Register(server);
   GRPC_server_start(server);
   // Run server
   for (;;) {
-    async_server_data *data = calloc(sizeof(async_server_data));
+    async_server_data *data = calloc(sizeof(async_server_data), 1);
     data->context = GRPC_server_context_create(server);
     data->request.name.funcs.decode = read_string_store_in_arg;
-    data->response.message.funcs.encode = write_string_from_arg;
+    data->reply.message.funcs.encode = write_string_from_arg;
 
     // Listen for this method
-    helloworld_Greeter_SayHello_ServerRequest(
-      &data->context,
+    GRPC_server_async_response_writer *writer = helloworld_Greeter_SayHello_ServerRequest(
+      service,
+      data->context,
       &data->request,
       incoming,           // incoming queue
-      incoming.cq,        // processing queue - we can reuse the
+      incoming->cq,       // processing queue - we can reuse the
                           // same underlying completion queue, or
                           // specify a different one here
       data                // tag for the completion queues
@@ -112,23 +118,23 @@ int main(int argc, char **argv) {
 
     // Process the request
     {
-      async_server_data *data = (async_server_data *) tag;
-      char *input_str = data->request.name.arg;
+      async_server_data *data_new = (async_server_data *) tag;
+      char *input_str = data_new->request.name.arg;
       size_t output_len = strlen(input_str) + 6;
       char *output_str = malloc(output_len + 1);
       sprintf(output_str, "Hello %s", input_str);
-      data->reply.message.arg = output_str;
+      data_new->reply.message.arg = output_str;
 
       helloworld_Greeter_SayHello_ServerFinish(
-        &data->context,
-        &data->reply,
+        writer,
+        &data_new->reply,
         GRPC_STATUS_OK,
-        data
+        data_new
       );
     }
 
     // Wait for request termination
-    GRPC_completion_queue_operation_status queue_status =
+    queue_status =
       GRPC_completion_queue_next(incoming->cq, &tag, &ok);
 
     if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
@@ -137,11 +143,11 @@ int main(int argc, char **argv) {
 
     // Clean up
     {
-      async_server_data *data = (async_server_data *) tag;
-      free(data->request.name.arg);
-      free(data->reply.message.arg);
-      GRPC_server_context_destroy(data->context);
-      free(data);
+      async_server_data *data_new = (async_server_data *) tag;
+      free(data_new->request.name.arg);
+      free(data_new->reply.message.arg);
+      GRPC_server_context_destroy(&data_new->context);
+      free(data_new);
     }
   }
   GRPC_server_shutdown(server);
