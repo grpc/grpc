@@ -94,6 +94,9 @@ int main(int argc, char **argv) {
     data->request.name.funcs.decode = read_string_store_in_arg;
     data->reply.message.funcs.encode = write_string_from_arg;
 
+    data->request.name.arg = NULL;
+    data->reply.message.arg = NULL;
+
     // Listen for this method
     GRPC_server_async_response_writer *writer = helloworld_Greeter_SayHello_ServerRequest(
       service,
@@ -114,10 +117,18 @@ int main(int argc, char **argv) {
 
     if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
     assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
-    assert(ok);
+    if (!ok) {
+      async_server_data *data_new = (async_server_data *) tag;
+      data_new->reply.message.arg = strdup("");
 
-    // Process the request
-    {
+      helloworld_Greeter_SayHello_ServerFinish(
+        writer,
+        &data_new->reply,
+        GRPC_STATUS_DATA_LOSS,
+        data_new
+      );
+    } else {
+      // Process the request
       async_server_data *data_new = (async_server_data *) tag;
       char *input_str = data_new->request.name.arg;
       size_t output_len = strlen(input_str) + 6;
@@ -139,7 +150,7 @@ int main(int argc, char **argv) {
 
     if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
     assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
-    assert(ok);
+    if (!ok) continue;
 
     // Clean up
     {

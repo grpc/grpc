@@ -39,6 +39,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include <pb_decode.h>
 #include "helloworld.grpc.pbc.h"
@@ -93,9 +94,9 @@ static void *async_say_hello_worker(void *param) {
   for (;;) {
     void *tag;
     bool ok;
-    GRPC_completion_queue_operation_status status =
+    GRPC_completion_queue_operation_status op_status =
         GRPC_completion_queue_next(cq, &tag, &ok);
-    if (status == GRPC_COMPLETION_QUEUE_SHUTDOWN) {
+    if (op_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) {
       printf("Worker thread shutting down\n");
       return NULL;
     }
@@ -108,6 +109,9 @@ static void *async_say_hello_worker(void *param) {
     assert(ok);
     assert(tag != NULL);
     async_client *client = (async_client *)tag;
+    GRPC_status status = GRPC_get_call_status(client->context);
+    assert(status.ok);
+    assert(status.code == GRPC_STATUS_OK);
     GRPC_client_context_destroy(&client->context);
     free(client);
   }
@@ -116,7 +120,6 @@ static void *async_say_hello_worker(void *param) {
 
 int main(int argc, char **argv) {
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
-  GRPC_client_context *context = GRPC_client_context_create(chan);
   GRPC_completion_queue *cq = GRPC_completion_queue_create();
 
   num_responses = 0;

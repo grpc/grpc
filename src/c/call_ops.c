@@ -34,6 +34,7 @@
 #include "src/c/call_ops.h"
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/log.h>
+#include <include/grpc/impl/codegen/grpc_types.h>
 #include "src/c/client_context.h"
 #include "src/c/server_context.h"
 
@@ -163,7 +164,9 @@ static bool op_server_recv_close_fill(grpc_op *op, GRPC_context *context,
                                       GRPC_call_op_set *set,
                                       const grpc_message message,
                                       void *response) {
+  GRPC_server_context *server_context = (GRPC_server_context *)context;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &server_context->cancelled;
   op->flags = 0;
   op->reserved = NULL;
   return true;
@@ -249,7 +252,11 @@ static void op_server_decode_context_payload_finish(GRPC_context *context,
   // decode payload in server context
   GRPC_server_context *server_context = (GRPC_server_context *) context;
   grpc_byte_buffer *buffer = server_context->payload;
-  GPR_ASSERT(buffer != NULL);
+
+  if (buffer == NULL) {
+    *status = false;
+    return;
+  }
 
   if (!set->message_received) {
       set->message_received = true;

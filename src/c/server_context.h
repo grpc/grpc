@@ -43,6 +43,8 @@ struct GRPC_server_context {
 
   // server-side specific
   GRPC_server *server;
+  // set to 1 if call failed in any way (treat as cancelled)
+  int cancelled;
   // optional payload (for unary call) to get from core
   grpc_byte_buffer *payload;
   // trailing metadata
