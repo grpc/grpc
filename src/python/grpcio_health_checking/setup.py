@@ -50,6 +50,7 @@ SETUP_REQUIRES = (
 )
 
 INSTALL_REQUIRES = (
+    'protobuf>=3.0.0',
     'grpcio>=0.15.0',
 )
 

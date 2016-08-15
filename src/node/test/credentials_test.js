@@ -71,7 +71,10 @@ var fakeSuccessfulGoogleCredentials = {
 var fakeFailingGoogleCredentials = {
   getRequestMetadata: function(service_url, callback) {
     setTimeout(function() {
-      callback(new Error('Authentication failure'));
+      // Google credentials currently adds string error codes to auth errors
+      var error = new Error('Authentication failure');
+      error.code = 'ENOENT';
+      callback(error);
     }, 0);
   }
 };
