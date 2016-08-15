@@ -80,6 +80,8 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     nuget \
     && apt-get clean
 
+RUN nuget update -self
+
 #=================
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
@@ -99,12 +101,6 @@ RUN /bin/bash -l -c "nvm alias default 4"
 # PHP dependencies
 
 # Install dependencies
-
-RUN /bin/bash -l -c "echo 'deb http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN /bin/bash -l -c "echo 'deb-src http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip

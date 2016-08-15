@@ -292,15 +292,6 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
 // TODO(makarandd): Move to a different file that contains only unit tests
 - (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall setUserAgentPrefix:@"Foo" forHost:nil];
-    XCTFail(@"Did not receive an exception when host is nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-
   // Try to set parameters to nil for GRPCCall. This should cause an exception
   @try {
     (void)[[GRPCCall alloc] initWithHost:nil

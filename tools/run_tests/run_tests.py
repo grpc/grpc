@@ -381,6 +381,42 @@ class PhpLanguage(object):
     return 'php'
 
 
+class Php7Language(object):
+
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def pre_build_steps(self):
+    return []
+
+  def make_targets(self):
+    return ['static_c', 'shared_c']
+
+  def make_options(self):
+    return []
+
+  def build_steps(self):
+    return [['tools/run_tests/build_php.sh']]
+
+  def post_tests_steps(self):
+    return [['tools/run_tests/post_tests_php.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
+
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/php7_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def __str__(self):
+    return 'php7'
+
+
 class PythonConfig(collections.namedtuple('PythonConfig', [
     'name', 'build', 'run'])):
   """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
@@ -665,14 +701,16 @@ class ObjCLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
-                                 timeout_seconds=None,
-                                 shortname='objc-tests',
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                                 timeout_seconds=15*60,
-                                 shortname='objc-examples-build',
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    return [
+        self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
+                              timeout_seconds=None,
+                              shortname='objc-tests',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+        self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
+                              timeout_seconds=30*60,
+                              shortname='objc-examples-build',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+    ]
 
   def pre_build_steps(self):
     return []
@@ -749,6 +787,7 @@ _LANGUAGES = {
     'c': CLanguage('c', 'c'),
     'node': NodeLanguage(),
     'php': PhpLanguage(),
+    'php7': Php7Language(),
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),

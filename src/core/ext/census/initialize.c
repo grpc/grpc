@@ -32,19 +32,31 @@
  */
 
 #include <grpc/census.h>
+#include "src/core/ext/census/base_resources.h"
+#include "src/core/ext/census/resource.h"
 
 static int features_enabled = CENSUS_FEATURE_NONE;
 
 int census_initialize(int features) {
   if (features_enabled != CENSUS_FEATURE_NONE) {
     // Must have been a previous call to census_initialize; return error
-    return 1;
+    return -1;
   }
-  features_enabled = features;
-  return 0;
+  features_enabled = features & CENSUS_FEATURE_ALL;
+  if (features & CENSUS_FEATURE_STATS) {
+    initialize_resources();
+    define_base_resources();
+  }
+
+  return features_enabled;
 }
 
-void census_shutdown(void) { features_enabled = CENSUS_FEATURE_NONE; }
+void census_shutdown(void) {
+  if (features_enabled & CENSUS_FEATURE_STATS) {
+    shutdown_resources();
+  }
+  features_enabled = CENSUS_FEATURE_NONE;
+}
 
 int census_supported(void) {
   /* TODO(aveitch): improve this as we implement features... */

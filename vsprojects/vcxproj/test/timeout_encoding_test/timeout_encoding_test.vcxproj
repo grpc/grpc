@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\transport\chttp2\timeout_encoding_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\timeout_encoding_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

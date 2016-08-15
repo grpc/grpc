@@ -168,55 +168,27 @@ if 'darwin' in sys.platform and PY3:
         r'macosx-10.7-\1',
         util.get_platform())
 
-
-def cython_extensions():
-  module_names = list(CYTHON_EXTENSION_MODULE_NAMES)
-  extra_sources = list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES)
-  include_dirs = list(EXTENSION_INCLUDE_DIRECTORIES)
-  libraries = list(EXTENSION_LIBRARIES)
-  define_macros = list(DEFINE_MACROS)
-  build_with_cython = bool(BUILD_WITH_CYTHON)
-  # Set compiler directives linetrace argument only if we care about tracing;
-  # this is due to Cython having different behavior between linetrace being
-  # False and linetrace being unset. See issue #5689.
-  cython_compiler_directives = {}
-  if ENABLE_CYTHON_TRACING:
-    define_macros = define_macros + [('CYTHON_TRACE_NOGIL', 1)]
-    cython_compiler_directives['linetrace'] = True
-  pyx_module_files = [os.path.join(PYTHON_STEM,
-                                   name.replace('.', '/') + '.pyx')
-                      for name in module_names]
-  c_module_files = [os.path.join(PYTHON_STEM,
-                                 name.replace('.', '/') + '.c')
-                    for name in module_names]
-  if not build_with_cython:
-    for module_file in c_module_files:
-      if not os.path.isfile(module_file):
-        sys.stderr.write('Cython-generated files are missing; '
-                         'forcing Cython build...\n')
-        build_with_cython = True
-        break
-  module_files = pyx_module_files if build_with_cython else c_module_files
+def cython_extensions_and_necessity():
+  cython_module_files = [os.path.join(PYTHON_STEM,
+                               name.replace('.', '/') + '.pyx')
+                  for name in CYTHON_EXTENSION_MODULE_NAMES]
   extensions = [
       _extension.Extension(
           name=module_name,
-          sources=[module_file] + extra_sources,
-          include_dirs=include_dirs, libraries=libraries,
-          define_macros=define_macros,
+          sources=[module_file] + list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
+          include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
+          libraries=list(EXTENSION_LIBRARIES),
+          define_macros=list(DEFINE_MACROS),
           extra_compile_args=list(CFLAGS),
           extra_link_args=list(LDFLAGS),
-      ) for (module_name, module_file) in zip(module_names, module_files)
+      ) for (module_name, module_file) in zip(list(CYTHON_EXTENSION_MODULE_NAMES), cython_module_files)
   ]
-  if build_with_cython:
-    import Cython.Build
-    return Cython.Build.cythonize(
-        extensions,
-        include_path=include_dirs,
-        compiler_directives=cython_compiler_directives)
-  else:
-    return extensions
+  need_cython = BUILD_WITH_CYTHON
+  if not BUILD_WITH_CYTHON:
+    need_cython = need_cython or not commands.check_and_update_cythonization(extensions)
+  return commands.try_cythonize(extensions, linetracing=ENABLE_CYTHON_TRACING, mandatory=BUILD_WITH_CYTHON), need_cython
 
-CYTHON_EXTENSION_MODULES = cython_extensions()
+CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()
 
 PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
@@ -228,7 +200,7 @@ INSTALL_REQUIRES = (
     'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.0.0a3',
+    'protobuf>=3.0.0',
 )
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
@@ -236,6 +208,15 @@ SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx_rtd_theme>=0.1.8',
     'six>=1.10',
 )
+if BUILD_WITH_CYTHON:
+  sys.stderr.write(
+    "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
+    "but do not have Cython installed. We won't stop you from using "
+    "other commands, but the extension files will fail to build.\n")
+elif need_cython:
+  sys.stderr.write(
+      'We could not find Cython. Setup may take 10-20 minutes.\n')
+  SETUP_REQUIRES += ('cython>=0.23',)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,

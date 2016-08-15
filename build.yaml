@@ -14,13 +14,16 @@ filegroups:
   - include/grpc/census.h
   headers:
   - src/core/ext/census/aggregation.h
+  - src/core/ext/census/base_resources.h
   - src/core/ext/census/census_interface.h
   - src/core/ext/census/census_rpc_stats.h
   - src/core/ext/census/gen/census.pb.h
   - src/core/ext/census/grpc_filter.h
   - src/core/ext/census/mlog.h
+  - src/core/ext/census/resource.h
   - src/core/ext/census/rpc_metric_id.h
   src:
+  - src/core/ext/census/base_resources.c
   - src/core/ext/census/context.c
   - src/core/ext/census/gen/census.pb.c
   - src/core/ext/census/grpc_context.c
@@ -30,6 +33,7 @@ filegroups:
   - src/core/ext/census/mlog.c
   - src/core/ext/census/operation.c
   - src/core/ext/census/placeholders.c
+  - src/core/ext/census/resource.c
   - src/core/ext/census/tracing.c
   plugin: census_grpc_plugin
   uses:
@@ -227,6 +231,7 @@ filegroups:
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/static_metadata.h
+  - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
@@ -316,6 +321,7 @@ filegroups:
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
   - src/core/lib/transport/static_metadata.c
+  - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
   deps:
@@ -376,11 +382,14 @@ filegroups:
   - gpr_codegen
 - name: grpc_lb_policy_grpclb
   headers:
+  - src/core/ext/lb_policy/grpclb/grpclb.h
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/lb_policy/grpclb/grpclb.c
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_config
@@ -529,7 +538,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/status_conversion.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
   - src/core/ext/transport/chttp2/transport/bin_decoder.c
@@ -551,7 +559,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/status_conversion.c
   - src/core/ext/transport/chttp2/transport/stream_lists.c
   - src/core/ext/transport/chttp2/transport/stream_map.c
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.c
   - src/core/ext/transport/chttp2/transport/varint.c
   - src/core/ext/transport/chttp2/transport/writing.c
   plugin: grpc_chttp2_plugin
@@ -685,6 +692,7 @@ filegroups:
   - include/grpc++/support/time.h
   headers:
   - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
   src:
@@ -697,6 +705,7 @@ filegroups:
   - src/cpp/client/generic_stub.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/rpc_method.cc
@@ -882,6 +891,7 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
+  - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
@@ -1133,7 +1143,7 @@ libs:
   - grpc++
   - grpc
   - gpr
-- name: interop_server_main
+- name: interop_server_lib
   build: private
   language: c++
   src:
@@ -1150,6 +1160,13 @@ libs:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: interop_server_main
+  build: private
+  language: c++
+  src:
+  - test/cpp/interop/interop_server_bootstrap.cc
+  deps:
+  - interop_server_lib
 - name: qps
   build: private
   language: c++
@@ -1293,6 +1310,16 @@ targets:
   language: c
   src:
   - test/core/census/context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_resource_test
+  build: test
+  language: c
+  src:
+  - test/core/census/resource_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2352,7 +2379,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/timeout_encoding_test.c
+  - test/core/transport/timeout_encoding_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2642,6 +2669,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: filter_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/filter_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -2772,6 +2812,20 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: grpclb_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/grpclb/grpclb_test.cc
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc
+  - grpc++
+  - grpc++_test_util
+  - grpc_test_util
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -2812,6 +2866,7 @@ targets:
   deps:
   - interop_server_main
   - interop_server_helper
+  - interop_server_lib
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -3392,6 +3447,7 @@ php_config_m4:
   - src/php/ext/grpc/channel.h
   - src/php/ext/grpc/channel_credentials.h
   - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php7_wrapper.h
   - src/php/ext/grpc/php_grpc.h
   - src/php/ext/grpc/server.h
   - src/php/ext/grpc/server_credentials.h

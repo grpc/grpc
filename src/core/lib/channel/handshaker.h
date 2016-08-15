@@ -60,7 +60,7 @@ typedef struct grpc_handshaker grpc_handshaker;
 typedef void (*grpc_handshaker_done_cb)(grpc_exec_ctx* exec_ctx,
                                         grpc_endpoint* endpoint,
                                         grpc_channel_args* args,
-                                        void* user_data);
+                                        void* user_data, grpc_error* error);
 
 struct grpc_handshaker_vtable {
   /// Destroys the handshaker.
@@ -115,9 +115,9 @@ typedef struct grpc_handshake_manager grpc_handshake_manager;
 grpc_handshake_manager* grpc_handshake_manager_create();
 
 /// Adds a handshaker to the handshake manager.
-/// Takes ownership of \a mgr.
-void grpc_handshake_manager_add(grpc_handshaker* handshaker,
-                                grpc_handshake_manager* mgr);
+/// Takes ownership of \a handshaker.
+void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
+                                grpc_handshaker* handshaker);
 
 /// Destroys the handshake manager.
 void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
@@ -134,8 +134,8 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 /// Does NOT take ownership of \a args.  Instead, makes a copy before
 /// invoking the first handshaker.
 /// \a acceptor will be NULL for client-side handshakers.
-/// If successful, invokes \a cb with \a user_data after all handshakers
-/// have completed.
+/// Invokes \a cb with \a user_data after either a handshaker fails or
+/// all handshakers have completed successfully.
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* args,

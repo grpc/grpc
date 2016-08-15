@@ -99,3 +99,6 @@ artifacts/
 
 # Git generated files for conflicting
 *.orig
+
+# IDE specific folder for JetBrains IDEs
+.idea/

@@ -53,29 +53,24 @@ const pb_field_t google_census_Timestamp_fields[3] = {
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_Metric_fields[5] = {
-    PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Metric, name, name, 0),
-    PB_FIELD(  2, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_Metric, description, name, 0),
-    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, unit, description, &google_census_Metric_MeasurementUnit_fields),
-    PB_FIELD(  4, INT32   , OPTIONAL, STATIC  , OTHER, google_census_Metric, id, unit, 0),
+const pb_field_t google_census_Resource_fields[4] = {
+    PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Resource, name, name, 0),
+    PB_FIELD(  2, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_Resource, description, name, 0),
+    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Resource, unit, description, &google_census_Resource_MeasurementUnit_fields),
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_Metric_BasicUnit_fields[2] = {
-    PB_FIELD(  1, UENUM   , OPTIONAL, STATIC  , FIRST, google_census_Metric_BasicUnit, type, type, 0),
+const pb_field_t google_census_Resource_MeasurementUnit_fields[4] = {
+    PB_FIELD(  1, INT32   , OPTIONAL, STATIC  , FIRST, google_census_Resource_MeasurementUnit, prefix, prefix, 0),
+    PB_FIELD(  2, UENUM   , REPEATED, CALLBACK, OTHER, google_census_Resource_MeasurementUnit, numerator, prefix, 0),
+    PB_FIELD(  3, UENUM   , REPEATED, CALLBACK, OTHER, google_census_Resource_MeasurementUnit, denominator, numerator, 0),
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_Metric_MeasurementUnit_fields[4] = {
-    PB_FIELD(  1, INT32   , OPTIONAL, STATIC  , FIRST, google_census_Metric_MeasurementUnit, prefix, prefix, 0),
-    PB_FIELD(  2, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Metric_MeasurementUnit, numerator, prefix, &google_census_Metric_BasicUnit_fields),
-    PB_FIELD(  3, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Metric_MeasurementUnit, denominator, numerator, &google_census_Metric_BasicUnit_fields),
-    PB_LAST_FIELD
-};
-
-const pb_field_t google_census_AggregationDescriptor_fields[3] = {
-    PB_ONEOF_FIELD(options,   1, MESSAGE , ONEOF, STATIC  , FIRST, google_census_AggregationDescriptor, bucket_boundaries, bucket_boundaries, &google_census_AggregationDescriptor_BucketBoundaries_fields),
-    PB_ONEOF_FIELD(options,   2, MESSAGE , ONEOF, STATIC  , FIRST, google_census_AggregationDescriptor, interval_boundaries, interval_boundaries, &google_census_AggregationDescriptor_IntervalBoundaries_fields),
+const pb_field_t google_census_AggregationDescriptor_fields[4] = {
+    PB_FIELD(  1, UENUM   , OPTIONAL, STATIC  , FIRST, google_census_AggregationDescriptor, type, type, 0),
+    PB_ONEOF_FIELD(options,   2, MESSAGE , ONEOF, STATIC  , OTHER, google_census_AggregationDescriptor, bucket_boundaries, type, &google_census_AggregationDescriptor_BucketBoundaries_fields),
+    PB_ONEOF_FIELD(options,   3, MESSAGE , ONEOF, STATIC  , OTHER, google_census_AggregationDescriptor, interval_boundaries, type, &google_census_AggregationDescriptor_IntervalBoundaries_fields),
     PB_LAST_FIELD
 };
 
@@ -124,25 +119,27 @@ const pb_field_t google_census_Tag_fields[3] = {
 const pb_field_t google_census_View_fields[6] = {
     PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_View, name, name, 0),
     PB_FIELD(  2, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_View, description, name, 0),
-    PB_FIELD(  3, INT32   , OPTIONAL, STATIC  , OTHER, google_census_View, metric_id, description, 0),
-    PB_FIELD(  4, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_View, aggregation, metric_id, &google_census_AggregationDescriptor_fields),
+    PB_FIELD(  3, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_View, resource_name, description, 0),
+    PB_FIELD(  4, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_View, aggregation, resource_name, &google_census_AggregationDescriptor_fields),
     PB_FIELD(  5, STRING  , REPEATED, CALLBACK, OTHER, google_census_View, tag_key, aggregation, 0),
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_Aggregation_fields[6] = {
+const pb_field_t google_census_Aggregation_fields[7] = {
     PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Aggregation, name, name, 0),
     PB_FIELD(  2, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_Aggregation, description, name, 0),
-    PB_ONEOF_FIELD(data,   3, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, distribution, description, &google_census_Distribution_fields),
-    PB_ONEOF_FIELD(data,   4, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, interval_stats, description, &google_census_IntervalStats_fields),
-    PB_FIELD(  5, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Aggregation, tag, data.interval_stats, &google_census_Tag_fields),
+    PB_ONEOF_FIELD(data,   3, UINT64  , ONEOF, STATIC  , OTHER, google_census_Aggregation, count, description, 0),
+    PB_ONEOF_FIELD(data,   4, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, distribution, description, &google_census_Distribution_fields),
+    PB_ONEOF_FIELD(data,   5, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, interval_stats, description, &google_census_IntervalStats_fields),
+    PB_FIELD(  6, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Aggregation, tag, data.interval_stats, &google_census_Tag_fields),
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_ViewAggregations_fields[4] = {
-    PB_FIELD(  1, MESSAGE , REPEATED, CALLBACK, FIRST, google_census_ViewAggregations, aggregation, aggregation, &google_census_Aggregation_fields),
-    PB_FIELD(  2, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_ViewAggregations, start, aggregation, &google_census_Timestamp_fields),
-    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_ViewAggregations, end, start, &google_census_Timestamp_fields),
+const pb_field_t google_census_Metric_fields[5] = {
+    PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Metric, view_name, view_name, 0),
+    PB_FIELD(  2, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Metric, aggregation, view_name, &google_census_Aggregation_fields),
+    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, start, aggregation, &google_census_Timestamp_fields),
+    PB_FIELD(  4, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, end, start, &google_census_Timestamp_fields),
     PB_LAST_FIELD
 };
 
@@ -156,7 +153,7 @@ const pb_field_t google_census_ViewAggregations_fields[4] = {
  * numbers or field sizes that are larger than what can fit in 8 or 16 bit
  * field descriptors.
  */
-PB_STATIC_ASSERT((pb_membersize(google_census_Metric, unit) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Metric, unit) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Distribution, range) < 65536 && pb_membersize(google_census_IntervalStats, window) < 65536 && pb_membersize(google_census_IntervalStats_Window, window_size) < 65536 && pb_membersize(google_census_View, aggregation) < 65536 && pb_membersize(google_census_Aggregation, data.distribution) < 65536 && pb_membersize(google_census_Aggregation, data.interval_stats) < 65536 && pb_membersize(google_census_Metric, unit) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Metric, unit) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 65536 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Distribution, range) < 65536 && pb_membersize(google_census_IntervalStats, window) < 65536 && pb_membersize(google_census_IntervalStats_Window, window_size) < 65536 && pb_membersize(google_census_View, aggregation) < 65536 && pb_membersize(google_census_Aggregation, data.distribution) < 65536 && pb_membersize(google_census_Aggregation, data.interval_stats) < 65536 && pb_membersize(google_census_Aggregation, tag) < 65536 && pb_membersize(google_census_ViewAggregations, aggregation) < 65536 && pb_membersize(google_census_ViewAggregations, start) < 65536 && pb_membersize(google_census_ViewAggregations, end) < 65536), YOU_MUST_DEFINE_PB_FIELD_32BIT_FOR_MESSAGES_google_census_Duration_google_census_Timestamp_google_census_Metric_google_census_Metric_BasicUnit_google_census_Metric_MeasurementUnit_google_census_AggregationDescriptor_google_census_AggregationDescriptor_BucketBoundaries_google_census_AggregationDescriptor_IntervalBoundaries_google_census_Distribution_google_census_Distribution_Range_google_census_IntervalStats_google_census_IntervalStats_Window_google_census_Tag_google_census_View_google_census_Aggregation_google_census_ViewAggregations)
+PB_STATIC_ASSERT((pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Distribution, range) < 65536 && pb_membersize(google_census_IntervalStats, window) < 65536 && pb_membersize(google_census_IntervalStats_Window, window_size) < 65536 && pb_membersize(google_census_View, aggregation) < 65536 && pb_membersize(google_census_Aggregation, data.distribution) < 65536 && pb_membersize(google_census_Aggregation, data.interval_stats) < 65536 && pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Resource, unit) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 65536 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 65536 && pb_membersize(google_census_Distribution, range) < 65536 && pb_membersize(google_census_IntervalStats, window) < 65536 && pb_membersize(google_census_IntervalStats_Window, window_size) < 65536 && pb_membersize(google_census_View, aggregation) < 65536 && pb_membersize(google_census_Aggregation, data.distribution) < 65536 && pb_membersize(google_census_Aggregation, data.interval_stats) < 65536 && pb_membersize(google_census_Aggregation, tag) < 65536 && pb_membersize(google_census_Metric, aggregation) < 65536 && pb_membersize(google_census_Metric, start) < 65536 && pb_membersize(google_census_Metric, end) < 65536), YOU_MUST_DEFINE_PB_FIELD_32BIT_FOR_MESSAGES_google_census_Duration_google_census_Timestamp_google_census_Resource_google_census_Resource_MeasurementUnit_google_census_AggregationDescriptor_google_census_AggregationDescriptor_BucketBoundaries_google_census_AggregationDescriptor_IntervalBoundaries_google_census_Distribution_google_census_Distribution_Range_google_census_IntervalStats_google_census_IntervalStats_Window_google_census_Tag_google_census_View_google_census_Aggregation_google_census_Metric)
 #endif
 
 #if !defined(PB_FIELD_16BIT) && !defined(PB_FIELD_32BIT)
@@ -167,7 +164,7 @@ PB_STATIC_ASSERT((pb_membersize(google_census_Metric, unit) < 65536 && pb_member
  * numbers or field sizes that are larger than what can fit in the default
  * 8 bit descriptors.
  */
-PB_STATIC_ASSERT((pb_membersize(google_census_Metric, unit) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Metric, unit) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Distribution, range) < 256 && pb_membersize(google_census_IntervalStats, window) < 256 && pb_membersize(google_census_IntervalStats_Window, window_size) < 256 && pb_membersize(google_census_View, aggregation) < 256 && pb_membersize(google_census_Aggregation, data.distribution) < 256 && pb_membersize(google_census_Aggregation, data.interval_stats) < 256 && pb_membersize(google_census_Metric, unit) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Metric, unit) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, numerator) < 256 && pb_membersize(google_census_Metric_MeasurementUnit, denominator) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Distribution, range) < 256 && pb_membersize(google_census_IntervalStats, window) < 256 && pb_membersize(google_census_IntervalStats_Window, window_size) < 256 && pb_membersize(google_census_View, aggregation) < 256 && pb_membersize(google_census_Aggregation, data.distribution) < 256 && pb_membersize(google_census_Aggregation, data.interval_stats) < 256 && pb_membersize(google_census_Aggregation, tag) < 256 && pb_membersize(google_census_ViewAggregations, aggregation) < 256 && pb_membersize(google_census_ViewAggregations, start) < 256 && pb_membersize(google_census_ViewAggregations, end) < 256), YOU_MUST_DEFINE_PB_FIELD_16BIT_FOR_MESSAGES_google_census_Duration_google_census_Timestamp_google_census_Metric_google_census_Metric_BasicUnit_google_census_Metric_MeasurementUnit_google_census_AggregationDescriptor_google_census_AggregationDescriptor_BucketBoundaries_google_census_AggregationDescriptor_IntervalBoundaries_google_census_Distribution_google_census_Distribution_Range_google_census_IntervalStats_google_census_IntervalStats_Window_google_census_Tag_google_census_View_google_census_Aggregation_google_census_ViewAggregations)
+PB_STATIC_ASSERT((pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Distribution, range) < 256 && pb_membersize(google_census_IntervalStats, window) < 256 && pb_membersize(google_census_IntervalStats_Window, window_size) < 256 && pb_membersize(google_census_View, aggregation) < 256 && pb_membersize(google_census_Aggregation, data.distribution) < 256 && pb_membersize(google_census_Aggregation, data.interval_stats) < 256 && pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Resource, unit) < 256 && pb_membersize(google_census_AggregationDescriptor, options.bucket_boundaries) < 256 && pb_membersize(google_census_AggregationDescriptor, options.interval_boundaries) < 256 && pb_membersize(google_census_Distribution, range) < 256 && pb_membersize(google_census_IntervalStats, window) < 256 && pb_membersize(google_census_IntervalStats_Window, window_size) < 256 && pb_membersize(google_census_View, aggregation) < 256 && pb_membersize(google_census_Aggregation, data.distribution) < 256 && pb_membersize(google_census_Aggregation, data.interval_stats) < 256 && pb_membersize(google_census_Aggregation, tag) < 256 && pb_membersize(google_census_Metric, aggregation) < 256 && pb_membersize(google_census_Metric, start) < 256 && pb_membersize(google_census_Metric, end) < 256), YOU_MUST_DEFINE_PB_FIELD_16BIT_FOR_MESSAGES_google_census_Duration_google_census_Timestamp_google_census_Resource_google_census_Resource_MeasurementUnit_google_census_AggregationDescriptor_google_census_AggregationDescriptor_BucketBoundaries_google_census_AggregationDescriptor_IntervalBoundaries_google_census_Distribution_google_census_Distribution_Range_google_census_IntervalStats_google_census_IntervalStats_Window_google_census_Tag_google_census_View_google_census_Aggregation_google_census_Metric)
 #endif
 
 

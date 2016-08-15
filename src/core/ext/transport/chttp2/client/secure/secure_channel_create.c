@@ -126,15 +126,22 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data) {
+                              grpc_channel_args *args, void *user_data,
+                              grpc_error *error) {
   connector *c = user_data;
-  // TODO(roth, jboeuf): Convert security connector handshaking to use new
-  // handshake API, and then move the code from on_secure_handshake_done()
-  // into this function.
-  c->tmp_args = args;
-  grpc_channel_security_connector_do_handshake(exec_ctx, c->security_connector,
-                                               endpoint, c->args.deadline,
-                                               on_secure_handshake_done, c);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_closure *notify = c->notify;
+    c->notify = NULL;
+    grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+  } else {
+    // TODO(roth, jboeuf): Convert security connector handshaking to use new
+    // handshake API, and then move the code from on_secure_handshake_done()
+    // into this function.
+    c->tmp_args = args;
+    grpc_channel_security_connector_do_handshake(
+        exec_ctx, c->security_connector, endpoint, c->args.deadline,
+        on_secure_handshake_done, c);
+  }
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,

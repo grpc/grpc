@@ -57,6 +57,8 @@ extern zend_module_entry grpc_module_entry;
 
 #include "php.h"
 
+#include "php7_wrapper.h"
+
 #include "grpc/grpc.h"
 
 #define RETURN_DESTROY_ZVAL(val)                               \

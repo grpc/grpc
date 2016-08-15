@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-07-21</date>
+ <date>2016-07-28</date>
  <time>16:06:07</time>
  <version>
   <release>1.1.0</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- PHP7 Support #7464
+- PHP7 Support continued, reduce code duplication #7543
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -46,6 +46,7 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/channel.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/channel_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/completion_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/php7_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server_credentials.h" role="src" />
@@ -255,6 +256,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
@@ -276,7 +278,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
@@ -319,6 +320,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
@@ -328,11 +330,13 @@
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/base_resources.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
@@ -421,6 +425,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c" role="src" />
@@ -443,7 +448,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/status_conversion.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.c" role="src" />
@@ -499,6 +503,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
@@ -510,6 +515,7 @@
     <file baseinstalldir="/" name="src/core/ext/resolver/sockaddr/sockaddr_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
@@ -519,6 +525,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/mlog.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/resource.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />
@@ -1115,6 +1122,21 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - PHP7 Support #7464
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0RC3</release>
+    <api>1.0.0RC3</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-07-28</date>
+   <license>BSD</license>
+   <notes>
+- PHP7 Support continued, reduce code duplication #7543
    </notes>
   </release>
  </changelog>

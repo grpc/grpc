@@ -47,14 +47,18 @@ static NSString * const kLocalSSLHost = @"localhost:5051";
   return kLocalSSLHost;
 }
 
+- (int32_t)encodingOverhead {
+  return 10; // bytes
+}
+
 - (void)setUp {
+  [super setUp];
+
   // Register test server certificates and name.
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
   NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
                                          ofType:@"pem"];
   [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-
-  [super setUp];
 }
 
 - (void)testExceptions {
