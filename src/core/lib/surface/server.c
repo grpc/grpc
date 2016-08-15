@@ -290,7 +290,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
 
 static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
                                          channel_broadcaster *cb,
-                                         int send_goaway,
+                                         bool send_goaway,
                                          grpc_error *force_disconnect) {
   size_t i;
 
@@ -1255,7 +1255,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
     l->destroy(&exec_ctx, server, l->arg, &l->destroy_done);
   }
 
-  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, 1, 0);
+  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, true /* send_goaway */,
+                               GRPC_ERROR_NONE);
 
 done:
   grpc_exec_ctx_finish(&exec_ctx);
@@ -1271,7 +1272,7 @@ void grpc_server_cancel_all_calls(grpc_server *server) {
   channel_broadcaster_init(server, &broadcaster);
   gpr_mu_unlock(&server->mu_global);
 
-  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, 0,
+  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, false /* send_goaway */,
                                GRPC_ERROR_CREATE("Cancelling all calls"));
   grpc_exec_ctx_finish(&exec_ctx);
 }

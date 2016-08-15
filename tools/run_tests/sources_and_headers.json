@@ -2148,6 +2148,24 @@
     ], 
     "headers": [], 
     "language": "c++", 
+    "name": "filter_end2end_test", 
+    "src": [
+      "test/cpp/end2end/filter_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
     "name": "generic_end2end_test", 
     "src": [
       "test/cpp/end2end/generic_end2end_test.cc"
@@ -4245,7 +4263,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_lb_policy_grpclb", 
-      "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
@@ -4340,7 +4357,6 @@
       "census", 
       "gpr", 
       "grpc_base", 
-      "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -6668,6 +6684,7 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/create_channel_internal.h", 
+      "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/thread_pool_interface.h"
     ], 
@@ -6731,6 +6748,8 @@
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/channel_arguments.cc", 
+      "src/cpp/common/channel_filter.cc", 
+      "src/cpp/common/channel_filter.h", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/core_codegen.cc", 
       "src/cpp/common/rpc_method.cc", 

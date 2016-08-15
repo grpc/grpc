@@ -802,6 +802,8 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+/* error may be GRPC_ERROR_NONE if there is no error allocated yet.
+   In that case, use "reason" as the text for a new error. */
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_transport *t, grpc_error *error) {
   grpc_chttp2_stream_global *stream_global;

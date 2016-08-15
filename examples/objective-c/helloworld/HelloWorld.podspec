@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   src = "../../protos"
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
-  s.dependency "!ProtoCompiler-gRPCPlugin", "~> 1.0.0-pre1"
+  s.dependency "!ProtoCompiler-gRPCPlugin", "~> 1.0.0-pre1.2"
 
   # Pods directory corresponding to this app's Podfile, relative to the location of this podspec.
   pods_root = 'Pods'
