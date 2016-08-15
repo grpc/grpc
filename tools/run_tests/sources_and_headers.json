@@ -6,1839 +6,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "alarm_test", 
-    "src": [
-      "test/core/surface/alarm_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "algorithm_test", 
-    "src": [
-      "test/core/compression/algorithm_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "alloc_test", 
-    "src": [
-      "test/core/support/alloc_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "alpn_test", 
-    "src": [
-      "test/core/transport/chttp2/alpn_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "api_fuzzer", 
-    "src": [
-      "test/core/end2end/fuzzers/api_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util", 
-      "test_tcp_server"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bad_server_response_test", 
-    "src": [
-      "test/core/end2end/bad_server_response_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bin_decoder_test", 
-    "src": [
-      "test/core/transport/chttp2/bin_decoder_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bin_encoder_test", 
-    "src": [
-      "test/core/transport/chttp2/bin_encoder_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "census_context_test", 
-    "src": [
-      "test/core/census/context_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "census_resource_test", 
-    "src": [
-      "test/core/census/resource_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "channel_create_test", 
-    "src": [
-      "test/core/surface/channel_create_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "chttp2_hpack_encoder_test", 
-    "src": [
-      "test/core/transport/chttp2/hpack_encoder_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "chttp2_status_conversion_test", 
-    "src": [
-      "test/core/transport/chttp2/status_conversion_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "chttp2_stream_map_test", 
-    "src": [
-      "test/core/transport/chttp2/stream_map_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "chttp2_varint_test", 
-    "src": [
-      "test/core/transport/chttp2/varint_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "client_fuzzer", 
-    "src": [
-      "test/core/end2end/fuzzers/client_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "compression_test", 
-    "src": [
-      "test/core/compression/compression_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "concurrent_connectivity_test", 
-    "src": [
-      "test/core/surface/concurrent_connectivity_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "dns_resolver_connectivity_test", 
-    "src": [
-      "test/core/client_config/resolvers/dns_resolver_connectivity_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "dns_resolver_test", 
-    "src": [
-      "test/core/client_config/resolvers/dns_resolver_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "dualstack_socket_test", 
-    "src": [
-      "test/core/end2end/dualstack_socket_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "endpoint_pair_test", 
-    "src": [
-      "test/core/iomgr/endpoint_pair_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "ev_epoll_linux_test", 
-    "src": [
-      "test/core/iomgr/ev_epoll_linux_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "fd_conservation_posix_test", 
-    "src": [
-      "test/core/iomgr/fd_conservation_posix_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "fd_posix_test", 
-    "src": [
-      "test/core/iomgr/fd_posix_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "fling_client", 
-    "src": [
-      "test/core/fling/client.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "fling_server", 
-    "src": [
-      "test/core/fling/server.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "fling_stream_test", 
-    "src": [
-      "test/core/fling/fling_stream_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "fling_test", 
-    "src": [
-      "test/core/fling/fling_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gen_hpack_tables", 
-    "src": [
-      "tools/codegen/core/gen_hpack_tables.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gen_legal_metadata_characters", 
-    "src": [
-      "tools/codegen/core/gen_legal_metadata_characters.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "goaway_server_test", 
-    "src": [
-      "test/core/end2end/goaway_server_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_avl_test", 
-    "src": [
-      "test/core/support/avl_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_backoff_test", 
-    "src": [
-      "test/core/support/backoff_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_cmdline_test", 
-    "src": [
-      "test/core/support/cmdline_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_cpu_test", 
-    "src": [
-      "test/core/support/cpu_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_env_test", 
-    "src": [
-      "test/core/support/env_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_histogram_test", 
-    "src": [
-      "test/core/support/histogram_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_host_port_test", 
-    "src": [
-      "test/core/support/host_port_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_log_test", 
-    "src": [
-      "test/core/support/log_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_slice_buffer_test", 
-    "src": [
-      "test/core/support/slice_buffer_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_slice_test", 
-    "src": [
-      "test/core/support/slice_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_stack_lockfree_test", 
-    "src": [
-      "test/core/support/stack_lockfree_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_string_test", 
-    "src": [
-      "test/core/support/string_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_sync_test", 
-    "src": [
-      "test/core/support/sync_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_thd_test", 
-    "src": [
-      "test/core/support/thd_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_time_test", 
-    "src": [
-      "test/core/support/time_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_tls_test", 
-    "src": [
-      "test/core/support/tls_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_useful_test", 
-    "src": [
-      "test/core/support/useful_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_auth_context_test", 
-    "src": [
-      "test/core/security/auth_context_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_b64_test", 
-    "src": [
-      "test/core/security/b64_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_byte_buffer_reader_test", 
-    "src": [
-      "test/core/surface/byte_buffer_reader_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_channel_args_test", 
-    "src": [
-      "test/core/channel/channel_args_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_channel_stack_test", 
-    "src": [
-      "test/core/channel/channel_stack_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_completion_queue_test", 
-    "src": [
-      "test/core/surface/completion_queue_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_create_jwt", 
-    "src": [
-      "test/core/security/create_jwt.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_credentials_test", 
-    "src": [
-      "test/core/security/credentials_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_fetch_oauth2", 
-    "src": [
-      "test/core/security/fetch_oauth2.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_invalid_channel_args_test", 
-    "src": [
-      "test/core/surface/invalid_channel_args_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_json_token_test", 
-    "src": [
-      "test/core/security/json_token_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_jwt_verifier_test", 
-    "src": [
-      "test/core/security/jwt_verifier_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_print_google_default_creds_token", 
-    "src": [
-      "test/core/security/print_google_default_creds_token.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_security_connector_test", 
-    "src": [
-      "test/core/security/security_connector_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_verify_jwt", 
-    "src": [
-      "test/core/security/verify_jwt.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "hpack_parser_fuzzer_test", 
-    "src": [
-      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "hpack_parser_test", 
-    "src": [
-      "test/core/transport/chttp2/hpack_parser_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "hpack_table_test", 
-    "src": [
-      "test/core/transport/chttp2/hpack_table_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "http_parser_test", 
-    "src": [
-      "test/core/http/parser_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "http_request_fuzzer_test", 
-    "src": [
-      "test/core/http/request_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "http_response_fuzzer_test", 
-    "src": [
-      "test/core/http/response_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "httpcli_format_request_test", 
-    "src": [
-      "test/core/http/format_request_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "httpcli_test", 
-    "src": [
-      "test/core/http/httpcli_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "httpscli_test", 
-    "src": [
-      "test/core/http/httpscli_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "init_test", 
-    "src": [
-      "test/core/surface/init_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "internal_api_canary_iomgr_test", 
-    "src": [
-      "test/core/internal_api_canaries/iomgr.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "internal_api_canary_support_test", 
-    "src": [
-      "test/core/internal_api_canaries/iomgr.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "internal_api_canary_transport_test", 
-    "src": [
-      "test/core/internal_api_canaries/iomgr.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "invalid_call_argument_test", 
-    "src": [
-      "test/core/end2end/invalid_call_argument_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "json_fuzzer_test", 
-    "src": [
-      "test/core/json/fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "json_rewrite", 
-    "src": [
-      "test/core/json/json_rewrite.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "json_rewrite_test", 
-    "src": [
-      "test/core/json/json_rewrite_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "json_stream_error_test", 
-    "src": [
-      "test/core/json/json_stream_error_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "json_test", 
-    "src": [
-      "test/core/json/json_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "lame_client_test", 
-    "src": [
-      "test/core/surface/lame_client_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "lb_policies_test", 
-    "src": [
-      "test/core/client_config/lb_policies_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "load_file_test", 
-    "src": [
-      "test/core/iomgr/load_file_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "low_level_ping_pong_benchmark", 
-    "src": [
-      "test/core/network_benchmarks/low_level_ping_pong.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "message_compress_test", 
-    "src": [
-      "test/core/compression/message_compress_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "mlog_test", 
-    "src": [
-      "test/core/census/mlog_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "multiple_server_queues_test", 
-    "src": [
-      "test/core/end2end/multiple_server_queues_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "murmur_hash_test", 
-    "src": [
-      "test/core/support/murmur_hash_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "nanopb_fuzzer_response_test", 
-    "src": [
-      "test/core/nanopb/fuzzer_response.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "nanopb_fuzzer_serverlist_test", 
-    "src": [
-      "test/core/nanopb/fuzzer_serverlist.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "no_server_test", 
-    "src": [
-      "test/core/end2end/no_server_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "resolve_address_test", 
-    "src": [
-      "test/core/iomgr/resolve_address_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "secure_channel_create_test", 
-    "src": [
-      "test/core/surface/secure_channel_create_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "secure_endpoint_test", 
-    "src": [
-      "test/core/security/secure_endpoint_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "sequential_connectivity_test", 
-    "src": [
-      "test/core/surface/sequential_connectivity_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "server_chttp2_test", 
-    "src": [
-      "test/core/surface/server_chttp2_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "server_fuzzer", 
-    "src": [
-      "test/core/end2end/fuzzers/server_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "server_test", 
-    "src": [
-      "test/core/surface/server_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util", 
-      "test_tcp_server"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "set_initial_connect_string_test", 
-    "src": [
-      "test/core/client_config/set_initial_connect_string_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "sockaddr_resolver_test", 
-    "src": [
-      "test/core/client_config/resolvers/sockaddr_resolver_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "sockaddr_utils_test", 
-    "src": [
-      "test/core/iomgr/sockaddr_utils_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "socket_utils_test", 
-    "src": [
-      "test/core/iomgr/socket_utils_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "tcp_client_posix_test", 
-    "src": [
-      "test/core/iomgr/tcp_client_posix_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "tcp_posix_test", 
-    "src": [
-      "test/core/iomgr/tcp_posix_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "tcp_server_posix_test", 
-    "src": [
-      "test/core/iomgr/tcp_server_posix_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "time_averaged_stats_test", 
-    "src": [
-      "test/core/iomgr/time_averaged_stats_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "timeout_encoding_test", 
-    "src": [
-      "test/core/transport/timeout_encoding_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "timer_heap_test", 
-    "src": [
-      "test/core/iomgr/timer_heap_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "timer_list_test", 
-    "src": [
-      "test/core/iomgr/timer_list_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "transport_connectivity_state_test", 
-    "src": [
-      "test/core/transport/connectivity_state_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "transport_metadata_test", 
-    "src": [
-      "test/core/transport/metadata_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "transport_security_test", 
-    "src": [
-      "test/core/tsi/transport_security_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "udp_server_test", 
-    "src": [
-      "test/core/iomgr/udp_server_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "uri_fuzzer_test", 
-    "src": [
-      "test/core/client_config/uri_fuzzer_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "uri_parser_test", 
-    "src": [
-      "test/core/client_config/uri_parser_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -2840,6 +1007,1839 @@
     "name": "public_headers_must_be_c89", 
     "src": [
       "test/core/surface/public_headers_must_be_c89.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "alarm_test", 
+    "src": [
+      "test/core/surface/alarm_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "algorithm_test", 
+    "src": [
+      "test/core/compression/algorithm_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "alloc_test", 
+    "src": [
+      "test/core/support/alloc_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "alpn_test", 
+    "src": [
+      "test/core/transport/chttp2/alpn_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "api_fuzzer", 
+    "src": [
+      "test/core/end2end/fuzzers/api_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "bad_server_response_test", 
+    "src": [
+      "test/core/end2end/bad_server_response_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "bin_decoder_test", 
+    "src": [
+      "test/core/transport/chttp2/bin_decoder_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "bin_encoder_test", 
+    "src": [
+      "test/core/transport/chttp2/bin_encoder_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "census_context_test", 
+    "src": [
+      "test/core/census/context_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "census_resource_test", 
+    "src": [
+      "test/core/census/resource_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "channel_create_test", 
+    "src": [
+      "test/core/surface/channel_create_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "chttp2_hpack_encoder_test", 
+    "src": [
+      "test/core/transport/chttp2/hpack_encoder_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "chttp2_status_conversion_test", 
+    "src": [
+      "test/core/transport/chttp2/status_conversion_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "chttp2_stream_map_test", 
+    "src": [
+      "test/core/transport/chttp2/stream_map_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "chttp2_varint_test", 
+    "src": [
+      "test/core/transport/chttp2/varint_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "client_fuzzer", 
+    "src": [
+      "test/core/end2end/fuzzers/client_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "compression_test", 
+    "src": [
+      "test/core/compression/compression_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "concurrent_connectivity_test", 
+    "src": [
+      "test/core/surface/concurrent_connectivity_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "dns_resolver_connectivity_test", 
+    "src": [
+      "test/core/client_config/resolvers/dns_resolver_connectivity_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "dns_resolver_test", 
+    "src": [
+      "test/core/client_config/resolvers/dns_resolver_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "dualstack_socket_test", 
+    "src": [
+      "test/core/end2end/dualstack_socket_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "endpoint_pair_test", 
+    "src": [
+      "test/core/iomgr/endpoint_pair_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "ev_epoll_linux_test", 
+    "src": [
+      "test/core/iomgr/ev_epoll_linux_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "fd_conservation_posix_test", 
+    "src": [
+      "test/core/iomgr/fd_conservation_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "fd_posix_test", 
+    "src": [
+      "test/core/iomgr/fd_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "fling_client", 
+    "src": [
+      "test/core/fling/client.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "fling_server", 
+    "src": [
+      "test/core/fling/server.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "fling_stream_test", 
+    "src": [
+      "test/core/fling/fling_stream_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "fling_test", 
+    "src": [
+      "test/core/fling/fling_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gen_hpack_tables", 
+    "src": [
+      "tools/codegen/core/gen_hpack_tables.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gen_legal_metadata_characters", 
+    "src": [
+      "tools/codegen/core/gen_legal_metadata_characters.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "goaway_server_test", 
+    "src": [
+      "test/core/end2end/goaway_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_avl_test", 
+    "src": [
+      "test/core/support/avl_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_backoff_test", 
+    "src": [
+      "test/core/support/backoff_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_cmdline_test", 
+    "src": [
+      "test/core/support/cmdline_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_cpu_test", 
+    "src": [
+      "test/core/support/cpu_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_env_test", 
+    "src": [
+      "test/core/support/env_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_histogram_test", 
+    "src": [
+      "test/core/support/histogram_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_host_port_test", 
+    "src": [
+      "test/core/support/host_port_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_log_test", 
+    "src": [
+      "test/core/support/log_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_slice_buffer_test", 
+    "src": [
+      "test/core/support/slice_buffer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_slice_test", 
+    "src": [
+      "test/core/support/slice_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_stack_lockfree_test", 
+    "src": [
+      "test/core/support/stack_lockfree_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_string_test", 
+    "src": [
+      "test/core/support/string_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_sync_test", 
+    "src": [
+      "test/core/support/sync_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_thd_test", 
+    "src": [
+      "test/core/support/thd_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_time_test", 
+    "src": [
+      "test/core/support/time_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_tls_test", 
+    "src": [
+      "test/core/support/tls_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr_useful_test", 
+    "src": [
+      "test/core/support/useful_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_auth_context_test", 
+    "src": [
+      "test/core/security/auth_context_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_b64_test", 
+    "src": [
+      "test/core/security/b64_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_byte_buffer_reader_test", 
+    "src": [
+      "test/core/surface/byte_buffer_reader_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_channel_args_test", 
+    "src": [
+      "test/core/channel/channel_args_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_channel_stack_test", 
+    "src": [
+      "test/core/channel/channel_stack_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_completion_queue_test", 
+    "src": [
+      "test/core/surface/completion_queue_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_create_jwt", 
+    "src": [
+      "test/core/security/create_jwt.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_credentials_test", 
+    "src": [
+      "test/core/security/credentials_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_fetch_oauth2", 
+    "src": [
+      "test/core/security/fetch_oauth2.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_invalid_channel_args_test", 
+    "src": [
+      "test/core/surface/invalid_channel_args_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_json_token_test", 
+    "src": [
+      "test/core/security/json_token_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_jwt_verifier_test", 
+    "src": [
+      "test/core/security/jwt_verifier_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_print_google_default_creds_token", 
+    "src": [
+      "test/core/security/print_google_default_creds_token.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_security_connector_test", 
+    "src": [
+      "test/core/security/security_connector_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_verify_jwt", 
+    "src": [
+      "test/core/security/verify_jwt.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "hpack_parser_fuzzer_test", 
+    "src": [
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "hpack_parser_test", 
+    "src": [
+      "test/core/transport/chttp2/hpack_parser_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "hpack_table_test", 
+    "src": [
+      "test/core/transport/chttp2/hpack_table_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "http_parser_test", 
+    "src": [
+      "test/core/http/parser_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "http_request_fuzzer_test", 
+    "src": [
+      "test/core/http/request_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "http_response_fuzzer_test", 
+    "src": [
+      "test/core/http/response_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "httpcli_format_request_test", 
+    "src": [
+      "test/core/http/format_request_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "httpcli_test", 
+    "src": [
+      "test/core/http/httpcli_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "httpscli_test", 
+    "src": [
+      "test/core/http/httpscli_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "init_test", 
+    "src": [
+      "test/core/surface/init_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "internal_api_canary_iomgr_test", 
+    "src": [
+      "test/core/internal_api_canaries/iomgr.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "internal_api_canary_support_test", 
+    "src": [
+      "test/core/internal_api_canaries/iomgr.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "internal_api_canary_transport_test", 
+    "src": [
+      "test/core/internal_api_canaries/iomgr.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "invalid_call_argument_test", 
+    "src": [
+      "test/core/end2end/invalid_call_argument_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "json_fuzzer_test", 
+    "src": [
+      "test/core/json/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "json_rewrite", 
+    "src": [
+      "test/core/json/json_rewrite.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "json_rewrite_test", 
+    "src": [
+      "test/core/json/json_rewrite_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "json_stream_error_test", 
+    "src": [
+      "test/core/json/json_stream_error_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "json_test", 
+    "src": [
+      "test/core/json/json_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "lame_client_test", 
+    "src": [
+      "test/core/surface/lame_client_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "lb_policies_test", 
+    "src": [
+      "test/core/client_config/lb_policies_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "load_file_test", 
+    "src": [
+      "test/core/iomgr/load_file_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "low_level_ping_pong_benchmark", 
+    "src": [
+      "test/core/network_benchmarks/low_level_ping_pong.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "message_compress_test", 
+    "src": [
+      "test/core/compression/message_compress_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "mlog_test", 
+    "src": [
+      "test/core/census/mlog_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "multiple_server_queues_test", 
+    "src": [
+      "test/core/end2end/multiple_server_queues_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "murmur_hash_test", 
+    "src": [
+      "test/core/support/murmur_hash_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "nanopb_fuzzer_response_test", 
+    "src": [
+      "test/core/nanopb/fuzzer_response.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "nanopb_fuzzer_serverlist_test", 
+    "src": [
+      "test/core/nanopb/fuzzer_serverlist.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "no_server_test", 
+    "src": [
+      "test/core/end2end/no_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "resolve_address_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "secure_channel_create_test", 
+    "src": [
+      "test/core/surface/secure_channel_create_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "secure_endpoint_test", 
+    "src": [
+      "test/core/security/secure_endpoint_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "sequential_connectivity_test", 
+    "src": [
+      "test/core/surface/sequential_connectivity_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "server_chttp2_test", 
+    "src": [
+      "test/core/surface/server_chttp2_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "server_fuzzer", 
+    "src": [
+      "test/core/end2end/fuzzers/server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "server_test", 
+    "src": [
+      "test/core/surface/server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "set_initial_connect_string_test", 
+    "src": [
+      "test/core/client_config/set_initial_connect_string_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "sockaddr_resolver_test", 
+    "src": [
+      "test/core/client_config/resolvers/sockaddr_resolver_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "sockaddr_utils_test", 
+    "src": [
+      "test/core/iomgr/sockaddr_utils_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "socket_utils_test", 
+    "src": [
+      "test/core/iomgr/socket_utils_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "tcp_client_posix_test", 
+    "src": [
+      "test/core/iomgr/tcp_client_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "tcp_posix_test", 
+    "src": [
+      "test/core/iomgr/tcp_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "tcp_server_posix_test", 
+    "src": [
+      "test/core/iomgr/tcp_server_posix_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "time_averaged_stats_test", 
+    "src": [
+      "test/core/iomgr/time_averaged_stats_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "timeout_encoding_test", 
+    "src": [
+      "test/core/transport/timeout_encoding_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "timer_heap_test", 
+    "src": [
+      "test/core/iomgr/timer_heap_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "timer_list_test", 
+    "src": [
+      "test/core/iomgr/timer_list_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "transport_connectivity_state_test", 
+    "src": [
+      "test/core/transport/connectivity_state_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "transport_metadata_test", 
+    "src": [
+      "test/core/transport/metadata_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "transport_security_test", 
+    "src": [
+      "test/core/tsi/transport_security_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "udp_server_test", 
+    "src": [
+      "test/core/iomgr/udp_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "uri_fuzzer_test", 
+    "src": [
+      "test/core/client_config/uri_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "uri_parser_test", 
+    "src": [
+      "test/core/client_config/uri_parser_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4075,7 +4075,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "api_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/api_fuzzer.c", 
@@ -4092,7 +4092,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "client_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/client_fuzzer.c", 
@@ -4109,7 +4109,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "hpack_parser_fuzzer_test_one_entry", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_fuzzer_test.c", 
@@ -4126,7 +4126,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "http_request_fuzzer_test_one_entry", 
     "src": [
       "test/core/http/request_fuzzer.c", 
@@ -4143,7 +4143,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "http_response_fuzzer_test_one_entry", 
     "src": [
       "test/core/http/response_fuzzer.c", 
@@ -4160,7 +4160,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "json_fuzzer_test_one_entry", 
     "src": [
       "test/core/json/fuzzer.c", 
@@ -4177,7 +4177,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "nanopb_fuzzer_response_test_one_entry", 
     "src": [
       "test/core/nanopb/fuzzer_response.c", 
@@ -4194,7 +4194,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "nanopb_fuzzer_serverlist_test_one_entry", 
     "src": [
       "test/core/nanopb/fuzzer_serverlist.c", 
@@ -4211,7 +4211,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "server_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/server_fuzzer.c", 
@@ -4228,7 +4228,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
-    "language": "c", 
+    "language": "core", 
     "name": "uri_fuzzer_test_one_entry", 
     "src": [
       "test/core/client_config/uri_fuzzer_test.c", 
@@ -4236,60 +4236,6 @@
     ], 
     "third_party": false, 
     "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr_base"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr"
-    ], 
-    "headers": [
-      "test/core/util/test_config.h"
-    ], 
-    "language": "c", 
-    "name": "gpr_test_util", 
-    "src": [
-      "test/core/util/test_config.c", 
-      "test/core/util/test_config.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "census", 
-      "gpr", 
-      "grpc_base", 
-      "grpc_lb_policy_grpclb", 
-      "grpc_lb_policy_grpclb", 
-      "grpc_lb_policy_pick_first", 
-      "grpc_lb_policy_round_robin", 
-      "grpc_load_reporting", 
-      "grpc_resolver_dns_native", 
-      "grpc_resolver_sockaddr", 
-      "grpc_secure", 
-      "grpc_transport_chttp2_client_insecure", 
-      "grpc_transport_chttp2_client_secure", 
-      "grpc_transport_chttp2_server_insecure", 
-      "grpc_transport_chttp2_server_secure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc", 
-    "src": [
-      "src/core/lib/surface/init.c"
-    ], 
-    "third_party": false, 
-    "type": "lib"
   }, 
   {
     "deps": [
@@ -4416,139 +4362,6 @@
     "src": [
       "test/c/end2end/end2end_test_client.c", 
       "test/c/end2end/end2end_test_client.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base", 
-      "grpc_transport_chttp2_client_secure", 
-      "grpc_transport_cronet_client_secure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_cronet", 
-    "src": [
-      "src/core/lib/surface/init.c"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_dll", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_base", 
-      "grpc_test_util_base"
-    ], 
-    "headers": [
-      "test/core/end2end/data/ssl_test_data.h", 
-      "test/core/security/oauth2_utils.h"
-    ], 
-    "language": "c", 
-    "name": "grpc_test_util", 
-    "src": [
-      "test/core/end2end/data/client_certs.c", 
-      "test/core/end2end/data/server1_cert.c", 
-      "test/core/end2end/data/server1_key.c", 
-      "test/core/end2end/data/ssl_test_data.h", 
-      "test/core/end2end/data/test_root_cert.c", 
-      "test/core/security/oauth2_utils.c", 
-      "test/core/security/oauth2_utils.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util_base", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_test_util_unsecure", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "census", 
-      "gpr", 
-      "grpc_base", 
-      "grpc_lb_policy_grpclb", 
-      "grpc_lb_policy_grpclb", 
-      "grpc_lb_policy_pick_first", 
-      "grpc_lb_policy_round_robin", 
-      "grpc_load_reporting", 
-      "grpc_resolver_dns_native", 
-      "grpc_resolver_sockaddr", 
-      "grpc_transport_chttp2_client_insecure", 
-      "grpc_transport_chttp2_server_insecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_unsecure", 
-    "src": [
-      "src/core/lib/surface/init.c", 
-      "src/core/lib/surface/init_unsecure.c"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util", 
-      "test_tcp_server"
-    ], 
-    "headers": [
-      "test/core/util/reconnect_server.h"
-    ], 
-    "language": "c", 
-    "name": "reconnect_server", 
-    "src": [
-      "test/core/util/reconnect_server.c", 
-      "test/core/util/reconnect_server.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/util/test_tcp_server.h"
-    ], 
-    "language": "c", 
-    "name": "test_tcp_server", 
-    "src": [
-      "test/core/util/test_tcp_server.c", 
-      "test/core/util/test_tcp_server.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -4921,6 +4734,193 @@
       "test/cpp/qps/usage_timer.h", 
       "test/cpp/util/benchmark_config.cc", 
       "test/cpp/util/benchmark_config.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr_base"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "gpr", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr"
+    ], 
+    "headers": [
+      "test/core/util/test_config.h"
+    ], 
+    "language": "core", 
+    "name": "gpr_test_util", 
+    "src": [
+      "test/core/util/test_config.c", 
+      "test/core/util/test_config.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "census", 
+      "gpr", 
+      "grpc_base", 
+      "grpc_lb_policy_grpclb", 
+      "grpc_lb_policy_grpclb", 
+      "grpc_lb_policy_pick_first", 
+      "grpc_lb_policy_round_robin", 
+      "grpc_load_reporting", 
+      "grpc_resolver_dns_native", 
+      "grpc_resolver_sockaddr", 
+      "grpc_secure", 
+      "grpc_transport_chttp2_client_insecure", 
+      "grpc_transport_chttp2_client_secure", 
+      "grpc_transport_chttp2_server_insecure", 
+      "grpc_transport_chttp2_server_secure"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc", 
+    "src": [
+      "src/core/lib/surface/init.c"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_transport_chttp2_client_secure", 
+      "grpc_transport_cronet_client_secure"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_cronet", 
+    "src": [
+      "src/core/lib/surface/init.c"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_dll", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_base", 
+      "grpc_test_util_base"
+    ], 
+    "headers": [
+      "test/core/end2end/data/ssl_test_data.h", 
+      "test/core/security/oauth2_utils.h"
+    ], 
+    "language": "core", 
+    "name": "grpc_test_util", 
+    "src": [
+      "test/core/end2end/data/client_certs.c", 
+      "test/core/end2end/data/server1_cert.c", 
+      "test/core/end2end/data/server1_key.c", 
+      "test/core/end2end/data/ssl_test_data.h", 
+      "test/core/end2end/data/test_root_cert.c", 
+      "test/core/security/oauth2_utils.c", 
+      "test/core/security/oauth2_utils.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util_base", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_test_util_unsecure", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "census", 
+      "gpr", 
+      "grpc_base", 
+      "grpc_lb_policy_grpclb", 
+      "grpc_lb_policy_grpclb", 
+      "grpc_lb_policy_pick_first", 
+      "grpc_lb_policy_round_robin", 
+      "grpc_load_reporting", 
+      "grpc_resolver_dns_native", 
+      "grpc_resolver_sockaddr", 
+      "grpc_transport_chttp2_client_insecure", 
+      "grpc_transport_chttp2_server_insecure"
+    ], 
+    "headers": [], 
+    "language": "core", 
+    "name": "grpc_unsecure", 
+    "src": [
+      "src/core/lib/surface/init.c", 
+      "src/core/lib/surface/init_unsecure.c"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [
+      "test/core/util/reconnect_server.h"
+    ], 
+    "language": "core", 
+    "name": "reconnect_server", 
+    "src": [
+      "test/core/util/reconnect_server.c", 
+      "test/core/util/reconnect_server.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/util/test_tcp_server.h"
+    ], 
+    "language": "core", 
+    "name": "test_tcp_server", 
+    "src": [
+      "test/core/util/test_tcp_server.c", 
+      "test/core/util/test_tcp_server.h"
     ], 
     "third_party": false, 
     "type": "lib"

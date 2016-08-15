@@ -783,6 +783,7 @@ with open('tools/run_tests/configs.json') as f:
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
+    'core': CLanguage('core', 'c'),
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'php7': Php7Language(),

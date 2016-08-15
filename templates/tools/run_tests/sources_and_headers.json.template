@@ -7,7 +7,7 @@
   def proto_headers(tgt):
     out = []
     fmt_strs = []
-    if tgt.language == 'c':
+    if tgt.language == 'c' or tgt.language == 'core':
       fmt_strs = ['%s.grpc.pbc.h', '%s.pbc.h']
     else:
       fmt_strs = ['%s.grpc.pb.h', '%s.pb.h']

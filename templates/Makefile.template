@@ -728,6 +728,31 @@
   PC_LIB = -lgrpc++
   GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
+
+
+  PC_REQUIRES_GRPC_C =
+  PC_LIBS_GRPC_C =
+
+  # grpc_c .pc file
+  PC_NAME = gRPC C
+  PC_DESCRIPTION = C wrapper for gRPC
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPC_C)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GRPC_C)
+  PC_LIB = -lgrpc_c
+  GRPC_C_PC_FILE := $(PC_TEMPLATE)
+
+  # grpc_c_unsecure .pc file
+  PC_NAME = gRPC C unsecure
+  PC_DESCRIPTION = C wrapper for gRPC without SSL
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPC_C)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GRPC_C)
+  PC_LIB = -lgrpc_c
+  GRPC_C_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+
+
+
   ifeq ($(MAKECMDGOALS),clean)
   NO_DEPS = true
   endif
@@ -741,7 +766,6 @@
 
   .SECONDARY = %.pb.h %.pb.cc
 
-  # This is the 'all' target to be executed after handling prerequisites
   ifeq ($(DEP_MISSING),)
   all: nanopb_protobuf_dep static shared plugins\
   % for tgt in targets:
@@ -878,7 +902,7 @@
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 
-  static: static_c static_cxx
+  static: static_c static_core static_cxx
 
   static_c: pc_c pc_c_unsecure cache.mk \
   % for lib in libs:
@@ -889,6 +913,14 @@
   % endif
   % endfor
 
+  static_core: pc_core pc_core_unsecure cache.mk \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'core' and not lib.get('external_deps', None):
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
@@ -900,12 +932,21 @@
   % endfor
 
 
-  shared: shared_c shared_cxx
+  shared: shared_c shared_core shared_cxx
 
   shared_c: pc_c pc_c_unsecure cache.mk\
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
+  % endif
+  % endfor
+
+  shared_core: pc_core pc_core_unsecure cache.mk\
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'core' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
   % endif
   % endif
@@ -921,7 +962,7 @@
   % endfor
 
 
-  shared_csharp: shared_c \
+  shared_csharp: shared_core \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
@@ -934,7 +975,7 @@
 
   plugins: $(PROTOC_PLUGINS)
 
-  privatelibs: privatelibs_c privatelibs_cxx
+  privatelibs: privatelibs_c privatelibs_core privatelibs_cxx
 
   privatelibs_c: \
   % for lib in libs:
@@ -945,9 +986,22 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+  privatelibs_core: \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'private' and lib.language == 'core' and not lib.get('external_deps', None) and not lib.boringssl:
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
 
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc
+
+  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc
+
+  pc_core: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+
+  pc_core_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
 
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -976,15 +1030,21 @@
   endif
 
 
-  buildtests: buildtests_c buildtests_cxx
+  buildtests: buildtests_c buildtests_core buildtests_cxx
 
   buildtests_c: privatelibs_c <%text>\</%text>
   % for tgt in targets:
-  % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
+  % if tgt.build == 'test' and tgt.language == 'c' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
+  buildtests_core: privatelibs_core <%text>\</%text>
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.language == 'core' and not tgt.get('external_deps', None):
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
+  % endif
+  % endfor
 
   ifeq ($(EMBED_OPENSSL),true)
   buildtests_cxx: privatelibs_cxx <%text>\</%text>
@@ -1004,28 +1064,25 @@
 
   endif
 
-  # This is the 'test' target to be executed after handling prerequisites
-  test: test_c test_cxx
+  test: test_c test_core test_cxx
 
-  flaky_test: flaky_test_c flaky_test_cxx
+  flaky_test: flaky_test_c flaky_test_core flaky_test_cxx
 
   test_c: buildtests_c
   % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
   % endif
   % endfor
-
 
   flaky_test_c: buildtests_c
   % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
   % endif
   % endfor
-
 
   test_cxx: buildtests_cxx
   % for tgt in targets:
@@ -1035,7 +1092,6 @@
   % endif
   % endfor
 
-
   flaky_test_cxx: buildtests_cxx
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
@@ -1044,26 +1100,47 @@
   % endif
   % endfor
 
+  test_core: buildtests_core
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'core' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  	$(E) "[RUN]     Testing ${tgt.name}"
+  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+  % endif
+  % endfor
 
-  test_python: static_c
+  flaky_test_core: buildtests_core
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'core' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  	$(E) "[RUN]     Testing ${tgt.name}"
+  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+  % endif
+  % endfor
+
+  test_python: static_core
   	$(E) "[RUN]     Testing python code"
   	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
 
 
-  tools: tools_c tools_cxx
+  tools: tools_c tools_core tools_cxx
 
 
   tools_c: privatelibs_c\
   % for tgt in targets:
-  % if tgt.build == 'tool' and not tgt.language=='c++':
+  % if tgt.build == 'tool' and tgt.language == 'c':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
   % endfor
 
+  tools_core: privatelibs_core\
+  % for tgt in targets:
+  % if tgt.build == 'tool' and not tgt.language == 'core':
+   $(BINDIR)/$(CONFIG)/${tgt.name}\
+  % endif
+  % endfor
 
   tools_cxx: privatelibs_cxx\
   % for tgt in targets:
-  % if tgt.build == 'tool' and tgt.language=='c++':
+  % if tgt.build == 'tool' and tgt.language == 'c++':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
   % endfor
@@ -1081,9 +1158,9 @@
 
   strip: strip-static strip-shared
 
-  strip-static: strip-static_c strip-static_cxx
+  strip-static: strip-static_c strip-static_core strip-static_cxx
 
-  strip-shared: strip-shared_c strip-shared_cxx
+  strip-shared: strip-shared_c strip-static_core strip-shared_cxx
 
 
   # TODO(nnoble): the strip target is stripping in-place, instead
@@ -1095,6 +1172,22 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
+  % if lib.build == "all":
+  % if not lib.get('external_deps', None):
+  	$(E) "[STRIP]   Stripping lib${lib.name}.a"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  % endif
+  % endif
+  % endif
+  % endif
+  % endfor
+  endif
+
+  strip-static_core: static_core
+  ifeq ($(CONFIG),opt)
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.language == "core":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
@@ -1125,6 +1218,22 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
+  % if lib.build == "all":
+  % if not lib.get('external_deps', None):
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
+  % endif
+  % endif
+  % endif
+  % endfor
+  endif
+
+  strip-shared_core: shared_core
+  ifeq ($(CONFIG),opt)
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.language == "core":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
@@ -1177,6 +1286,16 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
   	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
+
+  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GRPC_C_PC_FILE)" | tr , '\n' >$@
+
+  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GRPC_C_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
   	$(E) "[MAKE]    Generating $@"
@@ -1248,34 +1367,56 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-  install: install_c install_cxx install-plugins install-certs verify-install
+  install: install_c install_core install_cxx install-plugins install-certs verify-install
 
   install_c: install-headers_c install-static_c install-shared_c
 
+  install_core: install-headers_core install-static_core install-shared_core
+
   install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
 
-  install_csharp: install-shared_csharp install_c
+  install_csharp: install-shared_csharp install_core
 
   install_grpc_csharp_ext: install_csharp
 
-  install-headers: install-headers_c install-headers_cxx
+  install-headers: install-headers_c install-headers_core install-headers_cxx
 
   install-headers_c:
   	$(E) "[INSTALL] Installing public C headers"
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
+  install-headers_core:
+  	$(E) "[INSTALL] Installing public C core headers"
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CORE), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CORE), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+
   install-headers_cxx:
   	$(E) "[INSTALL] Installing public C++ headers"
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
-  install-static: install-static_c install-static_cxx
+  install-static: install-static_c install-static_core install-static_cxx
 
   install-static_c: static_c strip-static_c install-pkg-config_c
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
+  % if lib.build == "all":
+  % if not lib.get('external_deps', None):
+  	$(E) "[INSTALL] Installing lib${lib.name}.a"
+  	$(Q) $(INSTALL) -d $(prefix)/lib
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+  % endif
+  % endif
+  % endif
+  % endif
+  % endfor
+
+  install-static_core: static_core strip-static_core install-pkg-config_core
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.language == "core":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
@@ -1330,6 +1471,9 @@
   install-shared_c: shared_c strip-shared_c install-pkg-config_c
   ${install_shared("c")}
 
+  install-shared_core: shared_core strip-shared_core install-pkg-config_core
+  ${install_shared("core")}
+
   install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
   ${install_shared("c++")}
 
@@ -1351,6 +1495,12 @@
 
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
+  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc $(prefix)/lib/pkgconfig/grpc_c.pc
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc $(prefix)/lib/pkgconfig/grpc_c_unsecure.pc
+
+  install-pkg-config_core: pc_core pc_core_unsecure
+  	$(E) "[INSTALL] Installing C core pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
@@ -1428,7 +1578,10 @@
   % if lib.language == "c++":
   PUBLIC_HEADERS_CXX += \\
 
-  % else:
+  % elif lib.language == "core":
+  PUBLIC_HEADERS_CORE += \\
+
+  % elif lib.language == "c":
   PUBLIC_HEADERS_C += \\
 
   % endif
@@ -1829,18 +1982,19 @@
 
   .PHONY: all all strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
-  buildtests buildtests_c buildtests_cxx \
+  buildtests buildtests_c buildtests_core buildtests_cxx \
   buildtests_c buildtests_cxx \
-  test test test_c test_cxx \
+  test test test_c test_core test_cxx \
   test_c test_cxx \
-  install install_c install_cxx \
-  install-headers install-headers_c install-headers_cxx \
-  install-shared install-shared_c install-shared_cxx \
-  install-static install-static_c install-static_cxx \
+  install install_c install_core install_cxx \
+  install-headers install-headers_c install-headers_core install-headers_cxx \
+  install-shared install-shared_c install-shared_core install-shared_cxx \
+  install-static install-static_c install-static_core install-static_cxx \
   strip strip-shared strip-static \
   strip_c strip-shared_c strip-static_c \
+  strip_core strip-shared_core strip-static_core \
   strip_cxx strip-shared_cxx strip-static_cxx \
-  dep_c dep_cxx bins_dep_c bins_dep_cxx \
+  dep_c dep_core dep_cxx bins_dep_c bins_dep_core bins_dep_cxx \
   clean
 
   .PHONY: printvars

@@ -51,7 +51,7 @@
   hdrs = set()
   pfx = 'include/'
   for lib in libs:
-    if lib.language != 'c': continue
+    if lib.language != 'c' and lib.language != 'core': continue
     if is_lib_exempted(lib): continue
     for hdr in lib.get('public_headers', []):
       if is_platform_header(hdr): continue
