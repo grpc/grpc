@@ -59,7 +59,7 @@ def main():
           {
             'name': 'bad_client_test',
             'build': 'private',
-            'language': 'c',
+            'language': 'core',
             'src': [
               'test/core/bad_client/bad_client.c'
             ],
@@ -79,7 +79,7 @@ def main():
               'name': '%s_bad_client_test' % t,
               'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
-              'language': 'c',
+              'language': 'core',
               'secure': 'no',
               'src': ['test/core/bad_client/tests/%s.c' % t],
               'vs_proj_dir': 'test',

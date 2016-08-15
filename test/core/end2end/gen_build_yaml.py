@@ -175,7 +175,7 @@ def main():
           {
               'name': 'end2end_tests',
               'build': 'private',
-              'language': 'c',
+              'language': 'core',
               'secure': True,
               'src': ['test/core/end2end/end2end_tests.c'] + [
                   'test/core/end2end/tests/%s.c' % t
@@ -189,7 +189,7 @@ def main():
           {
               'name': 'end2end_nosec_tests',
               'build': 'private',
-              'language': 'c',
+              'language': 'core',
               'secure': False,
               'src': ['test/core/end2end/end2end_nosec_tests.c'] + [
                   'test/core/end2end/tests/%s.c' % t
@@ -205,7 +205,7 @@ def main():
           {
               'name': '%s_test' % f,
               'build': 'test',
-              'language': 'c',
+              'language': 'core',
               'run': False,
               'src': ['test/core/end2end/fixtures/%s.c' % f],
               'platforms': END2END_FIXTURES[f].platforms,
@@ -222,7 +222,7 @@ def main():
           {
               'name': '%s_nosec_test' % f,
               'build': 'test',
-              'language': 'c',
+              'language': 'core',
               'secure': 'no',
               'src': ['test/core/end2end/fixtures/%s.c' % f],
               'run': False,
@@ -248,7 +248,7 @@ def main():
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
-              'language': 'c',
+              'language': 'core',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())
@@ -263,7 +263,7 @@ def main():
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
-              'language': 'c',
+              'language': 'core',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())

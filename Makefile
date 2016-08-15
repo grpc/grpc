@@ -1273,8 +1273,8 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_core privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
-privatelibs_core:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a
+privatelibs_core:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc
@@ -1297,49 +1297,6 @@ endif
 buildtests: buildtests_c buildtests_core buildtests_cxx
 
 buildtests_c: privatelibs_c \
-  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
-  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
-  $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
-  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
-  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test \
-  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
-  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
-  $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
-  $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
-  $(BINDIR)/$(CONFIG)/h2_census_test \
-  $(BINDIR)/$(CONFIG)/h2_compress_test \
-  $(BINDIR)/$(CONFIG)/h2_fakesec_test \
-  $(BINDIR)/$(CONFIG)/h2_fd_test \
-  $(BINDIR)/$(CONFIG)/h2_full_test \
-  $(BINDIR)/$(CONFIG)/h2_full+pipe_test \
-  $(BINDIR)/$(CONFIG)/h2_full+trace_test \
-  $(BINDIR)/$(CONFIG)/h2_load_reporting_test \
-  $(BINDIR)/$(CONFIG)/h2_oauth2_test \
-  $(BINDIR)/$(CONFIG)/h2_proxy_test \
-  $(BINDIR)/$(CONFIG)/h2_sockpair_test \
-  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
-  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
-  $(BINDIR)/$(CONFIG)/h2_ssl_test \
-  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
-  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
-  $(BINDIR)/$(CONFIG)/h2_uds_test \
-  $(BINDIR)/$(CONFIG)/h2_census_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_compress_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_fd_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
 
 buildtests_core: privatelibs_core \
   $(BINDIR)/$(CONFIG)/alarm_test \
@@ -1444,6 +1401,49 @@ buildtests_core: privatelibs_core \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
+  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
+  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
+  $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
+  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
+  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test \
+  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
+  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
+  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
+  $(BINDIR)/$(CONFIG)/h2_census_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_test \
+  $(BINDIR)/$(CONFIG)/h2_fd_test \
+  $(BINDIR)/$(CONFIG)/h2_full_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_test \
+  $(BINDIR)/$(CONFIG)/h2_full+trace_test \
+  $(BINDIR)/$(CONFIG)/h2_load_reporting_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_test \
+  $(BINDIR)/$(CONFIG)/h2_census_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_fd_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
   $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry \
@@ -1598,30 +1598,6 @@ test: test_c test_core test_cxx
 flaky_test: flaky_test_c flaky_test_core flaky_test_cxx
 
 test_c: buildtests_c
-	$(E) "[RUN]     Testing badreq_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test || ( echo test head_of_line_blocking_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing headers_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing large_metadata_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test || ( echo test large_metadata_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing simple_request_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing window_overflow_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bad_ssl_alpn_test"
-	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bad_ssl_cert_test"
-	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
 flaky_test_c: buildtests_c
 
@@ -1882,6 +1858,30 @@ test_core: buildtests_core
 	$(Q) $(BINDIR)/$(CONFIG)/udp_server_test || ( echo test udp_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing uri_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
+	$(E) "[RUN]     Testing badreq_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test || ( echo test head_of_line_blocking_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing headers_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing large_metadata_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test || ( echo test large_metadata_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing simple_request_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing window_overflow_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_ssl_alpn_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_ssl_cert_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
 flaky_test_core: buildtests_core
 	$(E) "[RUN]     Testing lb_policies_test"
@@ -5503,7 +5503,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/ssl/t1_lib.c \
     third_party/boringssl/ssl/tls_record.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
@@ -5945,7 +5945,7 @@ endif
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC = \
     third_party/boringssl/crypto/constant_time_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC))))
 
@@ -6139,7 +6139,7 @@ endif
 LIBBORINGSSL_DSA_TEST_LIB_SRC = \
     third_party/boringssl/crypto/dsa/dsa_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_DSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DSA_TEST_LIB_SRC))))
 
@@ -6210,7 +6210,7 @@ endif
 LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC = \
     third_party/boringssl/crypto/ec/example_mul.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC))))
 
@@ -6445,7 +6445,7 @@ endif
 LIBBORINGSSL_HKDF_TEST_LIB_SRC = \
     third_party/boringssl/crypto/hkdf/hkdf_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_HKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HKDF_TEST_LIB_SRC))))
 
@@ -6516,7 +6516,7 @@ endif
 LIBBORINGSSL_LHASH_TEST_LIB_SRC = \
     third_party/boringssl/crypto/lhash/lhash_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_LHASH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_LHASH_TEST_LIB_SRC))))
 
@@ -6546,7 +6546,7 @@ endif
 LIBBORINGSSL_GCM_TEST_LIB_SRC = \
     third_party/boringssl/crypto/modes/gcm_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_GCM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GCM_TEST_LIB_SRC))))
 
@@ -6699,7 +6699,7 @@ endif
 LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC = \
     third_party/boringssl/crypto/refcount_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC))))
 
@@ -6770,7 +6770,7 @@ endif
 LIBBORINGSSL_THREAD_TEST_LIB_SRC = \
     third_party/boringssl/crypto/thread_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_THREAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_THREAD_TEST_LIB_SRC))))
 
@@ -6800,7 +6800,7 @@ endif
 LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
     third_party/boringssl/crypto/x509/pkcs7_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_PKCS7_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS7_TEST_LIB_SRC))))
 
@@ -6871,7 +6871,7 @@ endif
 LIBBORINGSSL_TAB_TEST_LIB_SRC = \
     third_party/boringssl/crypto/x509v3/tab_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_TAB_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TAB_TEST_LIB_SRC))))
 
@@ -6901,7 +6901,7 @@ endif
 LIBBORINGSSL_V3NAME_TEST_LIB_SRC = \
     third_party/boringssl/crypto/x509v3/v3name_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_V3NAME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_V3NAME_TEST_LIB_SRC))))
 
@@ -6931,7 +6931,7 @@ endif
 LIBBORINGSSL_PQUEUE_TEST_LIB_SRC = \
     third_party/boringssl/ssl/pqueue/pqueue_test.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PQUEUE_TEST_LIB_SRC))))
 
@@ -7016,7 +7016,7 @@ LIBZ_SRC = \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
@@ -7045,7 +7045,7 @@ endif
 LIBBAD_CLIENT_TEST_SRC = \
     test/core/bad_client/bad_client.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_CLIENT_TEST_SRC))))
 
@@ -7087,7 +7087,7 @@ endif
 LIBBAD_SSL_TEST_SERVER_SRC = \
     test/core/bad_ssl/server_common.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
 
@@ -7171,7 +7171,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBEND2END_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TESTS_SRC))))
 
@@ -7254,7 +7254,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CORE += \
 
 LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TESTS_SRC))))
 
