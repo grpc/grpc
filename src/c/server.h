@@ -35,9 +35,9 @@
 #define GRPC_C_INTERNAL_SERVER_H
 
 #include <grpc/grpc.h>
+#include <grpc_c/codegen/method.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/server.h>
-#include <grpc_c/codegen/method.h>
 #include "src/c/array.h"
 #include "src/c/server_incoming_queue.h"
 
@@ -72,10 +72,9 @@ struct GRPC_server {
 };
 
 grpc_call_error GRPC_server_request_call(
-  GRPC_registered_service *service,
-  size_t method_index,
-  GRPC_server_context *context,
-  GRPC_incoming_notification_queue *incoming_queue,
-  GRPC_completion_queue *processing_queue, void *tag);
+    GRPC_registered_service *service, size_t method_index,
+    GRPC_server_context *context,
+    GRPC_incoming_notification_queue *incoming_queue,
+    GRPC_completion_queue *processing_queue, void *tag);
 
 #endif  // GRPC_C_INTERNAL_SERVER_H

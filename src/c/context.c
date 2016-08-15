@@ -34,6 +34,6 @@
 #include "src/c/context.h"
 
 void GRPC_context_set_serialization_impl(
-  GRPC_context *context, grpc_serialization_impl serialization_impl) {
+    GRPC_context *context, grpc_serialization_impl serialization_impl) {
   context->serialization_impl = serialization_impl;
 }

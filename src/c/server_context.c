@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/alloc.h>
 #include "src/c/server_context.h"
+#include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
 
 GRPC_server_context *GRPC_server_context_create(GRPC_server *server) {

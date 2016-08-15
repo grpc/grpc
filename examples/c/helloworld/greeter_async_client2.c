@@ -37,9 +37,9 @@
  */
 
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include <pb_decode.h>
 #include "helloworld.grpc.pbc.h"

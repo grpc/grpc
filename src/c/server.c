@@ -32,9 +32,9 @@
  */
 
 #include "src/c/server.h"
+#include <grpc/support/log.h>
 #include <grpc_c/codegen/server.h>
 #include <grpc_c/completion_queue.h>
-#include <grpc/support/log.h>
 #include "src/c/alloc.h"
 #include "src/c/init_shutdown.h"
 #include "src/c/server_context.h"
@@ -105,7 +105,9 @@ void GRPC_server_destroy(GRPC_server *server) {
   grpc_server_destroy(server->core_server);
 }
 
-GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_service_declaration service_declaration, size_t num_methods) {
+GRPC_registered_service *GRPC_server_add_service(
+    GRPC_server *server, GRPC_service_declaration service_declaration,
+    size_t num_methods) {
   // register every method in the service
   size_t i;
   GRPC_registered_service registered_service;
@@ -115,36 +117,33 @@ GRPC_registered_service *GRPC_server_add_service(GRPC_server *server, GRPC_servi
     registered_method.method = *service_declaration[i];
     grpc_server_register_method_payload_handling handling;
     // Let core read the payload for us only in unary or server streaming case
-    if (registered_method.method.type == GRPC_NORMAL_RPC
-        || registered_method.method.type == GRPC_SERVER_STREAMING) {
+    if (registered_method.method.type == GRPC_NORMAL_RPC ||
+        registered_method.method.type == GRPC_SERVER_STREAMING) {
       handling = GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
     } else {
       handling = GRPC_SRM_PAYLOAD_NONE;
     }
     // TODO(yifeit): per-method host
-    registered_method.core_method_handle = grpc_server_register_method(server->core_server, registered_method.method.name, NULL, handling, 0);
-    GRPC_array_push_back(registered_service.registered_methods, registered_method);
+    registered_method.core_method_handle = grpc_server_register_method(
+        server->core_server, registered_method.method.name, NULL, handling, 0);
+    GRPC_array_push_back(registered_service.registered_methods,
+                         registered_method);
   }
   GRPC_array_push_back(server->registered_services, registered_service);
-  return &server->registered_services.data[server->registered_services.state.size - 1];
+  return &server->registered_services
+              .data[server->registered_services.state.size - 1];
 }
 
 grpc_call_error GRPC_server_request_call(
-  GRPC_registered_service *service,
-  size_t method_index,
-  GRPC_server_context *context,
-  GRPC_incoming_notification_queue *incoming_queue,
-  GRPC_completion_queue *processing_queue, void *tag) {
-  void *core_method_handle = service->registered_methods.data[method_index].core_method_handle;
+    GRPC_registered_service *service, size_t method_index,
+    GRPC_server_context *context,
+    GRPC_incoming_notification_queue *incoming_queue,
+    GRPC_completion_queue *processing_queue, void *tag) {
+  void *core_method_handle =
+      service->registered_methods.data[method_index].core_method_handle;
   GPR_ASSERT(core_method_handle != NULL);
   return grpc_server_request_registered_call(
-    context->server->core_server,
-    core_method_handle,
-    &context->call,
-    &context->deadline,
-    &context->recv_metadata_array,
-    &context->payload,
-    processing_queue,
-    incoming_queue->cq,
-    tag);
+      context->server->core_server, core_method_handle, &context->call,
+      &context->deadline, &context->recv_metadata_array, &context->payload,
+      processing_queue, incoming_queue->cq, tag);
 }

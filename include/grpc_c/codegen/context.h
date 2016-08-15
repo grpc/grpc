@@ -34,8 +34,8 @@
 #ifndef GRPC_C_CODEGEN_CONTEXT_H
 #define GRPC_C_CODEGEN_CONTEXT_H
 
-#include <grpc_c/grpc_c.h>
 #include <grpc_c/codegen/serialization.h>
+#include <grpc_c/grpc_c.h>
 
 typedef struct grpc_serialization_impl {
   GRPC_serializer serialize;

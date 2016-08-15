@@ -63,7 +63,6 @@ GRPC_status GRPC_get_call_status(GRPC_client_context *context) {
   return context->status;
 }
 
-
 // We define a conversion function instead of type-casting, which lets the user
 // convert
 // from any pointer to a grpc_context.

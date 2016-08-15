@@ -82,18 +82,18 @@ struct GRPC_call_op_set {
    * these are used by individual operations.
    * don't initialize them by hand
    */
-  /* pointer to the user-supplied object which shall receive deserialized data */
+  /* pointer to the user-supplied object which shall receive deserialized data
+   */
   void *received_object;
   grpc_byte_buffer *recv_buffer;
   /* Holding onto the buffer to free it later */
   grpc_byte_buffer *send_buffer;
   bool message_received;
-
 };
 
 size_t GRPC_fill_op_from_call_set(GRPC_call_op_set *set, GRPC_context *context,
-                                const grpc_message message, void *response,
-                                grpc_op *ops, size_t *nops);
+                                  const grpc_message message, void *response,
+                                  grpc_op *ops, size_t *nops);
 
 /* Runs post processing steps in the call op set. Returns false if something
  * wrong happens e.g. serialization. */
