@@ -261,8 +261,8 @@ void InitLogConstants(Local<Object> exports) {
   Nan::HandleScope scope;
   Local<Object> log_verbosity = Nan::New<Object>();
   Nan::Set(exports, Nan::New("logVerbosity").ToLocalChecked(), log_verbosity);
-  Local<Value> DEBUG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
-  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG);
+  Local<Value> DEBUG_LOG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
+  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG_LOG);
   Local<Value> INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
   Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), INFO);
   Local<Value> LOG_ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
