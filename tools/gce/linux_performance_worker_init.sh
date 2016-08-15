@@ -112,6 +112,11 @@ echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /
 sudo apt-get update
 sudo apt-get install -y mono-devel nuget
 
+# The version of nuget that is installed using apt-get is too old to download
+# the System.Interactive.Async.3.0.0 C# dependency. Update to the latest version
+# in order to be able download it.
+sudo nuget update -self
+
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby
