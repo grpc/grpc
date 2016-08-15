@@ -39,8 +39,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc_c/grpc_c.h>
-#include "init_shutdown.h"
 #include "src/c/call_ops.h"
+#include "src/c/init_shutdown.h"
 
 GRPC_completion_queue *GRPC_completion_queue_create() {
   GRPC_ensure_grpc_init();

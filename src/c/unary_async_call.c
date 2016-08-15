@@ -36,8 +36,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc_c/codegen/unary_async_call.h>
-#include "server.h"
 #include "src/c/alloc.h"
+#include "src/c/server.h"
 
 //
 // Client
