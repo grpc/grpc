@@ -35,6 +35,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+# This is the first (default) target
+default: all
 
 comma := ,
 
@@ -267,43 +269,21 @@ PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.
 major=`echo $$version | sed 's/\([0-9]*\).*/\1/'`; \
 majordef=$${major:-0}; \
 if [ $$majordef -ge 3 ]; then echo true; else echo false; fi;)
+SYSTEM_PYTHON_PROTOBUF_FILE := $(shell python -c 'import google.protobuf; print(google.protobuf.__file__);' 2> /dev/null || true)
+
 
 ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
 # For systems with built-in python-protobuf
-all: all_after_prereq
-test: test_after_prereq
-test_c: test_c_after_prereq
-test_cxx: test_cxx_after_prereq
-buildtests_c: buildtests_c_after_prereq
-buildtests_cxx: buildtests_cxx_after_prereq
-%:
+nanopb_protobuf_dep: $(SYSTEM_PYTHON_PROTOBUF_FILE)
+NANOPB_ACTIVATE_VENV :=
 else
 # We need to install a local python-protobuf
-
-all:
+NANOPB_VENV_DIR := $(abspath third_party/nanopb/nanopb_protobuf_dep/venv)
+nanopb_protobuf_dep: $(NANOPB_VENV_DIR)/bin/activate
+$(NANOPB_VENV_DIR)/bin/activate:
 	$(E) "[NANOPB]  Installing Nanopb dependencies"
-	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) all_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
-test:
-	$(E) "[NANOPB]  Installing Nanopb dependencies"
-	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
-test_c:
-	$(E) "[NANOPB]  Installing Nanopb dependencies"
-	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_c_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
-test_cxx:
-	$(E) "[NANOPB]  Installing Nanopb dependencies"
-	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) test_cxx_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
-buildtests_c:
-	$(E) "[NANOPB]  Installing Nanopb dependencies"
-	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) buildtests_c_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
-buildtests_cxx:
-	$(E) "[NANOPB]  Installing Nanopb dependencies"
-	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; 	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; 	. $($@_NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null; 	$(MAKE) $(MFLAGS) buildtests_cxx_after_prereq; 	EXIT_CODE=$$?; 	deactivate; 	exit $${EXIT_CODE}
+	$(Q) virtualenv $(NANOPB_VENV_DIR) >/dev/null; 	. $(NANOPB_VENV_DIR)/bin/activate; 	pip install protobuf==3.0.0b2 >/dev/null;
+NANOPB_ACTIVATE_VENV := . $(NANOPB_VENV_DIR)/bin/activate;
 endif
 
 PROTOC ?= protoc
@@ -861,11 +841,11 @@ endif
 
 # This is the 'all' target to be executed after handling prerequisites
 ifeq ($(DEP_MISSING),)
-all_after_prereq: static shared plugins
+all: nanopb_protobuf_dep static shared plugins
 dep_error:
 	@echo "You shouldn't see this message - all of your dependencies are correct."
 else
-all_after_prereq: dep_error git_update stop
+all: dep_error git_update stop
 
 dep_error:
 	@echo
@@ -1286,7 +1266,7 @@ endif
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c_after_prereq: privatelibs_c \
+buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
@@ -1446,7 +1426,7 @@ buildtests_c_after_prereq: privatelibs_c \
 
 
 ifeq ($(EMBED_OPENSSL),true)
-buildtests_cxx_after_prereq: privatelibs_cxx \
+buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
@@ -1533,7 +1513,7 @@ buildtests_cxx_after_prereq: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
 
 else
-buildtests_cxx_after_prereq: privatelibs_cxx \
+buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
@@ -1584,11 +1564,11 @@ buildtests_cxx_after_prereq: privatelibs_cxx \
 endif
 
 # This is the 'test' target to be executed after handling prerequisites
-test_after_prereq: test_c test_cxx
+test: test_c test_cxx
 
 flaky_test: flaky_test_c flaky_test_cxx
 
-test_c_after_prereq: buildtests_c_after_prereq
+test_c: buildtests_c
 	$(E) "[RUN]     Testing alarm_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing algorithm_test"
@@ -1810,7 +1790,7 @@ flaky_test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/mlog_test || ( echo test mlog_test failed ; exit 1 )
 
 
-test_cxx_after_prereq: buildtests_cxx_after_prereq
+test_cxx: buildtests_cxx
 	$(E) "[RUN]     Testing alarm_cpp_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
@@ -1996,10 +1976,10 @@ $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc: src/proto/grpc/lb/v1/load_ba
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pbc.c: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pbc.c: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2021,10 +2001,10 @@ $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc: src/proto/grpc/ref
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pbc.c: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pbc.c: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2046,10 +2026,10 @@ $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc: src/proto/grpc/testing/com
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/compiler_test.pbc.c: src/proto/grpc/testing/compiler_test.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/compiler_test.pbc.c: src/proto/grpc/testing/compiler_test.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc: src/proto/grpc/testing/compiler_test.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2071,10 +2051,10 @@ $(GENDIR)/src/proto/grpc/testing/control.pb.cc: src/proto/grpc/testing/control.p
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/control.pbc.c: src/proto/grpc/testing/control.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) $(GENDIR)/src/proto/grpc/testing/payloads.pbc.c $(GENDIR)/src/proto/grpc/testing/stats.pbc.c
+$(GENDIR)/src/proto/grpc/testing/control.pbc.c: src/proto/grpc/testing/control.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep $(GENDIR)/src/proto/grpc/testing/payloads.pbc.c $(GENDIR)/src/proto/grpc/testing/stats.pbc.c
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc: src/proto/grpc/testing/control.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2096,10 +2076,10 @@ $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc: src/proto/grpc/
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pbc.c: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pbc.c: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2121,10 +2101,10 @@ $(GENDIR)/src/proto/grpc/testing/echo.pb.cc: src/proto/grpc/testing/echo.proto $
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/echo.pbc.c: src/proto/grpc/testing/echo.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c
+$(GENDIR)/src/proto/grpc/testing/echo.pbc.c: src/proto/grpc/testing/echo.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc: src/proto/grpc/testing/echo.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2146,10 +2126,10 @@ $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc: src/proto/grpc/testing/ech
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c: src/proto/grpc/testing/echo_messages.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c: src/proto/grpc/testing/echo_messages.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc: src/proto/grpc/testing/echo_messages.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2171,10 +2151,10 @@ $(GENDIR)/src/proto/grpc/testing/empty.pb.cc: src/proto/grpc/testing/empty.proto
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/empty.pbc.c: src/proto/grpc/testing/empty.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/empty.pbc.c: src/proto/grpc/testing/empty.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc: src/proto/grpc/testing/empty.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2196,10 +2176,10 @@ $(GENDIR)/src/proto/grpc/testing/messages.pb.cc: src/proto/grpc/testing/messages
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/messages.pbc.c: src/proto/grpc/testing/messages.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/messages.pbc.c: src/proto/grpc/testing/messages.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc: src/proto/grpc/testing/messages.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2221,10 +2201,10 @@ $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc: src/proto/grpc/testing/metrics.p
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/metrics.pbc.c: src/proto/grpc/testing/metrics.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/metrics.pbc.c: src/proto/grpc/testing/metrics.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc: src/proto/grpc/testing/metrics.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2246,10 +2226,10 @@ $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc: src/proto/grpc/testing/payloads
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/payloads.pbc.c: src/proto/grpc/testing/payloads.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/payloads.pbc.c: src/proto/grpc/testing/payloads.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc: src/proto/grpc/testing/payloads.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2271,10 +2251,10 @@ $(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/services.pbc.c: src/proto/grpc/testing/services.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) $(GENDIR)/src/proto/grpc/testing/messages.pbc.c $(GENDIR)/src/proto/grpc/testing/control.pbc.c
+$(GENDIR)/src/proto/grpc/testing/services.pbc.c: src/proto/grpc/testing/services.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep $(GENDIR)/src/proto/grpc/testing/messages.pbc.c $(GENDIR)/src/proto/grpc/testing/control.pbc.c
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2296,10 +2276,10 @@ $(GENDIR)/src/proto/grpc/testing/stats.pb.cc: src/proto/grpc/testing/stats.proto
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/stats.pbc.c: src/proto/grpc/testing/stats.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) 
+$(GENDIR)/src/proto/grpc/testing/stats.pbc.c: src/proto/grpc/testing/stats.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep 
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -2321,10 +2301,10 @@ $(GENDIR)/src/proto/grpc/testing/test.pb.cc: src/proto/grpc/testing/test.proto $
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/test.pbc.c: src/proto/grpc/testing/test.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) $(GENDIR)/src/proto/grpc/testing/empty.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.pbc.c
+$(GENDIR)/src/proto/grpc/testing/test.pbc.c: src/proto/grpc/testing/test.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep $(GENDIR)/src/proto/grpc/testing/empty.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.pbc.c
 	$(E) "[PROTOC]  Generating nanopb C file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
 $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc: src/proto/grpc/testing/test.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -16447,7 +16427,7 @@ test/cpp/util/test_config.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 
-.PHONY: all all_after_prereq strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx buildtests_c_after_prereq buildtests_cxx_after_prereq test test_after_prereq test_c test_cxx test_c_after_prereq test_cxx_after_prereq install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
+.PHONY: all all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx buildtests_c buildtests_cxx test test test_c test_cxx test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
 
 .PHONY: printvars
 printvars:

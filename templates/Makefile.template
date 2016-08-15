@@ -70,6 +70,8 @@
         return 'no-' + warning
   %>
 
+  # This is the first (default) target
+  default: all
 
   comma := ,
 
@@ -157,32 +159,23 @@
   major=`echo $$version | sed 's/\([0-9]*\).*/\1/'`; \
   majordef=$${major:-0}; \
   if [ $$majordef -ge 3 ]; then echo true; else echo false; fi;)
+  SYSTEM_PYTHON_PROTOBUF_FILE := $(shell python -c 'import google.protobuf; print(google.protobuf.__file__);' 2> /dev/null || true)
+  </%text>
 
   ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
   # For systems with built-in python-protobuf
-  all: all_after_prereq
-  test: test_after_prereq
-  test_c: test_c_after_prereq
-  test_cxx: test_cxx_after_prereq
-  buildtests_c: buildtests_c_after_prereq
-  buildtests_cxx: buildtests_cxx_after_prereq
-  %:
+  nanopb_protobuf_dep: $(SYSTEM_PYTHON_PROTOBUF_FILE)
+  NANOPB_ACTIVATE_VENV :=
   else
   # We need to install a local python-protobuf
-  </%text>
-  %for tgt in ['all', 'test', 'test_c', 'test_cxx', 'buildtests_c', 'buildtests_cxx']:
-  ${tgt}:
+  NANOPB_VENV_DIR := $(abspath third_party/nanopb/nanopb_protobuf_dep/venv)
+  nanopb_protobuf_dep: $(NANOPB_VENV_DIR)/bin/activate
+  $(NANOPB_VENV_DIR)/bin/activate:
   	$(E) "[NANOPB]  Installing Nanopb dependencies"
-  	$(eval $@_NANOPB_VENV_DIR := $(shell mktemp -d /tmp/grpc-nanopb-XXXXXX))
-  	$(Q) virtualenv $($@_NANOPB_VENV_DIR) >/dev/null; \
-  	trap 'rm -rf "$($@_NANOPB_VENV_DIR)"' EXIT; \
-  	. $($@_NANOPB_VENV_DIR)/bin/activate; \
-  	pip install protobuf==3.0.0b2 >/dev/null; \
-  	$(MAKE) $(MFLAGS) ${tgt}_after_prereq; \
-  	EXIT_CODE=$$?; \
-  	deactivate; \
-  	<%text>exit $${EXIT_CODE}</%text>
-  %endfor
+  	$(Q) virtualenv $(NANOPB_VENV_DIR) >/dev/null; \
+  	. $(NANOPB_VENV_DIR)/bin/activate; \
+  	pip install protobuf==3.0.0b2 >/dev/null;
+  NANOPB_ACTIVATE_VENV := . $(NANOPB_VENV_DIR)/bin/activate;
   endif
 
   PROTOC ?= protoc
@@ -750,7 +743,7 @@
 
   # This is the 'all' target to be executed after handling prerequisites
   ifeq ($(DEP_MISSING),)
-  all_after_prereq: static shared plugins\
+  all: nanopb_protobuf_dep static shared plugins\
   % for tgt in targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -760,7 +753,7 @@
   dep_error:
   	@echo "You shouldn't see this message - all of your dependencies are correct."
   else
-  all_after_prereq: dep_error git_update stop
+  all: dep_error git_update stop
 
   dep_error:
   	@echo
@@ -985,7 +978,7 @@
 
   buildtests: buildtests_c buildtests_cxx
 
-  buildtests_c_after_prereq: privatelibs_c <%text>\</%text>
+  buildtests_c: privatelibs_c <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -994,7 +987,7 @@
 
 
   ifeq ($(EMBED_OPENSSL),true)
-  buildtests_cxx_after_prereq: privatelibs_cxx <%text>\</%text>
+  buildtests_cxx: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -1002,7 +995,7 @@
   % endfor
 
   else
-  buildtests_cxx_after_prereq: privatelibs_cxx <%text>\</%text>
+  buildtests_cxx: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
@@ -1012,11 +1005,11 @@
   endif
 
   # This is the 'test' target to be executed after handling prerequisites
-  test_after_prereq: test_c test_cxx
+  test: test_c test_cxx
 
   flaky_test: flaky_test_c flaky_test_cxx
 
-  test_c_after_prereq: buildtests_c_after_prereq
+  test_c: buildtests_c
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1034,7 +1027,7 @@
   % endfor
 
 
-  test_cxx_after_prereq: buildtests_cxx_after_prereq
+  test_cxx: buildtests_cxx
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1205,10 +1198,10 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating nanopb C file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+  	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
 
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
@@ -1834,12 +1827,12 @@
   % endfor
   endif
 
-  .PHONY: all all_after_prereq strip tools \
+  .PHONY: all all strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
-  buildtests_c_after_prereq buildtests_cxx_after_prereq \
-  test test_after_prereq test_c test_cxx \
-  test_c_after_prereq test_cxx_after_prereq \
+  buildtests_c buildtests_cxx \
+  test test test_c test_cxx \
+  test_c test_cxx \
   install install_c install_cxx \
   install-headers install-headers_c install-headers_cxx \
   install-shared install-shared_c install-shared_cxx \
