@@ -502,13 +502,13 @@ void PrintSourceServiceDeclaration(Printer *printer, const Service *service, std
   for (int i = 0; i < service->method_count(); i++) {
     auto method = service->method(i);
     (*vars)["Method"] = method->name();
-    (*vars)["Index"] = std::to_string(i);
+    (*vars)["Index"] = std::to_string(static_cast<long long>(i));
     printer->Print(
         *vars,
         "        GRPC_METHOD_INDEX_$CPrefix$$Service$_$Method$ = $Index$,\n");
   }
 
-  (*vars)["MethodCount"] = std::to_string(service->method_count());
+  (*vars)["MethodCount"] = std::to_string(static_cast<long long>(service->method_count()));
   printer->Print(
       *vars,
       "        GRPC_METHOD_COUNT_$CPrefix$$Service$_$Method$ = $MethodCount$\n"
