@@ -360,7 +360,7 @@ class PhpLanguage(object):
     return []
 
   def make_targets(self):
-    return ['static_c', 'shared_c']
+    return ['static_core', 'shared_core']
 
   def make_options(self):
     return []
@@ -396,7 +396,7 @@ class Php7Language(object):
     return []
 
   def make_targets(self):
-    return ['static_c', 'shared_c']
+    return ['static_core', 'shared_core']
 
   def make_options(self):
     return []
@@ -783,7 +783,7 @@ with open('tools/run_tests/configs.json') as f:
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
-    'core': CLanguage('core', 'c'),
+    'core': CLanguage('core', 'core'),
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'php7': Php7Language(),
