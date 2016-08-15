@@ -114,8 +114,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&c->mu);
     c->result->transport = grpc_create_chttp2_transport(
         exec_ctx, c->args.channel_args, secure_endpoint, 1);
-    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
-                                        0);
+    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL);
     auth_context_arg = grpc_auth_context_to_arg(auth_context);
     c->result->channel_args =
         grpc_channel_args_copy_and_add(c->tmp_args, &auth_context_arg, 1);
@@ -126,10 +125,13 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data,
+                              grpc_channel_args *args,
+                              gpr_slice_buffer *read_buffer, void *user_data,
                               grpc_error *error) {
   connector *c = user_data;
+  c->tmp_args = args;
   if (error != GRPC_ERROR_NONE) {
+    gpr_free(read_buffer);
     grpc_closure *notify = c->notify;
     c->notify = NULL;
     grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
@@ -137,10 +139,9 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     // TODO(roth, jboeuf): Convert security connector handshaking to use new
     // handshake API, and then move the code from on_secure_handshake_done()
     // into this function.
-    c->tmp_args = args;
     grpc_channel_security_connector_do_handshake(
-        exec_ctx, c->security_connector, endpoint, c->args.deadline,
-        on_secure_handshake_done, c);
+        exec_ctx, c->security_connector, endpoint, read_buffer,
+        c->args.deadline, on_secure_handshake_done, c);
   }
 }
 
