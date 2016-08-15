@@ -29,16 +29,15 @@
 
 """Secure client-server interoperability as a unit test."""
 
+from concurrent import futures
 import unittest
 
-from grpc.beta import implementations
+import grpc
 from src.proto.grpc.testing import test_pb2
 
 from tests.interop import _interop_test_case
 from tests.interop import methods
 from tests.interop import resources
-
-from tests.unit.beta import test_utilities
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
@@ -48,19 +47,18 @@ class SecureInteropTest(
     unittest.TestCase):
 
   def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
+    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    test_pb2.add_TestServiceServicer_to_server(
+        methods.TestService(), self.server)
     port = self.server.add_secure_port(
-        '[::]:0', implementations.ssl_server_credentials(
+        '[::]:0', grpc.ssl_server_credentials(
             [(resources.private_key(), resources.certificate_chain())]))
     self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        test_utilities.not_really_secure_channel(
-            'localhost', port, implementations.ssl_channel_credentials(
-                resources.test_root_certificates()),
-                _SERVER_HOST_OVERRIDE))
-
-  def tearDown(self):
-    self.server.stop(0)
+    self.stub = test_pb2.TestServiceStub(
+        grpc.secure_channel(
+            'localhost:{}'.format(port),
+            grpc.ssl_channel_credentials(resources.test_root_certificates()),
+            (('grpc.ssl_target_name_override', _SERVER_HOST_OVERRIDE,),)))
 
 
 if __name__ == '__main__':
