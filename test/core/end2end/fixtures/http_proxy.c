@@ -95,16 +95,12 @@ typedef struct proxy_connection {
 
   grpc_http_parser http_parser;
   grpc_http_request http_request;
-
-  grpc_end2end_http_proxy* proxy;  // Does not own.
 } proxy_connection;
 
 // Helper function to destroy the proxy connection.
 static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
                                    proxy_connection* conn) {
   if (gpr_unref(&conn->refcount)) {
-    // Tell the server to shut down when this connection is closed.
-    conn->proxy->shutdown = true;
     grpc_endpoint_destroy(exec_ctx, conn->client_endpoint);
     if (conn->server_endpoint != NULL)
       grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
@@ -358,7 +354,6 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   gpr_slice_buffer_init(&conn->server_write_buffer);
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
-  conn->proxy = proxy;
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
                      &conn->on_read_request_done);
 }
@@ -429,6 +424,7 @@ static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
+  proxy->shutdown = true;  // Signal proxy thread to shutdown.
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_thd_join(proxy->thd);
   grpc_tcp_server_shutdown_listeners(&exec_ctx, proxy->server);
