@@ -4299,6 +4299,7 @@ endif
 
 LIBGRPC_CLI_LIBS_SRC = \
     test/cpp/util/cli_call.cc \
+    test/cpp/util/cli_credentials.cc \
     test/cpp/util/grpc_tool.cc \
     test/cpp/util/proto_file_parser.cc \
     test/cpp/util/proto_reflection_descriptor_database.cc \
@@ -15360,6 +15361,7 @@ test/cpp/qps/usage_timer.cc: $(OPENSSL_DEP)
 test/cpp/util/benchmark_config.cc: $(OPENSSL_DEP)
 test/cpp/util/byte_buffer_proto_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/cli_call.cc: $(OPENSSL_DEP)
+test/cpp/util/cli_credentials.cc: $(OPENSSL_DEP)
 test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 test/cpp/util/grpc_tool.cc: $(OPENSSL_DEP)
 test/cpp/util/proto_file_parser.cc: $(OPENSSL_DEP)

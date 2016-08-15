@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,7 @@
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 using grpc::testing::EchoRequest;
@@ -56,6 +57,18 @@ using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
+namespace {
+
+class TestCliCredentials GRPC_FINAL : public grpc::testing::CliCredentials {
+ public:
+  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const
+      GRPC_OVERRIDE {
+    return InsecureChannelCredentials();
+  }
+  const grpc::string GetCredentialUsage() const GRPC_OVERRIDE { return ""; }
+};
+
+}  // namespame
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
@@ -121,7 +134,7 @@ TEST_F(GrpcToolTest, NoCommand) {
   // Exit with 1, print usage instruction in stderr
   EXPECT_EXIT(
       GrpcToolMainLib(
-          ArraySize(argv), argv,
+          ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), "No command specified\n" USAGE_REGEX);
   // No output
@@ -135,7 +148,7 @@ TEST_F(GrpcToolTest, InvalidCommand) {
   // Exit with 1, print usage instruction in stderr
   EXPECT_EXIT(
       GrpcToolMainLib(
-          ArraySize(argv), argv,
+          ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), "Invalid command 'abc'\n" USAGE_REGEX);
   // No output
@@ -147,7 +160,7 @@ TEST_F(GrpcToolTest, HelpCommand) {
   std::stringstream output_stream;
   const char* argv[] = {"grpc_cli", "help"};
   // Exit with 1, print usage instruction in stderr
-  EXPECT_EXIT(GrpcToolMainLib(ArraySize(argv), argv,
+  EXPECT_EXIT(GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                               std::bind(PrintStream, &output_stream,
                                         std::placeholders::_1)),
               ::testing::ExitedWithCode(1), USAGE_REGEX);
@@ -163,7 +176,7 @@ TEST_F(GrpcToolTest, CallCommand) {
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(), "Echo",
                         "message: 'Hello'"};
 
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv,
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
   // Expected output: "message: \"Hello\""
@@ -180,7 +193,7 @@ TEST_F(GrpcToolTest, TooFewArguments) {
   // Exit with 1
   EXPECT_EXIT(
       GrpcToolMainLib(
-          ArraySize(argv), argv,
+          ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), ".*Wrong number of arguments for call.*");
   // No output
@@ -196,7 +209,7 @@ TEST_F(GrpcToolTest, TooManyArguments) {
   // Exit with 1
   EXPECT_EXIT(
       GrpcToolMainLib(
-          ArraySize(argv), argv,
+          ArraySize(argv), argv, TestCliCredentials(),
           std::bind(PrintStream, &output_stream, std::placeholders::_1)),
       ::testing::ExitedWithCode(1), ".*Wrong number of arguments for call.*");
   // No output

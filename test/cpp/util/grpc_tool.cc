@@ -47,14 +47,12 @@
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/string_ref.h>
 #include <grpc/grpc.h>
-#include "test/cpp/util/cli_call.h"
 
+#include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
-DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
 DEFINE_bool(remotedb, true, "Use server types to parse and format messages");
 DEFINE_string(metadata, "",
               "Metadata to send to server, in the form of key1:val1:key2:val2");
@@ -73,8 +71,10 @@ class GrpcTool {
   explicit GrpcTool();
   virtual ~GrpcTool() {}
 
-  bool Help(int argc, const char** argv, GrpcToolOutputCallback callback);
-  bool CallMethod(int argc, const char** argv, GrpcToolOutputCallback callback);
+  bool Help(int argc, const char** argv, CliCredentials cred,
+            GrpcToolOutputCallback callback);
+  bool CallMethod(int argc, const char** argv, CliCredentials cred,
+                  GrpcToolOutputCallback callback);
   // TODO(zyc): implement the following methods
   // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
   // callback);
@@ -95,17 +95,18 @@ class GrpcTool {
 
  private:
   void CommandUsage(const grpc::string& usage) const;
-  std::shared_ptr<grpc::Channel> NewChannel(const grpc::string& server_address);
   bool print_command_usage_;
   int usage_exit_status_;
+  const grpc::string cred_usage_;
 };
 
 template <typename T>
-std::function<bool(GrpcTool*, int, const char**, GrpcToolOutputCallback)>
-BindWith4Args(T&& func) {
+std::function<bool(GrpcTool*, int, const char**, const CliCredentials,
+                   GrpcToolOutputCallback)>
+BindWith5Args(T&& func) {
   return std::bind(std::forward<T>(func), std::placeholders::_1,
                    std::placeholders::_2, std::placeholders::_3,
-                   std::placeholders::_4);
+                   std::placeholders::_4, std::placeholders::_5);
 }
 
 template <typename T>
@@ -155,21 +156,22 @@ void PrintMetadata(const T& m, const grpc::string& message) {
 
 struct Command {
   const char* command;
-  std::function<bool(GrpcTool*, int, const char**, GrpcToolOutputCallback)>
+  std::function<bool(GrpcTool*, int, const char**, const CliCredentials,
+                     GrpcToolOutputCallback)>
       function;
   int min_args;
   int max_args;
 };
 
 const Command ops[] = {
-    {"help", BindWith4Args(&GrpcTool::Help), 0, INT_MAX},
-    // {"ls", BindWith4Args(&GrpcTool::ListServices), 1, 3},
-    // {"list", BindWith4Args(&GrpcTool::ListServices), 1, 3},
-    {"call", BindWith4Args(&GrpcTool::CallMethod), 2, 3},
-    // {"type", BindWith4Args(&GrpcTool::PrintType), 2, 2},
-    // {"parse", BindWith4Args(&GrpcTool::ParseMessage), 2, 3},
-    // {"totext", BindWith4Args(&GrpcTool::ToText), 2, 3},
-    // {"tobinary", BindWith4Args(&GrpcTool::ToBinary), 2, 3},
+    {"help", BindWith5Args(&GrpcTool::Help), 0, INT_MAX},
+    // {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+    // {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+    {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
+    // {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
+    // {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
+    // {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
+    // {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
 };
 
 void Usage(const grpc::string& msg) {
@@ -199,7 +201,7 @@ const Command* FindCommand(const grpc::string& name) {
 }
 }  // namespace
 
-int GrpcToolMainLib(int argc, const char** argv,
+int GrpcToolMainLib(int argc, const char** argv, const CliCredentials cred,
                     GrpcToolOutputCallback callback) {
   if (argc < 2) {
     Usage("No command specified");
@@ -216,9 +218,9 @@ int GrpcToolMainLib(int argc, const char** argv,
       // Force the command to print its usage message
       fprintf(stderr, "\nWrong number of arguments for %s\n", command.c_str());
       grpc_tool.SetPrintCommandMode(1);
-      return cmd->function(&grpc_tool, -1, NULL, callback);
+      return cmd->function(&grpc_tool, -1, NULL, cred, callback);
     }
-    const bool ok = cmd->function(&grpc_tool, argc, argv, callback);
+    const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
     Usage("Invalid command '" + grpc::string(command.c_str()) + "'");
@@ -236,22 +238,7 @@ void GrpcTool::CommandUsage(const grpc::string& usage) const {
   }
 }
 
-std::shared_ptr<grpc::Channel> GrpcTool::NewChannel(
-    const grpc::string& server_address) {
-  std::shared_ptr<grpc::ChannelCredentials> creds;
-  if (!FLAGS_enable_ssl) {
-    creds = grpc::InsecureChannelCredentials();
-  } else {
-    if (FLAGS_use_auth) {
-      creds = grpc::GoogleDefaultCredentials();
-    } else {
-      creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
-    }
-  }
-  return grpc::CreateChannel(server_address, creds);
-}
-
-bool GrpcTool::Help(int argc, const char** argv,
+bool GrpcTool::Help(int argc, const char** argv, const CliCredentials cred,
                     GrpcToolOutputCallback callback) {
   CommandUsage(
       "Print help\n"
@@ -265,12 +252,13 @@ bool GrpcTool::Help(int argc, const char** argv,
       Usage("Unknown command '" + grpc::string(argv[0]) + "'");
     }
     SetPrintCommandMode(0);
-    cmd->function(this, -1, NULL, callback);
+    cmd->function(this, -1, NULL, cred, callback);
   }
   return true;
 }
 
 bool GrpcTool::CallMethod(int argc, const char** argv,
+                          const CliCredentials cred,
                           GrpcToolOutputCallback callback) {
   CommandUsage(
       "Call method\n"
@@ -284,13 +272,11 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    --proto_path             ; The search path of proto files, valid"
       " only when --proto_file is given\n"
       "    --metadata               ; The metadata to be sent to the server\n"
-      "    --enable_ssl             ; Set whether to use tls\n"
-      "    --use_auth               ; Set whether to create default google"
-      " credentials\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
       "    --binary_input           ; Input in binary format\n"
-      "    --binary_output          ; Output in binary format\n");
+      "    --binary_output          ; Output in binary format\n" +
+      cred.GetCredentialUsage());
 
   std::stringstream output_ss;
   grpc::string request_text;
@@ -319,7 +305,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     request_text = input_stream.str();
   }
 
-  std::shared_ptr<grpc::Channel> channel = NewChannel(server_address);
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateChannel(server_address, cred.GetCredentials());
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
     parser.reset(
         new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
@@ -338,7 +325,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       return false;
     }
   }
-  std::cerr << "connecting to " << server_address << std::endl;
+  fprintf(stderr, "connecting to %s\n", server_address.c_str());
 
   grpc::string serialized_response_proto;
   std::multimap<grpc::string, grpc::string> client_metadata;
@@ -346,7 +333,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       server_trailing_metadata;
   ParseMetadataFlag(&client_metadata);
   PrintMetadata(client_metadata, "Sending client initial metadata:");
-  grpc::Status s = grpc::testing::CliCall::Call(
+  grpc::Status status = grpc::testing::CliCall::Call(
       channel, parser->GetFormatedMethodName(method_name),
       serialized_request_proto, &serialized_response_proto, client_metadata,
       &server_initial_metadata, &server_trailing_metadata);
@@ -354,8 +341,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
                 "Received initial metadata from server:");
   PrintMetadata(server_trailing_metadata,
                 "Received trailing metadata from server:");
-  if (s.ok()) {
-    std::cerr << "Rpc succeeded with OK status" << std::endl;
+  if (status.ok()) {
+    fprintf(stderr, "Rpc succeeded with OK status\n");
     if (FLAGS_binary_output) {
       output_ss << serialized_response_proto;
     } else {
@@ -367,8 +354,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       output_ss << "Response: \n " << response_text << std::endl;
     }
   } else {
-    std::cerr << "Rpc failed with status code " << s.error_code()
-              << ", error message: " << s.error_message() << std::endl;
+    fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
+            status.error_code(), status.error_message().c_str());
   }
 
   return callback(output_ss.str());

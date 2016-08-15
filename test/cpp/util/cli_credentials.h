@@ -31,24 +31,22 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
-#define GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#ifndef GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
+#define GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
 
-#include <functional>
-
+#include <grpc++/security/credentials.h>
 #include <grpc++/support/config.h>
-
-#include "test/cpp/util/cli_credentials.h"
 
 namespace grpc {
 namespace testing {
 
-typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
-
-int GrpcToolMainLib(int argc, const char **argv, CliCredentials cred,
-                    GrpcToolOutputCallback callback);
+class CliCredentials {
+ public:
+  virtual std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const;
+  virtual const grpc::string GetCredentialUsage() const;
+};
 
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#endif  // GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H

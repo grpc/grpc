@@ -36,11 +36,9 @@
 
 #include <memory>
 
-#include <google/protobuf/compiler/importer.h>
-#include <google/protobuf/dynamic_message.h>
 #include <grpc++/channel.h>
 
-#include "src/compiler/config.h"
+#include "test/cpp/util/config_grpc_cli.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 
 namespace grpc {
@@ -93,17 +91,17 @@ class ProtoFileParser {
 
   bool has_error_;
   grpc::string request_text_;
-  google::protobuf::compiler::DiskSourceTree source_tree_;
+  protobuf::compiler::DiskSourceTree source_tree_;
   std::unique_ptr<ErrorPrinter> error_printer_;
-  std::unique_ptr<google::protobuf::compiler::Importer> importer_;
+  std::unique_ptr<protobuf::compiler::Importer> importer_;
   std::unique_ptr<grpc::ProtoReflectionDescriptorDatabase> reflection_db_;
-  std::unique_ptr<google::protobuf::DescriptorPoolDatabase> file_db_;
-  std::unique_ptr<google::protobuf::DescriptorDatabase> desc_db_;
-  std::unique_ptr<google::protobuf::DescriptorPool> desc_pool_;
-  std::unique_ptr<google::protobuf::DynamicMessageFactory> dynamic_factory_;
+  std::unique_ptr<protobuf::DescriptorPoolDatabase> file_db_;
+  std::unique_ptr<protobuf::DescriptorDatabase> desc_db_;
+  std::unique_ptr<protobuf::DescriptorPool> desc_pool_;
+  std::unique_ptr<protobuf::DynamicMessageFactory> dynamic_factory_;
   std::unique_ptr<grpc::protobuf::Message> request_prototype_;
   std::unique_ptr<grpc::protobuf::Message> response_prototype_;
-  std::vector<const google::protobuf::ServiceDescriptor*> service_desc_list_;
+  std::vector<const protobuf::ServiceDescriptor*> service_desc_list_;
 };
 
 }  // namespace testing

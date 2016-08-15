@@ -31,24 +31,33 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
-#define GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
-
-#include <functional>
-
-#include <grpc++/support/config.h>
-
 #include "test/cpp/util/cli_credentials.h"
+
+#include <gflags/gflags.h>
+
+DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
+DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
 
 namespace grpc {
 namespace testing {
 
-typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
+std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
+    const {
+  if (!FLAGS_enable_ssl) {
+    return grpc::InsecureChannelCredentials();
+  } else {
+    if (FLAGS_use_auth) {
+      return grpc::GoogleDefaultCredentials();
+    } else {
+      return grpc::SslCredentials(grpc::SslCredentialsOptions());
+    }
+  }
+}
 
-int GrpcToolMainLib(int argc, const char **argv, CliCredentials cred,
-                    GrpcToolOutputCallback callback);
-
+const grpc::string CliCredentials::GetCredentialUsage() const {
+  return "    --enable_ssl             ; Set whether to use tls\n"
+         "    --use_auth               ; Set whether to create default google"
+         " credentials\n";
+}
 }  // namespace testing
 }  // namespace grpc
-
-#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
