@@ -220,63 +220,6 @@ int grpc_chttp2_list_pop_written_stream(
   return r;
 }
 
-void grpc_chttp2_list_add_unannounced_incoming_window_available(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  GPR_ASSERT(stream_global->id != 0);
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_UNANNOUNCED_INCOMING_WINDOW_AVAILABLE);
-}
-
-void grpc_chttp2_list_remove_unannounced_incoming_window_available(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_maybe_remove(
-      TRANSPORT_FROM_GLOBAL(transport_global),
-      STREAM_FROM_GLOBAL(stream_global),
-      GRPC_CHTTP2_LIST_UNANNOUNCED_INCOMING_WINDOW_AVAILABLE);
-}
-
-int grpc_chttp2_list_pop_unannounced_incoming_window_available(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_parsing **stream_parsing) {
-  grpc_chttp2_stream *stream;
-  int r =
-      stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                      GRPC_CHTTP2_LIST_UNANNOUNCED_INCOMING_WINDOW_AVAILABLE);
-  if (r != 0) {
-    *stream_global = &stream->global;
-    *stream_parsing = &stream->parsing;
-  }
-  return r;
-}
-
-void grpc_chttp2_list_add_parsing_seen_stream(
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing) {
-  stream_list_add(TRANSPORT_FROM_PARSING(transport_parsing),
-                  STREAM_FROM_PARSING(stream_parsing),
-                  GRPC_CHTTP2_LIST_PARSING_SEEN);
-}
-
-int grpc_chttp2_list_pop_parsing_seen_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_parsing **stream_parsing) {
-  grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_PARSING(transport_parsing), &stream,
-                          GRPC_CHTTP2_LIST_PARSING_SEEN);
-  if (r != 0) {
-    *stream_global = &stream->global;
-    *stream_parsing = &stream->parsing;
-  }
-  return r;
-}
-
 void grpc_chttp2_list_add_waiting_for_concurrency(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {

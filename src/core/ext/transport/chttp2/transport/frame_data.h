@@ -94,8 +94,8 @@ grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
    frame */
 grpc_error *grpc_chttp2_data_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, gpr_slice slice, int is_last);
 
 void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
