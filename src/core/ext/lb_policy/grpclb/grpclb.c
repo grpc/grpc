@@ -164,6 +164,9 @@ typedef struct pending_pick {
   /* the initial metadata for the pick. See grpc_lb_policy_pick() */
   grpc_metadata_batch *initial_metadata;
 
+  /* storage for the lb token initial metadata mdelem */
+  grpc_linked_mdelem *lb_token_mdelem_storage;
+
   /* bitmask passed to pick() and used for selective cancelling. See
    * grpc_lb_policy_cancel_picks() */
   uint32_t initial_metadata_flags;
@@ -188,6 +191,7 @@ static void add_pending_pick(pending_pick **root,
   memset(pp, 0, sizeof(pending_pick));
   memset(&pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
   pp->next = *root;
+  pp->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
   pp->pollent = pick_args->pollent;
   pp->target = target;
   pp->initial_metadata = pick_args->initial_metadata;
@@ -294,7 +298,10 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
       (const char **)host_ports, serverlist->num_servers, ",", &uri_path_len);
 
   grpc_lb_policy_args args;
+  memset(&args, 0, sizeof(args));
   args.client_channel_factory = glb_policy->cc_factory;
+  args.tokens = gpr_malloc(sizeof(grpc_lb_policy_address_token) *
+                           serverlist->num_servers);
   args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
   args.addresses->naddrs = serverlist->num_servers;
   args.addresses->addrs =
@@ -309,6 +316,14 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
       memcpy(args.addresses->addrs[out_addrs_idx].addr, &sa, sa_len);
       args.addresses->addrs[out_addrs_idx].len = sa_len;
       ++out_addrs_idx;
+      const size_t token_max_size =
+          GPR_ARRAY_SIZE(serverlist->servers[i]->load_balance_token);
+      serverlist->servers[i]->load_balance_token[token_max_size - 1] = '\0';
+      args.tokens[i].token_size =
+          strlen(serverlist->servers[i]->load_balance_token);
+      args.tokens[i].token = gpr_malloc(args.tokens[i].token_size);
+      memcpy(args.tokens[i].token, serverlist->servers[i]->load_balance_token,
+             args.tokens[i].token_size);
     } else {
       gpr_log(GPR_ERROR, "Invalid LB service address '%s', ignoring.",
               host_ports[i]);
@@ -324,11 +339,14 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   gpr_free(host_ports);
   gpr_free(args.addresses->addrs);
   gpr_free(args.addresses);
+  gpr_free(args.tokens);
   return rr;
 }
 
 static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
                         grpc_error *error) {
+  GPR_ASSERT(glb_policy->serverlist != NULL &&
+             glb_policy->serverlist->num_servers > 0);
   GRPC_ERROR_REF(error);
   glb_policy->rr_policy =
       create_rr(exec_ctx, glb_policy->serverlist, glb_policy);
@@ -359,7 +377,8 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
               (intptr_t)glb_policy->rr_policy);
     }
     const grpc_lb_policy_pick_args pick_args = {
-        pp->pollent, pp->initial_metadata, pp->initial_metadata_flags};
+        pp->pollent, pp->initial_metadata, pp->initial_metadata_flags,
+        pp->lb_token_mdelem_storage};
     grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, &pick_args, pp->target,
                         &pp->wrapped_on_complete);
     pp->wrapped_on_complete_arg.owning_pending_node = pp;
@@ -607,6 +626,18 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                     grpc_connected_subchannel **target,
                     grpc_closure *on_complete) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
+
+  if (pick_args->lb_token_mdelem_storage == NULL) {
+    /* TODO(dgq): should this be an assert? If storage is NULL, something has
+     * gone very wrong at the client channel filter */
+    gpr_log(GPR_ERROR,
+            "No mdelem storage for the LB token. Load reporting won't work "
+            "without it. Failing");
+    *target = NULL;
+    grpc_exec_ctx_sched(exec_ctx, on_complete, GRPC_ERROR_NONE, NULL);
+    return 1;
+  }
+
   gpr_mu_lock(&glb_policy->mu);
   int r;
 

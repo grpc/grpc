@@ -81,6 +81,8 @@ typedef struct grpc_subchannel_call_holder {
   grpc_closure next_step;
 
   grpc_call_stack *owning_call;
+
+  grpc_linked_mdelem lb_token_mdelem;
 } grpc_subchannel_call_holder;
 
 void grpc_subchannel_call_holder_init(

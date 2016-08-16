@@ -61,6 +61,8 @@ typedef struct grpc_lb_policy_pick_args {
   grpc_metadata_batch *initial_metadata;
   /** See \a GRPC_INITIAL_METADATA_* in grpc_types.h */
   uint32_t initial_metadata_flags;
+  /** Storage for LB token in \a initial_metadata, or NULL if not used */
+  grpc_linked_mdelem *lb_token_mdelem_storage;
 } grpc_lb_policy_pick_args;
 
 struct grpc_lb_policy_vtable {

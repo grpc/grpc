@@ -49,8 +49,16 @@ struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
 };
 
+typedef struct grpc_lb_policy_address_token {
+  uint8_t *token;
+  size_t token_size;
+} grpc_lb_policy_address_token;
+
 typedef struct grpc_lb_policy_args {
   grpc_resolved_addresses *addresses;
+  /* It not NULL, array of load balancing tokens associated with \a addresses,
+   * on a 1:1 correspondence. Some indices may be NULL for missing tokens. */
+  grpc_lb_policy_address_token *tokens;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;
 

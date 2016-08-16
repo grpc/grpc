@@ -61,6 +61,7 @@ extern "C" {
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"
 
 #define NUM_BACKENDS 4
+#define PAYLOAD "hello you"
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send an empty serverlist update and verify that the client request blocks
@@ -303,6 +304,12 @@ static void start_backend_server(server_fixture *sf) {
       return;
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    char *expected_token;
+    GPR_ASSERT(gpr_asprintf(&expected_token, "token%d", sf->port) > 0);
+    GPR_ASSERT(contains_metadata(&request_metadata_recv,
+                                 "load-reporting-initial", expected_token));
+    gpr_free(expected_token);
+
     gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
 
     op = ops;
@@ -321,8 +328,7 @@ static void start_backend_server(server_fixture *sf) {
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
     bool exit = false;
-    gpr_slice response_payload_slice =
-        gpr_slice_from_copied_string("hello you");
+    gpr_slice response_payload_slice = gpr_slice_from_copied_string(PAYLOAD);
     while (!exit) {
       op = ops;
       op->op = GRPC_OP_RECV_MESSAGE;
@@ -474,10 +480,9 @@ static void perform_request(client_fixture *cf) {
     error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    peer = grpc_call_get_peer(c);
     cq_expect_completion(cqv, tag(2), 1);
     cq_verify(cqv);
-    gpr_free(peer);
+    GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, PAYLOAD));
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload_recv);
