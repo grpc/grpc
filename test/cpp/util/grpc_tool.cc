@@ -31,7 +31,7 @@
  *
  */
 
-#include "grpc_tool.h"
+#include "test/cpp/util/grpc_tool.h"
 
 #include <unistd.h>
 #include <fstream>
