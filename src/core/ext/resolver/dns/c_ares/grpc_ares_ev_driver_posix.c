@@ -126,6 +126,10 @@ void grpc_ares_gethostbyname(grpc_ares_ev_driver *ev_driver, const char *host,
   ares_gethostbyname(ev_driver->channel, host, AF_UNSPEC, on_done_cb, arg);
 }
 
+ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
+  return &ev_driver->channel;
+}
+
 void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver) {
   size_t i;

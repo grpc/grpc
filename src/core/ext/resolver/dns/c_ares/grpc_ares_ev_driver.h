@@ -45,6 +45,7 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver);
 void grpc_ares_gethostbyname(grpc_ares_ev_driver *ev_driver, const char *host,
                              ares_host_callback on_done_cb, void *arg);
+ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver);
 
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set);
