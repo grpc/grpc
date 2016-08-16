@@ -148,6 +148,7 @@ filegroups:
   - include/grpc/compression.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security_constants.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -424,7 +425,6 @@ filegroups:
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
-  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -712,9 +712,8 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-  deps:
-  - grpc
   uses:
+  - grpc_base
   - grpc++_codegen_base
 - name: grpc++_codegen_base
   language: c++

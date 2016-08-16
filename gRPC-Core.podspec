@@ -161,6 +161,7 @@ Pod::Spec.new do |s|
                       'include/grpc/compression.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
+                      'include/grpc/grpc_security_constants.h',
                       'include/grpc/status.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
                       'include/grpc/impl/codegen/byte_buffer_reader.h',
@@ -184,7 +185,6 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_windows.h',
                       'include/grpc/impl/codegen/time.h',
                       'include/grpc/grpc_security.h',
-                      'include/grpc/grpc_security_constants.h',
                       'include/grpc/census.h'
   end
   s.subspec 'Implementation' do |ss|
