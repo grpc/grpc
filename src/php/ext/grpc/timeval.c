@@ -150,8 +150,8 @@ PHP_METHOD(Timeval, subtract) {
 }
 
 /**
- * Return negative, 0, or positive according to whether a < b, a == b, or a > b
- * respectively.
+ * Return negative, 0, or positive according to whether a < b, a == b,
+ * or a > b respectively.
  * @param Timeval $a The first time to compare
  * @param Timeval $b The second time to compare
  * @return long

@@ -125,7 +125,7 @@ void php_grpc_read_args_array(zval *args_array,
  * "credentials" key mapping to a ChannelCredentials object, a secure channel
  * will be created with those credentials.
  * @param string $target The hostname to associate with this channel
- * @param array $args The arguments to pass to the Channel (optional)
+ * @param array $args The arguments to pass to the Channel
  */
 PHP_METHOD(Channel, __construct) {
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
@@ -233,6 +233,7 @@ PHP_METHOD(Channel, watchConnectivityState) {
 
 /**
  * Close the channel
+ * @return void
  */
 PHP_METHOD(Channel, close) {
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
