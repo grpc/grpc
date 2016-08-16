@@ -42,7 +42,7 @@ namespace testing {
 
 class CliCredentials {
  public:
-  virtual ~CliCredentials() {};
+  virtual ~CliCredentials(){};
   virtual std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const;
   virtual const grpc::string GetCredentialUsage() const;
 };
