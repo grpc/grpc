@@ -1398,7 +1398,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       }
       if (stream_global->all_incoming_byte_streams_finished) {
         grpc_chttp2_incoming_metadata_buffer_publish(
-            &stream_global->metadata_buffer[0],
+            &stream_global->metadata_buffer[1],
             stream_global->recv_trailing_metadata);
         grpc_chttp2_complete_closure_step(
             exec_ctx, transport_global, stream_global,
