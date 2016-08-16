@@ -36,11 +36,11 @@
 #define GRPC_C_MOCK_SERIALIZATION_H
 
 #include <include/grpc_c/codegen/serialization.h>
-#include "src/c/message.h"
+#include <grpc_c/grpc_c.h>
 
 /* Serialization functions that doesn't do anything except duplicating the buffer */
 
-grpc_message GRPC_id_serialize(const grpc_message input);
-void GRPC_id_deserialize(const grpc_message input, void *output);
+GRPC_message GRPC_id_serialize(const GRPC_message input);
+void GRPC_id_deserialize(const GRPC_message input, void *output);
 
 #endif // GRPC_C_MOCK_SERIALIZATION_H

@@ -31,19 +31,7 @@
  *
  */
 
-#include <string.h>
-#include "test/c/end2end/id_serialization.h"
+#ifndef GRPC_C_SERVER_END2END_TEST_H
+#define GRPC_C_SERVER_END2END_TEST_H
 
-/**
- * Serialization interface that does not transform data. Base implementation of GRPC_serialization_impl.
- */
-
-GRPC_message GRPC_id_serialize(const GRPC_message input) {
-  void *tmp = malloc(input.length);
-  memcpy(tmp, input.data, input.length);
-  return (GRPC_message) { tmp, input.length };
-}
-
-void GRPC_id_deserialize(const GRPC_message input, void *output) {
-  memcpy(output, input.data, input.length);
-}
+#endif // GRPC_C_SERVER_END2END_TEST_H

@@ -961,6 +961,7 @@ systemtap_dep_error:
 stop:
 	@false
 
+grpc_c_server_end2end_test: $(BINDIR)/$(CONFIG)/grpc_c_server_end2end_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
@@ -1297,6 +1298,7 @@ endif
 buildtests: buildtests_c buildtests_core buildtests_cxx
 
 buildtests_c: privatelibs_c \
+  $(BINDIR)/$(CONFIG)/grpc_c_server_end2end_test \
 
 buildtests_core: privatelibs_core \
   $(BINDIR)/$(CONFIG)/alarm_test \
@@ -1598,6 +1600,8 @@ test: test_c test_core test_cxx
 flaky_test: flaky_test_c flaky_test_core flaky_test_cxx
 
 test_c: buildtests_c
+	$(E) "[RUN]     Testing grpc_c_server_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_c_server_end2end_test || ( echo test grpc_c_server_end2end_test failed ; exit 1 )
 
 flaky_test_c: buildtests_c
 
@@ -7280,6 +7284,47 @@ endif
 
 
 # All of the test targets, and protoc plugins
+
+
+GRPC_C_SERVER_END2END_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c \
+    $(GENDIR)/src/proto/grpc/testing/echo.pbc.c $(GENDIR)/src/proto/grpc/testing/echo.grpc.pbc.c \
+    test/c/end2end/server_end2end_test.c \
+
+GRPC_C_SERVER_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_SERVER_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_c_server_end2end_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_c_server_end2end_test: $(GRPC_C_SERVER_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_C_SERVER_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_c_server_end2end_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/echo_messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/echo.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/c/end2end/server_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_c_server_end2end_test: $(GRPC_C_SERVER_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_C_SERVER_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/c/end2end/server_end2end_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c $(GENDIR)/src/proto/grpc/testing/echo.pbc.c $(GENDIR)/src/proto/grpc/testing/echo.grpc.pbc.c
 
 
 ALARM_CPP_TEST_SRC = \

@@ -32,19 +32,16 @@
  */
 
 /**
- * This file demonstrates the basic usage of async unary API.
+ * This tests both the C client and the server.
  */
 
-#include <assert.h>
-#include <stdbool.h>
+#include "test/c/end2end/server_end2end_test.h"
+#include "src/proto/grpc/testing/echo.grpc.pbc.h"
+#include <third_party/nanopb/pb_encode.h>
+#include <third_party/nanopb/pb_decode.h>
+#include <grpc/support/log.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <pb.h>
-#include <pb_decode.h>
-#include <pb_encode.h>
-#include "helloworld.grpc.pbc.h"
+#include <pthread.h>
 
 /**
  * Nanopb callbacks for string encoding/decoding.
@@ -67,85 +64,105 @@ static bool read_string_store_in_arg(pb_istream_t *stream,
                                      const pb_field_t *field, void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
-  if (!pb_read(stream, str, len)) return false;
+  if (!pb_read(stream, (uint8_t *) str, len)) return false;
   str[len] = '\0';
   *arg = str;
   return true;
 }
 
+static void *client_thread(void *param) {
+  GRPC_channel *channel = GRPC_channel_create("0.0.0.0:50051");
+  grpc_testing_EchoRequest request = {.message = {.arg = "gRPC-C", .funcs.encode = write_string_from_arg}};
+  grpc_testing_EchoResponse response = {.message = {.funcs.decode = read_string_store_in_arg}};
+
+  GRPC_client_context *context = GRPC_client_context_create(channel);
+  GRPC_status status = grpc_testing_EchoTestService_Echo(context, request, &response);
+  GPR_ASSERT(status.ok);
+  GPR_ASSERT(status.code == GRPC_STATUS_OK);
+  GPR_ASSERT(response.message.arg != NULL);
+  GPR_ASSERT(strcmp(response.message.arg, "gRPC-C") == 0);
+  free(response.message.arg);
+  GRPC_client_context_destroy(&context);
+
+  return NULL;
+}
+
 typedef struct async_server_data {
   GRPC_server_context *context;
-  helloworld_HelloRequest request;
-  helloworld_HelloReply reply;
+  grpc_testing_EchoRequest request;
+  grpc_testing_EchoResponse reply;
 } async_server_data;
 
 int main(int argc, char **argv) {
   GRPC_server *server = GRPC_build_server((GRPC_build_server_options){});
   GRPC_incoming_notification_queue *incoming =
-      GRPC_server_new_incoming_queue(server);
+    GRPC_server_new_incoming_queue(server);
   GRPC_server_listen_host(server, "0.0.0.0:50051");
-  GRPC_registered_service *service = helloworld_Greeter_Register(server);
+  GRPC_registered_service *service = grpc_testing_EchoTestService_Register(server);
   GRPC_server_start(server);
+
+  // Start client
+  pthread_t tid;
+  pthread_create(&tid, NULL, client_thread, NULL);
+
   // Run server
-  for (;;) {
+  {
     async_server_data *data = calloc(sizeof(async_server_data), 1);
     data->context = GRPC_server_context_create(server);
-    data->request.name.funcs.decode = read_string_store_in_arg;
+    data->request.message.funcs.decode = read_string_store_in_arg;
     data->reply.message.funcs.encode = write_string_from_arg;
 
-    data->request.name.arg = NULL;
+    data->request.message.arg = NULL;
     data->reply.message.arg = NULL;
 
     // Listen for this method
     GRPC_server_async_response_writer *writer =
-        helloworld_Greeter_SayHello_ServerRequest(
-            service, data->context, &data->request,
-            incoming,      // incoming queue
-            incoming->cq,  // processing queue - we can reuse the
-                           // same underlying completion queue, or
-                           // specify a different one here
-            data           // tag for the completion queues
-            );
+      grpc_testing_EchoTestService_Echo_ServerRequest(
+        service, data->context, &data->request,
+        incoming,      // incoming queue
+        incoming->cq,  // processing queue - we can reuse the
+        // same underlying completion queue, or
+        // specify a different one here
+        data           // tag for the completion queues
+      );
 
     // Wait for incoming call
     void *tag;
     bool ok;
     GRPC_completion_queue_operation_status queue_status =
-        GRPC_completion_queue_next(incoming->cq, &tag, &ok);
+      GRPC_completion_queue_next(incoming->cq, &tag, &ok);
 
-    if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
-    assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
+    GPR_ASSERT(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
     if (!ok) {
-      async_server_data *data_new = (async_server_data *)tag;
-      char *bad_reply = calloc(1, 1);
+      async_server_data *data_new = (async_server_data *) tag;
+      char *bad_reply = calloc(4, 1);
       data_new->reply.message.arg = bad_reply;
 
-      helloworld_Greeter_SayHello_ServerFinish(writer, &data_new->reply,
+      grpc_testing_EchoTestService_Echo_ServerFinish(writer, &data_new->reply,
                                                GRPC_STATUS_DATA_LOSS, data_new);
     } else {
       // Process the request
-      async_server_data *data_new = (async_server_data *)tag;
-      char *input_str = data_new->request.name.arg;
-      size_t output_len = strlen(input_str) + 6;
+      async_server_data *data_new = (async_server_data *) tag;
+      char *input_str = data_new->request.message.arg;
+      size_t output_len = strlen(input_str);
       char *output_str = malloc(output_len + 1);
-      sprintf(output_str, "Hello %s", input_str);
+      sprintf(output_str, "%s", input_str);
       data_new->reply.message.arg = output_str;
 
-      helloworld_Greeter_SayHello_ServerFinish(writer, &data_new->reply,
+      grpc_testing_EchoTestService_Echo_ServerFinish(writer, &data_new->reply,
                                                GRPC_STATUS_OK, data_new);
     }
 
     // Wait for request termination
     queue_status = GRPC_completion_queue_next(incoming->cq, &tag, &ok);
 
-    if (queue_status == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
-    assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
-    if (!ok) continue;
+    GPR_ASSERT(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
+    GPR_ASSERT(ok);
 
     // Clean up
     {
       async_server_data *data_new = (async_server_data *)tag;
-      free(data_new->request.name.arg);
+      free(data_new->request.message.arg);
       free(data_new->reply.message.arg);
       GRPC_server_context_destroy(&data_new->context);
       free(data_new);
@@ -153,5 +170,10 @@ int main(int argc, char **argv) {
   }
   GRPC_server_shutdown(server);
   GRPC_server_destroy(server);
+
+  // Wait for client to return
+  pthread_join(tid, NULL);
+
   return 0;
 }
+
