@@ -30,7 +30,7 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=1.0.0-pre2
+set VERSION=1.0.0
 set PROTOBUF_VERSION=3.0.0
 
 @rem Adjust the location of nuget.exe
