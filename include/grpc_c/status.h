@@ -54,6 +54,7 @@ typedef struct GRPC_status {
 
   /**
    * Detailed status string from the server.
+   * This pointer is managed by client context.
    */
   char *details;
 
