@@ -84,7 +84,7 @@ php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
 
 /**
  * Constructs a new instance of the Server class
- * @param array $args The arguments to pass to the server (optional)
+ * @param array $args_array The arguments to pass to the server (optional)
  */
 PHP_METHOD(Server, __construct) {
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
@@ -180,7 +180,7 @@ PHP_METHOD(Server, requestCall) {
 /**
  * Add a http2 over tcp listener.
  * @param string $addr The address to add
- * @return bool true on success, false on failure
+ * @return bool True on success, false on failure
  */
 PHP_METHOD(Server, addHttp2Port) {
   const char *addr;
@@ -201,7 +201,7 @@ PHP_METHOD(Server, addHttp2Port) {
  * Add a secure http2 over tcp listener.
  * @param string $addr The address to add
  * @param ServerCredentials The ServerCredentials object
- * @return bool true on success, false on failure
+ * @return bool True on success, false on failure
  */
 PHP_METHOD(Server, addSecureHttp2Port) {
   const char *addr;
