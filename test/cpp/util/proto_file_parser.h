@@ -48,15 +48,18 @@ class ErrorPrinter;
 // Find method and associated request/response types.
 class ProtoFileParser {
  public:
-  // The given proto file_name will be searched in a source tree rooted from
-  // proto_path. The method could be a partial string such as Service.Method or
-  // even just Method. It will log an error if there is ambiguity.
-  ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
-                  const grpc::string& proto_path,
-                  const grpc::string& protofiles);
+  // The parser will search proto files using the server reflection service
+  // provided on the given channel. The given protofiles in a source tree rooted
+  // from proto_path will also be searched.
+  explicit ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
+                           const grpc::string& proto_path,
+                           const grpc::string& protofiles);
 
   ~ProtoFileParser();
 
+  // The input method name in the following four functions could be a partial
+  // string such as Service.Method or even just Method. It will log an error if
+  // there is ambiguity.
   // Full method name is in the form of Service.Method, it's good to be used in
   // descriptor database queries.
   grpc::string GetFullMethodName(const grpc::string& method);
