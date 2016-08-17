@@ -165,12 +165,10 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_strcasecmp.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_strdup.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\ares_version.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\config-win32.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\bitncmp.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\selectbridge.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\setup_once.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c-ares\ares_build.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c-ares\config_linux\ares_config.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c-ares\config_darwin\ares_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\third_party\c-ares\ares__close_sockets.c">
@@ -281,4 +279,3 @@
     </PropertyGroup>
   </Target>
 </Project>
-

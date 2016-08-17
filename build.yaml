@@ -847,6 +847,7 @@ libs:
   vs_packages:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
+  - grpc.dependencies.ares
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
 - name: grpc_cronet
   build: all
@@ -879,8 +880,10 @@ libs:
   vs_packages:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
+  - grpc.dependencies.ares
   vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
   vs_props:
+  - ares
   - zlib
   - openssl
   - winsock
@@ -1228,6 +1231,7 @@ libs:
   vs_packages:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
+  - grpc.dependencies.ares
   vs_project_guid: '{D64C6D63-4458-4A88-AB38-35678384A7E4}'
   vs_props:
   - zlib
@@ -3211,6 +3215,11 @@ targets:
   - grpc
   - gpr
 vspackages:
+- linkage: static
+  name: grpc.dependencies.ares
+  props: false
+  redist: true
+  version: 1.11.0
 - linkage: static
   name: grpc.dependencies.zlib
   props: false
