@@ -71,6 +71,8 @@ var Metadata = require('./metadata.js');
 
 var common = require('./common.js');
 
+var _ = require('lodash');
+
 /**
  * Create an SSL Credentials object. If using a client-side certificate, both
  * the second and third arguments must be passed.
@@ -99,7 +101,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
       var message = '';
       if (error) {
         message = error.message;
-        if (error.hasOwnProperty('code')) {
+        if (error.hasOwnProperty('code') && _.isFinite(error.code)) {
           code = error.code;
         } else {
           code = grpc.status.UNAUTHENTICATED;

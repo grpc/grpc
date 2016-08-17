@@ -67,7 +67,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
       &exec_ctx, server_args, server_endpoint, 0 /* is_client */);
   grpc_endpoint_add_to_pollset(&exec_ctx, server_endpoint, grpc_cq_pollset(cq));
   grpc_server_setup_transport(&exec_ctx, server, transport, NULL, server_args);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

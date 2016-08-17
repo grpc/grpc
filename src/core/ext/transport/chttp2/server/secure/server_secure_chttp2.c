@@ -111,7 +111,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
         grpc_server_setup_transport(exec_ctx, state->state->server, transport,
                                     state->accepting_pollset, args_copy);
         grpc_channel_args_destroy(args_copy);
-        grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+        grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
       } else {
         /* We need to consume this here, because the server may already have
          * gone away. */
@@ -128,7 +128,8 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data,
+                              grpc_channel_args *args,
+                              gpr_slice_buffer *read_buffer, void *user_data,
                               grpc_error *error) {
   server_secure_connect *state = user_data;
   if (error != GRPC_ERROR_NONE) {
@@ -136,9 +137,10 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
     GRPC_ERROR_UNREF(error);
+    grpc_channel_args_destroy(args);
+    gpr_free(read_buffer);
     grpc_handshake_manager_shutdown(exec_ctx, state->handshake_mgr);
     grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
-    grpc_channel_args_destroy(args);
     state_unref(state->state);
     gpr_free(state);
     return;
@@ -150,8 +152,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
   // into this function.
   state->args = args;
   grpc_server_security_connector_do_handshake(
-      exec_ctx, state->state->sc, state->acceptor, endpoint, state->deadline,
-      on_secure_handshake_done, state);
+      exec_ctx, state->state->sc, state->acceptor, endpoint, read_buffer,
+      state->deadline, on_secure_handshake_done, state);
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
