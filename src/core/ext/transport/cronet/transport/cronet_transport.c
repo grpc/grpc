@@ -516,7 +516,7 @@ static void convert_metadata_to_cronet_headers(
     cronet_bidirectional_stream_header **pp_headers, size_t *p_num_headers) {
   grpc_linked_mdelem *curr = head;
   /* Walk the linked list and get number of header fields */
-  uint32_t num_headers_available = 0;
+  size_t num_headers_available = 0;
   while (curr != NULL) {
     curr = curr->next;
     num_headers_available++;
@@ -534,7 +534,7 @@ static void convert_metadata_to_cronet_headers(
     TODO (makdharma): Eliminate need to traverse the LL second time for perf.
    */
   curr = head;
-  uint32_t num_headers = 0;
+  size_t num_headers = 0;
   while (num_headers < num_headers_available) {
     grpc_mdelem *mdelem = curr->md;
     curr = curr->next;
