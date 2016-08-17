@@ -235,6 +235,7 @@ typedef struct glb_lb_policy {
   /** mutex protecting remaining members */
   gpr_mu mu;
 
+  char *server_name;  // Does not own.
   grpc_client_channel_factory *cc_factory;
 
   /** for communicating with the LB server */
@@ -295,6 +296,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
       (const char **)host_ports, serverlist->num_servers, ",", &uri_path_len);
 
   grpc_lb_policy_args args;
+  args.server_name = glb_policy->server_name;
   args.client_channel_factory = glb_policy->cc_factory;
   args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
   args.addresses->naddrs = serverlist->num_servers;
@@ -422,6 +424,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * policy is only instantiated and used in that case.
    *
    * Create a client channel over them to communicate with a LB service */
+  glb_policy->server_name = args->server_name;
   glb_policy->cc_factory = args->client_channel_factory;
   GPR_ASSERT(glb_policy->cc_factory != NULL);
   if (args->addresses->naddrs == 0) {
