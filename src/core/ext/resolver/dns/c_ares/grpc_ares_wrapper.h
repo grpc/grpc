@@ -34,21 +34,28 @@
 #ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
+#include <grpc/support/port_platform.h>
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
+
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-typedef struct grpc_ares_request grpc_ares_request;
+// typedef struct grpc_ares_request grpc_ares_request;
 
-extern grpc_ares_request *(*grpc_resolve_address_ares)(
-    grpc_exec_ctx *exec_ctx, const char *addr, const char *default_port,
-    grpc_pollset_set *pollset_set, grpc_closure *on_done,
-    grpc_resolved_addresses **addresses);
+extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
+                                         const char *addr,
+                                         const char *default_port,
+                                         grpc_pollset_set *pollset_set,
+                                         grpc_closure *on_done,
+                                         grpc_resolved_addresses **addresses);
 
 grpc_error *grpc_ares_init(void);
 
 void grpc_ares_cleanup(void);
+
+#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
 
 #endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */

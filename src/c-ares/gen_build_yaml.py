@@ -136,6 +136,7 @@ try:
         "third_party/c-ares/ares_strdup.h",
         "third_party/c-ares/ares_version.h",
         "third_party/c-ares/bitncmp.h",
+        "third_party/c-ares/config-win32.h",
         "third_party/c-ares/setup_once.h",
         "src/c-ares/ares_build.h",
         "src/c-ares/config_linux/ares_config.h",

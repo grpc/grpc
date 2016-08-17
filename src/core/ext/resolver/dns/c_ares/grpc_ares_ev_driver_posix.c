@@ -31,6 +31,7 @@
  *
  */
 #include <grpc/support/port_platform.h>
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
 #ifdef GPR_POSIX_SOCKET
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
@@ -200,4 +201,5 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
   gpr_log(GPR_ERROR, "eof notify_on_event");
 }
 
-#endif
+#endif /* GPR_POSIX_SOCKET */
+#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

@@ -207,7 +207,7 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\bitncmp.h">
       <Filter>third_party\c-ares</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\selectbridge.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\config-win32.h">
       <Filter>third_party\c-ares</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\c-ares\setup_once.h">
