@@ -70,6 +70,7 @@ typedef struct grpc_ares_request {
   grpc_closure request_closure;
   void *arg;
   int pending_quries;
+  int success;
   grpc_ares_ev_driver *ev_driver;
 } grpc_ares_request;
 
@@ -99,7 +100,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
   gpr_log(GPR_ERROR, "status: %d", status);
   grpc_ares_request *r = (grpc_ares_request *)arg;
-  grpc_error *err;
+  grpc_error *err = GRPC_ERROR_NONE;
   gpr_log(GPR_ERROR, "status: %s", r->name);
   grpc_resolved_addresses **addresses = r->addrs_out;
   size_t i;
@@ -107,7 +108,9 @@ static void on_done_cb(void *arg, int status, int timeouts,
 
   if (status == ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "status ARES_SUCCESS");
+    GRPC_ERROR_UNREF(err);
     err = GRPC_ERROR_NONE;
+    r->success = 1;
     if (*addresses == NULL) {
       *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
       (*addresses)->naddrs = 0;
@@ -157,17 +160,14 @@ static void on_done_cb(void *arg, int status, int timeouts,
       }
     }
     // ares_destroy(r->channel);
-  } else {
+  } else if (!r->success) {
     gpr_log(GPR_ERROR, "status not ARES_SUCCESS");
-    err = grpc_error_set_str(
-        grpc_error_set_str(
-            grpc_error_set_str(grpc_error_set_int(GRPC_ERROR_CREATE("OS Error"),
-                                                  GRPC_ERROR_INT_ERRNO, status),
-                               GRPC_ERROR_STR_OS_ERROR, gai_strerror(status)),
-            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, r->name);
+    // TODO(zyc): add more error detail
+    if (err == GRPC_ERROR_NONE) {
+      err = GRPC_ERROR_CREATE("C-ares query error");
+    }
   }
-  if (--r->pending_quries == 0) {
+  if (--r->pending_quries == 0 || err != GRPC_ERROR_NONE) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_exec_ctx_sched(&exec_ctx, r->on_done, err, NULL);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -288,6 +288,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     r->port = gpr_strdup(port);
     r->host = gpr_strdup(host);
     r->pending_quries = 0;
+    r->success = 0;
     grpc_closure_init(&r->request_closure, request_resolving_address, r);
     grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
   }
