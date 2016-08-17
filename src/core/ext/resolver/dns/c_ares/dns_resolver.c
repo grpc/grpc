@@ -88,8 +88,6 @@ typedef struct {
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
 
-  grpc_ares_request *request;
-
   grpc_polling_entity *pollent;
 } dns_resolver;
 
@@ -229,19 +227,25 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
     gpr_log(GPR_ERROR, "dns_start_resolving_locked");
     GRPC_RESOLVER_REF(&r->base, "dns-resolving");
     GPR_ASSERT(!r->resolving);
+    r->resolving = 1;
+    r->addresses = NULL;
+    r->pollent = NULL;
+#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
+    grpc_resolve_address(exec_ctx, r->name, r->default_port,
+                         grpc_closure_create(dns_on_resolved, r),
+                         &r->addresses);
+#else
     if (pollent) {
       r->pollent = pollent;
       grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
                                              r->base.pollset_set);
     } else {
       gpr_log(GPR_ERROR, "pollent is NULL");
-      r->pollent = NULL;
     }
-    r->resolving = 1;
-    r->addresses = NULL;
-    r->request = grpc_resolve_address_ares(
+    grpc_resolve_address_ares(
         exec_ctx, r->name, r->default_port, r->base.pollset_set,
         grpc_closure_create(dns_on_resolved, r), &r->addresses);
+#endif
   } else {
     dns_maybe_finish_next_locked(exec_ctx, r);
   }
@@ -255,9 +259,14 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = 1;
   r->addresses = NULL;
-  r->request = grpc_resolve_address_ares(
+#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
+  grpc_resolve_address(exec_ctx, r->name, r->default_port,
+                       grpc_closure_create(dns_on_resolved, r), &r->addresses);
+#else
+  grpc_resolve_address_ares(
       exec_ctx, r->name, r->default_port, r->base.pollset_set,
       grpc_closure_create(dns_on_resolved, r), &r->addresses);
+#endif
   // grpc_resolve_address(exec_ctx, r->name, r->default_port,
   //  grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
@@ -279,7 +288,9 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
   grpc_ares_cleanup();
+#endif
   if (r->resolved_config) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
@@ -294,7 +305,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
                                  const char *default_port,
                                  const char *lb_policy_name) {
   dns_resolver *r;
-  grpc_error *error;
+  grpc_error *error = GRPC_ERROR_NONE;
   const char *path = args->uri->path;
 
   if (0 != strcmp(args->uri->authority, "")) {
@@ -302,7 +313,9 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
     return NULL;
   }
 
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
   error = grpc_ares_init();
+#endif
   if (error != GRPC_ERROR_NONE) {
     GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
     return NULL;

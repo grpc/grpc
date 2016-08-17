@@ -32,18 +32,10 @@
  */
 
 #include <grpc/support/port_platform.h>
-
-#ifdef GPR_POSIX_SOCKET
-#include <arpa/inet.h>
-#endif
-
-#ifdef GPR_WINSOCK_SOCKET
-#include <winsock2.h>
-#endif
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
-// #include "src/core/lib/iomgr/ev_posix.h"
-// #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -67,7 +59,7 @@
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 
-struct grpc_ares_request {
+typedef struct grpc_ares_request {
   char *name;
   char *host;
   char *port;
@@ -79,7 +71,7 @@ struct grpc_ares_request {
   void *arg;
   int pending_quries;
   grpc_ares_ev_driver *ev_driver;
-};
+} grpc_ares_request;
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
@@ -228,10 +220,11 @@ static int try_fake_resolve(const char *name, const char *port,
   return 0;
 }
 
-grpc_ares_request *grpc_resolve_address_ares_impl(
-    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_pollset_set *pollset_set, grpc_closure *on_done,
-    grpc_resolved_addresses **addrs) {
+void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
+                                    const char *default_port,
+                                    grpc_pollset_set *pollset_set,
+                                    grpc_closure *on_done,
+                                    grpc_resolved_addresses **addrs) {
   char *host;
   char *port;
   grpc_error *err;
@@ -241,7 +234,7 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
   if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
       GRPC_ERROR_CANCELLED) {
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-    return NULL;
+    return;
   }
 
   if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
@@ -249,7 +242,7 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
     grpc_exec_ctx_sched(exec_ctx, on_done,
                         grpc_resolve_unix_domain_address(name + 5, addrs),
                         NULL);
-    return NULL;
+    return;
   }
 
   /* parse name, splitting it into host and port parts */
@@ -275,7 +268,7 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
     err = grpc_ares_ev_driver_create(&ev_driver, pollset_set);
     if (err != GRPC_ERROR_NONE) {
       grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-      return NULL;
+      return;
     }
     r = gpr_malloc(sizeof(grpc_ares_request));
     r->ev_driver = ev_driver;
@@ -293,10 +286,9 @@ grpc_ares_request *grpc_resolve_address_ares_impl(
 done:
   gpr_free(host);
   gpr_free(port);
-  return r;
 }
 
-grpc_ares_request *(*grpc_resolve_address_ares)(
+void (*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
     grpc_pollset_set *pollset_set, grpc_closure *on_done,
     grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
@@ -318,3 +310,5 @@ void grpc_ares_cleanup(void) {
   ares_library_cleanup();
   gpr_mu_unlock(&g_init_mu);
 }
+
+#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

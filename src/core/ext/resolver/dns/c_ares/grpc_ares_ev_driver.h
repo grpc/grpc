@@ -34,6 +34,9 @@
 #ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 #define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 
+#include <grpc/support/port_platform.h>
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
+
 #include <ares.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -50,5 +53,7 @@ ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver);
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set);
 void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver);
+
+#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
 
 #endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H */
