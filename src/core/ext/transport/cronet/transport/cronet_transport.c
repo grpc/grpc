@@ -777,12 +777,16 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     grpc_byte_stream_next(NULL, stream_op->send_message, &slice,
                           stream_op->send_message->length, NULL);
     /* Check that compression flag is OFF. We don't support compression yet. */
-    gpr_log(GPR_ERROR, "Compression is not supported");
-    GPR_ASSERT(stream_op->send_message->flags == 0);
+    if (stream_op->send_message->flags != 0) {
+      gpr_log(GPR_ERROR, "Compression is not supported");
+      GPR_ASSERT(stream_op->send_message->flags == 0);
+    }
     gpr_slice_buffer_add(&write_slice_buffer, slice);
-    gpr_log(GPR_ERROR, "Empty request is not supported");
-    GPR_ASSERT(write_slice_buffer.count ==
-               1); /* Empty request not handled yet */
+    if (write_slice_buffer.count != 1) {
+      /* Empty request not handled yet */
+      gpr_log(GPR_ERROR, "Empty request is not supported");
+      GPR_ASSERT(write_slice_buffer.count == 1);
+    }
     if (write_slice_buffer.count > 0) {
       size_t write_buffer_size;
       create_grpc_frame(&write_slice_buffer, &stream_state->ws.write_buffer,
