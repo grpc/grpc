@@ -95,7 +95,7 @@ typedef struct async_server_data {
 } async_server_data;
 
 int main(int argc, char **argv) {
-  GRPC_server *server = GRPC_build_server((GRPC_build_server_options){});
+  GRPC_server *server = GRPC_build_server((GRPC_build_server_options){ .max_message_size = 0 });
   GRPC_incoming_notification_queue *incoming =
     GRPC_server_new_incoming_queue(server);
   GRPC_server_listen_host(server, "0.0.0.0:50051");
