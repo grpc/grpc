@@ -79,15 +79,17 @@ void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
 void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq);
 
 /**
- * Wait for a new event on this completion queue. The event may represent completion of a
- * read or write operation, or an incoming call (applicable to server) etc.
+ * Wait for a new event on this completion queue. The event may represent
+ * completion of a read or write operation, or an incoming call (applicable to
+ * server) etc.
  * \a ok indicates if the operation is successful.
  */
 GRPC_completion_queue_operation_status GRPC_completion_queue_next(
     GRPC_completion_queue *cq, void **tag, bool *ok);
 
 /**
- * Same as GRPC_completion_queue_next, but lets you specify an execution deadline.
+ * Same as GRPC_completion_queue_next, but lets you specify an execution
+ * deadline.
  */
 GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(
     GRPC_completion_queue *cq, GRPC_timespec deadline, void **tag, bool *ok);

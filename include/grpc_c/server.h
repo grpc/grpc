@@ -46,7 +46,8 @@ typedef struct GRPC_build_server_options {
 GRPC_server *GRPC_build_server(GRPC_build_server_options options);
 
 /**
- * Gets a new completion queue from the server used to monitor incoming requests.
+ * Gets a new completion queue from the server used to monitor incoming
+ * requests.
  * There is no need to manually free this queue.
  */
 GRPC_incoming_notification_queue *GRPC_server_new_incoming_queue(
@@ -58,7 +59,8 @@ GRPC_incoming_notification_queue *GRPC_server_new_incoming_queue(
 void GRPC_server_listen_host(GRPC_server *server, const char *host);
 
 /**
- * Start listening for requests. The server cannot be modified beyond this point.
+ * Start listening for requests. The server cannot be modified beyond this
+ * point.
  */
 void GRPC_server_start(GRPC_server *server);
 

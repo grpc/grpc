@@ -32,10 +32,10 @@
  */
 
 #include "src/c/server.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc_c/codegen/server.h>
 #include <grpc_c/completion_queue.h>
-#include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
 #include "src/c/init_shutdown.h"
 #include "src/c/server_context.h"
