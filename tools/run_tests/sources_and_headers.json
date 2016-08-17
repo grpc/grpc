@@ -5409,6 +5409,7 @@
       "third_party/c-ares/ares_strdup.h", 
       "third_party/c-ares/ares_version.h", 
       "third_party/c-ares/bitncmp.h", 
+      "third_party/c-ares/config-win32.h", 
       "third_party/c-ares/setup_once.h"
     ], 
     "language": "c", 
