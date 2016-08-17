@@ -282,6 +282,7 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
 }
 
 const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key) {
+  if (uri == NULL) return NULL;
   GPR_ASSERT(key != NULL);
   if (key[0] == '\0') return NULL;
 
