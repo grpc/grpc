@@ -431,6 +431,12 @@ typedef unsigned __int64 uint64_t;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
+#ifdef GPR_WINDOWS
+#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
+#define GRPC_NATIVE_ADDRESS_RESOLVE
+#endif
+#endif
+
 #ifndef GRPC_MUST_USE_RESULT
 #ifdef __GNUC__
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))

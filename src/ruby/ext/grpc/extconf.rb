@@ -70,6 +70,7 @@ ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
 
 ENV['EMBED_OPENSSL'] = 'true'
 ENV['EMBED_ZLIB'] = 'true'
+ENV['EMBED_CARES'] = 'true'
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
@@ -86,6 +87,7 @@ end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
+$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libcares.a') unless windows
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
