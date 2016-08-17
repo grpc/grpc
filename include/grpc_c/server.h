@@ -37,14 +37,41 @@
 #include <grpc_c/grpc_c.h>
 
 typedef struct GRPC_build_server_options {
+  int max_message_size;
 } GRPC_build_server_options;
 
+/**
+ * Creates a server instance.
+ */
 GRPC_server *GRPC_build_server(GRPC_build_server_options options);
+
+/**
+ * Gets a new completion queue from the server used to monitor incoming requests.
+ * There is no need to manually free this queue.
+ */
 GRPC_incoming_notification_queue *GRPC_server_new_incoming_queue(
     GRPC_server *server);
+
+/**
+ * Instructs the server to listening on an address:port combination.
+ */
 void GRPC_server_listen_host(GRPC_server *server, const char *host);
+
+/**
+ * Start listening for requests. The server cannot be modified beyond this point.
+ */
 void GRPC_server_start(GRPC_server *server);
+
+/**
+ * A blocking call. Shuts down the server.
+ * After it returns, no new calls or connections will be admitted.
+ * Existing calls will be allowed to complete.
+ */
 void GRPC_server_shutdown(GRPC_server *server);
+
+/**
+ * Frees the server and associated resources.
+ */
 void GRPC_server_destroy(GRPC_server *server);
 
 #endif /* GRPC_C_SERVER_H */

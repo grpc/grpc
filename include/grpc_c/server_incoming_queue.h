@@ -37,6 +37,7 @@
 #include <grpc_c/grpc_c.h>
 
 struct GRPC_incoming_notification_queue {
+  /** Call GRPC_completion_queue_next on cq to consume incoming RPC calls */
   GRPC_completion_queue *cq;
 };
 

@@ -39,30 +39,56 @@
 
 typedef struct gpr_timespec GRPC_timespec;
 
-/** Tri-state return for GRPC_commit_ops_and_wait */
+/** Tri-state return for GRPC_completion_queue_next */
 typedef enum GRPC_completion_queue_next_status {
-  GRPC_COMPLETION_QUEUE_SHUTDOWN,  /* The completion queue has been shutdown. */
-  GRPC_COMPLETION_QUEUE_GOT_EVENT, /* Got a new event; \a tag will be filled in
-                                      with its */
-  /* associated value; \a ok indicating its success. */
-  GRPC_COMPLETION_QUEUE_TIMEOUT /* deadline was reached. */
+  /**
+   * The completion queue has been shutdown.
+   * It is guaranteed no more events will be posted.
+   * The listening thread may exit.
+   */
+  GRPC_COMPLETION_QUEUE_SHUTDOWN,
+
+  /* Got a new event; \a tag will be filled in with its */
+  /* associated value; \a ok indicating its success.    */
+  GRPC_COMPLETION_QUEUE_GOT_EVENT,
+
+  /* Deadline was reached. */
+  GRPC_COMPLETION_QUEUE_TIMEOUT
 } GRPC_completion_queue_operation_status;
 
-/** Creates a completion queue. You can listen for new events about calls on the
- * queue. */
+/**
+ * Creates a completion queue. You can listen for new events on it.
+ */
 GRPC_completion_queue *GRPC_completion_queue_create();
 
+/**
+ * Shuts down the completion queue. Call GRPC_completion_queue_shutdown_wait
+ * to drain all pending events before destroying this queue.
+ */
 void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq);
 
-/** Destroys the completion queue and frees resources. The queue must be fully
- * shutdown before this call. */
+/**
+ * Destroys the completion queue and frees resources. The queue must be fully
+ * shutdown before this call.
+ */
 void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
 
-/** Swallows events and blocks until it sees the shutdown event */
+/**
+ * Swallows events and blocks until it sees the shutdown event.
+ */
 void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq);
 
+/**
+ * Wait for a new event on this completion queue. The event may represent completion of a
+ * read or write operation, or an incoming call (applicable to server) etc.
+ * \a ok indicates if the operation is successful.
+ */
 GRPC_completion_queue_operation_status GRPC_completion_queue_next(
     GRPC_completion_queue *cq, void **tag, bool *ok);
+
+/**
+ * Same as GRPC_completion_queue_next, but lets you specify an execution deadline.
+ */
 GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(
     GRPC_completion_queue *cq, GRPC_timespec deadline, void **tag, bool *ok);
 

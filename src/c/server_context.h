@@ -53,4 +53,6 @@ struct GRPC_server_context {
   grpc_status_code server_return_status;
 };
 
+GRPC_context *GRPC_server_context_to_base(GRPC_server_context *server_context);
+
 #endif  // GRPC_C_INTERNAL_SERVER_CONTEXT_H
