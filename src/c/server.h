@@ -64,7 +64,7 @@ struct GRPC_server {
   GRPC_array(GRPC_registered_service) registered_services;
 
   // used to monitor server events
-  grpc_completion_queue *internal_queue;
+  grpc_completion_queue *event_queue;
 
   // async
 

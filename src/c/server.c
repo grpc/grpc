@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 #include <grpc_c/codegen/server.h>
 #include <grpc_c/completion_queue.h>
+#include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
 #include "src/c/init_shutdown.h"
 #include "src/c/server_context.h"
@@ -48,7 +49,7 @@ GRPC_server *GRPC_build_server(GRPC_build_server_options options) {
   grpc_server *core_server = grpc_server_create(NULL, NULL);
   GRPC_server *server = GRPC_ALLOC_STRUCT(
       GRPC_server, {.core_server = core_server,
-                    .internal_queue = grpc_completion_queue_create(NULL)});
+                    .event_queue = grpc_completion_queue_create(NULL)});
   GRPC_array_init(server->registered_queues);
   GRPC_array_init(server->registered_services);
   return server;
@@ -69,14 +70,16 @@ void GRPC_server_start(GRPC_server *server) {
 }
 
 void GRPC_server_shutdown(GRPC_server *server) {
-  grpc_server_shutdown_and_notify(server->core_server, server->internal_queue,
+  grpc_server_shutdown_and_notify(server->core_server, server->event_queue,
                                   NULL);
   // Wait for server to shutdown
   for (;;) {
     grpc_event ev = grpc_completion_queue_next(
-        server->internal_queue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+        server->event_queue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     if (ev.type == GRPC_OP_COMPLETE) break;
   }
+  // Shutdown internal server queue
+  grpc_completion_queue_shutdown(server->event_queue);
   // Shutdown all registered queues
   size_t i;
   for (i = 0; i < server->registered_queues.state.size; i++) {
@@ -88,21 +91,29 @@ void GRPC_server_shutdown(GRPC_server *server) {
   }
   for (;;) {
     grpc_event ev = grpc_completion_queue_next(
-        server->internal_queue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+        server->event_queue, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     if (ev.type == GRPC_QUEUE_SHUTDOWN) break;
   }
 }
 
 void GRPC_server_destroy(GRPC_server *server) {
   size_t i;
+  // release queues
   for (i = 0; i < server->registered_queues.state.size; i++) {
     GRPC_incoming_notification_queue_destroy(server->registered_queues.data[i]);
   }
   GRPC_array_deinit(server->registered_queues);
 
-  grpc_completion_queue_destroy(server->internal_queue);
+  // release registered methods
+  for (i = 0; i < server->registered_services.state.size; i++) {
+    GRPC_array_deinit(server->registered_services.data[i].registered_methods);
+  }
+  GRPC_array_deinit(server->registered_services);
+
+  grpc_completion_queue_destroy(server->event_queue);
 
   grpc_server_destroy(server->core_server);
+  gpr_free(server);
 }
 
 GRPC_registered_service *GRPC_server_add_service(

@@ -83,6 +83,7 @@ static void *client_thread(void *param) {
   GPR_ASSERT(strcmp(response.message.arg, "gRPC-C") == 0);
   free(response.message.arg);
   GRPC_client_context_destroy(&context);
+  GRPC_channel_destroy(&channel);
 
   return NULL;
 }

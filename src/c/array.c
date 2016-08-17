@@ -39,7 +39,7 @@ void GRPC_array_init_impl(GRPC_array_state *state, void *data_ptr,
   void **data = data_ptr;
   state->capacity = 4;
   state->size = 0;
-  *data = gpr_malloc(elem_size * 4);
+  *data = gpr_malloc(4 * elem_size);
 }
 
 void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr,
@@ -48,7 +48,7 @@ void GRPC_array_pop_back_impl(GRPC_array_state *state, void *data_ptr,
   void **data = data_ptr;
   state->size--;
   while (state->size * 2 + 1 <= state->capacity) {
-    *data = gpr_realloc(*data, state->capacity / 2);
+    *data = gpr_realloc(*data, state->capacity / 2 * elem_size);
     state->capacity /= 2;
   }
 }
@@ -58,7 +58,7 @@ void GRPC_array_ensure_capacity(GRPC_array_state *state, void *data_ptr,
   if (target_size <= state->capacity) return;
   void **data = data_ptr;
   while (state->capacity < target_size) {
-    *data = realloc(*data, state->capacity * 2);
+    *data = gpr_realloc(*data, state->capacity * 2 * elem_size);
     state->capacity *= 2;
   }
 }

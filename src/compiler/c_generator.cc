@@ -495,11 +495,12 @@ void PrintSourceServiceDeclaration(Printer *printer, const Service *service,
   printer->Print(*vars, "enum {\n");
 
   for (int i = 0; i < service->method_count(); i++) {
+    auto inner_vars = *vars;
     auto method = service->method(i);
-    (*vars)["Method"] = method->name();
-    (*vars)["Index"] = std::to_string(static_cast<long long>(i));
+    inner_vars["Method"] = method->name();
+    inner_vars["Index"] = std::to_string(static_cast<long long>(i));
     printer->Print(
-        *vars,
+        inner_vars,
         "        GRPC_METHOD_INDEX_$CPrefix$$Service$_$Method$ = $Index$,\n");
   }
 
@@ -507,7 +508,7 @@ void PrintSourceServiceDeclaration(Printer *printer, const Service *service,
       std::to_string(static_cast<long long>(service->method_count()));
   printer->Print(
       *vars,
-      "        GRPC_METHOD_COUNT_$CPrefix$$Service$_$Method$ = $MethodCount$\n"
+      "        GRPC_METHOD_COUNT_$CPrefix$$Service$ = $MethodCount$\n"
       "};\n"
       "\n");
 
@@ -516,7 +517,7 @@ void PrintSourceServiceDeclaration(Printer *printer, const Service *service,
                  "*$CPrefix$$Service$_Register(GRPC_server *server) {\n"
                  "        return GRPC_server_add_service(server, "
                  "GRPC_service_$CPrefix$$Service$, "
-                 "GRPC_METHOD_COUNT_$CPrefix$$Service$_$Method$);\n"
+                 "GRPC_METHOD_COUNT_$CPrefix$$Service$);\n"
                  "}\n"
                  "\n");
 }
