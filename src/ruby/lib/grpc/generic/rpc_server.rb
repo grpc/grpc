@@ -147,11 +147,11 @@ module GRPC
 
     def_delegators :@server, :add_http2_port
 
-    # Default thread pool size is 3
-    DEFAULT_POOL_SIZE = 3
+    # Default thread pool size is 100
+    DEFAULT_POOL_SIZE = 100
 
-    # Default max_waiting_requests size is 20
-    DEFAULT_MAX_WAITING_REQUESTS = 20
+    # Default max_waiting_requests size is 100
+    DEFAULT_MAX_WAITING_REQUESTS = 100
 
     # Default poll period is 1s
     DEFAULT_POLL_PERIOD = 1
