@@ -236,6 +236,7 @@ static const char *op_id_string(enum e_op_id i) {
     case OP_NUM_OPS:
       return "OP_NUM_OPS";
   }
+  return "UNKNOWN";
 }
 
 /*
@@ -515,7 +516,7 @@ static void convert_metadata_to_cronet_headers(
     cronet_bidirectional_stream_header **pp_headers, size_t *p_num_headers) {
   grpc_linked_mdelem *curr = head;
   /* Walk the linked list and get number of header fields */
-  uint32_t num_headers_available = 0;
+  size_t num_headers_available = 0;
   while (curr != NULL) {
     curr = curr->next;
     num_headers_available++;
@@ -533,7 +534,7 @@ static void convert_metadata_to_cronet_headers(
     TODO (makdharma): Eliminate need to traverse the LL second time for perf.
    */
   curr = head;
-  int num_headers = 0;
+  size_t num_headers = 0;
   while (num_headers < num_headers_available) {
     grpc_mdelem *mdelem = curr->md;
     curr = curr->next;
@@ -557,7 +558,7 @@ static void convert_metadata_to_cronet_headers(
       break;
     }
   }
-  *p_num_headers = num_headers;
+  *p_num_headers = (size_t)num_headers;
 }
 
 static int parse_grpc_header(const uint8_t *data) {
@@ -826,7 +827,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                    stream_state->rs.length_field);
         if (stream_state->rs.length_field > 0) {
           stream_state->rs.read_buffer =
-              gpr_malloc(stream_state->rs.length_field);
+              gpr_malloc((size_t)stream_state->rs.length_field);
           GPR_ASSERT(stream_state->rs.read_buffer);
           stream_state->rs.remaining_bytes = stream_state->rs.length_field;
           stream_state->rs.received_bytes = 0;
