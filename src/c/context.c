@@ -37,3 +37,11 @@ void GRPC_context_set_serialization_impl(
     GRPC_context *context, grpc_serialization_impl serialization_impl) {
   context->serialization_impl = serialization_impl;
 }
+
+void GRPC_context_destroy(GRPC_context *context) {
+  if (context->call) {
+    grpc_call_destroy(context->call);
+    context->call = NULL;
+  }
+  grpc_metadata_array_destroy(&context->recv_metadata_array);
+}

@@ -48,13 +48,11 @@ GRPC_client_context *GRPC_client_context_create(grpc_channel *chan) {
 }
 
 void GRPC_client_context_destroy(GRPC_client_context **context) {
+  GRPC_context_destroy(GRPC_client_context_to_base(*context));
   if ((*context)->status.details) {
     gpr_free((*context)->status.details);
   }
-  if ((*context)->call) {
-    grpc_call_destroy((*context)->call);
-    (*context)->call = NULL;
-  }
+
   gpr_free(*context);
   *context = NULL;
 }

@@ -64,4 +64,6 @@ struct GRPC_context {
   GRPC_C_CONTEXT_BASE_MEMBERS
 };
 
+void GRPC_context_destroy(GRPC_context *context);
+
 #endif  // GRPC_C_INTERNAL_CONTEXT_H

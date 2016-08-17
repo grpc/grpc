@@ -54,10 +54,7 @@ GRPC_context *GRPC_server_context_to_base(GRPC_server_context *server_context) {
 }
 
 void GRPC_server_context_destroy(GRPC_server_context **context) {
-  if ((*context)->call) {
-    grpc_call_destroy((*context)->call);
-    (*context)->call = NULL;
-  }
+  GRPC_context_destroy(GRPC_server_context_to_base(*context));
   gpr_free(*context);
   *context = NULL;
 }
