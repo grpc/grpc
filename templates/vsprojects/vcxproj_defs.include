@@ -60,8 +60,8 @@
     else:
       if target.language == 'c++':
         props.extend(['protobuf'])
-      props.extend(['winsock', 'zlib'])
-      packages.extend(['grpc.dependencies.zlib'])
+      props.extend(['winsock', 'zlib', 'ares'])
+      packages.extend(['grpc.dependencies.zlib', 'grpc.dependencies.ares'])
       if target.get('secure', 'check'):
         props.extend(['openssl'])
         packages.extend(['grpc.dependencies.openssl'])

@@ -39,7 +39,7 @@ LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
            -lgrpc++_reflection \
            -lprotobuf -lpthread -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
+LDFLAGS += -L/usr/local/lib -lgrpc++ -lgrpc     \
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed \
            -lprotobuf -lpthread -ldl
 endif

@@ -86,6 +86,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <TargetName>grpc</TargetName>
+    <Linkage-grpc_dependencies_ares>static</Linkage-grpc_dependencies_ares>
+    <Configuration-grpc_dependencies_ares>Debug</Configuration-grpc_dependencies_ares>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -93,6 +95,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <TargetName>grpc</TargetName>
+    <Linkage-grpc_dependencies_ares>static</Linkage-grpc_dependencies_ares>
+    <Configuration-grpc_dependencies_ares>Release</Configuration-grpc_dependencies_ares>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -447,6 +451,8 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
@@ -806,7 +812,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_wrapper.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
     </ClCompile>
@@ -851,6 +861,8 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.redist.1.11.0\build\native\grpc.dependencies.ares.redist.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.redist.1.11.0\build\native\grpc.dependencies\grpc.dependencies.ares.targets')" />
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.1.11.0\build\native\grpc.dependencies.ares.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.1.11.0\build\native\grpc.dependencies\grpc.dependencies.ares.targets')" />
   <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
   <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
   <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
@@ -860,6 +872,8 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.redist.1.11.0\build\native\grpc.dependencies.ares.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.redist.1.11.0\build\native\grpc.dependencies.ares.redist.targets')" />
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.1.11.0\build\native\grpc.dependencies.ares.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.ares.1.11.0\build\native\grpc.dependencies.ares.targets')" />
     <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" />
     <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" />
     <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" />
