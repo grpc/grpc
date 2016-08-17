@@ -94,6 +94,15 @@ static void destroy_request(grpc_ares_request *request) {
   gpr_free(request->default_port);
 }
 
+static uint16_t strhtons(const char *port) {
+  if (strcmp(port, "http") == 0) {
+    return htons(80);
+  } else if (strcmp(port, "https") == 0) {
+    return htons(443);
+  }
+  return htons((unsigned short)atoi(port));
+}
+
 static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
   gpr_log(GPR_ERROR, "status: %d", status);
@@ -138,7 +147,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
         gpr_log(GPR_ERROR, "addr: %s", output);
         gpr_log(GPR_ERROR, "port: %s", r->port);
         addr->sin6_family = (sa_family_t)hostent->h_addrtype;
-        addr->sin6_port = htons((unsigned short)atoi(r->port));
+        addr->sin6_port = strhtons(r->port);
       } else {
         char output[INET_ADDRSTRLEN];
         gpr_log(GPR_ERROR, "AF_INET");
@@ -152,7 +161,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
         memcpy(&addr->sin_addr, hostent->h_addr_list[i - prev_naddr],
                sizeof(struct in_addr));
         addr->sin_family = (sa_family_t)hostent->h_addrtype;
-        addr->sin_port = htons((unsigned short)atoi(r->port));
+        addr->sin_port = strhtons(r->port);
       }
     }
     // ares_destroy(r->channel);
@@ -204,7 +213,7 @@ static int try_fake_resolve(const char *name, const char *port,
         gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
     (*addresses)->addrs[0].len = sizeof(struct sockaddr_in);
     sa.sin_family = AF_INET;
-    sa.sin_port = htons((unsigned short)atoi(port));
+    sa.sin_port = strhtons(port);
     memcpy(&(*addresses)->addrs[0].addr, &sa, sizeof(struct sockaddr_in));
     return 1;
   }
@@ -217,7 +226,7 @@ static int try_fake_resolve(const char *name, const char *port,
         gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
     (*addresses)->addrs[0].len = sizeof(struct sockaddr_in6);
     sa6.sin6_family = AF_INET6;
-    sa6.sin6_port = htons((unsigned short)atoi(port));
+    sa6.sin6_port = strhtons(port);
     memcpy(&(*addresses)->addrs[0].addr, &sa6, sizeof(struct sockaddr_in6));
     ares_inet_ntop(AF_INET6, &sa6.sin6_addr, output, INET6_ADDRSTRLEN);
     gpr_log(GPR_ERROR, "addr: %s", output);

@@ -57,7 +57,6 @@ typedef struct fd_pair {
 } fd_pair;
 
 struct grpc_ares_ev_driver {
-  int id;
   bool closing;
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
   int bitmask;
@@ -141,7 +140,7 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
     grpc_closure_init(&ev_driver->driver_closure, driver_cb, ev_driver);
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       char *final_name;
-      gpr_asprintf(&final_name, "host1%" PRIuPTR, i);
+      gpr_asprintf(&final_name, "ares_ev_driver-%" PRIuPTR, i);
 
       if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i) ||
           ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
