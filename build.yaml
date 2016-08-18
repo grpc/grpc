@@ -1175,7 +1175,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -1274,7 +1273,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
@@ -1590,7 +1588,7 @@ targets:
   comments:
   - '#1': This is a gRPC-C test but temporarily written in C++ for the lack of a C
       server
-  - '#2': We're using the library grpc_c_end2end_client_lib to process nanopb and
+  - '#2': We are using the library grpc_c_end2end_client_lib to process nanopb and
       interface with generated code
 - name: grpc_c_generic_end2end_test
   gtest: true
@@ -1630,12 +1628,9 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_test_util
-  - grpc_test_util
   - grpc++_reflection
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: grpc_cpp_plugin
@@ -1648,26 +1643,6 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
-- name: grpc_cpp_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/cpp_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
-- name: grpc_csharp_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/csharp_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -1687,25 +1662,6 @@ targets:
   - grpc_plugin_support
   secure: false
   vs_config_type: Application
-- name: grpc_node_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/node_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-- name: grpc_objective_c_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/objective_c_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
@@ -1726,26 +1682,6 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
-- name: grpc_python_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/python_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
-- name: grpc_ruby_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/ruby_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
@@ -1844,6 +1780,7 @@ targets:
   deps:
   - interop_server_main
   - interop_server_helper
+  - interop_server_lib
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -3114,12 +3051,9 @@ targets:
   - test/core/census/mlog_test.c
   deps:
   - grpc_test_util
-  - grpc_cli_libs
-  - grpc++_reflection
-  - grpc++
   - grpc
+  - gpr_test_util
   - gpr
-  - grpc++_test_config
 - name: multiple_server_queues_test
   build: test
   language: core

@@ -2298,45 +2298,9 @@ cc_binary(
 
 
 cc_binary(
-  name = "grpc_cpp_plugin",
-  srcs = [
-    "src/compiler/cpp_plugin.cc",
-  ],
-  deps = [
-    "//external:protobuf_compiler",
-    ":grpc_plugin_support",
-  ],
-)
-
-
-cc_binary(
   name = "grpc_csharp_plugin",
   srcs = [
     "src/compiler/csharp_plugin.cc",
-  ],
-  deps = [
-    "//external:protobuf_compiler",
-    ":grpc_plugin_support",
-  ],
-)
-
-
-cc_binary(
-  name = "grpc_csharp_plugin",
-  srcs = [
-    "src/compiler/csharp_plugin.cc",
-  ],
-  deps = [
-    "//external:protobuf_compiler",
-    ":grpc_plugin_support",
-  ],
-)
-
-
-cc_binary(
-  name = "grpc_node_plugin",
-  srcs = [
-    "src/compiler/node_plugin.cc",
   ],
   deps = [
     "//external:protobuf_compiler",
@@ -2370,45 +2334,9 @@ cc_binary(
 
 
 cc_binary(
-  name = "grpc_objective_c_plugin",
-  srcs = [
-    "src/compiler/objective_c_plugin.cc",
-  ],
-  deps = [
-    "//external:protobuf_compiler",
-    ":grpc_plugin_support",
-  ],
-)
-
-
-cc_binary(
   name = "grpc_python_plugin",
   srcs = [
     "src/compiler/python_plugin.cc",
-  ],
-  deps = [
-    "//external:protobuf_compiler",
-    ":grpc_plugin_support",
-  ],
-)
-
-
-cc_binary(
-  name = "grpc_python_plugin",
-  srcs = [
-    "src/compiler/python_plugin.cc",
-  ],
-  deps = [
-    "//external:protobuf_compiler",
-    ":grpc_plugin_support",
-  ],
-)
-
-
-cc_binary(
-  name = "grpc_ruby_plugin",
-  srcs = [
-    "src/compiler/ruby_plugin.cc",
   ],
   deps = [
     "//external:protobuf_compiler",
