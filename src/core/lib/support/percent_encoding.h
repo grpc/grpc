@@ -41,11 +41,23 @@
 extern const uint8_t gpr_url_percent_encoding_unreserved_bytes[256 / 8];
 extern const uint8_t gpr_compatible_percent_encoding_unreserved_bytes[256 / 8];
 
+/* Percent-encode a slice, returning the new slice (this cannot fail):
+   unreserved_bytes is a bitfield indicating which bytes are considered
+   unreserved and thus do not need percent encoding */
 gpr_slice gpr_percent_encode_slice(gpr_slice slice,
                                    const uint8_t *unreserved_bytes);
+/* Percent-decode a slice, strictly.
+   If the input is legal (contains no unreserved bytes, and legal % encodings),
+   returns true and sets *slice_out to the decoded slice.
+   If the input is not legal, returns false and leaves *slice_out untouched.
+   unreserved_bytes is a bitfield indicating which bytes are considered
+   unreserved and thus do not need percent encoding */
 bool gpr_strict_percent_decode_slice(gpr_slice slice_in,
                                      const uint8_t *unreserved_bytes,
                                      gpr_slice *slice_out);
+/* Percent-decode a slice, permissively.
+   If a % triplet can not be decoded, pass it through verbatim.
+   This cannot fail. */
 gpr_slice gpr_permissive_percent_decode_slice(gpr_slice slice_in);
 
 #endif /* PRECENT_H */
