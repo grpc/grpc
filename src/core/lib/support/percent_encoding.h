@@ -38,7 +38,15 @@
 
 #include <grpc/support/slice.h>
 
+/* URL percent encoding spec bitfield (usabel as 'unreserved_bytes' in
+   gpr_percent_encode_slice, gpr_strict_percent_decode_slice).
+   Flags [A-Za-z0-9-_.~] as unreserved bytes for the percent encoding routines
+   */
 extern const uint8_t gpr_url_percent_encoding_unreserved_bytes[256 / 8];
+/* URL percent encoding spec bitfield (usabel as 'unreserved_bytes' in
+   gpr_percent_encode_slice, gpr_strict_percent_decode_slice).
+   Flags ascii7 non-control characters excluding '%' as unreserved bytes for the
+   percent encoding routines */
 extern const uint8_t gpr_compatible_percent_encoding_unreserved_bytes[256 / 8];
 
 /* Percent-encode a slice, returning the new slice (this cannot fail):
