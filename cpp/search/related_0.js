@@ -16,6 +16,7 @@ var searchData=
   ['serverasyncreaderwriter',['ServerAsyncReaderWriter',['../classgrpc_1_1_server_context.html#a85f3f3dc5b92690c676b86571be20684',1,'grpc::ServerContext']]],
   ['serverasyncresponsewriter',['ServerAsyncResponseWriter',['../classgrpc_1_1_server_context.html#a2c679b602d120c70a6713fe742704b4e',1,'grpc::ServerContext']]],
   ['serverasyncwriter',['ServerAsyncWriter',['../classgrpc_1_1_server_context.html#a6068d9e3369a1016e7b75350b80f4f45',1,'grpc::ServerContext']]],
+  ['serverbuilderplugintest',['ServerBuilderPluginTest',['../classgrpc_1_1_server_builder.html#a6d051c774efa6448928d2ca4062676d0',1,'grpc::ServerBuilder']]],
   ['servercontext',['ServerContext',['../classgrpc_1_1_completion_queue.html#a6c5b4f4c66d254f341915982a17aac95',1,'grpc::CompletionQueue']]],
   ['serverinterface',['ServerInterface',['../classgrpc_1_1_server_context.html#a8edbec79fc5ad7456e57c0f513451e2f',1,'grpc::ServerContext']]],
   ['serverreader',['ServerReader',['../classgrpc_1_1_completion_queue.html#a4f20e2d049342ae00242bbc8021a44bd',1,'grpc::CompletionQueue::ServerReader()'],['../classgrpc_1_1_server_context.html#a4f20e2d049342ae00242bbc8021a44bd',1,'grpc::ServerContext::ServerReader()']]],

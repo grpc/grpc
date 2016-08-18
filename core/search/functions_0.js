@@ -1,9 +1,9 @@
 var searchData=
 [
   ['census_5fcontext_5fcreate',['census_context_create',['../census_8h.html#a63289de665c241f31e9c32666310ec3a',1,'census.h']]],
-  ['census_5fcontext_5fdecode',['census_context_decode',['../census_8h.html#add1983e11e6bfbb6e3eafd085c8f2e5d',1,'census.h']]],
+  ['census_5fcontext_5fdecode',['census_context_decode',['../census_8h.html#aaccea127635aaf9200e776eff7c7ba5d',1,'census.h']]],
   ['census_5fcontext_5fdestroy',['census_context_destroy',['../census_8h.html#a6e29f72138aac3eac75ef13a7bd25560',1,'census.h']]],
-  ['census_5fcontext_5fencode',['census_context_encode',['../census_8h.html#a339fd5da5a7b080a9f98c9a0ed22ad28',1,'census.h']]],
+  ['census_5fcontext_5fencode',['census_context_encode',['../census_8h.html#a054424f7ca74d513c4dba55dd20d92f2',1,'census.h']]],
   ['census_5fcontext_5fget_5fstatus',['census_context_get_status',['../census_8h.html#a12077dda197a10bf2198203eac1a348a',1,'census.h']]],
   ['census_5fcontext_5fget_5ftag',['census_context_get_tag',['../census_8h.html#a610c654980b00da26ed7b2becca79f94',1,'census.h']]],
   ['census_5fcontext_5finitialize_5fiterator',['census_context_initialize_iterator',['../census_8h.html#ac19f91fc3442073217752ce4abf5dfc4',1,'census.h']]],

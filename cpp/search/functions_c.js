@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['name',['name',['../classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3',1,'grpc::RpcMethod']]],
+  ['name',['name',['../classgrpc_1_1_server_builder_plugin.html#ac337c61dcb4d6c41e669e510f1faca48',1,'grpc::ServerBuilderPlugin::name()'],['../classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3',1,'grpc::RpcMethod::name()']]],
   ['next',['Next',['../classgrpc_1_1_completion_queue.html#a86d9810ced694e50f7987ac90b9f8c1a',1,'grpc::CompletionQueue']]],
   ['nopayloadasyncrequest',['NoPayloadAsyncRequest',['../classgrpc_1_1_server_interface_1_1_no_payload_async_request.html#af12a62339275a6359eb037f6bf0b7fc9',1,'grpc::ServerInterface::NoPayloadAsyncRequest']]],
   ['notify_5fall',['notify_all',['../classgrpc_1_1condition__variable.html#a09a9b8a854f939962c6080bd2764dd36',1,'grpc::condition_variable']]],

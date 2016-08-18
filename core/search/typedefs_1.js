@@ -1,17 +1,17 @@
 var searchData=
 [
   ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../impl_2codegen_2alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7',1,'alloc.h']]],
-  ['gpr_5fatm',['gpr_atm',['../impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_atomic.h'],['../impl_2codegen_2atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_sync.h'],['../impl_2codegen_2atm__win32_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_win32.h']]],
+  ['gpr_5fatm',['gpr_atm',['../impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_atomic.h'],['../impl_2codegen_2atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_sync.h'],['../impl_2codegen_2atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_windows.h']]],
   ['gpr_5favl',['gpr_avl',['../avl_8h.html#a31a6a15570ecac89eadb97e13e6b73bd',1,'avl.h']]],
   ['gpr_5favl_5fnode',['gpr_avl_node',['../avl_8h.html#a387f850dc2c55ba4e46c3f847e176ada',1,'avl.h']]],
   ['gpr_5favl_5fvtable',['gpr_avl_vtable',['../avl_8h.html#a7b4e175c2732d19931f686aeb7b4f570',1,'avl.h']]],
   ['gpr_5fcmdline',['gpr_cmdline',['../cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6',1,'cmdline.h']]],
-  ['gpr_5fcv',['gpr_cv',['../impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885',1,'gpr_cv():&#160;sync_posix.h'],['../impl_2codegen_2sync__win32_8h.html#a81241bed6e85e9b106a1311060a04d9d',1,'gpr_cv():&#160;sync_win32.h']]],
+  ['gpr_5fcv',['gpr_cv',['../impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885',1,'gpr_cv():&#160;sync_posix.h'],['../impl_2codegen_2sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d',1,'gpr_cv():&#160;sync_windows.h']]],
   ['gpr_5fhistogram',['gpr_histogram',['../histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc',1,'histogram.h']]],
-  ['gpr_5flog_5ffunc',['gpr_log_func',['../impl_2codegen_2log_8h.html#a23f29195676c33c61ff08a7f0a3e69b0',1,'log.h']]],
+  ['gpr_5flog_5ffunc',['gpr_log_func',['../impl_2codegen_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05',1,'log.h']]],
   ['gpr_5flog_5fseverity',['gpr_log_severity',['../impl_2codegen_2log_8h.html#ad49303346a78cf4881129958214fde8d',1,'log.h']]],
   ['gpr_5fmu',['gpr_mu',['../impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f',1,'sync_posix.h']]],
-  ['gpr_5fonce',['gpr_once',['../impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f',1,'gpr_once():&#160;sync_posix.h'],['../impl_2codegen_2sync__win32_8h.html#a6a752a459fe345c616c26b5a556ccc13',1,'gpr_once():&#160;sync_win32.h']]],
+  ['gpr_5fonce',['gpr_once',['../impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f',1,'gpr_once():&#160;sync_posix.h'],['../impl_2codegen_2sync__windows_8h.html#a6a752a459fe345c616c26b5a556ccc13',1,'gpr_once():&#160;sync_windows.h']]],
   ['gpr_5fslice',['gpr_slice',['../impl_2codegen_2slice_8h.html#a91fe16db371db7c53d6e3adc90a6678c',1,'slice.h']]],
   ['gpr_5fslice_5frefcount',['gpr_slice_refcount',['../impl_2codegen_2slice_8h.html#af8841873e741f6cf38b2192147ea4f3e',1,'slice.h']]],
   ['gpr_5fsubprocess',['gpr_subprocess',['../subprocess_8h.html#a1c3492c3aef738e6eef6b8cb1b435095',1,'subprocess.h']]],
@@ -32,12 +32,12 @@ var searchData=
   ['grpc_5fcompletion_5fqueue',['grpc_completion_queue',['../grpc__types_8h.html#a895faab0e6035445750e43482651ba2f',1,'grpc_types.h']]],
   ['grpc_5fcompletion_5ftype',['grpc_completion_type',['../grpc__types_8h.html#a70454b2958c92c1cd8feeaa45f157b74',1,'grpc_types.h']]],
   ['grpc_5fcompression_5foptions',['grpc_compression_options',['../compression__types_8h.html#a074a1aa6fb56901a795fe53c2adeefde',1,'compression_types.h']]],
-  ['grpc_5fcredentials_5fplugin_5fmetadata_5fcb',['grpc_credentials_plugin_metadata_cb',['../grpc__security_8h.html#acc59d2e9577dc4429895b9cd89450106',1,'grpc_security.h']]],
+  ['grpc_5fcredentials_5fplugin_5fmetadata_5fcb',['grpc_credentials_plugin_metadata_cb',['../grpc__security_8h.html#a08c13ff956af9e64b514c4af434faba2',1,'grpc_security.h']]],
   ['grpc_5fevent',['grpc_event',['../grpc__types_8h.html#a07990645ca218f6965fd83edf3f421b7',1,'grpc_types.h']]],
   ['grpc_5fmetadata',['grpc_metadata',['../grpc__types_8h.html#a1da84eaead787d991c5a0c87aed7c30b',1,'grpc_types.h']]],
   ['grpc_5fop',['grpc_op',['../grpc__types_8h.html#a6556a58ca45ad5132b89c770cf875215',1,'grpc_types.h']]],
-  ['grpc_5fprocess_5fauth_5fmetadata_5fdone_5fcb',['grpc_process_auth_metadata_done_cb',['../grpc__security_8h.html#a54decefff49649afe0c5a3056d0734f1',1,'grpc_security.h']]],
+  ['grpc_5fprocess_5fauth_5fmetadata_5fdone_5fcb',['grpc_process_auth_metadata_done_cb',['../grpc__security_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4',1,'grpc_security.h']]],
   ['grpc_5fserver',['grpc_server',['../grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8',1,'grpc_types.h']]],
   ['grpc_5fserver_5fcredentials',['grpc_server_credentials',['../grpc__security_8h.html#aa724192e56fdc03827846f16752deccc',1,'grpc_security.h']]],
-  ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a005f46357a959bbfbb7b1241a933ef43',1,'grpc_security.h']]]
+  ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a81799db566912702502c280b163b12bc',1,'grpc_security.h']]]
 ];
