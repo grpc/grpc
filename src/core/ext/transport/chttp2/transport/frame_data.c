@@ -51,15 +51,10 @@ grpc_error *grpc_chttp2_data_parser_init(grpc_chttp2_data_parser *parser) {
 
 void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_data_parser *parser) {
-  grpc_byte_stream *bs;
-  if (parser->parsing_frame) {
+  if (parser->parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
         exec_ctx, parser->parsing_frame, GRPC_ERROR_CREATE("Parser destroyed"),
         1);
-  }
-  while (
-      (bs = grpc_chttp2_incoming_frame_queue_pop(&parser->incoming_frames))) {
-    grpc_byte_stream_destroy(exec_ctx, bs);
   }
 }
 
@@ -235,9 +230,9 @@ grpc_error *grpc_chttp2_data_parser_parse(
         message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
       }
       p->parsing_frame = incoming_byte_stream =
-          grpc_chttp2_incoming_byte_stream_create(
-              exec_ctx, transport_global, stream_global, p->frame_size,
-              message_flags, &p->incoming_frames);
+          grpc_chttp2_incoming_byte_stream_create(exec_ctx, transport_global,
+                                                  stream_global, p->frame_size,
+                                                  message_flags);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
       if (cur == end) {

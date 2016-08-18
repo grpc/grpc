@@ -69,7 +69,6 @@ typedef struct {
   grpc_error *error;
 
   int is_frame_compressed;
-  grpc_chttp2_incoming_frame_queue incoming_frames;
   grpc_chttp2_incoming_byte_stream *parsing_frame;
 } grpc_chttp2_data_parser;
 

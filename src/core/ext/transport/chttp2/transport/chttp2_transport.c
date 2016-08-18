@@ -1216,20 +1216,13 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_chttp2_initiate_write(exec_ctx, &t->global, true, "send_ping");
 }
 
-typedef struct ack_ping_args {
-  grpc_closure closure;
-  grpc_chttp2_transport *t;
-  uint8_t opaque_8bytes[8];
-} ack_ping_args;
-
-static void ack_ping_locked(grpc_exec_ctx *exec_ctx, void *a,
-                            grpc_error *error_ignored) {
-  ack_ping_args *args = a;
+void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
+                          grpc_chttp2_transport_global *transport_global,
+                          const uint8_t *opaque_8bytes) {
   grpc_chttp2_outstanding_ping *ping;
-  grpc_chttp2_transport_global *transport_global = &args->t->global;
   for (ping = transport_global->pings.next; ping != &transport_global->pings;
        ping = ping->next) {
-    if (0 == memcmp(args->opaque_8bytes, ping->id, 8)) {
+    if (0 == memcmp(opaque_8bytes, ping->id, 8)) {
       grpc_exec_ctx_sched(exec_ctx, ping->on_recv, GRPC_ERROR_NONE, NULL);
       ping->next->prev = ping->prev;
       ping->prev->next = ping->next;
@@ -1237,20 +1230,6 @@ static void ack_ping_locked(grpc_exec_ctx *exec_ctx, void *a,
       break;
     }
   }
-  UNREF_TRANSPORT(exec_ctx, args->t, "ack_ping");
-  gpr_free(args);
-}
-
-void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
-                          grpc_chttp2_transport_global *transport_global,
-                          const uint8_t *opaque_8bytes) {
-  ack_ping_args *args = gpr_malloc(sizeof(*args));
-  args->t = TRANSPORT_FROM_GLOBAL(transport_global);
-  memcpy(args->opaque_8bytes, opaque_8bytes, sizeof(args->opaque_8bytes));
-  grpc_closure_init(&args->closure, ack_ping_locked, args);
-  REF_TRANSPORT(args->t, "ack_ping");
-  grpc_combiner_execute(exec_ctx, args->t->executor.combiner, &args->closure,
-                        GRPC_ERROR_NONE);
 }
 
 static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
@@ -1960,7 +1939,6 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
   GPR_TIMER_BEGIN("post_reading_action_locked", 0);
   bool keep_reading = false;
-  GRPC_ERROR_REF(error);
   if (error == GRPC_ERROR_NONE && t->closed) {
     error = GRPC_ERROR_CREATE("Transport closed");
   }
@@ -1985,7 +1963,6 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   } else {
     UNREF_TRANSPORT(exec_ctx, t, "reading_action");
   }
-  GRPC_ERROR_UNREF(error);
 
   GPR_TIMER_END("post_reading_action_locked", 0);
 
@@ -2201,7 +2178,7 @@ void grpc_chttp2_incoming_byte_stream_finished(
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, uint32_t frame_size,
-    uint32_t flags, grpc_chttp2_incoming_frame_queue *add_to_queue) {
+    uint32_t flags) {
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
       gpr_malloc(sizeof(*incoming_byte_stream));
   incoming_byte_stream->base.length = frame_size;
@@ -2218,13 +2195,14 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
   incoming_byte_stream->error = GRPC_ERROR_NONE;
-  if (add_to_queue->head == NULL) {
-    add_to_queue->head = incoming_byte_stream;
+  grpc_chttp2_incoming_frame_queue *q = &stream_global->incoming_frames;
+  if (q->head == NULL) {
+    q->head = incoming_byte_stream;
   } else {
-    add_to_queue->tail->is_tail = 0;
-    add_to_queue->tail->next_message = incoming_byte_stream;
+    q->tail->is_tail = 0;
+    q->tail->next_message = incoming_byte_stream;
   }
-  add_to_queue->tail = incoming_byte_stream;
+  q->tail = incoming_byte_stream;
   return incoming_byte_stream;
 }
 
