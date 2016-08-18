@@ -71,6 +71,7 @@ typedef struct grpc_ares_request {
   void *arg;
   int pending_quries;
   int success;
+  grpc_error *error;
   grpc_ares_ev_driver *ev_driver;
 } grpc_ares_request;
 
@@ -100,7 +101,6 @@ static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
   gpr_log(GPR_ERROR, "status: %d", status);
   grpc_ares_request *r = (grpc_ares_request *)arg;
-  grpc_error *err = GRPC_ERROR_NONE;
   gpr_log(GPR_ERROR, "status: %s", r->name);
   grpc_resolved_addresses **addresses = r->addrs_out;
   size_t i;
@@ -108,8 +108,8 @@ static void on_done_cb(void *arg, int status, int timeouts,
 
   if (status == ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "status ARES_SUCCESS");
-    GRPC_ERROR_UNREF(err);
-    err = GRPC_ERROR_NONE;
+    GRPC_ERROR_UNREF(r->error);
+    r->error = GRPC_ERROR_NONE;
     r->success = 1;
     if (*addresses == NULL) {
       *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
@@ -165,13 +165,13 @@ static void on_done_cb(void *arg, int status, int timeouts,
   } else if (!r->success) {
     gpr_log(GPR_ERROR, "status not ARES_SUCCESS");
     // TODO(zyc): add more error detail
-    if (err == GRPC_ERROR_NONE) {
-      err = GRPC_ERROR_CREATE("C-ares query error");
+    if (r->error == GRPC_ERROR_NONE) {
+      r->error = GRPC_ERROR_CREATE("C-ares query error");
     }
   }
   if (--r->pending_quries == 0) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_exec_ctx_sched(&exec_ctx, r->on_done, err, NULL);
+    grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
     grpc_exec_ctx_flush(&exec_ctx);
     grpc_exec_ctx_finish(&exec_ctx);
 
@@ -293,6 +293,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     r->host = gpr_strdup(host);
     r->pending_quries = 0;
     r->success = 0;
+    r->error = GRPC_ERROR_NONE;
     grpc_closure_init(&r->request_closure, request_resolving_address, r);
     grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
   }
