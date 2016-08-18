@@ -675,18 +675,13 @@ CPPFLAGS := -Ithird_party/c-ares -Isrc/c-ares $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
 else
 ifeq ($(HAS_PKG_CONFIG),true)
-CARES_PKG_CONFIG = true
 PC_REQUIRES_GRPC += libcares
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags libcares)
-LDFLAGS_CARES_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L libcares)
-ifeq ($(SYSTEM),Linux)
-ifneq ($(LDFLAGS_CARES_PKG_CONFIG),)
-LDFLAGS_CARES_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L libcares | sed s/L/Wl,-rpath,/)
-endif
-endif
+LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L libcares)
+LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l libcares))
 else
 PC_LIBS_GRPC += -lcares
-LIBS += libcares
+LIBS += cares
 endif
 endif
 
