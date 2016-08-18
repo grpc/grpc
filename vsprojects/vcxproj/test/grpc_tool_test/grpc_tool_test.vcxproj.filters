@@ -1,38 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.proto">
-      <Filter>src\proto\grpc\testing</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.proto">
-      <Filter>src\proto\grpc\testing\duplicate</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.cc">
-      <Filter>test\cpp\end2end</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\grpc_tool_test.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\subprocess.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\test_credentials_provider.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
-      <Filter>src\cpp\codegen</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -186,97 +171,61 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h">
-      <Filter>test\cpp\end2end</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.h">
-      <Filter>test\cpp\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h">
-      <Filter>test\cpp\util</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.h">
-      <Filter>test\cpp\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\subprocess.h">
-      <Filter>test\cpp\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\test_credentials_provider.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{af3e8efd-71b5-c047-7b1f-9896ff6b9dae}</UniqueIdentifier>
+      <UniqueIdentifier>{89fed779-17c5-23da-c8a2-9e868ff34480}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc">
-      <UniqueIdentifier>{b8f8ac53-4ea7-9602-a5c8-592da3569a7e}</UniqueIdentifier>
+      <UniqueIdentifier>{96e4a1a8-0b91-1a6d-ae4d-ddf33abb93c0}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++">
-      <UniqueIdentifier>{e6ee8dea-0866-8e41-c115-c3a237f85295}</UniqueIdentifier>
+      <UniqueIdentifier>{1d9dcc6f-7c1b-cdc3-4c35-73d5968dfd92}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl">
-      <UniqueIdentifier>{67705040-57a2-dd65-b4e9-291d6512b10a}</UniqueIdentifier>
+      <UniqueIdentifier>{5eca7690-973a-c8ed-84d6-5325f8de43ac}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl\codegen">
-      <UniqueIdentifier>{c977e49d-7e35-9e45-54c2-3ec17f4a2027}</UniqueIdentifier>
+      <UniqueIdentifier>{5789073e-5b84-0ec9-af06-47866647874d}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl\codegen\security">
-      <UniqueIdentifier>{28c9540f-2a90-17a6-a18c-c8452c2efd93}</UniqueIdentifier>
+      <UniqueIdentifier>{d3f3293f-204f-7771-fcdf-de673f6b06b6}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\impl">
-      <UniqueIdentifier>{cb0bbb9c-2cd0-46eb-225d-8614a13f30a5}</UniqueIdentifier>
+      <UniqueIdentifier>{7e90f37b-f9cc-0725-b2c1-12aa7d4809ba}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
-      <UniqueIdentifier>{48b3f0ad-af42-c9fd-74ce-d47ad7ffa748}</UniqueIdentifier>
+      <UniqueIdentifier>{7e4b71ef-8125-6446-bfc1-9bc90beed59c}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>{21f220cf-c756-4172-000b-e8a1f0888097}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp">
-      <UniqueIdentifier>{4409f847-2173-ea03-724b-c9181ec50f07}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp\codegen">
-      <UniqueIdentifier>{ba3b353d-1c24-1466-d62d-7da515f5e6f6}</UniqueIdentifier>
+      <UniqueIdentifier>{169774bd-5c6c-6827-66a4-326b4aef44d6}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto">
-      <UniqueIdentifier>{58b0e1e0-f329-64ce-86e5-8f125c02b96e}</UniqueIdentifier>
+      <UniqueIdentifier>{1b609b37-ef2a-e5eb-e1ba-ad9e79c77438}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto\grpc">
-      <UniqueIdentifier>{f3daac52-2bfd-362e-9a76-04cd7a90aa34}</UniqueIdentifier>
+      <UniqueIdentifier>{cd1e35d8-8a61-62fe-6ce1-c8936872d1ef}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto\grpc\testing">
-      <UniqueIdentifier>{3df5f11f-e018-1126-8c22-291540035aa8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\proto\grpc\testing\duplicate">
-      <UniqueIdentifier>{4063b792-4f0a-a558-d4b1-0543a2b9fdeb}</UniqueIdentifier>
+      <UniqueIdentifier>{f7ee4df5-1f47-1e7f-c91e-350382c1b729}</UniqueIdentifier>
     </Filter>
     <Filter Include="test">
-      <UniqueIdentifier>{b1aaa210-fe1d-859a-67b3-95a2b286ec99}</UniqueIdentifier>
+      <UniqueIdentifier>{f2166b83-6b0b-d53b-b58b-627bd9efcad2}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp">
-      <UniqueIdentifier>{793efaa7-370f-c34a-d347-31fc4e0630e2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\cpp\end2end">
-      <UniqueIdentifier>{1e6760f2-4cf7-1ecb-88a5-5faeec3c2150}</UniqueIdentifier>
+      <UniqueIdentifier>{bbe36cbc-7fbe-2817-0bd0-d03726f323e6}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp\util">
-      <UniqueIdentifier>{bbe1e5b7-f4f9-8e32-ce7c-8c21afcf39d8}</UniqueIdentifier>
+      <UniqueIdentifier>{e106cd7b-cfa0-0645-f1a9-2acedc23afe7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

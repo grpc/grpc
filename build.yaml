@@ -789,6 +789,13 @@ filegroups:
   - src/cpp/ext/reflection.pb.cc
   uses:
   - grpc++_codegen_proto
+- name: thrift_util
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/thrift_serializer.h
+  - include/grpc++/impl/codegen/thrift_utils.h
+  uses:
+  - grpc++_codegen_base
 libs:
 - name: grpc_c
   build: all
@@ -954,6 +961,7 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
+  - thrift_util
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -975,16 +983,21 @@ libs:
   language: c++
   headers:
   - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - grpc++_reflection
   - grpc++
-  - grpc_plugin_support
+  - grpc++_test_config
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -1635,6 +1648,26 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
+- name: grpc_cpp_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/cpp_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
+- name: grpc_csharp_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/csharp_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -1654,6 +1687,25 @@ targets:
   - grpc_plugin_support
   secure: false
   vs_config_type: Application
+- name: grpc_node_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/node_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+- name: grpc_objective_c_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/objective_c_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
@@ -1674,6 +1726,16 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
+- name: grpc_python_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/python_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
@@ -1684,6 +1746,38 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
+- name: grpc_ruby_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/ruby_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
+- name: grpc_tool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/string_ref_helper.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - test/cpp/util/grpc_tool_test.cc
+  - test/cpp/util/string_ref_helper.cc
+  deps:
+  - grpc_cli_libs
+  - grpc++_reflection
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -3020,9 +3114,12 @@ targets:
   - test/core/census/mlog_test.c
   deps:
   - grpc_test_util
+  - grpc_cli_libs
+  - grpc++_reflection
+  - grpc++
   - grpc
-  - gpr_test_util
   - gpr
+  - grpc++_test_config
 - name: multiple_server_queues_test
   build: test
   language: core

@@ -1605,6 +1605,32 @@ install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
 )
 
 
+add_executable(grpc_cpp_plugin
+  src/compiler/cpp_plugin.cc
+)
+
+target_include_directories(grpc_cpp_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_cpp_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
 )
@@ -1625,6 +1651,58 @@ target_link_libraries(grpc_csharp_plugin
 
 
 install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_csharp_plugin
+  src/compiler/csharp_plugin.cc
+)
+
+target_include_directories(grpc_csharp_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_csharp_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_node_plugin
+  src/compiler/node_plugin.cc
+)
+
+target_include_directories(grpc_node_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_node_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_node_plugin EXPORT gRPCTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -1683,6 +1761,32 @@ install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
 )
 
 
+add_executable(grpc_objective_c_plugin
+  src/compiler/objective_c_plugin.cc
+)
+
+target_include_directories(grpc_objective_c_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_objective_c_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
 )
@@ -1703,6 +1807,58 @@ target_link_libraries(grpc_python_plugin
 
 
 install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_python_plugin
+  src/compiler/python_plugin.cc
+)
+
+target_include_directories(grpc_python_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_python_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_ruby_plugin
+  src/compiler/ruby_plugin.cc
+)
+
+target_include_directories(grpc_ruby_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_ruby_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

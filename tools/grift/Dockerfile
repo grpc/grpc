@@ -1,6 +1,4 @@
-#!/bin/sh
-
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,28 +27,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+FROM ubuntu:14.04
 
-set -e
+RUN apt-get update && \
+  apt-get install -y \
+  git build-essential \
+  pkg-config flex \
+  bison \
+  libkrb5-dev \
+  libsasl2-dev \
+  libnuma-dev \
+  pkg-config \
+  libssl-dev \
+  autoconf libtool \
+  cmake \
+  libiberty-dev \
+  g++ unzip \
+  curl make automake libtool libboost-dev
 
-export TEST=true
+# Configure git
+RUN git config --global user.name "Jenkins" && \
+  git config --global user.email "jenkins@grpc"
 
-cd `dirname $0`/../../..
+# Clone gRPC
+RUN git clone https://github.com/grpc/grpc
 
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
+# Update Submodules
+RUN cd grpc && git submodule update --init
 
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (version_for_cocoapods_2.0-100-gc880e42)
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- f8ac463766281625ad710900479130c7fcb4d63b third_party/nanopb (nanopb-0.3.4-29-gf8ac463)
- e8ae137c96444ea313485ed1118c5e43b2099cf1 third_party/protobuf (v3.0.0-beta-4-74-ge8ae137)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
- bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift
-EOF
+# Install protobuf
+RUN cd grpc/third_party/protobuf && ./autogen.sh && ./configure && \
+  make -j && make check -j && make install && ldconfig
 
-diff -u $submodules $want_submodules
+# Install gRPC
+RUN cd grpc && make -j && make install
 
-rm $submodules $want_submodules
-
+# Install thrift
+RUN cd grpc/third_party/thrift && git am --signoff < ../../tools/grift/grpc_plugins_generator.patch && \
+  ./bootstrap.sh && ./configure && make -j && make install
