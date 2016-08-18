@@ -15,9 +15,9 @@
     }
   ],
   "dependencies": {
-    "grpc": "^0.15.0",
+    "grpc": "^1.1.0-dev",
     "lodash": "^3.9.3",
-    "google-protobuf": "^3.0.0-alpha.5"
+    "google-protobuf": "^3.0.0"
   },
   "files": [
     "LICENSE",

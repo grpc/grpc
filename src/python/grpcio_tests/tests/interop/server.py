@@ -30,10 +30,11 @@
 """The Python implementation of the GRPC interoperability test server."""
 
 import argparse
+from concurrent import futures
 import logging
 import time
 
-from grpc.beta import implementations
+import grpc
 from src.proto.grpc.testing import test_pb2
 
 from tests.interop import methods
@@ -51,12 +52,13 @@ def serve():
       default=False, type=resources.parse_bool)
   args = parser.parse_args()
 
-  server = test_pb2.beta_create_TestService_server(methods.TestService())
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+  test_pb2.add_TestServiceServicer_to_server(methods.TestService(), server)
   if args.use_tls:
     private_key = resources.private_key()
     certificate_chain = resources.certificate_chain()
-    credentials = implementations.ssl_server_credentials(
-        [(private_key, certificate_chain)])
+    credentials = grpc.ssl_server_credentials(
+        ((private_key, certificate_chain),))
     server.add_secure_port('[::]:{}'.format(args.port), credentials)
   else:
     server.add_insecure_port('[::]:{}'.format(args.port))
@@ -68,7 +70,7 @@ def serve():
       time.sleep(_ONE_DAY_IN_SECONDS)
   except BaseException as e:
     logging.info('Caught exception "%s"; stopping server...', e)
-    server.stop(0)
+    server.stop(None)
     logging.info('Server stopped; exiting.')
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-<%page args="executable=False,includeData=False,includeRuntimes=True"/>\
+<%page args="executable=False,includeData=False"/>\
 "buildOptions": {
   % if executable:
     "emitEntryPoint": true
@@ -52,10 +52,8 @@
     }
   },
   %endif
-  % if includeRuntimes:
   "runtimes": {
     "win7-x64": { },
     "debian.8-x64": { },
     "osx.10.11-x64": { }
   },
-  % endif
