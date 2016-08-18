@@ -54,36 +54,23 @@ namespace Grpc.IntegrationTesting
 
         private class ClientOptions
         {
-            [Option("server_addresses", DefaultValue = "localhost:8080")]
+            [Option("server_addresses", Default = "localhost:8080")]
             public string ServerAddresses { get; set; }
 
-            [Option("test_cases", DefaultValue = "large_unary:100")]
+            [Option("test_cases", Default = "large_unary:100")]
             public string TestCases { get; set; }
 
-            [Option("test_duration_secs", DefaultValue = -1)]
+            [Option("test_duration_secs", Default = -1)]
             public int TestDurationSecs { get; set; }
 
-            [Option("num_channels_per_server", DefaultValue = 1)]
+            [Option("num_channels_per_server", Default = 1)]
             public int NumChannelsPerServer { get; set; }
 
-            [Option("num_stubs_per_channel", DefaultValue = 1)]
+            [Option("num_stubs_per_channel", Default = 1)]
             public int NumStubsPerChannel { get; set; }
 
-            [Option("metrics_port", DefaultValue = 8081)]
+            [Option("metrics_port", Default = 8081)]
             public int MetricsPort { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# stress test client",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ClientOptions options;
@@ -105,23 +92,21 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ClientOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
+            var parserResult = Parser.Default.ParseArguments<ClientOptions>(args)
+                .WithNotParsed((x) => Environment.Exit(1))
+                .WithParsed(options => {
+                    GrpcPreconditions.CheckArgument(options.NumChannelsPerServer > 0);
+                    GrpcPreconditions.CheckArgument(options.NumStubsPerChannel > 0);
 
-            GrpcPreconditions.CheckArgument(options.NumChannelsPerServer > 0);
-            GrpcPreconditions.CheckArgument(options.NumStubsPerChannel > 0);
+                    var serverAddresses = options.ServerAddresses.Split(',');
+                    GrpcPreconditions.CheckArgument(serverAddresses.Length > 0, "You need to provide at least one server address");
 
-            var serverAddresses = options.ServerAddresses.Split(',');
-            GrpcPreconditions.CheckArgument(serverAddresses.Length > 0, "You need to provide at least one server address");
+                    var testCases = ParseWeightedTestCases(options.TestCases);
+                    GrpcPreconditions.CheckArgument(testCases.Count > 0, "You need to provide at least one test case");
 
-            var testCases = ParseWeightedTestCases(options.TestCases);
-            GrpcPreconditions.CheckArgument(testCases.Count > 0, "You need to provide at least one test case");
-
-            var interopClient = new StressTestClient(options, serverAddresses.ToList(), testCases);
-            interopClient.Run().Wait();
+                    var interopClient = new StressTestClient(options, serverAddresses.ToList(), testCases);
+                    interopClient.Run().Wait();
+                });
         }
 
         async Task Run()
