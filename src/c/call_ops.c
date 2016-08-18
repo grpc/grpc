@@ -324,11 +324,11 @@ void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   GRPC_context *context,
                                   const grpc_message request, void *response) {
   size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT] = {};
+  grpc_op ops[GRPC_MAX_OP_COUNT] = {{0}};
   size_t num_ops =
       GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
   if (num_ops > 0 && call != NULL) {
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_batch(call, ops, nops, set, NULL));
+    grpc_call_error error = grpc_call_start_batch(call, ops, nops, set, NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
   }
 }

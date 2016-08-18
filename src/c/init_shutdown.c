@@ -36,7 +36,7 @@
 #include <grpc/support/log.h>
 #include <stdlib.h>
 
-static void perform_grpc_init() {
+static void perform_grpc_init(void) {
   grpc_init();
   /* register grpc_shutdown to be called */
   GPR_ASSERT(atexit(grpc_shutdown) == 0);

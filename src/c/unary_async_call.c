@@ -50,7 +50,7 @@ static void free_client_reader(void *arg) {
 
 GRPC_client_async_response_reader *GRPC_unary_async_call(
     GRPC_completion_queue *cq, const GRPC_method rpc_method,
-    const GRPC_message request, GRPC_client_context *context) {
+    const GRPC_message request, GRPC_client_context *const context) {
   grpc_call *call = grpc_channel_create_call(
       context->channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rpc_method.name, "",
       context->deadline, NULL);
