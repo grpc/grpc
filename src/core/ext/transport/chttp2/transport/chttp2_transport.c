@@ -1211,6 +1211,7 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   p->id[5] = (uint8_t)((t->global.ping_counter >> 16) & 0xff);
   p->id[6] = (uint8_t)((t->global.ping_counter >> 8) & 0xff);
   p->id[7] = (uint8_t)(t->global.ping_counter & 0xff);
+  t->global.ping_counter++;
   p->on_recv = on_recv;
   gpr_slice_buffer_add(&t->global.qbuf, grpc_chttp2_ping_create(0, p->id));
   grpc_chttp2_initiate_write(exec_ctx, &t->global, true, "send_ping");
@@ -1227,9 +1228,15 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
       ping->next->prev = ping->prev;
       ping->prev->next = ping->next;
       gpr_free(ping);
-      break;
+      return;
     }
   }
+  char *msg = gpr_dump((const char *)opaque_8bytes, 8, GPR_DUMP_HEX);
+  char *from =
+      grpc_endpoint_get_peer(TRANSPORT_FROM_GLOBAL(transport_global)->ep);
+  gpr_log(GPR_DEBUG, "Unknown ping response from %s: %s", from, msg);
+  gpr_free(from);
+  gpr_free(msg);
 }
 
 static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,

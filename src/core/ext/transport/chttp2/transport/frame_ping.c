@@ -95,6 +95,8 @@ grpc_error *grpc_chttp2_ping_parser_parse(
     } else {
       gpr_slice_buffer_add(&transport_global->qbuf,
                            grpc_chttp2_ping_create(1, p->opaque_8bytes));
+      grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                                 "ping response");
     }
   }
 
