@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['rpc_5fmethod_2eh',['rpc_method.h',['../rpc__method_8h.html',1,'']]],
-  ['rpc_5fmethod_2eh',['rpc_method.h',['../codegen_2rpc__method_8h.html',1,'']]],
-  ['rpc_5fservice_5fmethod_2eh',['rpc_service_method.h',['../rpc__service__method_8h.html',1,'']]],
-  ['rpc_5fservice_5fmethod_2eh',['rpc_service_method.h',['../codegen_2rpc__service__method_8h.html',1,'']]]
+  ['port_5fplatform_2eh',['port_platform.h',['../port__platform_8h.html',1,'']]],
+  ['propagation_5fbits_2eh',['propagation_bits.h',['../propagation__bits_8h.html',1,'']]]
 ];

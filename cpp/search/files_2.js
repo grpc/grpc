@@ -13,10 +13,15 @@ var searchData=
   ['completion_5fqueue_2eh',['completion_queue.h',['../completion__queue_8h.html',1,'']]],
   ['completion_5fqueue_2eh',['completion_queue.h',['../impl_2codegen_2completion__queue_8h.html',1,'']]],
   ['completion_5fqueue_5ftag_2eh',['completion_queue_tag.h',['../completion__queue__tag_8h.html',1,'']]],
+  ['compression_2eh',['compression.h',['../compression_8h.html',1,'']]],
+  ['compression_5ftypes_2eh',['compression_types.h',['../compression__types_8h.html',1,'']]],
   ['config_2eh',['config.h',['../impl_2codegen_2config_8h.html',1,'']]],
   ['config_2eh',['config.h',['../support_2config_8h.html',1,'']]],
-  ['config_5fprotobuf_2eh',['config_protobuf.h',['../support_2config__protobuf_8h.html',1,'']]],
-  ['config_5fprotobuf_2eh',['config_protobuf.h',['../impl_2codegen_2config__protobuf_8h.html',1,'']]],
+  ['connectivity_5fstate_2eh',['connectivity_state.h',['../connectivity__state_8h.html',1,'']]],
+  ['core_5fcodegen_2eh',['core_codegen.h',['../core__codegen_8h.html',1,'']]],
+  ['core_5fcodegen_5finterface_2eh',['core_codegen_interface.h',['../core__codegen__interface_8h.html',1,'']]],
+  ['create_5fauth_5fcontext_2eh',['create_auth_context.h',['../create__auth__context_8h.html',1,'']]],
   ['create_5fchannel_2eh',['create_channel.h',['../create__channel_8h.html',1,'']]],
+  ['create_5fchannel_5fposix_2eh',['create_channel_posix.h',['../create__channel__posix_8h.html',1,'']]],
   ['credentials_2eh',['credentials.h',['../credentials_8h.html',1,'']]]
 ];
