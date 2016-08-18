@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\support\percent_encoding_test.c">
+      <Filter>test\core\support</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{c2ea1ce7-c916-11e7-6477-92a18d988d54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{14fa1f36-5dea-ee3f-d3fa-a137176b235f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\support">
+      <UniqueIdentifier>{e245dffe-593f-f63e-8dc8-3c9de4d00697}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

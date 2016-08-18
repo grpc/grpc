@@ -98,6 +98,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
@@ -125,6 +126,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/percent_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.c" role="src" />
