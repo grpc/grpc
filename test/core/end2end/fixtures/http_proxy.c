@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
@@ -65,7 +66,7 @@ struct grpc_end2end_http_proxy {
   grpc_channel_args* channel_args;
   gpr_mu* mu;
   grpc_pollset* pollset;
-  bool shutdown;
+  gpr_atm shutdown;
 };
 
 //
@@ -376,7 +377,7 @@ static void thread_main(void* arg) {
         grpc_pollset_work(&exec_ctx, proxy->pollset, &worker, now, deadline));
     gpr_mu_unlock(proxy->mu);
     grpc_exec_ctx_flush(&exec_ctx);
-  } while (!proxy->shutdown);
+  } while (!gpr_atm_acq_load(&proxy->shutdown));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -424,7 +425,7 @@ static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
-  proxy->shutdown = true;  // Signal proxy thread to shutdown.
+  gpr_atm_rel_store(&proxy->shutdown, 1);  // Signal proxy thread to shutdown.
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_thd_join(proxy->thd);
   grpc_tcp_server_shutdown_listeners(&exec_ctx, proxy->server);
