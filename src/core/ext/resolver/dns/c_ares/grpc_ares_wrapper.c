@@ -150,11 +150,12 @@ static void on_done_cb(void *arg, int status, int timeouts,
 
         (*addresses)->addrs[i].len = sizeof(struct sockaddr_in);
         addr = (struct sockaddr_in *)&(*addresses)->addrs[i].addr;
+
+        memcpy(&addr->sin_addr, hostent->h_addr_list[i - prev_naddr],
+          sizeof(struct in_addr));
         ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
         gpr_log(GPR_ERROR, "addr: %s", output);
         gpr_log(GPR_ERROR, "port: %s", r->port);
-        memcpy(&addr->sin_addr, hostent->h_addr_list[i - prev_naddr],
-               sizeof(struct in_addr));
         addr->sin_family = (sa_family_t)hostent->h_addrtype;
         addr->sin_port = strhtons(r->port);
       }
@@ -167,7 +168,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
       err = GRPC_ERROR_CREATE("C-ares query error");
     }
   }
-  if (--r->pending_quries == 0 || err != GRPC_ERROR_NONE) {
+  if (--r->pending_quries == 0) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_exec_ctx_sched(&exec_ctx, r->on_done, err, NULL);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -197,6 +198,8 @@ static int try_fake_resolve(const char *name, const char *port,
                             grpc_resolved_addresses **addresses) {
   struct sockaddr_in sa;
   struct sockaddr_in6 sa6;
+  memset(&sa, 0, sizeof(struct sockaddr_in));
+  memset(&sa6, 0, sizeof(struct sockaddr_in6));
   if (0 != ares_inet_pton(AF_INET, name, &(sa.sin_addr))) {
     gpr_log(GPR_ERROR, "AF_INET");
     *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
