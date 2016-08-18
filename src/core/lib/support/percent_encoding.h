@@ -38,7 +38,14 @@
 
 #include <grpc/support/slice.h>
 
-gpr_slice gpr_percent_encode_slice(gpr_slice slice);
-bool gpr_percent_decode_slice(gpr_slice slice_in, gpr_slice *slice_out);
+extern const uint8_t gpr_url_percent_encoding_unreserved_bytes[256 / 8];
+extern const uint8_t gpr_compatible_percent_encoding_unreserved_bytes[256 / 8];
+
+gpr_slice gpr_percent_encode_slice(gpr_slice slice,
+                                   const uint8_t *unreserved_bytes);
+bool gpr_strict_percent_decode_slice(gpr_slice slice_in,
+                                     const uint8_t *unreserved_bytes,
+                                     gpr_slice *slice_out);
+gpr_slice gpr_permissive_percent_decode_slice(gpr_slice slice_in);
 
 #endif /* PRECENT_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,39 +31,54 @@
  *
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+/* generates constant table for metadata.c */
+
+#include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+static unsigned char legal_bits[256 / 8];
 
-#include "src/core/lib/support/percent_encoding.h"
-#include "test/core/util/memory_counters.h"
-
-bool squelch = true;
-bool leak_check = true;
-
-static void test(const uint8_t *data, size_t size, const uint8_t *dict) {
-  struct grpc_memory_counters counters;
-  grpc_memory_counters_init();
-  gpr_slice input = gpr_slice_from_copied_buffer((const char *)data, size);
-  gpr_slice output = gpr_percent_encode_slice(input, dict);
-  gpr_slice decoded_output;
-  // encoder must always produce decodable output
-  GPR_ASSERT(gpr_percent_decode_slice(output, false, &decoded_output));
-  // and decoded output must always match the input
-  GPR_ASSERT(gpr_slice_cmp(input, decoded_output) == 0);
-  gpr_slice_unref(input);
-  gpr_slice_unref(output);
-  gpr_slice_unref(decoded_output);
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  GPR_ASSERT(counters.total_size_relative == 0);
+static void legal(int x) {
+  int byte = x / 8;
+  int bit = x % 8;
+  /* NB: the following integer arithmetic operation needs to be in its
+   * expanded form due to the "integral promotion" performed (see section
+   * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+   * is then required to avoid the compiler warning */
+  legal_bits[byte] =
+      (unsigned char)((legal_bits[byte] | (unsigned char)(1 << bit)));
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  test(data, size, gpr_url_percent_encoding_unreserved_bytes);
-  test(data, size, gpr_compatible_percent_encoding_unreserved_bytes);
+static void dump(const char *name) {
+  int i;
+
+  printf("const uint8_t %s[256/8] = ", name);
+  for (i = 0; i < 256 / 8; i++)
+    printf("%c 0x%02x", i ? ',' : '{', legal_bits[i]);
+  printf(" };\n");
+}
+
+static void clear(void) { memset(legal_bits, 0, sizeof(legal_bits)); }
+
+int main(void) {
+  int i;
+
+  clear();
+  for (i = 'a'; i <= 'z'; i++) legal(i);
+  for (i = 'A'; i <= 'Z'; i++) legal(i);
+  for (i = '0'; i <= '9'; i++) legal(i);
+  legal('-');
+  legal('_');
+  legal('.');
+  legal('~');
+  dump("gpr_url_percent_encoding_unreserved_bytes");
+
+  clear();
+  for (i = 32; i <= 126; i++) {
+    if (i == '%') continue;
+    legal(i);
+  }
+  dump("gpr_compatible_percent_encoding_unreserved_bytes");
+
   return 0;
 }

@@ -1526,6 +1526,28 @@ install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
 )
 
 
+add_executable(gen_percent_encoding_tables
+  tools/codegen/core/gen_percent_encoding_tables.c
+)
+
+target_include_directories(gen_percent_encoding_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+
+
+install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
 add_executable(grpc_create_jwt
   test/core/security/create_jwt.c
 )

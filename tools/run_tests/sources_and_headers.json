@@ -486,6 +486,17 @@
     "type": "target"
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gen_percent_encoding_tables", 
+    "src": [
+      "tools/codegen/core/gen_percent_encoding_tables.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
     "deps": [
       "gpr", 
       "gpr_test_util", 
