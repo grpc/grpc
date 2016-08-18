@@ -70,16 +70,14 @@ typedef struct expectation {
 struct cq_verifier {
   /* bound completion queue */
   grpc_completion_queue *cq;
-  /* expectation list */
+  /* start of expectation list */
   expectation *first_expectation;
-  expectation *last_expectation;
 };
 
 cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
   cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
   v->cq = cq;
   v->first_expectation = NULL;
-  v->last_expectation = NULL;
   return v;
 }
 
@@ -239,7 +237,6 @@ void cq_verify(cq_verifier *v) {
         verify_matches(e, &ev);
         if (e == v->first_expectation) v->first_expectation = e->next;
         if (prev != NULL) prev->next = e->next;
-        if (e == v->last_expectation) v->last_expectation = prev;
         gpr_free(e);
         break;
       }
@@ -285,10 +282,8 @@ static void add(cq_verifier *v, grpc_completion_type type, void *tag,
   e->type = type;
   e->tag = tag;
   e->success = success;
-  e->next = NULL;
-  if (v->first_expectation == NULL) v->first_expectation = e;
-  if (v->last_expectation != NULL) v->last_expectation->next = e;
-  v->last_expectation = e;
+  e->next = v->first_expectation;
+  v->first_expectation = e;
 }
 
 void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
