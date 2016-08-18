@@ -113,9 +113,12 @@ static void md_only_test_get_request_metadata(
   if (c->is_async) {
     grpc_credentials_metadata_request *cb_arg =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    grpc_executor_push(
-        grpc_closure_create(on_simulated_token_fetch_done, cb_arg),
-        GRPC_ERROR_NONE);
+    grpc_timer_init(exec_ctx, &c->timer,
+                    gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_micros(10, GPR_TIMESPAN)),
+                    on_simulated_token_fetch_done, cb_arg,
+                    gpr_now(GPR_CLOCK_MONOTONIC));
+
   } else {
     cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, NULL);
   }
