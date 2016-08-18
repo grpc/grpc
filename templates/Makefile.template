@@ -556,7 +556,9 @@
   endif
 
   ifeq ($(EMBED_CARES),true)
-  CARES_DEP = $(LIBDIR)/$(CONFIG)/c-ares/libcares.a
+  CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
+  CARES_MERGE_OBJS = $(LIBARES_OBJS)
+  CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
   CARES_CFLAGS_EXTRA += $(findstring -m32,$(CFLAGS))
@@ -890,23 +892,6 @@
   	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
-
-  third_party/c-ares/configure:
-  	$(E) "[AUTOGEN] Preparing c-ares"
-  	# Walkaround for github.com/c-ares/c-ares/issues/44
-  	$(Q)sed -i'.bak' -e 's/AC_CONFIG_SUBDIRS(\[test\])/{}/g' third_party/c-ares/configure.ac
-  	$(Q)(cd third_party/c-ares; ./buildconf; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(CARES_LDFLAGS_EXTRA)" CFLAGS="-g $(CARES_CFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(CARES_CPPFLAGS_EXTRA)" ./configure --disable-shared)
-  	$(Q)mv third_party/c-ares/configure.ac.bak third_party/c-ares/configure.ac
-
-  $(LIBDIR)/$(CONFIG)/c-ares/libcares.a: third_party/c-ares/configure
-  	$(E) "[MAKE]    Building c-ares"
-  	$(Q)$(MAKE) -C third_party/c-ares clean
-  	$(Q)$(MAKE) -C third_party/c-ares
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/c-ares
-  	$(Q)cp third_party/c-ares/.libs/libcares.a $(LIBDIR)/$(CONFIG)
-
-  $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.o: third_party/c-ares/configure
-  $(OBJDIR)/$(CONFIG)/src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.o: third_party/c-ares/configure
 
   static: static_c static_cxx
 
@@ -1507,8 +1492,8 @@
   % if lib.name != 'z':
   $(ZLIB_DEP) \
   % endif
-  % if lib.name == 'ares':
-  third_party/c-ares/configure \
+  % if lib.name != 'ares':
+  $(CARES_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1518,11 +1503,11 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(CARES_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
-   $(CARES_DEP)\
 
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
@@ -1531,6 +1516,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(CARES_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1575,7 +1561,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(LDLIBS_CARES)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1709,7 +1695,6 @@
   % for dep in tgt.deps:
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
-   $(CARES_DEP)\
 
   % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
   ## C++ targets specificies.

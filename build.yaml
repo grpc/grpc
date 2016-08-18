@@ -3469,5 +3469,6 @@ ruby_gem:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
