@@ -36,6 +36,7 @@
  */
 
 #include "test/c/end2end/server_end2end_test.h"
+#include "test/core/util/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pbc.h"
 #include <third_party/nanopb/pb_encode.h>
 #include <third_party/nanopb/pb_decode.h>
@@ -71,7 +72,8 @@ static bool read_string_store_in_arg(pb_istream_t *stream,
 }
 
 static void *client_thread(void *param) {
-  GRPC_channel *channel = GRPC_channel_create("0.0.0.0:50051");
+  char *host = param;
+  GRPC_channel *channel = GRPC_channel_create(host);
   grpc_testing_EchoRequest request = {.message = {.arg = "gRPC-C", .funcs.encode = write_string_from_arg}};
   grpc_testing_EchoResponse response = {.message = {.funcs.decode = read_string_store_in_arg}};
 
@@ -98,13 +100,16 @@ int main(int argc, char **argv) {
   GRPC_server *server = GRPC_build_server((GRPC_build_server_options){ .max_message_size = 0 });
   GRPC_incoming_notification_queue *incoming =
     GRPC_server_new_incoming_queue(server);
-  GRPC_server_listen_host(server, "0.0.0.0:50051");
+  int port = grpc_pick_unused_port_or_die();
+  char *host = malloc(100);
+  sprintf(host, "0.0.0.0:%d", port);
+  GRPC_server_listen_host(server, host);
   GRPC_registered_service *service = grpc_testing_EchoTestService_Register(server);
   GRPC_server_start(server);
 
   // Start client
   pthread_t tid;
-  pthread_create(&tid, NULL, client_thread, NULL);
+  pthread_create(&tid, NULL, client_thread, host);
 
   // Run server
   {
