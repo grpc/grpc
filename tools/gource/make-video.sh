@@ -37,7 +37,7 @@ $(dirname $0)/gource.sh \
   --stop-at-end         \
   --output-ppm-stream - \
   $@ |                  \
-ffmpeg                  \
+avconv                  \
   -y                    \
   -r 60                 \
   -f image2pipe         \
