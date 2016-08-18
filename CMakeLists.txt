@@ -169,7 +169,7 @@ if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
   set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/gRPC")
 endif()
 
-
+  
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
   src/core/lib/profiling/stap_timers.c
@@ -279,6 +279,7 @@ foreach(_hdr
   )
 endforeach()
 
+  
 if (gRPC_INSTALL)
   install(TARGETS gpr EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -287,6 +288,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+  
 add_library(grpc
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -535,7 +537,7 @@ foreach(_hdr
   )
 endforeach()
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -544,7 +546,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc_cronet
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c
@@ -766,7 +768,7 @@ foreach(_hdr
   )
 endforeach()
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc_cronet EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -775,7 +777,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
@@ -991,8 +993,7 @@ foreach(_hdr
   )
 endforeach()
 
-
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1001,7 +1002,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc++
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
@@ -1162,7 +1163,7 @@ foreach(_hdr
   )
 endforeach()
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1171,7 +1172,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
@@ -1257,7 +1258,7 @@ foreach(_hdr
   )
 endforeach()
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1266,7 +1267,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc++_unsecure
   src/cpp/common/insecure_create_auth_context.cc
   src/cpp/client/channel.cc
@@ -1423,7 +1424,7 @@ foreach(_hdr
   )
 endforeach()
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc++_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1432,7 +1433,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -1465,7 +1466,7 @@ foreach(_hdr
   )
 endforeach()
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1474,7 +1475,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
-
+  
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
@@ -1494,7 +1495,7 @@ target_link_libraries(grpc_csharp_ext
 )
 
 
-
+  
 if (gRPC_INSTALL)
   install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1525,11 +1526,11 @@ target_link_libraries(gen_hpack_tables
 
 
 if (gRPC_INSTALL)
-install(TARGETS gen_hpack_tables EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 endif()
 
 
@@ -1808,6 +1809,9 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 endif()
+
+
+
 
 
 
