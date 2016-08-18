@@ -44,7 +44,6 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal sealed class NativeExtension
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeExtension>();
         static readonly object staticLock = new object();
         static volatile NativeExtension instance;
 
@@ -60,7 +59,7 @@ namespace Grpc.Core.Internal
 
             DefaultSslRootsOverride.Override(this.nativeMethods);
 
-            Logger.Debug("gRPC native library loaded successfully.");
+            GrpcEnvironment.Logger.ForType<NativeExtension>().Debug("gRPC native library loaded successfully.");
         }
 
         /// <summary>

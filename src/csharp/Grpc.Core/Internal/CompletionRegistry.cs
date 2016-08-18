@@ -46,8 +46,6 @@ namespace Grpc.Core.Internal
 
     internal class CompletionRegistry
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
-
         readonly GrpcEnvironment environment;
         readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();
 
@@ -84,6 +82,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
+                ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
                 Logger.Error(e, "Exception occured while invoking completion delegate.");
             }
             finally

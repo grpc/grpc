@@ -56,8 +56,6 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class ClientRunners
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
-
         // Profilers to use for clients.
         static readonly BlockingCollection<BasicProfiler> profilers = new BlockingCollection<BasicProfiler>();
 
@@ -72,6 +70,8 @@ namespace Grpc.IntegrationTesting
         /// </summary>
         public static IClientRunner CreateStarted(ClientConfig config)
         {
+            ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
+
             Logger.Debug("ClientConfig: {0}", config);
 
             if (config.AsyncClientThreads != 0)

@@ -46,8 +46,6 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class GrpcThreadPool
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
-
         readonly GrpcEnvironment environment;
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
@@ -170,6 +168,7 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
+                        ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
                         Logger.Error(e, "Exception occured while invoking completion delegate");
                     }
                 }

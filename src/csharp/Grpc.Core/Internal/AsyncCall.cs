@@ -121,7 +121,8 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate.");
+                        ILogger AsyncCallLogger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
+                        AsyncCallLogger.Error(e, "Exception occured while invoking completion delegate.");
                     }
                 }
                     

@@ -51,8 +51,6 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly UnaryServerMethod<TRequest, TResponse> handler;
 
@@ -89,6 +87,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
+                    ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
@@ -110,8 +109,6 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly ServerStreamingServerMethod<TRequest, TResponse> handler;
 
@@ -146,6 +143,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
+                    ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
@@ -168,8 +166,6 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly ClientStreamingServerMethod<TRequest, TResponse> handler;
 
@@ -204,6 +200,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
+                    ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
@@ -226,8 +223,6 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
-
         readonly Method<TRequest, TResponse> method;
         readonly DuplexStreamingServerMethod<TRequest, TResponse> handler;
 
@@ -260,6 +255,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
+                    ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);

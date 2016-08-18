@@ -49,7 +49,6 @@ namespace Grpc.IntegrationTesting
 {
     public class StressTestClient
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<StressTestClient>();
         const double SecondsToNanos = 1e9;
 
         private class ClientOptions
@@ -152,6 +151,7 @@ namespace Grpc.IntegrationTesting
 
         async Task RunBodyAsync(TestService.TestServiceClient client)
         {
+            ILogger Logger = GrpcEnvironment.Logger.ForType<StressTestClient>();
             Logger.Info("Starting stress test client thread.");
             while (!finishedTokenSource.Token.IsCancellationRequested)
             {
