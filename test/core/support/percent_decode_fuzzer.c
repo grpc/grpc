@@ -53,7 +53,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           input, gpr_url_percent_encoding_unreserved_bytes, &output)) {
     gpr_slice_unref(output);
   }
-  if (gpr_percent_decode_slice(
+  if (gpr_strict_percent_decode_slice(
           input, gpr_compatible_percent_encoding_unreserved_bytes, &output)) {
     gpr_slice_unref(output);
   }
