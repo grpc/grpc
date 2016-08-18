@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,34 +27,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Creates a standard jenkins worker on GCE.
+FROM ubuntu:14.04
 
-set -ex
+RUN apt-get update && \
+  apt-get install -y \
+  git build-essential \
+  pkg-config flex \
+  bison \
+  libkrb5-dev \
+  libsasl2-dev \
+  libnuma-dev \
+  pkg-config \
+  libssl-dev \
+  autoconf libtool \
+  cmake \
+  libiberty-dev \
+  g++ unzip \
+  curl make automake libtool libboost-dev
 
-cd $(dirname $0)
+# Configure git
+RUN git config --global user.name "Jenkins" && \
+  git config --global user.email "jenkins@grpc"
 
-CLOUD_PROJECT=grpc-testing
-ZONE=us-central1-a
+# Clone gRPC
+RUN git clone https://github.com/grpc/grpc
 
-INSTANCE_NAME="${1:-grpc-jenkins-worker1}"
+# Update Submodules
+RUN cd grpc && git submodule update --init
 
-gcloud compute instances create $INSTANCE_NAME \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    --machine-type n1-standard-8 \
-    --image=ubuntu-1510 \
-    --image-project=grpc-testing \
-    --boot-disk-size 1000
+# Install protobuf
+RUN cd grpc/third_party/protobuf && ./autogen.sh && ./configure && \
+  make -j && make check -j && make install && ldconfig
 
-echo 'Created GCE instance, waiting 60 seconds for it to come online.'
-sleep 60
+# Install gRPC
+RUN cd grpc && make -j && make install
 
-gcloud compute copy-files \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    jenkins_master.pub linux_worker_init.sh ${INSTANCE_NAME}:~
-
-gcloud compute ssh \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    $INSTANCE_NAME --command "./linux_worker_init.sh"
+# Install thrift
+RUN cd grpc/third_party/thrift && git am --signoff < ../../tools/grift/grpc_plugins_generator.patch && \
+  ./bootstrap.sh && ./configure && make -j && make install

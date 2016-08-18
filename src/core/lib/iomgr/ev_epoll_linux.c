@@ -42,6 +42,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
+#include <pthread.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/epoll.h>

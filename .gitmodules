@@ -21,3 +21,6 @@
 	path = third_party/c-ares
 	url = https://github.com/c-ares/c-ares.git
 	branch = cares-1_11_0
+[submodule "third_party/thrift"]
+	path = third_party/thrift
+	url = https://github.com/apache/thrift.git
