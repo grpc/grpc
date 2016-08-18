@@ -39,6 +39,7 @@
 
 extern "C" {
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -181,6 +182,37 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   cq_verify(cqv);
   gpr_log(GPR_INFO, "LB Server[%s] after tag 200", sf->servers_hostport);
 
+  // make sure we've received the initial metadata from the grpclb request.
+  GPR_ASSERT(request_metadata_recv.count > 0);
+  GPR_ASSERT(request_metadata_recv.metadata != NULL);
+
+  // receive request for backends
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  cq_expect_completion(cqv, tag(202), 1);
+  cq_verify(cqv);
+  gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG", sf->servers_hostport);
+
+  // validate initial request.
+  grpc_byte_buffer_reader bbr;
+  grpc_byte_buffer_reader_init(&bbr, request_payload_recv);
+  gpr_slice request_payload_slice = grpc_byte_buffer_reader_readall(&bbr);
+  grpc::lb::v1::LoadBalanceRequest request;
+  request.ParseFromArray(GPR_SLICE_START_PTR(request_payload_slice),
+                         GPR_SLICE_LENGTH(request_payload_slice));
+  GPR_ASSERT(request.has_initial_request());
+  GPR_ASSERT(request.initial_request().name() == "load.balanced.service.name");
+  gpr_slice_unref(request_payload_slice);
+  grpc_byte_buffer_reader_destroy(&bbr);
+  grpc_byte_buffer_destroy(request_payload_recv);
+
+  gpr_slice response_payload_slice;
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -196,21 +228,6 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s] after tag 201", sf->servers_hostport);
 
-  // receive request for backends
-  op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(202), 1);
-  cq_verify(cqv);
-  gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG", sf->servers_hostport);
-  // TODO(dgq): validate request.
-  grpc_byte_buffer_destroy(request_payload_recv);
-  gpr_slice response_payload_slice;
   for (int i = 0; i < 2; i++) {
     if (i == 0) {
       // First half of the ports.
