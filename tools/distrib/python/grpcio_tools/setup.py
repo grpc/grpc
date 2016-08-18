@@ -186,7 +186,7 @@ setuptools.setup(
   namespace_packages=['grpc'],
   install_requires=[
     'protobuf>=3.0.0',
-    'grpcio>=0.15.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
   ],
   package_data=package_data(),
 )
