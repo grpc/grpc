@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\generic_end2end_test.cc">
+      <Filter>test\c\end2end</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\id_serialization.cc">
+      <Filter>test\c\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\c\end2end\id_serialization.h">
+      <Filter>test\c\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{86056035-a2c0-d9e4-e726-e94554c9d703}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\c">
+      <UniqueIdentifier>{6e7f35dd-fd55-5887-5d76-a2d8d41d0141}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\c\end2end">
+      <UniqueIdentifier>{804b2017-2bd3-bfd6-1e41-e2a4c08da27a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

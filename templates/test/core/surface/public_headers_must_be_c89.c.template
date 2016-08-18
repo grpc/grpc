@@ -40,10 +40,19 @@
       if platform_identifier in hdr:
         return True
     return False
+  def is_lib_exempted(lib):
+    try:
+      if lib.do_not_enforce_c89_public_headers == True:
+        return True
+      else:
+        return False
+    except AttributeError:
+      return False
   hdrs = set()
   pfx = 'include/'
   for lib in libs:
-    if lib.language != 'c': continue
+    if lib.language != 'c' and lib.language != 'core': continue
+    if is_lib_exempted(lib): continue
     for hdr in lib.get('public_headers', []):
       if is_platform_header(hdr): continue
       if 'grpc_cronet.h' in hdr: continue

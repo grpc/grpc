@@ -159,6 +159,547 @@ if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
 endif()
 
   
+add_library(grpc_c
+  src/c/alloc.c
+  src/c/array.c
+  src/c/bidi_streaming_blocking_call.c
+  src/c/call_ops.c
+  src/c/channel.c
+  src/c/client_context.c
+  src/c/client_streaming_blocking_call.c
+  src/c/completion_queue.c
+  src/c/context.c
+  src/c/init_shutdown.c
+  src/c/message.c
+  src/c/pb_compat.c
+  src/c/server.c
+  src/c/server_context.c
+  src/c/server_incoming_queue.c
+  src/c/server_streaming_blocking_call.c
+  src/c/unary_async_call.c
+  src/c/unary_blocking_call.c
+)
+
+target_include_directories(grpc_c
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_c
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc
+  gpr
+)
+
+foreach(_hdr
+  include/grpc_c/channel.h
+  include/grpc_c/client_context.h
+  include/grpc_c/codegen/bidi_streaming_blocking_call.h
+  include/grpc_c/codegen/client_streaming_blocking_call.h
+  include/grpc_c/codegen/context.h
+  include/grpc_c/codegen/message.h
+  include/grpc_c/codegen/method.h
+  include/grpc_c/codegen/pb_compat.h
+  include/grpc_c/codegen/serialization.h
+  include/grpc_c/codegen/server.h
+  include/grpc_c/codegen/server_streaming_blocking_call.h
+  include/grpc_c/codegen/unary_async_call.h
+  include/grpc_c/codegen/unary_blocking_call.h
+  include/grpc_c/completion_queue.h
+  include/grpc_c/declare_serializer.h
+  include/grpc_c/grpc_c.h
+  include/grpc_c/server.h
+  include/grpc_c/server_context.h
+  include/grpc_c/server_incoming_queue.h
+  include/grpc_c/status.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc_c EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+  
+add_library(grpc++
+  src/cpp/client/secure_credentials.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/client/channel.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/server.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/util/byte_buffer.cc
+  src/cpp/util/slice.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time.cc
+  src/cpp/codegen/codegen_init.cc
+)
+
+target_include_directories(grpc++
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc++
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc
+)
+
+foreach(_hdr
+  include/grpc++/alarm.h
+  include/grpc++/channel.h
+  include/grpc++/client_context.h
+  include/grpc++/completion_queue.h
+  include/grpc++/create_channel.h
+  include/grpc++/create_channel_posix.h
+  include/grpc++/generic/async_generic_service.h
+  include/grpc++/generic/generic_stub.h
+  include/grpc++/grpc++.h
+  include/grpc++/impl/call.h
+  include/grpc++/impl/client_unary_call.h
+  include/grpc++/impl/codegen/core_codegen.h
+  include/grpc++/impl/grpc_library.h
+  include/grpc++/impl/method_handler_impl.h
+  include/grpc++/impl/rpc_method.h
+  include/grpc++/impl/rpc_service_method.h
+  include/grpc++/impl/serialization_traits.h
+  include/grpc++/impl/server_builder_option.h
+  include/grpc++/impl/server_builder_plugin.h
+  include/grpc++/impl/server_initializer.h
+  include/grpc++/impl/service_type.h
+  include/grpc++/impl/sync.h
+  include/grpc++/impl/sync_cxx11.h
+  include/grpc++/impl/sync_no_cxx11.h
+  include/grpc++/impl/thd.h
+  include/grpc++/impl/thd_cxx11.h
+  include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/security/auth_context.h
+  include/grpc++/security/auth_metadata_processor.h
+  include/grpc++/security/credentials.h
+  include/grpc++/security/server_credentials.h
+  include/grpc++/server.h
+  include/grpc++/server_builder.h
+  include/grpc++/server_context.h
+  include/grpc++/server_posix.h
+  include/grpc++/support/async_stream.h
+  include/grpc++/support/async_unary_call.h
+  include/grpc++/support/byte_buffer.h
+  include/grpc++/support/channel_arguments.h
+  include/grpc++/support/config.h
+  include/grpc++/support/slice.h
+  include/grpc++/support/status.h
+  include/grpc++/support/status_code_enum.h
+  include/grpc++/support/string_ref.h
+  include/grpc++/support/stub_options.h
+  include/grpc++/support/sync_stream.h
+  include/grpc++/support/time.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc++ EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+  
+add_library(grpc++_reflection
+  src/cpp/ext/proto_server_reflection.cc
+  src/cpp/ext/proto_server_reflection_plugin.cc
+  src/cpp/ext/reflection.grpc.pb.cc
+  src/cpp/ext/reflection.pb.cc
+)
+
+target_include_directories(grpc++_reflection
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc++_reflection
+  grpc++
+)
+
+foreach(_hdr
+  include/grpc++/ext/proto_server_reflection_plugin.h
+  include/grpc++/ext/reflection.grpc.pb.h
+  include/grpc++/ext/reflection.pb.h
+  include/grpc++/impl/codegen/proto_utils.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+  include/grpc++/impl/codegen/config_protobuf.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc++_reflection EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+  
+add_library(grpc++_unsecure
+  src/cpp/common/insecure_create_auth_context.cc
+  src/cpp/client/channel.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/server.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/util/byte_buffer.cc
+  src/cpp/util/slice.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time.cc
+  src/cpp/codegen/codegen_init.cc
+)
+
+target_include_directories(grpc++_unsecure
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc++_unsecure
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  gpr
+  grpc_unsecure
+  grpc
+)
+
+foreach(_hdr
+  include/grpc++/alarm.h
+  include/grpc++/channel.h
+  include/grpc++/client_context.h
+  include/grpc++/completion_queue.h
+  include/grpc++/create_channel.h
+  include/grpc++/create_channel_posix.h
+  include/grpc++/generic/async_generic_service.h
+  include/grpc++/generic/generic_stub.h
+  include/grpc++/grpc++.h
+  include/grpc++/impl/call.h
+  include/grpc++/impl/client_unary_call.h
+  include/grpc++/impl/codegen/core_codegen.h
+  include/grpc++/impl/grpc_library.h
+  include/grpc++/impl/method_handler_impl.h
+  include/grpc++/impl/rpc_method.h
+  include/grpc++/impl/rpc_service_method.h
+  include/grpc++/impl/serialization_traits.h
+  include/grpc++/impl/server_builder_option.h
+  include/grpc++/impl/server_builder_plugin.h
+  include/grpc++/impl/server_initializer.h
+  include/grpc++/impl/service_type.h
+  include/grpc++/impl/sync.h
+  include/grpc++/impl/sync_cxx11.h
+  include/grpc++/impl/sync_no_cxx11.h
+  include/grpc++/impl/thd.h
+  include/grpc++/impl/thd_cxx11.h
+  include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/security/auth_context.h
+  include/grpc++/security/auth_metadata_processor.h
+  include/grpc++/security/credentials.h
+  include/grpc++/security/server_credentials.h
+  include/grpc++/server.h
+  include/grpc++/server_builder.h
+  include/grpc++/server_context.h
+  include/grpc++/server_posix.h
+  include/grpc++/support/async_stream.h
+  include/grpc++/support/async_unary_call.h
+  include/grpc++/support/byte_buffer.h
+  include/grpc++/support/channel_arguments.h
+  include/grpc++/support/config.h
+  include/grpc++/support/slice.h
+  include/grpc++/support/status.h
+  include/grpc++/support/status_code_enum.h
+  include/grpc++/support/string_ref.h
+  include/grpc++/support/stub_options.h
+  include/grpc++/support/sync_stream.h
+  include/grpc++/support/time.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/alloc.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/slice_buffer.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/time.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc++_unsecure EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+  
+add_library(grpc_plugin_support
+  src/compiler/c_generator.cc
+  src/compiler/cpp_generator.cc
+  src/compiler/csharp_generator.cc
+  src/compiler/node_generator.cc
+  src/compiler/objective_c_generator.cc
+  src/compiler/python_generator.cc
+  src/compiler/ruby_generator.cc
+)
+
+target_include_directories(grpc_plugin_support
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_plugin_support
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+)
+
+foreach(_hdr
+  include/grpc++/impl/codegen/config_protobuf.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+install(TARGETS grpc_plugin_support EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+  
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
   src/core/lib/profiling/stap_timers.c
@@ -984,471 +1525,6 @@ install(TARGETS grpc_unsecure EXPORT gRPCTargets
 )
 
   
-add_library(grpc++
-  src/cpp/client/secure_credentials.cc
-  src/cpp/common/auth_property_iterator.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_channel_arguments.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/server/secure_server_credentials.cc
-  src/cpp/client/channel.cc
-  src/cpp/client/client_context.cc
-  src/cpp/client/create_channel.cc
-  src/cpp/client/create_channel_internal.cc
-  src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials.cc
-  src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue.cc
-  src/cpp/common/core_codegen.cc
-  src/cpp/common/rpc_method.cc
-  src/cpp/server/async_generic_service.cc
-  src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/server.cc
-  src/cpp/server/server_builder.cc
-  src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
-  src/cpp/server/server_posix.cc
-  src/cpp/util/byte_buffer.cc
-  src/cpp/util/slice.cc
-  src/cpp/util/status.cc
-  src/cpp/util/string_ref.cc
-  src/cpp/util/time.cc
-  src/cpp/codegen/codegen_init.cc
-)
-
-target_include_directories(grpc++
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc++
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc
-)
-
-foreach(_hdr
-  include/grpc++/alarm.h
-  include/grpc++/channel.h
-  include/grpc++/client_context.h
-  include/grpc++/completion_queue.h
-  include/grpc++/create_channel.h
-  include/grpc++/create_channel_posix.h
-  include/grpc++/generic/async_generic_service.h
-  include/grpc++/generic/generic_stub.h
-  include/grpc++/grpc++.h
-  include/grpc++/impl/call.h
-  include/grpc++/impl/client_unary_call.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/grpc_library.h
-  include/grpc++/impl/method_handler_impl.h
-  include/grpc++/impl/rpc_method.h
-  include/grpc++/impl/rpc_service_method.h
-  include/grpc++/impl/serialization_traits.h
-  include/grpc++/impl/server_builder_option.h
-  include/grpc++/impl/server_builder_plugin.h
-  include/grpc++/impl/server_initializer.h
-  include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
-  include/grpc++/security/auth_context.h
-  include/grpc++/security/auth_metadata_processor.h
-  include/grpc++/security/credentials.h
-  include/grpc++/security/server_credentials.h
-  include/grpc++/server.h
-  include/grpc++/server_builder.h
-  include/grpc++/server_context.h
-  include/grpc++/server_posix.h
-  include/grpc++/support/async_stream.h
-  include/grpc++/support/async_unary_call.h
-  include/grpc++/support/byte_buffer.h
-  include/grpc++/support/channel_arguments.h
-  include/grpc++/support/config.h
-  include/grpc++/support/slice.h
-  include/grpc++/support/status.h
-  include/grpc++/support/status_code_enum.h
-  include/grpc++/support/string_ref.h
-  include/grpc++/support/stub_options.h
-  include/grpc++/support/sync_stream.h
-  include/grpc++/support/time.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-  
-install(TARGETS grpc++ EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-  
-add_library(grpc++_reflection
-  src/cpp/ext/proto_server_reflection.cc
-  src/cpp/ext/proto_server_reflection_plugin.cc
-  src/cpp/ext/reflection.grpc.pb.cc
-  src/cpp/ext/reflection.pb.cc
-)
-
-target_include_directories(grpc++_reflection
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc++_reflection
-  grpc++
-)
-
-foreach(_hdr
-  include/grpc++/ext/proto_server_reflection_plugin.h
-  include/grpc++/ext/reflection.grpc.pb.h
-  include/grpc++/ext/reflection.pb.h
-  include/grpc++/impl/codegen/proto_utils.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
-  include/grpc++/impl/codegen/config_protobuf.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-  
-install(TARGETS grpc++_reflection EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-  
-add_library(grpc++_unsecure
-  src/cpp/common/insecure_create_auth_context.cc
-  src/cpp/client/channel.cc
-  src/cpp/client/client_context.cc
-  src/cpp/client/create_channel.cc
-  src/cpp/client/create_channel_internal.cc
-  src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials.cc
-  src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue.cc
-  src/cpp/common/core_codegen.cc
-  src/cpp/common/rpc_method.cc
-  src/cpp/server/async_generic_service.cc
-  src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/server.cc
-  src/cpp/server/server_builder.cc
-  src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
-  src/cpp/server/server_posix.cc
-  src/cpp/util/byte_buffer.cc
-  src/cpp/util/slice.cc
-  src/cpp/util/status.cc
-  src/cpp/util/string_ref.cc
-  src/cpp/util/time.cc
-  src/cpp/codegen/codegen_init.cc
-)
-
-target_include_directories(grpc++_unsecure
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc++_unsecure
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  gpr
-  grpc_unsecure
-  grpc
-)
-
-foreach(_hdr
-  include/grpc++/alarm.h
-  include/grpc++/channel.h
-  include/grpc++/client_context.h
-  include/grpc++/completion_queue.h
-  include/grpc++/create_channel.h
-  include/grpc++/create_channel_posix.h
-  include/grpc++/generic/async_generic_service.h
-  include/grpc++/generic/generic_stub.h
-  include/grpc++/grpc++.h
-  include/grpc++/impl/call.h
-  include/grpc++/impl/client_unary_call.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/grpc_library.h
-  include/grpc++/impl/method_handler_impl.h
-  include/grpc++/impl/rpc_method.h
-  include/grpc++/impl/rpc_service_method.h
-  include/grpc++/impl/serialization_traits.h
-  include/grpc++/impl/server_builder_option.h
-  include/grpc++/impl/server_builder_plugin.h
-  include/grpc++/impl/server_initializer.h
-  include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
-  include/grpc++/security/auth_context.h
-  include/grpc++/security/auth_metadata_processor.h
-  include/grpc++/security/credentials.h
-  include/grpc++/security/server_credentials.h
-  include/grpc++/server.h
-  include/grpc++/server_builder.h
-  include/grpc++/server_context.h
-  include/grpc++/server_posix.h
-  include/grpc++/support/async_stream.h
-  include/grpc++/support/async_unary_call.h
-  include/grpc++/support/byte_buffer.h
-  include/grpc++/support/channel_arguments.h
-  include/grpc++/support/config.h
-  include/grpc++/support/slice.h
-  include/grpc++/support/status.h
-  include/grpc++/support/status_code_enum.h
-  include/grpc++/support/string_ref.h
-  include/grpc++/support/stub_options.h
-  include/grpc++/support/sync_stream.h
-  include/grpc++/support/time.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-  
-install(TARGETS grpc++_unsecure EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-  
-add_library(grpc_plugin_support
-  src/compiler/cpp_generator.cc
-  src/compiler/csharp_generator.cc
-  src/compiler/node_generator.cc
-  src/compiler/objective_c_generator.cc
-  src/compiler/python_generator.cc
-  src/compiler/ruby_generator.cc
-)
-
-target_include_directories(grpc_plugin_support
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_plugin_support
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-)
-
-foreach(_hdr
-  include/grpc++/impl/codegen/config_protobuf.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-  
-install(TARGETS grpc_plugin_support EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-  
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
@@ -1477,11 +1553,11 @@ install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
 
 
 
-add_executable(gen_hpack_tables
-  tools/codegen/core/gen_hpack_tables.c
+add_executable(grpc_c_plugin
+  src/compiler/c_plugin.cc
 )
 
-target_include_directories(gen_hpack_tables
+target_include_directories(grpc_c_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -1490,114 +1566,13 @@ target_include_directories(gen_hpack_tables
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
-target_link_libraries(gen_hpack_tables
-  gpr
-  grpc
+target_link_libraries(grpc_c_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
 )
 
 
-install(TARGETS gen_hpack_tables EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-
-add_executable(gen_legal_metadata_characters
-  tools/codegen/core/gen_legal_metadata_characters.c
-)
-
-target_include_directories(gen_legal_metadata_characters
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-
-
-install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-
-add_executable(grpc_create_jwt
-  test/core/security/create_jwt.c
-)
-
-target_include_directories(grpc_create_jwt
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_create_jwt
-  ${_gRPC_SSL_LIBRARIES}
-  grpc
-  gpr
-)
-
-
-install(TARGETS grpc_create_jwt EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-
-add_executable(grpc_print_google_default_creds_token
-  test/core/security/print_google_default_creds_token.c
-)
-
-target_include_directories(grpc_print_google_default_creds_token
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_print_google_default_creds_token
-  grpc
-  gpr
-)
-
-
-install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-
-add_executable(grpc_verify_jwt
-  test/core/security/verify_jwt.c
-)
-
-target_include_directories(grpc_verify_jwt
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(grpc_verify_jwt
-  grpc
-  gpr
-)
-
-
-install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
+install(TARGETS grpc_c_plugin EXPORT gRPCTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -1754,6 +1729,133 @@ target_link_libraries(grpc_ruby_plugin
 
 
 install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.c
+)
+
+target_include_directories(gen_hpack_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(gen_hpack_tables
+  gpr
+  grpc
+)
+
+
+install(TARGETS gen_hpack_tables EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.c
+)
+
+target_include_directories(gen_legal_metadata_characters
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+
+
+install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_create_jwt
+  test/core/security/create_jwt.c
+)
+
+target_include_directories(grpc_create_jwt
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_create_jwt
+  ${_gRPC_SSL_LIBRARIES}
+  grpc
+  gpr
+)
+
+
+install(TARGETS grpc_create_jwt EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_print_google_default_creds_token
+  test/core/security/print_google_default_creds_token.c
+)
+
+target_include_directories(grpc_print_google_default_creds_token
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_print_google_default_creds_token
+  grpc
+  gpr
+)
+
+
+install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_executable(grpc_verify_jwt
+  test/core/security/verify_jwt.c
+)
+
+target_include_directories(grpc_verify_jwt
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_verify_jwt
+  grpc
+  gpr
+)
+
+
+install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

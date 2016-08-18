@@ -45,6 +45,15 @@ then
 elif [ "$platform" == "freebsd" ]
 then
   export MAKE=gmake
+elif [ "$platform" == "macos" ]
+then
+  # Install python-protobuf which is needed by nanopb
+  # the other platforms have it installed by default
+  MACOS_NANOPB_VIRTUAL_ENV=$(mktemp -d /tmp/grpc-nanopb-XXXXXX)
+  virtualenv ${MACOS_NANOPB_VIRTUAL_ENV}
+  source ${MACOS_NANOPB_VIRTUAL_ENV}/bin/activate
+  pip install protobuf==3.0.0b2
+  pip install virtualenv
 fi
 
 unset platform  # variable named 'platform' breaks the windows build
@@ -62,6 +71,12 @@ if [ ! -e reports/index.html ]
 then
   mkdir -p reports
   echo 'No reports generated.' > reports/index.html
+fi
+
+if [ "$platform" == "macos" ]
+then
+  deactivate
+  rm -rf ${MACOS_NANOPB_VIRTUAL_ENV}
 fi
 
 if [ "$TESTS_FAILED" != "" ]

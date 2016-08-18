@@ -54,7 +54,7 @@ FILEGROUP_LISTS = ['src', 'headers', 'public_headers', 'deps']
 
 
 FILEGROUP_DEFAULTS = {
-  'language': 'c',
+  'language': 'core',
   'boringssl': False,
   'zlib': False,
 }

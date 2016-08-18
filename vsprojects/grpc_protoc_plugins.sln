@@ -3,6 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_c_plugin", "vcxproj\.\grpc_c_plugin\grpc_c_plugin.vcxproj", "{06F2EB11-35DA-483D-AB0A-BC420D97B18C}"
+	ProjectSection(myProperties) = preProject
+        	lib = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{B6E81D84-2ACB-41B8-8781-493A944C7817} = {B6E81D84-2ACB-41B8-8781-493A944C7817}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_cpp_plugin", "vcxproj\.\grpc_cpp_plugin\grpc_cpp_plugin.vcxproj", "{7E51A25F-AC59-488F-906C-C60FAAE706AA}"
 	ProjectSection(myProperties) = preProject
         	lib = "False"
@@ -64,6 +72,14 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Debug|x64.ActiveCfg = Debug|x64
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Release|Win32.ActiveCfg = Release|Win32
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Release|x64.ActiveCfg = Release|x64
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Debug|Win32.Build.0 = Debug|Win32
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Debug|x64.Build.0 = Debug|x64
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Release|Win32.Build.0 = Release|Win32
+		{06F2EB11-35DA-483D-AB0A-BC420D97B18C}.Release|x64.Build.0 = Release|x64
 		{7E51A25F-AC59-488F-906C-C60FAAE706AA}.Debug|Win32.ActiveCfg = Debug|Win32
 		{7E51A25F-AC59-488F-906C-C60FAAE706AA}.Debug|x64.ActiveCfg = Debug|x64
 		{7E51A25F-AC59-488F-906C-C60FAAE706AA}.Release|Win32.ActiveCfg = Release|Win32

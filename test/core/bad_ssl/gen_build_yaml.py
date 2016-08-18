@@ -51,7 +51,7 @@ def main():
           {
               'name': 'bad_ssl_test_server',
               'build': 'private',
-              'language': 'c',
+              'language': 'core',
               'src': ['test/core/bad_ssl/server_common.c'],
               'headers': ['test/core/bad_ssl/server_common.h'],
               'vs_proj_dir': 'test',
@@ -68,7 +68,7 @@ def main():
           {
               'name': 'bad_ssl_%s_server' % t,
               'build': 'test',
-              'language': 'c',
+              'language': 'core',
               'run': False,
               'src': ['test/core/bad_ssl/servers/%s.c' % t],
               'vs_proj_dir': 'test/bad_ssl',
@@ -86,7 +86,7 @@ def main():
               'name': 'bad_ssl_%s_test' % t,
               'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
-              'language': 'c',
+              'language': 'core',
               'src': ['test/core/bad_ssl/bad_ssl_test.c'],
               'vs_proj_dir': 'test',
               'platforms': ['linux', 'posix', 'mac'],

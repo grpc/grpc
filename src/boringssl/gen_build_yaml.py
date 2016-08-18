@@ -73,7 +73,7 @@ class Grpc(object):
           {
             'name': 'boringssl',
             'build': 'private',
-            'language': 'c',
+            'language': 'core',
             'secure': 'no',
             'src': sorted(
               map_dir(f)
@@ -103,7 +103,7 @@ class Grpc(object):
             'name': 'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
             'build': 'private',
             'secure': 'no',
-            'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
+            'language': 'core' if os.path.splitext(test)[1] == '.c' else 'c++',
             'src': [map_dir(test)],
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,

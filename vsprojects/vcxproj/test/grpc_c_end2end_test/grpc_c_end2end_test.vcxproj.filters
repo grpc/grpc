@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\end2end_test.cc">
+      <Filter>test\c\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{17223a1e-3ecb-a3d6-c40d-bde3969d9275}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\c">
+      <UniqueIdentifier>{b16fb263-5348-4d59-4d1f-80b56e910635}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\c\end2end">
+      <UniqueIdentifier>{459aafe4-24cf-ac2c-1a7f-f58ae6b692f5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

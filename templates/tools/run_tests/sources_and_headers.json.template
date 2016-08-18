@@ -4,12 +4,18 @@
   import json
   import os
 
-  def proto_headers(src):
+  def proto_headers(tgt):
     out = []
+    fmt_strs = []
+    if tgt.language == 'c' or tgt.language == 'core':
+      fmt_strs = ['%s.grpc.pbc.h', '%s.pbc.h']
+    else:
+      fmt_strs = ['%s.grpc.pb.h', '%s.pb.h']
+    src = tgt.own_src
     for f in src:
       name, ext = os.path.splitext(f)
       if ext == '.proto':
-        out.extend(fmt % name for fmt in ['%s.grpc.pb.h', '%s.pb.h'])
+        out.extend(fmt % name for fmt in fmt_strs)
     return out
 
   def all_targets(targets, libs, filegroups):
@@ -46,7 +52,7 @@
                  "headers": sorted(
                      tgt.own_public_headers +
                      tgt.own_headers +
-                     proto_headers(tgt.own_src)),
+                     proto_headers(tgt)),
                  "deps": sorted(tgt.get('deps', []) +
                                 tgt.get('uses', []) +
                                 tgt.get('filegroups', []))}

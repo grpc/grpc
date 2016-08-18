@@ -73,6 +73,9 @@ build: "build type",      # in which situation we want that library to be
                           # built and potentially installed (see below).
 language: "...",          # the language tag; "c" or "c++"
 public_headers:           # list of public headers to install
+do_not_enforce_c89_public_headers: boolean # set to true to exempt this library
+                          # from the C89 header requirement. C public headers
+                          # must be C89 compliant by default.
 headers:                  # list of headers used by that target
 src:                      # list of files to compile
 secure: boolean,          # see below

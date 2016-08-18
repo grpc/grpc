@@ -47,6 +47,12 @@
         return filename
       return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
 
+    def proto_to_nanoc(filename):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '$(GENDIR)/' + m.group(1) + '.pbc.c $(GENDIR)/' + m.group(1) + '.grpc.pbc.c'
+
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
@@ -64,6 +70,8 @@
         return 'no-' + warning
   %>
 
+  # This is the first (default) target
+  default: all
 
   comma := ,
 
@@ -140,6 +148,35 @@
   # You may want to change these depending on your system.
 
   prefix ?= /usr/local
+
+  NANOPB_DIR := $(abspath third_party/nanopb)
+  NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/pb_common.c
+  NANOPB_DEP := $(NANOPB_DIR)/generator/proto/nanopb_pb2.py $(NANOPB_DIR)/generator/proto/plugin_pb2.py
+
+  <%text>
+  SYSTEM_PYTHON_PROTOBUF_GOOD := $(shell \
+  PYTHONPATH='' version=`python -c 'import google.protobuf; print(google.protobuf.__version__);' 2> /dev/null || true`; \
+  major=`echo $$version | sed 's/\([0-9]*\).*/\1/'`; \
+  majordef=$${major:-0}; \
+  if [ $$majordef -ge 3 ]; then echo true; else echo false; fi;)
+  SYSTEM_PYTHON_PROTOBUF_FILE := $(shell python -c 'import google.protobuf; print(google.protobuf.__file__);' 2> /dev/null || true)
+  </%text>
+
+  ifeq ($(SYSTEM_PYTHON_PROTOBUF_GOOD), true)
+  # For systems with built-in python-protobuf
+  nanopb_protobuf_dep: $(SYSTEM_PYTHON_PROTOBUF_FILE)
+  NANOPB_ACTIVATE_VENV :=
+  else
+  # We need to install a local python-protobuf
+  NANOPB_VENV_DIR := $(abspath third_party/nanopb/nanopb_protobuf_dep/venv)
+  nanopb_protobuf_dep: $(NANOPB_VENV_DIR)/bin/activate
+  $(NANOPB_VENV_DIR)/bin/activate:
+  	$(E) "[NANOPB]  Installing Nanopb dependencies"
+  	$(Q) virtualenv $(NANOPB_VENV_DIR) >/dev/null; \
+  	. $(NANOPB_VENV_DIR)/bin/activate; \
+  	pip install protobuf==3.0.0b2 >/dev/null;
+  NANOPB_ACTIVATE_VENV := . $(NANOPB_VENV_DIR)/bin/activate;
+  endif
 
   PROTOC ?= protoc
   DTRACE ?= dtrace
@@ -650,7 +687,8 @@
   CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
   ifneq ($(USE_BUILT_PROTOC),false)
-  PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
+  PROTOC = $(BINDIR)/opt/protobuf/protoc
+  PROTOC_DEP = $(PROTOC)
   PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
   else
   PROTOC_PLUGINS =
@@ -690,6 +728,31 @@
   PC_LIB = -lgrpc++
   GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
+
+
+  PC_REQUIRES_GRPC_C =
+  PC_LIBS_GRPC_C =
+
+  # grpc_c .pc file
+  PC_NAME = gRPC C
+  PC_DESCRIPTION = C wrapper for gRPC
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPC_C)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GRPC_C)
+  PC_LIB = -lgrpc_c
+  GRPC_C_PC_FILE := $(PC_TEMPLATE)
+
+  # grpc_c_unsecure .pc file
+  PC_NAME = gRPC C unsecure
+  PC_DESCRIPTION = C wrapper for gRPC without SSL
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPC_C)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GRPC_C)
+  PC_LIB = -lgrpc_c
+  GRPC_C_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+
+
+
   ifeq ($(MAKECMDGOALS),clean)
   NO_DEPS = true
   endif
@@ -704,7 +767,7 @@
   .SECONDARY = %.pb.h %.pb.cc
 
   ifeq ($(DEP_MISSING),)
-  all: static shared plugins\
+  all: nanopb_protobuf_dep static shared plugins\
   % for tgt in targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -822,18 +885,24 @@
   	$(E) "[AUTOGEN] Preparing protobuf"
   	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
 
-  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
+  $(BINDIR)/opt/protobuf/protoc: third_party/protobuf/configure
+  	$(E) "[MAKE]    Building protoc"
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_opt) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_opt) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)$(MAKE) -C third_party/protobuf clean
+  	$(Q)$(MAKE) -C third_party/protobuf
+  	$(Q)mkdir -p $(BINDIR)/opt/protobuf
+  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/opt/protobuf
+
+  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure $(BINDIR)/opt/protobuf/protoc
   	$(E) "[MAKE]    Building protobuf"
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static --with-protoc=$(BINDIR)/opt/protobuf/protoc $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
+  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 
-  static: static_c static_cxx
+  static: static_c static_core static_cxx
 
   static_c: pc_c pc_c_unsecure cache.mk \
   % for lib in libs:
@@ -844,6 +913,14 @@
   % endif
   % endfor
 
+  static_core: pc_core pc_core_unsecure cache.mk \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'core' and not lib.get('external_deps', None):
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
@@ -855,12 +932,21 @@
   % endfor
 
 
-  shared: shared_c shared_cxx
+  shared: shared_c shared_core shared_cxx
 
   shared_c: pc_c pc_c_unsecure cache.mk\
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
+  % endif
+  % endfor
+
+  shared_core: pc_core pc_core_unsecure cache.mk\
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'core' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
   % endif
   % endif
@@ -876,7 +962,7 @@
   % endfor
 
 
-  shared_csharp: shared_c \
+  shared_csharp: shared_core \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
@@ -889,7 +975,7 @@
 
   plugins: $(PROTOC_PLUGINS)
 
-  privatelibs: privatelibs_c privatelibs_cxx
+  privatelibs: privatelibs_c privatelibs_core privatelibs_cxx
 
   privatelibs_c: \
   % for lib in libs:
@@ -900,9 +986,22 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+  privatelibs_core: \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'private' and lib.language == 'core' and not lib.get('external_deps', None) and not lib.boringssl:
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
 
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc
+
+  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc
+
+  pc_core: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+
+  pc_core_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
 
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -931,15 +1030,21 @@
   endif
 
 
-  buildtests: buildtests_c buildtests_cxx
+  buildtests: buildtests_c buildtests_core buildtests_cxx
 
   buildtests_c: privatelibs_c <%text>\</%text>
   % for tgt in targets:
-  % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
+  % if tgt.build == 'test' and tgt.language == 'c' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
+  buildtests_core: privatelibs_core <%text>\</%text>
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.language == 'core' and not tgt.get('external_deps', None):
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
+  % endif
+  % endfor
 
   ifeq ($(EMBED_OPENSSL),true)
   buildtests_cxx: privatelibs_cxx <%text>\</%text>
@@ -959,28 +1064,25 @@
 
   endif
 
+  test: test_c test_core test_cxx
 
-  test: test_c test_cxx
-
-  flaky_test: flaky_test_c flaky_test_cxx
+  flaky_test: flaky_test_c flaky_test_core flaky_test_cxx
 
   test_c: buildtests_c
   % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
   % endif
   % endfor
-
 
   flaky_test_c: buildtests_c
   % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
   % endif
   % endfor
-
 
   test_cxx: buildtests_cxx
   % for tgt in targets:
@@ -990,7 +1092,6 @@
   % endif
   % endfor
 
-
   flaky_test_cxx: buildtests_cxx
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
@@ -999,26 +1100,47 @@
   % endif
   % endfor
 
+  test_core: buildtests_core
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'core' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  	$(E) "[RUN]     Testing ${tgt.name}"
+  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+  % endif
+  % endfor
 
-  test_python: static_c
+  flaky_test_core: buildtests_core
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'core' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
+  	$(E) "[RUN]     Testing ${tgt.name}"
+  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+  % endif
+  % endfor
+
+  test_python: static_core
   	$(E) "[RUN]     Testing python code"
   	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
 
 
-  tools: tools_c tools_cxx
+  tools: tools_c tools_core tools_cxx
 
 
   tools_c: privatelibs_c\
   % for tgt in targets:
-  % if tgt.build == 'tool' and not tgt.language=='c++':
+  % if tgt.build == 'tool' and tgt.language == 'c':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
   % endfor
 
+  tools_core: privatelibs_core\
+  % for tgt in targets:
+  % if tgt.build == 'tool' and not tgt.language == 'core':
+   $(BINDIR)/$(CONFIG)/${tgt.name}\
+  % endif
+  % endfor
 
   tools_cxx: privatelibs_cxx\
   % for tgt in targets:
-  % if tgt.build == 'tool' and tgt.language=='c++':
+  % if tgt.build == 'tool' and tgt.language == 'c++':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
   % endfor
@@ -1036,9 +1158,9 @@
 
   strip: strip-static strip-shared
 
-  strip-static: strip-static_c strip-static_cxx
+  strip-static: strip-static_c strip-static_core strip-static_cxx
 
-  strip-shared: strip-shared_c strip-shared_cxx
+  strip-shared: strip-shared_c strip-static_core strip-shared_cxx
 
 
   # TODO(nnoble): the strip target is stripping in-place, instead
@@ -1050,6 +1172,22 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
+  % if lib.build == "all":
+  % if not lib.get('external_deps', None):
+  	$(E) "[STRIP]   Stripping lib${lib.name}.a"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  % endif
+  % endif
+  % endif
+  % endif
+  % endfor
+  endif
+
+  strip-static_core: static_core
+  ifeq ($(CONFIG),opt)
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.language == "core":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
@@ -1080,6 +1218,22 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
+  % if lib.build == "all":
+  % if not lib.get('external_deps', None):
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
+  % endif
+  % endif
+  % endif
+  % endfor
+  endif
+
+  strip-shared_core: shared_core
+  ifeq ($(CONFIG),opt)
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.language == "core":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
@@ -1133,6 +1287,16 @@
   	$(Q) mkdir -p $(@D)
   	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
+  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GRPC_C_PC_FILE)" | tr , '\n' >$@
+
+  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GRPC_C_UNSECURE_PC_FILE)" | tr , '\n' >$@
+
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1148,15 +1312,25 @@
   $(GENDIR)/${p}.pb.cc: protoc_dep_error
   $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
   else
-  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
+  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(NANOPB_DEP) nanopb_protobuf_dep ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
+  	$(E) "[PROTOC]  Generating nanopb C file from $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(NANOPB_ACTIVATE_VENV) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<;
+
+  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+  $(GENDIR)/${p}.grpc.pbc.c: ${p}.proto $(PROTOC_DEP) $(PROTOC_PLUGINS) $(GENDIR)/${p}.pbc.c ${' '.join('$(GENDIR)/%s.pbc.c $(GENDIR)/%s.grpc.pbc.c' % (q,q) for q in proto_deps.get(p, []))}
+  	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
   endif
 
   % endfor
@@ -1193,34 +1367,56 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-  install: install_c install_cxx install-plugins install-certs verify-install
+  install: install_c install_core install_cxx install-plugins install-certs verify-install
 
   install_c: install-headers_c install-static_c install-shared_c
 
+  install_core: install-headers_core install-static_core install-shared_core
+
   install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
 
-  install_csharp: install-shared_csharp install_c
+  install_csharp: install-shared_csharp install_core
 
   install_grpc_csharp_ext: install_csharp
 
-  install-headers: install-headers_c install-headers_cxx
+  install-headers: install-headers_c install-headers_core install-headers_cxx
 
   install-headers_c:
   	$(E) "[INSTALL] Installing public C headers"
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
+  install-headers_core:
+  	$(E) "[INSTALL] Installing public C core headers"
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CORE), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CORE), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+
   install-headers_cxx:
   	$(E) "[INSTALL] Installing public C++ headers"
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
   	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
-  install-static: install-static_c install-static_cxx
+  install-static: install-static_c install-static_core install-static_cxx
 
   install-static_c: static_c strip-static_c install-pkg-config_c
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
+  % if lib.build == "all":
+  % if not lib.get('external_deps', None):
+  	$(E) "[INSTALL] Installing lib${lib.name}.a"
+  	$(Q) $(INSTALL) -d $(prefix)/lib
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+  % endif
+  % endif
+  % endif
+  % endif
+  % endfor
+
+  install-static_core: static_core strip-static_core install-pkg-config_core
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.language == "core":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
@@ -1275,6 +1471,9 @@
   install-shared_c: shared_c strip-shared_c install-pkg-config_c
   ${install_shared("c")}
 
+  install-shared_core: shared_core strip-shared_core install-pkg-config_core
+  ${install_shared("core")}
+
   install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
   ${install_shared("c++")}
 
@@ -1296,6 +1495,12 @@
 
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
+  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c.pc $(prefix)/lib/pkgconfig/grpc_c.pc
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_c_unsecure.pc $(prefix)/lib/pkgconfig/grpc_c_unsecure.pc
+
+  install-pkg-config_core: pc_core pc_core_unsecure
+  	$(E) "[INSTALL] Installing C core pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
@@ -1354,18 +1559,29 @@
   % endfor
 
   <%def name="makelib(lib)">
+  # Using nanopb for C files right now
   LIB${lib.name.upper()}_SRC = \\
 
+  % if lib.language == "c++":
   % for src in lib.src:
       ${proto_to_cc(src)} \\
 
   % endfor
+  % else:
+  % for src in lib.src:
+      ${proto_to_nanoc(src)} \\
+
+  % endfor
+  % endif
 
   % if "public_headers" in lib:
   % if lib.language == "c++":
   PUBLIC_HEADERS_CXX += \\
 
-  % else:
+  % elif lib.language == "core":
+  PUBLIC_HEADERS_CORE += \\
+
+  % elif lib.language == "c":
   PUBLIC_HEADERS_C += \\
 
   % endif
@@ -1559,9 +1775,15 @@
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   endif
   % endif
+
+  # Force compilation of proto files before building code that could potentially depend on them
   % for src in lib.src:
   % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % if lib.language == 'c++':
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % else:
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_nanoc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % endif
   % endif
   % endfor
   </%def>
@@ -1570,10 +1792,17 @@
   % if not has_no_sources:
   ${tgt.name.upper()}_SRC = \\
 
+  % if tgt.language == "c++":
   % for src in tgt.src:
       ${proto_to_cc(src)} \\
 
   % endfor
+  % else:
+   % for src in tgt.src:
+      ${proto_to_nanoc(src)} \\
+
+  % endfor
+  % endif
 
   ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
   % endif
@@ -1619,7 +1848,8 @@
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: \
   % if not has_no_sources:
-  $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+  $(PROTOBUF_DEP) \
+  $(${tgt.name.upper()}_OBJS)\
   % endif
   % else:
   $(BINDIR)/$(CONFIG)/${tgt.name}: \
@@ -1726,9 +1956,15 @@
   endif
   % endif
   % endif
+
+  # Force compilation of proto files before building code that could potentially depend on them
   % for src in tgt.src:
   % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in tgt.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % if tgt.language == 'c++':
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % else:
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_nanoc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % endif
   % endif
   % endfor
   </%def>
@@ -1744,18 +1980,21 @@
   % endfor
   endif
 
-  .PHONY: all strip tools \
+  .PHONY: all all strip tools \
   dep_error openssl_dep_error openssl_dep_message git_update stop \
-  buildtests buildtests_c buildtests_cxx \
-  test test_c test_cxx \
-  install install_c install_cxx \
-  install-headers install-headers_c install-headers_cxx \
-  install-shared install-shared_c install-shared_cxx \
-  install-static install-static_c install-static_cxx \
+  buildtests buildtests_c buildtests_core buildtests_cxx \
+  buildtests_c buildtests_cxx \
+  test test test_c test_core test_cxx \
+  test_c test_cxx \
+  install install_c install_core install_cxx \
+  install-headers install-headers_c install-headers_core install-headers_cxx \
+  install-shared install-shared_c install-shared_core install-shared_cxx \
+  install-static install-static_c install-static_core install-static_cxx \
   strip strip-shared strip-static \
   strip_c strip-shared_c strip-static_c \
+  strip_core strip-shared_core strip-static_core \
   strip_cxx strip-shared_cxx strip-static_cxx \
-  dep_c dep_cxx bins_dep_c bins_dep_cxx \
+  dep_c dep_core dep_cxx bins_dep_c bins_dep_core bins_dep_cxx \
   clean
 
   .PHONY: printvars
@@ -1763,3 +2002,8 @@
   	@$(foreach V,$(sort $(.VARIABLES)),                 \
   	  $(if $(filter-out environment% default automatic, \
   	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
+
+  # Build Nanopb before using it (these lines duplicate the functionality of the Nanopb Makefile, which cannot use the PROTOC variable)
+  $(NANOPB_DIR)/generator/proto/%_pb2.py: $(NANOPB_DIR)/generator/proto/%.proto $(PROTOC_DEP)
+  	$(E) "[NANOPB]  Compiling $<"
+  	$(Q) PYTHONPATH=third_party/protobuf/python $(PROTOC) --proto_path=$(dir $<) --python_out=$(dir $<) $<;

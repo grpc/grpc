@@ -797,168 +797,91 @@ filegroups:
   uses:
   - grpc++_codegen_base
 libs:
-- name: gpr
+- name: grpc_c
   build: all
   language: c
-  filegroups:
-  - gpr_base
-  secure: false
-  vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
-- name: gpr_test_util
-  build: private
-  language: c
+  public_headers:
+  - include/grpc_c/channel.h
+  - include/grpc_c/client_context.h
+  - include/grpc_c/codegen/bidi_streaming_blocking_call.h
+  - include/grpc_c/codegen/client_streaming_blocking_call.h
+  - include/grpc_c/codegen/context.h
+  - include/grpc_c/codegen/message.h
+  - include/grpc_c/codegen/method.h
+  - include/grpc_c/codegen/pb_compat.h
+  - include/grpc_c/codegen/serialization.h
+  - include/grpc_c/codegen/server.h
+  - include/grpc_c/codegen/server_streaming_blocking_call.h
+  - include/grpc_c/codegen/unary_async_call.h
+  - include/grpc_c/codegen/unary_blocking_call.h
+  - include/grpc_c/completion_queue.h
+  - include/grpc_c/declare_serializer.h
+  - include/grpc_c/grpc_c.h
+  - include/grpc_c/server.h
+  - include/grpc_c/server_context.h
+  - include/grpc_c/server_incoming_queue.h
+  - include/grpc_c/status.h
   headers:
-  - test/core/util/test_config.h
+  - src/c/alloc.h
+  - src/c/array.h
+  - src/c/bidi_streaming_blocking_call.h
+  - src/c/call_ops.h
+  - src/c/client_context.h
+  - src/c/client_streaming_blocking_call.h
+  - src/c/completion_queue.h
+  - src/c/context.h
+  - src/c/init_shutdown.h
+  - src/c/message.h
+  - src/c/server.h
+  - src/c/server_context.h
+  - src/c/server_incoming_queue.h
+  - src/c/server_streaming_blocking_call.h
+  - src/c/unary_async_call.h
+  - src/c/unary_blocking_call.h
   src:
-  - test/core/util/test_config.c
+  - src/c/alloc.c
+  - src/c/array.c
+  - src/c/bidi_streaming_blocking_call.c
+  - src/c/call_ops.c
+  - src/c/channel.c
+  - src/c/client_context.c
+  - src/c/client_streaming_blocking_call.c
+  - src/c/completion_queue.c
+  - src/c/context.c
+  - src/c/init_shutdown.c
+  - src/c/message.c
+  - src/c/pb_compat.c
+  - src/c/server.c
+  - src/c/server_context.c
+  - src/c/server_incoming_queue.c
+  - src/c/server_streaming_blocking_call.c
+  - src/c/unary_async_call.c
+  - src/c/unary_blocking_call.c
   deps:
-  - gpr
-  secure: false
-  vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
-- name: grpc
-  build: all
-  language: c
-  src:
-  - src/core/lib/surface/init.c
-  baselib: true
-  deps_linkage: static
-  dll: true
-  filegroups:
-  - grpc_base
-  - grpc_transport_chttp2_server_secure
-  - grpc_transport_chttp2_client_secure
-  - grpc_transport_chttp2_server_insecure
-  - grpc_transport_chttp2_client_insecure
-  - grpc_lb_policy_grpclb
-  - grpc_lb_policy_pick_first
-  - grpc_lb_policy_round_robin
-  - grpc_resolver_dns_native
-  - grpc_resolver_sockaddr
-  - grpc_load_reporting
-  - grpc_secure
-  - census
-  generate_plugin_registry: true
-  secure: true
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
-- name: grpc_cronet
-  build: all
-  language: c
-  src:
-  - src/core/lib/surface/init.c
-  baselib: true
-  deps_linkage: static
-  dll: true
-  filegroups:
-  - grpc_base
-  - grpc_transport_cronet_client_secure
-  - grpc_transport_chttp2_client_secure
-  generate_plugin_registry: true
-  platforms:
-  - linux
-  secure: true
-- name: grpc_dll
-  build: private
-  language: c
-  src: []
-  deps:
-  - gpr
   - grpc
-  build_system:
-  - visual_studio
-  deps_linkage: static
-  dll_def: grpc.def
-  vs_config_type: DynamicLibrary
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
-  vs_props:
-  - zlib
-  - openssl
-  - winsock
-  - global
-- name: grpc_test_util
-  build: private
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  - test/core/security/oauth2_utils.h
-  src:
-  - test/core/end2end/data/client_certs.c
-  - test/core/end2end/data/server1_cert.c
-  - test/core/end2end/data/server1_key.c
-  - test/core/end2end/data/test_root_cert.c
-  - test/core/security/oauth2_utils.c
-  deps:
-  - gpr_test_util
   - gpr
-  - grpc
-  filegroups:
-  - grpc_test_util_base
-  - grpc_base
-  vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
-- name: grpc_test_util_unsecure
-  build: private
-  language: c
-  deps:
-  - gpr
-  - gpr_test_util
-  - grpc_unsecure
-  filegroups:
-  - grpc_test_util_base
-  secure: false
-  vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
-- name: grpc_unsecure
-  build: all
-  language: c
-  src:
-  - src/core/lib/surface/init.c
-  - src/core/lib/surface/init_unsecure.c
   baselib: true
-  deps_linkage: static
   dll: true
-  filegroups:
-  - grpc_base
-  - grpc_transport_chttp2_server_insecure
-  - grpc_transport_chttp2_client_insecure
-  - grpc_resolver_dns_native
-  - grpc_resolver_sockaddr
-  - grpc_load_reporting
-  - grpc_lb_policy_grpclb
-  - grpc_lb_policy_pick_first
-  - grpc_lb_policy_round_robin
-  - census
-  generate_plugin_registry: true
-  secure: false
-  vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
-- name: reconnect_server
+  do_not_enforce_c89_public_headers: true
+  secure: check
+  vs_project_guid: '{8AC0CB05-6E3C-4A40-B45E-FDA77644F432}'
+- name: grpc_c_end2end_client_lib
   build: private
   language: c
   headers:
-  - test/core/util/reconnect_server.h
+  - test/c/end2end/end2end_test_client.h
   src:
-  - test/core/util/reconnect_server.c
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/c/end2end/end2end_test_client.c
   deps:
-  - test_tcp_server
+  - grpc_c
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
-- name: test_tcp_server
-  build: private
-  language: c
-  headers:
-  - test/core/util/test_tcp_server.h
-  src:
-  - test/core/util/test_tcp_server.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
+  uses:
+  - nanopb
 - name: grpc++
   build: all
   language: c++
@@ -1079,6 +1002,8 @@ libs:
   build: protoc
   language: c++
   headers:
+  - src/compiler/c_generator.h
+  - src/compiler/c_generator_helpers.h
   - src/compiler/config.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
@@ -1095,6 +1020,7 @@ libs:
   - src/compiler/ruby_generator_map-inl.h
   - src/compiler/ruby_generator_string-inl.h
   src:
+  - src/compiler/c_generator.cc
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
   - src/compiler/node_generator.cc
@@ -1214,6 +1140,168 @@ libs:
   - grpc_test_util
   - grpc++_test_util
   - grpc++
+- name: gpr
+  build: all
+  language: core
+  filegroups:
+  - gpr_base
+  secure: false
+  vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
+- name: gpr_test_util
+  build: private
+  language: core
+  headers:
+  - test/core/util/test_config.h
+  src:
+  - test/core/util/test_config.c
+  deps:
+  - gpr
+  secure: false
+  vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
+- name: grpc
+  build: all
+  language: core
+  src:
+  - src/core/lib/surface/init.c
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_base
+  - grpc_transport_chttp2_server_secure
+  - grpc_transport_chttp2_client_secure
+  - grpc_transport_chttp2_server_insecure
+  - grpc_transport_chttp2_client_insecure
+  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
+  - grpc_load_reporting
+  - grpc_secure
+  - census
+  generate_plugin_registry: true
+  secure: true
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
+  vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_cronet
+  build: all
+  language: core
+  src:
+  - src/core/lib/surface/init.c
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_base
+  - grpc_transport_cronet_client_secure
+  - grpc_transport_chttp2_client_secure
+  generate_plugin_registry: true
+  platforms:
+  - linux
+  secure: true
+- name: grpc_dll
+  build: private
+  language: core
+  src: []
+  deps:
+  - gpr
+  - grpc
+  build_system:
+  - visual_studio
+  deps_linkage: static
+  dll_def: grpc.def
+  vs_config_type: DynamicLibrary
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
+  vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
+  vs_props:
+  - zlib
+  - openssl
+  - winsock
+  - global
+- name: grpc_test_util
+  build: private
+  language: core
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  - test/core/security/oauth2_utils.h
+  src:
+  - test/core/end2end/data/client_certs.c
+  - test/core/end2end/data/server1_cert.c
+  - test/core/end2end/data/server1_key.c
+  - test/core/end2end/data/test_root_cert.c
+  - test/core/security/oauth2_utils.c
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - grpc_test_util_base
+  - grpc_base
+  vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
+- name: grpc_test_util_unsecure
+  build: private
+  language: core
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc_unsecure
+  filegroups:
+  - grpc_test_util_base
+  secure: false
+  vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
+- name: grpc_unsecure
+  build: all
+  language: core
+  src:
+  - src/core/lib/surface/init.c
+  - src/core/lib/surface/init_unsecure.c
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_base
+  - grpc_transport_chttp2_server_insecure
+  - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
+  - grpc_load_reporting
+  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
+  - census
+  generate_plugin_registry: true
+  secure: false
+  vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
+- name: reconnect_server
+  build: private
+  language: core
+  headers:
+  - test/core/util/reconnect_server.h
+  src:
+  - test/core/util/reconnect_server.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: test_tcp_server
+  build: private
+  language: core
+  headers:
+  - test/core/util/test_tcp_server.h
+  src:
+  - test/core/util/test_tcp_server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_csharp_ext
   build: all
   language: csharp
@@ -1236,1252 +1324,18 @@ libs:
   - winsock
   - global
 targets:
-- name: alarm_test
+- name: grpc_c_server_end2end_test
+  gtest: false
   build: test
   language: c
+  headers:
+  - test/c/end2end/server_end2end_test.h
   src:
-  - test/core/surface/alarm_test.c
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/c/end2end/server_end2end_test.c
   deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: algorithm_test
-  build: test
-  language: c
-  src:
-  - test/core/compression/algorithm_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: alloc_test
-  build: test
-  language: c
-  src:
-  - test/core/support/alloc_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: alpn_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/alpn_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: api_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/api_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/api_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
-  maxlen: 2048
-- name: bad_server_response_test
-  build: test
-  language: c
-  src:
-  - test/core/end2end/bad_server_response_test.c
-  deps:
-  - test_tcp_server
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: bin_decoder_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-- name: bin_encoder_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/bin_encoder_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-- name: census_context_test
-  build: test
-  language: c
-  src:
-  - test/core/census/context_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: census_resource_test
-  build: test
-  language: c
-  src:
-  - test/core/census/resource_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: channel_create_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/channel_create_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: chttp2_hpack_encoder_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/hpack_encoder_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: chttp2_status_conversion_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/status_conversion_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: chttp2_stream_map_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/stream_map_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: chttp2_varint_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/varint_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: client_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/client_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/client_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
-- name: compression_test
-  build: test
-  language: c
-  src:
-  - test/core/compression/compression_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: concurrent_connectivity_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/concurrent_connectivity_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: dns_resolver_connectivity_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/client_config/resolvers/dns_resolver_connectivity_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: dns_resolver_test
-  build: test
-  language: c
-  src:
-  - test/core/client_config/resolvers/dns_resolver_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: dualstack_socket_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/end2end/dualstack_socket_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: endpoint_pair_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/endpoint_pair_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: ev_epoll_linux_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/ev_epoll_linux_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - linux
-- name: fd_conservation_posix_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: fd_posix_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/fd_posix_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: fling_client
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/fling/client.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: fling_server
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/fling/server.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: fling_stream_test
-  cpu_cost: 1.5
-  build: test
-  language: c
-  src:
-  - test/core/fling/fling_stream_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: fling_test
-  cpu_cost: 1.5
-  build: test
-  language: c
-  src:
-  - test/core/fling/fling_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: gen_hpack_tables
-  build: tool
-  language: c
-  src:
-  - tools/codegen/core/gen_hpack_tables.c
-  deps:
-  - gpr
-  - grpc
-- name: gen_legal_metadata_characters
-  build: tool
-  language: c
-  src:
-  - tools/codegen/core/gen_legal_metadata_characters.c
-  deps: []
-- name: goaway_server_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/end2end/goaway_server_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: gpr_avl_test
-  build: test
-  language: c
-  src:
-  - test/core/support/avl_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_backoff_test
-  build: test
-  language: c
-  src:
-  - test/core/support/backoff_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_cmdline_test
-  build: test
-  language: c
-  src:
-  - test/core/support/cmdline_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_cpu_test
-  build: test
-  language: c
-  src:
-  - test/core/support/cpu_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_env_test
-  build: test
-  language: c
-  src:
-  - test/core/support/env_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_histogram_test
-  build: test
-  language: c
-  src:
-  - test/core/support/histogram_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_host_port_test
-  build: test
-  language: c
-  src:
-  - test/core/support/host_port_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_log_test
-  build: test
-  language: c
-  src:
-  - test/core/support/log_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_slice_buffer_test
-  build: test
-  language: c
-  src:
-  - test/core/support/slice_buffer_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_slice_test
-  build: test
-  language: c
-  src:
-  - test/core/support/slice_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_stack_lockfree_test
-  cpu_cost: 7
-  build: test
-  language: c
-  src:
-  - test/core/support/stack_lockfree_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_string_test
-  build: test
-  language: c
-  src:
-  - test/core/support/string_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_sync_test
-  cpu_cost: 10
-  build: test
-  language: c
-  src:
-  - test/core/support/sync_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_thd_test
-  cpu_cost: 10
-  build: test
-  language: c
-  src:
-  - test/core/support/thd_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_time_test
-  build: test
-  language: c
-  src:
-  - test/core/support/time_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_tls_test
-  build: test
-  language: c
-  src:
-  - test/core/support/tls_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_useful_test
-  build: test
-  language: c
-  src:
-  - test/core/support/useful_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: grpc_auth_context_test
-  build: test
-  language: c
-  src:
-  - test/core/security/auth_context_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_b64_test
-  build: test
-  language: c
-  src:
-  - test/core/security/b64_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_byte_buffer_reader_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/byte_buffer_reader_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_channel_args_test
-  build: test
-  language: c
-  src:
-  - test/core/channel/channel_args_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_channel_stack_test
-  build: test
-  language: c
-  src:
-  - test/core/channel/channel_stack_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_completion_queue_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/completion_queue_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_create_jwt
-  build: tool
-  language: c
-  src:
-  - test/core/security/create_jwt.c
-  deps:
-  - grpc
-  - gpr
-  secure: true
-- name: grpc_credentials_test
-  build: test
-  language: c
-  src:
-  - test/core/security/credentials_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_fetch_oauth2
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/security/fetch_oauth2.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_invalid_channel_args_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/invalid_channel_args_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_json_token_test
-  build: test
-  language: c
-  src:
-  - test/core/security/json_token_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: grpc_jwt_verifier_test
-  build: test
-  language: c
-  src:
-  - test/core/security/jwt_verifier_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_print_google_default_creds_token
-  build: tool
-  language: c
-  src:
-  - test/core/security/print_google_default_creds_token.c
-  deps:
-  - grpc
-  - gpr
-- name: grpc_security_connector_test
-  build: test
-  language: c
-  src:
-  - test/core/security/security_connector_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_verify_jwt
-  build: tool
-  language: c
-  src:
-  - test/core/security/verify_jwt.c
-  deps:
-  - grpc
-  - gpr
-- name: hpack_parser_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/transport/chttp2/hpack_parser_fuzzer_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/transport/chttp2/hpack_parser_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 512
-- name: hpack_parser_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/hpack_parser_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: hpack_table_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/chttp2/hpack_table_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: http_parser_test
-  build: test
-  language: c
-  src:
-  - test/core/http/parser_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: http_request_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/http/request_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/http/corpus
-  maxlen: 2048
-- name: http_response_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/http/response_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/http/corpus
-  maxlen: 2048
-- name: httpcli_format_request_test
-  build: test
-  language: c
-  src:
-  - test/core/http/format_request_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: httpcli_test
-  cpu_cost: 0.5
-  build: test
-  language: c
-  src:
-  - test/core/http/httpcli_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: httpscli_test
-  cpu_cost: 0.5
-  build: test
-  language: c
-  src:
-  - test/core/http/httpscli_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - linux
-- name: init_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/init_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: internal_api_canary_iomgr_test
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/internal_api_canaries/iomgr.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: internal_api_canary_support_test
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/internal_api_canaries/iomgr.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: internal_api_canary_transport_test
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/internal_api_canaries/iomgr.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: invalid_call_argument_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/end2end/invalid_call_argument_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: json_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/json/fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/json/corpus
-  maxlen: 512
-- name: json_rewrite
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/json/json_rewrite.c
-  deps:
-  - grpc
-  - gpr
-- name: json_rewrite_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_rewrite_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: json_stream_error_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_stream_error_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: json_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: lame_client_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/lame_client_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: lb_policies_test
-  cpu_cost: 0.1
-  flaky: true
-  build: test
-  language: c
-  src:
-  - test/core/client_config/lb_policies_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: load_file_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/load_file_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: low_level_ping_pong_benchmark
-  build: benchmark
-  language: c
-  src:
-  - test/core/network_benchmarks/low_level_ping_pong.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: message_compress_test
-  build: test
-  language: c
-  src:
-  - test/core/compression/message_compress_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: mlog_test
-  flaky: true
-  build: test
-  language: c
-  src:
-  - test/core/census/mlog_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: multiple_server_queues_test
-  build: test
-  language: c
-  src:
-  - test/core/end2end/multiple_server_queues_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: murmur_hash_test
-  build: test
-  language: c
-  src:
-  - test/core/support/murmur_hash_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: nanopb_fuzzer_response_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/nanopb/fuzzer_response.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/nanopb/corpus_response
-  maxlen: 128
-- name: nanopb_fuzzer_serverlist_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/nanopb/fuzzer_serverlist.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/nanopb/corpus_serverlist
-  maxlen: 128
-- name: no_server_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/end2end/no_server_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: resolve_address_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/resolve_address_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: secure_channel_create_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/secure_channel_create_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: secure_endpoint_test
-  build: test
-  language: c
-  src:
-  - test/core/security/secure_endpoint_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: sequential_connectivity_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/sequential_connectivity_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: server_chttp2_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/server_chttp2_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: server_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/server_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/server_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
-- name: server_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/server_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: set_initial_connect_string_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/client_config/set_initial_connect_string_test.c
-  deps:
-  - test_tcp_server
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: sockaddr_resolver_test
-  build: test
-  language: c
-  src:
-  - test/core/client_config/resolvers/sockaddr_resolver_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: sockaddr_utils_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/sockaddr_utils_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: socket_utils_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/socket_utils_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: tcp_client_posix_test
-  cpu_cost: 0.5
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/tcp_client_posix_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: tcp_posix_test
-  cpu_cost: 0.2
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/tcp_posix_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: tcp_server_posix_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/tcp_server_posix_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: time_averaged_stats_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/time_averaged_stats_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: timeout_encoding_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/timeout_encoding_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: timer_heap_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/timer_heap_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: timer_list_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/timer_list_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: transport_connectivity_state_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/connectivity_state_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: transport_metadata_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/metadata_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: transport_security_test
-  build: test
-  language: c
-  src:
-  - test/core/tsi/transport_security_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: udp_server_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/udp_server_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: uri_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/client_config/uri_fuzzer_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/client_config/uri_corpus
-  maxlen: 128
-- name: uri_parser_test
-  build: test
-  language: c
-  src:
-  - test/core/client_config/uri_parser_test.c
-  deps:
+  - grpc_c
   - grpc_test_util
   - grpc
   - gpr_test_util
@@ -2716,6 +1570,56 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: grpc_c_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/c/end2end/end2end_test.cc
+  deps:
+  - grpc_c_end2end_client_lib
+  - grpc_c
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  comments:
+  - '#1': This is a gRPC-C test but temporarily written in C++ for the lack of a C
+      server
+  - '#2': We are using the library grpc_c_end2end_client_lib to process nanopb and
+      interface with generated code
+- name: grpc_c_generic_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/c/end2end/id_serialization.h
+  src:
+  - test/c/end2end/generic_end2end_test.cc
+  - test/c/end2end/id_serialization.cc
+  deps:
+  - grpc_c
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  comments:
+  - '#1': This is a gRPC-C test but temporarily written in C++ for the lack of a C
+      server
+- name: grpc_c_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/c_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{06F2EB11-35DA-483D-AB0A-BC420D97B18C}'
 - name: grpc_cli
   build: test
   run: false
@@ -3229,6 +2133,1256 @@ targets:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc
+  - gpr
+- name: alarm_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/alarm_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: algorithm_test
+  build: test
+  language: core
+  src:
+  - test/core/compression/algorithm_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: alloc_test
+  build: test
+  language: core
+  src:
+  - test/core/support/alloc_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: alpn_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/alpn_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: api_fuzzer
+  build: fuzzer
+  language: core
+  src:
+  - test/core/end2end/fuzzers/api_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/api_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
+  maxlen: 2048
+- name: bad_server_response_test
+  build: test
+  language: core
+  src:
+  - test/core/end2end/bad_server_response_test.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: bin_decoder_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+- name: bin_encoder_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+- name: census_context_test
+  build: test
+  language: core
+  src:
+  - test/core/census/context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_resource_test
+  build: test
+  language: core
+  src:
+  - test/core/census/resource_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: channel_create_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/channel_create_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: chttp2_hpack_encoder_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/hpack_encoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: chttp2_status_conversion_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: chttp2_stream_map_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/stream_map_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: chttp2_varint_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/varint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: client_fuzzer
+  build: fuzzer
+  language: core
+  src:
+  - test/core/end2end/fuzzers/client_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/client_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
+  maxlen: 2048
+- name: compression_test
+  build: test
+  language: core
+  src:
+  - test/core/compression/compression_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: concurrent_connectivity_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/concurrent_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: dns_resolver_connectivity_test
+  cpu_cost: 0.1
+  build: test
+  language: core
+  src:
+  - test/core/client_config/resolvers/dns_resolver_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: dns_resolver_test
+  build: test
+  language: core
+  src:
+  - test/core/client_config/resolvers/dns_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: dualstack_socket_test
+  cpu_cost: 0.1
+  build: test
+  language: core
+  src:
+  - test/core/end2end/dualstack_socket_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: endpoint_pair_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/endpoint_pair_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: ev_epoll_linux_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/ev_epoll_linux_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+- name: fd_conservation_posix_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: fd_posix_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/fd_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: fling_client
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/fling/client.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: fling_server
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/fling/server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: fling_stream_test
+  cpu_cost: 1.5
+  build: test
+  language: core
+  src:
+  - test/core/fling/fling_stream_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: fling_test
+  cpu_cost: 1.5
+  build: test
+  language: core
+  src:
+  - test/core/fling/fling_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: gen_hpack_tables
+  build: tool
+  language: core
+  src:
+  - tools/codegen/core/gen_hpack_tables.c
+  deps:
+  - gpr
+  - grpc
+- name: gen_legal_metadata_characters
+  build: tool
+  language: core
+  src:
+  - tools/codegen/core/gen_legal_metadata_characters.c
+  deps: []
+- name: goaway_server_test
+  cpu_cost: 0.1
+  build: test
+  language: core
+  src:
+  - test/core/end2end/goaway_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: gpr_avl_test
+  build: test
+  language: core
+  src:
+  - test/core/support/avl_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_backoff_test
+  build: test
+  language: core
+  src:
+  - test/core/support/backoff_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_cmdline_test
+  build: test
+  language: core
+  src:
+  - test/core/support/cmdline_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_cpu_test
+  build: test
+  language: core
+  src:
+  - test/core/support/cpu_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_env_test
+  build: test
+  language: core
+  src:
+  - test/core/support/env_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_histogram_test
+  build: test
+  language: core
+  src:
+  - test/core/support/histogram_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_host_port_test
+  build: test
+  language: core
+  src:
+  - test/core/support/host_port_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_log_test
+  build: test
+  language: core
+  src:
+  - test/core/support/log_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_slice_buffer_test
+  build: test
+  language: core
+  src:
+  - test/core/support/slice_buffer_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_slice_test
+  build: test
+  language: core
+  src:
+  - test/core/support/slice_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_stack_lockfree_test
+  cpu_cost: 7
+  build: test
+  language: core
+  src:
+  - test/core/support/stack_lockfree_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_string_test
+  build: test
+  language: core
+  src:
+  - test/core/support/string_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_sync_test
+  cpu_cost: 10
+  build: test
+  language: core
+  src:
+  - test/core/support/sync_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_thd_test
+  cpu_cost: 10
+  build: test
+  language: core
+  src:
+  - test/core/support/thd_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_time_test
+  build: test
+  language: core
+  src:
+  - test/core/support/time_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_tls_test
+  build: test
+  language: core
+  src:
+  - test/core/support/tls_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_useful_test
+  build: test
+  language: core
+  src:
+  - test/core/support/useful_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: grpc_auth_context_test
+  build: test
+  language: core
+  src:
+  - test/core/security/auth_context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_b64_test
+  build: test
+  language: core
+  src:
+  - test/core/security/b64_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_byte_buffer_reader_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/byte_buffer_reader_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_channel_args_test
+  build: test
+  language: core
+  src:
+  - test/core/channel/channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_channel_stack_test
+  build: test
+  language: core
+  src:
+  - test/core/channel/channel_stack_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_completion_queue_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/completion_queue_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_create_jwt
+  build: tool
+  language: core
+  src:
+  - test/core/security/create_jwt.c
+  deps:
+  - grpc
+  - gpr
+  secure: true
+- name: grpc_credentials_test
+  build: test
+  language: core
+  src:
+  - test/core/security/credentials_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_fetch_oauth2
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/security/fetch_oauth2.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_invalid_channel_args_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/invalid_channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_json_token_test
+  build: test
+  language: core
+  src:
+  - test/core/security/json_token_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: grpc_jwt_verifier_test
+  build: test
+  language: core
+  src:
+  - test/core/security/jwt_verifier_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_print_google_default_creds_token
+  build: tool
+  language: core
+  src:
+  - test/core/security/print_google_default_creds_token.c
+  deps:
+  - grpc
+  - gpr
+- name: grpc_security_connector_test
+  build: test
+  language: core
+  src:
+  - test/core/security/security_connector_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_verify_jwt
+  build: tool
+  language: core
+  src:
+  - test/core/security/verify_jwt.c
+  deps:
+  - grpc
+  - gpr
+- name: hpack_parser_fuzzer_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/transport/chttp2/hpack_parser_fuzzer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/transport/chttp2/hpack_parser_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
+  maxlen: 512
+- name: hpack_parser_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/hpack_parser_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: hpack_table_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/chttp2/hpack_table_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: http_parser_test
+  build: test
+  language: core
+  src:
+  - test/core/http/parser_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: http_request_fuzzer_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/http/request_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/http/corpus
+  maxlen: 2048
+- name: http_response_fuzzer_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/http/response_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/http/corpus
+  maxlen: 2048
+- name: httpcli_format_request_test
+  build: test
+  language: core
+  src:
+  - test/core/http/format_request_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: httpcli_test
+  cpu_cost: 0.5
+  build: test
+  language: core
+  src:
+  - test/core/http/httpcli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: httpscli_test
+  cpu_cost: 0.5
+  build: test
+  language: core
+  src:
+  - test/core/http/httpscli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+- name: init_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/init_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: internal_api_canary_iomgr_test
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/internal_api_canaries/iomgr.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: internal_api_canary_support_test
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/internal_api_canaries/iomgr.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: internal_api_canary_transport_test
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/internal_api_canaries/iomgr.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: invalid_call_argument_test
+  cpu_cost: 0.1
+  build: test
+  language: core
+  src:
+  - test/core/end2end/invalid_call_argument_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: json_fuzzer_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/json/fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/json/corpus
+  maxlen: 512
+- name: json_rewrite
+  build: test
+  run: false
+  language: core
+  src:
+  - test/core/json/json_rewrite.c
+  deps:
+  - grpc
+  - gpr
+- name: json_rewrite_test
+  build: test
+  language: core
+  src:
+  - test/core/json/json_rewrite_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: json_stream_error_test
+  build: test
+  language: core
+  src:
+  - test/core/json/json_stream_error_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: json_test
+  build: test
+  language: core
+  src:
+  - test/core/json/json_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: lame_client_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/lame_client_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: lb_policies_test
+  cpu_cost: 0.1
+  flaky: true
+  build: test
+  language: core
+  src:
+  - test/core/client_config/lb_policies_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: load_file_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/load_file_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: low_level_ping_pong_benchmark
+  build: benchmark
+  language: core
+  src:
+  - test/core/network_benchmarks/low_level_ping_pong.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: message_compress_test
+  build: test
+  language: core
+  src:
+  - test/core/compression/message_compress_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: mlog_test
+  flaky: true
+  build: test
+  language: core
+  src:
+  - test/core/census/mlog_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: multiple_server_queues_test
+  build: test
+  language: core
+  src:
+  - test/core/end2end/multiple_server_queues_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: murmur_hash_test
+  build: test
+  language: core
+  src:
+  - test/core/support/murmur_hash_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: nanopb_fuzzer_response_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/nanopb/fuzzer_response.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/nanopb/corpus_response
+  maxlen: 128
+- name: nanopb_fuzzer_serverlist_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/nanopb/fuzzer_serverlist.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/nanopb/corpus_serverlist
+  maxlen: 128
+- name: no_server_test
+  cpu_cost: 0.1
+  build: test
+  language: core
+  src:
+  - test/core/end2end/no_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: resolve_address_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/resolve_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: secure_channel_create_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/secure_channel_create_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: secure_endpoint_test
+  build: test
+  language: core
+  src:
+  - test/core/security/secure_endpoint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: sequential_connectivity_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/sequential_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_chttp2_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/server_chttp2_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_fuzzer
+  build: fuzzer
+  language: core
+  src:
+  - test/core/end2end/fuzzers/server_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/server_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
+  maxlen: 2048
+- name: server_test
+  build: test
+  language: core
+  src:
+  - test/core/surface/server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: set_initial_connect_string_test
+  cpu_cost: 0.1
+  build: test
+  language: core
+  src:
+  - test/core/client_config/set_initial_connect_string_test.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: sockaddr_resolver_test
+  build: test
+  language: core
+  src:
+  - test/core/client_config/resolvers/sockaddr_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: sockaddr_utils_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/sockaddr_utils_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: socket_utils_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/socket_utils_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: tcp_client_posix_test
+  cpu_cost: 0.5
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/tcp_client_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: tcp_posix_test
+  cpu_cost: 0.2
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/tcp_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: tcp_server_posix_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/tcp_server_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: time_averaged_stats_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/time_averaged_stats_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: timeout_encoding_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/timeout_encoding_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: timer_heap_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/timer_heap_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: timer_list_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/timer_list_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_connectivity_state_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/connectivity_state_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_metadata_test
+  build: test
+  language: core
+  src:
+  - test/core/transport/metadata_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_security_test
+  build: test
+  language: core
+  src:
+  - test/core/tsi/transport_security_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: udp_server_test
+  build: test
+  language: core
+  src:
+  - test/core/iomgr/udp_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: uri_fuzzer_test
+  build: fuzzer
+  language: core
+  src:
+  - test/core/client_config/uri_fuzzer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/client_config/uri_corpus
+  maxlen: 128
+- name: uri_parser_test
+  build: test
+  language: core
+  src:
+  - test/core/client_config/uri_parser_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
   - gpr
 vspackages:
 - linkage: static

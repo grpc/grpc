@@ -56,7 +56,7 @@ try:
       'zlib': True,
       'defaults': 'zlib',
       'build': 'private',
-      'language': 'c',
+      'language': 'core',
       'secure': 'no',
       'src': sorted(cmvar('ZLIB_SRCS')),
       'headers': sorted(cmvar('ZLIB_PUBLIC_HDRS') + cmvar('ZLIB_PRIVATE_HDRS')),
