@@ -128,6 +128,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
                     sizeof(grpc_resolved_address) * (*addresses)->naddrs);
 
     for (i = prev_naddr; i < (*addresses)->naddrs; i++) {
+      memset(&(*addresses)->addrs[i], 0, sizeof(grpc_resolved_address));
       if (hostent->h_addrtype == AF_INET6) {
         char output[INET6_ADDRSTRLEN];
         gpr_log(GPR_ERROR, "AF_INET6");
