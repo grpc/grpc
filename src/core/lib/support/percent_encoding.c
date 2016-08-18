@@ -81,9 +81,9 @@ static bool valid_hex(const uint8_t *p, const uint8_t *end) {
 }
 
 static uint8_t dehex(uint8_t c) {
-  if (c >= '0' && c <= '9') return c - '0';
-  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
+  if (c >= 'A' && c <= 'F') return (uint8_t)(c - 'A' + 10);
+  if (c >= 'a' && c <= 'f') return (uint8_t)(c - 'a' + 10);
   GPR_UNREACHABLE_CODE(return 255);
 }
 
