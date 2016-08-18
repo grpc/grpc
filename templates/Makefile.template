@@ -559,10 +559,8 @@
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-  CPPFLAGS := -Ithird_party/c-ares $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/c-ares -Isrc/c-ares $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
-  CARES_CFLAGS_EXTRA += $(findstring -m32,$(CFLAGS))
-  CARES_CFLAGS_EXTRA += -Wno-invalid-source-encoding
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   CARES_PKG_CONFIG = true
@@ -578,14 +576,6 @@
   PC_LIBS_GRPC += -lcares
   LIBS += libcares
   endif
-  endif
-
-  LIBS_CARES = cares
-
-  ifeq ($(CARES_PKG_CONFIG),true)
-  LDLIBS_CARES += $(shell $(PKG_CONFIG) --libs-only-l libcares)
-  else
-  LDLIBS_CARES += $(addprefix -l, $(LIBS_CARES))
   endif
 
   OPENSSL_PKG_CONFIG = false
@@ -1725,7 +1715,6 @@
   % for dep in tgt.deps:
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
-   $(LDLIBS_CARES)\
   % if tgt.language == "c++":
   % if tgt.build == 'protoc':
    $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\
