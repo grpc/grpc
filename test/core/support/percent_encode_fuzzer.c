@@ -51,12 +51,16 @@ static void test(const uint8_t *data, size_t size, const uint8_t *dict) {
   gpr_slice output = gpr_percent_encode_slice(input, dict);
   gpr_slice decoded_output;
   // encoder must always produce decodable output
-  GPR_ASSERT(gpr_percent_decode_slice(output, false, &decoded_output));
+  GPR_ASSERT(gpr_strict_percent_decode_slice(output, dict, &decoded_output));
+  gpr_slice permissive_decoded_output =
+      gpr_permissive_percent_decode_slice(output);
   // and decoded output must always match the input
   GPR_ASSERT(gpr_slice_cmp(input, decoded_output) == 0);
+  GPR_ASSERT(gpr_slice_cmp(input, permissive_decoded_output) == 0);
   gpr_slice_unref(input);
   gpr_slice_unref(output);
   gpr_slice_unref(decoded_output);
+  gpr_slice_unref(permissive_decoded_output);
   counters = grpc_memory_counters_snapshot();
   grpc_memory_counters_destroy();
   GPR_ASSERT(counters.total_size_relative == 0);

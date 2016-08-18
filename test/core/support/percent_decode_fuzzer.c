@@ -49,12 +49,15 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_memory_counters_init();
   gpr_slice input = gpr_slice_from_copied_buffer((const char *)data, size);
   gpr_slice output;
-  if (gpr_percent_decode_slice(input, false, &output)) {
+  if (gpr_strict_percent_decode_slice(
+          input, gpr_url_percent_encoding_unreserved_bytes, &output)) {
     gpr_slice_unref(output);
   }
-  if (gpr_percent_decode_slice(input, true, &output)) {
+  if (gpr_percent_decode_slice(
+          input, gpr_compatible_percent_encoding_unreserved_bytes, &output)) {
     gpr_slice_unref(output);
   }
+  gpr_slice_unref(gpr_permissive_percent_decode_slice(input));
   gpr_slice_unref(input);
   counters = grpc_memory_counters_snapshot();
   grpc_memory_counters_destroy();
