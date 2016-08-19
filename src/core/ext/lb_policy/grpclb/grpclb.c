@@ -76,9 +76,9 @@
  *    operations in progress over the old RR instance. This is done by
  *    decreasing the reference count on the old policy. The moment no more
  *    references are held on the old RR policy, it'll be destroyed and \a
- *    rr_connectivity_changed notified with a \a GRPC_CHANNEL_SHUTDOWN state.
- *    At this point we can transition to a new RR instance safely, which is done
- *    once again via \a rr_handover().
+ *    glb_rr_connectivity_changed notified with a \a GRPC_CHANNEL_SHUTDOWN
+ *    state. At this point we can transition to a new RR instance safely, which
+ *    is done once again via \a rr_handover().
  *
  *
  * Once a RR policy instance is in place (and getting updated as described),
@@ -347,7 +347,6 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
                         grpc_error *error) {
   GPR_ASSERT(glb_policy->serverlist != NULL &&
              glb_policy->serverlist->num_servers > 0);
-  GRPC_ERROR_REF(error);
   glb_policy->rr_policy =
       create_rr(exec_ctx, glb_policy->serverlist, glb_policy);
 
@@ -362,8 +361,8 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
       exec_ctx, glb_policy->rr_policy, &glb_policy->rr_connectivity->state,
       &glb_policy->rr_connectivity->on_change);
   grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
-                              glb_policy->rr_connectivity->state, error,
-                              "rr_handover");
+                              glb_policy->rr_connectivity->state,
+                              GRPC_ERROR_REF(error), "rr_handover");
   grpc_lb_policy_exit_idle(exec_ctx, glb_policy->rr_policy);
 
   /* flush pending ops */
@@ -397,13 +396,13 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
                             &pping->wrapped_notify);
     pping->wrapped_notify_arg.owning_pending_node = pping;
   }
-  GRPC_ERROR_UNREF(error);
 }
 
-static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
-                                    grpc_error *error) {
+static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   rr_connectivity_data *rr_conn_data = arg;
   glb_lb_policy *glb_policy = rr_conn_data->glb_policy;
+
   if (rr_conn_data->state == GRPC_CHANNEL_SHUTDOWN) {
     if (glb_policy->serverlist != NULL) {
       /* a RR policy is shutting down but there's a serverlist available ->
@@ -417,8 +416,8 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
     if (error == GRPC_ERROR_NONE) {
       /* RR not shutting down. Mimic the RR's policy state */
       grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
-                                  rr_conn_data->state, error,
-                                  "rr_connectivity_changed");
+                                  rr_conn_data->state, GRPC_ERROR_REF(error),
+                                  "glb_rr_connectivity_changed");
       /* resubscribe */
       grpc_lb_policy_notify_on_state_change(exec_ctx, glb_policy->rr_policy,
                                             &rr_conn_data->state,
@@ -427,7 +426,6 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_free(rr_conn_data);
     }
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
@@ -482,7 +480,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   rr_connectivity_data *rr_connectivity =
       gpr_malloc(sizeof(rr_connectivity_data));
   memset(rr_connectivity, 0, sizeof(rr_connectivity_data));
-  grpc_closure_init(&rr_connectivity->on_change, rr_connectivity_changed,
+  grpc_closure_init(&rr_connectivity->on_change, glb_rr_connectivity_changed,
                     rr_connectivity);
   rr_connectivity->glb_policy = glb_policy;
   glb_policy->rr_connectivity = rr_connectivity;
@@ -958,7 +956,7 @@ static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         } else {
           /* unref the RR policy, eventually leading to its substitution with a
            * new one constructed from the received serverlist (see
-           * rr_connectivity_changed) */
+           * glb_rr_connectivity_changed) */
           GRPC_LB_POLICY_UNREF(exec_ctx, lb_client->glb_policy->rr_policy,
                                "serverlist_received");
         }
