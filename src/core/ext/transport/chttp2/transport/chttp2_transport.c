@@ -507,13 +507,14 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->global.id, s);
+    grpc_chttp2_register_stream(t, s);
     s->global.in_stream_map = true;
+  } else {
+    grpc_closure_init(&s->init_stream, finish_init_stream_locked, s);
+    GRPC_CHTTP2_STREAM_REF(&s->global, "init");
+    grpc_combiner_execute(exec_ctx, t->executor.combiner, &s->init_stream,
+                          GRPC_ERROR_NONE);
   }
-
-  grpc_closure_init(&s->init_stream, finish_init_stream_locked, s);
-  GRPC_CHTTP2_STREAM_REF(&s->global, "init");
-  grpc_combiner_execute(exec_ctx, t->executor.combiner, &s->init_stream,
-                        GRPC_ERROR_NONE);
 
   GPR_TIMER_END("init_stream", 0);
 
