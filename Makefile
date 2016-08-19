@@ -2753,7 +2753,7 @@ LIBGRPC_SRC = \
     third_party/nanopb/pb_encode.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
-    src/core/ext/resolver/dns/c_ares/dns_resolver.c \
+    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
@@ -3452,7 +3452,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
-    src/core/ext/resolver/dns/c_ares/dns_resolver.c \
+    src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
@@ -6605,7 +6605,7 @@ PUBLIC_HEADERS_C += \
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
 $(LIBARES_OBJS): CPPFLAGS += -Ithird_party/c-ares -Isrc/c-ares $(if $(subst Linux,,$(SYSTEM)),,-Isrc/c-ares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Isrc/c-ares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
-$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding -Wno-pointer-sign
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"

@@ -423,7 +423,7 @@ filegroups:
   - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h
   src:
-  - src/core/ext/resolver/dns/c_ares/dns_resolver.c
+  - src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
   - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
   - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
   plugin: grpc_resolver_dns_ares
@@ -3408,7 +3408,7 @@ configs:
     timeout_multiplier: 1.5
 defaults:
   ares:
-    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding -Wno-pointer-sign
     CPPFLAGS: -Ithird_party/c-ares -Isrc/c-ares $(if $(subst Linux,,$(SYSTEM)),,-Isrc/c-ares/config_linux)
       $(if $(subst Darwin,,$(SYSTEM)),,-Isrc/c-ares/config_darwin) -fvisibility=hidden
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
@@ -3427,6 +3427,7 @@ node_modules:
 - deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
   headers:

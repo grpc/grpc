@@ -49,7 +49,8 @@
           "include_dirs": [
             "third_party/boringssl/include",
             "third_party/zlib",
-            "third_party/c-ares"
+            "third_party/c-ares",
+            "src/c-ares",
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -88,7 +89,8 @@
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
             '<(node_root_dir)/deps/zlib',
-            '<(node_root_dir)/deps/cares/include'
+            "third_party/c-ares",
+            "src/c-ares"
           ],
           'conditions': [
             ['config=="gcov"', {
@@ -173,16 +175,9 @@
       }]
     ],
     'targets': [
-  <%
-      for lib in libs:
-        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
-          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-      for module in node_modules:
-        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
-  %>
       % for module in node_modules:
       % for lib in libs:
-      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
+      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z', 'ares'):
       {
         'cflags': [
           '-std=c99',
@@ -207,6 +202,42 @@
             'xcode_settings': {
               'MACOSX_DEPLOYMENT_TARGET': '10.9'
             }
+          }]
+        ]
+      },
+      % endif
+      % if lib.name == 'ares':
+      {
+        'cflags': [
+          '-Wall',
+          '-Werror',
+          '-Wno-implicit-function-declaration'
+        ],
+        'include_dirs': [ 'src/c-ares' ],
+        'target_name': '${lib.name}',
+        'product_prefix': 'lib',
+        'type': 'static_library',
+        'dependencies': [
+        ],
+        'sources': [
+          % for source in lib.src:
+          '${source}',
+          % endfor
+        ],
+        "conditions": [
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            },
+            'include_dirs': [ 'src/c-ares/config_darwin' ],
+            'defines': [ 'HAVE_CONFIG_H' ]
+          }],
+          ['OS == "linux"', {
+            'include_dirs': [ 'src/c-ares/config_linux' ],
+            'defines': [ 'HAVE_CONFIG_H' ]
+          }],
+          ['OS == "win"', {
+            'defines': [ 'CARES_STATICLIB' ]
           }]
         ]
       },

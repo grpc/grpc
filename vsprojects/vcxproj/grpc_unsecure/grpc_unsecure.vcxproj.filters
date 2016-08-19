@@ -409,7 +409,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
       <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
