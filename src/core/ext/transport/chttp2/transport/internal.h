@@ -64,7 +64,6 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_WRITTEN,
-  GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_WRITING,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
   /* streams waiting for the outgoing window in the writing path, they will be
@@ -218,10 +217,6 @@ struct grpc_chttp2_transport_global {
   /** next payload for an outgoing ping */
   uint64_t ping_counter;
 
-  /** concurrent stream count: updated when not parsing,
-      so this is a strict over-estimation on the client */
-  uint32_t concurrent_stream_count;
-
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */
@@ -308,10 +303,6 @@ struct grpc_chttp2_transport {
   struct {
     grpc_combiner *combiner;
 
-    /** is a thread currently in the global lock */
-    bool global_active;
-    /** is a thread currently parsing */
-    bool parsing_active;
     /** write execution state of the transport */
     grpc_chttp2_write_state write_state;
     /** has a check_read_ops been scheduled */
@@ -336,14 +327,8 @@ struct grpc_chttp2_transport {
       chain. */
   grpc_chttp2_transport_writing writing;
 
-  /** maps stream id to grpc_chttp2_stream objects;
-      owned by the parsing thread when parsing */
-  grpc_chttp2_stream_map parsing_stream_map;
-
-  /** streams created by the client (possibly during parsing);
-      merged with parsing_stream_map during unlock when no
-      parsing is occurring */
-  grpc_chttp2_stream_map new_stream_map;
+  /** maps stream id to grpc_chttp2_stream objects */
+  grpc_chttp2_stream_map stream_map;
 
   /** closure to execute writing */
   grpc_closure writing_action;
@@ -374,9 +359,6 @@ struct grpc_chttp2_transport {
     /** connectivity tracking */
     grpc_connectivity_state_tracker state_tracker;
   } channel_callback;
-
-  /** Transport op to be applied post-parsing */
-  grpc_transport_op *post_parsing_op;
 };
 
 struct grpc_chttp2_stream_global {
@@ -601,13 +583,6 @@ int grpc_chttp2_list_pop_stalled_by_transport(
 void grpc_chttp2_list_remove_stalled_by_transport(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
-
-void grpc_chttp2_list_add_closed_waiting_for_parsing(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
-int grpc_chttp2_list_pop_closed_waiting_for_parsing(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global);
 
 void grpc_chttp2_list_add_closed_waiting_for_writing(
     grpc_chttp2_transport_global *transport_global,

@@ -824,11 +824,20 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
                           const void *transport_server_data) {
   channel_data *chand = cd;
   /* create a call */
-  grpc_call *call = grpc_call_create(chand->channel, NULL, 0, NULL, NULL,
-                                     transport_server_data, NULL, 0,
-                                     gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  grpc_call_create_args args;
+  memset(&args, 0, sizeof(args));
+  args.channel = chand->channel;
+  args.server_transport_data = transport_server_data;
+  args.send_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  grpc_call *call;
+  grpc_error *error = grpc_call_create(&args, &call);
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
+  if (error != GRPC_ERROR_NONE) {
+    got_initial_metadata(exec_ctx, elem, error);
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   call_data *calld = elem->call_data;
   grpc_op op;
   memset(&op, 0, sizeof(op));
