@@ -34,7 +34,6 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 /* -- Fake transport security credentials. -- */
@@ -51,7 +50,6 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 typedef struct {
   grpc_call_credentials base;
   grpc_credentials_md_store *md_store;
-  grpc_timer timer;
   int is_async;
 } grpc_md_only_test_credentials;
 

@@ -37,6 +37,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

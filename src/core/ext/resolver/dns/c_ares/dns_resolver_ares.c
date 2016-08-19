@@ -230,12 +230,7 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
     r->resolving = 1;
     r->addresses = NULL;
     r->pollent = NULL;
-#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
-    grpc_resolve_address(exec_ctx, r->name, r->default_port,
-                         grpc_closure_create(dns_on_resolved, r),
-                         &r->addresses);
-#else
-    if (pollent) {
+    if (grpc_ares_need_poll_entity() && pollent) {
       r->pollent = pollent;
       grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
                                              r->base.pollset_set);
@@ -245,7 +240,6 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
     grpc_resolve_address_ares(
         exec_ctx, r->name, r->default_port, r->base.pollset_set,
         grpc_closure_create(dns_on_resolved, r), &r->addresses);
-#endif
   } else {
     dns_maybe_finish_next_locked(exec_ctx, r);
   }

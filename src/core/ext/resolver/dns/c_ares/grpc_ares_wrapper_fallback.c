@@ -31,28 +31,30 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
-#define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
+/* TODO(zyc): remove this fallback after we can build c-ares on windows */
 
 #include <grpc/support/port_platform.h>
+#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
-extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
-                                         const char *addr,
-                                         const char *default_port,
-                                         grpc_pollset_set *pollset_set,
-                                         grpc_closure *on_done,
-                                         grpc_resolved_addresses **addresses);
+void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
+                                    const char *default_port,
+                                    grpc_pollset_set *pollset_set,
+                                    grpc_closure *on_done,
+                                    grpc_resolved_addresses **addrs) {
+  grpc_resolve_address(exec_ctx, name, default_port, on_done, addrs);
+}
 
-grpc_error *grpc_ares_init(void);
+void (*grpc_resolve_address_ares)(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *pollset_set, grpc_closure *on_done,
+    grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
-void grpc_ares_cleanup(void);
+grpc_error *grpc_ares_init(void) { return GRPC_ERROR_NONE; }
 
-/* TODO(zyc): remove this temporary hack after we can build c-ares on windows */
-int grpc_ares_need_poll_entity(void);
+void grpc_ares_cleanup(void) {}
 
-#endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */
+int grpc_ares_need_poll_entity(void) { return 0; }
+
+#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

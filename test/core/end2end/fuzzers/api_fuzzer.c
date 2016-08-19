@@ -516,9 +516,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
   grpc_resolve_address = my_resolve_address;
-#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
   grpc_resolve_address_ares = my_resolve_address_async;
-#endif
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();

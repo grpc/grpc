@@ -80,8 +80,6 @@ static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 static void destroy_request(grpc_ares_request *request) {
   grpc_ares_ev_driver_destroy(request->ev_driver);
 
-  // ares_cancel(request->channel);
-  // ares_destroy(request->channel);
   gpr_free(request->name);
   gpr_free(request->host);
   gpr_free(request->port);
@@ -317,5 +315,7 @@ void grpc_ares_cleanup(void) {
   ares_library_cleanup();
   gpr_mu_unlock(&g_init_mu);
 }
+
+int grpc_ares_need_poll_entity(void) { return 1; }
 
 #endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
