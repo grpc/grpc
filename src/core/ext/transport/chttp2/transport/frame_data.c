@@ -56,6 +56,7 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
         exec_ctx, parser->parsing_frame, GRPC_ERROR_CREATE("Parser destroyed"),
         1);
   }
+  GRPC_ERROR_UNREF(parser->error);
 }
 
 grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,

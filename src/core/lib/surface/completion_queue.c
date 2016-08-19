@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/pollset.h"
@@ -50,6 +51,9 @@
 #include "src/core/lib/surface/event_string.h"
 
 int grpc_trace_operation_failures;
+#ifndef NDEBUG
+int grpc_trace_pending_tags;
+#endif
 
 typedef struct {
   grpc_pollset_worker **worker;
@@ -338,6 +342,27 @@ static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
   return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
 }
 
+#ifndef NDEBUG
+static void dump_pending_tags(grpc_completion_queue *cc) {
+  if (!grpc_trace_pending_tags) return;
+
+  gpr_strvec v;
+  gpr_strvec_init(&v);
+  gpr_strvec_add(&v, gpr_strdup("PENDING TAGS:"));
+  for (size_t i = 0; i < cc->outstanding_tag_count; i++) {
+    char *s;
+    gpr_asprintf(&s, " %p", cc->outstanding_tags[i]);
+    gpr_strvec_add(&v, s);
+  }
+  char *out = gpr_strvec_flatten(&v, NULL);
+  gpr_strvec_destroy(&v);
+  gpr_log(GPR_DEBUG, "%s", out);
+  gpr_free(out);
+}
+#else
+static void dump_pending_tags(grpc_completion_queue *cc) {}
+#endif
+
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
                                       gpr_timespec deadline, void *reserved) {
   grpc_event ret;
@@ -356,6 +381,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
           reserved));
   GPR_ASSERT(!reserved);
+
+  dump_pending_tags(cc);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
@@ -400,6 +427,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_unlock(cc->mu);
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
       break;
     }
     first_loop = 0;
@@ -425,6 +453,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
+        dump_pending_tags(cc);
         break;
       }
     }
@@ -510,6 +539,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   }
   GPR_ASSERT(!reserved);
 
+  dump_pending_tags(cc);
+
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
   cq_is_finished_arg is_finished_arg = {cc, deadline, NULL, tag};
@@ -561,6 +592,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       memset(&ret, 0, sizeof(ret));
       /* TODO(ctiller): should we use a different result here */
       ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
       break;
     }
     now = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -569,6 +601,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       gpr_mu_unlock(cc->mu);
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
       break;
     }
     first_loop = 0;
@@ -594,6 +627,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
+        dump_pending_tags(cc);
         break;
       }
     }

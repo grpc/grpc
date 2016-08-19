@@ -444,7 +444,7 @@ static grpc_error *init_data_frame_parser(
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
     grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
-                                   true, false, GRPC_ERROR_REF(err));
+                                   true, false, err);
     gpr_slice_buffer_add(
         &transport_global->qbuf,
         grpc_chttp2_rst_stream_create(transport_global->incoming_stream_id,
