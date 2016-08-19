@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <pb_encode.h>
 #include <pb_decode.h>
 #include "helloworld.grpc.pbc.h"
 
@@ -58,7 +59,7 @@ static bool read_string(pb_istream_t *stream, const pb_field_t *field,
                         void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
-  if (!pb_read(stream, str, len)) return false;
+  if (!pb_read(stream, (uint8_t *) str, len)) return false;
   str[len] = '\0';
   printf("Server replied %s\n", str);
   free(str);

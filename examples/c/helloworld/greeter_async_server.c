@@ -67,7 +67,7 @@ static bool read_string_store_in_arg(pb_istream_t *stream,
                                      const pb_field_t *field, void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
-  if (!pb_read(stream, str, len)) return false;
+  if (!pb_read(stream, (uint8_t *) str, len)) return false;
   str[len] = '\0';
   *arg = str;
   return true;

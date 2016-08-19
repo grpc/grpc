@@ -214,7 +214,6 @@ static bool op_server_send_status_fill(grpc_op *op, GRPC_context *context,
                                        GRPC_call_op_set *set,
                                        const grpc_message message,
                                        void *response) {
-  // TODO(yifeit): hook up to server handlers
   GRPC_server_context *server_context = (GRPC_server_context *)context;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count =
@@ -312,9 +311,9 @@ bool GRPC_finish_op_from_call_set(GRPC_call_op_set *set,
         set->operations[count].finish == NULL)
       break;  // end of call set
     if (set->operations[count].finish == NULL) continue;
-    int size = 100;  // todo(yifeit): hook up this value
+    int max_message_size = 100;  // todo(yifeit): hook up this value
     bool status = true;
-    set->operations[count].finish(context, set, &status, size);
+    set->operations[count].finish(context, set, &status, max_message_size);
     allStatus &= status;
     count++;
   }
@@ -327,9 +326,11 @@ void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
   memset(ops, 0, sizeof(ops));
-  size_t num_ops =
-      GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
-  if (num_ops > 0 && call != NULL) {
+  GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
+  // Server will sometimes use a GRPC_call_op_set to perform post processing,
+  // in which case there will be zero filled operations but some
+  // finish operations.
+  if (nops > 0 && call != NULL) {
     grpc_call_error error = grpc_call_start_batch(call, ops, nops, set, NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
   }

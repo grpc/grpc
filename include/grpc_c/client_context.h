@@ -37,8 +37,14 @@
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
 
+/**
+ * Creates a client context for making a call over the specified channel.
+ */
 GRPC_client_context *GRPC_client_context_create(GRPC_channel *chan);
 
+/**
+ * Destroys the client context and sets it to NULL.
+ */
 void GRPC_client_context_destroy(GRPC_client_context **context);
 
 /**
