@@ -771,9 +771,10 @@
     },
     {
       'cflags': [
+        '-std=c99',
         '-Wall',
         '-Werror',
-        '-Wno-implicit-function-declaration'
+        '-Wno-invalid-source-encoding',
       ],
       'include_dirs': [ 'src/c-ares' ],
       'target_name': 'ares',
@@ -833,6 +834,12 @@
         'third_party/c-ares/windows_port.c',
       ],
       "conditions": [
+        ['OS != "win"', {
+          'defines': [
+            'HAVE_CONFIG_H',
+            '_GNU_SOURCE'
+          ]
+          }],
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9'
