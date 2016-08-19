@@ -105,6 +105,7 @@ class Server {
     }
   }
 
+  virtual void AwaitThreadsCompletion() {}
  private:
   int port_;
   int cores_;

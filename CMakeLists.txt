@@ -48,6 +48,12 @@ set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} C CXX)
 
+if (NOT MSVC)
+  set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
+else()
+  set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
+endif()
+
 set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
 set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -58,6 +64,10 @@ set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
 set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
+
+if (MSVC)
+  add_definitions( -D_WIN32_WINNT=0x600 )
+endif()
 
 if (gRPC_USE_PROTO_LITE)
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
@@ -98,6 +108,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
   endif()
   if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
+    set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
     add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
     if(TARGET ${_gRPC_PROTOBUF_LIBRARY_NAME})
       set(_gRPC_PROTOBUF_LIBRARIES ${_gRPC_PROTOBUF_LIBRARY_NAME})
@@ -269,11 +280,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS gpr EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS gpr EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc
@@ -525,11 +538,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc_cronet
@@ -754,11 +769,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc_cronet EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_cronet EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc_unsecure
@@ -977,11 +994,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc_unsecure EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_unsecure EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc++
@@ -1145,11 +1164,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc++ EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc++ EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc++_reflection
@@ -1238,11 +1259,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc++_reflection EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc++_reflection EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc++_unsecure
@@ -1402,11 +1425,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc++_unsecure EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc++_unsecure EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc_plugin_support
@@ -1442,11 +1467,13 @@ foreach(_hdr
 endforeach()
 
   
-install(TARGETS grpc_plugin_support EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_plugin_support EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
   
 add_library(grpc_csharp_ext
@@ -1469,11 +1496,13 @@ target_link_libraries(grpc_csharp_ext
 
 
   
-install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_csharp_ext EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 
@@ -1496,11 +1525,13 @@ target_link_libraries(gen_hpack_tables
 )
 
 
-install(TARGETS gen_hpack_tables EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(gen_legal_metadata_characters
@@ -1518,11 +1549,13 @@ target_include_directories(gen_legal_metadata_characters
 
 
 
-install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_create_jwt
@@ -1545,11 +1578,13 @@ target_link_libraries(grpc_create_jwt
 )
 
 
-install(TARGETS grpc_create_jwt EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_create_jwt EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_print_google_default_creds_token
@@ -1571,11 +1606,13 @@ target_link_libraries(grpc_print_google_default_creds_token
 )
 
 
-install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_verify_jwt
@@ -1597,11 +1634,13 @@ target_link_libraries(grpc_verify_jwt
 )
 
 
-install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_cpp_plugin
@@ -1623,11 +1662,13 @@ target_link_libraries(grpc_cpp_plugin
 )
 
 
-install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_csharp_plugin
@@ -1649,11 +1690,13 @@ target_link_libraries(grpc_csharp_plugin
 )
 
 
-install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_node_plugin
@@ -1675,11 +1718,13 @@ target_link_libraries(grpc_node_plugin
 )
 
 
-install(TARGETS grpc_node_plugin EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_node_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_objective_c_plugin
@@ -1701,11 +1746,13 @@ target_link_libraries(grpc_objective_c_plugin
 )
 
 
-install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_python_plugin
@@ -1727,11 +1774,13 @@ target_link_libraries(grpc_python_plugin
 )
 
 
-install(TARGETS grpc_python_plugin EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_python_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_ruby_plugin
@@ -1753,11 +1802,13 @@ target_link_libraries(grpc_ruby_plugin
 )
 
 
-install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 
@@ -1766,10 +1817,12 @@ install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
 
 
 
-install(EXPORT gRPCTargets
-  DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-  NAMESPACE gRPC::
-)
+if (gRPC_INSTALL)
+  install(EXPORT gRPCTargets
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    NAMESPACE gRPC::
+  )
+endif()
 
 foreach(_config gRPCConfig gRPCConfigVersion)
   configure_file(tools/cmake/${_config}.cmake.in

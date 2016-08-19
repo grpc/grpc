@@ -41,7 +41,6 @@ do
   git clone https://github.com/grpc/$repo.git
   cd $repo
   gource --output-custom-log $tmpdir/logs/$repo
-  sed -i .backup "s,\|/,\|/$repo/,g" $tmpdir/logs/$repo
+  sed -i "s,|/,|/$repo/,g" $tmpdir/logs/$repo
 done
-rm $tmpdir/logs/*.backup
 cat $tmpdir/logs/* | sort -n > $outdir/all-logs.txt
