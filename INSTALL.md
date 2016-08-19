@@ -61,6 +61,17 @@ gRPC C Core library.
 There are several ways to build under Windows, of varying complexity depending
 on experience with the tools involved.
 
+###CMake and Conan
+- Install [CMake](https://cmake.org/download/) and add it to `PATH` environment variable.
+- Install [Conan.io](https://www.conan.io/downloads)
+- Run this commands in grpc directory:
+```
+md .build
+cd .build
+cmake .. -G"Visual Studio 12 2013 Win64" -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
+
 <!--
 ###Visual Studio
 
@@ -95,15 +106,6 @@ This approach requires having [msys2](https://msys2.github.io/) installed.
   and `ssleay32`.
 - If you are not installing the above files under msys2's path, you may specify
   it, for instance, in the following way:
-  ```CPPFLAGS=”-I/c/OpenSSL-Win32/include” LDFLAGS=”-L/c/OpenSSL-Win32/lib” make static_c```
+  `CPPFLAGS=”-I/c/OpenSSL-Win32/include” LDFLAGS=”-L/c/OpenSSL-Win32/lib” make static_c`
 - [protobuf3](https://github.com/google/protobuf/blob/master/src/README.md#c-installation---windows)
   must be installed on the msys2 path.
-
-###Cmake (experimental)
-
-- Install [CMake](https://cmake.org/download/).
-- Run it over [grpc's
-  CMakeLists.txt](https://github.com/grpc/grpc/blob/master/CMakeLists.txt) to
-  generate "projects" for your compiler.
-- Build with your compiler of choice. The generated build files should have the
-  protobuf3 dependency baked in.
