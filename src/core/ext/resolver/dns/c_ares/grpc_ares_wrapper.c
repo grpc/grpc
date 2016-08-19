@@ -250,14 +250,6 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     return;
   }
 
-  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
-      name[4] == ':' && name[5] != 0) {
-    grpc_exec_ctx_sched(exec_ctx, on_done,
-                        grpc_resolve_unix_domain_address(name + 5, addrs),
-                        NULL);
-    return;
-  }
-
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {

@@ -2756,6 +2756,7 @@ LIBGRPC_SRC = \
     src/core/ext/resolver/dns/c_ares/dns_resolver.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
@@ -3454,6 +3455,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/resolver/dns/c_ares/dns_resolver.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
+    src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \

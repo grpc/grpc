@@ -97,6 +97,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
+                     grpc_polling_entity *pollent,
                      grpc_client_config **target_config,
                      grpc_closure *on_complete);
 
@@ -130,6 +131,7 @@ static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx,
 }
 
 static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                     grpc_polling_entity *pollent,
                      grpc_client_config **target_config,
                      grpc_closure *on_complete) {
   dns_resolver *r = (dns_resolver *)resolver;
