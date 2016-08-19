@@ -146,7 +146,7 @@ class AsyncQpsServerTest : public Server {
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       (*cq)->Shutdown();
     }
-    for (auto thr = threads_.begin(); thr != threads_.end(); ++thr) {
+    for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
     }
     threads_.clear();
