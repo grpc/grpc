@@ -34,6 +34,7 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
 #include <string.h>
+#include <unistd.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -94,14 +95,21 @@ static void md_only_test_destruct(grpc_call_credentials *creds) {
   grpc_credentials_md_store_unref(c->md_store);
 }
 
+typedef struct simulated_token_fetch_args {
+  grpc_timer timer;
+  grpc_credentials_metadata_request *md_request;
+} simulated_token_fetch_args;
+
 static void on_simulated_token_fetch_done(grpc_exec_ctx *exec_ctx,
                                           void *user_data, grpc_error *error) {
-  grpc_credentials_metadata_request *r =
-      (grpc_credentials_metadata_request *)user_data;
-  grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
-  r->cb(exec_ctx, r->user_data, c->md_store->entries, c->md_store->num_entries,
-        GRPC_CREDENTIALS_OK, NULL);
-  grpc_credentials_metadata_request_destroy(r);
+  simulated_token_fetch_args *cb_arg = (simulated_token_fetch_args *)user_data;
+  grpc_md_only_test_credentials *c =
+      (grpc_md_only_test_credentials *)cb_arg->md_request->creds;
+  cb_arg->md_request->cb(exec_ctx, cb_arg->md_request->user_data,
+                         c->md_store->entries, c->md_store->num_entries,
+                         GRPC_CREDENTIALS_OK, NULL);
+  grpc_credentials_metadata_request_destroy(cb_arg->md_request);
+  gpr_free(cb_arg);
 }
 
 static void md_only_test_get_request_metadata(
@@ -109,16 +117,16 @@ static void md_only_test_get_request_metadata(
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
-
   if (c->is_async) {
-    grpc_credentials_metadata_request *cb_arg =
+    simulated_token_fetch_args *cb_arg =
+        gpr_malloc(sizeof(simulated_token_fetch_args));
+    cb_arg->md_request =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    grpc_timer_init(exec_ctx, &c->timer,
+    grpc_timer_init(exec_ctx, &cb_arg->timer,
                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_micros(10, GPR_TIMESPAN)),
+                                 gpr_time_from_micros(100, GPR_TIMESPAN)),
                     on_simulated_token_fetch_done, cb_arg,
                     gpr_now(GPR_CLOCK_MONOTONIC));
-
   } else {
     cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, NULL);
   }
