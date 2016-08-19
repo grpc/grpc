@@ -29,7 +29,7 @@
 
 begin
   RUBY_VERSION =~ /(\d+\.\d+)/
-  require "#{$1}/grpc_c"
+  require_relative "#{$1}/grpc_c"
 rescue LoadError
   require_relative 'grpc_c'
 end
