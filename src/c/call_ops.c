@@ -31,10 +31,11 @@
  *
  */
 
+#include <string.h>
 #include "src/c/call_ops.h"
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/log.h>
-#include <include/grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include "src/c/client_context.h"
 #include "src/c/server_context.h"
 
@@ -324,7 +325,8 @@ void GRPC_start_batch_from_op_set(grpc_call *call, GRPC_call_op_set *set,
                                   GRPC_context *context,
                                   const grpc_message request, void *response) {
   size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT] = {{0}};
+  grpc_op ops[GRPC_MAX_OP_COUNT];
+  memset(ops, 0, sizeof(ops));
   size_t num_ops =
       GRPC_fill_op_from_call_set(set, context, request, response, ops, &nops);
   if (num_ops > 0 && call != NULL) {
