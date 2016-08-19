@@ -69,6 +69,7 @@ class ServerStreamingInterface {
  public:
   virtual ~ServerStreamingInterface() {}
 
+  /// Blocking send initial metadata to client.
   virtual void SendInitialMetadata() = 0;
 };
 
