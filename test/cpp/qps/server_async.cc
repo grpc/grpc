@@ -151,6 +151,7 @@ class AsyncQpsServerTest : public Server {
     }
     threads_.clear();
   }
+
  private:
   void ThreadFunc(int thread_idx) {
     // Wait until work is available or we are shutting down
