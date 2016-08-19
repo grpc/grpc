@@ -217,10 +217,6 @@ struct grpc_chttp2_transport_global {
   /** next payload for an outgoing ping */
   uint64_t ping_counter;
 
-  /** concurrent stream count: updated when not parsing,
-      so this is a strict over-estimation on the client */
-  uint32_t concurrent_stream_count;
-
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */
@@ -331,14 +327,8 @@ struct grpc_chttp2_transport {
       chain. */
   grpc_chttp2_transport_writing writing;
 
-  /** maps stream id to grpc_chttp2_stream objects;
-      owned by the parsing thread when parsing */
-  grpc_chttp2_stream_map parsing_stream_map;
-
-  /** streams created by the client (possibly during parsing);
-      merged with parsing_stream_map during unlock when no
-      parsing is occurring */
-  grpc_chttp2_stream_map new_stream_map;
+  /** maps stream id to grpc_chttp2_stream objects */
+  grpc_chttp2_stream_map stream_map;
 
   /** closure to execute writing */
   grpc_closure writing_action;
