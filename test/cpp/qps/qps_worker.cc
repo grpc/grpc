@@ -272,6 +272,9 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       gpr_log(GPR_INFO, "RunServerBody: Mark response given");
     }
 
+    gpr_log(GPR_INFO, "RunServerBody: Awaiting Threads Completion");
+    server->AwaitThreadsCompletion();
+
     gpr_log(GPR_INFO, "RunServerBody: Returning");
     return Status::OK;
   }
