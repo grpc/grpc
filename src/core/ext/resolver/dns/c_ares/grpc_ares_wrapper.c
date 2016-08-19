@@ -242,11 +242,12 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   grpc_ares_request *r = NULL;
   grpc_ares_ev_driver *ev_driver;
 
-  if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
-      GRPC_ERROR_CANCELLED) {
+  if (grpc_customized_resolve_address(name, default_port, addrs, &err) != 0) {
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
     return;
   }
+  GRPC_ERROR_UNREF(err);
+  err = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);

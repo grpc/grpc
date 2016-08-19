@@ -149,16 +149,17 @@ grpc_error *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port,
     grpc_resolved_addresses **addresses) = blocking_resolve_address_impl;
 
-static grpc_error *default_customized_resolve_address_impl(
+static int default_customized_resolve_address_impl(
     const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses) {
-  return GRPC_ERROR_CANCELLED;
+    grpc_resolved_addresses **addresses, grpc_error **error) {
+  *error = GRPC_ERROR_NONE;
+  return 0;
 }
 
-grpc_error *(*grpc_customized_resolve_address)(
+int (*grpc_customized_resolve_address)(
     const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses) =
-    default_customized_resolve_address_impl;
+    grpc_resolved_addresses **addresses,
+    grpc_error **error) = default_customized_resolve_address_impl;
 
 typedef struct {
   char *name;
@@ -197,8 +198,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   request *r;
   grpc_error *err;
 
-  if ((err = grpc_customized_resolve_address(name, default_port, addrs)) !=
-      GRPC_ERROR_CANCELLED) {
+  if (grpc_customized_resolve_address(name, default_port, addrs, &err) != 0) {
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
     return;
   }

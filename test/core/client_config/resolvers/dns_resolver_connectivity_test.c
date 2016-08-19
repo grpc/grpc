@@ -67,22 +67,24 @@ static grpc_client_channel_factory cc_factory = {&sc_vtable};
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
 
-static grpc_error *my_resolve_address(const char *name, const char *addr,
-                                      grpc_resolved_addresses **addrs) {
+static int my_resolve_address(const char *name, const char *addr,
+                              grpc_resolved_addresses **addrs,
+                              grpc_error **error) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", name));
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
-    return GRPC_ERROR_CREATE("Forced Failure");
+    *error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
     *addrs = gpr_malloc(sizeof(**addrs));
     (*addrs)->naddrs = 1;
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
-    return GRPC_ERROR_NONE;
+    *error = GRPC_ERROR_NONE;
   }
+  return 1;
 }
 
 static grpc_resolver *create_resolver(const char *name) {

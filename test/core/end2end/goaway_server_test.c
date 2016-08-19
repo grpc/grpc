@@ -53,16 +53,17 @@ static void set_resolve_port(int port) {
   gpr_mu_unlock(&g_mu);
 }
 
-static grpc_error *my_resolve_address(const char *name, const char *addr,
-                                      grpc_resolved_addresses **addrs) {
+static int my_resolve_address(const char *name, const char *addr,
+                              grpc_resolved_addresses **addrs,
+                              grpc_error **error) {
   if (0 != strcmp(name, "test")) {
-    return GRPC_ERROR_CANCELLED;
+    return 0;
   }
 
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
-    return GRPC_ERROR_CREATE("Forced Failure");
+    *error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     *addrs = gpr_malloc(sizeof(**addrs));
     (*addrs)->naddrs = 1;
@@ -74,8 +75,9 @@ static grpc_error *my_resolve_address(const char *name, const char *addr,
     sa->sin_port = htons((uint16_t)g_resolve_port);
     (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
-    return GRPC_ERROR_NONE;
+    *error = GRPC_ERROR_NONE;
   }
+  return 1;
 }
 
 int main(int argc, char **argv) {
