@@ -359,6 +359,8 @@ static void dump_pending_tags(grpc_completion_queue *cc) {
   gpr_log(GPR_DEBUG, "%s", out);
   gpr_free(out);
 }
+#else
+static void dump_pending_tags(grpc_completion_queue *cc) {}
 #endif
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
@@ -380,9 +382,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
           reserved));
   GPR_ASSERT(!reserved);
 
-#ifndef NDEBUG
   dump_pending_tags(cc);
-#endif
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
@@ -427,6 +427,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_unlock(cc->mu);
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
       break;
     }
     first_loop = 0;
@@ -452,6 +453,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
+        dump_pending_tags(cc);
         break;
       }
     }
@@ -537,9 +539,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   }
   GPR_ASSERT(!reserved);
 
-#ifndef NDEBUG
   dump_pending_tags(cc);
-#endif
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
@@ -592,6 +592,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       memset(&ret, 0, sizeof(ret));
       /* TODO(ctiller): should we use a different result here */
       ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
       break;
     }
     now = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -600,6 +601,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       gpr_mu_unlock(cc->mu);
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      dump_pending_tags(cc);
       break;
     }
     first_loop = 0;
@@ -625,6 +627,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         GRPC_ERROR_UNREF(err);
         memset(&ret, 0, sizeof(ret));
         ret.type = GRPC_QUEUE_TIMEOUT;
+        dump_pending_tags(cc);
         break;
       }
     }

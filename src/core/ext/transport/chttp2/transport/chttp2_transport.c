@@ -1587,7 +1587,7 @@ void grpc_chttp2_mark_stream_closed(
     stream_global->read_closed_error = GRPC_ERROR_REF(error);
     stream_global->read_closed = true;
     stream_global->published_metadata[0] = true;
-    stream_global->published_metadata[0] = true;
+    stream_global->published_metadata[1] = true;
     decrement_active_streams_locked(exec_ctx, transport_global, stream_global);
   }
   if (close_writes && !stream_global->write_closed) {
