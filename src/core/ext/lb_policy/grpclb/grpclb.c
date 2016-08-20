@@ -180,19 +180,18 @@ typedef struct pending_pick {
   wrapped_rr_closure_arg wrapped_on_complete_arg;
 } pending_pick;
 
-static void add_pending_pick(pending_pick **root, grpc_polling_entity *pollent,
-                             grpc_metadata_batch *initial_metadata,
-                             uint32_t initial_metadata_flags,
+static void add_pending_pick(pending_pick **root,
+                             const grpc_lb_policy_pick_args *pick_args,
                              grpc_connected_subchannel **target,
                              grpc_closure *on_complete) {
   pending_pick *pp = gpr_malloc(sizeof(*pp));
   memset(pp, 0, sizeof(pending_pick));
   memset(&pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
   pp->next = *root;
-  pp->pollent = pollent;
+  pp->pollent = pick_args->pollent;
   pp->target = target;
-  pp->initial_metadata = initial_metadata;
-  pp->initial_metadata_flags = initial_metadata_flags;
+  pp->initial_metadata = pick_args->initial_metadata;
+  pp->initial_metadata_flags = pick_args->initial_metadata_flags;
   pp->wrapped_on_complete_arg.wrapped_closure = on_complete;
   grpc_closure_init(&pp->wrapped_on_complete, wrapped_rr_closure,
                     &pp->wrapped_on_complete_arg);
@@ -359,9 +358,10 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
       gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
     }
-    grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pp->pollent,
-                        pp->initial_metadata, pp->initial_metadata_flags,
-                        pp->target, &pp->wrapped_on_complete);
+    const grpc_lb_policy_pick_args pick_args = {
+        pp->pollent, pp->initial_metadata, pp->initial_metadata_flags};
+    grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, &pick_args, pp->target,
+                        &pp->wrapped_on_complete);
     pp->wrapped_on_complete_arg.owning_pending_node = pp;
   }
 
@@ -603,9 +603,7 @@ static void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                    grpc_polling_entity *pollent,
-                    grpc_metadata_batch *initial_metadata,
-                    uint32_t initial_metadata_flags,
+                    const grpc_lb_policy_pick_args *pick_args,
                     grpc_connected_subchannel **target,
                     grpc_closure *on_complete) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
@@ -623,8 +621,8 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     glb_policy->wc_arg.wrapped_closure = on_complete;
     grpc_closure_init(&glb_policy->wrapped_on_complete, wrapped_rr_closure,
                       &glb_policy->wc_arg);
-    r = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pollent,
-                            initial_metadata, initial_metadata_flags, target,
+
+    r = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pick_args, target,
                             &glb_policy->wrapped_on_complete);
     if (r != 0) {
       /* the call to grpc_lb_policy_pick has been sychronous. Unreffing the RR
@@ -639,10 +637,10 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           GRPC_ERROR_NONE, NULL);
     }
   } else {
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
+    grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
                                            glb_policy->base.interested_parties);
-    add_pending_pick(&glb_policy->pending_picks, pollent, initial_metadata,
-                     initial_metadata_flags, target, on_complete);
+    add_pending_pick(&glb_policy->pending_picks, pick_args, target,
+                     on_complete);
 
     if (!glb_policy->started_picking) {
       start_picking(exec_ctx, glb_policy);

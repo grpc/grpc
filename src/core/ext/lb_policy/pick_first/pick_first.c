@@ -199,9 +199,7 @@ static void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                   grpc_polling_entity *pollent,
-                   grpc_metadata_batch *initial_metadata,
-                   uint32_t initial_metadata_flags,
+                   const grpc_lb_policy_pick_args *pick_args,
                    grpc_connected_subchannel **target,
                    grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
@@ -225,13 +223,13 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
+    grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
                                            p->base.interested_parties);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
-    pp->pollent = pollent;
+    pp->pollent = pick_args->pollent;
     pp->target = target;
-    pp->initial_metadata_flags = initial_metadata_flags;
+    pp->initial_metadata_flags = pick_args->initial_metadata_flags;
     pp->on_complete = on_complete;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);

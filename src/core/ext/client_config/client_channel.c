@@ -401,9 +401,10 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
     int r;
     GRPC_LB_POLICY_REF(lb_policy, "cc_pick_subchannel");
     gpr_mu_unlock(&chand->mu_config);
-    r = grpc_lb_policy_pick(exec_ctx, lb_policy, calld->pollent,
-                            initial_metadata, initial_metadata_flags,
-                            connected_subchannel, on_ready);
+    const grpc_lb_policy_pick_args inputs = {calld->pollent, initial_metadata,
+                                             initial_metadata_flags};
+    r = grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs, connected_subchannel,
+                            on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "cc_pick_subchannel");
     GPR_TIMER_END("cc_pick_subchannel", 0);
     return r;

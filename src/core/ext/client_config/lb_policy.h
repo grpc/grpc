@@ -53,23 +53,35 @@ struct grpc_lb_policy {
   grpc_pollset_set *interested_parties;
 };
 
+/** Extra arguments for an LB pick */
+typedef struct grpc_lb_policy_pick_args {
+  /** Parties interested in the pick's progress */
+  grpc_polling_entity *pollent;
+  /** Initial metadata associated with the picking call. */
+  grpc_metadata_batch *initial_metadata;
+  /** See \a GRPC_INITIAL_METADATA_* in grpc_types.h */
+  uint32_t initial_metadata_flags;
+} grpc_lb_policy_pick_args;
+
 struct grpc_lb_policy_vtable {
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
-
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
-  /** implement grpc_lb_policy_pick */
+  /** \see grpc_lb_policy_pick */
   int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-              grpc_polling_entity *pollent,
-              grpc_metadata_batch *initial_metadata,
-              uint32_t initial_metadata_flags,
+              const grpc_lb_policy_pick_args *pick_args,
               grpc_connected_subchannel **target, grpc_closure *on_complete);
+
+  /** \see grpc_lb_policy_cancel_pick */
   void (*cancel_pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                       grpc_connected_subchannel **target);
+
+  /** \see grpc_lb_policy_cancel_picks */
   void (*cancel_picks)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                        uint32_t initial_metadata_flags_mask,
                        uint32_t initial_metadata_flags_eq);
 
+  /** \see grpc_lb_policy_ping_one */
   void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                    grpc_closure *closure);
 
@@ -83,8 +95,7 @@ struct grpc_lb_policy_vtable {
 
   /** call notify when the connectivity state of a channel changes from *state.
       Updates *state with the new state of the policy. Calling with a NULL \a
-      state cancels the subscription.
-      */
+      state cancels the subscription.  */
   void (*notify_on_state_change)(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  grpc_connectivity_state *state,
@@ -124,26 +135,31 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable);
 
-/** Given initial metadata in \a initial_metadata, find an appropriate
-    target for this rpc, and 'return' it by calling \a on_complete after setting
-    \a target.
-    Picking can be asynchronous. Any IO should be done under \a pollent. */
+/** Find an appropriate target for this call, based on \a pick_args.
+    Upon completion \a on_complete will be called, with \a *target set to an
+    appropriate connected subchannel if the pick was successful or NULL
+    otherwise.
+    Picking can be asynchronous. Any IO should be done under \a
+    pick_args->pollent. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_polling_entity *pollent,
-                        grpc_metadata_batch *initial_metadata,
-                        uint32_t initial_metadata_flags,
+                        const grpc_lb_policy_pick_args *pick_args,
                         grpc_connected_subchannel **target,
                         grpc_closure *on_complete);
 
+/** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)
+    against one of the connected subchannels managed by \a policy. */
 void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              grpc_closure *closure);
 
+/** Cancel picks for \a target.
+    The \a on_complete callback of the pending picks will be invoked with \a
+    *target set to NULL. */
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                 grpc_connected_subchannel **target);
 
-/** Cancel all pending picks which have:
-    (initial_metadata_flags & initial_metadata_flags_mask) ==
-         initial_metadata_flags_eq */
+/** Cancel all pending picks for which their \a initial_metadata_flags (as given
+    in the call to \a grpc_lb_policy_pick) matches \a initial_metadata_flags_eq
+    when AND'd with \a initial_metadata_flags_mask */
 void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  uint32_t initial_metadata_flags_mask,
