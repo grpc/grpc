@@ -1193,7 +1193,7 @@ def insecure_channel(target, options=None):
 
 
 def secure_channel(target, credentials, options=None):
-  """Creates an insecure Channel to a server.
+  """Creates a secure Channel to a server.
 
   Args:
     target: The target to which to connect.
