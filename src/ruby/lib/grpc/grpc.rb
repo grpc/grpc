@@ -29,7 +29,7 @@
 
 begin
   ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION)
-  distrib_lib_dir = File.expand_path("#{ruby_version_dirname}/grpc_c",
+  distrib_lib_dir = File.expand_path(ruby_version_dirname,
                                      File.dirname(__FILE__))
   if File.directory?(distrib_lib_dir)
     require_relative "#{distrib_lib_dir}/grpc_c"
