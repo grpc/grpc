@@ -39,11 +39,13 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/ucx_transport.h"
 
 void grpc_iomgr_platform_init(void) {
   grpc_wakeup_fd_global_init();
   grpc_event_engine_init();
   grpc_register_tracer("tcp", &grpc_tcp_trace);
+  grpc_register_tracer("ucx", &grpc_ucx_trace);
 }
 
 void grpc_iomgr_platform_flush(void) {}

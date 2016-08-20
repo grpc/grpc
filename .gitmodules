@@ -20,3 +20,6 @@
 [submodule "third_party/google_benchmark"]
 	path = third_party/google_benchmark
 	url = https://github.com/google/benchmark
+[submodule "third_party/ucx"]
+	path = third_party/ucx
+	url = https://github.com/openucx/ucx.git
