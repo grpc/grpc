@@ -353,30 +353,3 @@ int grpc_chttp2_list_pop_closed_waiting_for_writing(
   }
   return r;
 }
-
-void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s) {
-  stream_list_add_tail(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
-}
-
-int grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
-                                  grpc_chttp2_stream *s) {
-  stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
-  return stream_list_empty(t, GRPC_CHTTP2_LIST_ALL_STREAMS);
-}
-
-int grpc_chttp2_has_streams(grpc_chttp2_transport *t) {
-  return !stream_list_empty(t, GRPC_CHTTP2_LIST_ALL_STREAMS);
-}
-
-void grpc_chttp2_for_all_streams(
-    grpc_chttp2_transport_global *transport_global, void *user_data,
-    void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
-               grpc_chttp2_stream_global *stream_global)) {
-  grpc_chttp2_stream *s;
-  grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
-  for (s = t->lists[GRPC_CHTTP2_LIST_ALL_STREAMS].head; s != NULL;
-       s = s->links[GRPC_CHTTP2_LIST_ALL_STREAMS].next) {
-    cb(transport_global, user_data, &s->global);
-  }
-}

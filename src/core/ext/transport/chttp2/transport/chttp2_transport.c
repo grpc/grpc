@@ -465,13 +465,6 @@ void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx,
 }
 #endif
 
-static void finish_init_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
-                                      grpc_error *error) {
-  grpc_chttp2_stream *s = sp;
-  grpc_chttp2_register_stream(s->t, s);
-  GRPC_CHTTP2_STREAM_UNREF(exec_ctx, &s->global, "init");
-}
-
 static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_stream *gs, grpc_stream_refcount *refcount,
                        const void *server_data) {
@@ -507,13 +500,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->global.id, s);
-    grpc_chttp2_register_stream(t, s);
     s->global.in_stream_map = true;
-  } else {
-    grpc_closure_init(&s->init_stream, finish_init_stream_locked, s);
-    GRPC_CHTTP2_STREAM_REF(&s->global, "init");
-    grpc_combiner_execute(exec_ctx, t->executor.combiner, &s->init_stream,
-                          GRPC_ERROR_NONE);
   }
 
   GPR_TIMER_END("init_stream", 0);
@@ -532,11 +519,6 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GPR_ASSERT((s->global.write_closed && s->global.read_closed) ||
              s->global.id == 0);
   GPR_ASSERT(!s->global.in_stream_map);
-  if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
-    close_transport_locked(
-        exec_ctx, t,
-        GRPC_ERROR_CREATE("Last stream closed after sending goaway"));
-  }
   if (s->global.id != 0) {
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->stream_map, s->global.id) ==
                NULL);
@@ -1254,7 +1236,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
         t->global.last_incoming_stream_id,
         (uint32_t)grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
         gpr_slice_ref(*op->goaway_message), &t->global.qbuf);
-    close_transport = grpc_chttp2_has_streams(t)
+    close_transport = grpc_chttp2_stream_map_size(&t->stream_map) == 0
                           ? GRPC_ERROR_NONE
                           : GRPC_ERROR_CREATE("GOAWAY sent");
     grpc_chttp2_initiate_write(exec_ctx, &t->global, false, "goaway_sent");
@@ -1408,7 +1390,8 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     s->global.data_parser.parsing_frame = NULL;
   }
 
-  if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
+  if (grpc_chttp2_stream_map_size(&t->stream_map) == 0 &&
+      t->global.sent_goaway) {
     close_transport_locked(
         exec_ctx, t, GRPC_ERROR_CREATE_REFERENCING(
                          "Last stream closed after sending GOAWAY", &error, 1));
@@ -1738,20 +1721,20 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 typedef struct {
   grpc_exec_ctx *exec_ctx;
   grpc_error *error;
+  grpc_chttp2_transport *t;
 } cancel_stream_cb_args;
 
-static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
-                             void *user_data,
-                             grpc_chttp2_stream_global *stream_global) {
+static void cancel_stream_cb(void *user_data, uint32_t key, void *stream) {
   cancel_stream_cb_args *args = user_data;
-  cancel_from_api(args->exec_ctx, transport_global, stream_global,
+  grpc_chttp2_stream *s = stream;
+  cancel_from_api(args->exec_ctx, &args->t->global, &s->global,
                   GRPC_ERROR_REF(args->error));
 }
 
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                               grpc_error *error) {
-  cancel_stream_cb_args args = {exec_ctx, error};
-  grpc_chttp2_for_all_streams(&t->global, &args, cancel_stream_cb);
+  cancel_stream_cb_args args = {exec_ctx, error, t};
+  grpc_chttp2_stream_map_for_each(&t->stream_map, cancel_stream_cb, &args);
   GRPC_ERROR_UNREF(error);
 }
 

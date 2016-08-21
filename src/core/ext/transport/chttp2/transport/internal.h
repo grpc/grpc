@@ -59,7 +59,6 @@ typedef struct grpc_chttp2_stream grpc_chttp2_stream;
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
-  GRPC_CHTTP2_LIST_ALL_STREAMS,
   GRPC_CHTTP2_LIST_CHECK_READ_OPS,
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
@@ -475,7 +474,6 @@ struct grpc_chttp2_stream {
   grpc_chttp2_stream_global global;
   grpc_chttp2_stream_writing writing;
 
-  grpc_closure init_stream;
   grpc_closure destroy_stream;
   void *destroy_stream_arg;
 
@@ -600,17 +598,6 @@ grpc_chttp2_stream_global *grpc_chttp2_parsing_accept_stream(
 void grpc_chttp2_add_incoming_goaway(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     uint32_t goaway_error, gpr_slice goaway_text);
-
-void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s);
-/* returns 1 if this is the last stream, 0 otherwise */
-int grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
-                                  grpc_chttp2_stream *s) GRPC_MUST_USE_RESULT;
-int grpc_chttp2_has_streams(grpc_chttp2_transport *t);
-void grpc_chttp2_for_all_streams(
-    grpc_chttp2_transport_global *transport_global, void *user_data,
-    void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
-               grpc_chttp2_stream_global *stream_global));
 
 void grpc_chttp2_parsing_become_skip_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global);
