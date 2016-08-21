@@ -303,9 +303,8 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   args.tokens = gpr_malloc(sizeof(grpc_lb_policy_address_token) *
                            serverlist->num_servers);
   args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-  args.addresses->naddrs = serverlist->num_servers;
   args.addresses->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * args.addresses->naddrs);
+      gpr_malloc(sizeof(grpc_resolved_address) * serverlist->num_servers);
   size_t out_addrs_idx = 0;
   for (size_t i = 0; i < serverlist->num_servers; ++i) {
     grpc_uri uri;
@@ -329,6 +328,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
               host_ports[i]);
     }
   }
+  args.addresses->naddrs = out_addrs_idx;
 
   grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
 
