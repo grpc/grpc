@@ -8,7 +8,7 @@
     <ProjectGuid>{724DFC8C-4B57-4C3F-811C-0463BE2A2829}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Greeter</RootNamespace>
-    <AssemblyName>1</AssemblyName>
+    <AssemblyName>Greeter</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <NuGetPackageImportStamp>2669b4f2</NuGetPackageImportStamp>
   </PropertyGroup>
