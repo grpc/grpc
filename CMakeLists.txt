@@ -47,6 +47,7 @@ set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 
+project(${PACKAGE_NAME} C CXX)
 
 include(CheckFunctionExists)
 
@@ -63,8 +64,6 @@ if(NOT HAS_POW)
     message(FATAL_ERROR "No pow() found")
   endif()
 endif()
-
-project(${PACKAGE_NAME} C CXX)
 
 if (NOT MSVC)
   set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
