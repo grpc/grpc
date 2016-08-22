@@ -190,11 +190,13 @@ filegroups:
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
@@ -275,6 +277,7 @@ filegroups:
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
   - src/core/lib/iomgr/socket_utils_posix.c
+  - src/core/lib/iomgr/socket_utils_windows.c
   - src/core/lib/iomgr/socket_windows.c
   - src/core/lib/iomgr/tcp_client_posix.c
   - src/core/lib/iomgr/tcp_client_windows.c
@@ -463,8 +466,7 @@ filegroups:
   - src/core/lib/security/credentials/credentials.c
   - src/core/lib/security/credentials/credentials_metadata.c
   - src/core/lib/security/credentials/fake/fake_credentials.c
-  - src/core/lib/security/credentials/google_default/credentials_posix.c
-  - src/core/lib/security/credentials/google_default/credentials_windows.c
+  - src/core/lib/security/credentials/google_default/credentials_generic.c
   - src/core/lib/security/credentials/google_default/google_default_credentials.c
   - src/core/lib/security/credentials/iam/iam_credentials.c
   - src/core/lib/security/credentials/jwt/json_token.c
@@ -640,6 +642,8 @@ filegroups:
   deps:
   - gpr
   secure: true
+  uses:
+  - grpc_base
 - name: grpc++_base
   language: c++
   public_headers:

@@ -32,10 +32,10 @@
  */
 
 #include <grpc/grpc_posix.h>
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
-#ifdef GPR_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 
@@ -1906,13 +1906,13 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   return &vtable;
 }
 
-#else /* defined(GPR_LINUX_EPOLL) */
-#if defined(GPR_POSIX_SOCKET)
+#else /* defined(GRPC_LINUX_EPOLL) */
+#if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_posix.h"
-/* If GPR_LINUX_EPOLL is not defined, it means epoll is not available. Return
+/* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable *grpc_init_epoll_linux(void) { return NULL; }
-#endif /* defined(GPR_POSIX_SOCKET) */
+#endif /* defined(GRPC_POSIX_SOCKET) */
 
 void grpc_use_signal(int signum) {}
-#endif /* !defined(GPR_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL) */

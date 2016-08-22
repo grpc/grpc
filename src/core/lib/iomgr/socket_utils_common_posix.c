@@ -31,10 +31,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <arpa/inet.h>
@@ -78,7 +79,7 @@ grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking) {
 }
 
 grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
-#ifdef GPR_HAVE_SO_NOSIGPIPE
+#ifdef GRPC_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -96,7 +97,7 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
-#ifdef GPR_HAVE_IP_PKTINFO
+#ifdef GRPC_HAVE_IP_PKTINFO
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
@@ -107,7 +108,7 @@ grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
-#ifdef GPR_HAVE_IPV6_RECVPKTINFO
+#ifdef GRPC_HAVE_IPV6_RECVPKTINFO
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
@@ -294,6 +295,10 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = socket(family, type, protocol);
   return error_for_fd(*newfd, addr);
+}
+
+const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
+  return inet_ntop(af, src, dst, size);
 }
 
 #endif

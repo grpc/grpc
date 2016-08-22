@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -146,7 +147,7 @@ int main(int argc, char **argv) {
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
   gpr_setenv("GRPC_TRACE", "doesnt-exist,http,all");
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10.0 : 1.0;
 #else
   g_fixture_slowdown_factor = 10.0;

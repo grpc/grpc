@@ -215,11 +215,13 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.h" role="src" />
@@ -379,6 +381,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.c" role="src" />
@@ -457,8 +460,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_generic.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/iam/iam_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/json_token.c" role="src" />

@@ -335,11 +335,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\port.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h" />
@@ -542,6 +544,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_windows.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.c">
@@ -698,9 +702,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_posix.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_generic.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.c">
     </ClCompile>

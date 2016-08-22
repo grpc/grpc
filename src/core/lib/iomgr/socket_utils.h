@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,18 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
+#define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#include "src/core/lib/security/credentials/credentials.h"
-
-#define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
-#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
-  "application_default_credentials.json"
-
-#ifdef GPR_WINDOWS
-#define GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR "APPDATA"
-#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX \
-  GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY    \
-  "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
-#define GRPC_GOOGLE_CREDENTIALS_GENERIC 1
+#ifdef GRPC_WINSOCK_SOCKET
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #else
-#define GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR "HOME"
-#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX         \
-  ".config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY \
-  "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
-#define GRPC_GOOGLE_CREDENTIALS_GENERIC 1
+#include "src/core/lib/iomgr/sockaddr_posix.h"
 #endif
 
-void grpc_flush_cached_google_default_credentials(void);
+/* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
+const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size);
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H \
-          */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H */

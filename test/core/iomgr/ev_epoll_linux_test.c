@@ -30,10 +30,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
 /* This test only relevant on linux systems where epoll() is available */
-#ifdef GPR_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -239,6 +239,6 @@ int main(int argc, char **argv) {
   grpc_iomgr_shutdown();
   return 0;
 }
-#else /* defined(GPR_LINUX_EPOLL) */
+#else /* defined(GRPC_LINUX_EPOLL) */
 int main(int argc, char **argv) { return 0; }
-#endif /* !defined(GPR_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL) */

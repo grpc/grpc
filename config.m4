@@ -122,6 +122,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
     src/core/lib/iomgr/tcp_client_windows.c \
@@ -200,8 +201,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/credentials.c \
     src/core/lib/security/credentials/credentials_metadata.c \
     src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
+    src/core/lib/security/credentials/google_default/credentials_generic.c \
     src/core/lib/security/credentials/google_default/google_default_credentials.c \
     src/core/lib/security/credentials/iam/iam_credentials.c \
     src/core/lib/security/credentials/jwt/json_token.c \

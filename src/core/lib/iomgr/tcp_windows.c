@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <limits.h>
 
@@ -416,4 +416,4 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   return &tcp->base;
 }
 
-#endif /* GPR_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
 
@@ -44,7 +44,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
   struct sockaddr_un *un = (struct sockaddr_un *)addr;
 

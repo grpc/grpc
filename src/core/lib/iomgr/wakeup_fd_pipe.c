@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_WAKEUP_FD
+#ifdef GRPC_POSIX_WAKEUP_FD
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 

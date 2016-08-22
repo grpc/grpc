@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-#ifdef GPR_WINSOCK_SOCKET
+#include "src/core/lib/iomgr/port.h"
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"

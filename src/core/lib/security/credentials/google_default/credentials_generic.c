@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#ifdef GPR_WINDOWS
-
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+
+#ifdef GRPC_GOOGLE_CREDENTIALS_GENERIC
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -46,16 +44,15 @@
 
 char *grpc_get_well_known_google_credentials_file_path_impl(void) {
   char *result = NULL;
-  char *appdata_path = gpr_getenv("APPDATA");
-  if (appdata_path == NULL) {
-    gpr_log(GPR_ERROR, "Could not get APPDATA environment variable.");
+  char *base = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR);
+  if (base == NULL) {
+    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_ENV_VAR
+                       " environment variable.");
     return NULL;
   }
-  gpr_asprintf(&result, "%s/%s/%s", appdata_path,
-               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
-               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free(appdata_path);
+  gpr_asprintf(&result, "%s/%s", base, GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX);
+  gpr_free(base);
   return result;
 }
 
-#endif /* GPR_WINDOWS */
+#endif /* GRPC_GOOGLE_CREDENTIALS_GENERIC */
