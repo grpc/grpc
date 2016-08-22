@@ -409,7 +409,6 @@ struct grpc_chttp2_stream_global {
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
-  bool exceeded_metadata_size;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
@@ -748,5 +747,10 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global,
                                  bool covered_by_poller, const char *reason);
+
+void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
+                               grpc_chttp2_transport_global *transport_global,
+                               grpc_chttp2_stream_global *stream_global,
+                               grpc_error *due_to_error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

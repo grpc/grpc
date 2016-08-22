@@ -354,7 +354,9 @@ static grpc_error *skip_parser(grpc_exec_ctx *exec_ctx, void *parser,
   return GRPC_ERROR_NONE;
 }
 
-static void skip_header(void *tp, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
+static void skip_header(grpc_exec_ctx *exec_ctx, void *tp, grpc_mdelem *md) {
+  GRPC_MDELEM_UNREF(md);
+}
 
 static grpc_error *init_skip_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
@@ -458,7 +460,8 @@ static grpc_error *init_data_frame_parser(
 
 static void free_timeout(void *p) { gpr_free(p); }
 
-static void on_initial_header(void *tp, grpc_mdelem *md) {
+static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
+                              grpc_mdelem *md) {
   grpc_chttp2_transport_global *transport_global = tp;
   grpc_chttp2_stream_global *stream_global = transport_global->incoming_stream;
 
@@ -500,14 +503,17 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
         transport_global->settings[GRPC_ACKED_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (new_size > metadata_size_limit) {
-      if (!stream_global->exceeded_metadata_size) {
-        gpr_log(GPR_DEBUG,
-                "received initial metadata size exceeds limit (%" PRIuPTR
-                " vs. %" PRIuPTR ")",
-                new_size, metadata_size_limit);
-        stream_global->seen_error = true;
-        stream_global->exceeded_metadata_size = true;
-      }
+      gpr_log(GPR_DEBUG,
+              "received initial metadata size exceeds limit (%" PRIuPTR
+              " vs. %" PRIuPTR ")",
+              new_size, metadata_size_limit);
+      grpc_chttp2_cancel_stream(
+          exec_ctx, transport_global, stream_global,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE("received initial metadata size exceeds limit"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
+      grpc_chttp2_parsing_become_skip_parser(exec_ctx, transport_global);
+      stream_global->seen_error = true;
       GRPC_MDELEM_UNREF(md);
     } else {
       grpc_chttp2_incoming_metadata_buffer_add(
@@ -518,7 +524,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
   GPR_TIMER_END("on_initial_header", 0);
 }
 
-static void on_trailing_header(void *tp, grpc_mdelem *md) {
+static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
+                               grpc_mdelem *md) {
   grpc_chttp2_transport_global *transport_global = tp;
   grpc_chttp2_stream_global *stream_global = transport_global->incoming_stream;
 
@@ -542,14 +549,17 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
       transport_global->settings[GRPC_ACKED_SETTINGS]
                                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
   if (new_size > metadata_size_limit) {
-    if (!stream_global->exceeded_metadata_size) {
-      gpr_log(GPR_DEBUG,
-              "received trailing metadata size exceeds limit (%" PRIuPTR
-              " vs. %" PRIuPTR ")",
-              new_size, metadata_size_limit);
-      stream_global->seen_error = true;
-      stream_global->exceeded_metadata_size = true;
-    }
+    gpr_log(GPR_DEBUG,
+            "received trailing metadata size exceeds limit (%" PRIuPTR
+            " vs. %" PRIuPTR ")",
+            new_size, metadata_size_limit);
+    grpc_chttp2_cancel_stream(
+        exec_ctx, transport_global, stream_global,
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("received trailing metadata size exceeds limit"),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
+    grpc_chttp2_parsing_become_skip_parser(exec_ctx, transport_global);
+    stream_global->seen_error = true;
     GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&stream_global->metadata_buffer[1],

@@ -102,12 +102,6 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                             grpc_error *error);
 
-/** Cancel a stream: coming from the transport API */
-static void cancel_from_api(grpc_exec_ctx *exec_ctx,
-                            grpc_chttp2_transport_global *transport_global,
-                            grpc_chttp2_stream_global *stream_global,
-                            grpc_error *error);
-
 static void close_from_api(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global,
                            grpc_chttp2_stream_global *stream_global,
@@ -899,10 +893,11 @@ static void maybe_start_some_streams(
   while (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID &&
          grpc_chttp2_list_pop_waiting_for_concurrency(transport_global,
                                                       &stream_global)) {
-    cancel_from_api(exec_ctx, transport_global, stream_global,
-                    grpc_error_set_int(
-                        GRPC_ERROR_CREATE("Stream IDs exhausted"),
-                        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    grpc_chttp2_cancel_stream(
+        exec_ctx, transport_global, stream_global,
+        grpc_error_set_int(GRPC_ERROR_CREATE("Stream IDs exhausted"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -992,8 +987,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->cancel_error != GRPC_ERROR_NONE) {
-    cancel_from_api(exec_ctx, transport_global, stream_global,
-                    GRPC_ERROR_REF(op->cancel_error));
+    grpc_chttp2_cancel_stream(exec_ctx, transport_global, stream_global,
+                              GRPC_ERROR_REF(op->cancel_error));
   }
 
   if (op->close_error != GRPC_ERROR_NONE) {
@@ -1017,7 +1012,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                        stream_global->send_initial_metadata->deadline);
     }
     if (metadata_size > metadata_peer_limit) {
-      cancel_from_api(
+      grpc_chttp2_cancel_stream(
           exec_ctx, transport_global, stream_global,
           grpc_error_set_int(
               grpc_error_set_int(
@@ -1084,7 +1079,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         transport_global->settings[GRPC_PEER_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (metadata_size > metadata_peer_limit) {
-      cancel_from_api(
+      grpc_chttp2_cancel_stream(
           exec_ctx, transport_global, stream_global,
           grpc_error_set_int(
               grpc_error_set_int(
@@ -1298,14 +1293,6 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
                     &stream_global->incoming_frames)) != NULL) {
           incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
         }
-        if (stream_global->exceeded_metadata_size) {
-          cancel_from_api(
-              exec_ctx, transport_global, stream_global,
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE(
-                      "received initial metadata size exceeds limit"),
-                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
-        }
       }
       grpc_chttp2_incoming_metadata_buffer_publish(
           &stream_global->metadata_buffer[0],
@@ -1341,14 +1328,6 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
         while ((bs = grpc_chttp2_incoming_frame_queue_pop(
                     &stream_global->incoming_frames)) != NULL) {
           incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
-        }
-        if (stream_global->exceeded_metadata_size) {
-          cancel_from_api(
-              exec_ctx, transport_global, stream_global,
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE(
-                      "received trailing metadata size exceeds limit"),
-                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
         }
       }
       if (stream_global->all_incoming_byte_streams_finished) {
@@ -1432,10 +1411,10 @@ static void status_codes_from_error(grpc_error *error, gpr_timespec deadline,
   }
 }
 
-static void cancel_from_api(grpc_exec_ctx *exec_ctx,
-                            grpc_chttp2_transport_global *transport_global,
-                            grpc_chttp2_stream_global *stream_global,
-                            grpc_error *due_to_error) {
+void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
+                               grpc_chttp2_transport_global *transport_global,
+                               grpc_chttp2_stream_global *stream_global,
+                               grpc_error *due_to_error) {
   if (!stream_global->read_closed || !stream_global->write_closed) {
     grpc_status_code grpc_status;
     grpc_chttp2_error_code http_error;
@@ -1727,8 +1706,8 @@ typedef struct {
 static void cancel_stream_cb(void *user_data, uint32_t key, void *stream) {
   cancel_stream_cb_args *args = user_data;
   grpc_chttp2_stream *s = stream;
-  cancel_from_api(args->exec_ctx, &args->t->global, &s->global,
-                  GRPC_ERROR_REF(args->error));
+  grpc_chttp2_cancel_stream(args->exec_ctx, &args->t->global, &s->global,
+                            GRPC_ERROR_REF(args->error));
 }
 
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
