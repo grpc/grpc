@@ -54,6 +54,10 @@
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     elif target_dict['name'] in ['grpc']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
+
+    if target_dict['name'] in ['gpr']:
+      deps.append("${libMath}")
+
     for d in target_dict.get('deps', []):
       deps.append(d)
     return deps
@@ -66,6 +70,23 @@
   set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+
+
+  include(CheckFunctionExists)
+
+  CHECK_FUNCTION_EXISTS(pow HAS_POW)
+  if(NOT HAS_POW)
+    list(APPEND CMAKE_REQUIRED_INCLUDES math.h)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+    CHECK_FUNCTION_EXISTS(pow HAS_POW_INCLUDED)
+
+    if(HAS_POW_INCLUDED)
+      set(libMath m)
+    else()
+      message(FATAL_ERROR "No pow() found")
+    endif()
+  endif()
 
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
 

@@ -47,10 +47,22 @@ set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 
-# Set Wl and as-needed for QA assurances
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
-set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed")
-set(CMAKE_STATIC_LINKER_FLAGS"-Wl,--as-needed")
+
+include(CheckFunctionExists)
+
+CHECK_FUNCTION_EXISTS(pow HAS_POW)
+if(NOT HAS_POW)
+  list(APPEND CMAKE_REQUIRED_INCLUDES math.h)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+  CHECK_FUNCTION_EXISTS(pow HAS_POW_INCLUDED)
+
+  if(HAS_POW_INCLUDED)
+    set(libMath m)
+  else()
+    message(FATAL_ERROR "No pow() found")
+  endif()
+endif()
 
 project(${PACKAGE_NAME} C CXX)
 
@@ -238,6 +250,7 @@ target_include_directories(gpr
 
 target_link_libraries(gpr
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${libMath}
 )
 
 foreach(_hdr
