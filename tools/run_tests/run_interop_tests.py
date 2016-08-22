@@ -662,7 +662,7 @@ argp.add_argument('--prod_servers',
                         'cloud_to_prod_auth tests against.'))
 argp.add_argument('-s', '--server',
                   choices=['all'] + sorted(_SERVERS),
-                  action='append',
+                  nargs='+',
                   help='Run cloud_to_cloud servers in a separate docker ' +
                        'image. Servers can only be started automatically if ' +
                        '--use_docker option is enabled.',

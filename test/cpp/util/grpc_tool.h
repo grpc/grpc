@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,24 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H
+#ifndef GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#define GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
 
-#include <grpc/support/time.h>
-#include "src/core/lib/support/string.h"
+#include <functional>
 
-#define GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
+#include <grpc++/support/config.h>
 
-/* Encode/decode timeouts to the GRPC over HTTP2 format;
-   encoding may round up arbitrarily */
-void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer);
-int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout);
+#include "test/cpp/util/cli_credentials.h"
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TIMEOUT_ENCODING_H */
+namespace grpc {
+namespace testing {
+
+typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
+
+int GrpcToolMainLib(int argc, const char **argv, CliCredentials cred,
+                    GrpcToolOutputCallback callback);
+
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H

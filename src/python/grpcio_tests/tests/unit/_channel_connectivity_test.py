@@ -32,12 +32,12 @@
 import threading
 import time
 import unittest
-from concurrent import futures
 
 import grpc
 from grpc import _channel
 from grpc import _server
 from tests.unit.framework.common import test_constants
+from tests.unit import _thread_pool
 
 
 def _ready_in_connectivities(connectivities):
@@ -104,7 +104,8 @@ class ChannelConnectivityTest(unittest.TestCase):
         grpc.ChannelConnectivity.READY, fifth_connectivities)
 
   def test_immediately_connectable_channel_connectivity(self):
-    server = _server.Server(futures.ThreadPoolExecutor(max_workers=0), ())
+    thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+    server = _server.Server(thread_pool, ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     first_callback = _Callback()
@@ -141,9 +142,11 @@ class ChannelConnectivityTest(unittest.TestCase):
         fourth_connectivities)
     self.assertNotIn(
         grpc.ChannelConnectivity.SHUTDOWN, fourth_connectivities)
+    self.assertFalse(thread_pool.was_used())
 
   def test_reachable_then_unreachable_channel_connectivity(self):
-    server = _server.Server(futures.ThreadPoolExecutor(max_workers=0), ())
+    thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+    server = _server.Server(thread_pool, ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     callback = _Callback()
@@ -155,6 +158,7 @@ class ChannelConnectivityTest(unittest.TestCase):
     server.stop(None)
     callback.block_until_connectivities_satisfy(_last_connectivity_is_not_ready)
     channel.unsubscribe(callback.update)
+    self.assertFalse(thread_pool.was_used())
 
 
 if __name__ == '__main__':

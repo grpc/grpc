@@ -89,3 +89,18 @@ $ cmake -G "Visual Studio 12 2013"
 2. Open solution `third_party\protobuf\cmake\protobuf.sln` and build it in Release mode. That will build libraries `libprotobuf.lib` and `libprotoc.lib` needed for the next step.
 
 3. Open solution `vsprojects\grpc_protoc_plugins.sln` and build it in Release mode. As a result, you should obtain a set of gRPC protoc plugin binaries (`grpc_cpp_plugin.exe`, `grpc_csharp_plugin.exe`, ...)
+
+#Building using CMake (with BoringSSL)
+1. Install [Active State Perl](http://www.activestate.com/activeperl/) (`choco install activeperl`)
+2. Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
+2. Install [Go](https://golang.org/dl/) (`choco install golang`)
+3. Install [yasm](http://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`)
+4. Update boringssl sumbodule to `master`
+5. Run this commads in grpc directory:
+```
+> md .build
+> cd .build
+> call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
+> cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+> cmake --build .
+```

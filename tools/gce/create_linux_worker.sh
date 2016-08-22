@@ -43,7 +43,8 @@ gcloud compute instances create $INSTANCE_NAME \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
     --machine-type n1-standard-8 \
-    --image ubuntu-15-10 \
+    --image=ubuntu-1510 \
+    --image-project=grpc-testing \
     --boot-disk-size 1000
 
 echo 'Created GCE instance, waiting 60 seconds for it to come online.'

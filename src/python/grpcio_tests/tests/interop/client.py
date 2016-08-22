@@ -32,14 +32,12 @@
 import argparse
 from oauth2client import client as oauth2client_client
 
+import grpc
 from grpc.beta import implementations
 from src.proto.grpc.testing import test_pb2
 
 from tests.interop import methods
 from tests.interop import resources
-from tests.unit.beta import test_utilities
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def _args():
@@ -66,41 +64,49 @@ def _args():
   return parser.parse_args()
 
 
+def _application_default_credentials():
+  return oauth2client_client.GoogleCredentials.get_application_default()
+
+
 def _stub(args):
+  target = '{}:{}'.format(args.server_host, args.server_port)
   if args.test_case == 'oauth2_auth_token':
-    creds = oauth2client_client.GoogleCredentials.get_application_default()
-    scoped_creds = creds.create_scoped([args.oauth_scope])
-    access_token = scoped_creds.get_access_token().access_token
-    call_creds = implementations.access_token_call_credentials(access_token)
+    google_credentials = _application_default_credentials()
+    scoped_credentials = google_credentials.create_scoped([args.oauth_scope])
+    access_token = scoped_credentials.get_access_token().access_token
+    call_credentials = grpc.access_token_call_credentials(access_token)
   elif args.test_case == 'compute_engine_creds':
-    creds = oauth2client_client.GoogleCredentials.get_application_default()
-    scoped_creds = creds.create_scoped([args.oauth_scope])
-    call_creds = implementations.google_call_credentials(scoped_creds)
+    google_credentials = _application_default_credentials()
+    scoped_credentials = google_credentials.create_scoped([args.oauth_scope])
+    # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
+    # remaining use of the Beta API.
+    call_credentials = implementations.google_call_credentials(
+        scoped_credentials)
   elif args.test_case == 'jwt_token_creds':
-    creds = oauth2client_client.GoogleCredentials.get_application_default()
-    call_creds = implementations.google_call_credentials(creds)
+    google_credentials = _application_default_credentials()
+    # TODO(https://github.com/grpc/grpc/issues/6799): Eliminate this last
+    # remaining use of the Beta API.
+    call_credentials = implementations.google_call_credentials(
+        google_credentials)
   else:
-    call_creds = None
+    call_credentials = None
   if args.use_tls:
     if args.use_test_ca:
       root_certificates = resources.test_root_certificates()
     else:
       root_certificates = None  # will load default roots.
 
-    channel_creds = implementations.ssl_channel_credentials(root_certificates)
-    if call_creds is not None:
-      channel_creds = implementations.composite_channel_credentials(
-          channel_creds, call_creds)
+    channel_credentials = grpc.ssl_channel_credentials(root_certificates)
+    if call_credentials is not None:
+      channel_credentials = grpc.composite_channel_credentials(
+          channel_credentials, call_credentials)
 
-    channel = test_utilities.not_really_secure_channel(
-        args.server_host, args.server_port, channel_creds,
-        args.server_host_override)
-    stub = test_pb2.beta_create_TestService_stub(channel)
+    channel = grpc.secure_channel(
+        target, channel_credentials,
+        (('grpc.ssl_target_name_override', args.server_host_override,),))
   else:
-    channel = implementations.insecure_channel(
-        args.server_host, args.server_port)
-    stub = test_pb2.beta_create_TestService_stub(channel)
-  return stub
+    channel = grpc.insecure_channel(target)
+  return test_pb2.TestServiceStub(channel)
 
 
 def _test_case_from_arg(test_case_arg):

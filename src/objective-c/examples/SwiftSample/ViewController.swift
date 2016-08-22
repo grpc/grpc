@@ -91,7 +91,7 @@ class ViewController: UIViewController {
 
     call.startWithWriteable(GRXWriteable { response, error in
       if let response = response as? NSData {
-        NSLog("3. Received response:\n\(RMTSimpleResponse(data: response, error: nil))")
+        NSLog("3. Received response:\n\(try! RMTSimpleResponse(data: response))")
       } else {
         NSLog("3. Finished with error: \(error!)")
       }
