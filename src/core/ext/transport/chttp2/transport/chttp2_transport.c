@@ -1232,8 +1232,8 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
         (uint32_t)grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
         gpr_slice_ref(*op->goaway_message), &t->global.qbuf);
     close_transport = grpc_chttp2_stream_map_size(&t->stream_map) == 0
-                          ? GRPC_ERROR_NONE
-                          : GRPC_ERROR_CREATE("GOAWAY sent");
+                          ? GRPC_ERROR_CREATE("GOAWAY sent")
+                          : GRPC_ERROR_NONE;
     grpc_chttp2_initiate_write(exec_ctx, &t->global, false, "goaway_sent");
   }
 
