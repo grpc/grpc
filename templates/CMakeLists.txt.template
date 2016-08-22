@@ -67,11 +67,6 @@
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 
-  # Set Wl and as-needed for QA assurances
-  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
-  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed")
-  set(CMAKE_STATIC_LINKER_FLAGS"-Wl,--as-needed")
-
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
 
   if (NOT MSVC)
