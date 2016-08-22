@@ -48,7 +48,12 @@
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.get('secure', False):
       deps.append("${_gRPC_SSL_LIBRARIES}")
-    if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
+    if target_dict['name'] in [
+        'grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib',
+        'grpc_objective_c_plugin', 'grpc_print_google_default_creds_token', 
+        'grpc_verify_jwt', 'grpc_create_jwt', 'grpc_cpp_plugin',
+        'gen_hpack_tables', 'grpc_csharp_plugin', 'grpc_cronet',
+        'grpc_node_plugin', 'grpc_python_plugin', 'grpc_ruby_plugin']:
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     elif target_dict['name'] in ['grpc']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
@@ -64,6 +69,12 @@
   set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+
+  # Set Wl and as-needed for QA assurances
+  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--as-needed")
+  set(CMAKE_STATIC_LINKER_FLAGS"-Wl,--as-needed")
+
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
 
   if (NOT MSVC)
@@ -149,7 +160,10 @@
       set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
     else()
       find_package(Protobuf MODULE)
-      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
+      if(Protobuf_FOUND)
+        set(_gRPC_PROTOBUF_LIBRARIES <%text>${Protobuf_LIBRARIES}</%text>)
+        set(_gRPC_PROTOBUF_PROTOC_LIBRARIES <%text>${Protobuf_PROTOC_LIBRARIES}</%text>)
+      endif()
     endif()
   endif()
 
