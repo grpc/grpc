@@ -96,7 +96,6 @@
  * - Implement LB service forwarding (point 2c. in the doc's diagram).
  */
 
-#include <arpa/inet.h>
 #include <errno.h>
 
 #include <string.h>
@@ -112,7 +111,7 @@
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
