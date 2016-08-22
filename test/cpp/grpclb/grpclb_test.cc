@@ -37,7 +37,8 @@
 #include <cstring>
 #include <string>
 
-extern "C" {
+#include <arpa/inet.h>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -48,6 +49,9 @@ extern "C" {
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#include <grpc++/impl/codegen/config.h>
+
+extern "C" {
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
@@ -107,8 +111,8 @@ static gpr_slice build_response_payload_slice(
     int64_t expiration_interval_secs, int32_t expiration_interval_nanos) {
   // server_list {
   //   servers {
-  //     ip_address: "127.0.0.1"
-  //     port: ...
+  //     ip_address: <in_addr/6 bytes of an IP>
+  //     port: <16 bit uint>
   //     load_balance_token: "token..."
   //   }
   //   ...
@@ -127,21 +131,21 @@ static gpr_slice build_response_payload_slice(
   }
   for (size_t i = 0; i < nports; i++) {
     auto *server = serverlist->add_servers();
-    server->set_ip_address(host);
+    // TODO(dgq): test ipv6
+    struct in_addr ip4;
+    GPR_ASSERT(inet_pton(AF_INET, host, &ip4) == 1);
+    server->set_ip_address(
+        grpc::string(reinterpret_cast<const char *>(&ip4), sizeof(ip4)));
     server->set_port(ports[i]);
     // The following long long int cast is meant to work around the
     // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
     // have a version for int but does have one for long long int.
-    server->set_load_balance_token("token" +
-                                   std::to_string((long long int)ports[i]));
+    string token_data = "token" + std::to_string((long long int)ports[i]);
+    token_data.resize(64, '-');
+    server->set_load_balance_token(token_data);
   }
-
-  gpr_log(GPR_INFO, "generating response: %s",
-          response.ShortDebugString().c_str());
-
-  const gpr_slice response_slice =
-      gpr_slice_from_copied_string(response.SerializeAsString().c_str());
-  return response_slice;
+  const grpc::string &enc_resp = response.SerializeAsString();
+  return gpr_slice_from_copied_buffer(enc_resp.data(), enc_resp.size());
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -321,11 +325,15 @@ static void start_backend_server(server_fixture *sf) {
       return;
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    char *expected_token;
-    GPR_ASSERT(gpr_asprintf(&expected_token, "token%d", sf->port) > 0);
+
+    // The following long long int cast is meant to work around the
+    // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
+    // have a version for int but does have one for long long int.
+    string expected_token = "token" + std::to_string((long long int)sf->port);
+    expected_token.resize(64, '-');
     GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                 "load-reporting-initial", expected_token));
-    gpr_free(expected_token);
+                                 "load-reporting-initial",
+                                 expected_token.c_str()));
 
     gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
 

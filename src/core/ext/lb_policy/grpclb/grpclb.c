@@ -96,6 +96,9 @@
  * - Implement LB service forwarding (point 2c. in the doc's diagram).
  */
 
+#include <arpa/inet.h>
+#include <errno.h>
+
 #include <string.h>
 
 #include <grpc/byte_buffer_reader.h>
@@ -285,17 +288,7 @@ struct rr_connectivity_data {
 static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
                                  const grpc_grpclb_serverlist *serverlist,
                                  glb_lb_policy *glb_policy) {
-  /* TODO(dgq): support mixed ip version */
   GPR_ASSERT(serverlist != NULL && serverlist->num_servers > 0);
-  char **host_ports = gpr_malloc(sizeof(char *) * serverlist->num_servers);
-  for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    gpr_join_host_port(&host_ports[i], serverlist->servers[i]->ip_address,
-                       serverlist->servers[i]->port);
-  }
-
-  size_t uri_path_len;
-  char *concat_ipports = gpr_strjoin_sep(
-      (const char **)host_ports, serverlist->num_servers, ",", &uri_path_len);
 
   grpc_lb_policy_args args;
   memset(&args, 0, sizeof(args));
@@ -305,38 +298,56 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
   args.addresses->addrs =
       gpr_malloc(sizeof(grpc_resolved_address) * serverlist->num_servers);
-  size_t out_addrs_idx = 0;
+  size_t addr_idx = 0;
   for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    grpc_uri uri;
-    struct sockaddr_storage sa;
-    size_t sa_len;
-    uri.path = host_ports[i];
-    if (parse_ipv4(&uri, &sa, &sa_len)) { /* TODO(dgq): add support for ipv6 */
-      memcpy(args.addresses->addrs[out_addrs_idx].addr, &sa, sa_len);
-      args.addresses->addrs[out_addrs_idx].len = sa_len;
-      ++out_addrs_idx;
-      const size_t token_max_size =
-          GPR_ARRAY_SIZE(serverlist->servers[i]->load_balance_token);
-      serverlist->servers[i]->load_balance_token[token_max_size - 1] = '\0';
-      args.tokens[i].token_size =
-          strlen(serverlist->servers[i]->load_balance_token);
-      args.tokens[i].token = gpr_malloc(args.tokens[i].token_size);
-      memcpy(args.tokens[i].token, serverlist->servers[i]->load_balance_token,
-             args.tokens[i].token_size);
-    } else {
-      gpr_log(GPR_ERROR, "Invalid LB service address '%s', ignoring.",
-              host_ports[i]);
+    const grpc_grpclb_server *const server = serverlist->servers[i];
+    /* a minimal of error checking */
+    if (server->port >> 16 != 0) {
+      gpr_log(GPR_ERROR, "Invalid port '%d'. Ignoring server list index %zu",
+              server->port, i);
+      continue;
     }
+    const uint16_t netorder_port = htons((uint16_t)server->port);
+    /* the addresses are given in binary format (a in(6)_addr struct) in
+     * server->ip_address.bytes. */
+    const grpc_grpclb_ip_address *ip = &server->ip_address;
+    struct sockaddr_storage sa;
+    size_t sa_len = 0;
+    if (ip->size == 4) {
+      struct sockaddr_in *addr4 = (struct sockaddr_in *)&sa;
+      memset(addr4, 0, sizeof(struct sockaddr_in));
+      sa_len = sizeof(struct sockaddr_in);
+      addr4->sin_family = AF_INET;
+      memcpy(&addr4->sin_addr, ip->bytes, ip->size);
+      addr4->sin_port = netorder_port;
+    } else if (ip->size == 6) {
+      struct sockaddr_in *addr6 = (struct sockaddr_in *)&sa;
+      memset(addr6, 0, sizeof(struct sockaddr_in));
+      sa_len = sizeof(struct sockaddr_in);
+      addr6->sin_family = AF_INET;
+      memcpy(&addr6->sin_addr, ip->bytes, ip->size);
+      addr6->sin_port = netorder_port;
+    } else {
+      gpr_log(GPR_ERROR,
+              "Expected IP to be 4 or 16 bytes. Got %d. Ignoring server list "
+              "index %zu",
+              ip->size, i);
+      continue;
+    }
+    GPR_ASSERT(sa_len > 0);
+    memcpy(args.addresses->addrs[addr_idx].addr, &sa, sa_len);
+    args.addresses->addrs[addr_idx].len = sa_len;
+    ++addr_idx;
+
+    args.tokens[i].token_size = GPR_ARRAY_SIZE(server->load_balance_token) - 1;
+    args.tokens[i].token = gpr_malloc(args.tokens[i].token_size);
+    memcpy(args.tokens[i].token, server->load_balance_token,
+           args.tokens[i].token_size);
   }
-  args.addresses->naddrs = out_addrs_idx;
+  args.addresses->naddrs = addr_idx;
 
   grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
 
-  gpr_free(concat_ipports);
-  for (size_t i = 0; i < serverlist->num_servers; i++) {
-    gpr_free(host_ports[i]);
-  }
-  gpr_free(host_ports);
   gpr_free(args.addresses->addrs);
   gpr_free(args.addresses);
   gpr_free(args.tokens);
