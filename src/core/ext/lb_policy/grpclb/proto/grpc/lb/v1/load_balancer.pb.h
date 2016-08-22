@@ -70,14 +70,14 @@ typedef struct _grpc_lb_v1_InitialLoadBalanceRequest {
 /* @@protoc_insertion_point(struct:grpc_lb_v1_InitialLoadBalanceRequest) */
 } grpc_lb_v1_InitialLoadBalanceRequest;
 
-typedef PB_BYTES_ARRAY_T(46) grpc_lb_v1_Server_ip_address_t;
+typedef PB_BYTES_ARRAY_T(16) grpc_lb_v1_Server_ip_address_t;
 typedef struct _grpc_lb_v1_Server {
     bool has_ip_address;
     grpc_lb_v1_Server_ip_address_t ip_address;
     bool has_port;
     int32_t port;
     bool has_load_balance_token;
-    char load_balance_token[64];
+    char load_balance_token[65];
     bool has_drop_request;
     bool drop_request;
 /* @@protoc_insertion_point(struct:grpc_lb_v1_Server) */
@@ -172,7 +172,7 @@ extern const pb_field_t grpc_lb_v1_Server_fields[5];
 #define grpc_lb_v1_LoadBalanceResponse_size      (98 + grpc_lb_v1_ServerList_size)
 #define grpc_lb_v1_InitialLoadBalanceResponse_size 90
 /* grpc_lb_v1_ServerList_size depends on runtime parameters */
-#define grpc_lb_v1_Server_size                   127
+#define grpc_lb_v1_Server_size 98
 
 /* Message IDs (where set with "msgid" option) */
 #ifdef PB_MSGID
