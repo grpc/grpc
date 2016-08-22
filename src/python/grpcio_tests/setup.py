@@ -31,13 +31,9 @@
 
 import os
 import os.path
-import shutil
 import sys
 
-from distutils import core as _core
-from distutils import extension as _extension
 import setuptools
-from setuptools.command import egg_info
 
 import grpc.tools.command
 
