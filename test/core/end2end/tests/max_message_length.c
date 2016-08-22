@@ -100,12 +100,15 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void test_max_message_length(grpc_end2end_test_config config) {
+static void test_max_message_length(grpc_end2end_test_config config,
+                                    bool send_limit) {
+  gpr_log(GPR_INFO, "testing with send_limit=%d", send_limit);
+
   grpc_end2end_test_fixture f;
-  grpc_arg server_arg;
-  grpc_channel_args server_args;
+  grpc_arg channel_arg;
+  grpc_channel_args channel_args;
   grpc_call *c;
-  grpc_call *s;
+  grpc_call *s = NULL;
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
@@ -123,14 +126,17 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  server_arg.key = GRPC_ARG_MAX_MESSAGE_LENGTH;
-  server_arg.type = GRPC_ARG_INTEGER;
-  server_arg.value.integer = 5;
+  channel_arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
+                               : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
+  channel_arg.type = GRPC_ARG_INTEGER;
+  channel_arg.value.integer = 5;
 
-  server_args.num_args = 1;
-  server_args.args = &server_arg;
+  channel_args.num_args = 1;
+  channel_args.args = &channel_arg;
 
-  f = begin_test(config, "test_max_message_length", NULL, &server_args);
+  f = begin_test(config, "test_max_message_length",
+                 send_limit ? &channel_args : NULL,
+                 send_limit ? NULL : &channel_args);
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -173,6 +179,10 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  if (send_limit) {
+    GPR_ASSERT(GRPC_CALL_ERROR_INVALID_MESSAGE == error);
+    goto done;
+  }
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -207,6 +217,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   GPR_ASSERT(was_cancelled == 1);
   GPR_ASSERT(recv_payload == NULL);
 
+done:
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -215,7 +226,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(request_payload);
 
   grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  if (s != NULL) grpc_call_destroy(s);
 
   cq_verifier_destroy(cqv);
 
@@ -224,7 +235,8 @@ static void test_max_message_length(grpc_end2end_test_config config) {
 }
 
 void max_message_length(grpc_end2end_test_config config) {
-  test_max_message_length(config);
+  test_max_message_length(config, false);
+  test_max_message_length(config, true);
 }
 
 void max_message_length_pre_init(void) {}

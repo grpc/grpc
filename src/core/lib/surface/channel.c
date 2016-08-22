@@ -64,7 +64,8 @@ typedef struct registered_call {
 
 struct grpc_channel {
   int is_client;
-  uint32_t max_message_length;
+  uint32_t max_receive_message_length;
+  uint32_t max_send_message_length;
   grpc_compression_options compression_options;
   grpc_mdelem *default_authority;
 
@@ -96,17 +97,14 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   grpc_channel_stack_builder_set_channel_arguments(builder, input_args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  grpc_channel *channel;
-  grpc_channel_args *args;
   if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
     return NULL;
-  } else {
-    args = grpc_channel_args_copy(
-        grpc_channel_stack_builder_get_channel_arguments(builder));
-    channel = grpc_channel_stack_builder_finish(
-        exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL);
   }
+  grpc_channel_args *args = grpc_channel_args_copy(
+      grpc_channel_stack_builder_get_channel_arguments(builder));
+  grpc_channel *channel = grpc_channel_stack_builder_finish(
+      exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL);
 
   memset(channel, 0, sizeof(*channel));
   channel->target = gpr_strdup(target);
@@ -114,19 +112,33 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
-  channel->max_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
+  channel->max_receive_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
+  channel->max_send_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
   grpc_compression_options_init(&channel->compression_options);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_MESSAGE_LENGTH)) {
+      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)) {
         if (args->args[i].type != GRPC_ARG_INTEGER) {
           gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
-                  GRPC_ARG_MAX_MESSAGE_LENGTH);
+                  GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
         } else if (args->args[i].value.integer < 0) {
           gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
-                  GRPC_ARG_MAX_MESSAGE_LENGTH);
+                  GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
         } else {
-          channel->max_message_length = (uint32_t)args->args[i].value.integer;
+          channel->max_receive_message_length =
+              (uint32_t)args->args[i].value.integer;
+        }
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)) {
+        if (args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+                  GRPC_ARG_MAX_SEND_MESSAGE_LENGTH);
+        } else if (args->args[i].value.integer < 0) {
+          gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
+                  GRPC_ARG_MAX_SEND_MESSAGE_LENGTH);
+        } else {
+          channel->max_send_message_length =
+              (uint32_t)args->args[i].value.integer;
         }
       } else if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
         if (args->args[i].type != GRPC_ARG_STRING) {
@@ -372,6 +384,10 @@ grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
                                            grpc_mdstr_from_string(tmp));
 }
 
-uint32_t grpc_channel_get_max_message_length(grpc_channel *channel) {
-  return channel->max_message_length;
+uint32_t grpc_channel_get_max_receive_message_length(grpc_channel *channel) {
+  return channel->max_receive_message_length;
+}
+
+uint32_t grpc_channel_get_max_send_message_length(grpc_channel *channel) {
+  return channel->max_send_message_length;
 }
