@@ -332,7 +332,6 @@ filegroups:
   headers:
   - src/core/ext/client_config/client_channel.h
   - src/core/ext/client_config/client_channel_factory.h
-  - src/core/ext/client_config/client_config.h
   - src/core/ext/client_config/connector.h
   - src/core/ext/client_config/initial_connect_string.h
   - src/core/ext/client_config/lb_policy.h
@@ -342,6 +341,7 @@ filegroups:
   - src/core/ext/client_config/resolver.h
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
+  - src/core/ext/client_config/resolver_result.h
   - src/core/ext/client_config/subchannel.h
   - src/core/ext/client_config/subchannel_call_holder.h
   - src/core/ext/client_config/subchannel_index.h
@@ -350,7 +350,6 @@ filegroups:
   - src/core/ext/client_config/channel_connectivity.c
   - src/core/ext/client_config/client_channel.c
   - src/core/ext/client_config/client_channel_factory.c
-  - src/core/ext/client_config/client_config.c
   - src/core/ext/client_config/client_config_plugin.c
   - src/core/ext/client_config/connector.c
   - src/core/ext/client_config/default_initial_connect_string.c
@@ -362,6 +361,7 @@ filegroups:
   - src/core/ext/client_config/resolver.c
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
+  - src/core/ext/client_config/resolver_result.c
   - src/core/ext/client_config/subchannel.c
   - src/core/ext/client_config/subchannel_call_holder.c
   - src/core/ext/client_config/subchannel_index.c
