@@ -236,6 +236,9 @@ target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
+target_link_libraries(gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
+)
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -735,7 +738,6 @@ target_include_directories(grpc_cronet
 target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   gpr
 )
 
@@ -1464,6 +1466,7 @@ target_include_directories(grpc_plugin_support
 
 target_link_libraries(grpc_plugin_support
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 foreach(_hdr
@@ -1530,7 +1533,6 @@ target_include_directories(gen_hpack_tables
 )
 
 target_link_libraries(gen_hpack_tables
-  ${_gRPC_PROTOBUF_LIBRARIES}
   gpr
   grpc
 )
@@ -1584,7 +1586,6 @@ target_include_directories(grpc_create_jwt
 
 target_link_libraries(grpc_create_jwt
   ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc
   gpr
 )
@@ -1613,7 +1614,6 @@ target_include_directories(grpc_print_google_default_creds_token
 )
 
 target_link_libraries(grpc_print_google_default_creds_token
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc
   gpr
 )
@@ -1642,7 +1642,6 @@ target_include_directories(grpc_verify_jwt
 )
 
 target_link_libraries(grpc_verify_jwt
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc
   gpr
 )
@@ -1672,7 +1671,6 @@ target_include_directories(grpc_cpp_plugin
 
 target_link_libraries(grpc_cpp_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1701,7 +1699,6 @@ target_include_directories(grpc_csharp_plugin
 
 target_link_libraries(grpc_csharp_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1730,7 +1727,6 @@ target_include_directories(grpc_node_plugin
 
 target_link_libraries(grpc_node_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1759,7 +1755,6 @@ target_include_directories(grpc_objective_c_plugin
 
 target_link_libraries(grpc_objective_c_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1788,7 +1783,6 @@ target_include_directories(grpc_python_plugin
 
 target_link_libraries(grpc_python_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1817,7 +1811,6 @@ target_include_directories(grpc_ruby_plugin
 
 target_link_libraries(grpc_ruby_plugin
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_plugin_support
 )
 
