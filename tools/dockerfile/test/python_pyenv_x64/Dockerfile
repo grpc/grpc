@@ -91,11 +91,15 @@ RUN apt-get update && apt-get install -y \
   zlib1g-dev && apt-get clean
 
 # Install Pyenv and dev Python versions 3.5 and 3.6
-RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
-RUN pyenv update
+ENV PYENV_ROOT $HOME/.pyenv
+ENV PATH $PYENV_ROOT/bin:$PATH
+RUN git clone https://github.com/yyuu/pyenv.git $PYENV_ROOT
+RUN echo "export PYENV_ROOT=$PYENV_ROOT" >> /etc/profile
+RUN echo 'export PATH=$PYENV_ROOT/bin:$PATH' >> /etc/profile
+RUN echo 'eval "$(pyenv init -)"' >> /etc/profile
 RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev
-RUN pyenv local 3.5-dev 3.6-dev
+RUN pyenv local system 3.5-dev 3.6-dev
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
