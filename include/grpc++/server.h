@@ -122,12 +122,13 @@ class Server GRPC_FINAL : public ServerInterface,
 
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
-  /// \param thread_pool The threadpool instance to use for call processing.
-  /// \param thread_pool_owned Does the server own the \a thread_pool instance?
+  /// \param has_sync_methods Does this Server have any synchronous methods.
+  /// This information is useful to the server in creating some internal data
+  /// structures (completion queues / thread pools etc) to handle the incoming
+  /// RPCs corresponding to those sync methods
   /// \param max_message_size Maximum message length that the channel can
   /// receive.
-  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         int max_message_size, ChannelArguments* args);
+  Server(bool has_sync_methods, int max_message_size, ChannelArguments* args);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -180,7 +181,10 @@ class Server GRPC_FINAL : public ServerInterface,
 
   const int max_message_size_;
 
-  // Completion queue.
+  // The following completion queues used ONLY if the server has any services
+  // with sync methods. The queues are used as notification_cqs to get notified
+  // of the incoming RPCs
+  // std::vector<std::unique_ptr<CompletionQueue>> notification_cqs_;
   CompletionQueue cq_;
 
   // Sever status
@@ -188,9 +192,11 @@ class Server GRPC_FINAL : public ServerInterface,
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;
+
+  // TODO (sreek) : Remove num_running_cb_ and callback_cv_;
   // The number of threads which are running callbacks.
-  int num_running_cb_;
-  grpc::condition_variable callback_cv_;
+  // int num_running_cb_;
+  // grpc::condition_variable callback_cv_;
 
   grpc::condition_variable shutdown_cv_;
 
@@ -203,10 +209,6 @@ class Server GRPC_FINAL : public ServerInterface,
 
   // Pointer to the c grpc server.
   grpc_server* server_;
-
-  ThreadPoolInterface* thread_pool_;
-  // Whether the thread pool is created and owned by the server.
-  bool thread_pool_owned_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
 };

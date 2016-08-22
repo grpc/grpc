@@ -276,19 +276,16 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 };
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
-Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size, ChannelArguments* args)
+Server::Server(bool has_sync_methods, int max_message_size,
+               ChannelArguments* args)
     : GrpcRpcManager(3, 5, 8),
       max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       shutdown_notified_(false),
-      num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
       server_(nullptr),
-      thread_pool_(thread_pool),
-      thread_pool_owned_(thread_pool_owned),
       server_initializer_(new ServerInitializer(this)) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
@@ -297,7 +294,8 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
   server_ = grpc_server_create(&channel_args, nullptr);
-  if (thread_pool_ == nullptr) {
+
+  if (!has_sync_methods) {
     grpc_server_register_non_listening_completion_queue(server_, cq_.cq(),
                                                         nullptr);
   } else {
@@ -320,9 +318,6 @@ Server::~Server() {
   bool ok;
   GPR_ASSERT(!cq_.Next(&got_tag, &ok));
   grpc_server_destroy(server_);
-  if (thread_pool_owned_) {
-    delete thread_pool_;
-  }
   delete sync_methods_;
 }
 
@@ -418,12 +413,14 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       // proper constructor implicitly. Construct the object and use push_back.
       sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
     }
+
     for (size_t i = 0; i < num_cqs; i++) {
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
     }
   }
+
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
     for (auto m = sync_methods_->begin(); m != sync_methods_->end(); m++) {
@@ -465,10 +462,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     }
     lock.lock();
 
+    /* TODO (sreek) - Remove this block */
     // Wait for running callbacks to finish.
-    while (num_running_cb_ != 0) {
-      callback_cv_.wait(lock);
-    }
+    /*
+     while (num_running_cb_ != 0) {
+       callback_cv_.wait(lock);
+     }
+     */
 
     shutdown_notified_ = true;
     shutdown_cv_.notify_all();

@@ -138,31 +138,32 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  std::unique_ptr<ThreadPoolInterface> thread_pool;
+
+  // == Determine if the server has any syncrhonous methods ==
   bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
-      if (!thread_pool) {
-        thread_pool.reset(CreateDefaultThreadPool());
+      has_sync_methods = true;
+      break;
+    }
+  }
+
+  if (!has_sync_methods) {
+    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+      if ((*plugin)->has_sync_methods()) {
         has_sync_methods = true;
         break;
       }
     }
   }
+
+  // == Channel args ==
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
     (*option)->UpdatePlugins(&plugins_);
   }
-  if (!thread_pool) {
-    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-      if ((*plugin)->has_sync_methods()) {
-        thread_pool.reset(CreateDefaultThreadPool());
-        has_sync_methods = true;
-        break;
-      }
-    }
-  }
+
   if (max_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
   }
@@ -176,8 +177,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
   }
+
   std::unique_ptr<Server> server(
-      new Server(thread_pool.release(), true, max_message_size_, &args));
+      new Server(has_sync_methods, max_message_size_, &args));
+
   ServerInitializer* initializer = server->initializer();
 
   // If the server has atleast one sync methods, we know that this is a Sync
@@ -212,9 +215,11 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       return nullptr;
     }
   }
+
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
     (*plugin)->InitServer(initializer);
   }
+
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
   } else {
@@ -227,6 +232,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       }
     }
   }
+
   for (auto port = ports_.begin(); port != ports_.end(); port++) {
     int r = server->AddListeningPort(port->addr, port->creds.get());
     if (!r) return nullptr;
@@ -234,13 +240,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
+
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
   if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
   }
+
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
     (*plugin)->Finish(initializer);
   }
+
   return server;
 }
 
