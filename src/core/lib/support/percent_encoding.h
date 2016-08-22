@@ -31,8 +31,15 @@
  *
  */
 
-#ifndef PRECENT_H
-#define PRECENT_H
+#ifndef GRPC_CORE_LIB_SUPPORT_PERCENT_ENCODING_H
+#define GRPC_CORE_LIB_SUPPORT_PERCENT_ENCODING_H
+
+/* Percent encoding and decoding of slices.
+   Transforms arbitrary strings into safe-for-transmission strings by using
+   variants of percent encoding (RFC 3986).
+   Two major variants are supplied: one that strictly matches URL encoding,
+     and another which applies percent encoding only to non-http2 header
+     bytes (the 'compatible' variant) */
 
 #include <stdbool.h>
 
@@ -68,4 +75,4 @@ bool gpr_strict_percent_decode_slice(gpr_slice slice_in,
    This cannot fail. */
 gpr_slice gpr_permissive_percent_decode_slice(gpr_slice slice_in);
 
-#endif /* PRECENT_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_PERCENT_ENCODING_H */
