@@ -19,7 +19,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\channel.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\channel_cc.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\client_context.cc">
@@ -34,7 +34,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_posix.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials_cc.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
@@ -46,7 +46,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue_cc.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
@@ -67,10 +67,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_cc.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_context.cc">
@@ -82,10 +82,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_posix.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer_cc.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\slice.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\slice_cc.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\status.cc">
@@ -94,7 +94,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\string_ref.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time_cc.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
