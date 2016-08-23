@@ -35,7 +35,6 @@
 #define GRPCXX_CHANNEL_FILTER_H
 
 #include <grpc++/impl/codegen/config.h>
-#include <grpc/census.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/alloc.h>
 
