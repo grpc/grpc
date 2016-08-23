@@ -36,6 +36,7 @@
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -184,9 +185,12 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_ares_ev_driver *ev_driver = r->ev_driver;
   ares_channel *channel = grpc_ares_ev_driver_get_channel(ev_driver);
   gpr_log(GPR_ERROR, "before ares_gethostbyname %s", r->host);
-  r->pending_quries = 2;
+  r->pending_quries = 1;
+  if (grpc_ipv6_loopback_available()) {
+    r->pending_quries += 1;
+    ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
+  }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
-  ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   // grpc_ares_gethostbyname(r->ev_driver, r->host, on_dones_cb, r);
   gpr_log(GPR_ERROR, "before ares_getsock");
   grpc_ares_notify_on_event(exec_ctx, ev_driver);
