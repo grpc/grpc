@@ -47,8 +47,7 @@
         "include_dirs": [
           "third_party/boringssl/include",
           "third_party/zlib",
-          "third_party/c-ares",
-          "src/c-ares",
+          "third_party/c-ares"
         ],
         "defines": [
           '_WIN32_WINNT=0x0600',
@@ -87,8 +86,7 @@
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
           '<(node_root_dir)/deps/zlib',
-          "third_party/c-ares",
-          "src/c-ares"
+          '<(node_root_dir)/deps/cares/include',
         ],
         'conditions': [
           ['config=="gcov"', {
@@ -487,6 +485,7 @@
     }]
   ],
   'targets': [
+
     {
       'cflags': [
         '-std=c99',
@@ -564,6 +563,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'node_modules/cares/deps/cares/cares.gyp:cares',
       ],
       'sources': [
         'src/core/lib/surface/init.c',
@@ -770,93 +770,6 @@
       ]
     },
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror',
-        '-Wno-invalid-source-encoding',
-      ],
-      'include_dirs': [ 'src/c-ares' ],
-      'target_name': 'ares',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'third_party/c-ares/ares__close_sockets.c',
-        'third_party/c-ares/ares__get_hostent.c',
-        'third_party/c-ares/ares__read_line.c',
-        'third_party/c-ares/ares__timeval.c',
-        'third_party/c-ares/ares_cancel.c',
-        'third_party/c-ares/ares_create_query.c',
-        'third_party/c-ares/ares_data.c',
-        'third_party/c-ares/ares_destroy.c',
-        'third_party/c-ares/ares_expand_name.c',
-        'third_party/c-ares/ares_expand_string.c',
-        'third_party/c-ares/ares_fds.c',
-        'third_party/c-ares/ares_free_hostent.c',
-        'third_party/c-ares/ares_free_string.c',
-        'third_party/c-ares/ares_getenv.c',
-        'third_party/c-ares/ares_gethostbyaddr.c',
-        'third_party/c-ares/ares_gethostbyname.c',
-        'third_party/c-ares/ares_getnameinfo.c',
-        'third_party/c-ares/ares_getopt.c',
-        'third_party/c-ares/ares_getsock.c',
-        'third_party/c-ares/ares_init.c',
-        'third_party/c-ares/ares_library_init.c',
-        'third_party/c-ares/ares_llist.c',
-        'third_party/c-ares/ares_mkquery.c',
-        'third_party/c-ares/ares_nowarn.c',
-        'third_party/c-ares/ares_options.c',
-        'third_party/c-ares/ares_parse_a_reply.c',
-        'third_party/c-ares/ares_parse_aaaa_reply.c',
-        'third_party/c-ares/ares_parse_mx_reply.c',
-        'third_party/c-ares/ares_parse_naptr_reply.c',
-        'third_party/c-ares/ares_parse_ns_reply.c',
-        'third_party/c-ares/ares_parse_ptr_reply.c',
-        'third_party/c-ares/ares_parse_soa_reply.c',
-        'third_party/c-ares/ares_parse_srv_reply.c',
-        'third_party/c-ares/ares_parse_txt_reply.c',
-        'third_party/c-ares/ares_platform.c',
-        'third_party/c-ares/ares_process.c',
-        'third_party/c-ares/ares_query.c',
-        'third_party/c-ares/ares_search.c',
-        'third_party/c-ares/ares_send.c',
-        'third_party/c-ares/ares_strcasecmp.c',
-        'third_party/c-ares/ares_strdup.c',
-        'third_party/c-ares/ares_strerror.c',
-        'third_party/c-ares/ares_timeout.c',
-        'third_party/c-ares/ares_version.c',
-        'third_party/c-ares/ares_writev.c',
-        'third_party/c-ares/bitncmp.c',
-        'third_party/c-ares/inet_net_pton.c',
-        'third_party/c-ares/inet_ntop.c',
-        'third_party/c-ares/windows_port.c',
-      ],
-      "conditions": [
-        ['OS != "win"', {
-          'defines': [
-            'HAVE_CONFIG_H',
-            '_GNU_SOURCE'
-          ]
-          }],
-        ['OS == "mac"', {
-          'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9'
-          },
-          'include_dirs': [ 'src/c-ares/config_darwin' ],
-          'defines': [ 'HAVE_CONFIG_H' ]
-        }],
-        ['OS == "linux"', {
-          'include_dirs': [ 'src/c-ares/config_linux' ],
-          'defines': [ 'HAVE_CONFIG_H' ]
-        }],
-        ['OS == "win"', {
-          'defines': [ 'CARES_STATICLIB' ]
-        }]
-      ]
-    },
-    {
       'include_dirs': [
         "<!(node -e \"require('nan')\")"
       ],
@@ -910,7 +823,7 @@
       "dependencies": [
         "grpc",
         "gpr",
-        "ares",
+        "node_modules/cares/deps/cares/cares.gyp:cares",
       ]
     },
     {

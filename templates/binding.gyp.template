@@ -49,8 +49,7 @@
           "include_dirs": [
             "third_party/boringssl/include",
             "third_party/zlib",
-            "third_party/c-ares",
-            "src/c-ares",
+            "third_party/c-ares"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -89,8 +88,7 @@
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
             '<(node_root_dir)/deps/zlib',
-            "third_party/c-ares",
-            "src/c-ares"
+            '<(node_root_dir)/deps/cares/include',
           ],
           'conditions': [
             ['config=="gcov"', {
@@ -175,9 +173,16 @@
       }]
     ],
     'targets': [
+  <%
+      for lib in libs:
+        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
+          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+      for module in node_modules:
+        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+  %>
       % for module in node_modules:
       % for lib in libs:
-      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z', 'ares'):
+      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
       {
         'cflags': [
           '-std=c99',
@@ -202,49 +207,6 @@
             'xcode_settings': {
               'MACOSX_DEPLOYMENT_TARGET': '10.9'
             }
-          }]
-        ]
-      },
-      % endif
-      % if lib.name == 'ares':
-      {
-        'cflags': [
-          '-std=c99',
-          '-Wall',
-          '-Werror',
-          '-Wno-invalid-source-encoding',
-        ],
-        'include_dirs': [ 'src/c-ares' ],
-        'target_name': '${lib.name}',
-        'product_prefix': 'lib',
-        'type': 'static_library',
-        'dependencies': [
-        ],
-        'sources': [
-          % for source in lib.src:
-          '${source}',
-          % endfor
-        ],
-        "conditions": [
-          ['OS != "win"', {
-            'defines': [
-              'HAVE_CONFIG_H',
-              '_GNU_SOURCE'
-            ]
-            }],
-          ['OS == "mac"', {
-            'xcode_settings': {
-              'MACOSX_DEPLOYMENT_TARGET': '10.9'
-            },
-            'include_dirs': [ 'src/c-ares/config_darwin' ],
-            'defines': [ 'HAVE_CONFIG_H' ]
-          }],
-          ['OS == "linux"', {
-            'include_dirs': [ 'src/c-ares/config_linux' ],
-            'defines': [ 'HAVE_CONFIG_H' ]
-          }],
-          ['OS == "win"', {
-            'defines': [ 'CARES_STATICLIB' ]
           }]
         ]
       },

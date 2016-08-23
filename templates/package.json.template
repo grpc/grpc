@@ -33,7 +33,7 @@
       "lodash": "^3.9.3",
       "nan": "^2.0.0",
       "protobufjs": "^4.0.0",
-      "cares": "^1.1.0"
+      "cares": "^1.1.5"
     },
     "devDependencies": {
       "async": "^1.5.0",

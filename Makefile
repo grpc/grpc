@@ -6607,7 +6607,7 @@ PUBLIC_HEADERS_C += \
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
 $(LIBARES_OBJS): CPPFLAGS += -Ithird_party/c-ares -Isrc/c-ares $(if $(subst Linux,,$(SYSTEM)),,-Isrc/c-ares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Isrc/c-ares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
-$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding -Wno-pointer-sign
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion -Wno-invalid-source-encoding
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"
