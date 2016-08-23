@@ -307,6 +307,12 @@ class ClientContext {
   };
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
+  // Should be used for framework-level extensions only.
+  // Applications never need to call this method.
+  grpc_call* c_call() const {
+    return call_;
+  }
+
  private:
   // Disallow copy and assign.
   ClientContext(const ClientContext&);
