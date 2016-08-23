@@ -299,6 +299,7 @@ add_library(grpc
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -557,6 +558,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -789,6 +791,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
