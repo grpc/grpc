@@ -187,8 +187,7 @@ static void cc_on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
 
   if (chand->resolver_result != NULL) {
-    lb_policy =
-        grpc_resolver_result_get_lb_policy(chand->resolver_result);
+    lb_policy = grpc_resolver_result_get_lb_policy(chand->resolver_result);
     if (lb_policy != NULL) {
       GRPC_LB_POLICY_REF(lb_policy, "channel");
       GRPC_LB_POLICY_REF(lb_policy, "config_change");
@@ -233,8 +232,7 @@ static void cc_on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver,
-                       &chand->resolver_result,
+    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
     gpr_mu_unlock(&chand->mu);
   } else {
@@ -411,8 +409,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = 1;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver,
-                       &chand->resolver_result,
+    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
   }
   if (chand->resolver != NULL) {
@@ -548,8 +545,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
       if (!chand->started_resolving && chand->resolver != NULL) {
         GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
         chand->started_resolving = 1;
-        grpc_resolver_next(exec_ctx, chand->resolver,
-                           &chand->resolver_result,
+        grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                            &chand->on_resolver_result_changed);
       }
     }
