@@ -50,7 +50,6 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
 
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
