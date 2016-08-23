@@ -46,12 +46,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
@@ -94,7 +94,8 @@ static void initiate_writing(grpc_exec_ctx *exec_ctx, void *t,
 
 static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_transport *t, grpc_error *error);
+                                  grpc_chttp2_transport *t, grpc_error *error,
+                                  const char *reason);
 
 /** Set a transport level setting, and push it to our peer */
 static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -876,7 +877,7 @@ static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
       set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE,
                       "start_writing:nothing_to_write");
     }
-    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_CREATE("Nothing to write"));
+    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_NONE, "Nothing to write");
     if (t->ep && !t->endpoint_reading) {
       destroy_endpoint(exec_ctx, t);
     }
@@ -925,11 +926,18 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+/* error may be GRPC_ERROR_NONE if there is no error allocated yet.
+   In that case, use "reason" as the text for a new error. */
 static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_transport *t, grpc_error *error) {
+                                  grpc_chttp2_transport *t, grpc_error *error,
+                                  const char *reason) {
   grpc_chttp2_stream_global *stream_global;
   while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
                                                          &stream_global)) {
+    if (error == GRPC_ERROR_NONE && reason != NULL) {
+      /* create error object. */
+      error = GRPC_ERROR_CREATE(reason);
+    }
     fail_pending_writes(exec_ctx, &t->global, stream_global,
                         GRPC_ERROR_REF(error));
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
@@ -951,7 +959,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
 
-  end_waiting_for_write(exec_ctx, t, error);
+  end_waiting_for_write(exec_ctx, t, error, NULL);
 
   switch (t->executor.write_state) {
     case GRPC_CHTTP2_WRITING_INACTIVE:
@@ -2005,6 +2013,7 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
 static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
   grpc_chttp2_transport *t = arg;
+  grpc_error *err = GRPC_ERROR_NONE;
   GPR_TIMER_BEGIN("reading_action.parse", 0);
   size_t i = 0;
   grpc_error *errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
@@ -2013,15 +2022,13 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
     errors[1] = grpc_chttp2_perform_read(exec_ctx, &t->parsing,
                                          t->read_buffer.slices[i]);
   };
-  if (i != t->read_buffer.count) {
+  if (errors[1] == GRPC_ERROR_NONE) {
+    err = GRPC_ERROR_REF(error);
+  } else {
     errors[2] = try_http_parsing(exec_ctx, t);
+    err = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
+                                        GPR_ARRAY_SIZE(errors));
   }
-  grpc_error *err =
-      errors[0] == GRPC_ERROR_NONE && errors[1] == GRPC_ERROR_NONE &&
-              errors[2] == GRPC_ERROR_NONE
-          ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
-                                          GPR_ARRAY_SIZE(errors));
   for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
     GRPC_ERROR_UNREF(errors[i]);
   }
@@ -2539,9 +2546,12 @@ grpc_transport *grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
-                                         gpr_slice *slices, size_t nslices) {
+                                         gpr_slice_buffer *read_buffer) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)transport;
   REF_TRANSPORT(t, "reading_action"); /* matches unref inside reading_action */
-  gpr_slice_buffer_addn(&t->read_buffer, slices, nslices);
+  if (read_buffer != NULL) {
+    gpr_slice_buffer_move_into(read_buffer, &t->read_buffer);
+    gpr_free(read_buffer);
+  }
   reading_action(exec_ctx, t, GRPC_ERROR_NONE);
 }

@@ -40,6 +40,10 @@
 
 #define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
 /// It also provides a universal entry path to run those mutators to build
@@ -83,5 +87,9 @@ void grpc_channel_init_shutdown(void);
 bool grpc_channel_init_create_stack(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_stack_builder *builder,
                                     grpc_channel_stack_type type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H */

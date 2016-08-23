@@ -49,7 +49,11 @@ cp grpc-*.tgz $artifacts/grpc.tgz
 
 mkdir -p bin
 
-cd src/node/tools
+cd $base/src/node/health_check
+npm pack
+cp grpc-health-check-*.tgz $artifacts/
+
+cd $base/src/node/tools
 npm update
 npm pack
 cp grpc-tools-*.tgz $artifacts/
@@ -61,7 +65,7 @@ mkdir -p $output_dir
 well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
 
 for arch in {x86,x64}; do
-  case arch in
+  case $arch in
     x86)
       node_arch=ia32
       ;;
@@ -70,7 +74,7 @@ for arch in {x86,x64}; do
       ;;
   esac
   for plat in {windows,linux,macos}; do
-    case plat in
+    case $plat in
       windows)
         node_plat=win32
         ;;

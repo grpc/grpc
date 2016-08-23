@@ -44,8 +44,10 @@ grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
     grpc_endpoint *ep, int is_client);
 
+/// Takes ownership of \a read_buffer, which (if non-NULL) contains
+/// leftover bytes previously read from the endpoint (e.g., by handshakers).
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
-                                         gpr_slice *slices, size_t nslices);
+                                         gpr_slice_buffer *read_buffer);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

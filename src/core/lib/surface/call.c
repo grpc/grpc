@@ -154,8 +154,9 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
-  /* Call stats: only valid after trailing metadata received */
-  grpc_call_stats stats;
+  /* Call data useful used for reporting. Only valid after the call has
+   * completed */
+  grpc_call_final_info final_info;
 
   /* Compression algorithm for *incoming* data */
   grpc_compression_algorithm incoming_compression_algorithm;
@@ -263,9 +264,19 @@ grpc_call *grpc_call_create(
       gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
-                       call->context, server_transport_data,
-                       CALL_STACK_FROM_CALL(call));
+  grpc_error *error = grpc_call_stack_init(
+      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
+      server_transport_data, CALL_STACK_FROM_CALL(call));
+  if (error != GRPC_ERROR_NONE) {
+    intptr_t status;
+    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status))
+      status = GRPC_STATUS_UNKNOWN;
+    const char *error_str =
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
+    close_with_status(&exec_ctx, call, (grpc_status_code)status,
+                      error_str == NULL ? "unknown error" : error_str);
+    GRPC_ERROR_UNREF(error);
+  }
   if (cq != NULL) {
     GPR_ASSERT(
         pollset_set_alternative == NULL &&
@@ -361,6 +372,25 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
   GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
+static void get_final_status(grpc_call *call,
+                             void (*set_value)(grpc_status_code code,
+                                               void *user_data),
+                             void *set_value_user_data) {
+  int i;
+  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
+    if (call->status[i].is_set) {
+      set_value(call->status[i].code, set_value_user_data);
+      return;
+    }
+  }
+  if (call->is_client) {
+    set_value(GRPC_STATUS_UNKNOWN, set_value_user_data);
+  } else {
+    set_value(GRPC_STATUS_OK, set_value_user_data);
+  }
+}
+
+static void set_status_value_directly(grpc_status_code status, void *dest);
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   size_t i;
@@ -392,7 +422,11 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
   grpc_channel *channel = c->channel;
-  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->stats, c);
+
+  get_final_status(call, set_status_value_directly,
+                   &c->final_info.final_status);
+
+  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info, c);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
   GPR_TIMER_END("destroy_call", 0);
 }
@@ -411,24 +445,6 @@ static void set_status_details(grpc_call *call, status_source source,
     GRPC_MDSTR_UNREF(status);
   } else {
     call->status[source].details = status;
-  }
-}
-
-static void get_final_status(grpc_call *call,
-                             void (*set_value)(grpc_status_code code,
-                                               void *user_data),
-                             void *set_value_user_data) {
-  int i;
-  for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set) {
-      set_value(call->status[i].code, set_value_user_data);
-      return;
-    }
-  }
-  if (call->is_client) {
-    set_value(GRPC_STATUS_UNKNOWN, set_value_user_data);
-  } else {
-    set_value(GRPC_STATUS_OK, set_value_user_data);
   }
 }
 
@@ -1361,6 +1377,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   int num_completion_callbacks_needed = 1;
   grpc_call_error error = GRPC_CALL_OK;
 
+  // sent_initial_metadata guards against variable reuse.
+  grpc_metadata compression_md;
+
   GPR_TIMER_BEGIN("grpc_call_start_batch", 0);
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
@@ -1406,8 +1425,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* process compression level */
-        grpc_metadata compression_md;
-        memset(&compression_md, 0, sizeof(grpc_metadata));
+        memset(&compression_md, 0, sizeof(compression_md));
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level;
         bool level_set = false;
@@ -1608,7 +1626,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->stats.transport_stream_stats;
+        stream_op.collect_stats =
+            &call->final_info.stats.transport_stream_stats;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         /* Flag validation: currently allow no flags */
@@ -1630,7 +1649,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->stats.transport_stream_stats;
+        stream_op.collect_stats =
+            &call->final_info.stats.transport_stream_stats;
         break;
     }
   }

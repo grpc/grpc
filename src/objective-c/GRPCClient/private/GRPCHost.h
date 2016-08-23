@@ -42,6 +42,7 @@ struct grpc_channel_credentials;
 @interface GRPCHost : NSObject
 
 + (void)flushChannelCache;
++ (void)resetAllHostSettings;
 
 @property(nonatomic, readonly) NSString *address;
 @property(nonatomic, copy, nullable) NSString *userAgentPrefix;
@@ -52,6 +53,10 @@ struct grpc_channel_credentials;
 @property(nonatomic, getter=isSecure) BOOL secure;
 
 @property(nonatomic, copy, nullable) NSString *hostNameOverride;
+
+/** The default response size limit is 4MB. Set this to override that default. */
+@property(nonatomic, strong, nullable) NSNumber *responseSizeLimitOverride;
+
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 /** Host objects initialized with the same address are the same. */

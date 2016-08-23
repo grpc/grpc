@@ -40,7 +40,7 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
 require 'multi_json'
-require 'route_guide_services'
+require 'route_guide_services_pb'
 
 include Routeguide
 COORD_FACTOR = 1e7

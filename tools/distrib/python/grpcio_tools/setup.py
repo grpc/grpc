@@ -28,11 +28,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from distutils import extension
+from distutils import util
 import errno
 import os
 import os.path
 import pkg_resources
 import platform
+import re
 import shlex
 import shutil
 import sys
@@ -89,6 +91,13 @@ if EXTRA_ENV_LINK_ARGS is None:
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
+CC_FILES = [
+  os.path.normpath(cc_file) for cc_file in protoc_lib_deps.CC_FILES]
+PROTO_FILES = [
+  os.path.normpath(proto_file) for proto_file in protoc_lib_deps.PROTO_FILES]
+CC_INCLUDE = os.path.normpath(protoc_lib_deps.CC_INCLUDE)
+PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
+
 GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
 GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
@@ -104,14 +113,18 @@ if 'darwin' in sys.platform and PY3:
   if mac_target and (pkg_resources.parse_version(mac_target) <
 		     pkg_resources.parse_version('10.9.0')):
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
+    os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
+        r'macosx-[0-9]+\.[0-9]+-(.+)',
+        r'macosx-10.9-\1',
+        util.get_platform())
 
 def package_data():
   tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace('.', os.path.sep)
   proto_resources_path = os.path.join(tools_path,
                                       GRPC_PYTHON_PROTO_RESOURCES_NAME)
   proto_files = []
-  for proto_file in protoc_lib_deps.PROTO_FILES:
-    source = os.path.join(protoc_lib_deps.PROTO_INCLUDE, proto_file)
+  for proto_file in PROTO_FILES:
+    source = os.path.join(PROTO_INCLUDE, proto_file)
     target = os.path.join(proto_resources_path, proto_file)
     relative_target = os.path.join(GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file)
     try:
@@ -127,22 +140,22 @@ def package_data():
 
 def extension_modules():
   if BUILD_WITH_CYTHON:
-    plugin_sources = ['grpc/tools/_protoc_compiler.pyx']
+    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.pyx')]
   else:
-    plugin_sources = ['grpc/tools/_protoc_compiler.cpp']
+    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.cpp')]
   plugin_sources += [
-      'grpc/tools/main.cc',
-      'grpc_root/src/compiler/python_generator.cc'] + [
-      os.path.join(protoc_lib_deps.CC_INCLUDE, cc_file)
-      for cc_file in protoc_lib_deps.CC_FILES]
+    os.path.join('grpc', 'tools', 'main.cc'),
+    os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
+    os.path.join(CC_INCLUDE, cc_file)
+    for cc_file in CC_FILES]
   plugin_ext = extension.Extension(
       name='grpc.tools._protoc_compiler',
       sources=plugin_sources,
       include_dirs=[
           '.',
           'grpc_root',
-          'grpc_root/include',
-          protoc_lib_deps.CC_INCLUDE,
+          os.path.join('grpc_root', 'include'),
+          CC_INCLUDE,
       ],
       language='c++',
       define_macros=list(DEFINE_MACROS),
@@ -164,7 +177,7 @@ setuptools.setup(
   packages=setuptools.find_packages('.'),
   namespace_packages=['grpc'],
   install_requires=[
-    'protobuf>=3.0.0a3',
+    'protobuf>=3.0.0',
     'grpcio>=0.15.0',
   ],
   package_data=package_data(),
