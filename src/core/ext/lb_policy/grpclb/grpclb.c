@@ -112,6 +112,7 @@
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
