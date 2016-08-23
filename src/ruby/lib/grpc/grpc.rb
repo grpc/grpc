@@ -28,7 +28,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 begin
-  require_relative "#{RUBY_VERSION.sub(/\.\d$/, '')}/grpc_c"
-rescue LoadError
-  require_relative 'grpc_c'
+  ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
+  distrib_lib_dir = File.expand_path(ruby_version_dirname,
+                                     File.dirname(__FILE__))
+  if File.directory?(distrib_lib_dir)
+    require_relative "#{distrib_lib_dir}/grpc_c"
+  else
+    require_relative 'grpc_c'
+  end
 end
