@@ -51,7 +51,7 @@
     if target_dict['name'] in [
         'grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib', 'gpr',
         'grpc_plugin_support']:
-      deps.append("${Protobuf_LIBS}")
+      deps.append("${Protobuf_LIBRARIES}")
     elif target_dict['name'] in ['grpc']:
       deps.append("${ZLIB_LIBRARIES}")
 
@@ -94,8 +94,6 @@
   else()
     set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
   endif()
-
-  set(GRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
   if (MSVC)
     add_definitions( -D_WIN32_WINNT=0x600 )
@@ -166,13 +164,6 @@
     else()
       message(FATAL "Protobuf not found")
     endif()
-  endif()
-
-  if (GRPC_USE_PROTO_LITE)
-    set(Protobuf_LIBS <%text>${Protobuf_LITE_LIBRARIES}</%text>)
-    add_definitions("-DGRPC_USE_PROTO_LITE")
-  else()
-    set(Protobuf_LIBS <%text>${Protobuf_LIBRARIES}</%text>)
   endif()
 
   if(NOT MSVC)

@@ -71,8 +71,6 @@ else()
   set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
 endif()
 
-set(GRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
-
 if (MSVC)
   add_definitions( -D_WIN32_WINNT=0x600 )
 endif()
@@ -142,13 +140,6 @@ if (NOT Protobuf_FOUND)
   else()
     message(FATAL "Protobuf not found")
   endif()
-endif()
-
-if (GRPC_USE_PROTO_LITE)
-  set(Protobuf_LIBS ${Protobuf_LITE_LIBRARIES})
-  add_definitions("-DGRPC_USE_PROTO_LITE")
-else()
-  set(Protobuf_LIBS ${Protobuf_LIBRARIES})
 endif()
 
 if(NOT MSVC)
@@ -224,7 +215,7 @@ target_include_directories(gpr
 )
 
 target_link_libraries(gpr
-  ${Protobuf_LIBS}
+  ${Protobuf_LIBRARIES}
   ${libMath}
 )
 
@@ -1052,7 +1043,7 @@ target_include_directories(grpc++
 target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
-  ${Protobuf_LIBS}
+  ${Protobuf_LIBRARIES}
   grpc
 )
 
@@ -1311,7 +1302,7 @@ target_include_directories(grpc++_unsecure
 
 target_link_libraries(grpc++_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
-  ${Protobuf_LIBS}
+  ${Protobuf_LIBRARIES}
   gpr
   grpc_unsecure
   grpc
@@ -1454,7 +1445,7 @@ target_include_directories(grpc_plugin_support
 
 target_link_libraries(grpc_plugin_support
   ${Protobuf_PROTOC_LIBRARIES}
-  ${Protobuf_LIBS}
+  ${Protobuf_LIBRARIES}
 )
 
 foreach(_hdr
