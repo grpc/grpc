@@ -234,7 +234,6 @@ namespace Grpc.Core.Internal
             {
                 try
                 {
-                
                     msg = deserializer(payload);
                     return null;
              
@@ -263,7 +262,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                origTcs.SetException(new InvalidOperationException("Send failed"));
+                origTcs.SetException(new GrpcOperationFailedException("Send failed"));
             }
             else
             {
@@ -283,7 +282,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                sendStatusFromServerTcs.SetException(new InvalidOperationException("Error sending status from server."));
+                sendStatusFromServerTcs.SetException(new GrpcOperationFailedException("Error sending status from server."));
             }
             else
             {

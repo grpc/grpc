@@ -187,8 +187,7 @@ namespace Grpc.Core.Internal.Tests
 
             var writeTask = requestStream.WriteAsync("request1");
             fakeCall.SendCompletionHandler(false);
-            // TODO: maybe IOException or waiting for RPCException is more appropriate here.
-            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
+            Assert.ThrowsAsync(typeof(GrpcOperationFailedException), async () => await writeTask);
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Internal),
