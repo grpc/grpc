@@ -304,12 +304,12 @@ static bool process_serverlist(const grpc_grpclb_server *server,
     memcpy(&addr4->sin_addr, ip->bytes, ip->size);
     addr4->sin_port = netorder_port;
   } else if (ip->size == 6) {
-    struct sockaddr_in *addr6 = (struct sockaddr_in *)sa;
-    *sa_len = sizeof(struct sockaddr_in);
+    struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)sa;
+    *sa_len = sizeof(struct sockaddr_in6);
     memset(addr6, 0, *sa_len);
-    addr6->sin_family = AF_INET;
-    memcpy(&addr6->sin_addr, ip->bytes, ip->size);
-    addr6->sin_port = netorder_port;
+    addr6->sin6_family = AF_INET;
+    memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
+    addr6->sin6_port = netorder_port;
   } else {
     gpr_log(GPR_ERROR, "Expected IP to be 4 or 16 bytes. Got %d.", ip->size);
     return false;
