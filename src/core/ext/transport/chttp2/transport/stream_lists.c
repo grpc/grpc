@@ -245,6 +245,8 @@ void grpc_chttp2_list_add_check_read_ops(
     grpc_chttp2_stream_global *stream_global) {
   grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
   if (!t->executor.check_read_ops_scheduled) {
+    GRPC_CHTTP2_REF_TRANSPORT(TRANSPORT_FROM_GLOBAL(transport_global),
+                              "initiate_read_flush_locked");
     grpc_combiner_execute_finally(exec_ctx, t->executor.combiner,
                                   &t->initiate_read_flush_locked,
                                   GRPC_ERROR_NONE, false);

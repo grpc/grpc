@@ -70,6 +70,7 @@ struct grpc_exec_ctx {
   grpc_closure *stolen_closure;
   /** currently active combiner: updated only via combiner.c */
   grpc_combiner *active_combiner;
+  grpc_combiner *last_combiner;
   bool cached_ready_to_finish;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
@@ -79,7 +80,7 @@ struct grpc_exec_ctx {
    prefer to use GRPC_EXEC_CTX_INIT whenever possible */
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
   {                                                                          \
-    GRPC_CLOSURE_LIST_INIT, NULL, NULL, NULL, false, finish_check_arg,       \
+    GRPC_CLOSURE_LIST_INIT, NULL, NULL, NULL, NULL, false, finish_check_arg, \
         finish_check                                                         \
   }
 #else

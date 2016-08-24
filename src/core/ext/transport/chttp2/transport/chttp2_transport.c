@@ -179,33 +179,30 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   gpr_free(t);
 }
 
-/*#define REFCOUNTING_DEBUG 1*/
-#ifdef REFCOUNTING_DEBUG
-#define REF_TRANSPORT(t, r) ref_transport(t, r, __FILE__, __LINE__)
-#define UNREF_TRANSPORT(cl, t, r) unref_transport(cl, t, r, __FILE__, __LINE__)
-static void unref_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                            const char *reason, const char *file, int line) {
-  gpr_log(GPR_DEBUG, "chttp2:unref:%p %d->%d %s [%s:%d]", t, t->refs.count,
-          t->refs.count - 1, reason, file, line);
+#ifdef GRPC_CHTTP2_REFCOUNTING_DEBUG
+void grpc_chttp2_unref_transport(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t, const char *reason,
+                                 const char *file, int line) {
+  gpr_log(GPR_DEBUG, "chttp2:unref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]", t,
+          t->refs.count, t->refs.count - 1, reason, file, line);
   if (!gpr_unref(&t->refs)) return;
   destruct_transport(exec_ctx, t);
 }
 
-static void ref_transport(grpc_chttp2_transport *t, const char *reason,
-                          const char *file, int line) {
-  gpr_log(GPR_DEBUG, "chttp2:  ref:%p %d->%d %s [%s:%d]", t, t->refs.count,
-          t->refs.count + 1, reason, file, line);
+void grpc_chttp2_ref_transport(grpc_chttp2_transport *t, const char *reason,
+                               const char *file, int line) {
+  gpr_log(GPR_DEBUG, "chttp2:  ref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]", t,
+          t->refs.count, t->refs.count + 1, reason, file, line);
   gpr_ref(&t->refs);
 }
 #else
-#define REF_TRANSPORT(t, r) ref_transport(t)
-#define UNREF_TRANSPORT(cl, t, r) unref_transport(cl, t)
-static void unref_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
+void grpc_chttp2_unref_transport(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t) {
   if (!gpr_unref(&t->refs)) return;
   destruct_transport(exec_ctx, t);
 }
 
-static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
+void grpc_chttp2_ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 #endif
 
 static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -392,7 +389,7 @@ static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
   grpc_chttp2_transport *t = tp;
   t->destroying = 1;
   drop_connection(exec_ctx, t, GRPC_ERROR_CREATE("Transport destroyed"));
-  UNREF_TRANSPORT(exec_ctx, t, "destroy");
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "destroy");
 }
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
@@ -482,7 +479,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   gpr_slice_buffer_init(&s->writing.flow_controlled_buffer);
   s->global.deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
 
-  REF_TRANSPORT(t, "stream");
+  GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
 
   if (server_data) {
     s->global.id = (uint32_t)(uintptr_t)server_data;
@@ -547,7 +544,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->global.read_closed_error);
   GRPC_ERROR_UNREF(s->global.write_closed_error);
 
-  UNREF_TRANSPORT(exec_ctx, t, "stream");
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "stream");
 
   GPR_TIMER_END("destroy_stream", 0);
 
@@ -632,6 +629,7 @@ static void initiate_read_flush_locked(grpc_exec_ctx *exec_ctx, void *tp,
   grpc_chttp2_transport *t = tp;
   t->executor.check_read_ops_scheduled = false;
   check_read_ops(exec_ctx, &t->global);
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "initiate_read_flush_locked");
 }
 
 /*******************************************************************************
@@ -667,7 +665,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
       break;
     case GRPC_CHTTP2_WRITING_INACTIVE:
       set_write_state(t, GRPC_CHTTP2_WRITE_SCHEDULED, reason);
-      REF_TRANSPORT(t, "writing");
+      GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->executor.combiner,
                                     &t->initiate_writing, GRPC_ERROR_NONE,
                                     covered_by_poller);
@@ -714,7 +712,7 @@ static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
                       "start_writing:nothing_to_write");
     }
     end_waiting_for_write(exec_ctx, t, GRPC_ERROR_NONE);
-    UNREF_TRANSPORT(exec_ctx, t, "writing");
+    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
   }
   GPR_TIMER_END("start_writing", 0);
 }
@@ -787,7 +785,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx, void *tp,
     case GRPC_CHTTP2_WRITING_STALE_WITH_POLLER:
       GPR_TIMER_MARK("state=writing_stale_with_poller", 0);
       set_write_state(t, GRPC_CHTTP2_WRITE_SCHEDULED, "terminate_writing");
-      REF_TRANSPORT(t, "writing");
+      GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->executor.combiner,
                                     &t->initiate_writing, GRPC_ERROR_NONE,
                                     true);
@@ -795,14 +793,14 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx, void *tp,
     case GRPC_CHTTP2_WRITING_STALE_NO_POLLER:
       GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
       set_write_state(t, GRPC_CHTTP2_WRITE_SCHEDULED, "terminate_writing");
-      REF_TRANSPORT(t, "writing");
+      GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->executor.combiner,
                                     &t->initiate_writing, GRPC_ERROR_NONE,
                                     false);
       break;
   }
 
-  UNREF_TRANSPORT(exec_ctx, t, "writing");
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
   GPR_TIMER_END("terminate_writing_with_lock", 0);
 }
 
@@ -1261,7 +1259,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
 
   grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
 
-  UNREF_TRANSPORT(exec_ctx, t, "transport_op");
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "transport_op");
 }
 
 static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
@@ -1270,7 +1268,7 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   op->transport_private.args[0] = gt;
   grpc_closure_init(&op->transport_private.closure, perform_transport_op_locked,
                     op);
-  REF_TRANSPORT(t, "transport_op");
+  GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   grpc_combiner_execute(exec_ctx, t->executor.combiner,
                         &op->transport_private.closure, GRPC_ERROR_NONE);
 }
@@ -1864,7 +1862,7 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     }
   } else if (!t->closed) {
     keep_reading = true;
-    REF_TRANSPORT(t, "keep_reading");
+    GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
     prevent_endpoint_shutdown(t);
   }
   gpr_slice_buffer_reset_and_unref(&t->read_buffer);
@@ -1872,9 +1870,9 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer, &t->reading_action);
     allow_endpoint_shutdown_locked(exec_ctx, t);
-    UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
+    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
-    UNREF_TRANSPORT(exec_ctx, t, "reading_action");
+    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");
   }
 
   GPR_TIMER_END("post_reading_action_locked", 0);
@@ -2247,7 +2245,8 @@ void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
                                          gpr_slice_buffer *read_buffer) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)transport;
-  REF_TRANSPORT(t, "reading_action"); /* matches unref inside reading_action */
+  GRPC_CHTTP2_REF_TRANSPORT(
+      t, "reading_action"); /* matches unref inside reading_action */
   if (read_buffer != NULL) {
     gpr_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);

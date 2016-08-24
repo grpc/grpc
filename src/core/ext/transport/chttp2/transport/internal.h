@@ -726,6 +726,25 @@ void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx,
                               grpc_chttp2_stream_global *stream_global);
 #endif
 
+//#define GRPC_CHTTP2_REFCOUNTING_DEBUG 1
+#ifdef GRPC_CHTTP2_REFCOUNTING_DEBUG
+#define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
+  grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
+#define GRPC_CHTTP2_UNREF_TRANSPORT(cl, t, r) \
+  grpc_chttp2_unref_transport(cl, t, r, __FILE__, __LINE__)
+void grpc_chttp2_unref_transport(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t, const char *reason,
+                                 const char *file, int line);
+void grpc_chttp2_ref_transport(grpc_chttp2_transport *t, const char *reason,
+                               const char *file, int line);
+#else
+#define GRPC_CHTTP2_REF_TRANSPORT(t, r) grpc_chttp2_ref_transport(t)
+#define GRPC_CHTTP2_UNREF_TRANSPORT(cl, t, r) grpc_chttp2_unref_transport(cl, t)
+void grpc_chttp2_unref_transport(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport *t);
+void grpc_chttp2_ref_transport(grpc_chttp2_transport *t);
+#endif
+
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, uint32_t frame_size,

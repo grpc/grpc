@@ -51,6 +51,7 @@ int grpc_combiner_trace = 0;
   } while (0)
 
 struct grpc_combiner {
+  grpc_combiner *next_combiner_on_this_exec_ctx;
   grpc_workqueue *optional_workqueue;
   gpr_mpscq queue;
   // state is:
@@ -58,17 +59,23 @@ struct grpc_combiner {
   // other bits - number of items queued on the lock
   gpr_atm state;
   bool take_async_break_before_final_list;
+  bool time_to_execute_final_list;
   grpc_closure_list final_list;
-  grpc_closure continue_finishing;
+  grpc_closure offload;
 };
+
+static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   grpc_combiner *lock = gpr_malloc(sizeof(*lock));
+  lock->next_combiner_on_this_exec_ctx = NULL;
+  lock->time_to_execute_final_list = false;
   lock->optional_workqueue = optional_workqueue;
   gpr_atm_no_barrier_store(&lock->state, 1);
   gpr_mpscq_init(&lock->queue);
   lock->take_async_break_before_final_list = false;
   grpc_closure_list_init(&lock->final_list);
+  grpc_closure_init(&lock->offload, offload, lock);
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }
@@ -90,154 +97,14 @@ void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   }
 }
 
-static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
-static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
-
-static void continue_finishing_mainline(grpc_exec_ctx *exec_ctx, void *arg,
-                                        grpc_error *error) {
-  GPR_TIMER_BEGIN("combiner.continue_executing_mainline", 0);
-  grpc_combiner *lock = arg;
-  GRPC_COMBINER_TRACE(
-      gpr_log(GPR_DEBUG, "C:%p continue_finishing_mainline", lock));
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
-  exec_ctx->active_combiner = lock;
-  if (maybe_finish_one(exec_ctx, lock)) finish(exec_ctx, lock);
-  GPR_ASSERT(exec_ctx->active_combiner == lock);
-  exec_ctx->active_combiner = NULL;
-  GPR_TIMER_END("combiner.continue_executing_mainline", 0);
-}
-
-static void execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
-  GPR_TIMER_BEGIN("combiner.execute_final", 0);
-  grpc_closure *c = lock->final_list.head;
-  GPR_ASSERT(c != NULL);
-  grpc_closure_list_init(&lock->final_list);
-  lock->take_async_break_before_final_list = false;
-  int loops = 0;
-  while (c != NULL) {
-    GRPC_COMBINER_TRACE(
-        gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
-    grpc_closure *next = c->next_data.next;
-    grpc_error *error = c->error;
-    c->cb(exec_ctx, c->cb_arg, error);
-    GRPC_ERROR_UNREF(error);
-    c = next;
-    loops++;
-  }
-  GPR_TIMER_END("combiner.execute_final", 0);
-}
-
-static void continue_executing_final(grpc_exec_ctx *exec_ctx, void *arg,
-                                     grpc_error *error) {
-  GPR_TIMER_BEGIN("combiner.continue_executing_final", 0);
-  grpc_combiner *lock = arg;
-  GRPC_COMBINER_TRACE(
-      gpr_log(GPR_DEBUG, "C:%p continue_executing_final", lock));
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
-  exec_ctx->active_combiner = lock;
-  // quick peek to see if new things have turned up on the queue: if so, go back
-  // to executing them before the final list
-  if ((gpr_atm_acq_load(&lock->state) >> 1) > 1) {
-    if (maybe_finish_one(exec_ctx, lock)) finish(exec_ctx, lock);
+static void queue_on_exec_ctx(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  lock->next_combiner_on_this_exec_ctx = NULL;
+  if (exec_ctx->active_combiner == NULL) {
+    exec_ctx->active_combiner = exec_ctx->last_combiner = lock;
   } else {
-    execute_final(exec_ctx, lock);
-    finish(exec_ctx, lock);
+    exec_ctx->last_combiner->next_combiner_on_this_exec_ctx = lock;
+    exec_ctx->last_combiner = lock;
   }
-  GPR_ASSERT(exec_ctx->active_combiner == lock);
-  exec_ctx->active_combiner = NULL;
-  GPR_TIMER_END("combiner.continue_executing_final", 0);
-}
-
-static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
-  GPR_TIMER_BEGIN("combiner.start_execute_final", 0);
-  GPR_ASSERT(exec_ctx->active_combiner == lock);
-  GRPC_COMBINER_TRACE(
-      gpr_log(GPR_DEBUG,
-              "C:%p start_execute_final take_async_break_before_final_list=%d",
-              lock, lock->take_async_break_before_final_list));
-  if (lock->take_async_break_before_final_list) {
-    grpc_closure_init(&lock->continue_finishing, continue_executing_final,
-                      lock);
-    grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
-                        GRPC_WORKQUEUE_REF(lock->optional_workqueue, "sched"));
-    GPR_TIMER_END("combiner.start_execute_final", 0);
-    return false;
-  } else {
-    execute_final(exec_ctx, lock);
-    GPR_TIMER_END("combiner.start_execute_final", 0);
-    return true;
-  }
-}
-
-static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
-  GPR_TIMER_BEGIN("combiner.maybe_finish_one", 0);
-  GPR_ASSERT(exec_ctx->active_combiner == lock);
-  if (lock->optional_workqueue != NULL &&
-      grpc_exec_ctx_ready_to_finish(exec_ctx)) {
-    // this execution context wants to move on, and we have a workqueue (and so
-    // can help the execution context out): schedule remaining work to be picked
-    // up on the workqueue
-    grpc_closure_init(&lock->continue_finishing, continue_finishing_mainline,
-                      lock);
-    grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue,
-                           &lock->continue_finishing, GRPC_ERROR_NONE);
-    GPR_TIMER_END("combiner.maybe_finish_one", 0);
-    return false;
-  }
-  gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
-  GRPC_COMBINER_TRACE(
-      gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
-  if (n == NULL) {
-    // queue is in an inconsistant state: use this as a cue that we should
-    // go off and do something else for a while (and come back later)
-    grpc_closure_init(&lock->continue_finishing, continue_finishing_mainline,
-                      lock);
-    grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
-                        GRPC_WORKQUEUE_REF(lock->optional_workqueue, "sched"));
-    GPR_TIMER_END("combiner.maybe_finish_one", 0);
-    return false;
-  }
-  grpc_closure *cl = (grpc_closure *)n;
-  grpc_error *error = cl->error;
-  cl->cb(exec_ctx, cl->cb_arg, error);
-  GRPC_ERROR_UNREF(error);
-  GPR_TIMER_END("combiner.maybe_finish_one", 0);
-  return true;
-}
-
-static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
-  bool (*executor)(grpc_exec_ctx * exec_ctx, grpc_combiner * lock);
-  GPR_TIMER_BEGIN("combiner.finish", 0);
-  int loops = 0;
-  do {
-    executor = maybe_finish_one;
-    gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -2);
-    GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
-                                "C:%p finish[%d] old_state=%" PRIdPTR, lock,
-                                loops, old_state));
-    switch (old_state) {
-      case 5:  // we're down to one queued item: if it's the final list we
-      case 4:  // should do that
-        if (!grpc_closure_list_empty(lock->final_list)) {
-          executor = start_execute_final;
-        }
-        break;
-      case 3:  // had one count, one unorphaned --> unlocked unorphaned
-        GPR_TIMER_END("combiner.finish", 0);
-        return;
-      case 2:  // and one count, one orphaned --> unlocked and orphaned
-        really_destroy(exec_ctx, lock);
-        GPR_TIMER_END("combiner.finish", 0);
-        return;
-      case 1:
-      case 0:
-        // these values are illegal - representing an already unlocked or
-        // deleted lock
-        GPR_UNREACHABLE_CODE(return );
-    }
-    loops++;
-  } while (executor(exec_ctx, lock));
-  GPR_TIMER_END("combiner.finish", 0);
 }
 
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
@@ -247,20 +114,137 @@ void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
   GPR_TIMER_BEGIN("combiner.execute", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, 2);
   GPR_ASSERT(last & 1);  // ensure lock has not been destroyed
+  cl->error = error;
+  gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
   if (last == 1) {
-    exec_ctx->active_combiner = lock;
-    GPR_TIMER_BEGIN("combiner.execute_first_cb", 0);
-    cl->cb(exec_ctx, cl->cb_arg, error);
-    GPR_TIMER_END("combiner.execute_first_cb", 0);
-    GRPC_ERROR_UNREF(error);
-    finish(exec_ctx, lock);
-    GPR_ASSERT(exec_ctx->active_combiner == lock);
-    exec_ctx->active_combiner = NULL;
-  } else {
-    cl->error = error;
-    gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
+    // code will be written when the exec_ctx calls
+    // grpc_combiner_continue_exec_ctx
+    queue_on_exec_ctx(exec_ctx, lock);
   }
   GPR_TIMER_END("combiner.execute", 0);
+}
+
+static void move_next(grpc_exec_ctx *exec_ctx) {
+  exec_ctx->active_combiner =
+      exec_ctx->active_combiner->next_combiner_on_this_exec_ctx;
+  if (exec_ctx->active_combiner == NULL) {
+    exec_ctx->last_combiner = NULL;
+  }
+}
+
+static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_combiner *lock = arg;
+  queue_on_exec_ctx(exec_ctx, lock);
+}
+
+static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  move_next(exec_ctx);
+  grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue, &lock->offload,
+                         GRPC_ERROR_NONE);
+}
+
+bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
+  GPR_TIMER_BEGIN("combiner.continue_exec_ctx", 0);
+  grpc_combiner *lock = exec_ctx->active_combiner;
+  if (lock == NULL) {
+    GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+    return false;
+  }
+
+  if (lock->optional_workqueue != NULL &&
+      grpc_exec_ctx_ready_to_finish(exec_ctx)) {
+    GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
+    // this execution context wants to move on, and we have a workqueue (and so
+    // can help the execution context out): schedule remaining work to be picked
+    // up on the workqueue
+    queue_offload(exec_ctx, lock);
+    GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+    return true;
+  }
+
+  if (!lock->time_to_execute_final_list ||
+      // peek to see if something new has shown up, and execute that with
+      // priority
+      (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
+    gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
+    GRPC_COMBINER_TRACE(
+        gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
+    if (n == NULL) {
+      // queue is in an inconsistant state: use this as a cue that we should
+      // go off and do something else for a while (and come back later)
+      GPR_TIMER_MARK("delay_busy", 0);
+      if (lock->optional_workqueue != NULL) {
+        queue_offload(exec_ctx, lock);
+      }
+      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+      return true;
+    }
+    GPR_TIMER_BEGIN("combiner.exec1", 0);
+    grpc_closure *cl = (grpc_closure *)n;
+    grpc_error *error = cl->error;
+    cl->cb(exec_ctx, cl->cb_arg, error);
+    GRPC_ERROR_UNREF(error);
+    GPR_TIMER_END("combiner.exec1", 0);
+  } else {
+    if (lock->take_async_break_before_final_list) {
+      GPR_TIMER_MARK("async_break", 0);
+      GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p take async break", lock));
+      lock->take_async_break_before_final_list = false;
+      if (lock->optional_workqueue != NULL) {
+        queue_offload(exec_ctx, lock);
+      }
+      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+      return true;
+    } else {
+      grpc_closure *c = lock->final_list.head;
+      GPR_ASSERT(c != NULL);
+      grpc_closure_list_init(&lock->final_list);
+      lock->take_async_break_before_final_list = false;
+      int loops = 0;
+      while (c != NULL) {
+        GPR_TIMER_BEGIN("combiner.exec_1final", 0);
+        GRPC_COMBINER_TRACE(
+            gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
+        grpc_closure *next = c->next_data.next;
+        grpc_error *error = c->error;
+        c->cb(exec_ctx, c->cb_arg, error);
+        GRPC_ERROR_UNREF(error);
+        c = next;
+        GPR_TIMER_END("combiner.exec_1final", 0);
+      }
+    }
+  }
+
+  GPR_TIMER_MARK("unref", 0);
+  gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -2);
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG, "C:%p finish old_state=%" PRIdPTR, lock, old_state));
+  lock->time_to_execute_final_list = false;
+  switch (old_state) {
+    case 5:  // we're down to one queued item: if it's the final list we
+    case 4:  // should do that
+      if (!grpc_closure_list_empty(lock->final_list)) {
+        lock->time_to_execute_final_list = true;
+      }
+      break;
+    case 3:  // had one count, one unorphaned --> unlocked unorphaned
+      move_next(exec_ctx);
+      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+      return true;
+    case 2:  // and one count, one orphaned --> unlocked and orphaned
+      move_next(exec_ctx);
+      really_destroy(exec_ctx, lock);
+      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+      return true;
+    case 1:
+    case 0:
+      // these values are illegal - representing an already unlocked or
+      // deleted lock
+      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+      GPR_UNREACHABLE_CODE(return true);
+  }
+  GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+  return true;
 }
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,

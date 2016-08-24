@@ -64,6 +64,8 @@ void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                                    bool hint_async_break);
 void grpc_combiner_force_async_finally(grpc_combiner *lock);
 
+bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
+
 extern int grpc_combiner_trace;
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

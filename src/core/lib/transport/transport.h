@@ -292,6 +292,10 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
 grpc_transport_op *grpc_make_transport_op(grpc_closure *on_consumed);
+/* Allocate a grpc_transport_stream_op, and preconfigure the on_consumed closure
+   to \a on_consumed and then delete the returned transport op */
+grpc_transport_stream_op *grpc_make_transport_stream_op(
+    grpc_closure *on_consumed);
 
 #ifdef __cplusplus
 }
