@@ -50,6 +50,7 @@ typedef struct call_data {
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
+  grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
 
@@ -64,6 +65,7 @@ typedef struct call_data {
 typedef struct channel_data {
   grpc_mdelem *static_scheme;
   grpc_mdelem *user_agent;
+  size_t max_payload_size_for_get;
 } channel_data;
 
 typedef struct {
@@ -134,17 +136,43 @@ static void hc_mutate_op(grpc_call_element *elem,
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
+
+  /* Decide which HTTP VERB to use */
+  grpc_mdelem *method = GRPC_MDELEM_METHOD_POST;
+  if ((op->send_initial_metadata_flags &
+       GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
+      op->send_message != NULL &&
+      op->send_message->length < channeld->max_payload_size_for_get) {
+    method = GRPC_MDELEM_METHOD_GET;
+  } else if (op->send_initial_metadata_flags &
+             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
+    method = GRPC_MDELEM_METHOD_PUT;
+  }
+
+  if (method == GRPC_MDELEM_METHOD_GET) {
+    gpr_slice slice;
+    /* TODO (makdharma): extend code for messages with multiple slices */
+    if (grpc_byte_stream_next(NULL, op->send_message, &slice,
+                              op->send_message->length, NULL)) {
+      grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
+          GRPC_MDSTR_GRPC_PAYLOAD_BIN,
+          grpc_mdstr_from_buffer(GPR_SLICE_START_PTR(slice),
+                                 GPR_SLICE_LENGTH(slice)));
+      grpc_metadata_batch_add_tail(op->send_initial_metadata,
+                                   &calld->payload_bin, payload_bin);
+    } else {
+      gpr_log(GPR_ERROR, "send_message could not be read");
+    }
+    op->send_message = NULL;
+  }
+
   if (op->send_initial_metadata != NULL) {
     grpc_metadata_batch_filter(op->send_initial_metadata, client_strip_filter,
                                elem);
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    grpc_metadata_batch_add_head(
-        op->send_initial_metadata, &calld->method,
-        op->send_initial_metadata_flags &
-                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
-            ? GRPC_MDELEM_METHOD_PUT
-            : GRPC_MDELEM_METHOD_POST);
+    grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->method,
+                                 method);
     grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->scheme,
                                  channeld->static_scheme);
     grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->te_trailers,
@@ -210,6 +238,22 @@ static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
   return GRPC_MDELEM_SCHEME_HTTP;
 }
 
+static size_t max_payload_size_from_args(const grpc_channel_args *args) {
+  if (args != NULL) {
+    for (size_t i = 0; i < args->num_args; ++i) {
+      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET)) {
+        if (args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
+        } else {
+          return args->args[i].value.integer;
+        }
+      }
+    }
+  }
+  return kMaxPayloadSizeForGet;
+}
+
 static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args,
                                         const char *transport_name) {
   gpr_strvec v;
@@ -267,6 +311,8 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != NULL);
   chand->static_scheme = scheme_from_args(args->channel_args);
+  chand->max_payload_size_for_get =
+      max_payload_size_from_args(args->channel_args);
   chand->user_agent = grpc_mdelem_from_metadata_strings(
       GRPC_MDSTR_USER_AGENT,
       user_agent_from_args(args->channel_args,
