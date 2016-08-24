@@ -44,17 +44,56 @@ namespace grpc {
 
 class GrpcRpcManager {
  public:
-  explicit GrpcRpcManager(int min_pollers, int max_pollers, int max_threads);
+  explicit GrpcRpcManager(int min_pollers, int max_pollers);
   virtual ~GrpcRpcManager();
 
   // This function MUST be called before using the object
   void Initialize();
 
-  virtual void PollForWork(bool& is_work_found, void **tag) = 0;
-  virtual void DoWork(void *tag) = 0;
+  enum WorkStatus { WORK_FOUND, SHUTDOWN, TIMEOUT };
 
-  void Wait();
+  // "Polls" for new work.
+  // If the return value is WORK_FOUND:
+  //  - The implementaion of PollForWork() MAY set some opaque identifier to
+  //    (identify the work item found) via the '*tag' parameter
+  //  - The implementaion MUST set the value of 'ok' to 'true' or 'false'. A
+  //    value of 'false' indicates some implemenation specific error (that is
+  //    neither SHUTDOWN nor TIMEOUT)
+  //  - GrpcRpcManager does not interpret the values of 'tag' and 'ok'
+  //  - GrpcRpcManager WILL call DoWork() and pass '*tag' and 'ok' as input to
+  //    DoWork()
+  //
+  // If the return value is SHUTDOWN:,
+  //  - GrpcManager WILL NOT call DoWork() and terminates the thead
+  //
+  // If the return value is TIMEOUT:,
+  //  - GrpcManager WILL NOT call DoWork()
+  //  - GrpcManager MAY terminate the thread depending on the current number of
+  //    active poller threads and mix_pollers/max_pollers settings
+  //  - Also, the value of timeout is specific to the derived class
+  //    implementation
+  virtual WorkStatus PollForWork(void** tag, bool* ok) = 0;
+
+  // The implementation of DoWork() is supposed to perform the work found by
+  // PollForWork(). The tag and ok parameters are the same as returned by
+  // PollForWork()
+  //
+  // The implementation of DoWork() should also do any setup needed to ensure
+  // that the next call to PollForWork() (not necessarily by the current thread)
+  // actually finds some work
+  virtual void DoWork(void* tag, bool ok) = 0;
+
+  // Mark the GrpcRpcManager as shutdown and begin draining the work.
+  // This is a non-blocking call and the caller should call Wait(), a blocking
+  // call which returns only once the shutdown is complete
   void ShutdownRpcManager();
+
+  // Has ShutdownRpcManager() been called
+  bool IsShutdown();
+
+  // A blocking call that returns only after the GrpcRpcManager has shutdown and
+  // all the threads have drained all the outstanding work
+  void Wait();
 
  private:
   // Helper wrapper class around std::thread. This takes a GrpcRpcManager object
@@ -63,8 +102,6 @@ class GrpcRpcManager {
   // The Run() function calls GrpcManager::MainWorkLoop() function and once that
   // completes, it marks the GrpcRpcManagerThread completed by calling
   // GrpcRpcManager::MarkAsCompleted()
-  // TODO: sreek - Consider using a separate threadpool rather than implementing
-  // one in this class
   class GrpcRpcManagerThread {
    public:
     GrpcRpcManagerThread(GrpcRpcManager* rpc_mgr);
@@ -83,13 +120,11 @@ class GrpcRpcManager {
   void MainWorkLoop();
 
   // Create a new poller if the number of current pollers is less than the
-  // minimum number of pollers needed (i.e min_pollers) and the total number of
-  // threads are less than the max number of threads (i.e max_threads)
+  // minimum number of pollers needed (i.e min_pollers).
   void MaybeCreatePoller();
 
   // Returns true if the current thread can resume as a poller. i.e if the
-  // current number of pollers is less than the max_pollers AND the total number
-  // of threads is less than max_threads
+  // current number of pollers is less than the max_pollers.
   bool MaybeContinueAsPoller();
 
   void MarkAsCompleted(GrpcRpcManagerThread* thd);
@@ -112,10 +147,6 @@ class GrpcRpcManager {
   // The total number of threads (includes threads includes the threads that are
   // currently polling i.e num_pollers_)
   int num_threads_;
-
-  // The maximum number of threads that can be active (This is a soft limit and
-  // the actual number of threads may sometimes be briefly above this number)
-  int max_threads_;
 
   grpc::mutex list_mu_;
   std::list<GrpcRpcManagerThread*> completed_threads_;

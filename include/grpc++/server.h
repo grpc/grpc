@@ -66,9 +66,7 @@ class ThreadPoolInterface;
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
-class Server GRPC_FINAL : public ServerInterface,
-                          private GrpcLibraryCodegen,
-                          public GrpcRpcManager {
+class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 
@@ -100,13 +98,6 @@ class Server GRPC_FINAL : public ServerInterface,
   // Returns a \em raw pointer to the underlying grpc_server instance.
   grpc_server* c_server();
 
-  // Returns a \em raw pointer to the underlying CompletionQueue.
-  CompletionQueue* completion_queue();
-
-  /// GRPC RPC Manager functions
-  void PollForWork(bool& is_work_found, void** tag) GRPC_OVERRIDE;
-  void DoWork(void* tag) GRPC_OVERRIDE;
-
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
@@ -116,19 +107,37 @@ class Server GRPC_FINAL : public ServerInterface,
   class AsyncRequest;
   class ShutdownRequest;
 
+  /// SyncRequestManager is an implementation of GrpcRpcManager. This class is
+  /// responsible for polling for incoming RPCs and calling the RPC handlers.
+  /// This is only used in case of a Sync server (i.e a server exposing a sync
+  /// interface)
+  class SyncRequestManager;
+
   class UnimplementedAsyncRequestContext;
   class UnimplementedAsyncRequest;
   class UnimplementedAsyncResponse;
 
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
-  /// \param has_sync_methods Does this Server have any synchronous methods.
-  /// This information is useful to the server in creating some internal data
-  /// structures (completion queues / thread pools etc) to handle the incoming
-  /// RPCs corresponding to those sync methods
+  /// \param sync_server_cqs The completion queues to use if the server is a
+  /// synchronous server (or a hybrid server). The server polls for new RPCs on
+  /// these queues
+  ///
   /// \param max_message_size Maximum message length that the channel can
   /// receive.
-  Server(bool has_sync_methods, int max_message_size, ChannelArguments* args);
+  ///
+  /// \param args The channel args
+  ///
+  /// \param min_pollers The minimum number of polling threads per server
+  /// completion queue (in param sync_server_cqs) to use for listening to
+  /// incoming requests (used only in case of sync server)
+  ///
+  /// \param max_pollers The maximum number of polling threads per server
+  /// completion queue (in param sync_server_cqs) to use for listening to
+  /// incoming requests (used only in case of sync server)
+  Server(std::shared_ptr<std::vector<ServerCompletionQueue>> sync_server_cqs,
+         int max_message_size, ChannelArguments* args, int min_pollers,
+         int max_pollers);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -181,17 +190,22 @@ class Server GRPC_FINAL : public ServerInterface,
 
   const int max_message_size_;
 
-  // The following completion queues used ONLY if the server has any services
-  // with sync methods. The queues are used as notification_cqs to get notified
-  // of the incoming RPCs
-  // std::vector<std::unique_ptr<CompletionQueue>> notification_cqs_;
-  CompletionQueue cq_;
+  /// The following completion queues are ONLY used in case of Sync API i.e if
+  /// the server has any services with sync methods. The server uses these
+  /// completion queues to poll for new RPCs
+  std::shared_ptr<std::vector<ServerCompletionQueue>> sync_server_cqs_;
+
+  /// List of GrpcRpcManager instances (one for each cq in the sync_server_cqs)
+  std::vector<std::unique_ptr<SyncRequestManager>> sync_req_mgrs_;
 
   // Sever status
   grpc::mutex mu_;
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;
+
+  /// The completion queue to use for server shutdown completion notification
+  CompletionQueue shutdown_cq_;
 
   // TODO (sreek) : Remove num_running_cb_ and callback_cv_;
   // The number of threads which are running callbacks.
@@ -202,12 +216,10 @@ class Server GRPC_FINAL : public ServerInterface,
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
-  std::list<SyncRequest>* sync_methods_;
   std::vector<grpc::string> services_;
-  std::unique_ptr<RpcServiceMethod> unknown_method_;
   bool has_generic_service_;
 
-  // Pointer to the c grpc server.
+  // Pointer to the c core's grpc server.
   grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;

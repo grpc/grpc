@@ -54,14 +54,12 @@ GrpcRpcManager::GrpcRpcManagerThread::~GrpcRpcManagerThread() {
   thd_.reset();
 }
 
-GrpcRpcManager::GrpcRpcManager(int min_pollers, int max_pollers,
-                               int max_threads)
+GrpcRpcManager::GrpcRpcManager(int min_pollers, int max_pollers)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers),
-      num_threads_(0),
-      max_threads_(max_threads) {}
+      num_threads_(0) {}
 
 GrpcRpcManager::~GrpcRpcManager() {
   std::unique_lock<grpc::mutex> lock(mu_);
@@ -82,6 +80,11 @@ void GrpcRpcManager::Wait() {
 void GrpcRpcManager::ShutdownRpcManager() {
   std::unique_lock<grpc::mutex> lock(mu_);
   shutdown_ = true;
+}
+
+bool GrpcRpcManager::IsShutdown() {
+  std::unique_lock<grpc::mutex> lock(mu_);
+  return shutdown_;
 }
 
 void GrpcRpcManager::MarkAsCompleted(GrpcRpcManagerThread* thd) {
@@ -108,8 +111,7 @@ void GrpcRpcManager::Initialize() {
 // below the maximum threshold, we can let the current thread continue as poller
 bool GrpcRpcManager::MaybeContinueAsPoller() {
   std::unique_lock<grpc::mutex> lock(mu_);
-  if (shutdown_ || num_pollers_ > max_pollers_ ||
-      num_threads_ >= max_threads_) {
+  if (shutdown_ || num_pollers_ > max_pollers_) {
     return false;
   }
 
@@ -122,8 +124,7 @@ bool GrpcRpcManager::MaybeContinueAsPoller() {
 // min_pollers_) and the total number of threads is below the maximum threshold
 void GrpcRpcManager::MaybeCreatePoller() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
-  if (!shutdown_ && num_pollers_ < min_pollers_ &&
-      num_threads_ < max_threads_) {
+  if (!shutdown_ && num_pollers_ < min_pollers_) {
     num_pollers_++;
     num_threads_++;
 
@@ -133,28 +134,38 @@ void GrpcRpcManager::MaybeCreatePoller() {
 }
 
 void GrpcRpcManager::MainWorkLoop() {
-  bool is_work_found = false;
   void* tag;
+  bool ok;
 
   /*
    1. Poll for work (i.e PollForWork())
-   2. After returning from PollForWork, reduce the number of pollers by 1
+   2. After returning from PollForWork, reduce the number of pollers by 1. If
+      PollForWork() returned a TIMEOUT, then it may indicate that we have more
+      polling threads than needed. Check if the number of pollers is greater
+      than min_pollers and if so, terminate the thread.
    3. Since we are short of one poller now, see if a new poller has to be
       created (i.e see MaybeCreatePoller() for more details)
    4. Do the actual work (DoWork())
    5. After doing the work, see it this thread can resume polling work (i.e
       see MaybeContinueAsPoller() for more details) */
   do {
-    PollForWork(is_work_found, &tag);
+    WorkStatus work_status = PollForWork(&tag, &ok);
 
     {
       grpc::unique_lock<grpc::mutex> lock(mu_);
       num_pollers_--;
+
+      if (work_status == TIMEOUT && num_pollers_ > min_pollers_) {
+        break;
+      }
     }
 
-    if (is_work_found) {
+    // TODO (sreek) See if we need to check for shutdown here and quit
+    // Note that MaybeCreatePoller does check for shutdown and creates a new
+    // thread only if GrpcRpcManager is not shutdown
+    if (work_status == WORK_FOUND) {
       MaybeCreatePoller();
-      DoWork(tag);
+      DoWork(tag, ok);
     }
   } while (MaybeContinueAsPoller());
 

@@ -153,6 +153,12 @@ class ServerBuilder {
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
+  // TODO (sreek) Make these configurable
+  // The default number of minimum and maximum number of polling threads needed
+  // per completion queue. These are only used in case of Sync server
+  const int kDefaultMinPollers = 1;
+  const int kDefaultMaxPollers = -1; // Unlimited
+
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
@@ -172,7 +178,10 @@ class ServerBuilder {
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+
+  /* List of completion queues added via AddCompletionQueue() method */
   std::vector<ServerCompletionQueue*> cqs_;
+
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
   AsyncGenericService* generic_service_;
