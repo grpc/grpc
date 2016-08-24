@@ -52,8 +52,6 @@ typedef struct grpc_chttp2_transport_parsing grpc_chttp2_transport_parsing;
 #define GRPC_CHTTP2_FRAME_GOAWAY 7
 #define GRPC_CHTTP2_FRAME_WINDOW_UPDATE 8
 
-#define GRPC_CHTTP2_MAX_PAYLOAD_LENGTH ((1 << 14) - 1)
-
 #define GRPC_CHTTP2_DATA_FLAG_END_STREAM 1
 #define GRPC_CHTTP2_FLAG_ACK 1
 #define GRPC_CHTTP2_DATA_FLAG_END_HEADERS 4
