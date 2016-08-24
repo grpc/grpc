@@ -37,8 +37,6 @@
 #include <cstring>
 #include <string>
 
-#include <arpa/inet.h>
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -54,6 +52,7 @@
 extern "C" {
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
 #include "src/core/lib/surface/channel.h"
