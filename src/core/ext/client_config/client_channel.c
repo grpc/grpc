@@ -411,8 +411,6 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = 1;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    // grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
-    // chand->interested_parties);
     grpc_resolver_next(exec_ctx, chand->resolver, calld->pollent,
                        &chand->incoming_configuration,
                        &chand->on_config_changed);

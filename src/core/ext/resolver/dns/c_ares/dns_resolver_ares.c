@@ -152,18 +152,14 @@ static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  gpr_log(GPR_ERROR, "dns_on_resolved");
   dns_resolver *r = arg;
   grpc_client_config *config = NULL;
   grpc_lb_policy *lb_policy;
-  gpr_log(GPR_ERROR, "before mu");
   gpr_mu_lock(&r->mu);
-  gpr_log(GPR_ERROR, "after mu");
   GPR_ASSERT(r->resolving);
   r->resolving = 0;
   grpc_resolved_addresses *addresses = r->addresses;
   if (addresses != NULL) {
-    gpr_log(GPR_ERROR, "addresses != NULL");
     grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
@@ -182,7 +178,6 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     }
     grpc_resolved_addresses_destroy(addresses);
   } else {
-    gpr_log(GPR_ERROR, "addresses == NULL");
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
@@ -208,9 +203,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   r->resolved_version++;
   dns_maybe_finish_next_locked(exec_ctx, r);
   gpr_mu_unlock(&r->mu);
-  gpr_log(GPR_ERROR, "mu_unlock");
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "dns-resolving");
-  gpr_log(GPR_ERROR, "after GRPC_RESOLVER_UNREF");
 }
 
 static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
@@ -224,7 +217,6 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
   r->target_config = target_config;
   if (r->resolved_version == 0 && !r->resolving) {
     gpr_backoff_reset(&r->backoff_state);
-    gpr_log(GPR_ERROR, "dns_start_resolving_locked");
     GRPC_RESOLVER_REF(&r->base, "dns-resolving");
     GPR_ASSERT(!r->resolving);
     r->resolving = 1;
@@ -235,7 +227,7 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
       grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
                                              r->base.pollset_set);
     } else {
-      gpr_log(GPR_ERROR, "pollent is NULL");
+      gpr_log(GPR_DEBUG, "dns_next is called without giving a pollent");
     }
     grpc_resolve_address_ares(
         exec_ctx, r->name, r->default_port, r->base.pollset_set,
@@ -248,21 +240,13 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 
 static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
                                        dns_resolver *r) {
-  gpr_log(GPR_ERROR, "dns_start_resolving_locked");
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
   r->resolving = 1;
   r->addresses = NULL;
-#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
-  grpc_resolve_address(exec_ctx, r->name, r->default_port,
-                       grpc_closure_create(dns_on_resolved, r), &r->addresses);
-#else
   grpc_resolve_address_ares(
       exec_ctx, r->name, r->default_port, r->base.pollset_set,
       grpc_closure_create(dns_on_resolved, r), &r->addresses);
-#endif
-  // grpc_resolve_address(exec_ctx, r->name, r->default_port,
-  //  grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
 static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,

@@ -53,9 +53,6 @@ struct grpc_resolver_vtable {
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*channel_saw_error)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
-  // void (*next)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-  //              grpc_client_config **target_config, grpc_closure
-  //              *on_complete);
   void (*next)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                grpc_polling_entity *pollent, grpc_client_config **target_config,
                grpc_closure *on_complete);
@@ -92,10 +89,6 @@ void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
 
     If resolution is fatally broken, set *target_config to NULL and
     schedule on_complete. */
-// void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-//                         grpc_client_config **target_config,
-//                         grpc_closure *on_complete);
-
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                         grpc_polling_entity *pollent,
                         grpc_client_config **target_config,
