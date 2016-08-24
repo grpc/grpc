@@ -635,8 +635,8 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
     else if (!stream_state->state_callback_received[OP_RECV_TRAILING_METADATA])
       result = false;
     /* we haven't received on_succeeded  yet. */
-    else if (!stream_state->state_callback_received[OP_SUCCEEDED])
-      result = false;
+    //else if (!stream_state->state_callback_received[OP_SUCCEEDED])
+    //  result = false;
   } else if (op_id == OP_SEND_TRAILING_METADATA) {
     /* already executed */
     if (stream_state->state_op_done[OP_SEND_TRAILING_METADATA]) result = false;
