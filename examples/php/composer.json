@@ -2,6 +2,6 @@
   "name": "grpc/grpc-demo",
   "description": "gRPC example for PHP",
   "require": {
-    "grpc/grpc": "v1.0.0",
+    "grpc/grpc": "v1.0.0"
   }
 }
