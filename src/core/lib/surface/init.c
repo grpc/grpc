@@ -99,8 +99,8 @@ static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
 
 static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
-      (void *)&grpc_message_size_filter);
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      prepend_filter, (void *)&grpc_message_size_filter);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       prepend_filter, (void *)&grpc_message_size_filter);
