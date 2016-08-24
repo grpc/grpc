@@ -112,6 +112,7 @@
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -284,6 +285,39 @@ struct rr_connectivity_data {
   glb_lb_policy *glb_policy;
 };
 
+static bool process_serverlist(const grpc_grpclb_server *server,
+                               struct sockaddr_storage *sa, size_t *sa_len) {
+  if (server->port >> 16 != 0) {
+    gpr_log(GPR_ERROR, "Invalid port '%d'.", server->port);
+    return false;
+  }
+  const uint16_t netorder_port = htons((uint16_t)server->port);
+  /* the addresses are given in binary format (a in(6)_addr struct) in
+   * server->ip_address.bytes. */
+  const grpc_grpclb_ip_address *ip = &server->ip_address;
+  *sa_len = 0;
+  if (ip->size == 4) {
+    struct sockaddr_in *addr4 = (struct sockaddr_in *)sa;
+    *sa_len = sizeof(struct sockaddr_in);
+    memset(addr4, 0, *sa_len);
+    addr4->sin_family = AF_INET;
+    memcpy(&addr4->sin_addr, ip->bytes, ip->size);
+    addr4->sin_port = netorder_port;
+  } else if (ip->size == 6) {
+    struct sockaddr_in *addr6 = (struct sockaddr_in *)sa;
+    *sa_len = sizeof(struct sockaddr_in);
+    memset(addr6, 0, *sa_len);
+    addr6->sin_family = AF_INET;
+    memcpy(&addr6->sin_addr, ip->bytes, ip->size);
+    addr6->sin_port = netorder_port;
+  } else {
+    gpr_log(GPR_ERROR, "Expected IP to be 4 or 16 bytes. Got %d.", ip->size);
+    return false;
+  }
+  GPR_ASSERT(*sa_len > 0);
+  return true;
+}
+
 static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
                                  const grpc_grpclb_serverlist *serverlist,
                                  glb_lb_policy *glb_policy) {
@@ -299,45 +333,17 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
       gpr_malloc(sizeof(grpc_resolved_address) * serverlist->num_servers);
   size_t addr_idx = 0;
   for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    const grpc_grpclb_server *const server = serverlist->servers[i];
-    /* a minimal of error checking */
-    if (server->port >> 16 != 0) {
-      gpr_log(GPR_ERROR, "Invalid port '%d'. Ignoring server list index %zu",
-              server->port, i);
+    const grpc_grpclb_server *server = serverlist->servers[i];
+    grpc_resolved_address *raddr = &args.addresses->addrs[addr_idx];
+    if (!process_serverlist(server, (struct sockaddr_storage *)raddr->addr,
+                            &raddr->len)) {
+      gpr_log(GPR_INFO,
+              "Problem processing server at index %zu of received serverlist, "
+              "ignoring.",
+              i);
       continue;
     }
-    const uint16_t netorder_port = htons((uint16_t)server->port);
-    /* the addresses are given in binary format (a in(6)_addr struct) in
-     * server->ip_address.bytes. */
-    const grpc_grpclb_ip_address *ip = &server->ip_address;
-    struct sockaddr_storage sa;
-    size_t sa_len = 0;
-    if (ip->size == 4) {
-      struct sockaddr_in *addr4 = (struct sockaddr_in *)&sa;
-      memset(addr4, 0, sizeof(struct sockaddr_in));
-      sa_len = sizeof(struct sockaddr_in);
-      addr4->sin_family = AF_INET;
-      memcpy(&addr4->sin_addr, ip->bytes, ip->size);
-      addr4->sin_port = netorder_port;
-    } else if (ip->size == 6) {
-      struct sockaddr_in *addr6 = (struct sockaddr_in *)&sa;
-      memset(addr6, 0, sizeof(struct sockaddr_in));
-      sa_len = sizeof(struct sockaddr_in);
-      addr6->sin_family = AF_INET;
-      memcpy(&addr6->sin_addr, ip->bytes, ip->size);
-      addr6->sin_port = netorder_port;
-    } else {
-      gpr_log(GPR_ERROR,
-              "Expected IP to be 4 or 16 bytes. Got %d. Ignoring server list "
-              "index %zu",
-              ip->size, i);
-      continue;
-    }
-    GPR_ASSERT(sa_len > 0);
-    memcpy(args.addresses->addrs[addr_idx].addr, &sa, sa_len);
-    args.addresses->addrs[addr_idx].len = sa_len;
     ++addr_idx;
-
     args.tokens[i].token_size = GPR_ARRAY_SIZE(server->load_balance_token) - 1;
     args.tokens[i].token = gpr_malloc(args.tokens[i].token_size);
     memcpy(args.tokens[i].token, server->load_balance_token,
