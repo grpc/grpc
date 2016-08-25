@@ -332,7 +332,7 @@ grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
   return new;
 }
 
-static const char *no_error_string = "null";
+static const char *no_error_string = "\"No Error\"";
 static const char *oom_error_string = "\"Out of memory\"";
 static const char *cancelled_error_string = "\"Cancelled\"";
 

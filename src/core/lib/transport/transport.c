@@ -32,10 +32,14 @@
  */
 
 #include "src/core/lib/transport/transport.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -246,4 +250,27 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
   }
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, status);
   add_error(op, &op->close_error, error);
+}
+
+typedef struct {
+  grpc_closure outer_on_complete;
+  grpc_closure *inner_on_complete;
+  grpc_transport_op op;
+} made_transport_op;
+
+static void destroy_made_transport_op(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_error *error) {
+  made_transport_op *op = arg;
+  grpc_exec_ctx_sched(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error),
+                      NULL);
+  gpr_free(op);
+}
+
+grpc_transport_op *grpc_make_transport_op(grpc_closure *on_complete) {
+  made_transport_op *op = gpr_malloc(sizeof(*op));
+  grpc_closure_init(&op->outer_on_complete, destroy_made_transport_op, op);
+  op->inner_on_complete = on_complete;
+  memset(&op->op, 0, sizeof(op->op));
+  op->op.on_consumed = &op->outer_on_complete;
+  return &op->op;
 }
