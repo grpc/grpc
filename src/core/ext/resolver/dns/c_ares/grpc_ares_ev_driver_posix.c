@@ -116,9 +116,10 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
           ARES_GETSOCK_READABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD,
           ARES_GETSOCK_WRITABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD);
     }
+  } else {
+    ares_cancel(d->channel);
   }
   grpc_ares_notify_on_event(exec_ctx, d);
-  grpc_exec_ctx_flush(exec_ctx);
 }
 
 void grpc_ares_gethostbyname(grpc_ares_ev_driver *ev_driver, const char *host,

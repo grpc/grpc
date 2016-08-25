@@ -152,7 +152,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
         addr = (struct sockaddr_in *)&(*addresses)->addrs[i].addr;
 
         memcpy(&addr->sin_addr, hostent->h_addr_list[i - prev_naddr],
-          sizeof(struct in_addr));
+               sizeof(struct in_addr));
         ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
         gpr_log(GPR_ERROR, "addr: %s", output);
         gpr_log(GPR_ERROR, "port: %s", r->port);
