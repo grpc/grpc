@@ -337,11 +337,12 @@ module GRPC
         fail 'md already sent' if @metadata_sent
         batch_result = @call.run_batch(
           SEND_INITIAL_METADATA => metadata,
-          SEND_MESSAGE => req,
+          SEND_MESSAGE => @marshal.call(req),
           SEND_CLOSE_FROM_CLIENT => nil,
           RECV_INITIAL_METADATA => nil,
           RECV_MESSAGE => nil,
           RECV_STATUS_ON_CLIENT => nil)
+        @metadata_sent = true
       end
 
       response = nil
@@ -353,14 +354,14 @@ module GRPC
       end
       @call.status = batch_result.status
       @call.metadata = batch_result.metadata
-
       op_is_done
+
+      # The RECV_STATUS in run_batch always succeeds
+      # Check the status for a bad status or failed run batch
       batch_result.check_status
       @call.close
+
       response
-    rescue GRPC::Core::CallError => e
-      finished  # checks for Cancelled
-      raise e
     end
 
     # client_streamer sends a stream of requests to a GRPC server, and
