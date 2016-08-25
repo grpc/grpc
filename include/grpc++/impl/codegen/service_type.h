@@ -150,8 +150,11 @@ class Service {
   void MarkMethodFCUnary(int index, MethodHandler* fc_unary_method) {
     GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
                        "Cannot mark an async or generic method as FCUnary");
-    methods_[index]->SetMethodType(::grpc::RpcMethod::FC_UNARY);
     methods_[index]->SetHandler(fc_unary_method);
+
+    // From the server's point of view, streamed unary is a special
+    // case of BIDI_STREAMING that has 1 read and 1 write, in that order.
+    methods_[index]->SetMethodType(::grpc::RpcMethod::BIDI_STREAMING);
   }
 
  private:

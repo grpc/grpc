@@ -1154,7 +1154,7 @@ void PrintSourceService(Printer *printer, const Service *service,
     (*vars)["Idx"] = as_string(i);
     if (method->NoStreaming()) {
       (*vars)["StreamingType"] = "NORMAL_RPC";
-      // NOTE: There is no reason to consider FC_UNARY as a separate
+      // NOTE: There is no reason to consider streamed-unary as a separate
       // category here since this part is setting up the client-side stub
       // and this appears as a NORMAL_RPC from the client-side.
     } else if (method->ClientOnlyStreaming()) {
