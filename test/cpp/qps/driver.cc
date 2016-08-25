@@ -310,6 +310,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // clients is array rather than std::vector to avoid gcc-4.4 issues
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
+  size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
@@ -344,6 +345,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
         }
       }
     }
+
+    // Reduce channel count so that total channels specified is held regardless
+    // of the number of clients available
+    size_t num_channels =
+        (client_config.client_channels() - channels_allocated) /
+        (num_clients - i);
+    channels_allocated += num_channels;
+    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i,
+            num_channels);
+    per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
     *args.mutable_setup() = per_client_config;

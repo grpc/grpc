@@ -95,15 +95,13 @@ static void test_define_single_resource(const char *file, const char *name,
 }
 
 // Try deleting various resources (both those that exist and those that don't).
-static void test_delete_resource() {
+static void test_delete_resource(const char *minimal_good, const char *full) {
   initialize_resources();
   // Try deleting resource before any are defined.
   census_delete_resource(0);
   // Create and check a couple of resources.
-  int32_t rid1 = define_resource_from_file(
-      "test/core/census/data/resource_minimal_good.pb");
-  int32_t rid2 =
-      define_resource_from_file("test/core/census/data/resource_full.pb");
+  int32_t rid1 = define_resource_from_file(minimal_good);
+  int32_t rid2 = define_resource_from_file(full);
   GPR_ASSERT(rid1 >= 0 && rid2 >= 0 && rid1 != rid2);
   int32_t rid3 = census_resource_id("minimal_good");
   int32_t rid4 = census_resource_id("full_resource");
@@ -117,8 +115,7 @@ static void test_delete_resource() {
   rid3 = census_resource_id("minimal_good");
   GPR_ASSERT(rid3 < 0);
   // Check that re-adding works.
-  rid1 = define_resource_from_file(
-      "test/core/census/data/resource_minimal_good.pb");
+  rid1 = define_resource_from_file(minimal_good);
   GPR_ASSERT(rid1 >= 0);
   rid3 = census_resource_id("minimal_good");
   GPR_ASSERT(rid1 == rid3);
@@ -136,22 +133,37 @@ static void test_base_resources() {
 }
 
 int main(int argc, char **argv) {
+  const char *resource_empty_name_pb, *resource_full_pb,
+      *resource_minimal_good_pb, *resource_no_name_pb,
+      *resource_no_numerator_pb, *resource_no_unit_pb;
+  if (argc == 7) {
+    resource_empty_name_pb = argv[1];
+    resource_full_pb = argv[2];
+    resource_minimal_good_pb = argv[3];
+    resource_no_name_pb = argv[4];
+    resource_no_numerator_pb = argv[5];
+    resource_no_unit_pb = argv[6];
+  } else {
+    GPR_ASSERT(argc == 1);
+    resource_empty_name_pb = "test/core/census/data/resource_empty_name.pb";
+    resource_full_pb = "test/core/census/data/resource_full.pb";
+    resource_minimal_good_pb = "test/core/census/data/resource_minimal_good.pb";
+    resource_no_name_pb = "test/core/census/data/resource_no_name.pb";
+    resource_no_numerator_pb = "test/core/census/data/resource_no_numerator.pb";
+    resource_no_unit_pb = "test/core/census/data/resource_no_unit.pb";
+  }
   grpc_test_init(argc, argv);
   test_enable_disable();
   test_empty_definition();
-  test_define_single_resource("test/core/census/data/resource_minimal_good.pb",
-                              "minimal_good", true);
-  test_define_single_resource("test/core/census/data/resource_full.pb",
-                              "full_resource", true);
-  test_define_single_resource("test/core/census/data/resource_no_name.pb",
-                              "resource_no_name", false);
-  test_define_single_resource("test/core/census/data/resource_no_numerator.pb",
-                              "resource_no_numerator", false);
-  test_define_single_resource("test/core/census/data/resource_no_unit.pb",
-                              "resource_no_unit", false);
-  test_define_single_resource("test/core/census/data/resource_empty_name.pb",
-                              "resource_empty_name", false);
-  test_delete_resource();
+  test_define_single_resource(resource_minimal_good_pb, "minimal_good", true);
+  test_define_single_resource(resource_full_pb, "full_resource", true);
+  test_define_single_resource(resource_no_name_pb, "resource_no_name", false);
+  test_define_single_resource(resource_no_numerator_pb, "resource_no_numerator",
+                              false);
+  test_define_single_resource(resource_no_unit_pb, "resource_no_unit", false);
+  test_define_single_resource(resource_empty_name_pb, "resource_empty_name",
+                              false);
+  test_delete_resource(resource_minimal_good_pb, resource_full_pb);
   test_base_resources();
   return 0;
 }

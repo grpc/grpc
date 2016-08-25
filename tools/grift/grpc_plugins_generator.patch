@@ -1,0 +1,2505 @@
+From 0894590b5020c38106d4ebb2291994668c64f9dd Mon Sep 17 00:00:00 2001
+From: chedeti <chedeti@google.com>
+Date: Sun, 31 Jul 2016 15:47:47 -0700
+Subject: [PATCH 1/3] don't build tests
+
+---
+ Makefile.am         | 7 ++-----
+ lib/cpp/Makefile.am | 7 ++-----
+ 2 files changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 10fe49a..d49caac 100755
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -21,10 +21,6 @@ ACLOCAL_AMFLAGS = -I ./aclocal
+ 
+ SUBDIRS = compiler/cpp lib
+ 
+-if WITH_TESTS
+-SUBDIRS += test
+-endif
+-
+ if WITH_TUTORIAL
+ SUBDIRS += tutorial
+ endif
+@@ -117,4 +113,5 @@ EXTRA_DIST = \
+ 	CHANGES \
+ 	NOTICE \
+ 	README.md \
+-	Thrift.podspec
++	Thrift.podspec \
++	test
+diff --git a/lib/cpp/Makefile.am b/lib/cpp/Makefile.am
+index 6fd15d2..7de1fad 100755
+--- a/lib/cpp/Makefile.am
++++ b/lib/cpp/Makefile.am
+@@ -27,10 +27,6 @@ moc__%.cpp: %.h
+ 
+ SUBDIRS = .
+ 
+-if WITH_TESTS
+-SUBDIRS += test
+-endif
+-
+ pkgconfigdir = $(libdir)/pkgconfig
+ 
+ lib_LTLIBRARIES = libthrift.la
+@@ -277,7 +273,8 @@ EXTRA_DIST = \
+              thrift-qt.pc.in \
+              thrift-qt5.pc.in \
+              src/thrift/qt/CMakeLists.txt \
+-             $(WINDOWS_DIST)
++             $(WINDOWS_DIST) \
++             test
+ 
+ style-local:
+ 	$(CPPSTYLE_CMD)
+-- 
+2.8.0.rc3.226.g39d4020
+
+
+From 387e4300bc9d98176a92a7c010621443a538e7f2 Mon Sep 17 00:00:00 2001
+From: chedeti <chedeti@google.com>
+Date: Sun, 31 Jul 2016 16:16:40 -0700
+Subject: [PATCH 2/3] grpc cpp plugins generator with example
+
+---
+ compiler/cpp/src/generate/t_cpp_generator.cc | 489 +++++++++++++++++++++++----
+ tutorial/cpp/CMakeLists.txt                  |  53 ---
+ tutorial/cpp/CppClient.cpp                   |  80 -----
+ tutorial/cpp/CppServer.cpp                   | 181 ----------
+ tutorial/cpp/GriftClient.cpp                 |  93 +++++
+ tutorial/cpp/GriftServer.cpp                 |  93 +++++
+ tutorial/cpp/Makefile.am                     |  66 ++--
+ tutorial/cpp/test.thrift                     |  13 +
+ 8 files changed, 652 insertions(+), 416 deletions(-)
+ delete mode 100644 tutorial/cpp/CMakeLists.txt
+ delete mode 100644 tutorial/cpp/CppClient.cpp
+ delete mode 100644 tutorial/cpp/CppServer.cpp
+ create mode 100644 tutorial/cpp/GriftClient.cpp
+ create mode 100644 tutorial/cpp/GriftServer.cpp
+ create mode 100644 tutorial/cpp/test.thrift
+
+diff --git a/compiler/cpp/src/generate/t_cpp_generator.cc b/compiler/cpp/src/generate/t_cpp_generator.cc
+index 6c04899..1557241 100644
+--- a/compiler/cpp/src/generate/t_cpp_generator.cc
++++ b/compiler/cpp/src/generate/t_cpp_generator.cc
+@@ -162,6 +162,8 @@ public:
+                                  bool specialized = false);
+   void generate_function_helpers(t_service* tservice, t_function* tfunction);
+   void generate_service_async_skeleton(t_service* tservice);
++  void generate_service_stub_interface(t_service* tservice);
++  void generate_service_stub(t_service* tservice);
+ 
+   /**
+    * Serialization constructs
+@@ -883,10 +885,10 @@ void t_cpp_generator::generate_struct_declaration(ofstream& out,
+                                                   bool is_user_struct) {
+   string extends = "";
+   if (is_exception) {
+-    extends = " : public ::apache::thrift::TException";
++    extends = " : public apache::thrift::TException";
+   } else {
+-    if (is_user_struct && !gen_templates_) {
+-      extends = " : public virtual ::apache::thrift::TBase";
++    if (!gen_templates_) {
++      extends = " : public virtual apache::thrift::TBase";
+     }
+   }
+ 
+@@ -1130,9 +1132,15 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
+   vector<t_field*>::const_iterator m_iter;
+   const vector<t_field*>& members = tstruct->get_members();
+ 
++  string method_prefix = "";
++  if (service_name_ != "") {
++    method_prefix = service_name_ + "::";
++  }
++
+   // Destructor
+   if (tstruct->annotations_.find("final") == tstruct->annotations_.end()) {
+-    force_cpp_out << endl << indent() << tstruct->get_name() << "::~" << tstruct->get_name()
++    force_cpp_out << endl << indent() << method_prefix <<
++    tstruct->get_name() << "::~" << tstruct->get_name()
+                   << "() throw() {" << endl;
+     indent_up();
+ 
+@@ -1145,12 +1153,14 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
+     for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
+       if (is_reference((*m_iter))) {
+         std::string type = type_name((*m_iter)->get_type());
+-        out << endl << indent() << "void " << tstruct->get_name() << "::__set_"
++        out << endl << indent() << "void " << method_prefix
++            << tstruct->get_name() << "::__set_"
+             << (*m_iter)->get_name() << "(boost::shared_ptr<"
+             << type_name((*m_iter)->get_type(), false, false) << ">";
+         out << " val) {" << endl;
+       } else {
+-        out << endl << indent() << "void " << tstruct->get_name() << "::__set_"
++        out << endl << indent() << "void " << method_prefix
++            << tstruct->get_name() << "::__set_"
+             << (*m_iter)->get_name() << "(" << type_name((*m_iter)->get_type(), false, true);
+         out << " val) {" << endl;
+       }
+@@ -1177,11 +1187,16 @@ void t_cpp_generator::generate_struct_definition(ofstream& out,
+  * @param tstruct The struct
+  */
+ void t_cpp_generator::generate_struct_reader(ofstream& out, t_struct* tstruct, bool pointers) {
++  string method_prefix = "";
++  if (service_name_ != "") {
++    method_prefix = service_name_ + "::";
++  }
++
+   if (gen_templates_) {
+     out << indent() << "template <class Protocol_>" << endl << indent() << "uint32_t "
+-        << tstruct->get_name() << "::read(Protocol_* iprot) {" << endl;
++        << method_prefix << tstruct->get_name() << "::read(Protocol_* iprot) {" << endl;
+   } else {
+-    indent(out) << "uint32_t " << tstruct->get_name()
++    indent(out) << "uint32_t " << method_prefix << tstruct->get_name()
+                 << "::read(::apache::thrift::protocol::TProtocol* iprot) {" << endl;
+   }
+   indent_up();
+@@ -1301,14 +1316,18 @@ void t_cpp_generator::generate_struct_reader(ofstream& out, t_struct* tstruct, b
+  */
+ void t_cpp_generator::generate_struct_writer(ofstream& out, t_struct* tstruct, bool pointers) {
+   string name = tstruct->get_name();
++  string method_prefix = "";
++  if (service_name_ != "") {
++    method_prefix = service_name_ + "::";
++  }
+   const vector<t_field*>& fields = tstruct->get_sorted_members();
+   vector<t_field*>::const_iterator f_iter;
+ 
+   if (gen_templates_) {
+     out << indent() << "template <class Protocol_>" << endl << indent() << "uint32_t "
+-        << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
++        << method_prefix << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
+   } else {
+-    indent(out) << "uint32_t " << tstruct->get_name()
++    indent(out) << "uint32_t " << method_prefix << tstruct->get_name()
+                 << "::write(::apache::thrift::protocol::TProtocol* oprot) const {" << endl;
+   }
+   indent_up();
+@@ -1369,14 +1388,18 @@ void t_cpp_generator::generate_struct_result_writer(ofstream& out,
+                                                     t_struct* tstruct,
+                                                     bool pointers) {
+   string name = tstruct->get_name();
++  string method_prefix = "";
++  if (service_name_ != "") {
++    method_prefix = service_name_ + "::";
++  }
+   const vector<t_field*>& fields = tstruct->get_sorted_members();
+   vector<t_field*>::const_iterator f_iter;
+ 
+   if (gen_templates_) {
+     out << indent() << "template <class Protocol_>" << endl << indent() << "uint32_t "
+-        << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
++        << method_prefix << tstruct->get_name() << "::write(Protocol_* oprot) const {" << endl;
+   } else {
+-    indent(out) << "uint32_t " << tstruct->get_name()
++    indent(out) << "uint32_t " << method_prefix << tstruct->get_name()
+                 << "::write(::apache::thrift::protocol::TProtocol* oprot) const {" << endl;
+   }
+   indent_up();
+@@ -1385,18 +1408,7 @@ void t_cpp_generator::generate_struct_result_writer(ofstream& out,
+ 
+   indent(out) << "xfer += oprot->writeStructBegin(\"" << name << "\");" << endl;
+ 
+-  bool first = true;
+   for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+-    if (first) {
+-      first = false;
+-      out << endl << indent() << "if ";
+-    } else {
+-      out << " else if ";
+-    }
+-
+-    out << "(this->__isset." << (*f_iter)->get_name() << ") {" << endl;
+-
+-    indent_up();
+ 
+     // Write field header
+     out << indent() << "xfer += oprot->writeFieldBegin("
+@@ -1410,9 +1422,6 @@ void t_cpp_generator::generate_struct_result_writer(ofstream& out,
+     }
+     // Write field closer
+     indent(out) << "xfer += oprot->writeFieldEnd();" << endl;
+-
+-    indent_down();
+-    indent(out) << "}";
+   }
+ 
+   // Write the struct map
+@@ -1478,9 +1487,13 @@ void t_cpp_generator::generate_struct_ostream_operator(std::ofstream& out, t_str
+ }
+ 
+ void t_cpp_generator::generate_struct_print_method_decl(std::ofstream& out, t_struct* tstruct) {
++  string method_prefix = "";
++  if (service_name_ != "") {
++    method_prefix = service_name_ + "::";
++  }
+   out << "void ";
+   if (tstruct) {
+-    out << tstruct->get_name() << "::";
++    out << method_prefix << tstruct->get_name() << "::";
+   }
+   out << "printTo(std::ostream& out) const";
+ }
+@@ -1601,11 +1614,13 @@ void t_cpp_generator::generate_exception_what_method(std::ofstream& out, t_struc
+  */
+ void t_cpp_generator::generate_service(t_service* tservice) {
+   string svcname = tservice->get_name();
++  string ns = tservice->get_program()->get_namespace("cpp");
+ 
+   // Make output files
+-  string f_header_name = get_out_dir() + svcname + ".h";
++  string f_header_name = get_out_dir() + svcname + ".grpc.thrift.h";
+   f_header_.open(f_header_name.c_str());
+ 
++
+   // Print header file includes
+   f_header_ << autogen_comment();
+   f_header_ << "#ifndef " << svcname << "_H" << endl << "#define " << svcname << "_H" << endl
+@@ -1621,15 +1636,38 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+     f_header_ << "#include <thrift/async/TAsyncDispatchProcessor.h>" << endl;
+   }
+   f_header_ << "#include <thrift/async/TConcurrentClientSyncInfo.h>" << endl;
++
+   f_header_ << "#include \"" << get_include_prefix(*get_program()) << program_name_ << "_types.h\""
+             << endl;
+ 
+   t_service* extends_service = tservice->get_extends();
+-  if (extends_service != NULL) {
++  if (extends_service) {
+     f_header_ << "#include \"" << get_include_prefix(*(extends_service->get_program()))
+-              << extends_service->get_name() << ".h\"" << endl;
++              << extends_service->get_name() << ".grpc.thrift.h\"" << endl;
+   }
+ 
++
++  f_header_  <<
++      "#include <grpc++/impl/codegen/async_stream.h>" << endl <<
++      "#include <grpc++/impl/codegen/async_unary_call.h>"  << endl <<
++      "#include <grpc++/impl/codegen/thrift_utils.h>" << endl <<
++      "#include <grpc++/impl/codegen/rpc_method.h>"  << endl <<
++      "#include <grpc++/impl/codegen/service_type.h>"  << endl <<
++      "#include <grpc++/impl/codegen/status.h>" << endl <<
++      "#include <grpc++/impl/codegen/stub_options.h>" << endl <<
++      "#include <grpc++/impl/codegen/sync_stream.h>" << endl;
++
++
++  f_header_  <<
++      endl <<
++      "namespace grpc {" << endl <<
++      "class CompletionQueue;"  << endl <<
++      "class Channel;"  << endl <<
++      "class RpcService;"  << endl <<
++      "class ServerCompletionQueue;"  << endl <<
++      "class ServerContext;" << endl <<
++      "}" << endl;
++
+   f_header_ << endl << ns_open_ << endl << endl;
+ 
+   f_header_ << "#ifdef _WIN32\n"
+@@ -1638,10 +1676,13 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+                "#endif\n\n";
+ 
+   // Service implementation file includes
+-  string f_service_name = get_out_dir() + svcname + ".cpp";
++  string f_service_name = get_out_dir() + svcname + ".grpc.thrift.cpp";
+   f_service_.open(f_service_name.c_str());
+   f_service_ << autogen_comment();
+-  f_service_ << "#include \"" << get_include_prefix(*get_program()) << svcname << ".h\"" << endl;
++
++  f_service_ << "#include \"" <<
++    get_include_prefix(*get_program()) << svcname << ".grpc.thrift.h\"" << endl;
++
+   if (gen_cob_style_) {
+     f_service_ << "#include \"thrift/async/TAsyncChannel.h\"" << endl;
+   }
+@@ -1652,7 +1693,7 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+     string f_service_tcc_name = get_out_dir() + svcname + ".tcc";
+     f_service_tcc_.open(f_service_tcc_name.c_str());
+     f_service_tcc_ << autogen_comment();
+-    f_service_tcc_ << "#include \"" << get_include_prefix(*get_program()) << svcname << ".h\""
++    f_service_tcc_ << "#include \"" << get_include_prefix(*get_program()) << svcname << ".grpc.thrift.h\""
+                    << endl;
+ 
+     f_service_tcc_ << "#ifndef " << svcname << "_TCC" << endl << "#define " << svcname << "_TCC"
+@@ -1663,19 +1704,69 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+     }
+   }
+ 
++  f_service_ <<
++    endl <<
++    "#include <grpc++/impl/codegen/async_stream.h>" << endl <<
++    "#include <grpc++/impl/codegen/async_unary_call.h>" << endl <<
++    "#include <grpc++/impl/codegen/channel_interface.h>" << endl <<
++    "#include <grpc++/impl/codegen/client_unary_call.h>" << endl <<
++    "#include <grpc++/impl/codegen/method_handler_impl.h>" << endl <<
++    "#include <grpc++/impl/codegen/rpc_service_method.h>" << endl <<
++    "#include <grpc++/impl/codegen/service_type.h>" << endl <<
++    "#include <grpc++/impl/codegen/sync_stream.h>" << endl <<
++    endl;
++
+   f_service_ << endl << ns_open_ << endl << endl;
+   f_service_tcc_ << endl << ns_open_ << endl << endl;
+ 
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++
++  f_service_ <<
++    "static const char* " << service_name_ << "_method_names[] = {" << endl;
++
++
++  indent_up();
++
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "\"/" << ns << "." << service_name_ << "/" << (*f_iter)->get_name() << "\"," << endl;
++  }
++
++
++  t_service* service_iter = extends_service;  
++  while (service_iter) {
++    vector<t_function*> functions = service_iter->get_functions();
++    vector<t_function*>::iterator f_iter;
++
++    for ( f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++      indent() << "\"/" << service_iter->get_program()->get_namespace("cpp") <<
++      "." << service_iter->get_name() << "/" << (*f_iter)->get_name() << "\"," << endl;
++    }
++    service_iter = service_iter->get_extends();
++  }
++
++  indent_down();
++  f_service_ <<
++  "};" << endl;
++
++  // Generate service class
++  if ( extends_service) {
++    f_header_ << "class " << service_name_ << " : public " <<
++      type_name(extends_service) << " {" << endl <<
++      "public:" << endl;
++  }
++  else {
++    f_header_ << "class " << service_name_ << "{" << endl <<
++      "public:" << endl;
++  }
++
+   // Generate all the components
+-  generate_service_interface(tservice, "");
+-  generate_service_interface_factory(tservice, "");
+-  generate_service_null(tservice, "");
+   generate_service_helpers(tservice);
+-  generate_service_client(tservice, "");
+-  generate_service_processor(tservice, "");
+-  generate_service_multiface(tservice);
+-  generate_service_skeleton(tservice);
+-  generate_service_client(tservice, "Concurrent");
++  generate_service_interface(tservice, "");
++  generate_service_stub_interface(tservice);
++  generate_service_stub(tservice);
+ 
+   // Generate all the cob components
+   if (gen_cob_style_) {
+@@ -1688,10 +1779,14 @@ void t_cpp_generator::generate_service(t_service* tservice) {
+     generate_service_async_skeleton(tservice);
+   }
+ 
++   // Close service class
++  f_header_ << "};" << endl;
++
+   f_header_ << "#ifdef _WIN32\n"
+                "  #pragma warning( pop )\n"
+                "#endif\n\n";
+ 
++
+   // Close the namespace
+   f_service_ << ns_close_ << endl << endl;
+   f_service_tcc_ << ns_close_ << endl << endl;
+@@ -1729,15 +1824,11 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
+     string name_orig = ts->get_name();
+ 
+     // TODO(dreiss): Why is this stuff not in generate_function_helpers?
+-    ts->set_name(tservice->get_name() + "_" + (*f_iter)->get_name() + "_args");
++    ts->set_name((*f_iter)->get_name() + "Req");
+     generate_struct_declaration(f_header_, ts, false);
+-    generate_struct_definition(out, f_service_, ts, false);
++    generate_struct_definition(out, f_service_, ts, true);
+     generate_struct_reader(out, ts);
+     generate_struct_writer(out, ts);
+-    ts->set_name(tservice->get_name() + "_" + (*f_iter)->get_name() + "_pargs");
+-    generate_struct_declaration(f_header_, ts, false, true, false, true);
+-    generate_struct_definition(out, f_service_, ts, false);
+-    generate_struct_writer(out, ts, true);
+     ts->set_name(name_orig);
+ 
+     generate_function_helpers(tservice, *f_iter);
+@@ -1745,13 +1836,218 @@ void t_cpp_generator::generate_service_helpers(t_service* tservice) {
+ }
+ 
+ /**
++ *  Generates a service Stub Interface
++ *
++ * @param tservice The service to generate a stub for.
++ *
++ */
++void t_cpp_generator::generate_service_stub_interface(t_service* tservice) {
++
++    string extends = "";
++    if (tservice->get_extends()) {
++      extends = " : virtual public " + type_name(tservice->get_extends()) + "::StubInterface";
++    }
++
++    f_header_ <<
++    endl <<
++    "class StubInterface " << extends << " {" << endl;
++    indent_up();
++    f_header_ <<
++    " public:" << endl <<
++    indent() << "virtual ~StubInterface() {}" << endl;
++
++    vector<t_function*> functions = tservice->get_functions();
++    vector<t_function*>::iterator f_iter;
++    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      string function_name = (*f_iter)->get_name();
++      f_header_ <<
++        indent() << "virtual ::grpc::Status " << function_name <<
++        "(::grpc::ClientContext* context, const " << function_name <<
++        "Req& request, " << function_name << "Resp* response) = 0;" << endl;
++    }
++    indent_down();
++    f_header_ <<
++      "};" << endl << endl;
++
++}
++void t_cpp_generator::generate_service_stub(t_service* tservice) {
++    f_header_ <<
++    endl <<
++    "class Stub : public StubInterface {" <<
++    endl;
++
++    indent_up();
++    f_header_ <<
++    " public:" << endl <<
++    indent() << "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);" <<
++    endl;
++
++    vector<t_function*> functions = tservice->get_functions();
++    vector<t_function*>::iterator f_iter;
++    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      string function_name = (*f_iter)->get_name();
++      f_header_ <<
++        indent() << "::grpc::Status " << function_name <<
++        "(::grpc::ClientContext* context, const " << function_name <<
++        "Req& request, " << function_name << "Resp* response) override;" << endl;
++    }
++
++    t_service* extends_service = tservice->get_extends();
++    t_service* service_iter = extends_service;
++    while (service_iter) {
++      // generate inherited methods
++      vector<t_function*> functions = service_iter->get_functions();
++      vector<t_function*>::iterator f_iter;
++      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++        string function_name = (*f_iter)->get_name();
++        f_header_ <<
++          indent() << "::grpc::Status " << function_name <<
++          "(::grpc::ClientContext* context, const " << function_name <<
++          "Req& request, " << function_name << "Resp* response) override;" << endl;
++      }
++      service_iter = service_iter->get_extends();
++    }
++
++    f_header_ <<
++    endl <<
++    " private:" << endl <<
++    indent() << "std::shared_ptr< ::grpc::ChannelInterface> channel_;" <<
++    endl;
++
++    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_header_ <<
++        indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
++    }
++
++    service_iter = extends_service;
++    while (service_iter) {
++      // generate inherited methods
++      vector<t_function*> functions = service_iter->get_functions();
++      vector<t_function*>::iterator f_iter;
++      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++        f_header_ <<
++          indent() << "const ::grpc::RpcMethod rpcmethod_" << (*f_iter)->get_name() << "_;" << endl;
++      }
++      service_iter = service_iter->get_extends();
++    }
++
++    indent_down();
++    f_header_ <<
++      "};" << endl << endl;
++
++    // generate the implementaion of Stub
++    f_service_ <<
++      endl <<
++      service_name_ << "::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)" << endl;
++
++    indent_up();
++    f_service_ <<
++    indent() << ": channel_(channel)" << endl;
++    int i=0;
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter , ++i) {
++      f_service_ <<
++        indent() <<
++        ", rpcmethod_" << (*f_iter)->get_name() << "_(" <<
++        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
++    }
++
++    service_iter = extends_service;
++    while (service_iter) {
++      // generate inherited methods
++      vector<t_function*> functions = service_iter->get_functions();
++      vector<t_function*>::iterator f_iter;
++      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter, ++i) {
++        f_service_ <<
++        indent() <<
++        ", rpcmethod_" << (*f_iter)->get_name() << "_(" <<
++        service_name_ << "_method_names[" << i << "], ::grpc::RpcMethod::NORMAL_RPC, channel)" << endl;
++      }
++      service_iter = service_iter->get_extends();
++    }
++    f_service_ <<
++    indent() << "{}" << endl;
++    indent_down();
++
++    // generate NewStub
++    f_header_ <<
++    endl <<
++    "static std::unique_ptr<Stub> NewStub(const std::shared_ptr\
++    < ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());" <<
++    endl;
++
++    // generate NewStub Implementation
++    f_service_ <<
++    endl <<
++    "std::unique_ptr< " << service_name_ << "::Stub> " << service_name_ << "::NewStub(const std::shared_ptr\
++    < ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {" << endl;
++
++    indent_up();
++    f_service_ <<
++    indent() << "std::unique_ptr< " << service_name_ << "::Stub> stub(new " << service_name_ <<
++    "::Stub(channel));" << endl <<
++    indent() << "return stub;" << endl;
++    indent_down();
++    f_service_ <<
++    "}" << endl;
++
++    // generate stub methods
++    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      string function_name = (*f_iter)->get_name();
++      f_service_ <<
++        endl <<
++        "::grpc::Status " << service_name_ << "::Stub::" <<  function_name <<
++        "(::grpc::ClientContext* context, const " << service_name_ << "::" <<
++        function_name << "Req& request, " << service_name_ << "::" <<
++        function_name << "Resp* response) {" << endl;
++
++      indent_up();
++      f_service_ <<
++      indent() << "return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_" <<
++      function_name << "_, context, request, response);" << endl;
++      indent_down();
++
++      f_service_ <<
++      "}" << endl;
++
++    }
++
++    service_iter = extends_service;
++    while (service_iter) {
++      vector<t_function*> functions = service_iter->get_functions();
++      vector<t_function*>::iterator f_iter;
++      for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++        string function_name = (*f_iter)->get_name();
++        f_service_ <<
++          endl <<
++          "::grpc::Status " << service_name_ << "::Stub::" <<  function_name <<
++          "(::grpc::ClientContext* context, const " << service_name_ << "::" <<
++          function_name << "Req& request, " << service_name_ << "::" <<
++          function_name << "Resp* response) {" << endl;
++
++        indent_up();
++        f_service_ <<
++        indent() << "return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_" <<
++        function_name << "_, context, request, response);" << endl;
++        indent_down();
++
++        f_service_ <<
++        "}" << endl;
++
++      }
++      service_iter = service_iter->get_extends();
++    }
++
++}
++
++
++/**
+  * Generates a service interface definition.
+  *
+  * @param tservice The service to generate a header definition for
+  */
+ void t_cpp_generator::generate_service_interface(t_service* tservice, string style) {
+ 
+-  string service_if_name = service_name_ + style + "If";
++  string service_if_name = "Service";
+   if (style == "CobCl") {
+     // Forward declare the client.
+     string client_name = service_name_ + "CobClient";
+@@ -1764,13 +2060,15 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+   }
+ 
+   string extends = "";
+-  if (tservice->get_extends() != NULL) {
+-    extends = " : virtual public " + type_name(tservice->get_extends()) + style + "If";
++  if (tservice->get_extends()) {
++    extends = " : virtual public " + type_name(tservice->get_extends()) + style + "::Service";
+     if (style == "CobCl" && gen_templates_) {
+       // TODO(simpkins): If gen_templates_ is enabled, we currently assume all
+       // parent services were also generated with templates enabled.
+       extends += "T<Protocol_>";
+     }
++  } else {
++    extends = " : public ::grpc::Service";
+   }
+ 
+   if (style == "CobCl" && gen_templates_) {
+@@ -1778,7 +2076,9 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+   }
+   f_header_ << "class " << service_if_name << extends << " {" << endl << " public:" << endl;
+   indent_up();
+-  f_header_ << indent() << "virtual ~" << service_if_name << "() {}" << endl;
++
++  f_header_ << indent() << "Service();" << endl;
++  f_header_ << indent() << "virtual ~Service();" << endl;
+ 
+   vector<t_function*> functions = tservice->get_functions();
+   vector<t_function*>::iterator f_iter;
+@@ -1786,7 +2086,12 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+     if ((*f_iter)->has_doc())
+       f_header_ << endl;
+     generate_java_doc(f_header_, *f_iter);
+-    f_header_ << indent() << "virtual " << function_signature(*f_iter, style) << " = 0;" << endl;
++
++    string function_name = (*f_iter)->get_name();
++    f_header_ <<
++      indent() << "virtual ::grpc::Status " << function_name <<
++      "(::grpc::ServerContext* context, const "<< function_name <<
++      "Req* request, "<< function_name << "Resp* response);" << endl;
+   }
+   indent_down();
+   f_header_ << "};" << endl << endl;
+@@ -1797,6 +2102,66 @@ void t_cpp_generator::generate_service_interface(t_service* tservice, string sty
+     f_header_ << "typedef " << service_if_name << "< ::apache::thrift::protocol::TProtocol> "
+               << service_name_ << style << "If;" << endl << endl;
+   }
++
++   // generate the service interface implementations
++
++    f_service_ <<
++    endl <<
++    service_name_ << "::Service::Service() {" << endl;
++    indent_up();
++    f_service_ <<
++    indent() << "(void)" << service_name_ << "_method_names;" << endl;
++    uint32_t i=0;
++    for(i=0;i<functions.size(); i++) {
++      string function_name = functions[i]->get_name();
++      f_service_ <<
++        endl <<
++        indent() << "AddMethod(new ::grpc::RpcServiceMethod(" << endl;
++        indent_up();
++
++      f_service_ <<
++        indent() << service_name_ << "_method_names[" << i << "]," << endl <<
++        indent() << "::grpc::RpcMethod::NORMAL_RPC," << endl <<
++        indent() << "new ::grpc::RpcMethodHandler< " << service_name_ << "::Service, " <<
++        service_name_ << "::" << function_name << "Req, " << service_name_ << "::" <<
++        function_name << "Resp>(" << endl;
++
++      indent_up();
++      f_service_ <<
++        indent() << "std::mem_fn(&" << service_name_ << "::Service::" << function_name << "), this)));" << endl;
++
++      indent_down();
++      indent_down();
++    }
++
++    indent_down();
++    f_service_ <<
++    "}" << endl;
++
++    f_service_ <<
++    endl <<
++    service_name_ << "::Service::~Service() {" << endl <<
++    "}" << endl;
++
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      string function_name = (*f_iter)->get_name();
++      f_service_ <<
++        endl <<
++        "::grpc::Status " << service_name_ << "::Service::" << function_name <<
++        "(::grpc::ServerContext* context, const " << service_name_ << "::" << function_name <<
++        "Req* request, " << service_name_ << "::" << function_name << "Resp* response) {" << endl;
++      indent_up();
++      f_service_ <<
++      indent() << "(void) context;" << endl <<
++      indent() << "(void) request;" << endl <<
++      indent() << "(void) response;" << endl <<
++      indent() << "return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED,\"\");" << endl;
++      indent_down();
++
++      f_service_ <<
++      "}" << endl;
++    }
++
+ }
+ 
+ /**
+@@ -3095,7 +3460,7 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
+ 
+   std::ofstream& out = (gen_templates_ ? f_service_tcc_ : f_service_);
+ 
+-  t_struct result(program_, tservice->get_name() + "_" + tfunction->get_name() + "_result");
++  t_struct result(program_, tfunction->get_name() + "Resp");
+   t_field success(tfunction->get_returntype(), "success", 0);
+   if (!tfunction->get_returntype()->is_void()) {
+     result.append(&success);
+@@ -3109,17 +3474,9 @@ void t_cpp_generator::generate_function_helpers(t_service* tservice, t_function*
+   }
+ 
+   generate_struct_declaration(f_header_, &result, false);
+-  generate_struct_definition(out, f_service_, &result, false);
++  generate_struct_definition(out, f_service_, &result, true);
+   generate_struct_reader(out, &result);
+   generate_struct_result_writer(out, &result);
+-
+-  result.set_name(tservice->get_name() + "_" + tfunction->get_name() + "_presult");
+-  generate_struct_declaration(f_header_, &result, false, true, true, gen_cob_style_);
+-  generate_struct_definition(out, f_service_, &result, false);
+-  generate_struct_reader(out, &result, true);
+-  if (gen_cob_style_) {
+-    generate_struct_writer(out, &result, true);
+-  }
+ }
+ 
+ /**
+@@ -3162,8 +3519,8 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
+         << endl;
+     scope_up(out);
+ 
+-    string argsname = tservice->get_name() + "_" + tfunction->get_name() + "_args";
+-    string resultname = tservice->get_name() + "_" + tfunction->get_name() + "_result";
++    string argsname = tfunction->get_name() + "Req";
++    string resultname = tfunction->get_name() + "Resp";
+ 
+     if (tfunction->is_oneway() && !unnamed_oprot_seqid) {
+       out << indent() << "(void) seqid;" << endl << indent() << "(void) oprot;" << endl;
+@@ -3320,7 +3677,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
+       out << indent() << "(void) seqid;" << endl << indent() << "(void) oprot;" << endl;
+     }
+ 
+-    out << indent() << tservice->get_name() + "_" + tfunction->get_name() << "_args args;" << endl
++    out << indent() << tfunction->get_name() << "Req args;" << endl
+         << indent() << "void* ctx = NULL;" << endl << indent()
+         << "if (this->eventHandler_.get() != NULL) {" << endl << indent()
+         << "  ctx = this->eventHandler_->getContext(" << service_func_name << ", NULL);" << endl
+@@ -3487,7 +3844,7 @@ void t_cpp_generator::generate_process_function(t_service* tservice,
+           << "this->eventHandler_.get(), ctx, " << service_func_name << ");" << endl << endl;
+ 
+       // Throw the TDelayedException, and catch the result
+-      out << indent() << tservice->get_name() << "_" << tfunction->get_name() << "_result result;"
++      out << indent() << tfunction->get_name() << "Resp result;"
+           << endl << endl << indent() << "try {" << endl;
+       indent_up();
+       out << indent() << "_throw->throw_it();" << endl << indent() << "return cob(false);"
+diff --git a/tutorial/cpp/CMakeLists.txt b/tutorial/cpp/CMakeLists.txt
+deleted file mode 100644
+index 8a3d085..0000000
+--- a/tutorial/cpp/CMakeLists.txt
++++ /dev/null
+@@ -1,53 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements. See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership. The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License. You may obtain a copy of the License at
+-#
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied. See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-find_package(Boost 1.53.0 REQUIRED)
+-include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
+-
+-#Make sure gen-cpp files can be included
+-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+-include_directories("${CMAKE_CURRENT_BINARY_DIR}/gen-cpp")
+-include_directories("${PROJECT_SOURCE_DIR}/lib/cpp/src")
+-
+-include(ThriftMacros)
+-
+-set(tutorialgencpp_SOURCES 
+-    gen-cpp/Calculator.cpp
+-    gen-cpp/SharedService.cpp
+-    gen-cpp/shared_constants.cpp
+-    gen-cpp/shared_types.cpp
+-    gen-cpp/tutorial_constants.cpp
+-    gen-cpp/tutorial_types.cpp
+-)
+-add_library(tutorialgencpp STATIC ${tutorialgencpp_SOURCES})
+-LINK_AGAINST_THRIFT_LIBRARY(tutorialgencpp thrift)
+-
+-add_custom_command(OUTPUT gen-cpp/Calculator.cpp gen-cpp/SharedService.cpp gen-cpp/shared_constants.cpp gen-cpp/shared_types.cpp gen-cpp/tutorial_constants.cpp gen-cpp/tutorial_types.cpp
+-    COMMAND ${THRIFT_COMPILER} --gen cpp -r ${PROJECT_SOURCE_DIR}/tutorial/tutorial.thrift
+-)
+-
+-add_executable(TutorialServer CppServer.cpp)
+-target_link_libraries(TutorialServer tutorialgencpp)
+-LINK_AGAINST_THRIFT_LIBRARY(TutorialServer thrift)
+-target_link_libraries(TutorialServer ${ZLIB_LIBRARIES})
+-
+-add_executable(TutorialClient CppClient.cpp)
+-target_link_libraries(TutorialClient tutorialgencpp)
+-LINK_AGAINST_THRIFT_LIBRARY(TutorialClient thrift)
+-target_link_libraries(TutorialClient ${ZLIB_LIBRARIES})
+diff --git a/tutorial/cpp/CppClient.cpp b/tutorial/cpp/CppClient.cpp
+deleted file mode 100644
+index 2763fee..0000000
+--- a/tutorial/cpp/CppClient.cpp
++++ /dev/null
+@@ -1,80 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one
+- * or more contributor license agreements. See the NOTICE file
+- * distributed with this work for additional information
+- * regarding copyright ownership. The ASF licenses this file
+- * to you under the Apache License, Version 2.0 (the
+- * "License"); you may not use this file except in compliance
+- * with the License. You may obtain a copy of the License at
+- *
+- *   http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing,
+- * software distributed under the License is distributed on an
+- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+- * KIND, either express or implied. See the License for the
+- * specific language governing permissions and limitations
+- * under the License.
+- */
+-
+-#include <iostream>
+-
+-#include <thrift/protocol/TBinaryProtocol.h>
+-#include <thrift/transport/TSocket.h>
+-#include <thrift/transport/TTransportUtils.h>
+-
+-#include "../gen-cpp/Calculator.h"
+-
+-using namespace std;
+-using namespace apache::thrift;
+-using namespace apache::thrift::protocol;
+-using namespace apache::thrift::transport;
+-
+-using namespace tutorial;
+-using namespace shared;
+-
+-int main() {
+-  boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+-  boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+-  boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+-  CalculatorClient client(protocol);
+-
+-  try {
+-    transport->open();
+-
+-    client.ping();
+-    cout << "ping()" << endl;
+-
+-    cout << "1 + 1 = " << client.add(1, 1) << endl;
+-
+-    Work work;
+-    work.op = Operation::DIVIDE;
+-    work.num1 = 1;
+-    work.num2 = 0;
+-
+-    try {
+-      client.calculate(1, work);
+-      cout << "Whoa? We can divide by zero!" << endl;
+-    } catch (InvalidOperation& io) {
+-      cout << "InvalidOperation: " << io.why << endl;
+-      // or using generated operator<<: cout << io << endl;
+-      // or by using std::exception native method what(): cout << io.what() << endl;
+-    }
+-
+-    work.op = Operation::SUBTRACT;
+-    work.num1 = 15;
+-    work.num2 = 10;
+-    int32_t diff = client.calculate(1, work);
+-    cout << "15 - 10 = " << diff << endl;
+-
+-    // Note that C++ uses return by reference for complex types to avoid
+-    // costly copy construction
+-    SharedStruct ss;
+-    client.getStruct(ss, 1);
+-    cout << "Received log: " << ss << endl;
+-
+-    transport->close();
+-  } catch (TException& tx) {
+-    cout << "ERROR: " << tx.what() << endl;
+-  }
+-}
+diff --git a/tutorial/cpp/CppServer.cpp b/tutorial/cpp/CppServer.cpp
+deleted file mode 100644
+index eafffa9..0000000
+--- a/tutorial/cpp/CppServer.cpp
++++ /dev/null
+@@ -1,181 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one
+- * or more contributor license agreements. See the NOTICE file
+- * distributed with this work for additional information
+- * regarding copyright ownership. The ASF licenses this file
+- * to you under the Apache License, Version 2.0 (the
+- * "License"); you may not use this file except in compliance
+- * with the License. You may obtain a copy of the License at
+- *
+- *   http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing,
+- * software distributed under the License is distributed on an
+- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+- * KIND, either express or implied. See the License for the
+- * specific language governing permissions and limitations
+- * under the License.
+- */
+-
+-#include <thrift/concurrency/ThreadManager.h>
+-#include <thrift/concurrency/PlatformThreadFactory.h>
+-#include <thrift/protocol/TBinaryProtocol.h>
+-#include <thrift/server/TSimpleServer.h>
+-#include <thrift/server/TThreadPoolServer.h>
+-#include <thrift/server/TThreadedServer.h>
+-#include <thrift/transport/TServerSocket.h>
+-#include <thrift/transport/TSocket.h>
+-#include <thrift/transport/TTransportUtils.h>
+-#include <thrift/TToString.h>
+-
+-#include <boost/make_shared.hpp>
+-
+-#include <iostream>
+-#include <stdexcept>
+-#include <sstream>
+-
+-#include "../gen-cpp/Calculator.h"
+-
+-using namespace std;
+-using namespace apache::thrift;
+-using namespace apache::thrift::concurrency;
+-using namespace apache::thrift::protocol;
+-using namespace apache::thrift::transport;
+-using namespace apache::thrift::server;
+-
+-using namespace tutorial;
+-using namespace shared;
+-
+-class CalculatorHandler : public CalculatorIf {
+-public:
+-  CalculatorHandler() {}
+-
+-  void ping() { cout << "ping()" << endl; }
+-
+-  int32_t add(const int32_t n1, const int32_t n2) {
+-    cout << "add(" << n1 << ", " << n2 << ")" << endl;
+-    return n1 + n2;
+-  }
+-
+-  int32_t calculate(const int32_t logid, const Work& work) {
+-    cout << "calculate(" << logid << ", " << work << ")" << endl;
+-    int32_t val;
+-
+-    switch (work.op) {
+-    case Operation::ADD:
+-      val = work.num1 + work.num2;
+-      break;
+-    case Operation::SUBTRACT:
+-      val = work.num1 - work.num2;
+-      break;
+-    case Operation::MULTIPLY:
+-      val = work.num1 * work.num2;
+-      break;
+-    case Operation::DIVIDE:
+-      if (work.num2 == 0) {
+-        InvalidOperation io;
+-        io.whatOp = work.op;
+-        io.why = "Cannot divide by 0";
+-        throw io;
+-      }
+-      val = work.num1 / work.num2;
+-      break;
+-    default:
+-      InvalidOperation io;
+-      io.whatOp = work.op;
+-      io.why = "Invalid Operation";
+-      throw io;
+-    }
+-
+-    SharedStruct ss;
+-    ss.key = logid;
+-    ss.value = to_string(val);
+-
+-    log[logid] = ss;
+-
+-    return val;
+-  }
+-
+-  void getStruct(SharedStruct& ret, const int32_t logid) {
+-    cout << "getStruct(" << logid << ")" << endl;
+-    ret = log[logid];
+-  }
+-
+-  void zip() { cout << "zip()" << endl; }
+-
+-protected:
+-  map<int32_t, SharedStruct> log;
+-};
+-
+-/*
+-  CalculatorIfFactory is code generated.
+-  CalculatorCloneFactory is useful for getting access to the server side of the
+-  transport.  It is also useful for making per-connection state.  Without this
+-  CloneFactory, all connections will end up sharing the same handler instance.
+-*/
+-class CalculatorCloneFactory : virtual public CalculatorIfFactory {
+- public:
+-  virtual ~CalculatorCloneFactory() {}
+-  virtual CalculatorIf* getHandler(const ::apache::thrift::TConnectionInfo& connInfo)
+-  {
+-    boost::shared_ptr<TSocket> sock = boost::dynamic_pointer_cast<TSocket>(connInfo.transport);
+-    cout << "Incoming connection\n";
+-    cout << "\tSocketInfo: "  << sock->getSocketInfo() << "\n";
+-    cout << "\tPeerHost: "    << sock->getPeerHost() << "\n";
+-    cout << "\tPeerAddress: " << sock->getPeerAddress() << "\n";
+-    cout << "\tPeerPort: "    << sock->getPeerPort() << "\n";
+-    return new CalculatorHandler;
+-  }
+-  virtual void releaseHandler( ::shared::SharedServiceIf* handler) {
+-    delete handler;
+-  }
+-};
+-
+-int main() {
+-  TThreadedServer server(
+-    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()),
+-    boost::make_shared<TServerSocket>(9090), //port
+-    boost::make_shared<TBufferedTransportFactory>(),
+-    boost::make_shared<TBinaryProtocolFactory>());
+-
+-  /*
+-  // if you don't need per-connection state, do the following instead
+-  TThreadedServer server(
+-    boost::make_shared<CalculatorProcessor>(boost::make_shared<CalculatorHandler>()),
+-    boost::make_shared<TServerSocket>(9090), //port
+-    boost::make_shared<TBufferedTransportFactory>(),
+-    boost::make_shared<TBinaryProtocolFactory>());
+-  */
+-
+-  /**
+-   * Here are some alternate server types...
+-
+-  // This server only allows one connection at a time, but spawns no threads
+-  TSimpleServer server(
+-    boost::make_shared<CalculatorProcessor>(boost::make_shared<CalculatorHandler>()),
+-    boost::make_shared<TServerSocket>(9090),
+-    boost::make_shared<TBufferedTransportFactory>(),
+-    boost::make_shared<TBinaryProtocolFactory>());
+-
+-  const int workerCount = 4;
+-
+-  boost::shared_ptr<ThreadManager> threadManager =
+-    ThreadManager::newSimpleThreadManager(workerCount);
+-  threadManager->threadFactory(
+-    boost::make_shared<PlatformThreadFactory>());
+-  threadManager->start();
+-
+-  // This server allows "workerCount" connection at a time, and reuses threads
+-  TThreadPoolServer server(
+-    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()),
+-    boost::make_shared<TServerSocket>(9090),
+-    boost::make_shared<TBufferedTransportFactory>(),
+-    boost::make_shared<TBinaryProtocolFactory>(),
+-    threadManager);
+-  */
+-
+-  cout << "Starting the server..." << endl;
+-  server.serve();
+-  cout << "Done." << endl;
+-  return 0;
+-}
+diff --git a/tutorial/cpp/GriftClient.cpp b/tutorial/cpp/GriftClient.cpp
+new file mode 100644
+index 0000000..647a683
+--- /dev/null
++++ b/tutorial/cpp/GriftClient.cpp
+@@ -0,0 +1,93 @@
++/*
++ *
++ * Copyright 2016, Google Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *     * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include <iostream>
++#include <memory>
++#include <string>
++
++#include <grpc++/grpc++.h>
++
++#include "gen-cpp/Greeter.grpc.thrift.h"
++
++using grpc::Channel;
++using grpc::ClientContext;
++using grpc::Status;
++using test::Greeter;
++
++class GreeterClient {
++ public:
++  GreeterClient(std::shared_ptr<Channel> channel)
++      : stub_(Greeter::NewStub(channel)) {}
++
++  // Assembles the client's payload, sends it and presents the response back
++  // from the server.
++  std::string SayHello(const std::string& user) {
++    // Data we are sending to the server.
++    Greeter::SayHelloReq req;
++    req.request.name = user;
++
++    // Container for the data we expect from the server.
++    Greeter::SayHelloResp reply;
++
++    // Context for the client. It could be used to convey extra information to
++    // the server and/or tweak certain RPC behaviors.
++    ClientContext context;
++
++    // The actual RPC.
++    Status status = stub_->SayHello(&context, req, &reply);
++
++    // Act upon its status.
++    if (status.ok()) {
++      return reply.success.message;
++    } else {
++      return "RPC failed";
++    }
++  }
++
++ private:
++  std::unique_ptr<Greeter::Stub> stub_;
++};
++
++int main() {
++  // Instantiate the client. It requires a channel, out of which the actual RPCs
++  // are created. This channel models a connection to an endpoint (in this case,
++  // localhost at port 50051). We indicate that the channel isn't authenticated
++  // (use of InsecureChannelCredentials()).
++  GreeterClient greeter(grpc::CreateChannel(
++      "localhost:50051", grpc::InsecureChannelCredentials()));
++  std::string user("world");
++  std::string reply = greeter.SayHello(user);
++  std::cout << "Greeter received: " << reply << std::endl;
++
++  return 0;
++}
+diff --git a/tutorial/cpp/GriftServer.cpp b/tutorial/cpp/GriftServer.cpp
+new file mode 100644
+index 0000000..7c01606
+--- /dev/null
++++ b/tutorial/cpp/GriftServer.cpp
+@@ -0,0 +1,93 @@
++/*
++ *
++ * Copyright 2016, Google Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *     * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include <iostream>
++#include <memory>
++#include <string>
++
++#include <grpc++/grpc++.h>
++
++#include "gen-cpp/Greeter.grpc.thrift.h"
++#include <grpc++/server_builder.h>
++
++using grpc::Server;
++using grpc::ServerBuilder;
++using grpc::ServerContext;
++using grpc::Status;
++using test::Greeter;
++
++// Logic and data behind the server's behavior.
++class GreeterServiceImpl final : public Greeter::Service {
++ public:
++  ~GreeterServiceImpl() {
++    // shutdown server
++    server->Shutdown();
++  }
++
++  Status SayHello(ServerContext* context,const Greeter::SayHelloReq* request,
++                  Greeter::SayHelloResp* reply) override {
++    std::string prefix("Hello ");
++
++    reply->success.message = prefix + request->request.name;
++
++    return Status::OK;
++  }
++
++  void RunServer() {
++    std::string server_address("0.0.0.0:50051");
++
++    ServerBuilder builder;
++    // Listen on the given address without any authentication mechanism.
++    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
++    // Register "service" as the instance through which we'll communicate with
++    // clients. In this case it corresponds to an *synchronous* service.
++    builder.RegisterService(this);
++    // Finally assemble the server.
++    server = builder.BuildAndStart();
++    std::cout << "Server listening on " << server_address << std::endl;
++
++    // Wait for the server to shutdown. Note that some other thread must be
++    // responsible for shutting down the server for this call to ever return.
++    server->Wait();
++  }
++
++ private:
++  std::unique_ptr<Server> server;
++};
++
++int main() {
++  GreeterServiceImpl service;
++  service.RunServer();
++
++  return 0;
++}
+diff --git a/tutorial/cpp/Makefile.am b/tutorial/cpp/Makefile.am
+index 184a69d..6f91e28 100755
+--- a/tutorial/cpp/Makefile.am
++++ b/tutorial/cpp/Makefile.am
+@@ -18,44 +18,38 @@
+ #
+ AUTOMAKE_OPTIONS = subdir-objects serial-tests
+ 
+-BUILT_SOURCES = gen-cpp/shared_types.cpp \
+-                gen-cpp/tutorial_types.cpp
++BUILT_SOURCES = gen-cpp/test_types.cpp
+ 
+-noinst_LTLIBRARIES = libtutorialgencpp.la
+-nodist_libtutorialgencpp_la_SOURCES = \
+-	gen-cpp/Calculator.cpp \
+-	gen-cpp/Calculator.h \
+-	gen-cpp/SharedService.cpp \
+-	gen-cpp/SharedService.h \
+-	gen-cpp/shared_constants.cpp \
+-	gen-cpp/shared_constants.h \
+-	gen-cpp/shared_types.cpp \
+-	gen-cpp/shared_types.h \
+-	gen-cpp/tutorial_constants.cpp \
+-	gen-cpp/tutorial_constants.h \
+-	gen-cpp/tutorial_types.cpp \
+-	gen-cpp/tutorial_types.h
++#noinst_LTLIBRARIES = libtutorialgencpp.la
++noinst_LTLIBRARIES = libtestgencpp.la
++nodist_libtestgencpp_la_SOURCES = \
++	gen-cpp/Greeter.grpc.thrift.cpp \
++	gen-cpp/Greeter.grpc.thrift.h \
++	gen-cpp/test_constants.cpp \
++	gen-cpp/test_constants.h \
++	gen-cpp/test_types.cpp \
++	gen-cpp/test_types.h
+ 
+ 
+ 
+-libtutorialgencpp_la_LIBADD = $(top_builddir)/lib/cpp/libthrift.la
++libtestgencpp_la_LIBADD = $(top_builddir)/lib/cpp/libthrift.la
+ 
+ noinst_PROGRAMS = \
+-	TutorialServer \
+-	TutorialClient
++	TestServer \
++	TestClient
+ 
+-TutorialServer_SOURCES = \
+-	CppServer.cpp
++TestServer_SOURCES = \
++	GriftServer.cpp
+ 
+-TutorialServer_LDADD = \
+-	libtutorialgencpp.la \
++TestServer_LDADD = \
++	libtestgencpp.la \
+ 	$(top_builddir)/lib/cpp/libthrift.la
+ 
+-TutorialClient_SOURCES = \
+-	CppClient.cpp
++TestClient_SOURCES = \
++	GriftClient.cpp
+ 
+-TutorialClient_LDADD = \
+-	libtutorialgencpp.la \
++TestClient_LDADD = \
++	libtestgencpp.la \
+ 	$(top_builddir)/lib/cpp/libthrift.la
+ 
+ #
+@@ -63,26 +57,26 @@ TutorialClient_LDADD = \
+ #
+ THRIFT = $(top_builddir)/compiler/cpp/thrift
+ 
+-gen-cpp/Calculator.cpp gen-cpp/SharedService.cpp gen-cpp/shared_constants.cpp gen-cpp/shared_types.cpp gen-cpp/tutorial_constants.cpp gen-cpp/tutorial_types.cpp: $(top_srcdir)/tutorial/tutorial.thrift
++gen-cpp/Greeter.grpc.thrift.cpp gen-cpp/test_constants.cpp gen-cpp/test_types.cpp: $(top_srcdir)/tutorial/cpp/test.thrift
+ 	$(THRIFT) --gen cpp -r $<
+ 
+ AM_CPPFLAGS = $(BOOST_CPPFLAGS) $(LIBEVENT_CPPFLAGS) -I$(top_srcdir)/lib/cpp/src -Igen-cpp
+ AM_CXXFLAGS = -Wall -Wextra -pedantic
+-AM_LDFLAGS = $(BOOST_LDFLAGS) $(LIBEVENT_LDFLAGS)
++AM_LDFLAGS = $(BOOST_LDFLAGS) $(LIBEVENT_LDFLAGS) `pkg-config --libs grpc++ grpc` -lpthread -ldl -lgrpc
+ 
+ clean-local:
+-	$(RM) gen-cpp/*
++	$(RM) -r gen-cpp
+ 
+-tutorialserver: all
+-	./TutorialServer
++testserver: all
++	./TestServer
+ 
+-tutorialclient: all
+-	./TutorialClient
++testclient: all
++	./TestClient
+ 
+ style-local:
+ 	$(CPPSTYLE_CMD)
+ 
+ EXTRA_DIST = \
+ 	CMakeLists.txt \
+-	CppClient.cpp \
+-	CppServer.cpp
++	GriftClient.cpp \
++	GriftServer.cpp
+diff --git a/tutorial/cpp/test.thrift b/tutorial/cpp/test.thrift
+new file mode 100644
+index 0000000..de3c9a4
+--- /dev/null
++++ b/tutorial/cpp/test.thrift
+@@ -0,0 +1,13 @@
++namespace cpp test
++
++struct HelloRequest {
++	1:string name
++}
++
++struct HelloResponse {
++	1:string message
++}
++
++service Greeter {
++	HelloResponse SayHello(1:HelloRequest request);
++}
+\ No newline at end of file
+-- 
+2.8.0.rc3.226.g39d4020
+
+
+From 3e4d75a2e2c474ee7700e7c9acaf89fdb768bedc Mon Sep 17 00:00:00 2001
+From: chedeti <chedeti@google.com>
+Date: Sun, 31 Jul 2016 16:23:53 -0700
+Subject: [PATCH 3/3] grpc java plugins generator
+
+for examples refer to https://github.com/grpc/grpc-java/tree/master/examples/thrift
+---
+ compiler/cpp/src/generate/t_java_generator.cc | 906 +++++++++++++++++++++++++-
+ tutorial/Makefile.am                          |   8 +-
+ 2 files changed, 887 insertions(+), 27 deletions(-)
+
+diff --git a/compiler/cpp/src/generate/t_java_generator.cc b/compiler/cpp/src/generate/t_java_generator.cc
+index 2db8cb8..8b28fe2 100644
+--- a/compiler/cpp/src/generate/t_java_generator.cc
++++ b/compiler/cpp/src/generate/t_java_generator.cc
+@@ -97,10 +97,10 @@ public:
+         } else if(iter->second.compare("suppress") == 0) {
+           suppress_generated_annotations_ = true;
+         } else {
+-          throw "unknown option java:" + iter->first + "=" + iter->second; 
++          throw "unknown option java:" + iter->first + "=" + iter->second;
+         }
+       } else {
+-        throw "unknown option java:" + iter->first; 
++        throw "unknown option java:" + iter->first;
+       }
+     }
+ 
+@@ -195,6 +195,17 @@ public:
+   void generate_service_async_server(t_service* tservice);
+   void generate_process_function(t_service* tservice, t_function* tfunction);
+   void generate_process_async_function(t_service* tservice, t_function* tfunction);
++  void generate_service_impl_base(t_service* tservice);
++  void generate_method_descriptors(t_service* tservice);
++  void generate_stub(t_service* tservice);
++  void generate_blocking_stub(t_service* tservice);
++  void generate_future_stub(t_service* tservice);
++  void generate_method_ids(t_service* tservice);
++  void generate_method_handlers(t_service* tservice);
++  void generate_service_descriptors(t_service* tservice);
++  void generate_service_builder(t_service* tservice);
++  void generate_arg_ids(t_service* tservice);
++  void generate_message_factory(t_service* tservice);
+ 
+   void generate_java_union(t_struct* tstruct);
+   void generate_union_constructor(ofstream& out, t_struct* tstruct);
+@@ -307,6 +318,8 @@ public:
+   std::string java_package();
+   std::string java_type_imports();
+   std::string java_suppressions();
++  std::string grpc_imports();
++  std::string import_extended_service(t_service* tservice);
+   std::string type_name(t_type* ttype,
+                         bool in_container = false,
+                         bool in_init = false,
+@@ -368,7 +381,7 @@ private:
+   bool use_option_type_;
+   bool undated_generated_annotations_;
+   bool suppress_generated_annotations_;
+-  
++
+ };
+ 
+ /**
+@@ -456,6 +469,35 @@ string t_java_generator::java_suppressions() {
+   return "@SuppressWarnings({\"cast\", \"rawtypes\", \"serial\", \"unchecked\", \"unused\"})\n";
+ }
+ 
++string t_java_generator::grpc_imports() {
++  return
++    string() +
++    "import static io.grpc.stub.ClientCalls.asyncUnaryCall;\n" +
++    "import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;\n" +
++    "import static io.grpc.stub.ClientCalls.asyncClientStreamingCall;\n" +
++    "import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;\n" +
++    "import static io.grpc.stub.ClientCalls.blockingUnaryCall;\n" +
++    "import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;\n" +
++    "import static io.grpc.stub.ClientCalls.futureUnaryCall;\n" +
++    "import static io.grpc.MethodDescriptor.generateFullMethodName;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncUnaryCall;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;\n" +
++    "import io.grpc.thrift.ThriftUtils;\n\n";
++}
++
++string t_java_generator::import_extended_service(t_service* tservice) {
++  if (!tservice) {
++    return string() + "\n";
++  }
++  string ns = tservice->get_program()->get_namespace("java");
++  string extend_service_name = tservice->get_name() + "Grpc";
++  return string() + "import " + ns + "." + extend_service_name + ";\n\n";
++}
++
+ /**
+  * Nothing in Java
+  */
+@@ -2772,25 +2814,51 @@ void t_java_generator::generate_field_value_meta_data(std::ofstream& out, t_type
+  */
+ void t_java_generator::generate_service(t_service* tservice) {
+   // Make output file
+-  string f_service_name = package_dir_ + "/" + make_valid_java_filename(service_name_) + ".java";
++  string f_service_name = package_dir_ + "/" + make_valid_java_filename(service_name_) + "Grpc.java";
+   f_service_.open(f_service_name.c_str());
+ 
+-  f_service_ << autogen_comment() << java_package() << java_type_imports() << java_suppressions();
++  f_service_ <<
++      autogen_comment() <<
++      java_package() <<
++      java_type_imports() <<
++      grpc_imports() <<
++      import_extended_service(tservice->get_extends());
++      java_suppressions();
++
++  f_service_ <<
++    "public class " << service_name_ << "Grpc {" << endl <<
++    endl;
+ 
+-  if (!suppress_generated_annotations_) {
+-    generate_javax_generated_annotation(f_service_);
+-  }
+-  f_service_ << "public class " << service_name_ << " {" << endl << endl;
+   indent_up();
+ 
++  // generate constructor
++  f_service_ <<
++    indent() << "private " << service_name_ <<
++    "Grpc() {}" << endl << endl;
++
++  f_service_ <<
++    indent() << "public static final String SERVICE_NAME = " <<
++    "\"" << package_name_ << "." << service_name_ << "\";" << endl << endl;
++
+   // Generate the three main parts of the service
+   generate_service_interface(tservice);
+-  generate_service_async_interface(tservice);
+-  generate_service_client(tservice);
+-  generate_service_async_client(tservice);
+-  generate_service_server(tservice);
+-  generate_service_async_server(tservice);
++  generate_arg_ids(tservice);
++  generate_message_factory(tservice);
++  generate_service_impl_base(tservice);
++  //generate_service_async_interface(tservice);
++  //generate_service_client(tservice);
++  //generate_service_async_client(tservice);
++  //generate_service_server(tservice);
++  //generate_service_async_server(tservice);
+   generate_service_helpers(tservice);
++  generate_method_descriptors(tservice);
++  generate_stub(tservice);
++  generate_blocking_stub(tservice);
++  generate_future_stub(tservice);
++  generate_method_ids(tservice);
++  generate_method_handlers(tservice);
++  generate_service_descriptors(tservice);
++  generate_service_builder(tservice);
+ 
+   indent_down();
+   f_service_ << "}" << endl;
+@@ -2805,24 +2873,820 @@ void t_java_generator::generate_service(t_service* tservice) {
+ void t_java_generator::generate_service_interface(t_service* tservice) {
+   string extends = "";
+   string extends_iface = "";
+-  if (tservice->get_extends() != NULL) {
+-    extends = type_name(tservice->get_extends());
+-    extends_iface = " extends " + extends + ".Iface";
+-  }
+ 
+   generate_java_doc(f_service_, tservice);
+-  f_service_ << indent() << "public interface Iface" << extends_iface << " {" << endl << endl;
++  f_service_ << indent() <<
++    "@java.lang.Deprecated public static interface " << service_name_;
++
++  if (tservice->get_extends()) {
++    f_service_ << " extends " << tservice->get_extends()->get_name() + "Grpc." <<
++      tservice->get_extends()->get_name() << endl;
++  }
++  f_service_ << " {" << endl;
++
++  indent_up();
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    //generate_java_doc(f_service_, *f_iter);
++    f_service_ <<
++      indent() << "public void " << (*f_iter)->get_name() << "(" << (*f_iter)->get_name() <<
++      "_args request," << endl <<
++      indent() << "    io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() <<
++      "_result> responseObserver);" << endl << endl;
++  }
++  indent_down();
++  f_service_ << indent() << "}" << endl << endl;
++}
++
++void t_java_generator::generate_arg_ids(t_service* tservice) {
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  int i=0;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ << indent() <<
++      "private static final int ARG_IN_METHOD_" <<
++      (*f_iter)->get_name() << " = " << ++i << ";" << endl;
++    f_service_ << indent() <<
++      "private static final int ARG_OUT_METHOD_" <<
++      (*f_iter)->get_name() << " = " << ++i << ";" << endl;
++  }
++  f_service_ << endl;
++
++  if (tservice->get_extends()) {
++    f_service_ << indent() << "// ARG IDs for extended service" << endl;
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ << indent() <<
++        "private static final int ARG_IN_METHOD_" <<
++        (*f_iter)->get_name() << " = " << ++i << ";" << endl;
++      f_service_ << indent() <<
++        "private static final int ARG_OUT_METHOD_" <<
++        (*f_iter)->get_name() << " = " << ++i << ";" << endl;
++    }
++    f_service_ << endl;
++  }
++}
++
++void t_java_generator::generate_message_factory(t_service* tservice) {
++  f_service_ << indent() <<
++    "private static final class ThriftMessageFactory<T extends " <<
++    "org.apache.thrift.TBase<T,?>>" << endl << indent() <<
++    "    implements io.grpc.thrift.MessageFactory<T> {" << endl;
++  indent_up();
++  f_service_ << indent() <<
++      "private final int id;" << endl << endl;
++  f_service_ << endl;
++
++  f_service_ << indent() <<
++    "ThriftMessageFactory(int id) {" << endl <<
++    indent() << "  this.id = id;" << endl <<
++    indent() << "}" << endl;
++
++  f_service_ << indent() <<
++    "@java.lang.Override" << endl <<
++    indent() << "public T newInstance() {" << endl;
++  indent_up();
++
++  f_service_ << indent() <<
++    "Object o;" << endl <<
++    indent() << "switch (id) {" << endl;
++
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ << indent() <<
++      "case ARG_IN_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
++      indent() << "  o = new " << (*f_iter)->get_name() << "_args();" <<
++      endl << indent() << "  break;" << endl;
++    f_service_ << indent() <<
++      "case ARG_OUT_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
++      indent() << " o = new " << (*f_iter)->get_name() << "_result();" <<
++      endl << indent() << "  break;" << endl;
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for (f_iter = functions.begin(); f_iter!= functions.end(); ++f_iter) {
++      f_service_ << indent() <<
++        "case ARG_IN_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
++        indent() << "  o = new " << extend_service_name << "." << (*f_iter)->get_name() << "_args();" <<
++        endl << indent() << "  break;" << endl;
++      f_service_ << indent() <<
++        "case ARG_OUT_METHOD_" << (*f_iter)->get_name() << ":" << endl <<
++        indent() << " o = new " << extend_service_name << "." << (*f_iter)->get_name() << "_result();" <<
++        endl << indent() << "  break;" << endl;
++    }
++  }
++
++  f_service_  << indent() <<
++    "default:" << endl << indent() <<
++    "  throw new AssertionError();" << endl << indent() <<
++    "}" << endl;
++
++  f_service_ << indent() <<
++    "@java.lang.SuppressWarnings(\"unchecked\")" << endl <<
++    indent() << "T t = (T) o;" << endl << indent() <<
++    "return t;" << endl;
++
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl;
++
++  indent_down();
++  f_service_ << indent() << "}" << endl;
++}
++
++void t_java_generator::generate_service_impl_base(t_service* tservice) {
++  f_service_ <<
++    indent() << "public static abstract class " << service_name_ <<
++    "ImplBase implements " << service_name_ << ", io.grpc.BindableService {" << endl;
++  indent_up();
++
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "@java.lang.Override" << endl <<
++      indent() << "public void " << (*f_iter)->get_name() << "(" << (*f_iter)->get_name() <<
++      "_args request, " << endl <<
++      indent() << "    io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() <<
++      "_result> responseObserver) {" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "asyncUnimplementedUnaryCall(METHOD_" << (*f_iter)->get_name() <<
++      ", responseObserver);" << endl;
++    indent_down();
++    f_service_ <<
++      indent() << "}" << endl << endl;
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc" ;
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "@java.lang.Override" << endl <<
++        indent() << "public void " << (*f_iter)->get_name() << "(" <<
++        extend_service_name << "." << (*f_iter)->get_name() <<
++        "_args request, " << endl <<
++        indent() << "    io.grpc.stub.StreamObserver<" << extend_service_name
++        << "." << (*f_iter)->get_name() << "_result> responseObserver) {" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "asyncUnimplementedUnaryCall(METHOD_" << (*f_iter)->get_name() <<
++        ", responseObserver);" << endl;
++      indent_down();
++      f_service_ <<
++        indent() << "}" << endl << endl;
++    }
++  }
++
++  f_service_ <<
++    indent() << "@java.lang.Override" <<
++    " public io.grpc.ServerServiceDefinition bindService() {" << endl;
+   indent_up();
++  f_service_ <<
++    indent() << "return " << service_name_ << "Grpc.bindService(this);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // generate Abstract Service
++  f_service_ <<
++    indent() << "@java.lang.Deprecated public static abstract class Abstract" << service_name_ <<
++    " extends " << service_name_ << "ImplBase {}" << endl << endl;
++}
++
++void t_java_generator::generate_method_descriptors(t_service* tservice) {
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for( f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "public static final io.grpc.MethodDescriptor<" <<
++      (*f_iter)->get_name() << "_args," << endl <<
++      indent() << "    " << (*f_iter)->get_name() << "_result> METHOD_" << (*f_iter)->get_name() <<
++      " = " << endl << indent() << "    io.grpc.MethodDescriptor.create(" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "    io.grpc.MethodDescriptor.MethodType.UNARY," << endl <<
++      indent() << "    generateFullMethodName(" << "\"" << package_name_ << "." <<
++      service_name_ << "\" , \"" << (*f_iter)->get_name() << "\")," << endl <<
++      indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
++      indent() << "    new ThriftMessageFactory<" << (*f_iter)->get_name() <<
++      "_args>( ARG_IN_METHOD_" << (*f_iter)->get_name() << "))," << endl <<
++      indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
++      indent() << "    new ThriftMessageFactory<" << (*f_iter)->get_name() <<
++      "_result>( ARG_OUT_METHOD_" << (*f_iter)->get_name() << ")));" << endl << endl;
++    indent_down();
++  }
++
++  if(tservice->get_extends()) {
++    t_service* extends_service = tservice->get_extends();
++    functions = extends_service->get_functions();
++    string extend_service_name = extends_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "public static final io.grpc.MethodDescriptor<" << extend_service_name << "." <<
++        (*f_iter)->get_name() << "_args," << endl <<
++        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() << "_result> METHOD_"
++        << (*f_iter)->get_name() << " = " << endl << indent() <<
++        "    io.grpc.MethodDescriptor.create(" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "    io.grpc.MethodDescriptor.MethodType.UNARY," << endl <<
++        indent() << "    generateFullMethodName(" << "\"" << package_name_ << "." <<
++        service_name_ << "\" , \"" << (*f_iter)->get_name() << "\")," << endl <<
++        indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
++        indent() << "    new ThriftMessageFactory<" << extend_service_name << "." <<
++        (*f_iter)->get_name() << "_args>( ARG_IN_METHOD_" << (*f_iter)->get_name() << "))," << endl <<
++        indent() << "    io.grpc.thrift.ThriftUtils.marshaller(" << endl <<
++        indent() << "    new ThriftMessageFactory<" << extend_service_name << "." << (*f_iter)->get_name() <<
++        "_result>( ARG_OUT_METHOD_" << (*f_iter)->get_name() << ")));" << endl << endl;
++      indent_down();
++    }
++  }
++}
++
++void t_java_generator::generate_stub(t_service* tservice) {
++  f_service_ <<
++    indent() <<
++    "public static " << service_name_ <<
++    "Stub newStub(io.grpc.Channel channel) {" <<
++    endl;
++
++  indent_up();
++  f_service_ <<
++    indent() <<
++    "return new " << service_name_ << "Stub(channel);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // generate Stub impl
++
++  f_service_ <<
++    indent() << "public static class " <<
++    service_name_ << "Stub extends io.grpc.stub.AbstractStub<" <<
++    service_name_ << "Stub>" << endl <<
++    indent() << "    implements " << service_name_ << "{" << endl;
++  indent_up();
++
++  f_service_ <<
++    indent() << "private " << service_name_ << "Stub(io.grpc.Channel channel) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "super(channel);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  f_service_ <<
++    indent() << "private " << service_name_ << "Stub(io.grpc.Channel channel, " << endl <<
++    indent() << "    io.grpc.CallOptions callOptions) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "super(channel, callOptions);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  f_service_ <<
++    indent() << "@java.lang.Override" << endl <<
++    indent() << "protected " << service_name_ << "Stub build(io.grpc.Channel channel, " <<
++    endl << indent() << "    io.grpc.CallOptions callOptions) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return new " << service_name_ << "Stub(channel, callOptions);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "@java.lang.Override" << endl <<
++      indent() << "public void " << (*f_iter)->get_name() << "(" <<
++      (*f_iter)->get_name() << "_args request," << endl << indent() <<
++      "    io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() <<
++      "_result> responseObserver) {" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "asyncUnaryCall(" << endl <<
++      indent() << "    getChannel().newCall(METHOD_" << (*f_iter)->get_name() <<
++      ", getCallOptions()), request, responseObserver);" << endl;
++    indent_down();
++    f_service_ <<
++      indent() << "}" << endl << endl;
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "@java.lang.Override" << endl <<
++        indent() << "public void " << (*f_iter)->get_name() << "(" <<
++        extend_service_name << "." << (*f_iter)->get_name() << "_args request,"
++        << endl << indent() << "    io.grpc.stub.StreamObserver<" <<
++        extend_service_name << "." << (*f_iter)->get_name() <<
++        "_result> responseObserver) {" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "asyncUnaryCall(" << endl <<
++        indent() << "    getChannel().newCall(METHOD_" << (*f_iter)->get_name() <<
++        ", getCallOptions()), request, responseObserver);" << endl;
++      indent_down();
++      f_service_ <<
++        indent() << "}" << endl << endl;
++    }
++  }
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++}
++
++void t_java_generator::generate_blocking_stub(t_service* tservice) {
++  f_service_ <<
++    indent() << "public static " << service_name_ <<
++    "BlockingStub newBlockingStub(" << endl <<
++    indent() << "    io.grpc.Channel channel) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return new " << service_name_ << "BlockingStub(channel);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // generate Blocking Client
++  f_service_ <<
++    indent() << "@java.lang.Deprecated public static interface " << service_name_ <<
++    "BlockingClient " ;
++  
++  if (tservice->get_extends()) {
++    string extend_service_name = tservice->get_extends()->get_name();
++    f_service_ << endl << indent() << "    extends " << extend_service_name << "Grpc." <<
++        extend_service_name << "BlockingClient " ;
++  }
++
++  f_service_ << "{" << endl;
++
++  indent_up();
++
+   vector<t_function*> functions = tservice->get_functions();
+   vector<t_function*>::iterator f_iter;
+   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+-    generate_java_doc(f_service_, *f_iter);
+-    indent(f_service_) << "public " << function_signature(*f_iter) << ";" << endl << endl;
++    f_service_ <<
++      indent() << "public " << (*f_iter)->get_name() << "_result " <<
++      (*f_iter)->get_name() << "(" << (*f_iter)->get_name() << "_args request);" << endl << endl;
++  }
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // generate Blocking Stub impl
++
++  f_service_ <<
++    indent() << "public static class " <<
++    service_name_ << "BlockingStub extends io.grpc.stub.AbstractStub<" <<
++    service_name_ << "BlockingStub>" << endl <<
++    indent() << "    implements " << service_name_ << "BlockingClient {";
++
++  indent_up();
++
++  f_service_ <<
++    indent() << "private " << service_name_ << "BlockingStub(io.grpc.Channel channel) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "super(channel);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  f_service_ <<
++    indent() << "private " << service_name_ << "BlockingStub(io.grpc.Channel channel, " << endl <<
++    indent() << "    io.grpc.CallOptions callOptions) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "super(channel, callOptions);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  f_service_ <<
++    indent() << "@java.lang.Override" << endl <<
++    indent() << "protected " << service_name_ << "BlockingStub build(io.grpc.Channel channel, " <<
++    endl << indent() << "    io.grpc.CallOptions callOptions) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return new " << service_name_ << "BlockingStub(channel, callOptions);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "@java.lang.Override" << endl <<
++      indent() << "public " << (*f_iter)->get_name() << "_result " << (*f_iter)->get_name() << "(" <<
++      (*f_iter)->get_name() << "_args request) {" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "return blockingUnaryCall(" << endl <<
++      indent() << "    getChannel(), METHOD_" << (*f_iter)->get_name() <<
++      ", getCallOptions(), request);" << endl;
++    indent_down();
++    f_service_ <<
++      indent() << "}" << endl << endl;
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "@java.lang.Override" << endl <<
++        indent() << "public " << extend_service_name << "." << (*f_iter)->get_name() <<
++        "_result " << (*f_iter)->get_name() << "(" << extend_service_name << "." <<
++        (*f_iter)->get_name() << "_args request) {" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "return blockingUnaryCall(" << endl <<
++        indent() << "    getChannel(), METHOD_" << (*f_iter)->get_name() <<
++        ", getCallOptions(), request);" << endl;
++      indent_down();
++      f_service_ <<
++        indent() << "}" << endl << endl;
++    }
++  }
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++}
++
++void t_java_generator::generate_future_stub(t_service* tservice) {
++  f_service_ <<
++    indent() << "public static " << service_name_ <<
++    "FutureStub newFutureStub(" << endl <<
++    indent() << "    io.grpc.Channel channel) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return new " << service_name_ << "FutureStub(channel);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // generate Future Client
++  f_service_ <<
++    indent() << "@java.lang.Deprecated public static interface " << service_name_ <<
++    "FutureClient " ;
++
++  if (tservice->get_extends()) {
++    string extend_service_name = tservice->get_extends()->get_name();
++    f_service_ << endl << indent() << "    extends " << extend_service_name << "Grpc." <<
++        extend_service_name << "FutureClient " ; 
++  }
++  f_service_ << "{" << endl;
++
++  indent_up();
++
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
++      (*f_iter)->get_name() << "_result> " << (*f_iter)->get_name() << "(" << endl <<
++      indent() << "    " << (*f_iter)->get_name() << "_args request);" << endl << endl;
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
++        extend_service_name << "." << (*f_iter)->get_name() << "_result> " <<
++        (*f_iter)->get_name() << "(" << endl <<
++        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() <<
++        "_args request);" << endl << endl;
++    }
++  }
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // generate Stub impl
++
++  f_service_ <<
++    indent() << "public static class " <<
++    service_name_ << "FutureStub extends io.grpc.stub.AbstractStub<" <<
++    service_name_ << "FutureStub>" << endl <<
++    indent() << "    implements " << service_name_ << "FutureClient {" << endl;
++  indent_up();
++
++  f_service_ <<
++    indent() << "private " << service_name_ << "FutureStub(io.grpc.Channel channel) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "super(channel);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  f_service_ <<
++    indent() << "private " << service_name_ << "FutureStub(io.grpc.Channel channel, " << endl <<
++    indent() << "    io.grpc.CallOptions callOptions) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "super(channel, callOptions);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  f_service_ <<
++    indent() << "@java.lang.Override" << endl <<
++    indent() << "protected " << service_name_ << "FutureStub build(io.grpc.Channel channel, " <<
++    endl << indent() << "    io.grpc.CallOptions callOptions) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return new " << service_name_ << "FutureStub(channel, callOptions);" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  functions = tservice->get_functions();
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "@java.lang.Override" << endl <<
++      indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
++      (*f_iter)->get_name() << "_result> " << (*f_iter)->get_name() << "(" <<
++      endl << indent() << "    " << (*f_iter)->get_name() << "_args request) {" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "return futureUnaryCall(" << endl <<
++      indent() << "    getChannel().newCall(METHOD_" << (*f_iter)->get_name() <<
++      ", getCallOptions()), request);" << endl;
++    indent_down();
++    f_service_ <<
++      indent() << "}" << endl << endl;
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "@java.lang.Override" << endl <<
++        indent() << "public com.google.common.util.concurrent.ListenableFuture<" <<
++        extend_service_name << "." << (*f_iter)->get_name() << "_result> " <<
++        (*f_iter)->get_name() << "(" << endl << indent() << "    " <<
++        extend_service_name << "." << (*f_iter)->get_name() << "_args request) {" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "return futureUnaryCall(" << endl <<
++        indent() << "    getChannel().newCall(METHOD_" << (*f_iter)->get_name() <<
++        ", getCallOptions()), request);" << endl;
++      indent_down();
++      f_service_ <<
++        indent() << "}" << endl << endl;
++    }
++  }
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++}
++
++void t_java_generator::generate_method_ids(t_service* tservice) {
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  int i=0;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter, ++i) {
++    f_service_ <<
++      indent() << "private static final int METHODID_" <<
++      (*f_iter)->get_name() << " = " << i << ";" << endl;
++  }
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter, ++i) {
++      f_service_ <<
++        indent() << "private static final int METHODID_" <<
++        (*f_iter)->get_name() << " = " << i << ";" << endl;
++    }
++  }
++  f_service_ << endl;
++}
++
++void t_java_generator::generate_method_handlers(t_service* tservice) {
++  f_service_ <<
++    indent() << "private static class MethodHandlers<Req, Resp> implements" <<
++    endl << indent() << "    io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>," <<
++    endl << indent() << "    io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>," <<
++    endl << indent() << "    io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>," <<
++    endl << indent() << "    io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {" <<
++    endl;
++  indent_up();
++  f_service_ <<
++    indent() << "private final " << service_name_ << " serviceImpl;" << endl <<
++    indent() << "private final int methodId;" << endl << endl;
++
++  f_service_ <<
++    indent() << "public MethodHandlers(" << service_name_ << " serviceImpl, int " <<
++    "methodId) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "this.serviceImpl = serviceImpl;" << endl <<
++    indent() << "this.methodId = methodId;" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // invoke
++  f_service_ <<
++    indent() << "@java.lang.Override" << endl <<
++    indent() << "@java.lang.SuppressWarnings(\"unchecked\")" << endl <<
++    indent() << "public void invoke(Req request, io.grpc.stub.StreamObserver<Resp> responseObserver) {" <<
++    endl;
++  indent_up();
++  f_service_ <<
++    indent() << "switch (methodId) {" << endl;
++  indent_up();
++
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "case METHODID_" << (*f_iter)->get_name() << ":" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "serviceImpl." << (*f_iter)->get_name() << "((" << (*f_iter)->get_name() <<
++      "_args) request," << endl <<
++      indent() << "    (io.grpc.stub.StreamObserver<" << (*f_iter)->get_name() << "_result>)" <<
++      " responseObserver);" << endl <<
++      indent() << "break;" << endl << endl;
++    indent_down();
++  }
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "case METHODID_" << (*f_iter)->get_name() << ":" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "serviceImpl." << (*f_iter)->get_name() << "((" << extend_service_name <<
++        "." << (*f_iter)->get_name() << "_args) request," << endl <<
++        indent() << "    (io.grpc.stub.StreamObserver<" << extend_service_name << "." <<
++        (*f_iter)->get_name() << "_result>)" << " responseObserver);" << endl <<
++        indent() << "break;" << endl << endl;
++      indent_down();
++    }
+   }
++  f_service_ <<
++    indent() << "default:" << endl <<
++    indent() << "  throw new AssertionError();" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl;
++  indent_down();
++  f_service_ <<
++    indent() << "}" << endl << endl;
++
++  // invoke
++  f_service_ <<
++    indent() << "@java.lang.Override" << endl <<
++    indent() << "@java.lang.SuppressWarnings(\"unchecked\")" << endl <<
++    indent() << "public io.grpc.stub.StreamObserver<Req> invoke(" << endl <<
++    indent() << "    io.grpc.stub.StreamObserver<Resp> responseObserver) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "switch (methodId) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "default:" << endl;
++  f_service_ <<
++    indent() << "  throw new AssertionError();" << endl;
++  indent_down();
++  f_service_ << indent() << "}" << endl;
+   indent_down();
+   f_service_ << indent() << "}" << endl << endl;
++  indent_down();
++  f_service_ << indent() << "}" << endl << endl;
++
+ }
+ 
++void t_java_generator::generate_service_descriptors(t_service* tservice) {
++  // generate service descriptor
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  f_service_ <<
++    indent() << "public static io.grpc.ServiceDescriptor getServiceDescriptor() {" <<
++    endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return new io.grpc.ServiceDescriptor(SERVICE_NAME";
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "," << endl <<
++      indent() << "    METHOD_" << (*f_iter)->get_name();
++  }
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "," << endl <<
++        indent() << "    METHOD_" << (*f_iter)->get_name();
++    }
++  }
++  f_service_ << ");" << endl;
++  indent_down();
++  f_service_ << indent() << "}" << endl << endl;
++}
++
++void t_java_generator::generate_service_builder(t_service* tservice) {
++  // bind Service
++  vector<t_function*> functions = tservice->get_functions();
++  vector<t_function*>::iterator f_iter;
++  f_service_ <<
++    indent() << "@java.lang.Deprecated public static io.grpc.ServerServiceDefinition" <<
++    " bindService(" << endl <<
++    indent() << "    final " << service_name_ << " serviceImpl) {" << endl;
++  indent_up();
++  f_service_ <<
++    indent() << "return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())" <<
++    endl;
++  for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++    f_service_ <<
++      indent() << "    .addMethod(" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "    METHOD_" << (*f_iter)->get_name() << "," << endl <<
++      indent() << "    asyncUnaryCall(" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "    new MethodHandlers<" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "    " << (*f_iter)->get_name() << "_args," << endl <<
++      indent() << "    " << (*f_iter)->get_name() << "_result>(" << endl;
++    indent_up();
++    f_service_ <<
++      indent() << "    serviceImpl, METHODID_" << (*f_iter)->get_name() << ")))" << endl;
++    indent_down();
++    indent_down();
++    indent_down();
++    indent_down();
++  }
++
++  if (tservice->get_extends()) {
++    t_service* extend_service = tservice->get_extends();
++    functions = extend_service->get_functions();
++    string extend_service_name = extend_service->get_name() + "Grpc";
++    for(f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
++      f_service_ <<
++        indent() << "    .addMethod(" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "    METHOD_" << (*f_iter)->get_name() << "," << endl <<
++        indent() << "    asyncUnaryCall(" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "    new MethodHandlers<" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() << "_args," << endl <<
++        indent() << "    " << extend_service_name << "." << (*f_iter)->get_name() << "_result>(" << endl;
++      indent_up();
++      f_service_ <<
++        indent() << "    serviceImpl, METHODID_" << (*f_iter)->get_name() << ")))" << endl;
++      indent_down();
++      indent_down();
++      indent_down();
++      indent_down();
++    }
++  }
++  f_service_ <<
++    indent() << "    .build();" << endl;
++  indent_down();
++  f_service_ << indent() << "}" << endl << endl;
++}
++
++
+ void t_java_generator::generate_service_async_interface(t_service* tservice) {
+   string extends = "";
+   string extends_iface = "";
+diff --git a/tutorial/Makefile.am b/tutorial/Makefile.am
+index 5865c54..1cffbe6 100755
+--- a/tutorial/Makefile.am
++++ b/tutorial/Makefile.am
+@@ -35,11 +35,6 @@ if WITH_D
+ SUBDIRS += d
+ endif
+ 
+-if WITH_JAVA
+-SUBDIRS += java
+-SUBDIRS += js
+-endif
+-
+ if WITH_PYTHON
+ SUBDIRS += py
+ SUBDIRS += py.twisted
+@@ -95,4 +90,5 @@ EXTRA_DIST = \
+ 	php \
+ 	shared.thrift \
+ 	tutorial.thrift \
+-	README.md
++	README.md \
++	java
+-- 
+2.8.0.rc3.226.g39d4020
+
