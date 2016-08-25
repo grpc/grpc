@@ -63,7 +63,8 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
   grpc_call_element* elem = user_data;
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
-  if ((*calld->recv_message)->length > chand->max_recv_size) {
+  if (*calld->recv_message != NULL &&
+      (*calld->recv_message)->length > chand->max_recv_size) {
     char* message_string;
     gpr_asprintf(&message_string, "Received message larger than max (%lu)",
                  (unsigned long)chand->max_recv_size);
