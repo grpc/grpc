@@ -187,7 +187,6 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
-  // grpc_ares_gethostbyname(r->ev_driver, r->host, on_dones_cb, r);
   grpc_ares_notify_on_event(exec_ctx, ev_driver);
 }
 

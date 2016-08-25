@@ -266,9 +266,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
   grpc_ares_cleanup();
-#endif
   if (r->resolved_config) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
@@ -291,9 +289,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
     return NULL;
   }
 
-#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
   error = grpc_ares_init();
-#endif
   if (error != GRPC_ERROR_NONE) {
     GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
     return NULL;
