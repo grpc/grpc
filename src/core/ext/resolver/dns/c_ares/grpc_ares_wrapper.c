@@ -69,7 +69,6 @@ typedef struct grpc_ares_request {
   grpc_closure *on_done;
   grpc_resolved_addresses **addrs_out;
   grpc_closure request_closure;
-  void *arg;
   int pending_quries;
   int success;
   grpc_error *error;
@@ -98,15 +97,12 @@ static uint16_t strhtons(const char *port) {
 
 static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
-  gpr_log(GPR_ERROR, "status: %d", status);
   grpc_ares_request *r = (grpc_ares_request *)arg;
-  gpr_log(GPR_ERROR, "status: %s", r->name);
   grpc_resolved_addresses **addresses = r->addrs_out;
   size_t i;
   size_t prev_naddr;
 
   if (status == ARES_SUCCESS) {
-    gpr_log(GPR_ERROR, "status ARES_SUCCESS");
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     r->success = 1;
@@ -121,7 +117,6 @@ static void on_done_cb(void *arg, int status, int timeouts,
     }
     (*addresses)->naddrs += i;
 
-    gpr_log(GPR_ERROR, "naddr: %" PRIuPTR, (*addresses)->naddrs);
     (*addresses)->addrs =
         gpr_realloc((*addresses)->addrs,
                     sizeof(grpc_resolved_address) * (*addresses)->naddrs);
@@ -130,7 +125,6 @@ static void on_done_cb(void *arg, int status, int timeouts,
       memset(&(*addresses)->addrs[i], 0, sizeof(grpc_resolved_address));
       if (hostent->h_addrtype == AF_INET6) {
         char output[INET6_ADDRSTRLEN];
-        gpr_log(GPR_ERROR, "AF_INET6");
         struct sockaddr_in6 *addr;
 
         (*addresses)->addrs[i].len = sizeof(struct sockaddr_in6);
@@ -139,13 +133,14 @@ static void on_done_cb(void *arg, int status, int timeouts,
         memcpy(&addr->sin6_addr, hostent->h_addr_list[i - prev_naddr],
                sizeof(struct in6_addr));
         ares_inet_ntop(AF_INET6, &addr->sin6_addr, output, INET6_ADDRSTRLEN);
-        gpr_log(GPR_ERROR, "addr: %s", output);
-        gpr_log(GPR_ERROR, "port: %s", r->port);
+        gpr_log(GPR_DEBUG,
+                "c-ares resolver gets a AF_INET6 result: \n"
+                "  addr: %s\n  port: %s\n",
+                output, r->port);
         addr->sin6_family = (sa_family_t)hostent->h_addrtype;
         addr->sin6_port = strhtons(r->port);
       } else {
         char output[INET_ADDRSTRLEN];
-        gpr_log(GPR_ERROR, "AF_INET");
         struct sockaddr_in *addr;
 
         (*addresses)->addrs[i].len = sizeof(struct sockaddr_in);
@@ -154,15 +149,17 @@ static void on_done_cb(void *arg, int status, int timeouts,
         memcpy(&addr->sin_addr, hostent->h_addr_list[i - prev_naddr],
                sizeof(struct in_addr));
         ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
-        gpr_log(GPR_ERROR, "addr: %s", output);
-        gpr_log(GPR_ERROR, "port: %s", r->port);
+        gpr_log(GPR_DEBUG,
+                "c-ares resolver gets a AF_INET result: \n"
+                "  addr: %s\n  port: %s\n",
+                output, r->port);
         addr->sin_family = (sa_family_t)hostent->h_addrtype;
         addr->sin_port = strhtons(r->port);
       }
     }
     // ares_destroy(r->channel);
   } else if (!r->success) {
-    gpr_log(GPR_ERROR, "status not ARES_SUCCESS");
+    gpr_log(GPR_DEBUG, "c-ares status not ARES_SUCCESS");
     // TODO(zyc): add more error detail
     if (r->error == GRPC_ERROR_NONE) {
       r->error = GRPC_ERROR_CREATE("C-ares query error");
@@ -184,7 +181,6 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_ares_request *r = (grpc_ares_request *)arg;
   grpc_ares_ev_driver *ev_driver = r->ev_driver;
   ares_channel *channel = grpc_ares_ev_driver_get_channel(ev_driver);
-  gpr_log(GPR_ERROR, "before ares_gethostbyname %s", r->host);
   r->pending_quries = 1;
   if (grpc_ipv6_loopback_available()) {
     r->pending_quries += 1;
@@ -192,9 +188,7 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
   }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
   // grpc_ares_gethostbyname(r->ev_driver, r->host, on_dones_cb, r);
-  gpr_log(GPR_ERROR, "before ares_getsock");
   grpc_ares_notify_on_event(exec_ctx, ev_driver);
-  gpr_log(GPR_ERROR, "eof resolve_address_impl");
 }
 
 static int try_fake_resolve(const char *name, const char *port,
@@ -204,7 +198,6 @@ static int try_fake_resolve(const char *name, const char *port,
   memset(&sa, 0, sizeof(struct sockaddr_in));
   memset(&sa6, 0, sizeof(struct sockaddr_in6));
   if (0 != ares_inet_pton(AF_INET, name, &(sa.sin_addr))) {
-    gpr_log(GPR_ERROR, "AF_INET");
     *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
     (*addresses)->naddrs = 1;
     (*addresses)->addrs =
@@ -216,8 +209,6 @@ static int try_fake_resolve(const char *name, const char *port,
     return 1;
   }
   if (0 != ares_inet_pton(AF_INET6, name, &(sa6.sin6_addr))) {
-    char output[INET6_ADDRSTRLEN];
-    gpr_log(GPR_ERROR, "AF_INET6");
     *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
     (*addresses)->naddrs = 1;
     (*addresses)->addrs =
@@ -226,10 +217,6 @@ static int try_fake_resolve(const char *name, const char *port,
     sa6.sin6_family = AF_INET6;
     sa6.sin6_port = strhtons(port);
     memcpy(&(*addresses)->addrs[0].addr, &sa6, sizeof(struct sockaddr_in6));
-    ares_inet_ntop(AF_INET6, &sa6.sin6_addr, output, INET6_ADDRSTRLEN);
-    gpr_log(GPR_ERROR, "addr: %s", output);
-    gpr_log(GPR_ERROR, "port: %s", port);
-
     return 1;
   }
   return 0;

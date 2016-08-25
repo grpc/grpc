@@ -30,5 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
+#include <grpc/support/port_platform.h>
+#ifdef GPR_WINSOCK_SOCKET
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+
+#endif /* GPR_WINSOCK_SOCKET */
