@@ -57,6 +57,9 @@ endif()
 set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
 set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
+set(gRPC_CARES_PROVIDER "module" CACHE STRING "Provider of c-ares library")
+set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
 set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -95,6 +98,27 @@ elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
     set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
   endif()
   set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
+endif()
+
+if("${gRPC_CARES_PROVIDER}" STREQUAL "module")
+  if(NOT CARES_ROOT_DIR)
+    set(CARES_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/c-ares)
+  endif()
+  set(CARES_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/c-ares")
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/c-ares/CMakeLists.txt")
+      add_subdirectory(src/c-ares third_party/c-ares)
+      if(TARGET cares)
+          set(_gRPC_CARES_LIBRARIES cares)
+      endif()
+  else()
+      message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
+  find_package(CARES)
+  if(TARGET CARES::CARES)
+    set(_gRPC_CARES_LIBRARIES CARES::CARES)
+  endif()
+  set(_gRPC_FIND_CARES "if(NOT CARES_FOUND)\n  find_package(CARES)\nendif()")
 endif()
 
 if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
@@ -225,6 +249,8 @@ target_include_directories(gpr
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 
@@ -493,12 +519,15 @@ target_include_directories(grpc
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_CARES_LIBRARIES}
   gpr
 )
 
@@ -725,6 +754,8 @@ target_include_directories(grpc_cronet
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_cronet
@@ -957,6 +988,8 @@ target_include_directories(grpc_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_unsecure
@@ -1145,6 +1178,8 @@ target_include_directories(grpc++
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc++
@@ -1293,6 +1328,8 @@ target_include_directories(grpc++_reflection
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc++_reflection
@@ -1502,6 +1539,8 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc++_unsecure
@@ -1651,6 +1690,8 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_plugin_support
@@ -1688,6 +1729,8 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_csharp_ext
@@ -1718,6 +1761,8 @@ target_include_directories(gen_hpack_tables
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(gen_hpack_tables
@@ -1746,6 +1791,8 @@ target_include_directories(gen_legal_metadata_characters
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 
@@ -1770,6 +1817,8 @@ target_include_directories(grpc_create_jwt
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_create_jwt
@@ -1799,6 +1848,8 @@ target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_print_google_default_creds_token
@@ -1827,6 +1878,8 @@ target_include_directories(grpc_verify_jwt
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_verify_jwt
@@ -1855,6 +1908,8 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_cpp_plugin
@@ -1883,6 +1938,8 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_csharp_plugin
@@ -1911,6 +1968,8 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_node_plugin
@@ -1939,6 +1998,8 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_objective_c_plugin
@@ -1967,6 +2028,8 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_python_plugin
@@ -1995,6 +2058,8 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_ROOT_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/c-ares
 )
 
 target_link_libraries(grpc_ruby_plugin

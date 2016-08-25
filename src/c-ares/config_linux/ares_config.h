@@ -352,7 +352,7 @@
 /* #undef NEED_THREAD_SAFE */
 
 /* cpu-machine-OS */
-#define OS "x86_64-unknown-linux-gnu"
+#define OS "i386-unknown-linux-gnu"
 
 /* Name of package */
 #define PACKAGE "c-ares"
@@ -451,13 +451,13 @@
 #define SIZEOF_INT 4
 
 /* The size of `long', as computed by sizeof. */
-#define SIZEOF_LONG 8
+#define SIZEOF_LONG 4
 
 /* The size of `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
 /* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T 8
+#define SIZEOF_SIZE_T 4
 
 /* The size of `struct in6_addr', as computed by sizeof. */
 #define SIZEOF_STRUCT_IN6_ADDR 16
@@ -466,7 +466,7 @@
 #define SIZEOF_STRUCT_IN_ADDR 4
 
 /* The size of `time_t', as computed by sizeof. */
-#define SIZEOF_TIME_T 8
+#define SIZEOF_TIME_T 4
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
