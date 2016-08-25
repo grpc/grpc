@@ -150,7 +150,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\test_config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\test_config.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\test_config_cc.cc">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
