@@ -130,7 +130,7 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(&exec_ctx, NULL, sfd.server, 0);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
   /* Bind everything into the same pollset */

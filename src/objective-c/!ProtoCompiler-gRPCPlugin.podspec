@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.0.0-pre1'
+  v = '1.0.0'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -82,10 +82,9 @@ Pod::Spec.new do |s|
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   repo = 'grpc/grpc'
-  release = "objective-c-v#{v}"
   file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
   s.source = {
-    :http => "https://github.com/#{repo}/releases/download/#{release}/#{file}",
+    :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
@@ -96,7 +95,7 @@ Pod::Spec.new do |s|
   s.preserve_paths = plugin
 
   # Restrict the protoc version to the one supported by this plugin.
-  s.dependency '!ProtoCompiler', '3.0.0-beta-3.1'
+  s.dependency '!ProtoCompiler', '3.0.0'
   # For the Protobuf dependency not to complain:
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'

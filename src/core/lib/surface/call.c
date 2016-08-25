@@ -264,9 +264,19 @@ grpc_call *grpc_call_create(
       gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
-                       call->context, server_transport_data,
-                       CALL_STACK_FROM_CALL(call));
+  grpc_error *error = grpc_call_stack_init(
+      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
+      server_transport_data, CALL_STACK_FROM_CALL(call));
+  if (error != GRPC_ERROR_NONE) {
+    intptr_t status;
+    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status))
+      status = GRPC_STATUS_UNKNOWN;
+    const char *error_str =
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
+    close_with_status(&exec_ctx, call, (grpc_status_code)status,
+                      error_str == NULL ? "unknown error" : error_str);
+    GRPC_ERROR_UNREF(error);
+  }
   if (cq != NULL) {
     GPR_ASSERT(
         pollset_set_alternative == NULL &&
@@ -1367,6 +1377,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   int num_completion_callbacks_needed = 1;
   grpc_call_error error = GRPC_CALL_OK;
 
+  // sent_initial_metadata guards against variable reuse.
+  grpc_metadata compression_md;
+
   GPR_TIMER_BEGIN("grpc_call_start_batch", 0);
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
@@ -1412,8 +1425,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* process compression level */
-        grpc_metadata compression_md;
-        memset(&compression_md, 0, sizeof(grpc_metadata));
+        memset(&compression_md, 0, sizeof(compression_md));
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level;
         bool level_set = false;

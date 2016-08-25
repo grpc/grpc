@@ -49,7 +49,11 @@ cp grpc-*.tgz $artifacts/grpc.tgz
 
 mkdir -p bin
 
-cd src/node/tools
+cd $base/src/node/health_check
+npm pack
+cp grpc-health-check-*.tgz $artifacts/
+
+cd $base/src/node/tools
 npm update
 npm pack
 cp grpc-tools-*.tgz $artifacts/

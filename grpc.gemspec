@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0.0.alpha.5.0.3'
+  s.add_dependency 'google-protobuf', '~> 3.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -146,6 +146,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/compression.h )
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_posix.h )
+  s.files += %w( include/grpc/grpc_security_constants.h )
   s.files += %w( include/grpc/status.h )
   s.files += %w( include/grpc/impl/codegen/byte_buffer.h )
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
@@ -169,7 +170,6 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
   s.files += %w( include/grpc/impl/codegen/time.h )
   s.files += %w( include/grpc/grpc_security.h )
-  s.files += %w( include/grpc/grpc_security_constants.h )
   s.files += %w( include/grpc/census.h )
   s.files += %w( src/core/lib/channel/channel_args.h )
   s.files += %w( src/core/lib/channel/channel_stack.h )
@@ -248,6 +248,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/metadata.h )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/static_metadata.h )
+  s.files += %w( src/core/lib/transport/timeout_encoding.h )
   s.files += %w( src/core/lib/transport/transport.h )
   s.files += %w( src/core/lib/transport/transport_impl.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_decoder.h )
@@ -269,7 +270,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/internal.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/status_conversion.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_map.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/timeout_encoding.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.h )
   s.files += %w( src/core/ext/transport/chttp2/alpn/alpn.h )
   s.files += %w( src/core/lib/security/context/security_context.h )
@@ -322,11 +322,13 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/load_reporting/load_reporting.h )
   s.files += %w( src/core/ext/load_reporting/load_reporting_filter.h )
   s.files += %w( src/core/ext/census/aggregation.h )
+  s.files += %w( src/core/ext/census/base_resources.h )
   s.files += %w( src/core/ext/census/census_interface.h )
   s.files += %w( src/core/ext/census/census_rpc_stats.h )
   s.files += %w( src/core/ext/census/gen/census.pb.h )
   s.files += %w( src/core/ext/census/grpc_filter.h )
   s.files += %w( src/core/ext/census/mlog.h )
+  s.files += %w( src/core/ext/census/resource.h )
   s.files += %w( src/core/ext/census/rpc_metric_id.h )
   s.files += %w( src/core/lib/surface/init.c )
   s.files += %w( src/core/lib/channel/channel_args.c )
@@ -415,6 +417,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/metadata.c )
   s.files += %w( src/core/lib/transport/metadata_batch.c )
   s.files += %w( src/core/lib/transport/static_metadata.c )
+  s.files += %w( src/core/lib/transport/timeout_encoding.c )
   s.files += %w( src/core/lib/transport/transport.c )
   s.files += %w( src/core/lib/transport/transport_op_string.c )
   s.files += %w( src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c )
@@ -437,7 +440,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/status_conversion.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_map.c )
-  s.files += %w( src/core/ext/transport/chttp2/transport/timeout_encoding.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.c )
   s.files += %w( src/core/ext/transport/chttp2/transport/writing.c )
   s.files += %w( src/core/ext/transport/chttp2/alpn/alpn.c )
@@ -505,6 +507,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/resolver/sockaddr/sockaddr_resolver.c )
   s.files += %w( src/core/ext/load_reporting/load_reporting.c )
   s.files += %w( src/core/ext/load_reporting/load_reporting_filter.c )
+  s.files += %w( src/core/ext/census/base_resources.c )
   s.files += %w( src/core/ext/census/context.c )
   s.files += %w( src/core/ext/census/gen/census.pb.c )
   s.files += %w( src/core/ext/census/grpc_context.c )
@@ -514,6 +517,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/census/mlog.c )
   s.files += %w( src/core/ext/census/operation.c )
   s.files += %w( src/core/ext/census/placeholders.c )
+  s.files += %w( src/core/ext/census/resource.c )
   s.files += %w( src/core/ext/census/tracing.c )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry.c )
   s.files += %w( third_party/boringssl/crypto/aes/internal.h )
