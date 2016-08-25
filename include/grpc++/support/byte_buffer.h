@@ -72,6 +72,9 @@ class ByteBuffer GRPC_FINAL {
   /// Buffer size in bytes.
   size_t Length() const;
 
+  /// Swap the state of *this and *other.
+  void Swap(ByteBuffer* other);
+
  private:
   friend class SerializationTraits<ByteBuffer, void>;
 

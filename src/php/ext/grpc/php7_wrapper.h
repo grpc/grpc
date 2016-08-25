@@ -143,8 +143,7 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val)
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) \
-  zval _stack_zval_##pzv; \
-  pzv = &(_stack_zval_##pzv)
+  pzv = (zval *)emalloc(sizeof(zval));
 #define PHP_GRPC_DELREF(zv)
 
 #define PHP_GRPC_WRAP_OBJECT_START(name) \
