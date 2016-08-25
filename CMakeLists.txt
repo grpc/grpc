@@ -49,6 +49,14 @@ set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 
 project(${PACKAGE_NAME} C CXX)
 
+
+function(JOIN VALUES GLUE OUTPUT)
+  string (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+  string (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
+  set (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+endfunction()
+
+
 include(CheckFunctionExists)
 
 CHECK_FUNCTION_EXISTS(pow HAS_POW)
@@ -269,6 +277,7 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
 
   
 if (gRPC_INSTALL)
@@ -528,6 +537,31 @@ foreach(_hdr
   )
 endforeach()
 
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc")
+  set(PKG_CONFIG_DESCRIPTION "High performance general RPC framework")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  if (ZLIB_FOUND)
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "zlib")
+  else()
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lz')
+  endif()
+  if (OPENSSL_FOUND)
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "openssl")
+  else()
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lssl')
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lcrypto')
+  endif()
+  set(PKG_CONFIG_LIB "-lgrpc")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc EXPORT gRPCTargets
@@ -759,6 +793,7 @@ foreach(_hdr
   )
 endforeach()
 
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc_cronet EXPORT gRPCTargets
@@ -984,6 +1019,25 @@ foreach(_hdr
   )
 endforeach()
 
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc_unsecure")
+  set(PKG_CONFIG_DESCRIPTION "High performance general RPC framework without SSL")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  if (ZLIB_FOUND)
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "zlib")
+  else()
+    LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lz')
+  endif()
+  set(PKG_CONFIG_LIB "-lgrpc")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
@@ -1154,6 +1208,21 @@ foreach(_hdr
   )
 endforeach()
 
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc++")
+  set(PKG_CONFIG_DESCRIPTION "C++ Wrapper for grpc")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE grpc)
+  set(PKG_CONFIG_LIB "-lgrpc++")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
@@ -1248,6 +1317,7 @@ foreach(_hdr
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+
 
   
 if (gRPC_INSTALL)
@@ -1415,6 +1485,21 @@ foreach(_hdr
   )
 endforeach()
 
+if (BUILD_SHARED_LIBS)
+  set(PKG_CONFIG_LIBNAME "grpc++_unsecure")
+  set(PKG_CONFIG_DESCRIPTION "C++ Wrapper for grpc_unsecure")
+  unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+  unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+  LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE grpc_unsecure)
+  set(PKG_CONFIG_LIB "-lgrpc++")
+
+  JOIN("${_PKG_CONFIG_REQUIRES_PRIVATE}" " " PKG_CONFIG_REQUIRES_PRIVATE)
+  JOIN("${_PKG_CONFIG_LIBS_PRIVATE}" " " PKG_CONFIG_LIBS_PRIVATE)
+  configure_file(tools/cmake/pkg-config.pc.in "${PKG_CONFIG_LIBNAME}.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}.pc" DESTINATION lib/pkgconfig)
+endif()
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc++_unsecure EXPORT gRPCTargets
@@ -1458,6 +1543,7 @@ foreach(_hdr
   )
 endforeach()
 
+
   
 if (gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
@@ -1485,6 +1571,7 @@ target_link_libraries(grpc_csharp_ext
   grpc
   gpr
 )
+
 
 
   

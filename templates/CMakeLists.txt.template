@@ -61,6 +61,31 @@
     for d in target_dict.get('deps', []):
       deps.append(d)
     return deps
+
+  def get_desc_pc(target_dict):
+    d_map = {
+      'grpc': {
+        'desc': 'High performance general RPC framework',
+        'libs': ['grpc'],
+        'deps': ['zlib', 'openssl']
+      },
+      'grpc_unsecure': {
+        'desc': 'High performance general RPC framework without SSL',
+        'libs': ['grpc'],
+        'deps': ['zlib']
+      },
+      'grpc++': {
+        'desc': 'C++ Wrapper for grpc',
+        'libs': ['grpc++'],
+        'deps': ['grpc'],
+      },
+      'grpc++_unsecure': {
+        'desc': 'C++ Wrapper for grpc_unsecure',
+        'libs': ['grpc++'],
+        'deps': ['grpc_unsecure'],
+      }
+    }
+    return d_map.get(target_dict['name'], None)
   %>
 
   cmake_minimum_required(VERSION 2.8)
@@ -72,6 +97,14 @@
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
+
+  <%text>
+  function(JOIN VALUES GLUE OUTPUT)
+    string (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+    string (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
+    set (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+  endfunction()
+  </%text>
 
   include(CheckFunctionExists)
 
@@ -231,6 +264,42 @@
     )
   endforeach()
   % endif
+
+  % if get_desc_pc(lib):
+  if (BUILD_SHARED_LIBS)
+    set(PKG_CONFIG_LIBNAME "${lib.name}")
+    set(PKG_CONFIG_DESCRIPTION "${get_desc_pc(lib)['desc']}")
+    unset(_PKG_CONFIG_REQUIRES_PRIVATE)
+    unset(_PKG_CONFIG_LIBS_PRIVATE)
+
+    % for dep in get_desc_pc(lib)['deps']:
+    % if dep == 'openssl':
+    if (OPENSSL_FOUND)
+      LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "openssl")
+    else()
+      LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lssl')
+      LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lcrypto')
+    endif()
+    % elif dep == 'zlib':
+    if (ZLIB_FOUND)
+      LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE "zlib")
+    else()
+      LIST(APPEND _PKG_CONFIG_LIBS_PRIVATE '-lz')
+    endif()
+    % elif dep in ['grpc', 'grpc_unsecure']:
+    LIST(APPEND _PKG_CONFIG_REQUIRES_PRIVATE ${dep})
+    % endif
+    % endfor
+    % for library in get_desc_pc(lib)['libs']:
+    set(PKG_CONFIG_LIB "-l${library}")
+    % endfor
+
+    JOIN("<%text>${_PKG_CONFIG_REQUIRES_PRIVATE}</%text>" " " PKG_CONFIG_REQUIRES_PRIVATE)
+    JOIN("<%text>${_PKG_CONFIG_LIBS_PRIVATE}</%text>" " " PKG_CONFIG_LIBS_PRIVATE)
+    configure_file(tools/cmake/pkg-config.pc.in "<%text>${PKG_CONFIG_LIBNAME}</%text>.pc" @ONLY)
+    install(FILES "<%text>${CMAKE_CURRENT_BINARY_DIR}/${PKG_CONFIG_LIBNAME}</%text>.pc" DESTINATION lib/pkgconfig)
+  endif()
+  %endif
   </%def>
 
   <%def name="cc_binary(tgt)">
