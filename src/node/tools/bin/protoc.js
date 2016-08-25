@@ -47,7 +47,11 @@ var exe_ext = process.platform === 'win32' ? '.exe' : '';
 
 var protoc = path.resolve(__dirname, 'protoc' + exe_ext);
 
-var child_process = execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
+var plugin = path.resolve(__dirname, 'grpc_node_plugin' + exe_ext);
+
+var args = ['--plugin=protoc-gen-grpc=' + plugin].concat(process.argv.slice(2));
+
+var child_process = execFile(protoc, args, function(error, stdout, stderr) {
   if (error) {
     throw error;
   }
