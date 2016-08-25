@@ -60,11 +60,20 @@ os.chdir(_ROOT)
 errors = 0
 
 # walk directories, find things
+printed_banner = False
 for target_dir in _TARGET_DIRS:
   for root, dirs, filenames in os.walk(target_dir):
     if 'README.md' not in filenames:
-      print '%s: missing README.md' % root
+      if not printed_banner:
+        print 'Missing README.md'
+        print '================='
+        printed_banner = True
+      print root
       errors += 1
+if printed_banner: print
+printed_banner = False
+for target_dir in _TARGET_DIRS:
+  for root, dirs, filenames in os.walk(target_dir):
     for filename in filenames:
       if os.path.splitext(filename)[1] not in _INTERESTING_EXTENSIONS:
         continue
@@ -72,7 +81,11 @@ for target_dir in _TARGET_DIRS:
       with open(path) as f:
         contents = f.read()
       if '\\file' not in contents:
-        print '%s: no \\file comment' % path
+        if not printed_banner:
+          print 'Missing \\file comment'
+          print '======================'
+          printed_banner = True
+        print path
         errors += 1
 
 assert errors == 0, 'error count = %d' % errors
