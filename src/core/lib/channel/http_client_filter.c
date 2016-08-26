@@ -53,6 +53,7 @@ typedef struct call_data {
   grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
+  uint8_t *payload_bytes;
 
   /** Closure to call when finished with the hc_on_recv hook */
   grpc_closure *on_done_recv;
@@ -151,17 +152,23 @@ static void hc_mutate_op(grpc_call_element *elem,
 
   if (method == GRPC_MDELEM_METHOD_GET) {
     gpr_slice slice;
-    /* TODO (makdharma): extend code for messages with multiple slices */
-    if (grpc_byte_stream_next(NULL, op->send_message, &slice,
-                              op->send_message->length, NULL)) {
-      grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
+    gpr_slice_buffer slices;
+    gpr_slice_buffer_init(&slices);
+    calld->payload_bytes = gpr_malloc(op->send_message->length);
+    uint8_t *wrptr = calld->payload_bytes;
+
+    while (grpc_byte_stream_next(NULL, op->send_message, &slice, ~(size_t)0, NULL)) {
+      memcpy(wrptr, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice));
+      wrptr += GPR_SLICE_LENGTH(slice);
+      gpr_slice_buffer_add(&slices, slice);
+      if (op->send_message->length == slices.length) {
+        grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
           GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-          grpc_mdstr_from_buffer(GPR_SLICE_START_PTR(slice),
-                                 GPR_SLICE_LENGTH(slice)));
-      grpc_metadata_batch_add_tail(op->send_initial_metadata,
-                                   &calld->payload_bin, payload_bin);
-    } else {
-      gpr_log(GPR_ERROR, "send_message could not be read");
+          grpc_mdstr_from_buffer(calld->payload_bytes, op->send_message->length));
+        grpc_metadata_batch_add_tail(op->send_initial_metadata,
+          &calld->payload_bin, payload_bin);
+        break;
+      }
     }
     op->send_message = NULL;
   }
@@ -246,7 +253,7 @@ static size_t max_payload_size_from_args(const grpc_channel_args *args) {
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
         } else {
-          return args->args[i].value.integer;
+          return (size_t)args->args[i].value.integer;
         }
       }
     }
