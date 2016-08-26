@@ -122,8 +122,6 @@ struct grpc_call {
 
   /* client or server call */
   bool is_client;
-  /* is the alarm set */
-  bool have_alarm;
   /** has grpc_call_destroy been called */
   bool destroy_called;
   /** flag indicating that cancellation is inherited */
@@ -165,9 +163,6 @@ struct grpc_call {
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
-
-  /* Deadline alarm - if have_alarm is non-zero */
-  grpc_timer alarm;
 
   /* for the client, extra metadata is initial metadata; for the
      server, it's trailing metadata */
@@ -211,8 +206,6 @@ struct grpc_call {
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-static void set_deadline_alarm(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                               gpr_timespec deadline);
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
                        grpc_transport_stream_op *op);
 static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
@@ -260,7 +253,7 @@ grpc_call *grpc_call_create(
       call->metadata_batch[i][j].deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
     }
   }
-  call->send_deadline =
+  send_deadline =
       gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
@@ -334,10 +327,7 @@ grpc_call *grpc_call_create(
 
     gpr_mu_unlock(&parent_call->mu);
   }
-  if (gpr_time_cmp(send_deadline, gpr_inf_future(send_deadline.clock_type)) !=
-      0) {
-    set_deadline_alarm(&exec_ctx, call, send_deadline);
-  }
+  call->send_deadline = send_deadline;
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_call_create", 0);
   return call;
@@ -736,9 +726,6 @@ void grpc_call_destroy(grpc_call *c) {
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  if (c->have_alarm) {
-    grpc_timer_cancel(&exec_ctx, &c->alarm);
-  }
   cancel = !c->received_final_op;
   gpr_mu_unlock(&c->mu);
   if (cancel) grpc_call_cancel(c, NULL);
@@ -895,32 +882,6 @@ char *grpc_call_get_peer(grpc_call *call) {
 
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
   return CALL_FROM_TOP_ELEM(elem);
-}
-
-static void call_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_call *call = arg;
-  gpr_mu_lock(&call->mu);
-  call->have_alarm = 0;
-  if (error != GRPC_ERROR_CANCELLED) {
-    cancel_with_status(exec_ctx, call, GRPC_STATUS_DEADLINE_EXCEEDED,
-                       "Deadline Exceeded");
-  }
-  gpr_mu_unlock(&call->mu);
-  GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "alarm");
-}
-
-static void set_deadline_alarm(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                               gpr_timespec deadline) {
-  if (call->have_alarm) {
-    gpr_log(GPR_ERROR, "Attempt to set deadline alarm twice");
-    assert(0);
-    return;
-  }
-  GRPC_CALL_INTERNAL_REF(call, "alarm");
-  call->have_alarm = 1;
-  call->send_deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  grpc_timer_init(exec_ctx, &call->alarm, call->send_deadline, call_alarm, call,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 /* we offset status by a small amount when storing it into transport metadata
@@ -1271,14 +1232,6 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     GPR_TIMER_BEGIN("validate_filtered_metadata", 0);
     validate_filtered_metadata(exec_ctx, bctl);
     GPR_TIMER_END("validate_filtered_metadata", 0);
-
-    if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
-            0 &&
-        !call->is_client) {
-      GPR_TIMER_BEGIN("set_deadline_alarm", 0);
-      set_deadline_alarm(exec_ctx, call, md->deadline);
-      GPR_TIMER_END("set_deadline_alarm", 0);
-    }
   }
 
   call->has_initial_md_been_received = true;
@@ -1326,9 +1279,6 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     grpc_metadata_batch_filter(md, recv_trailing_filter, call);
 
     call->received_final_op = true;
-    if (call->have_alarm) {
-      grpc_timer_cancel(exec_ctx, &call->alarm);
-    }
     /* propagate cancellation to any interested children */
     child_call = call->first_child;
     if (child_call != NULL) {
