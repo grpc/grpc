@@ -197,7 +197,12 @@ function updateAuthMetadataCallback($context)
     $methodName = $context->method_name;
     $auth_credentials = ApplicationDefaultCredentials::getCredentials();
 
-    return $auth_credentials->updateMetadata($metadata = [], $authUri);
+    $metadata = [];
+    $result = $auth_credentials->updateMetadata([], $authUri);
+    foreach ($result as $key => $value) {
+      $metadata[strtolower($key)] = $value;
+    }
+    return $metadata;
 }
 
 /**
