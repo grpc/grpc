@@ -206,16 +206,14 @@ struct grpc_chttp2_transport {
   /** maps stream id to grpc_chttp2_stream objects */
   grpc_chttp2_stream_map stream_map;
 
-  /** closure to execute writing */
-  grpc_closure writing_action;
-  grpc_closure writing_done_action;
-  /** closure to finish writing */
-  grpc_closure terminate_writing;
-  /** closure to start reading from the endpoint */
-  grpc_closure reading_action;
-  grpc_closure reading_action_locked;
-  /** closure to flush read state up the stack */
-  grpc_closure initiate_read_flush_locked;
+  grpc_closure write_action_begin_locked;
+  grpc_closure write_action;
+  grpc_closure write_action_end;
+  grpc_closure write_action_end_locked;
+
+  grpc_closure read_action_begin;
+  grpc_closure read_action_locked;
+  grpc_closure read_action_flush_locked;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -319,7 +317,23 @@ struct grpc_chttp2_transport {
   grpc_status_code goaway_error;
   uint32_t goaway_last_stream_index;
   gpr_slice goaway_text;
+
+  /* closures to finish after writing */
+  grpc_closure **finish_after_writing;
+  size_t finish_after_writing_count;
+  size_t finish_after_writing_capacity;
 };
+
+typedef enum {
+  GRPC_CHTTP2_CALL_WHEN_SCHEDULED,
+  GRPC_CHTTP2_CALL_WHEN_WRITTEN,
+} grpc_chttp2_call_write_cb_when;
+
+typedef struct grpc_chttp2_write_cb {
+  size_t call_at_byte;
+  grpc_closure *closure;
+  grpc_chttp2_call_write_cb_when when;
+} grpc_chttp2_write_cb;
 
 struct grpc_chttp2_stream {
   grpc_chttp2_transport *t;
@@ -350,10 +364,10 @@ struct grpc_chttp2_stream {
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
   grpc_closure *send_initial_metadata_finished;
-  grpc_byte_stream *send_message;
-  grpc_closure *send_message_finished;
   grpc_metadata_batch *send_trailing_metadata;
   grpc_closure *send_trailing_metadata_finished;
+
+  grpc_byte_stream *fetching_send_message;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_closure *recv_initial_metadata_ready;
@@ -416,6 +430,10 @@ struct grpc_chttp2_stream {
   gpr_slice fetching_slice;
   size_t stream_fetched;
   grpc_closure finished_fetch;
+
+  grpc_chttp2_write_cb *write_cbs;
+  size_t write_cb_count;
+  size_t write_cb_capacity;
 };
 
 /** Transport writing call flow:

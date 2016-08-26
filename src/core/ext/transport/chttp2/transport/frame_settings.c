@@ -143,10 +143,10 @@ grpc_error *grpc_chttp2_settings_parser_begin_frame(
   }
 }
 
-grpc_error *grpc_chttp2_settings_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *p,
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global, gpr_slice slice, int is_last) {
+grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
+                                              grpc_chttp2_transport *t,
+                                              grpc_chttp2_stream *s,
+                                              gpr_slice slice, int is_last) {
   grpc_chttp2_settings_parser *parser = p;
   const uint8_t *cur = GPR_SLICE_START_PTR(slice);
   const uint8_t *end = GPR_SLICE_END_PTR(slice);
@@ -164,8 +164,7 @@ grpc_error *grpc_chttp2_settings_parser_parse(
           if (is_last) {
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
-            gpr_slice_buffer_add(&transport_global->qbuf,
-                                 grpc_chttp2_settings_ack_create());
+            gpr_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
           }
           return GRPC_ERROR_NONE;
         }
@@ -225,9 +224,9 @@ grpc_error *grpc_chttp2_settings_parser_parse(
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
                 grpc_chttp2_goaway_append(
-                    transport_global->last_incoming_stream_id, sp->error_value,
+                    t->last_incoming_stream_id, sp->error_value,
                     gpr_slice_from_static_string("HTTP2 settings error"),
-                    &transport_global->qbuf);
+                    &t->qbuf);
                 gpr_asprintf(&msg, "invalid value %u passed for %s",
                              parser->value, sp->name);
                 grpc_error *err = GRPC_ERROR_CREATE(msg);
@@ -237,18 +236,17 @@ grpc_error *grpc_chttp2_settings_parser_parse(
           }
           if (parser->id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
               parser->incoming_settings[parser->id] != parser->value) {
-            transport_global->initial_window_update =
+            t->initial_window_update =
                 (int64_t)parser->value - parser->incoming_settings[parser->id];
             if (grpc_http_trace) {
               gpr_log(GPR_DEBUG, "adding %d for initial_window change",
-                      (int)transport_global->initial_window_update);
+                      (int)t->initial_window_update);
             }
           }
           parser->incoming_settings[parser->id] = parser->value;
           if (grpc_http_trace) {
             gpr_log(GPR_DEBUG, "CHTTP2:%s: got setting %d = %d",
-                    transport_global->is_client ? "CLI" : "SVR", parser->id,
-                    parser->value);
+                    t->is_client ? "CLI" : "SVR", parser->id, parser->value);
           }
         } else if (grpc_http_trace) {
           gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",

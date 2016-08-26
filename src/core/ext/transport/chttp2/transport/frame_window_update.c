@@ -80,9 +80,8 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
 }
 
 grpc_error *grpc_chttp2_window_update_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global, gpr_slice slice, int is_last) {
+    grpc_exec_ctx *exec_ctx, void *parser, grpc_chttp2_transport *t,
+    grpc_chttp2_stream *s, gpr_slice slice, int is_last) {
   uint8_t *const beg = GPR_SLICE_START_PTR(slice);
   uint8_t *const end = GPR_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
@@ -94,8 +93,8 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     p->byte++;
   }
 
-  if (stream_global != NULL) {
-    stream_global->stats.incoming.framing_bytes += (uint32_t)(end - cur);
+  if (s != NULL) {
+    s->stats.incoming.framing_bytes += (uint32_t)(end - cur);
   }
 
   if (p->byte == 4) {
@@ -109,24 +108,24 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     }
     GPR_ASSERT(is_last);
 
-    if (transport_global->incoming_stream_id != 0) {
-      if (stream_global != NULL) {
-        bool was_zero = stream_global->outgoing_window <= 0;
-        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", transport_global, stream_global,
-                                       outgoing_window, received_update);
-        bool is_zero = stream_global->outgoing_window <= 0;
+    if (t->incoming_stream_id != 0) {
+      if (s != NULL) {
+        bool was_zero = s->outgoing_window <= 0;
+        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", t, s, outgoing_window,
+                                       received_update);
+        bool is_zero = s->outgoing_window <= 0;
         if (was_zero && !is_zero) {
-          grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
-                                      false, "stream.read_flow_control");
+          grpc_chttp2_become_writable(exec_ctx, t, s, false,
+                                      "stream.read_flow_control");
         }
       }
     } else {
-      bool was_zero = transport_global->outgoing_window <= 0;
-      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", transport_global,
-                                        outgoing_window, received_update);
-      bool is_zero = transport_global->outgoing_window <= 0;
+      bool was_zero = t->outgoing_window <= 0;
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", t, outgoing_window,
+                                        received_update);
+      bool is_zero = t->outgoing_window <= 0;
       if (was_zero && !is_zero) {
-        grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+        grpc_chttp2_initiate_write(exec_ctx, t, false,
                                    "new_global_flow_control");
       }
     }

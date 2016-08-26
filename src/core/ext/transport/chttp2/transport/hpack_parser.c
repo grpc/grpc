@@ -1571,14 +1571,15 @@ grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
   return p->state(exec_ctx, p, beg, end);
 }
 
-grpc_error *grpc_chttp2_header_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *hpack_parser,
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global, gpr_slice slice, int is_last) {
+grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
+                                            void *hpack_parser,
+                                            grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream *s,
+                                            gpr_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
-  if (stream_global != NULL) {
-    stream_global->stats.incoming.header_bytes += GPR_SLICE_LENGTH(slice);
+  if (s != NULL) {
+    s->stats.incoming.header_bytes += GPR_SLICE_LENGTH(slice);
   }
   grpc_error *error = grpc_chttp2_hpack_parser_parse(
       exec_ctx, parser, GPR_SLICE_START_PTR(slice), GPR_SLICE_END_PTR(slice));
@@ -1594,21 +1595,17 @@ grpc_error *grpc_chttp2_header_parser_parse(
     }
     /* need to check for null stream: this can occur if we receive an invalid
        stream id on a header */
-    if (stream_global != NULL) {
+    if (s != NULL) {
       if (parser->is_boundary) {
-        if (stream_global->header_frames_received ==
-            GPR_ARRAY_SIZE(stream_global->metadata_buffer)) {
+        if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
           return GRPC_ERROR_CREATE("Too many trailer frames");
         }
-        stream_global
-            ->published_metadata[stream_global->header_frames_received] = true;
-        stream_global->header_frames_received++;
-        grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
-                                            stream_global);
+        s->published_metadata[s->header_frames_received] = true;
+        s->header_frames_received++;
+        grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
       }
       if (parser->is_eof) {
-        grpc_chttp2_mark_stream_closed(exec_ctx, transport_global,
-                                       stream_global, true, false,
+        grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
                                        GRPC_ERROR_NONE);
       }
     }
