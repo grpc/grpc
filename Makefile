@@ -4470,6 +4470,7 @@ LIBGRPC_CLI_LIBS_SRC = \
     test/cpp/util/grpc_tool.cc \
     test/cpp/util/proto_file_parser.cc \
     test/cpp/util/proto_reflection_descriptor_database.cc \
+    test/cpp/util/service_describer.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -15533,6 +15534,7 @@ test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 test/cpp/util/grpc_tool.cc: $(OPENSSL_DEP)
 test/cpp/util/proto_file_parser.cc: $(OPENSSL_DEP)
 test/cpp/util/proto_reflection_descriptor_database.cc: $(OPENSSL_DEP)
+test/cpp/util/service_describer.cc: $(OPENSSL_DEP)
 test/cpp/util/string_ref_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
 test/cpp/util/test_config.cc: $(OPENSSL_DEP)

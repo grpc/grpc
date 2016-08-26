@@ -16,6 +16,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\service_describer.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
@@ -34,6 +37,9 @@
       <Filter>test\cpp\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\service_describer.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>
