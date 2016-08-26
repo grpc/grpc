@@ -51,6 +51,7 @@
 #ifndef GRPCXX_GRPCXX_H
 #define GRPCXX_GRPCXX_H
 
+// IWYU pragma: begin_exports
 #include <grpc/grpc.h>
 
 #include <grpc++/channel.h>
@@ -62,5 +63,6 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_posix.h>
+// IWYU pragma: end_exports
 
 #endif  // GRPCXX_GRPCXX_H
