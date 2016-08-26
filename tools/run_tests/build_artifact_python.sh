@@ -38,38 +38,42 @@ export PYTHON=${PYTHON:-python}
 export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# Because multiple builds run in parallel, some distutils file
+# operations may collide.  To avoid this, each build is run in
+# a temp directory
+mkdir -p artifacts
+ARTIFACT_DIR="$PWD/artifacts"
+BUILD_DIR=`mktemp -d "${TMPDIR:-/tmp}/pygrpc.XXXXXX"`
+trap "rm -rf $BUILD_DIR" EXIT
+cp -r * "$BUILD_DIR"
+cd "$BUILD_DIR"
 
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    sdist
+${SETARCH_CMD} ${PYTHON} setup.py sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    bdist_wheel
+${SETARCH_CMD} ${PYTHON} setup.py bdist_wheel
 
 # Build gRPC tools package distribution
 ${PYTHON} tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package source distribution
-${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py  \
-    sdist
+${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py sdist
 
 # Build gRPC tools package binary distribution
-CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
-  ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
+${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
-mkdir -p artifacts
 if [ "$BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
+    ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
     rm $wheel
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
+    ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
     rm $wheel
   done
 fi
@@ -81,14 +85,14 @@ fi
 if [ "$BUILD_HEALTH_CHECKING" != "" ]
 then
   ${PIP} install -rrequirements.txt
-  ${PIP} install grpcio --no-index --find-links "file://${PWD}/artifacts/"
-  ${PIP} install grpcio-tools --no-index --find-links "file://${PWD}/artifacts/"
+  ${PIP} install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  ${PIP} install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build gRPC health check source distribution
   ${SETARCH_CMD} ${PYTHON} src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos sdist
-  cp -r src/python/grpcio_health_checking/dist/* artifacts
+  cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 fi
 
-cp -r dist/* artifacts
-cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
+cp -r dist/* "$ARTIFACT_DIR"
+cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"

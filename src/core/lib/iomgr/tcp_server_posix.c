@@ -140,15 +140,17 @@ struct grpc_tcp_server {
 };
 
 static gpr_once check_init = GPR_ONCE_INIT;
-static bool has_so_reuseport;
+static bool has_so_reuseport = false;
 
 static void init(void) {
+#ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s >= 0) {
     has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
                                          grpc_set_socket_reuse_port(s, 1));
     close(s);
   }
+#endif
 }
 
 grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
