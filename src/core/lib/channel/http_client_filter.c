@@ -217,7 +217,7 @@ static void hc_mutate_op(grpc_call_element *elem,
     op->recv_initial_metadata_ready = &calld->hc_on_recv;
   }
 
-  if (op->on_complete != NULL) {
+  if (op->on_complete != NULL && op->send_message != NULL) {
     calld->on_complete = op->on_complete;
     op->on_complete = &calld->hc_on_complete;
   }

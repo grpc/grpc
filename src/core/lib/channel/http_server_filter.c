@@ -251,11 +251,6 @@ static void hs_mutate_op(grpc_call_element *elem,
         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
   }
 
-  if (op->on_complete) {
-    calld->on_complete = op->on_complete;
-    op->on_complete = &calld->hs_on_complete;
-  }
-
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     GPR_ASSERT(op->recv_idempotent_request != NULL);
@@ -270,6 +265,10 @@ static void hs_mutate_op(grpc_call_element *elem,
     calld->pp_recv_message = op->recv_message;
     if (op->recv_message_ready) {
       op->recv_message_ready = &calld->hs_recv_message_ready;
+    }
+    if (op->on_complete) {
+      calld->on_complete = op->on_complete;
+      op->on_complete = &calld->hs_on_complete;
     }
   }
 }
