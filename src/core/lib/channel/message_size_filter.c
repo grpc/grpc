@@ -31,11 +31,14 @@
 
 #include "src/core/lib/channel/message_size_filter.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_args.h"
 
 // The protobuf library will (by default) start warning at 100 megs.
 #define DEFAULT_MAX_MESSAGE_LENGTH (4 * 1024 * 1024)
@@ -129,32 +132,17 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   memset(chand, 0, sizeof(*chand));
   chand->max_send_size = DEFAULT_MAX_MESSAGE_LENGTH;
   chand->max_recv_size = DEFAULT_MAX_MESSAGE_LENGTH;
+  const grpc_integer_options options = {DEFAULT_MAX_MESSAGE_LENGTH, 0, INT_MAX};
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
-      if (args->channel_args->args[i].type != GRPC_ARG_INTEGER) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
-                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH);
-      } else if (args->channel_args->args[i].value.integer < 0) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
-                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH);
-      } else {
-        chand->max_send_size =
-            (size_t)args->channel_args->args[i].value.integer;
-      }
+      chand->max_send_size = (size_t)grpc_channel_arg_get_integer(
+          &args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      if (args->channel_args->args[i].type != GRPC_ARG_INTEGER) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
-                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
-      } else if (args->channel_args->args[i].value.integer < 0) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
-                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
-      } else {
-        chand->max_recv_size =
-            (size_t)args->channel_args->args[i].value.integer;
-      }
+      chand->max_recv_size = (size_t)grpc_channel_arg_get_integer(
+          &args->channel_args->args[i], options);
     }
   }
 }

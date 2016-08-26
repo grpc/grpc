@@ -271,3 +271,21 @@ int grpc_channel_args_compare(const grpc_channel_args *a,
   }
   return 0;
 }
+
+int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options) {
+  if (arg->type != GRPC_ARG_INTEGER) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);
+    return options.default_value;
+  }
+  if (arg->value.integer < options.min_value) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be >= %d", arg->key,
+            options.min_value);
+    return options.default_value;
+  }
+  if (arg->value.integer > options.max_value) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be <= %d", arg->key,
+            options.max_value);
+    return options.default_value;
+  }
+  return arg->value.integer;
+}
