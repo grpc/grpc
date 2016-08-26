@@ -57,10 +57,12 @@ typedef struct call_data {
 
   /** Closure to call when finished with the hc_on_recv hook */
   grpc_closure *on_done_recv;
+  grpc_closure *on_complete;
   /** Receive closures are chained: we inject this closure as the on_done_recv
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
   grpc_closure hc_on_recv;
+  grpc_closure hc_on_complete;
 } call_data;
 
 typedef struct channel_data {
@@ -122,6 +124,17 @@ static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, error);
 }
 
+static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
+                       grpc_error *error) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  if (calld->payload_bytes) {
+    gpr_free(calld->payload_bytes);
+    calld->payload_bytes = NULL;
+  }
+  calld->on_complete->cb(exec_ctx, calld->on_complete->cb_arg, error);
+}
+
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
   /* eat the things we'd like to set ourselves */
   if (md->key == GRPC_MDSTR_METHOD) return NULL;
@@ -154,9 +167,12 @@ static void hc_mutate_op(grpc_call_element *elem,
     gpr_slice slice;
     gpr_slice_buffer slices;
     gpr_slice_buffer_init(&slices);
+    /* allocate memory to hold the entire payload */
     calld->payload_bytes = gpr_malloc(op->send_message->length);
+    GPR_ASSERT(calld->payload_bytes);
     uint8_t *wrptr = calld->payload_bytes;
 
+    /* copy payload from slices into payload_bytes. It gets freed in op_complete*/
     while (grpc_byte_stream_next(NULL, op->send_message, &slice, ~(size_t)0, NULL)) {
       memcpy(wrptr, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice));
       wrptr += GPR_SLICE_LENGTH(slice);
@@ -197,6 +213,11 @@ static void hc_mutate_op(grpc_call_element *elem,
     calld->on_done_recv = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->hc_on_recv;
   }
+
+  if (op->on_complete != NULL) {
+    calld->on_complete = op->on_complete;
+    op->on_complete = &calld->hc_on_complete;
+  }
 }
 
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -215,7 +236,10 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->on_done_recv = NULL;
+  calld->on_complete = NULL;
+  calld->payload_bytes = NULL;
   grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
+  grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem);
   return GRPC_ERROR_NONE;
 }
 
