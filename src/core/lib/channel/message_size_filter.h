@@ -36,4 +36,4 @@
 
 extern const grpc_channel_filter grpc_message_size_filter;
 
-#endif  // GRPC_CORE_LIB_CHANNEL_MESSAGE_SIZE_FILTER_H
+#endif /* GRPC_CORE_LIB_CHANNEL_MESSAGE_SIZE_FILTER_H */
