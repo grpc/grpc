@@ -125,7 +125,7 @@ static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
-                       grpc_error *error) {
+                           grpc_error *error) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (calld->payload_bytes) {
@@ -172,17 +172,20 @@ static void hc_mutate_op(grpc_call_element *elem,
     GPR_ASSERT(calld->payload_bytes);
     uint8_t *wrptr = calld->payload_bytes;
 
-    /* copy payload from slices into payload_bytes. It gets freed in op_complete*/
-    while (grpc_byte_stream_next(NULL, op->send_message, &slice, ~(size_t)0, NULL)) {
+    /* copy payload from slices into payload_bytes. It gets freed in
+     * op_complete*/
+    while (grpc_byte_stream_next(NULL, op->send_message, &slice, ~(size_t)0,
+                                 NULL)) {
       memcpy(wrptr, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice));
       wrptr += GPR_SLICE_LENGTH(slice);
       gpr_slice_buffer_add(&slices, slice);
       if (op->send_message->length == slices.length) {
         grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
-          GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-          grpc_mdstr_from_buffer(calld->payload_bytes, op->send_message->length));
+            GRPC_MDSTR_GRPC_PAYLOAD_BIN,
+            grpc_mdstr_from_buffer(calld->payload_bytes,
+                                   op->send_message->length));
         grpc_metadata_batch_add_tail(op->send_initial_metadata,
-          &calld->payload_bin, payload_bin);
+                                     &calld->payload_bin, payload_bin);
         break;
       }
     }
