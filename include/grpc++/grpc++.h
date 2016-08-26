@@ -51,6 +51,8 @@
 #ifndef GRPCXX_GRPCXX_H
 #define GRPCXX_GRPCXX_H
 
+// Pragma for http://include-what-you-use.org/ tool, tells that following
+// headers are not private for grpc++.h and are part of its interface.
 // IWYU pragma: begin_exports
 #include <grpc/grpc.h>
 
