@@ -182,8 +182,8 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d %s:%d",
-                   e->success, e->file, e->line);
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d %s:%d", e->success,
+                   e->file, e->line);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_QUEUE_TIMEOUT:
@@ -283,7 +283,7 @@ static void add(cq_verifier *v, const char *file, int line,
   v->first_expectation = e;
 }
 
-void cq_expect_completion(cq_verifier *v, const char *file, int line,
-                          void *tag, bool success) {
+void cq_expect_completion(cq_verifier *v, const char *file, int line, void *tag,
+                          bool success) {
   add(v, file, line, GRPC_OP_COMPLETE, tag, success);
 }
