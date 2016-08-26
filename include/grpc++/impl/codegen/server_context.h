@@ -168,9 +168,7 @@ class ServerContext {
 
   // Should be used for framework-level extensions only.
   // Applications never need to call this method.
-  grpc_call* c_call() const {
-    return call_;
-  }
+  grpc_call* c_call() { return call_; }
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;

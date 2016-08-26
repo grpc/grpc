@@ -84,6 +84,11 @@ void grpc_auth_context_unref(grpc_auth_context *policy);
 
 void grpc_auth_property_reset(grpc_auth_property *property);
 
+/* --- grpc_security_context_extension ---
+
+   Extension to the security context that may be set in a filter and accessed
+   later by a higher level method on a grpc_call object. */
+
 typedef struct {
   void *instance;
   void (*destroy)(void *);
