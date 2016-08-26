@@ -33,6 +33,8 @@
 
 import UIKit
 
+import RemoteTest
+
 class ViewController: UIViewController {
 
   override func viewDidLoad() {
@@ -60,7 +62,7 @@ class ViewController: UIViewController {
 
     // Same but manipulating headers:
 
-    var RPC : ProtoRPC! // Needed to convince Swift to capture by reference (__block)
+    var RPC : GRPCProtoCall! // Needed to convince Swift to capture by reference (__block)
     RPC = service.RPCToUnaryCallWithRequest(request) { response, error in
       if let response = response {
         NSLog("2. Finished successfully with response:\n\(response)")
@@ -71,24 +73,25 @@ class ViewController: UIViewController {
       NSLog("2. Response trailers: \(RPC.responseTrailers)")
     }
 
-    RPC.requestHeaders["My-Header"] = "My value"
+    // TODO(jcanizales): Revert to using subscript syntax once XCode 8 is released.
+    RPC.requestHeaders.setObject("My value", forKey: "My-Header")
 
     RPC.start()
 
 
     // Same example call using the generic gRPC client library:
 
-    let method = ProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
+    let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
 
     let requestsWriter = GRXWriter(value: request.data())
 
     let call = GRPCCall(host: RemoteHost, path: method.HTTPPath, requestsWriter: requestsWriter)
 
-    call.requestHeaders["My-Header"] = "My value"
+    call.requestHeaders.setObject("My value", forKey: "My-Header")
 
     call.startWithWriteable(GRXWriteable { response, error in
       if let response = response as? NSData {
-        NSLog("3. Received response:\n\(RMTSimpleResponse(data: response, error: nil))")
+        NSLog("3. Received response:\n\(try! RMTSimpleResponse(data: response))")
       } else {
         NSLog("3. Finished with error: \(error!)")
       }

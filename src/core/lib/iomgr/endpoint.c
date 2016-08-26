@@ -65,3 +65,7 @@ void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
 char* grpc_endpoint_get_peer(grpc_endpoint* ep) {
   return ep->vtable->get_peer(ep);
 }
+
+grpc_workqueue* grpc_endpoint_get_workqueue(grpc_endpoint* ep) {
+  return ep->vtable->get_workqueue(ep);
+}

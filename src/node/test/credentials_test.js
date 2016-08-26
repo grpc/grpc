@@ -71,7 +71,10 @@ var fakeSuccessfulGoogleCredentials = {
 var fakeFailingGoogleCredentials = {
   getRequestMetadata: function(service_url, callback) {
     setTimeout(function() {
-      callback(new Error('Authentication failure'));
+      // Google credentials currently adds string error codes to auth errors
+      var error = new Error('Authentication failure');
+      error.code = 'ENOENT';
+      callback(error);
     }, 0);
   }
 };
@@ -318,7 +321,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it.skip('should propagate errors that the updater emits', function(done) {
+  it('should propagate errors that the updater emits', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var error = new Error('Authentication error');
       error.code = grpc.status.UNAUTHENTICATED;
@@ -370,7 +373,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it.skip('should get an error from a Google credential', function(done) {
+  it('should get an error from a Google credential', function(done) {
     var creds = grpc.credentials.createFromGoogleCredential(
         fakeFailingGoogleCredentials);
     var combined_creds = grpc.credentials.combineChannelCredentials(

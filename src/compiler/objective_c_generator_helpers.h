@@ -53,6 +53,5 @@ inline string ServiceClassName(const ServiceDescriptor *service) {
   string prefix = file->options().objc_class_prefix();
   return prefix + service->name();
 }
-
 }
 #endif  // GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H

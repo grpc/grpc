@@ -30,10 +30,8 @@
 """Setup module for the GRPC Python package's optional health checking."""
 
 import os
-import os.path
 import sys
 
-from distutils import core as _core
 import setuptools
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -41,31 +39,35 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our commands module.
 import health_commands
+import grpc_version
 
-_PACKAGES = (
-    setuptools.find_packages('.')
-)
-
-_PACKAGE_DIRECTORIES = {
+PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-_INSTALL_REQUIRES = (
-    'grpcio>=0.13.1',
+SETUP_REQUIRES = (
+    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 )
 
-_COMMAND_CLASS = {
-    'copy_proto_modules': health_commands.CopyProtoModules,
-    'build_proto_modules': health_commands.BuildProtoModules,
-    'build_py': health_commands.BuildPy,
-    'sdist': health_commands.SDist,
+INSTALL_REQUIRES = (
+    'protobuf>=3.0.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
+)
+
+COMMAND_CLASS = {
+    # Run preprocess from the repository *before* doing any packaging!
+    'preprocess': health_commands.CopyProtoModules,
+    'build_package_protos': health_commands.BuildPackageProtos,
 }
 
 setuptools.setup(
-    name='grpcio_health_checking',
-    version='0.14.0b0',
-    packages=list(_PACKAGES),
-    package_dir=_PACKAGE_DIRECTORIES,
-    install_requires=_INSTALL_REQUIRES,
-    cmdclass=_COMMAND_CLASS
+    name='grpcio-health-checking',
+    version=grpc_version.VERSION,
+    license='3-clause BSD',
+    package_dir=PACKAGE_DIRECTORIES,
+    packages=setuptools.find_packages('.'),
+    namespace_packages=['grpc'],
+    install_requires=INSTALL_REQUIRES,
+    setup_requires=SETUP_REQUIRES,
+    cmdclass=COMMAND_CLASS
 )

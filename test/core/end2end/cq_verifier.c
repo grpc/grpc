@@ -61,7 +61,6 @@ typedef struct metadata {
    list to detail other expectations */
 typedef struct expectation {
   struct expectation *next;
-  struct expectation *prev;
   grpc_completion_type type;
   void *tag;
   int success;
@@ -71,17 +70,14 @@ typedef struct expectation {
 struct cq_verifier {
   /* bound completion queue */
   grpc_completion_queue *cq;
-  /* the root/sentinal expectation */
-  expectation expect;
+  /* start of expectation list */
+  expectation *first_expectation;
 };
 
 cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
   cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
-  v->expect.type = ROOT_EXPECTATION;
-  v->expect.tag = NULL;
-  v->expect.next = &v->expect;
-  v->expect.prev = &v->expect;
   v->cq = cq;
+  v->first_expectation = NULL;
   return v;
 }
 
@@ -149,7 +145,8 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   grpc_byte_buffer *rbb;
   int res;
 
-  grpc_byte_buffer_reader_init(&reader, bb);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
+             "Couldn't init byte buffer reader");
   rbb = grpc_raw_byte_buffer_from_reader(&reader);
   res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
   grpc_byte_buffer_reader_destroy(&reader);
@@ -197,7 +194,7 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 static void expectations_to_strvec(gpr_strvec *buf, cq_verifier *v) {
   expectation *e;
 
-  for (e = v->expect.next; e != &v->expect; e = e->next) {
+  for (e = v->first_expectation; e != NULL; e = e->next) {
     expectation_to_strvec(buf, e);
     gpr_strvec_add(buf, gpr_strdup("\n"));
   }
@@ -225,30 +222,32 @@ void cq_verify(cq_verifier *v) {
 
   gpr_strvec_init(&have_tags);
 
-  while (v->expect.next != &v->expect) {
+  while (v->first_expectation != NULL) {
     ev = grpc_completion_queue_next(v->cq, deadline, NULL);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
     }
 
-    for (e = v->expect.next; e != &v->expect; e = e->next) {
+    expectation *prev = NULL;
+    for (e = v->first_expectation; e != NULL; e = e->next) {
       gpr_asprintf(&s, " %p", e->tag);
       gpr_strvec_add(&have_tags, s);
       if (e->tag == ev.tag) {
         verify_matches(e, &ev);
-        e->next->prev = e->prev;
-        e->prev->next = e->next;
+        if (e == v->first_expectation) v->first_expectation = e->next;
+        if (prev != NULL) prev->next = e->next;
         gpr_free(e);
         break;
       }
+      prev = e;
     }
-    if (e == &v->expect) {
+    if (e == NULL) {
       s = grpc_event_string(&ev);
-      gpr_log(GPR_ERROR, "event not found: %s", s);
+      gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
       gpr_free(s);
       s = gpr_strvec_flatten(&have_tags, NULL);
-      gpr_log(GPR_ERROR, "have tags:%s", s);
+      gpr_log(GPR_ERROR, "expected tags:%s", s);
       gpr_free(s);
       gpr_strvec_destroy(&have_tags);
       abort();
@@ -258,12 +257,13 @@ void cq_verify(cq_verifier *v) {
   gpr_strvec_destroy(&have_tags);
 }
 
-void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
+void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec) {
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
-  GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
+  GPR_ASSERT(v->first_expectation == NULL && "expectation queue must be empty");
 
   ev = grpc_completion_queue_next(v->cq, deadline, NULL);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
@@ -274,16 +274,18 @@ void cq_verify_empty(cq_verifier *v) {
   }
 }
 
-static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
+void cq_verify_empty(cq_verifier *v) { cq_verify_empty_timeout(v, 1); }
+
+static void add(cq_verifier *v, grpc_completion_type type, void *tag,
+                bool success) {
   expectation *e = gpr_malloc(sizeof(expectation));
   e->type = type;
   e->tag = tag;
-  e->next = &v->expect;
-  e->prev = e->next->prev;
-  e->next->prev = e->prev->next = e;
-  return e;
+  e->success = success;
+  e->next = v->first_expectation;
+  v->first_expectation = e;
 }
 
 void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
-  add(v, GRPC_OP_COMPLETE, tag)->success = success;
+  add(v, GRPC_OP_COMPLETE, tag, success);
 }

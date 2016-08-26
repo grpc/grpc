@@ -119,7 +119,7 @@
 // libraries; it should be integrated with the `__linux__` definitions below.
 #define GPR_PLATFORM_STRING "manylinux"
 #define GPR_POSIX_CRASH_HANDLER 1
-#define GPR_CPU_LINUX 1
+#define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #define GPR_LINUX 1
@@ -207,6 +207,7 @@
 #ifdef __GLIBC_PREREQ
 #if __GLIBC_PREREQ(2, 9)
 #define GPR_LINUX_EVENTFD 1
+#define GPR_LINUX_EPOLL 1
 #endif
 #if __GLIBC_PREREQ(2, 10)
 #define GPR_LINUX_SOCKETUTILS 1

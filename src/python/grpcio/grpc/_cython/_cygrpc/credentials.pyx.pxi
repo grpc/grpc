@@ -33,6 +33,7 @@ cimport cpython
 cdef class ChannelCredentials:
 
   def __cinit__(self):
+    grpc_init()
     self.c_credentials = NULL
     self.c_ssl_pem_key_cert_pair.private_key = NULL
     self.c_ssl_pem_key_cert_pair.certificate_chain = NULL
@@ -46,13 +47,14 @@ cdef class ChannelCredentials:
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
-      with nogil:
-        grpc_channel_credentials_release(self.c_credentials)
+      grpc_channel_credentials_release(self.c_credentials)
+    grpc_shutdown()
 
 
 cdef class CallCredentials:
 
   def __cinit__(self):
+    grpc_init()
     self.c_credentials = NULL
     self.references = []
 
@@ -64,25 +66,26 @@ cdef class CallCredentials:
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
-      with nogil:
-        grpc_call_credentials_release(self.c_credentials)
+      grpc_call_credentials_release(self.c_credentials)
+    grpc_shutdown()
 
 
 cdef class ServerCredentials:
 
   def __cinit__(self):
+    grpc_init()
     self.c_credentials = NULL
     self.references = []
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
-      with nogil:
-        grpc_server_credentials_release(self.c_credentials)
+      grpc_server_credentials_release(self.c_credentials)
+    grpc_shutdown()
 
 
 cdef class CredentialsMetadataPlugin:
 
-  def __cinit__(self, object plugin_callback, name):
+  def __cinit__(self, object plugin_callback, bytes name):
     """
     Args:
       plugin_callback (callable): Callback accepting a service URL (str/bytes)
@@ -91,9 +94,9 @@ cdef class CredentialsMetadataPlugin:
         when called should be non-blocking and eventually call the callback
         object with the appropriate status code/details and metadata (if
         successful).
-      name (str): Plugin name.
+      name (bytes): Plugin name.
     """
-    name = str_to_bytes(name)
+    grpc_init()
     if not callable(plugin_callback):
       raise ValueError('expected callable plugin_callback')
     self.plugin_callback = plugin_callback
@@ -109,10 +112,14 @@ cdef class CredentialsMetadataPlugin:
     cpython.Py_INCREF(self)
     return result
 
+  def __dealloc__(self):
+    grpc_shutdown()
+
 
 cdef class AuthMetadataContext:
 
   def __cinit__(self):
+    grpc_init()
     self.context.service_url = NULL
     self.context.method_name = NULL
 
@@ -124,14 +131,16 @@ cdef class AuthMetadataContext:
   def method_name(self):
     return self.context.method_name
 
+  def __dealloc__(self):
+    grpc_shutdown()
+
 
 cdef void plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil:
   def python_callback(
       Metadata metadata, grpc_status_code status,
-      error_details):
-    error_details = str_to_bytes(error_details)
+      bytes error_details):
     cb(user_data, metadata.c_metadata_array.metadata,
        metadata.c_metadata_array.count, status, error_details)
   cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state

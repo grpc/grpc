@@ -1,17 +1,20 @@
 # C/C++ build outputs
+.build/
 bins
 gens
 libs
 objs
 
 # Python items
+cython_debug/
 python_build/
 .coverage*
 .eggs
-.tox
 htmlcov/
 dist/
 *.egg
+py27/
+py34/
 
 # Node installation output
 ^node_modules
@@ -94,3 +97,9 @@ Pods/
 
 # Artifacts directory
 artifacts/
+
+# Git generated files for conflicting
+*.orig
+
+# IDE specific folder for JetBrains IDEs
+.idea/

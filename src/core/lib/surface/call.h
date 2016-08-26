@@ -37,7 +37,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/surface_trace.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>

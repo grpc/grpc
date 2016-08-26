@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\h2_load_reporting.c">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{abff9aef-586e-65d2-beb8-e6392ecf7440}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{fd31cbf1-8cff-2e6a-618d-a01855997839}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{c6cc113f-ddb4-733b-5c10-8f98aa2d7d22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\fixtures">
+      <UniqueIdentifier>{2cd15a3b-a7e6-b847-b6c4-7c6cc03eacc2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

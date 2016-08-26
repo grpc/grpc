@@ -203,6 +203,12 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
+  /* TODO(ctiller): this rate limits the test, and it should be removed when
+                    retry has been implemented; until then cross-thread chatter
+                    may result in some requests needing to be cancelled due to
+                    seqno exhaustion. */
+  cq_verify_empty(cqv);
+
   cq_verifier_destroy(cqv);
 }
 

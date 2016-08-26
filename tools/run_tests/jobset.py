@@ -29,7 +29,8 @@
 
 """Run a group of subprocesses and then finish."""
 
-import hashlib
+from __future__ import print_function
+
 import multiprocessing
 import os
 import platform
@@ -47,6 +48,12 @@ measure_cpu_costs = False
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
+
+def sanitized_environment(env):
+  sanitized = {}
+  for key, value in env.items():
+    sanitized[str(key).encode()] = str(value).encode()
+  return sanitized
 
 def platform_string():
   if platform.system() == 'Windows':
@@ -118,8 +125,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   try:
     if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
-        print explanatory_text
-      print '%s: %s' % (tag, msg)
+        print(explanatory_text)
+      print('%s: %s' % (tag, msg))
       return
     sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
         _BEGINNING_OF_LINE,
@@ -149,7 +156,7 @@ def which(filename):
 class JobSpec(object):
   """Specifies what to run for a job."""
 
-  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
+  def __init__(self, cmdline, shortname=None, environ=None,
                cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
                timeout_retries=0, kill_handler=None, cpu_cost=1.0,
                verbose_success=False):
@@ -157,19 +164,14 @@ class JobSpec(object):
     Arguments:
       cmdline: a list of arguments to pass as the command line
       environ: a dictionary of environment variables to set in the child process
-      hash_targets: which files to include in the hash representing the jobs version
-                    (or empty, indicating the job should not be hashed)
       kill_handler: a handler that will be called whenever job.kill() is invoked
       cpu_cost: number of cores per second this job needs
     """
     if environ is None:
       environ = {}
-    if hash_targets is None:
-      hash_targets = []
     self.cmdline = cmdline
     self.environ = environ
     self.shortname = cmdline[0] if shortname is None else shortname
-    self.hash_targets = hash_targets or []
     self.cwd = cwd
     self.shell = shell
     self.timeout_seconds = timeout_seconds
@@ -180,7 +182,7 @@ class JobSpec(object):
     self.verbose_success = verbose_success
 
   def identity(self):
-    return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
+    return '%r %r' % (self.cmdline, self.environ)
 
   def __hash__(self):
     return hash(self.identity())
@@ -205,9 +207,8 @@ class JobResult(object):
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, bin_hash, newline_on_success, travis, add_env):
+  def __init__(self, spec, newline_on_success, travis, add_env):
     self._spec = spec
-    self._bin_hash = bin_hash
     self._newline_on_success = newline_on_success
     self._travis = travis
     self._add_env = add_env.copy()
@@ -226,6 +227,7 @@ class Job(object):
     env = dict(os.environ)
     env.update(self._spec.environ)
     env.update(self._add_env)
+    env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
     if measure_cpu_costs:
@@ -249,7 +251,7 @@ class Job(object):
       self._process = try_start()
     self._state = _RUNNING
 
-  def state(self, update_cache):
+  def state(self):
     """Poll current state of the job. Prints messages at completion."""
     def stdout(self=self):
       self._tempfile.seek(0)
@@ -293,8 +295,6 @@ class Job(object):
             stdout() if self._spec.verbose_success else None,
             do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
-        if self._bin_hash:
-          update_cache.finished(self._spec.identity(), self._bin_hash)
     elif (self._state == _RUNNING and
           self._spec.timeout_seconds is not None and
           time.time() - self._start > self._spec.timeout_seconds):
@@ -329,7 +329,7 @@ class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env, cache):
+               stop_on_failure, add_env):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -338,9 +338,7 @@ class Jobset(object):
     self._maxjobs = maxjobs
     self._newline_on_success = newline_on_success
     self._travis = travis
-    self._cache = cache
     self._stop_on_failure = stop_on_failure
-    self._hashes = {}
     self._add_env = add_env
     self.resultset = {}
     self._remaining = None
@@ -367,29 +365,13 @@ class Jobset(object):
       if current_cpu_cost + spec.cpu_cost <= self._maxjobs: break
       self.reap()
     if self.cancelled(): return False
-    if spec.hash_targets:
-      if spec.identity() in self._hashes:
-        bin_hash = self._hashes[spec.identity()]
-      else:
-        bin_hash = hashlib.sha1()
-        for fn in spec.hash_targets:
-          with open(which(fn)) as f:
-            bin_hash.update(f.read())
-        bin_hash = bin_hash.hexdigest()
-        self._hashes[spec.identity()] = bin_hash
-      should_run = self._cache.should_run(spec.identity(), bin_hash)
-    else:
-      bin_hash = None
-      should_run = True
-    if should_run:
-      job = Job(spec,
-                bin_hash,
-                self._newline_on_success,
-                self._travis,
-                self._add_env)
-      self._running.add(job)
-      if not self.resultset.has_key(job.GetSpec().shortname):
-        self.resultset[job.GetSpec().shortname] = []
+    job = Job(spec,
+              self._newline_on_success,
+              self._travis,
+              self._add_env)
+    self._running.add(job)
+    if job.GetSpec().shortname not in self.resultset:
+      self.resultset[job.GetSpec().shortname] = []
     return True
 
   def reap(self):
@@ -397,7 +379,7 @@ class Jobset(object):
     while self._running:
       dead = set()
       for job in self._running:
-        st = job.state(self._cache)
+        st = job.state()
         if st == _RUNNING: continue
         if st == _FAILURE or st == _KILLED:
           self._failures += 1
@@ -450,15 +432,6 @@ def _never_cancelled():
   return False
 
 
-# cache class that caches nothing
-class NoCache(object):
-  def should_run(self, cmdline, bin_hash):
-    return True
-
-  def finished(self, cmdline, bin_hash):
-    pass
-
-
 def tag_remaining(xs):
   staging = []
   for x in xs:
@@ -477,12 +450,10 @@ def run(cmdlines,
         travis=False,
         infinite_runs=False,
         stop_on_failure=False,
-        cache=None,
         add_env={}):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success, travis, stop_on_failure, add_env,
-              cache if cache is not None else NoCache())
+              newline_on_success, travis, stop_on_failure, add_env)
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break

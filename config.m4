@@ -87,6 +87,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/compression/compression.c \
@@ -100,6 +101,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
+    src/core/lib/iomgr/ev_epoll_linux.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
@@ -110,6 +112,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -165,6 +168,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
+    src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
@@ -187,7 +191,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/status_conversion.c \
     src/core/ext/transport/chttp2/transport/stream_lists.c \
     src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
@@ -243,6 +246,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/lb_policy/grpclb/grpclb.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -254,6 +258,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
     src/core/ext/load_reporting/load_reporting_filter.c \
+    src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
     src/core/ext/census/grpc_context.c \
@@ -263,6 +268,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/mlog.c \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
+    src/core/ext/census/resource.c \
     src/core/ext/census/tracing.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
     src/boringssl/err_data.c \

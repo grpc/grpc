@@ -69,6 +69,10 @@ var ChannelCredentials = grpc.ChannelCredentials;
 
 var Metadata = require('./metadata.js');
 
+var common = require('./common.js');
+
+var _ = require('lodash');
+
 /**
  * Create an SSL Credentials object. If using a client-side certificate, both
  * the second and third arguments must be passed.
@@ -90,13 +94,14 @@ exports.createSsl = ChannelCredentials.createSsl;
  * @return {CallCredentials} The credentials object
  */
 exports.createFromMetadataGenerator = function(metadata_generator) {
-  return CallCredentials.createFromPlugin(function(service_url, callback) {
+  return CallCredentials.createFromPlugin(function(service_url, cb_data,
+                                                   callback) {
     metadata_generator({service_url: service_url}, function(error, metadata) {
       var code = grpc.status.OK;
       var message = '';
       if (error) {
         message = error.message;
-        if (error.hasOwnProperty('code')) {
+        if (error.hasOwnProperty('code') && _.isFinite(error.code)) {
           code = error.code;
         } else {
           code = grpc.status.UNAUTHENTICATED;
@@ -105,7 +110,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
           metadata = new Metadata();
         }
       }
-      callback(code, message, metadata._getCoreRepresentation());
+      callback(code, message, metadata._getCoreRepresentation(), cb_data);
     });
   });
 };
@@ -120,7 +125,7 @@ exports.createFromGoogleCredential = function(google_credential) {
     var service_url = auth_context.service_url;
     google_credential.getRequestMetadata(service_url, function(err, header) {
       if (err) {
-        console.log('Auth error:', err);
+        common.log(grpc.logVerbosity.INFO, 'Auth error:' + err);
         callback(err);
         return;
       }

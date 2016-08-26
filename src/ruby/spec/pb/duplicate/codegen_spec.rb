@@ -44,7 +44,7 @@ describe 'Ping protobuf code generation' do
       # Get the current content
       service_path = File.join(root_dir, 'src', 'ruby', 'pb', 'grpc',
                                'testing', 'duplicate',
-                               'echo_duplicate_services.rb')
+                               'echo_duplicate_services_pb.rb')
       want = nil
       File.open(service_path) { |f| want = f.read }
 
@@ -54,7 +54,7 @@ describe 'Ping protobuf code generation' do
       got = nil
       Dir.mktmpdir do |tmp_dir|
         gen_out = File.join(tmp_dir, 'src', 'proto', 'grpc', 'testing',
-                            'duplicate', 'echo_duplicate_services.rb')
+                            'duplicate', 'echo_duplicate_services_pb.rb')
         pid = spawn(
           'protoc',
           '-I.',

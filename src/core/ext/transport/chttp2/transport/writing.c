@@ -75,9 +75,13 @@ int grpc_chttp2_unlocking_check_writes(
 
   GRPC_CHTTP2_FLOW_MOVE_TRANSPORT("write", transport_writing, outgoing_window,
                                   transport_global, outgoing_window);
-  bool is_window_available = transport_writing->outgoing_window > 0;
-  grpc_chttp2_list_flush_writing_stalled_by_transport(
-      exec_ctx, transport_writing, is_window_available);
+  if (transport_writing->outgoing_window > 0) {
+    while (grpc_chttp2_list_pop_stalled_by_transport(transport_global,
+                                                     &stream_global)) {
+      grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
+                                  false, "transport.read_flow_control");
+    }
+  }
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
@@ -198,6 +202,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_BEGIN("finalize_outbuf", 0);
 
+  bool is_first_data_frame = true;
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
     uint32_t max_outgoing =
@@ -262,6 +267,11 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
             stream_writing->id, &stream_writing->flow_controlled_buffer,
             send_bytes, is_last_frame, &stream_writing->stats,
             &transport_writing->outbuf);
+        if (is_first_data_frame) {
+          /* TODO(dgq): this is a hack. It'll be fix in a future refactoring */
+          stream_writing->stats.data_bytes -= 5; /* discount grpc framing */
+          is_first_data_frame = false;
+        }
         GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", transport_writing,
                                       stream_writing, outgoing_window,
                                       send_bytes);
@@ -330,6 +340,12 @@ void grpc_chttp2_cleanup_writing(
     grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
+
+  if (grpc_chttp2_list_flush_writing_stalled_by_transport(exec_ctx,
+                                                          transport_writing)) {
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "resume_stalled_stream");
+  }
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {

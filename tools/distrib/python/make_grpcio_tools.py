@@ -29,12 +29,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
+import errno
+import filecmp
+import glob
 import os
 import os.path
 import shutil
 import subprocess
 import sys
 import traceback
+import uuid
 
 DEPS_FILE_CONTENT="""
 # Copyright 2016, Google Inc.
@@ -82,22 +88,23 @@ GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
                  '..', '..', '..'))
 
-GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'tools/distrib/python/grpcio_tools')
+GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'tools', 'distrib',
+                                'python', 'grpcio_tools')
 
-GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT = 'third_party/protobuf/src'
+GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT = os.path.join('third_party', 'protobuf', 'src')
 GRPC_PROTOBUF = os.path.join(GRPC_ROOT, GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT)
-GRPC_PROTOC_PLUGINS = os.path.join(GRPC_ROOT, 'src/compiler')
-GRPC_PYTHON_PROTOBUF = os.path.join(GRPC_PYTHON_ROOT,
-                                    'third_party/protobuf/src')
-GRPC_PYTHON_PROTOC_PLUGINS = os.path.join(GRPC_PYTHON_ROOT,
-                                          'grpc_root/src/compiler')
+GRPC_PROTOC_PLUGINS = os.path.join(GRPC_ROOT, 'src', 'compiler')
+GRPC_PYTHON_PROTOBUF = os.path.join(GRPC_PYTHON_ROOT, 'third_party', 'protobuf',
+                                    'src')
+GRPC_PYTHON_PROTOC_PLUGINS = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root', 'src',
+                                          'compiler')
 GRPC_PYTHON_PROTOC_LIB_DEPS = os.path.join(GRPC_PYTHON_ROOT,
                                            'protoc_lib_deps.py')
 
 GRPC_INCLUDE = os.path.join(GRPC_ROOT, 'include')
-GRPC_PYTHON_INCLUDE = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root/include')
+GRPC_PYTHON_INCLUDE = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root', 'include')
 
-BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools/distrib/python/bazel_deps.sh')
+BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools', 'distrib', 'python', 'bazel_deps.sh')
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
 BAZEL_DEPS_COMMON_PROTOS_QUERY = '//:well_known_protos'
 
@@ -124,20 +131,30 @@ def get_deps():
       proto_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT))
   return deps_file_content
 
+def long_path(path):
+  if os.name == 'nt':
+    return '\\\\?\\' + path
+  else:
+    return path
 
 def main():
   os.chdir(GRPC_ROOT)
 
-  for tree in [GRPC_PYTHON_PROTOBUF,
-               GRPC_PYTHON_PROTOC_PLUGINS,
-               GRPC_PYTHON_INCLUDE]:
-    try:
-      shutil.rmtree(tree)
-    except Exception as _:
-      pass
-  shutil.copytree(GRPC_PROTOBUF, GRPC_PYTHON_PROTOBUF)
-  shutil.copytree(GRPC_PROTOC_PLUGINS, GRPC_PYTHON_PROTOC_PLUGINS)
-  shutil.copytree(GRPC_INCLUDE, GRPC_PYTHON_INCLUDE)
+  for source, target in [
+      (GRPC_PROTOBUF, GRPC_PYTHON_PROTOBUF),
+      (GRPC_PROTOC_PLUGINS, GRPC_PYTHON_PROTOC_PLUGINS),
+      (GRPC_INCLUDE, GRPC_PYTHON_INCLUDE)]:
+    for source_dir, _, files in os.walk(source):
+      target_dir = os.path.abspath(os.path.join(target, os.path.relpath(source_dir, source)))
+      try:
+        os.makedirs(target_dir)
+      except OSError as error:
+        if error.errno != errno.EEXIST:
+          raise
+      for relative_file in files:
+        source_file = os.path.abspath(os.path.join(source_dir, relative_file))
+        target_file = os.path.abspath(os.path.join(target_dir, relative_file))
+        shutil.copyfile(source_file, target_file)
 
   try:
     protoc_lib_deps_content = get_deps()

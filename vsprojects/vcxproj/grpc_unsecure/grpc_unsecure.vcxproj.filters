@@ -22,6 +22,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -61,6 +64,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -89,6 +95,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
@@ -256,6 +265,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.c">
+      <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
@@ -323,9 +335,6 @@
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.c">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.c">
@@ -412,6 +421,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
       <Filter>src\core\ext\load_reporting</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.c">
+      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
@@ -432,6 +444,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
       <Filter>src\core\ext\lb_policy\round_robin</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\base_resources.c">
+      <Filter>src\core\ext\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
       <Filter>src\core\ext\census</Filter>
@@ -460,6 +475,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\placeholders.c">
       <Filter>src\core\ext\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\resource.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
       <Filter>src\core\ext\census</Filter>
     </ClCompile>
@@ -481,6 +499,9 @@
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
@@ -572,6 +593,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -608,6 +632,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -636,6 +663,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h">
@@ -761,9 +791,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\surface_trace.h">
-      <Filter>src\core\lib\surface</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
@@ -777,6 +804,9 @@
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h">
+      <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h">
@@ -842,9 +872,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
@@ -905,6 +932,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
       <Filter>src\core\ext\load_reporting</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h">
+      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
@@ -926,6 +956,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\base_resources.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
@@ -939,6 +972,9 @@
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h">

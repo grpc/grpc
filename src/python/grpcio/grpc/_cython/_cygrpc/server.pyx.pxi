@@ -35,6 +35,7 @@ import time
 cdef class Server:
 
   def __cinit__(self, ChannelArgs arguments=None):
+    grpc_init()
     cdef grpc_channel_args *c_arguments = NULL
     self.references = []
     self.registered_completion_queues = []
@@ -101,7 +102,7 @@ cdef class Server:
     # Ensure the core has gotten a chance to do the start-up work
     self.backup_shutdown_queue.poll(Timespec(None))
 
-  def add_http2_port(self, address,
+  def add_http2_port(self, bytes address,
                      ServerCredentials server_credentials=None):
     address = str_to_bytes(address)
     self.references.append(address)
@@ -171,5 +172,5 @@ cdef class Server:
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
           time.sleep(0)
-      with nogil:
-        grpc_server_destroy(self.c_server)
+      grpc_server_destroy(self.c_server)
+    grpc_shutdown()

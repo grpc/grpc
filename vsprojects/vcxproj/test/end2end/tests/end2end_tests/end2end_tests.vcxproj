@@ -181,6 +181,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\empty_batch.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_call_init_fails.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">
@@ -195,11 +197,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\large_metadata.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\load_reporting_hook.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_concurrent_streams.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_message_length.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\negative_deadline.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\network_status_change.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
     </ClCompile>

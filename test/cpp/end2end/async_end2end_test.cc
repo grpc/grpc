@@ -200,6 +200,10 @@ class Verifier {
   bool spin_;
 };
 
+bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
+  return plugin->has_sync_methods();
+}
+
 // This class disables the server builder plugins that may add sync services to
 // the server. If there are sync services, UnimplementedRpc test will triger
 // the sync unkown rpc routine on the server side, rather than the async one
@@ -210,14 +214,9 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
   void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
-    auto plugin = plugins->begin();
-    while (plugin != plugins->end()) {
-      if ((*plugin)->has_sync_methods()) {
-        plugins->erase(plugin++);
-      } else {
-        plugin++;
-      }
-    }
+    plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
+                                  plugin_has_sync_methods),
+                   plugins->end());
   }
 };
 
@@ -343,6 +342,31 @@ TEST_P(AsyncEnd2endTest, SimpleRpc) {
 TEST_P(AsyncEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpc(10);
+}
+
+// We do not need to protect notify because the use is synchronized.
+void ServerWait(Server* server, int* notify) {
+  server->Wait();
+  *notify = 1;
+}
+TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
+  int notify = 0;
+  std::thread* wait_thread =
+      new std::thread(&ServerWait, server_.get(), &notify);
+  ResetStub();
+  SendRpc(1);
+  EXPECT_EQ(0, notify);
+  server_->Shutdown();
+  wait_thread->join();
+  EXPECT_EQ(1, notify);
+  delete wait_thread;
+}
+
+TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
+  ResetStub();
+  SendRpc(1);
+  server_->Shutdown();
+  server_->Wait();
 }
 
 // Test a simple RPC using the async version of Next

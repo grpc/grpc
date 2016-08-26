@@ -55,6 +55,9 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse);
 /* disable nagle */
 grpc_error *grpc_set_socket_low_latency(int fd, int low_latency);
 
+/* set SO_REUSEPORT */
+grpc_error *grpc_set_socket_reuse_port(int fd, int reuse);
+
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
 

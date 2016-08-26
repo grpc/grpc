@@ -23,9 +23,9 @@ HOW TO USE
 
 - Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution.
 
-- Add NuGet package `Grpc` as a dependency (Project options -> Manage NuGet Packages).
+- Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages).
 
-- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add NuGet package `Grpc.Tools` that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
+- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
 
 BUILD FROM SOURCE
 -----------------

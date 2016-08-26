@@ -34,6 +34,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -117,6 +118,31 @@ namespace Grpc.Core.Tests
             await call.RequestStream.CompleteAsync();
 
             await call.ResponseStream.ToListAsync();
+        }
+
+        [Test]
+        public void CanReadCompressedMessages()
+        {
+            var compressionMetadata = new Metadata
+            {
+                { new Metadata.Entry(Metadata.CompressionRequestAlgorithmMetadataKey, "gzip") }
+            };
+
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (req, context) =>
+            {
+                await context.WriteResponseHeadersAsync(compressionMetadata);
+                return req;
+            });
+
+            var stringBuilder = new StringBuilder();
+            for (int i = 0; i < 200000; i++)
+            {
+                stringBuilder.Append('a');
+            }
+            var request = stringBuilder.ToString();
+            var response = Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(compressionMetadata)), request);
+
+            Assert.AreEqual(request, response);
         }
     }
 }

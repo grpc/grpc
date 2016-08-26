@@ -176,12 +176,14 @@ cdef class Timespec:
 cdef class CallDetails:
 
   def __cinit__(self):
+    grpc_init()
     with nogil:
       grpc_call_details_init(&self.c_details)
 
   def __dealloc__(self):
     with nogil:
       grpc_call_details_destroy(&self.c_details)
+    grpc_shutdown()
 
   @property
   def method(self):
@@ -231,17 +233,11 @@ cdef class Event:
 
 cdef class ByteBuffer:
 
-  def __cinit__(self, data):
+  def __cinit__(self, bytes data):
+    grpc_init()
     if data is None:
       self.c_byte_buffer = NULL
       return
-    if isinstance(data, ByteBuffer):
-      data = (<ByteBuffer>data).bytes()
-      if data is None:
-        self.c_byte_buffer = NULL
-        return
-    else:
-      data = str_to_bytes(data)
 
     cdef char *c_data = data
     cdef gpr_slice data_slice
@@ -259,9 +255,13 @@ cdef class ByteBuffer:
     cdef gpr_slice data_slice
     cdef size_t data_slice_length
     cdef void *data_slice_pointer
+    cdef bint reader_status
     if self.c_byte_buffer != NULL:
       with nogil:
-        grpc_byte_buffer_reader_init(&reader, self.c_byte_buffer)
+        reader_status = grpc_byte_buffer_reader_init(
+            &reader, self.c_byte_buffer)
+      if not reader_status:
+        return None
       result = bytearray()
       with nogil:
         while grpc_byte_buffer_reader_next(&reader, &data_slice):
@@ -290,37 +290,40 @@ cdef class ByteBuffer:
 
   def __dealloc__(self):
     if self.c_byte_buffer != NULL:
-      with nogil:
-        grpc_byte_buffer_destroy(self.c_byte_buffer)
+      grpc_byte_buffer_destroy(self.c_byte_buffer)
+    grpc_shutdown()
 
 
 cdef class SslPemKeyCertPair:
 
-  def __cinit__(self, private_key, certificate_chain):
-    self.private_key = str_to_bytes(private_key)
-    self.certificate_chain = str_to_bytes(certificate_chain)
+  def __cinit__(self, bytes private_key, bytes certificate_chain):
+    self.private_key = private_key
+    self.certificate_chain = certificate_chain
     self.c_pair.private_key = self.private_key
     self.c_pair.certificate_chain = self.certificate_chain
 
 
 cdef class ChannelArg:
 
-  def __cinit__(self, key, value):
-    self.key = str_to_bytes(key)
+  def __cinit__(self, bytes key, value):
+    self.key = key
     self.c_arg.key = self.key
     if isinstance(value, int):
-      self.value = int(value)
+      self.value = value
       self.c_arg.type = GRPC_ARG_INTEGER
       self.c_arg.value.integer = self.value
-    else:
-      self.value = str_to_bytes(value)
+    elif isinstance(value, bytes):
+      self.value = value
       self.c_arg.type = GRPC_ARG_STRING
       self.c_arg.value.string = self.value
+    else:
+      raise TypeError('Expected int or bytes, got {}'.format(type(value)))
 
 
 cdef class ChannelArgs:
 
   def __cinit__(self, args):
+    grpc_init()
     self.args = list(args)
     for arg in self.args:
       if not isinstance(arg, ChannelArg):
@@ -335,6 +338,7 @@ cdef class ChannelArgs:
   def __dealloc__(self):
     with nogil:
       gpr_free(self.c_args.arguments)
+    grpc_shutdown()
 
   def __len__(self):
     # self.args is never stale; it's only updated from this file
@@ -347,9 +351,9 @@ cdef class ChannelArgs:
 
 cdef class Metadatum:
 
-  def __cinit__(self, key, value):
-    self._key = str_to_bytes(key)
-    self._value = str_to_bytes(value)
+  def __cinit__(self, bytes key, bytes value):
+    self._key = key
+    self._value = value
     self.c_metadata.key = self._key
     self.c_metadata.value = self._value
     self.c_metadata.value_length = len(self._value)
@@ -401,6 +405,7 @@ cdef class _MetadataIterator:
 cdef class Metadata:
 
   def __cinit__(self, metadata):
+    grpc_init()
     self.metadata = list(metadata)
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
@@ -421,8 +426,8 @@ cdef class Metadata:
     # this frees the allocated memory for the grpc_metadata_array (although
     # it'd be nice if that were documented somewhere...)
     # TODO(atash): document this in the C core
-    with nogil:
-      grpc_metadata_array_destroy(&self.c_metadata_array)
+    grpc_metadata_array_destroy(&self.c_metadata_array)
+    grpc_shutdown()
 
   def __len__(self):
     return self.c_metadata_array.count
@@ -440,6 +445,7 @@ cdef class Metadata:
 cdef class Operation:
 
   def __cinit__(self):
+    grpc_init()
     self.references = []
     self._received_status_details = NULL
     self._received_status_details_capacity = 0
@@ -531,8 +537,8 @@ cdef class Operation:
     # Python. The remaining one(s) are primitive fields filled in by GRPC core.
     # This means that we need to clean up after receive_status_on_client.
     if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
-      with nogil:
-        gpr_free(self._received_status_details)
+      gpr_free(self._received_status_details)
+    grpc_shutdown()
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
   cdef Operation op = Operation()
@@ -563,8 +569,7 @@ def operation_send_close_from_client(int flags):
   return op
 
 def operation_send_status_from_server(
-    Metadata metadata, grpc_status_code code, details, int flags):
-  details = str_to_bytes(details)
+    Metadata metadata, grpc_status_code code, bytes details, int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
   op.c_op.flags = flags
@@ -650,6 +655,7 @@ cdef class _OperationsIterator:
 cdef class Operations:
 
   def __cinit__(self, operations):
+    grpc_init()
     self.operations = list(operations)  # normalize iterable
     self.c_ops = NULL
     self.c_nops = 0
@@ -672,6 +678,7 @@ cdef class Operations:
   def __dealloc__(self):
     with nogil:
       gpr_free(self.c_ops)
+    grpc_shutdown()
 
   def __iter__(self):
     return _OperationsIterator(self)

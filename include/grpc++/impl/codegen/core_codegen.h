@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
+#define GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
+
 // This file should be compiled as part of grpc++.
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
@@ -54,8 +57,8 @@ class CoreCodegen : public CoreCodegenInterface {
 
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) GRPC_OVERRIDE;
 
-  void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                    grpc_byte_buffer* buffer) GRPC_OVERRIDE;
+  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
+                                   grpc_byte_buffer* buffer) GRPC_OVERRIDE;
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader)
       GRPC_OVERRIDE;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
@@ -83,3 +86,5 @@ class CoreCodegen : public CoreCodegenInterface {
 };
 
 }  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
