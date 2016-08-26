@@ -349,8 +349,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
       if (0 ==
           strcmp(c->args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         const grpc_integer_options options = {-1, 0, INT_MAX};
-        const int value = grpc_channel_arg_get_integer(&c->args->args[i],
-                                                       options);
+        const int value =
+            grpc_channel_arg_get_integer(&c->args->args[i], options);
         if (value >= 0) {
           gpr_backoff_init(
               &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,

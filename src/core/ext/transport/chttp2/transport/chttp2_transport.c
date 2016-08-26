@@ -341,8 +341,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                   GRPC_ARG_MAX_CONCURRENT_STREAMS);
         } else {
           const grpc_integer_options options = {-1, 0, INT_MAX};
-          const int value = grpc_channel_arg_get_integer(&channel_args->args[i],
-                                                         options);
+          const int value =
+              grpc_channel_arg_get_integer(&channel_args->args[i], options);
           if (value >= 0) {
             push_setting(exec_ctx, t,
                          GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
@@ -352,8 +352,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
         const grpc_integer_options options = {-1, 0, INT_MAX};
-        const int value = grpc_channel_arg_get_integer(&channel_args->args[i],
-                                                       options);
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
         if (value >= 0) {
           if ((t->global.next_stream_id & 1) != (value & 1)) {
             gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
@@ -367,16 +367,16 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
         const grpc_integer_options options = {-1, 5, INT_MAX};
-        const int value = grpc_channel_arg_get_integer(&channel_args->args[i],
-                                                       options);
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
         if (value >= 0) {
           t->global.stream_lookahead = (uint32_t)value;
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
         const grpc_integer_options options = {-1, 0, INT_MAX};
-        const int value = grpc_channel_arg_get_integer(&channel_args->args[i],
-                                                       options);
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
         if (value >= 0) {
           push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
                        (uint32_t)value);
@@ -384,18 +384,17 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
         const grpc_integer_options options = {-1, 0, INT_MAX};
-        const int value = grpc_channel_arg_get_integer(&channel_args->args[i],
-                                                       options);
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
         if (value >= 0) {
           grpc_chttp2_hpack_compressor_set_max_usable_size(
-              &t->writing.hpack_compressor,
-              (uint32_t)value);
+              &t->writing.hpack_compressor, (uint32_t)value);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_MAX_METADATA_SIZE)) {
         const grpc_integer_options options = {-1, 0, INT_MAX};
-        const int value = grpc_channel_arg_get_integer(&channel_args->args[i],
-                                                       options);
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
         if (value >= 0) {
           push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        (uint32_t)value);
