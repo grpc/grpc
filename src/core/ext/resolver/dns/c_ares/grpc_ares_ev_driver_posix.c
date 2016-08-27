@@ -134,18 +134,21 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
         ares_getsock(ev_driver->channel, ev_driver->socks, ARES_GETSOCK_MAXNUM);
     grpc_closure_init(&ev_driver->driver_closure, driver_cb, ev_driver);
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-      char *fd_name;
-      gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
 
       if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i) ||
           ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
         fd_pair *fdp = get_fd(&ev_driver->fds, ev_driver->socks[i]);
         if (!fdp) {
+          char *fd_name;
+          gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
+          
           fdp = gpr_malloc(sizeof(fd_pair));
           fdp->grpc_fd = grpc_fd_create(ev_driver->socks[i], fd_name);
           fdp->fd = ev_driver->socks[i];
           grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
                                   fdp->grpc_fd);
+
+          gpr_free(fd_name);
         }
         fdp->next = new_list;
         new_list = fdp;
@@ -159,7 +162,6 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
                                   &ev_driver->driver_closure);
         }
       }
-      gpr_free(fd_name);
     }
   }
 
