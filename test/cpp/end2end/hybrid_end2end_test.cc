@@ -422,13 +422,13 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
 }
 
 // Add a second service with one sync streamed unary method.
-class StreamedUnaryDupPkg : public
-    duplicate::EchoTestService::WithStreamedUnaryMethod_Echo<
-                          TestServiceImplDupPkg> {
+class StreamedUnaryDupPkg
+    : public duplicate::EchoTestService::WithStreamedUnaryMethod_Echo<
+          TestServiceImplDupPkg> {
  public:
   Status StreamedEcho(ServerContext* context,
-		      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-    GRPC_OVERRIDE {
+                      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
+      GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -461,11 +461,12 @@ TEST_F(HybridEnd2endTest,
 }
 
 // Add a second service that is fully Streamed Unary
-class FullyStreamedUnaryDupPkg : public duplicate::EchoTestService::StreamedUnaryService {
+class FullyStreamedUnaryDupPkg
+    : public duplicate::EchoTestService::StreamedUnaryService {
  public:
   Status StreamedEcho(ServerContext* context,
-		      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-    GRPC_OVERRIDE {
+                      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
+      GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;

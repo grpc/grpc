@@ -178,9 +178,8 @@ template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler : public MethodHandler {
  public:
   TemplatedBidiStreamingHandler(
-      std::function<Status(ServerContext*, Streamer*)>
-          func)
-    : func_(func), write_needed_(WriteNeeded) {}
+      std::function<Status(ServerContext*, Streamer*)> func)
+      : func_(func), write_needed_(WriteNeeded) {}
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     Streamer stream(param.call, param.server_context);
@@ -194,10 +193,10 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
         ops.set_compression_level(param.server_context->compression_level());
       }
       if (write_needed_ && status.ok()) {
-	// If we needed a write but never did one, we need to mark the
-	// status as a fail
-	status = Status(IMPROPER_IMPLEMENTATION,
-			"Service did not provide response message");
+        // If we needed a write but never did one, we need to mark the
+        // status as a fail
+        status = Status(IMPROPER_IMPLEMENTATION,
+                        "Service did not provide response message");
       }
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
@@ -206,24 +205,37 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
   }
 
  private:
-  std::function<Status(ServerContext*, Streamer*)>
-    func_;
+  std::function<Status(ServerContext*, Streamer*)> func_;
   const bool write_needed_;
 };
 
 template <class ServiceType, class RequestType, class ResponseType>
-  class BidiStreamingHandler : public TemplatedBidiStreamingHandler<ServerReaderWriter<ResponseType, RequestType>, false> {
+class BidiStreamingHandler
+    : public TemplatedBidiStreamingHandler<
+          ServerReaderWriter<ResponseType, RequestType>, false> {
  public:
-  BidiStreamingHandler(std::function<Status(ServiceType*, ServerContext*,
-					    ServerReaderWriter<ResponseType,RequestType>*)> func, ServiceType* service): TemplatedBidiStreamingHandler<ServerReaderWriter<ResponseType, RequestType>,false>(std::bind(func, service, std::placeholders::_1, std::placeholders::_2)) {}
- };
+  BidiStreamingHandler(
+      std::function<Status(ServiceType*, ServerContext*,
+                           ServerReaderWriter<ResponseType, RequestType>*)>
+          func,
+      ServiceType* service)
+      : TemplatedBidiStreamingHandler<
+            ServerReaderWriter<ResponseType, RequestType>, false>(std::bind(
+            func, service, std::placeholders::_1, std::placeholders::_2)) {}
+};
 
- template <class RequestType, class ResponseType>
-   class StreamedUnaryHandler : public TemplatedBidiStreamingHandler<ServerUnaryStreamer<RequestType, ResponseType>, true> {
+template <class RequestType, class ResponseType>
+class StreamedUnaryHandler
+    : public TemplatedBidiStreamingHandler<
+          ServerUnaryStreamer<RequestType, ResponseType>, true> {
  public:
- explicit StreamedUnaryHandler(std::function<Status(ServerContext*,
-					    ServerUnaryStreamer<RequestType,ResponseType>*)> func): TemplatedBidiStreamingHandler<ServerUnaryStreamer<RequestType, ResponseType>, true>(func) {}
- };
+  explicit StreamedUnaryHandler(
+      std::function<Status(ServerContext*,
+                           ServerUnaryStreamer<RequestType, ResponseType>*)>
+          func)
+      : TemplatedBidiStreamingHandler<
+            ServerUnaryStreamer<RequestType, ResponseType>, true>(func) {}
+};
 
 // Handle unknown method by returning UNIMPLEMENTED error.
 class UnknownMethodHandler : public MethodHandler {

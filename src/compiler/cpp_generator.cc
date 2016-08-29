@@ -616,7 +616,7 @@ void PrintHeaderServerMethodStreamedUnary(
     printer->Print(*vars, "template <class BaseClass>\n");
     printer->Print(*vars,
                    "class WithStreamedUnaryMethod_$Method$ : "
-		   "public BaseClass {\n");
+                   "public BaseClass {\n");
     printer->Print(
         " private:\n"
         "  void BaseClassMustBeDerivedFromService(const Service *service) "
@@ -628,9 +628,9 @@ void PrintHeaderServerMethodStreamedUnary(
                    "  ::grpc::Service::MarkMethodStreamedUnary($Idx$,\n"
                    "    new ::grpc::StreamedUnaryHandler<$Request$, "
                    "$Response$>(std::bind"
-		   "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
+                   "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
                    "Streamed$Method$, this, std::placeholders::_1, "
-		   "std::placeholders::_2)));\n"
+                   "std::placeholders::_2)));\n"
                    "}\n");
     printer->Print(*vars,
                    "~WithStreamedUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
@@ -649,7 +649,7 @@ void PrintHeaderServerMethodStreamedUnary(
                    "// replace default version of method with streamed unary\n"
                    "virtual ::grpc::Status Streamed$Method$("
                    "::grpc::ServerContext* context, "
-		   "::grpc::ServerUnaryStreamer< "
+                   "::grpc::ServerUnaryStreamer< "
                    "$Request$,$Response$>* server_unary_streamer)"
                    " = 0;\n");
     printer->Outdent();
@@ -827,7 +827,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
     PrintHeaderServerMethodStreamedUnary(printer, service->method(i).get(),
-					 vars);
+                                         vars);
   }
 
   printer->Print("typedef ");
