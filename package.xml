@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- TBD
+- Reject metadata keys which are not legal #7881
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1173,7 +1173,7 @@ Update to wrap gRPC C Core version 0.10.0
    <date>2016-08-22</date>
    <license>BSD</license>
    <notes>
-- TBD
+- Reject metadata keys which are not legal #7881
    </notes>
   </release>
  </changelog>
