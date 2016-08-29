@@ -82,6 +82,10 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *t,
 static void read_action_flush_locked(grpc_exec_ctx *exec_ctx, void *t,
                                      grpc_error *error);
 
+static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
+                                  grpc_error *error);
+static void complete_fetch(grpc_exec_ctx *exec_ctx, void *gs,
+                           grpc_error *error);
 /** Set a transport level setting, and push it to our peer */
 static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          grpc_chttp2_setting_id id, uint32_t value);
@@ -443,6 +447,8 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_data_parser_init(&s->data_parser);
   gpr_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  grpc_closure_init(&s->complete_fetch, complete_fetch, s);
+  grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s);
 
   GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
 
@@ -493,7 +499,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   }
 
   GPR_ASSERT(s->send_initial_metadata_finished == NULL);
-  GPR_ASSERT(s->send_message_finished == NULL);
+  GPR_ASSERT(s->fetching_send_message == NULL);
   GPR_ASSERT(s->send_trailing_metadata_finished == NULL);
   GPR_ASSERT(s->recv_initial_metadata_ready == NULL);
   GPR_ASSERT(s->recv_message_ready == NULL);
@@ -776,6 +782,76 @@ static bool contains_non_ok_status(grpc_metadata_batch *batch) {
   return false;
 }
 
+static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s);
+
+static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s) {
+  if (s->fetching_send_message == NULL) {
+    /* Stream was cancelled before message fetch completed */
+    abort(); /* TODO(ctiller): what cleanup here? */
+    return;
+  }
+  if (s->fetched_send_message_length == s->fetching_send_message->length) {
+    ssize_t notify_offset = s->fetching_slice_end_offset;
+    if (notify_offset <= 0) {
+      grpc_chttp2_complete_closure_step(
+          exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE);
+    } else {
+      grpc_chttp2_write_cb *cb = t->write_cb_pool;
+      if (cb == NULL) {
+        cb = gpr_malloc(sizeof(*cb));
+      } else {
+        t->write_cb_pool = cb->next;
+      }
+      cb->call_at_byte = (size_t)notify_offset;
+      cb->closure = s->fetching_send_message_finished;
+      s->fetching_send_message_finished = NULL;
+      cb->next = s->on_write_finished_cbs;
+      s->on_write_finished_cbs = cb;
+    }
+    s->fetching_send_message = NULL;
+  } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
+                                   &s->fetching_slice, UINT32_MAX,
+                                   &s->complete_fetch)) {
+    add_fetched_slice_locked(exec_ctx, t, s);
+  }
+}
+
+static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s) {
+  s->fetched_send_message_length +=
+      (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
+  gpr_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
+  if (s->id != 0) {
+    grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
+  }
+  continue_fetching_send_locked(exec_ctx, t, s);
+}
+
+static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
+                                  grpc_error *error) {
+  grpc_chttp2_stream *s = gs;
+  grpc_chttp2_transport *t = s->t;
+  if (error == GRPC_ERROR_NONE) {
+    add_fetched_slice_locked(exec_ctx, t, s);
+  } else {
+    /* TODO(ctiller): what to do here */
+    abort();
+  }
+}
+
+static void complete_fetch(grpc_exec_ctx *exec_ctx, void *gs,
+                           grpc_error *error) {
+  grpc_chttp2_stream *s = gs;
+  grpc_chttp2_transport *t = s->t;
+  grpc_combiner_execute(exec_ctx, t->combiner, &s->complete_fetch_locked,
+                        GRPC_ERROR_REF(error));
+}
+
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
@@ -865,12 +941,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->send_message != NULL) {
+    s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
-      grpc_closure *temp_barrier = add_closure_barrier(op->send_message);
       grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &temp_barrier,
+          exec_ctx, t, s, &s->fetching_send_message_finished,
           GRPC_ERROR_CREATE("Attempt to send message after stream was closed"));
     } else {
+      GPR_ASSERT(s->fetching_send_message == NULL);
       uint8_t *frame_hdr =
           gpr_slice_buffer_tiny_add(&s->flow_controlled_buffer, 5);
       uint32_t flags = op->send_message->flags;
@@ -880,21 +957,14 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       frame_hdr[2] = (uint8_t)(len >> 16);
       frame_hdr[3] = (uint8_t)(len >> 8);
       frame_hdr[4] = (uint8_t)(len);
-      grpc_chttp2_write_cb *write_cb = t->write_cb_pool;
-      if (write_cb != NULL) {
-        t->write_cb_pool = write_cb->next;
-      } else {
-        write_cb = gpr_malloc(sizeof(*write_cb));
+      s->fetching_send_message = op->send_message;
+      s->fetched_send_message_length = 0;
+      s->fetching_slice_end_offset =
+          (ssize_t)s->flow_controlled_buffer.length + (ssize_t)len;
+      if (flags & GRPC_WRITE_BUFFER_HINT) {
+        s->fetched_send_message_length -= 65536;
       }
-      write_cb->next = &s->on_write_finished_cbs;
-      write_cb->call_at_byte =
-          add_send_completion(t, s, (ssize_t)() - backup, true);
-    }
-
-    s->send_message_finished = add_closure_barrier(on_complete);
-    if (s->write_closed) {
-    } else {
-      s->send_message = op->send_message;
+      continue_fetching_send_locked(exec_ctx, t, s);
       if (s->id != 0) {
         grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
       }
@@ -1328,15 +1398,15 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport *t, grpc_chttp2_stream *s,
                                 grpc_error *error) {
   error = removal_error(error, s);
-  s->send_message = NULL;
+  s->fetching_send_message = NULL;
   grpc_chttp2_complete_closure_step(exec_ctx, t, s,
                                     &s->send_initial_metadata_finished,
                                     GRPC_ERROR_REF(error));
   grpc_chttp2_complete_closure_step(exec_ctx, t, s,
                                     &s->send_trailing_metadata_finished,
                                     GRPC_ERROR_REF(error));
-  grpc_chttp2_complete_closure_step(exec_ctx, t, s, &s->send_message_finished,
-                                    error);
+  grpc_chttp2_complete_closure_step(exec_ctx, t, s,
+                                    &s->fetching_send_message_finished, error);
 }
 
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
@@ -1386,9 +1456,11 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   if (s->id != 0 && !t->is_client) {
     /* Hand roll a header block.
-       This is unnecessarily ugly - at some point we should find a more elegant
+       This is unnecessarily ugly - at some point we should find a more
+       elegant
        solution.
-       It's complicated by the fact that our send machinery would be dead by the
+       It's complicated by the fact that our send machinery would be dead by
+       the
        time we got around to sending this, so instead we ignore HPACK
        compression
        and just write the uncompressed bytes onto the wire. */

@@ -59,11 +59,7 @@ typedef enum {
   GRPC_CHTTP2_LIST_CHECK_READ_OPS,
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
-  GRPC_CHTTP2_LIST_WRITTEN,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
-  /* streams waiting for the outgoing window in the writing path, they will be
-   * merged to the stalled list or writable list under transport lock. */
-  GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
@@ -155,11 +151,6 @@ typedef struct grpc_chttp2_write_cb {
   grpc_closure *closure;
   struct grpc_chttp2_write_cb *next;
 } grpc_chttp2_write_cb;
-
-typedef struct grpc_chttp2_write_cb_list {
-  grpc_chttp2_write_cb *head;
-  grpc_chttp2_write_cb *tail;
-} grpc_chttp2_write_cb_list;
 
 /* forward declared in frame_data.h */
 struct grpc_chttp2_incoming_byte_stream {
@@ -365,6 +356,12 @@ struct grpc_chttp2_stream {
   grpc_closure *send_trailing_metadata_finished;
 
   grpc_byte_stream *fetching_send_message;
+  uint32_t fetched_send_message_length;
+  gpr_slice fetching_slice;
+  int64_t fetching_slice_end_offset;
+  grpc_closure complete_fetch;
+  grpc_closure complete_fetch_locked;
+  grpc_closure *fetching_send_message_finished;
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_closure *recv_initial_metadata_ready;
@@ -416,20 +413,15 @@ struct grpc_chttp2_stream {
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
 
-  /** HTTP2 stream id for this stream, or zero if one has not been assigned */
-  uint8_t fetching;
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
   /** how much window should we announce? */
   uint32_t announce_window;
   gpr_slice_buffer flow_controlled_buffer;
-  gpr_slice fetching_slice;
-  size_t stream_fetched;
-  grpc_closure finished_fetch;
 
-  grpc_chttp2_write_cb_list on_write_scheduled_cbs;
-  grpc_chttp2_write_cb_list on_write_finished_cbs;
-  grpc_chttp2_write_cb_list finish_after_write;
+  grpc_chttp2_write_cb *on_write_finished_cbs;
+  grpc_chttp2_write_cb *finish_after_write;
+  size_t sending_bytes;
 };
 
 /** Transport writing call flow:
@@ -451,7 +443,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and frame them if so */
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
-void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, void *transport_writing,
+void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_error *error);
 
 /** Process one slice of incoming data; return 1 if the connection is still
@@ -491,11 +483,6 @@ bool grpc_chttp2_list_remove_check_read_ops(grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s);
 int grpc_chttp2_list_pop_check_read_ops(grpc_chttp2_transport *t,
                                         grpc_chttp2_stream **s);
-
-void grpc_chttp2_list_add_writing_stalled_by_transport(grpc_chttp2_transport *t,
-                                                       grpc_chttp2_stream *s);
-bool grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);

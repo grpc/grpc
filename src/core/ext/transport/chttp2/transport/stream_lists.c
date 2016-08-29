@@ -148,16 +148,6 @@ int grpc_chttp2_list_pop_writing_stream(grpc_chttp2_transport *t,
   return stream_list_pop(t, s, GRPC_CHTTP2_LIST_WRITING);
 }
 
-void grpc_chttp2_list_add_written_stream(grpc_chttp2_transport *t,
-                                         grpc_chttp2_stream *s) {
-  stream_list_add(t, s, GRPC_CHTTP2_LIST_WRITTEN);
-}
-
-int grpc_chttp2_list_pop_written_stream(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s) {
-  return stream_list_pop(t, s, GRPC_CHTTP2_LIST_WRITTEN);
-}
-
 void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s) {
   stream_list_add(t, s, GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY);
@@ -189,30 +179,6 @@ bool grpc_chttp2_list_remove_check_read_ops(grpc_chttp2_transport *t,
 int grpc_chttp2_list_pop_check_read_ops(grpc_chttp2_transport *t,
                                         grpc_chttp2_stream **s) {
   return stream_list_pop(t, s, GRPC_CHTTP2_LIST_CHECK_READ_OPS);
-}
-
-void grpc_chttp2_list_add_writing_stalled_by_transport(grpc_chttp2_transport *t,
-                                                       grpc_chttp2_stream *s) {
-  grpc_chttp2_stream *stream = s;
-  gpr_log(GPR_DEBUG, "writing stalled %d", s->id);
-  if (!stream->included[GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT]) {
-    GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing_stalled");
-  }
-  stream_list_add(t, stream, GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT);
-}
-
-bool grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
-  grpc_chttp2_stream *s;
-  bool out = false;
-  while (
-      stream_list_pop(t, &s, GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT)) {
-    gpr_log(GPR_DEBUG, "move %d from writing stalled to just stalled", s->id);
-    grpc_chttp2_list_add_stalled_by_transport(t, s);
-    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing_stalled");
-    out = true;
-  }
-  return out;
 }
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
