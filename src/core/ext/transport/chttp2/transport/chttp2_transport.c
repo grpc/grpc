@@ -1095,6 +1095,10 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = op->transport_private.args[0];
   grpc_error *close_transport = op->disconnect_with_error;
 
+  char *msg = grpc_transport_op_string(op);
+  gpr_log(GPR_DEBUG, "run:%p: %s", t, msg);
+  gpr_free(msg);
+
   if (op->on_connectivity_state_change != NULL) {
     grpc_connectivity_state_notify_on_state_change(
         exec_ctx, &t->channel_callback.state_tracker, op->connectivity_state,
@@ -1143,6 +1147,9 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
 static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                  grpc_transport_op *op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
+  char *msg = grpc_transport_op_string(op);
+  gpr_log(GPR_DEBUG, "scd:%p: %s", t, msg);
+  gpr_free(msg);
   op->transport_private.args[0] = gt;
   grpc_closure_init(&op->transport_private.closure, perform_transport_op_locked,
                     op);

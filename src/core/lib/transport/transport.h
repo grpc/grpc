@@ -251,6 +251,7 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
                                         gpr_slice *optional_message);
 
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
+char *grpc_transport_op_string(grpc_transport_op *op);
 
 /* Send a batch of operations on a transport
 

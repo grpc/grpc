@@ -279,6 +279,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
   grpc_channel_element *elem;
 
   op->send_goaway = send_goaway;
+  op->set_accept_stream = true;
   sc->slice = gpr_slice_from_copied_string("Server shutdown");
   op->goaway_message = &sc->slice;
   op->goaway_status = GRPC_STATUS_OK;
@@ -437,14 +438,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
   maybe_finish_shutdown(exec_ctx, chand->server);
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
-
-  grpc_transport_op *op =
-      grpc_make_transport_op(&chand->finish_destroy_channel_closure);
-  op->set_accept_stream = true;
-  grpc_channel_next_op(exec_ctx,
-                       grpc_channel_stack_element(
-                           grpc_channel_get_channel_stack(chand->channel), 0),
-                       op);
 
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
