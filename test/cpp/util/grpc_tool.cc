@@ -277,7 +277,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
   std::shared_ptr<grpc::Channel> channel =
       grpc::CreateChannel(server_address, cred.GetCredentials());
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
-  google::protobuf::DescriptorPool desc_pool(&desc_db);
+  grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
   std::vector<grpc::string> service_list;
   if (!desc_db.GetServices(&service_list)) {
@@ -321,7 +321,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       }
     }
 
-    const google::protobuf::ServiceDescriptor* service =
+    const grpc::protobuf::ServiceDescriptor* service =
         desc_pool.FindServiceByName(service_name);
     if (service != nullptr) {
       if (method_name.empty()) {
@@ -329,7 +329,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       } else {
         method_name.insert(0, 1, '.');
         method_name.insert(0, service_name);
-        const google::protobuf::MethodDescriptor* method =
+        const grpc::protobuf::MethodDescriptor* method =
             desc_pool.FindMethodByName(method_name);
         if (method != nullptr) {
           output = FLAGS_l ? DescribeMethod(method) : SummarizeMethod(method);
@@ -344,7 +344,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
         fprintf(stderr, "Service %s not found.\n", service_name.c_str());
         return false;
       } else {
-        const google::protobuf::MethodDescriptor* method =
+        const grpc::protobuf::MethodDescriptor* method =
             desc_pool.FindMethodByName(service_name);
         if (method != nullptr) {
           output = FLAGS_l ? DescribeMethod(method) : SummarizeMethod(method);
