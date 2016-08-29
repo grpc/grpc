@@ -161,7 +161,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
                    grpc_connectivity_state_name(*op->connectivity_state));
       gpr_strvec_add(&b, tmp);
     } else {
-      gpr_asprintf(&tmp, "ON_CONNECTIVITY_STATE_CHANGE[p=%p]",
+      gpr_asprintf(&tmp, "ON_CONNECTIVITY_STATE_CHANGE:p=%p:unsubscribe",
                    op->on_connectivity_state_change);
       gpr_strvec_add(&b, tmp);
     }
