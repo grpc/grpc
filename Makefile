@@ -6606,6 +6606,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/server_finishes_request.c \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
+    test/core/end2end/tests/simple_cacheable_request.c \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
@@ -6686,6 +6687,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/server_finishes_request.c \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
+    test/core/end2end/tests/simple_cacheable_request.c \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
