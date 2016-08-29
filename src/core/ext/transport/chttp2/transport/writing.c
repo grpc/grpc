@@ -77,13 +77,6 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
-  gpr_log(
-      GPR_DEBUG,
-      "grpc_chttp2_begin_write: outbuf_len0=%" PRIdPTR
-      " dirtied_local_settings=%d sent_local_settings=%d qbuf_len=%" PRIdPTR,
-      t->outbuf.length, t->dirtied_local_settings, t->sent_local_settings,
-      t->qbuf.length);
-
   if (t->dirtied_local_settings && !t->sent_local_settings) {
     gpr_slice_buffer_add(
         &t->outbuf,
@@ -115,14 +108,6 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
   while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
-
-    gpr_log(GPR_DEBUG,
-            "grpc_chttp2_begin_write[%d]: sent_initial_metadata=%d "
-            "send_initial_metadata=%p announce_window=%d fcbuf_len=%" PRIdPTR
-            " s_win=%" PRId64 " t_win=%" PRId64 " send_trailing_metadata=%p",
-            s->id, sent_initial_metadata, s->send_initial_metadata,
-            s->announce_window, s->flow_controlled_buffer.length,
-            s->outgoing_window, t->outgoing_window, s->send_trailing_metadata);
 
     /* send initial metadata if it's available */
     if (!sent_initial_metadata && s->send_initial_metadata) {
@@ -185,7 +170,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           s->fetching_send_message == NULL &&
           s->flow_controlled_buffer.length == 0) {
         grpc_chttp2_encode_header(&t->hpack_compressor, s->id,
-                                  s->send_trailing_metadata, 0,
+                                  s->send_trailing_metadata, true,
                                   &s->stats.outgoing, &t->outbuf);
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
