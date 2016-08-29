@@ -164,6 +164,9 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
     if (key_type1 != HASH_KEY_IS_STRING) {
       return false;
     }
+    if (!grpc_header_key_is_legal(key1, strlen(key1))) {
+      return false;
+    }
     inner_array_hash = Z_ARRVAL_P(inner_array);
     PHP_GRPC_HASH_FOREACH_VAL_START(inner_array_hash, value)
       if (Z_TYPE_P(value) != IS_STRING) {
