@@ -55,6 +55,7 @@ typedef struct call_data {
 
   grpc_metadata_batch *recv_initial_metadata;
   bool *recv_idempotent_request;
+  bool *recv_cacheable_request;
   /** Closure to call when finished with the hs_on_recv hook */
   grpc_closure *on_done_recv;
   /** Closure to call when we retrieve read message from the payload-bin header
@@ -94,9 +95,13 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     if (md == GRPC_MDELEM_METHOD_POST) {
       calld->seen_method = 1;
       *calld->recv_idempotent_request = false;
-    } else if (md == GRPC_MDELEM_METHOD_PUT || md == GRPC_MDELEM_METHOD_GET) {
+      *calld->recv_cacheable_request = false;
+    } else if (md == GRPC_MDELEM_METHOD_PUT) {
       calld->seen_method = 1;
       *calld->recv_idempotent_request = true;
+    } else if (md == GRPC_MDELEM_METHOD_GET) {
+      calld->seen_method = 1;
+      *calld->recv_cacheable_request = true;
     } else if (md->key == GRPC_MDSTR_SCHEME) {
       calld->seen_scheme = 1;
     } else if (md == GRPC_MDELEM_TE_TRAILERS) {
@@ -254,8 +259,10 @@ static void hs_mutate_op(grpc_call_element *elem,
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     GPR_ASSERT(op->recv_idempotent_request != NULL);
+    GPR_ASSERT(op->recv_cacheable_request != NULL);
     calld->recv_initial_metadata = op->recv_initial_metadata;
     calld->recv_idempotent_request = op->recv_idempotent_request;
+    calld->recv_cacheable_request = op->recv_cacheable_request;
     calld->on_done_recv = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->hs_on_recv;
   }
