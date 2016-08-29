@@ -711,12 +711,6 @@ static grpc_error *init_settings_frame_parser(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-/*
-static int is_window_update_legal(int64_t window_update, int64_t window) {
-  return window + window_update < MAX_WINDOW;
-}
-*/
-
 static grpc_error *parse_frame_slice(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t, gpr_slice slice,
                                      int is_last) {

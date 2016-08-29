@@ -207,8 +207,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->ep = ep;
   /* one ref is for destroy */
   gpr_ref_init(&t->refs, 1);
-  /* ref is dropped at transport close() */
-  gpr_ref_init(&t->shutdown_ep_refs, 1);
   t->combiner = grpc_combiner_create(grpc_endpoint_get_workqueue(ep));
   t->peer_string = grpc_endpoint_get_peer(ep);
   t->endpoint_reading = 1;
@@ -377,19 +375,6 @@ static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
                         GRPC_ERROR_NONE);
 }
 
-/** block grpc_endpoint_shutdown being called until a paired
-    allow_endpoint_shutdown is made */
-static void prevent_endpoint_shutdown(grpc_chttp2_transport *t) {
-  gpr_ref(&t->shutdown_ep_refs);
-}
-
-static void allow_endpoint_shutdown_locked(grpc_exec_ctx *exec_ctx,
-                                           grpc_chttp2_transport *t) {
-  if (gpr_unref(&t->shutdown_ep_refs)) {
-    grpc_endpoint_shutdown(exec_ctx, t->ep);
-  }
-}
-
 static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
                                    grpc_error *error) {
@@ -397,7 +382,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     t->closed = 1;
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
                            GRPC_ERROR_REF(error), "close_transport");
-    allow_endpoint_shutdown_locked(exec_ctx, t);
+    grpc_endpoint_shutdown(exec_ctx, t->ep);
 
     /* flush writable stream list to avoid dangling references */
     grpc_chttp2_stream *s;
@@ -591,7 +576,6 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   grpc_chttp2_transport *t = gt;
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   if (!t->closed && grpc_chttp2_begin_write(exec_ctx, t)) {
-    prevent_endpoint_shutdown(t);
     grpc_exec_ctx_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE, NULL);
   } else {
     t->write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
@@ -620,7 +604,6 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                     grpc_error *error) {
   GPR_TIMER_BEGIN("terminate_writing_with_lock", 0);
   grpc_chttp2_transport *t = tp;
-  allow_endpoint_shutdown_locked(exec_ctx, t);
 
   if (error != GRPC_ERROR_NONE) {
     drop_connection(exec_ctx, t, GRPC_ERROR_REF(error));
@@ -1715,13 +1698,11 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   } else if (!t->closed) {
     keep_reading = true;
     GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
-    prevent_endpoint_shutdown(t);
   }
   gpr_slice_buffer_reset_and_unref(&t->read_buffer);
 
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer, &t->read_action_begin);
-    allow_endpoint_shutdown_locked(exec_ctx, t);
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");

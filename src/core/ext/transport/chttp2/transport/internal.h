@@ -184,9 +184,6 @@ struct grpc_chttp2_transport {
   grpc_endpoint *ep;
   char *peer_string;
 
-  /** when this drops to zero it's safe to shutdown the endpoint */
-  gpr_refcount shutdown_ep_refs;
-
   grpc_combiner *combiner;
 
   /** write execution state of the transport */
