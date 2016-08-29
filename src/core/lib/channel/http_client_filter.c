@@ -153,7 +153,7 @@ static void hc_mutate_op(grpc_call_element *elem,
 
   /* Decide which HTTP VERB to use */
   grpc_mdelem *method = GRPC_MDELEM_METHOD_POST;
-  if ((op->send_initial_metadata_flags &
+  if (op->send_initial_metadata != NULL && (op->send_initial_metadata_flags &
        GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
       op->send_message != NULL &&
       op->send_message->length < channeld->max_payload_size_for_get) {
@@ -189,6 +189,8 @@ static void hc_mutate_op(grpc_call_element *elem,
         break;
       }
     }
+    calld->on_complete = op->on_complete;
+    op->on_complete = &calld->hc_on_complete;
     op->send_message = NULL;
   }
 
@@ -215,11 +217,6 @@ static void hc_mutate_op(grpc_call_element *elem,
     calld->recv_initial_metadata = op->recv_initial_metadata;
     calld->on_done_recv = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->hc_on_recv;
-  }
-
-  if (op->on_complete != NULL && op->send_message != NULL) {
-    calld->on_complete = op->on_complete;
-    op->on_complete = &calld->hc_on_complete;
   }
 }
 

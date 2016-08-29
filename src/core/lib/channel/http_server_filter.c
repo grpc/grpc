@@ -53,6 +53,9 @@ typedef struct call_data {
   grpc_linked_mdelem status;
   grpc_linked_mdelem content_type;
 
+  /* flag to ensure payload_bin is delivered only once */
+  uint8_t payload_bin_delivered;
+
   grpc_metadata_batch *recv_initial_metadata;
   bool *recv_idempotent_request;
   bool *recv_cacheable_request;
@@ -221,10 +224,13 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
   call_data *calld = elem->call_data;
   /* Call recv_message_ready if we got the payload via the header field */
   if (calld->seen_payload_bin && calld->recv_message_ready != NULL) {
-    *calld->pp_recv_message = (grpc_byte_stream *)&calld->read_stream;
+    *calld->pp_recv_message = calld->payload_bin_delivered
+                                  ? NULL
+                                  : (grpc_byte_stream *)&calld->read_stream;
     calld->recv_message_ready->cb(exec_ctx, calld->recv_message_ready->cb_arg,
                                   err);
     calld->recv_message_ready = NULL;
+    calld->payload_bin_delivered = true;
   }
   calld->on_complete->cb(exec_ctx, calld->on_complete->cb_arg, err);
 }
