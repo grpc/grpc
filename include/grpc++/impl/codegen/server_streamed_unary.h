@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_FC_UNARY_H
-#define GRPCXX_IMPL_CODEGEN_FC_UNARY_H
+#ifndef GRPCXX_IMPL_CODEGEN_SERVER_STREAMED_UNARY_H
+#define GRPCXX_IMPL_CODEGEN_SERVER_STREAMED_UNARY_H
 
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/completion_queue.h>
@@ -47,19 +47,19 @@ namespace grpc {
 /// as though it were a single-ping-pong streaming call. The server can use
 /// the \a NextMessageSize method to determine an upper-bound on the size of
 /// the message.
-/// A key difference relative to streaming: an FCUnary must have exactly 1 Read
-/// and exactly 1 Write, in that order, to function correctly.
-/// Otherwise, the RPC is in error.
+/// A key difference relative to streaming: ServerUnaryStreamer
+///  must have exactly 1 Read and exactly 1 Write, in that order, to function
+/// correctly. Otherwise, the RPC is in error.
 template <class RequestType, class ResponseType>
-class FCUnary GRPC_FINAL
+class ServerUnaryStreamer GRPC_FINAL
     : public ServerReaderWriterInterface<ResponseType, RequestType> {
  public:
-  FCUnary(Call* call, ServerContext* ctx)
+  ServerUnaryStreamer(Call* call, ServerContext* ctx)
       : ServerReaderWriterInterface<ResponseType, RequestType>(call, ctx),
         read_done_(false),
         write_done_(false) {}
 
-  ~FCUnary() {}
+  ~ServerUnaryStreamer() {}
 
   bool Read(RequestType* request) GRPC_OVERRIDE {
     if (read_done_) {
@@ -87,4 +87,4 @@ class FCUnary GRPC_FINAL
 };
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_FC_UNARY_H
+#endif  // GRPCXX_IMPL_CODEGEN_SERVER_STREAMED_UNARY_H

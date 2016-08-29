@@ -130,10 +130,10 @@ grpc::string GetHeaderIncludes(File *file, const Parameters &params) {
     static const char *headers_strs[] = {
         "grpc++/impl/codegen/async_stream.h",
         "grpc++/impl/codegen/async_unary_call.h",
-        "grpc++/impl/codegen/fc_unary.h",
         "grpc++/impl/codegen/method_handler_impl.h",
         "grpc++/impl/codegen/proto_utils.h",
         "grpc++/impl/codegen/rpc_method.h",
+        "grpc++/impl/codegen/server_streamed_unary.h",
         "grpc++/impl/codegen/service_type.h",
         "grpc++/impl/codegen/status.h",
         "grpc++/impl/codegen/stub_options.h",
@@ -606,7 +606,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
   printer->Print(*vars, "};\n");
 }
 
-void PrintHeaderServerMethodFCUnary(
+void PrintHeaderServerMethodStreamedUnary(
     Printer *printer, const Method *method,
     std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Method"] = method->name();
@@ -615,7 +615,8 @@ void PrintHeaderServerMethodFCUnary(
   if (method->NoStreaming()) {
     printer->Print(*vars, "template <class BaseClass>\n");
     printer->Print(*vars,
-                   "class WithFCUnaryMethod_$Method$ : public BaseClass {\n");
+                   "class WithStreamedUnaryMethod_$Method$ : "
+		   "public BaseClass {\n");
     printer->Print(
         " private:\n"
         "  void BaseClassMustBeDerivedFromService(const Service *service) "
@@ -623,17 +624,16 @@ void PrintHeaderServerMethodFCUnary(
     printer->Print(" public:\n");
     printer->Indent();
     printer->Print(*vars,
-                   "WithFCUnaryMethod_$Method$() {\n"
-                   "  ::grpc::Service::MarkMethodFCUnary($Idx$,\n"
-                   "    new ::grpc::FCUnaryMethodHandler<Service, "
-                   "$Request$, "
-                   "$Response$>("
-                   "std::bind(&WithFCUnaryMethod_$Method$<BaseClass>::FC$"
-                   "Method$, this, std::placeholders::_1, "
-                   "std::placeholders::_2)));\n"
+                   "WithStreamedUnaryMethod_$Method$() {\n"
+                   "  ::grpc::Service::MarkMethodStreamedUnary($Idx$,\n"
+                   "    new ::grpc::StreamedUnaryHandler<$Request$, "
+                   "$Response$>(std::bind"
+		   "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
+                   "Streamed$Method$, this, std::placeholders::_1, "
+		   "std::placeholders::_2)));\n"
                    "}\n");
     printer->Print(*vars,
-                   "~WithFCUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
+                   "~WithStreamedUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
                    "  BaseClassMustBeDerivedFromService(this);\n"
                    "}\n");
     printer->Print(
@@ -646,10 +646,11 @@ void PrintHeaderServerMethodFCUnary(
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
     printer->Print(*vars,
-                   "// replace default version of this method with FCUnary\n"
-                   "virtual ::grpc::Status FC$Method$("
-                   "::grpc::ServerContext* context, ::grpc::FCUnary< "
-                   "$Request$,$Response$>* fc_unary)"
+                   "// replace default version of method with streamed unary\n"
+                   "virtual ::grpc::Status Streamed$Method$("
+                   "::grpc::ServerContext* context, "
+		   "::grpc::ServerUnaryStreamer< "
+                   "$Request$,$Response$>* server_unary_streamer)"
                    " = 0;\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
@@ -822,17 +823,18 @@ void PrintHeaderService(Printer *printer, const Service *service,
     PrintHeaderServerMethodGeneric(printer, service->method(i).get(), vars);
   }
 
-  // Server side - FC Unary
+  // Server side - Streamed Unary
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
-    PrintHeaderServerMethodFCUnary(printer, service->method(i).get(), vars);
+    PrintHeaderServerMethodStreamedUnary(printer, service->method(i).get(),
+					 vars);
   }
 
   printer->Print("typedef ");
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["method_name"] = service->method(i).get()->name();
     if (service->method(i)->NoStreaming()) {
-      printer->Print(*vars, "WithFCUnaryMethod_$method_name$<");
+      printer->Print(*vars, "WithStreamedUnaryMethod_$method_name$<");
     }
   }
   printer->Print("Service");
@@ -841,7 +843,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
       printer->Print(" >");
     }
   }
-  printer->Print(" FCUnaryService;\n");
+  printer->Print(" StreamedUnaryService;\n");
 
   printer->Outdent();
   printer->Print("};\n");
@@ -943,9 +945,9 @@ grpc::string GetSourceIncludes(File *file, const Parameters &params) {
         "grpc++/impl/codegen/async_unary_call.h",
         "grpc++/impl/codegen/channel_interface.h",
         "grpc++/impl/codegen/client_unary_call.h",
-        "grpc++/impl/codegen/fc_unary.h",
         "grpc++/impl/codegen/method_handler_impl.h",
         "grpc++/impl/codegen/rpc_service_method.h",
+        "grpc++/impl/codegen/server_streamed_unary.h",
         "grpc++/impl/codegen/service_type.h",
         "grpc++/impl/codegen/sync_stream.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));

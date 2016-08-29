@@ -75,8 +75,6 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class FCUnaryMethodHandler;
 class UnknownMethodHandler;
 
 class Call;
@@ -192,10 +190,8 @@ class ServerContext {
   friend class ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class BidiStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class FCUnaryMethodHandler;
+  template <class Streamer, bool WriteNeeded>
+  friend class TemplatedBidiStreamingHandler;
   friend class UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 

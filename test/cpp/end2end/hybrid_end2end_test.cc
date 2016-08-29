@@ -421,31 +421,33 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
   request_stream_handler_thread.join();
 }
 
-// Add a second service with one sync FCUnary method.
-class FCUnaryDupPkg : public duplicate::EchoTestService::WithFCUnaryMethod_Echo<
+// Add a second service with one sync streamed unary method.
+class StreamedUnaryDupPkg : public
+    duplicate::EchoTestService::WithStreamedUnaryMethod_Echo<
                           TestServiceImplDupPkg> {
  public:
-  Status FCEcho(ServerContext* context,
-                FCUnary<EchoRequest, EchoResponse>* fc_unary) GRPC_OVERRIDE {
+  Status StreamedEcho(ServerContext* context,
+		      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
+    GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
-    fc_unary->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "FC Unary Next Message Size is %u", next_msg_sz);
-    GPR_ASSERT(fc_unary->Read(&req));
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    GPR_ASSERT(fc_unary->Write(resp));
+    GPR_ASSERT(stream->Write(resp));
     return Status::OK;
   }
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncFCUnaryDupService) {
+       AsyncRequestStreamResponseStream_SyncStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
   SType service;
-  FCUnaryDupPkg dup_service;
+  StreamedUnaryDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, 8192);
   ResetStub();
   std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
@@ -458,30 +460,31 @@ TEST_F(HybridEnd2endTest,
   request_stream_handler_thread.join();
 }
 
-// Add a second service that is fully FCUnary
-class FullyFCUnaryDupPkg : public duplicate::EchoTestService::FCUnaryService {
+// Add a second service that is fully Streamed Unary
+class FullyStreamedUnaryDupPkg : public duplicate::EchoTestService::StreamedUnaryService {
  public:
-  Status FCEcho(ServerContext* context,
-                FCUnary<EchoRequest, EchoResponse>* fc_unary) GRPC_OVERRIDE {
+  Status StreamedEcho(ServerContext* context,
+		      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
+    GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
-    fc_unary->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "FC Unary Next Message Size is %u", next_msg_sz);
-    GPR_ASSERT(fc_unary->Read(&req));
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    GPR_ASSERT(fc_unary->Write(resp));
+    GPR_ASSERT(stream->Write(resp));
     return Status::OK;
   }
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncFullyFCUnaryDupService) {
+       AsyncRequestStreamResponseStream_SyncFullyStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
   SType service;
-  FullyFCUnaryDupPkg dup_service;
+  FullyStreamedUnaryDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, 8192);
   ResetStub();
   std::thread response_stream_handler_thread(HandleServerStreaming<SType>,

@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_FC_UNARY_H
-#define GRPCXX_SUPPORT_FC_UNARY_H
+#ifndef GRPCXX_SUPPORT_SERVER_STREAMED_UNARY_H
+#define GRPCXX_SUPPORT_SERVER_STREAMED_UNARY_H
 
-#include <grpc++/impl/codegen/fc_unary.h>
+#include <grpc++/impl/codegen/server_streamed_unary.h>
 
-#endif  // GRPCXX_SUPPORT_FC_UNARY_H
+#endif  // GRPCXX_SUPPORT_SERVER_STREAMED_UNARY_H

@@ -35,8 +35,8 @@
 #define GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc++/impl/codegen/fc_unary.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpc++/impl/codegen/server_streamed_unary.h>
 #include <grpc++/impl/codegen/sync_stream.h>
 
 namespace grpc {
@@ -168,20 +168,23 @@ class ServerStreamingHandler : public MethodHandler {
 };
 
 // A wrapper class of an application provided bidi-streaming handler.
-template <class ServiceType, class RequestType, class ResponseType>
-class BidiStreamingHandler : public MethodHandler {
+// This also applies to server-streamed implementation of a unary method
+// with the additional requirement that such methods must have done a
+// write for status to be ok
+// Since this is used by more than 1 class, the service is not passed in.
+// Instead, it is expected to be an implicitly-captured argument of func
+// (through bind or something along those lines)
+template <class Streamer, bool WriteNeeded>
+class TemplatedBidiStreamingHandler : public MethodHandler {
  public:
-  BidiStreamingHandler(
-      std::function<Status(ServiceType*, ServerContext*,
-                           ServerReaderWriter<ResponseType, RequestType>*)>
-          func,
-      ServiceType* service)
-      : func_(func), service_(service) {}
+  TemplatedBidiStreamingHandler(
+      std::function<Status(ServerContext*, Streamer*)>
+          func)
+    : func_(func), write_needed_(WriteNeeded) {}
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
-    ServerReaderWriter<ResponseType, RequestType> stream(param.call,
-                                                         param.server_context);
-    Status status = func_(service_, param.server_context, &stream);
+    Streamer stream(param.call, param.server_context);
+    Status status = func_(param.server_context, &stream);
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
@@ -190,6 +193,12 @@ class BidiStreamingHandler : public MethodHandler {
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
       }
+      if (write_needed_ && status.ok()) {
+	// If we needed a write but never did one, we need to mark the
+	// status as a fail
+	status = Status(IMPROPER_IMPLEMENTATION,
+			"Service did not provide response message");
+      }
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -197,46 +206,24 @@ class BidiStreamingHandler : public MethodHandler {
   }
 
  private:
-  std::function<Status(ServiceType*, ServerContext*,
-                       ServerReaderWriter<ResponseType, RequestType>*)>
-      func_;
-  ServiceType* service_;
+  std::function<Status(ServerContext*, Streamer*)>
+    func_;
+  const bool write_needed_;
 };
 
-// A wrapper class of an application provided rpc method handler
-// specifically to apply to the flow-controlled implementation of a unary
-// method.
-/// The argument to the constructor should be a member function already
-/// bound to the appropriate service instance. The declaration gets too
-/// complicated
-/// otherwise.
 template <class ServiceType, class RequestType, class ResponseType>
-class FCUnaryMethodHandler : public MethodHandler {
+  class BidiStreamingHandler : public TemplatedBidiStreamingHandler<ServerReaderWriter<ResponseType, RequestType>, false> {
  public:
-  FCUnaryMethodHandler(
-      std::function<Status(ServerContext*, FCUnary<RequestType, ResponseType>*)>
-          func)
-      : func_(func) {}
+  BidiStreamingHandler(std::function<Status(ServiceType*, ServerContext*,
+					    ServerReaderWriter<ResponseType,RequestType>*)> func, ServiceType* service): TemplatedBidiStreamingHandler<ServerReaderWriter<ResponseType, RequestType>,false>(std::bind(func, service, std::placeholders::_1, std::placeholders::_2)) {}
+ };
 
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
-    FCUnary<RequestType, ResponseType> fc_unary(param.call,
-                                                param.server_context);
-    Status status = func_(param.server_context, &fc_unary);
-    if (!param.server_context->sent_initial_metadata_) {
-      // means that the write never happened, which is bad
-    } else {
-      CallOpSet<CallOpServerSendStatus> ops;
-      ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
-      param.call->PerformOps(&ops);
-      param.call->cq()->Pluck(&ops);
-    }
-  }
-
- private:
-  // Application provided rpc handler function, already bound to its service.
-  std::function<Status(ServerContext*, FCUnary<RequestType, ResponseType>*)>
-      func_;
-};
+ template <class RequestType, class ResponseType>
+   class StreamedUnaryHandler : public TemplatedBidiStreamingHandler<ServerUnaryStreamer<RequestType, ResponseType>, true> {
+ public:
+ explicit StreamedUnaryHandler(std::function<Status(ServerContext*,
+					    ServerUnaryStreamer<RequestType,ResponseType>*)> func): TemplatedBidiStreamingHandler<ServerUnaryStreamer<RequestType, ResponseType>, true>(func) {}
+ };
 
 // Handle unknown method by returning UNIMPLEMENTED error.
 class UnknownMethodHandler : public MethodHandler {
