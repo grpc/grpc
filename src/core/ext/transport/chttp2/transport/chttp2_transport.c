@@ -865,13 +865,34 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->send_message != NULL) {
-    GPR_ASSERT(s->send_message_finished == NULL);
-    GPR_ASSERT(s->send_message == NULL);
+    if (s->write_closed) {
+      grpc_closure *temp_barrier = add_closure_barrier(op->send_message);
+      grpc_chttp2_complete_closure_step(
+          exec_ctx, t, s, &temp_barrier,
+          GRPC_ERROR_CREATE("Attempt to send message after stream was closed"));
+    } else {
+      uint8_t *frame_hdr =
+          gpr_slice_buffer_tiny_add(&s->flow_controlled_buffer, 5);
+      uint32_t flags = op->send_message->flags;
+      frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
+      size_t len = op->send_message->length;
+      frame_hdr[1] = (uint8_t)(len >> 24);
+      frame_hdr[2] = (uint8_t)(len >> 16);
+      frame_hdr[3] = (uint8_t)(len >> 8);
+      frame_hdr[4] = (uint8_t)(len);
+      grpc_chttp2_write_cb *write_cb = t->write_cb_pool;
+      if (write_cb != NULL) {
+        t->write_cb_pool = write_cb->next;
+      } else {
+        write_cb = gpr_malloc(sizeof(*write_cb));
+      }
+      write_cb->next = &s->on_write_finished_cbs;
+      write_cb->call_at_byte =
+          add_send_completion(t, s, (ssize_t)() - backup, true);
+    }
+
     s->send_message_finished = add_closure_barrier(on_complete);
     if (s->write_closed) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_message_finished,
-          GRPC_ERROR_CREATE("Attempt to send message after stream was closed"));
     } else {
       s->send_message = op->send_message;
       if (s->id != 0) {

@@ -150,6 +150,17 @@ typedef struct grpc_chttp2_outstanding_ping {
   struct grpc_chttp2_outstanding_ping *prev;
 } grpc_chttp2_outstanding_ping;
 
+typedef struct grpc_chttp2_write_cb {
+  size_t call_at_byte;
+  grpc_closure *closure;
+  struct grpc_chttp2_write_cb *next;
+} grpc_chttp2_write_cb;
+
+typedef struct grpc_chttp2_write_cb_list {
+  grpc_chttp2_write_cb *head;
+  grpc_chttp2_write_cb *tail;
+} grpc_chttp2_write_cb_list;
+
 /* forward declared in frame_data.h */
 struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
@@ -318,22 +329,8 @@ struct grpc_chttp2_transport {
   uint32_t goaway_last_stream_index;
   gpr_slice goaway_text;
 
-  /* closures to finish after writing */
-  grpc_closure **finish_after_writing;
-  size_t finish_after_writing_count;
-  size_t finish_after_writing_capacity;
+  grpc_chttp2_write_cb *write_cb_pool;
 };
-
-typedef enum {
-  GRPC_CHTTP2_CALL_WHEN_SCHEDULED,
-  GRPC_CHTTP2_CALL_WHEN_WRITTEN,
-} grpc_chttp2_call_write_cb_when;
-
-typedef struct grpc_chttp2_write_cb {
-  size_t call_at_byte;
-  grpc_closure *closure;
-  grpc_chttp2_call_write_cb_when when;
-} grpc_chttp2_write_cb;
 
 struct grpc_chttp2_stream {
   grpc_chttp2_transport *t;
@@ -422,8 +419,7 @@ struct grpc_chttp2_stream {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint8_t fetching;
   bool sent_initial_metadata;
-  uint8_t sent_message;
-  uint8_t sent_trailing_metadata;
+  bool sent_trailing_metadata;
   /** how much window should we announce? */
   uint32_t announce_window;
   gpr_slice_buffer flow_controlled_buffer;
@@ -431,9 +427,9 @@ struct grpc_chttp2_stream {
   size_t stream_fetched;
   grpc_closure finished_fetch;
 
-  grpc_chttp2_write_cb *write_cbs;
-  size_t write_cb_count;
-  size_t write_cb_capacity;
+  grpc_chttp2_write_cb_list on_write_scheduled_cbs;
+  grpc_chttp2_write_cb_list on_write_finished_cbs;
+  grpc_chttp2_write_cb_list finish_after_write;
 };
 
 /** Transport writing call flow:
