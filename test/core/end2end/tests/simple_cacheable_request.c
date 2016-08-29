@@ -235,7 +235,11 @@ static void test_cacheable_request_response_with_metadata_and_payload(
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST & call_details.flags);
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
+    // Our simple proxy does not support cacheable requests
+  } else {
+    GPR_ASSERT(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST & call_details.flags);
+  }
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
