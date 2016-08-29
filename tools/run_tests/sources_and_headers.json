@@ -4329,11 +4329,11 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src", 
-      "grpc_unsecure"
+      "grpc++_codegen_base_src"
     ], 
     "headers": [
       "include/grpc++/impl/codegen/core_codegen.h", 
@@ -6503,8 +6503,9 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc++_codegen_base", 
-      "grpc_unsecure"
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 

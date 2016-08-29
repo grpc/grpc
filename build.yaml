@@ -710,9 +710,8 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
-  deps:
-  - grpc_unsecure
   uses:
+  - grpc_base
   - grpc++_codegen_base
 - name: grpc++_codegen_base
   language: c++
