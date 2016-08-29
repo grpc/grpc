@@ -77,6 +77,13 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
+  gpr_log(
+      GPR_DEBUG,
+      "grpc_chttp2_begin_write: outbuf_len0=%" PRIdPTR
+      " dirtied_local_settings=%d sent_local_settings=%d qbuf_len=%" PRIdPTR,
+      t->outbuf.length, t->dirtied_local_settings, t->sent_local_settings,
+      t->qbuf.length);
+
   if (t->dirtied_local_settings && !t->sent_local_settings) {
     gpr_slice_buffer_add(
         &t->outbuf,
@@ -109,8 +116,13 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
 
-    GRPC_CHTTP2_FLOW_MOVE_STREAM("write", t, s, outgoing_window, s,
-                                 outgoing_window);
+    gpr_log(GPR_DEBUG,
+            "grpc_chttp2_begin_write[%d]: sent_initial_metadata=%d "
+            "send_initial_metadata=%p announce_window=%d fcbuf_len=%" PRIdPTR
+            " s_win=%" PRId64 " t_win=%" PRId64 " send_trailing_metadata=%p",
+            s->id, sent_initial_metadata, s->send_initial_metadata,
+            s->announce_window, s->flow_controlled_buffer.length,
+            s->outgoing_window, t->outgoing_window, s->send_trailing_metadata);
 
     /* send initial metadata if it's available */
     if (!sent_initial_metadata && s->send_initial_metadata) {
@@ -123,7 +135,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       now_writing = true;
     }
     /* send any window updates */
-    if (s->announce_window > 0 && s->send_initial_metadata == NULL) {
+    if (s->announce_window > 0 && s->sent_initial_metadata) {
       uint32_t announce = s->announce_window;
       gpr_slice_buffer_add(&t->outbuf,
                            grpc_chttp2_window_update_create(
@@ -156,7 +168,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                            send_bytes);
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
-            s->sent_trailing_metadata = 1;
+            s->sent_trailing_metadata = true;
           }
           s->sending_bytes += send_bytes;
           now_writing = true;

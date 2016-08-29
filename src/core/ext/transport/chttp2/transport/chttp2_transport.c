@@ -720,6 +720,8 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
 static grpc_closure *add_closure_barrier(grpc_closure *closure) {
+  gpr_log(GPR_DEBUG, "add_closure_barrier[%p]: scratch=%" PRIdPTR, closure,
+          closure->next_data.scratch);
   closure->next_data.scratch += CLOSURE_BARRIER_FIRST_REF_BIT;
   return closure;
 }
@@ -734,6 +736,8 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
     return;
   }
+  gpr_log(GPR_DEBUG, "complete_closure_step[%p]: scratch=%" PRIdPTR, closure,
+          closure->next_data.scratch);
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
   if (error != GRPC_ERROR_NONE) {
     if (closure->error == GRPC_ERROR_NONE) {
@@ -772,6 +776,10 @@ static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
 static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s) {
+  gpr_log(GPR_DEBUG,
+          "continue_fetching_send_locked[%d]: fsm=%p fetched=%d tgt=%d", s->id,
+          s->fetching_send_message, s->fetched_send_message_length,
+          s->fetching_send_message->length);
   if (s->fetching_send_message == NULL) {
     /* Stream was cancelled before message fetch completed */
     abort(); /* TODO(ctiller): what cleanup here? */
