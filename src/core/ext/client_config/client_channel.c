@@ -233,7 +233,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver,
+    grpc_resolver_next(exec_ctx, chand->resolver, NULL,
                        &chand->incoming_configuration,
                        &chand->on_config_changed);
     gpr_mu_unlock(&chand->mu_config);
@@ -411,7 +411,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = 1;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver,
+    grpc_resolver_next(exec_ctx, chand->resolver, calld->pollent,
                        &chand->incoming_configuration,
                        &chand->on_config_changed);
   }
@@ -523,13 +523,18 @@ void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!chand->resolver);
   chand->resolver = resolver;
   GRPC_RESOLVER_REF(resolver, "channel");
-  if (!grpc_closure_list_empty(chand->waiting_for_config_closures) ||
-      chand->exit_idle_when_lb_policy_arrives) {
-    chand->started_resolving = 1;
-    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, resolver, &chand->incoming_configuration,
-                       &chand->on_config_changed);
-  }
+  // TODO(zyc): check if the following part is needed
+  // if (!grpc_closure_list_empty(chand->waiting_for_config_closures) ||
+  //     chand->exit_idle_when_lb_policy_arrives) {
+  //   chand->started_resolving = 1;
+  //   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
+  //   grpc_resolver_next(exec_ctx, resolver, &chand->incoming_configuration,
+  //                      &chand->on_config_changed);
+  //                        gpr_log(GPR_ERROR, "%" PRIuPTR "%" PRIuPTR "%"
+  //                        PRIuPTR, chand->interested_parties->pollset_count,
+  //                        chand->interested_parties->pollset_set_count,
+  //                        chand->interested_parties->fd_count);
+  // }
   gpr_mu_unlock(&chand->mu_config);
 }
 
@@ -547,7 +552,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
       if (!chand->started_resolving && chand->resolver != NULL) {
         GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
         chand->started_resolving = 1;
-        grpc_resolver_next(exec_ctx, chand->resolver,
+        grpc_resolver_next(exec_ctx, chand->resolver, NULL,
                            &chand->incoming_configuration,
                            &chand->on_config_changed);
       }

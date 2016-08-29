@@ -45,6 +45,7 @@ typedef struct grpc_resolver_vtable grpc_resolver_vtable;
     objects */
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
+  grpc_pollset_set *pollset_set;
   gpr_refcount refs;
 };
 
@@ -53,7 +54,8 @@ struct grpc_resolver_vtable {
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*channel_saw_error)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*next)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-               grpc_client_config **target_config, grpc_closure *on_complete);
+               grpc_polling_entity *pollent, grpc_client_config **target_config,
+               grpc_closure *on_complete);
 };
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
@@ -88,6 +90,7 @@ void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
     If resolution is fatally broken, set *target_config to NULL and
     schedule on_complete. */
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                        grpc_polling_entity *pollent,
                         grpc_client_config **target_config,
                         grpc_closure *on_complete);
 

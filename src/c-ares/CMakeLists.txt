@@ -1,5 +1,8 @@
-#!/bin/sh
-# Copyright 2015, Google Inc.
+# c-ares cmake file for gRPC
+#
+# This is currently very experimental, and unsupported.
+#
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,19 +31,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/proto            \
-  src/zlib             \
-  src/c-ares           \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/qps"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+string(TOLOWER ${CMAKE_SYSTEM_NAME} cares_system_name)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/c-ares)
+
+if(${cares_system_name} MATCHES windows)
+  add_definitions(-DCARES_STATICLIB=1)
+  add_definitions(-DWIN32_LEAN_AND_MEAN=1)
+else()
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/config_${cares_system_name})
+  add_definitions(-DHAVE_CONFIG_H=1)
+endif()
+
+file(GLOB lib_sources ../../third_party/c-ares/*.c)
+add_library(cares ${lib_sources})

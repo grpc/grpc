@@ -31,6 +31,7 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -39,6 +40,7 @@
 
 #include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
@@ -85,6 +87,8 @@ typedef struct {
 
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
+
+  grpc_polling_entity *pollent;
 } dns_resolver;
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -130,24 +134,6 @@ static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&r->mu);
 }
 
-static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                     grpc_polling_entity *pollent,
-                     grpc_client_config **target_config,
-                     grpc_closure *on_complete) {
-  dns_resolver *r = (dns_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
-  GPR_ASSERT(!r->next_completion);
-  r->next_completion = on_complete;
-  r->target_config = target_config;
-  if (r->resolved_version == 0 && !r->resolving) {
-    gpr_backoff_reset(&r->backoff_state);
-    dns_start_resolving_locked(exec_ctx, r);
-  } else {
-    dns_maybe_finish_next_locked(exec_ctx, r);
-  }
-  gpr_mu_unlock(&r->mu);
-}
-
 static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   dns_resolver *r = arg;
@@ -185,6 +171,11 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_client_config_set_lb_policy(config, lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
     }
+    if (r->pollent) {
+      grpc_polling_entity_del_from_pollset_set(exec_ctx, r->pollent,
+                                               r->base.pollset_set);
+      r->pollent = NULL;
+    }
     grpc_resolved_addresses_destroy(addresses);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -212,8 +203,39 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   r->resolved_version++;
   dns_maybe_finish_next_locked(exec_ctx, r);
   gpr_mu_unlock(&r->mu);
-
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "dns-resolving");
+}
+
+static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
+                     grpc_polling_entity *pollent,
+                     grpc_client_config **target_config,
+                     grpc_closure *on_complete) {
+  dns_resolver *r = (dns_resolver *)resolver;
+  gpr_mu_lock(&r->mu);
+  GPR_ASSERT(!r->next_completion);
+  r->next_completion = on_complete;
+  r->target_config = target_config;
+  if (r->resolved_version == 0 && !r->resolving) {
+    gpr_backoff_reset(&r->backoff_state);
+    GRPC_RESOLVER_REF(&r->base, "dns-resolving");
+    GPR_ASSERT(!r->resolving);
+    r->resolving = 1;
+    r->addresses = NULL;
+    r->pollent = NULL;
+    if (grpc_ares_need_poll_entity() && pollent) {
+      r->pollent = pollent;
+      grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
+                                             r->base.pollset_set);
+    } else {
+      gpr_log(GPR_DEBUG, "dns_next is called without giving a pollent");
+    }
+    grpc_resolve_address_ares(
+        exec_ctx, r->name, r->default_port, r->base.pollset_set,
+        grpc_closure_create(dns_on_resolved, r), &r->addresses);
+  } else {
+    dns_maybe_finish_next_locked(exec_ctx, r);
+  }
+  gpr_mu_unlock(&r->mu);
 }
 
 static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
@@ -222,8 +244,9 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = 1;
   r->addresses = NULL;
-  grpc_resolve_address(exec_ctx, r->name, r->default_port,
-                       grpc_closure_create(dns_on_resolved, r), &r->addresses);
+  grpc_resolve_address_ares(
+      exec_ctx, r->name, r->default_port, r->base.pollset_set,
+      grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
 static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
@@ -243,6 +266,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
+  grpc_ares_cleanup();
   if (r->resolved_config) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
@@ -257,10 +281,17 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
                                  const char *default_port,
                                  const char *lb_policy_name) {
   dns_resolver *r;
+  grpc_error *error = GRPC_ERROR_NONE;
   const char *path = args->uri->path;
 
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
+    return NULL;
+  }
+
+  error = grpc_ares_init();
+  if (error != GRPC_ERROR_NONE) {
+    GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
     return NULL;
   }
 
@@ -310,8 +341,8 @@ static grpc_resolver_factory *dns_resolver_factory_create() {
   return &dns_resolver_factory;
 }
 
-void grpc_resolver_dns_native_init(void) {
+void grpc_resolver_dns_ares_init(void) {
   grpc_register_resolver_type(dns_resolver_factory_create());
 }
 
-void grpc_resolver_dns_native_shutdown(void) {}
+void grpc_resolver_dns_ares_shutdown(void) {}
