@@ -457,7 +457,8 @@ namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody GRPC_FINAL {
  public:
-  ServerReaderWriterBody(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerReaderWriterBody(Call* call, ServerContext* ctx)
+      : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
@@ -512,8 +513,7 @@ class ServerReaderWriterBody GRPC_FINAL {
 template <class W, class R>
 class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
  public:
-  ServerReaderWriter(Call* call, ServerContext* ctx)
-      : body_(call, ctx) {}
+  ServerReaderWriter(Call* call, ServerContext* ctx) : body_(call, ctx) {}
 
   void SendInitialMetadata() GRPC_OVERRIDE { body_.SendInitialMetadata(); }
 
@@ -527,9 +527,9 @@ class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
   bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
     return body_.Write(msg, options);
   }
-  
+
  private:
-  internal::ServerReaderWriterBody<W,R> body_;
+  internal::ServerReaderWriterBody<W, R> body_;
 };
 
 /// A class to represent a flow-controlled unary call. This is something
@@ -573,7 +573,7 @@ class ServerUnaryStreamer GRPC_FINAL
   }
 
  private:
-  internal::ServerReaderWriterBody<ResponseType,RequestType> body_;
+  internal::ServerReaderWriterBody<ResponseType, RequestType> body_;
   bool read_done_;
   bool write_done_;
 };
