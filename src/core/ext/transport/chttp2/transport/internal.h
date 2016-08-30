@@ -339,13 +339,6 @@ struct grpc_chttp2_stream {
       As the upper layer offers more bytes, this value increases.
       As bytes are read, this value decreases. */
   uint32_t max_recv_bytes;
-  /** The number of bytes the upper layer has offered to read but we have
-      not yet announced to HTTP2 flow control.
-      As the upper layers offer to read more bytes, this value increases.
-      As we advertise incoming flow control window, this value decreases. */
-  /* TODO(ctiller): remove this, it's equivalent to incoming_window now
-  uint32_t unannounced_incoming_window_for_parse; */
-  uint32_t unannounced_incoming_window_for_writing;
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
   grpc_closure *send_initial_metadata_finished;
