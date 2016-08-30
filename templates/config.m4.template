@@ -7,9 +7,9 @@
     dnl Write more examples of tests here...
 
     dnl # --with-grpc -> add include path
-    PHP_ADD_INCLUDE(../../grpc/include)
-    PHP_ADD_INCLUDE(../../grpc/src/php/ext/grpc)
-    PHP_ADD_INCLUDE(../../grpc/third_party/boringssl/include)
+    PHP_ADD_INCLUDE(include)
+    PHP_ADD_INCLUDE(src/php/ext/grpc)
+    PHP_ADD_INCLUDE(third_party/boringssl/include)
 
     LIBS="-lpthread $LIBS"
 
