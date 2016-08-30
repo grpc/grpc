@@ -46,7 +46,7 @@ class RpcMethod {
     NORMAL_RPC = 0,
     CLIENT_STREAMING,  // request streaming
     SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
+    TWODI_STREAMING
   };
 
   RpcMethod(const char* name, RpcType type)

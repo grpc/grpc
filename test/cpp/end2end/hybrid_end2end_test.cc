@@ -248,7 +248,7 @@ class HybridEnd2endTest : public ::testing::Test {
     SendEcho();
     SendSimpleClientStreaming();
     SendSimpleServerStreaming();
-    SendBidiStreaming();
+    SendTwodiStreaming();
   }
 
   void SendEcho() {
@@ -314,14 +314,14 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(s.ok());
   }
 
-  void SendBidiStreaming() {
+  void SendTwodiStreaming() {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
     context.set_fail_fast(false);
     grpc::string msg("hello");
 
-    auto stream = stub_->BidiStream(&context);
+    auto stream = stub_->TwodiStream(&context);
 
     request.set_message(msg + "0");
     EXPECT_TRUE(stream->Write(request));

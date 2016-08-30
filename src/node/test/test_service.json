@@ -44,7 +44,7 @@
                     "response": "Response",
                     "options": {}
                 },
-                "BidiStream": {
+                "TwodiStream": {
                     "request": "Request",
                     "response": "Response",
                     "options": {}

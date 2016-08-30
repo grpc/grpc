@@ -88,7 +88,7 @@ p(sprintf('The first %d positive integers sum to: %d',
           $limit, $response->getNum()));
 p('');
 
-p('Running bidi-streaming test:');
+p('Running twodi-streaming test:');
 $call = $client->DivMany();
 for ($i = 0; $i < 7; ++$i) {
     $div_arg = new math\DivArgs();

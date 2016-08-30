@@ -783,7 +783,7 @@ namespace routeguide {
      */
     public function RouteChat($metadata = array())
     {
-        return $this->_bidiRequest('/routeguide.RouteGuide/RouteChat', '\routeguide\RouteNote::deserialize', $metadata);
+        return $this->_twodiRequest('/routeguide.RouteGuide/RouteChat', '\routeguide\RouteNote::deserialize', $metadata);
     }
   }
 }

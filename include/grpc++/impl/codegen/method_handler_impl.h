@@ -166,11 +166,11 @@ class ServerStreamingHandler : public MethodHandler {
   ServiceType* service_;
 };
 
-// A wrapper class of an application provided bidi-streaming handler.
+// A wrapper class of an application provided twodi-streaming handler.
 template <class ServiceType, class RequestType, class ResponseType>
-class BidiStreamingHandler : public MethodHandler {
+class TwodiStreamingHandler : public MethodHandler {
  public:
-  BidiStreamingHandler(
+  TwodiStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*,
                            ServerReaderWriter<ResponseType, RequestType>*)>
           func,

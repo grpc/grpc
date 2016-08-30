@@ -311,14 +311,14 @@ class BaseStub
      * @param callable $deserialize A function that deserializes the responses
      * @param array    $metadata    A metadata map to send to the server
      *
-     * @return BidiStreamingSurfaceActiveCall The active call object
+     * @return TwodiStreamingSurfaceActiveCall The active call object
      */
-    public function _bidiRequest($method,
+    public function _twodiRequest($method,
                                  callable $deserialize,
                                  $metadata = [],
                                  $options = [])
     {
-        $call = new BidiStreamingCall($this->channel,
+        $call = new TwodiStreamingCall($this->channel,
                                       $method,
                                       $deserialize,
                                       $options);

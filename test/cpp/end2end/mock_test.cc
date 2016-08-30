@@ -136,12 +136,12 @@ class MockStub : public EchoTestService::StubInterface {
       void* tag) GRPC_OVERRIDE {
     return nullptr;
   }
-  ClientReaderWriterInterface<EchoRequest, EchoResponse>* BidiStreamRaw(
+  ClientReaderWriterInterface<EchoRequest, EchoResponse>* TwodiStreamRaw(
       ClientContext* context) GRPC_OVERRIDE {
     return new MockClientReaderWriter<EchoRequest, EchoResponse>();
   }
   ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>*
-  AsyncBidiStreamRaw(ClientContext* context, CompletionQueue* cq,
+  AsyncTwodiStreamRaw(ClientContext* context, CompletionQueue* cq,
                      void* tag) GRPC_OVERRIDE {
     return nullptr;
   }
@@ -166,14 +166,14 @@ class FakeClient {
     EXPECT_TRUE(s.ok());
   }
 
-  void DoBidiStream() {
+  void DoTwodiStream() {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
     grpc::string msg("hello");
 
     std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
-        stream = stub_->BidiStream(&context);
+        stream = stub_->TwodiStream(&context);
 
     request.set_message(msg + "0");
     EXPECT_TRUE(stream->Write(request));
@@ -211,7 +211,7 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
+  Status TwodiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
     EchoRequest request;
@@ -264,13 +264,13 @@ TEST_F(MockTest, SimpleRpc) {
   client.DoEcho();
 }
 
-TEST_F(MockTest, BidiStream) {
+TEST_F(MockTest, TwodiStream) {
   ResetStub();
   FakeClient client(stub_.get());
-  client.DoBidiStream();
+  client.DoTwodiStream();
   MockStub stub;
   client.ResetStub(&stub);
-  client.DoBidiStream();
+  client.DoTwodiStream();
 }
 
 }  // namespace

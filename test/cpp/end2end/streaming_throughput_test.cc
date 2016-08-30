@@ -101,7 +101,7 @@ namespace testing {
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  static void BidiStream_Sender(
+  static void TwodiStream_Sender(
       ServerReaderWriter<EchoResponse, EchoRequest>* stream,
       gpr_atm* should_exit) {
     EchoResponse response;
@@ -119,7 +119,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   // Only implement the one method we will be calling for brevity.
-  Status BidiStream(ServerContext* context,
+  Status TwodiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
     EchoRequest request;
@@ -127,7 +127,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
 
     std::thread sender(
-        std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
+        std::bind(&TestServiceImpl::TwodiStream_Sender, stream, &should_exit));
 
     while (stream->Read(&request)) {
       struct timespec tv = {0, 3000000};  // 3 ms
@@ -180,7 +180,7 @@ static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
 TEST_F(End2endTest, StreamingThroughput) {
   ResetStub();
   grpc::ClientContext context;
-  auto stream = stub_->BidiStream(&context);
+  auto stream = stub_->TwodiStream(&context);
 
   auto reader = stream.get();
   std::thread receiver(std::bind(Drainer, reader));

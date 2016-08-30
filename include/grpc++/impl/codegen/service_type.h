@@ -120,7 +120,7 @@ class Service {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncBidiStreaming(int index, ServerContext* context,
+  void RequestAsyncTwodiStreaming(int index, ServerContext* context,
                                  ServerAsyncStreamingInterface* stream,
                                  CompletionQueue* call_cq,
                                  ServerCompletionQueue* notification_cq,

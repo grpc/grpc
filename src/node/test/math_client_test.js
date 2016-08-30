@@ -137,7 +137,7 @@ describe('Math client', function() {
       done();
     });
   });
-  it('should handle an error from a bidi request', function(done) {
+  it('should handle an error from a twodi request', function(done) {
     var call = math_client.divMany();
     call.on('data', function(value) {
       assert.fail(value, undefined, 'Unexpected data response on failing call',

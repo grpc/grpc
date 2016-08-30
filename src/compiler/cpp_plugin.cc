@@ -71,7 +71,7 @@ class ProtoBufMethod : public grpc_cpp_generator::Method {
     return !method_->client_streaming() && method_->server_streaming();
   }
 
-  bool BidiStreaming() const {
+  bool TwodiStreaming() const {
     return method_->client_streaming() && method_->server_streaming();
   }
 

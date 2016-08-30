@@ -32,22 +32,22 @@ require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
-  # The BiDiCall class orchestrates exection of a BiDi stream on a client or
+  # The TwoDiCall class orchestrates exection of a TwoDi stream on a client or
   # server.
-  class BidiCall
+  class TwodiCall
     include Core::CallOps
     include Core::StatusCodes
     include Core::TimeConsts
 
-    # Creates a BidiCall.
+    # Creates a TwodiCall.
     #
-    # BidiCall should only be created after a call is accepted.  That means
+    # TwodiCall should only be created after a call is accepted.  That means
     # different things on a client and a server.  On the client, the call is
     # accepted after call.invoke. On the server, this is after call.accept.
     #
     # #initialize cannot determine if the call is accepted or not; so if a
     # call that's not accepted is used here, the error won't be visible until
-    # the BidiCall#run is called.
+    # the TwodiCall#run is called.
     #
     # deadline is the absolute deadline for the call.
     #
@@ -71,7 +71,7 @@ module GRPC
       @req_view = req_view
     end
 
-    # Begins orchestration of the Bidi stream for a client sending requests.
+    # Begins orchestration of the Twodi stream for a client sending requests.
     #
     # The method either returns an Enumerator of the responses, or accepts a
     # block that can be invoked with each response.
@@ -85,7 +85,7 @@ module GRPC
       read_loop(&blk)
     end
 
-    # Begins orchestration of the Bidi stream for a server generating replies.
+    # Begins orchestration of the Twodi stream for a server generating replies.
     #
     # N.B. gen_each_reply is a func(Enumerable<Requests>)
     #
@@ -95,7 +95,7 @@ module GRPC
     # This does not mean that must necessarily be one.  E.g, the replies
     # produced by gen_each_reply could ignore the received_msgs
     #
-    # @param gen_each_reply [Proc] generates the BiDi stream replies.
+    # @param gen_each_reply [Proc] generates the TwoDi stream replies.
     def run_on_server(gen_each_reply)
       # Pass in the optional call object parameter if possible
       if gen_each_reply.arity == 1
@@ -114,14 +114,14 @@ module GRPC
     END_OF_READS = :end_of_reads
     END_OF_WRITES = :end_of_writes
 
-    # signals that bidi operation is complete
+    # signals that twodi operation is complete
     def notify_done
       return unless @op_notifier
-      GRPC.logger.debug("bidi-notify-done: notifying  #{@op_notifier}")
+      GRPC.logger.debug("twodi-notify-done: notifying  #{@op_notifier}")
       @op_notifier.notify(self)
     end
 
-    # signals that a bidi operation is complete (read + write)
+    # signals that a twodi operation is complete (read + write)
     def finished
       @done_mutex.synchronize do
         return unless @reads_complete && @writes_complete && !@complete
@@ -143,10 +143,10 @@ module GRPC
     end
 
     def write_loop(requests, is_client: true)
-      GRPC.logger.debug('bidi-write-loop: starting')
+      GRPC.logger.debug('twodi-write-loop: starting')
       count = 0
       requests.each do |req|
-        GRPC.logger.debug("bidi-write-loop: #{count}")
+        GRPC.logger.debug("twodi-write-loop: #{count}")
         count += 1
         payload = @marshal.call(req)
         # Fails if status already received
@@ -156,23 +156,23 @@ module GRPC
         rescue GRPC::Core::CallError => e
           # This is almost definitely caused by a status arriving while still
           # writing. Don't re-throw the error
-          GRPC.logger.warn('bidi-write-loop: ended with error')
+          GRPC.logger.warn('twodi-write-loop: ended with error')
           GRPC.logger.warn(e)
           break
         end
       end
-      GRPC.logger.debug("bidi-write-loop: #{count} writes done")
+      GRPC.logger.debug("twodi-write-loop: #{count} writes done")
       if is_client
-        GRPC.logger.debug("bidi-write-loop: client sent #{count}, waiting")
+        GRPC.logger.debug("twodi-write-loop: client sent #{count}, waiting")
         @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
-        GRPC.logger.debug('bidi-write-loop: done')
+        GRPC.logger.debug('twodi-write-loop: done')
         notify_done
         @writes_complete = true
         finished
       end
-      GRPC.logger.debug('bidi-write-loop: finished')
+      GRPC.logger.debug('twodi-write-loop: finished')
     rescue StandardError => e
-      GRPC.logger.warn('bidi-write-loop: failed')
+      GRPC.logger.warn('twodi-write-loop: failed')
       GRPC.logger.warn(e)
       notify_done
       @writes_complete = true
@@ -184,27 +184,27 @@ module GRPC
     def read_loop(is_client: true)
       return enum_for(:read_loop,
                       is_client: is_client) unless block_given?
-      GRPC.logger.debug('bidi-read-loop: starting')
+      GRPC.logger.debug('twodi-read-loop: starting')
       begin
         count = 0
         # queue the initial read before beginning the loop
         loop do
-          GRPC.logger.debug("bidi-read-loop: #{count}")
+          GRPC.logger.debug("twodi-read-loop: #{count}")
           count += 1
           batch_result = read_using_run_batch
 
           # handle the next message
           if batch_result.message.nil?
-            GRPC.logger.debug("bidi-read-loop: null batch #{batch_result}")
+            GRPC.logger.debug("twodi-read-loop: null batch #{batch_result}")
 
             if is_client
               batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
               @call.status = batch_result.status
               batch_result.check_status
-              GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
+              GRPC.logger.debug("twodi-read-loop: done status #{@call.status}")
             end
 
-            GRPC.logger.debug('bidi-read-loop: done reading!')
+            GRPC.logger.debug('twodi-read-loop: done reading!')
             break
           end
 
@@ -212,11 +212,11 @@ module GRPC
           yield res
         end
       rescue StandardError => e
-        GRPC.logger.warn('bidi: read-loop failed')
+        GRPC.logger.warn('twodi: read-loop failed')
         GRPC.logger.warn(e)
         raise e
       end
-      GRPC.logger.debug('bidi-read-loop: finished')
+      GRPC.logger.debug('twodi-read-loop: finished')
       @reads_complete = true
       finished
     end

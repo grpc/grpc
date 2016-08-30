@@ -161,14 +161,14 @@ enum MethodType {
   METHODTYPE_NO_STREAMING,
   METHODTYPE_CLIENT_STREAMING,
   METHODTYPE_SERVER_STREAMING,
-  METHODTYPE_BIDI_STREAMING
+  METHODTYPE_TWODI_STREAMING
 };
 
 inline MethodType GetMethodType(
     const grpc::protobuf::MethodDescriptor *method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
-      return METHODTYPE_BIDI_STREAMING;
+      return METHODTYPE_TWODI_STREAMING;
     } else {
       return METHODTYPE_CLIENT_STREAMING;
     }

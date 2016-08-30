@@ -231,13 +231,13 @@ describe GenericService do
         rpc :AnRpc, GoodMsg, GoodMsg
         rpc :AServerStreamer, GoodMsg, stream(GoodMsg)
         rpc :AClientStreamer, stream(GoodMsg), GoodMsg
-        rpc :ABidiStreamer, stream(GoodMsg), stream(GoodMsg)
+        rpc :ATwodiStreamer, stream(GoodMsg), stream(GoodMsg)
       end
       client_class = s.rpc_stub_class
       expect(client_class.instance_methods).to include(:an_rpc)
       expect(client_class.instance_methods).to include(:a_server_streamer)
       expect(client_class.instance_methods).to include(:a_client_streamer)
-      expect(client_class.instance_methods).to include(:a_bidi_streamer)
+      expect(client_class.instance_methods).to include(:a_twodi_streamer)
     end
 
     describe 'the generated instances' do
@@ -247,7 +247,7 @@ describe GenericService do
           rpc :AnRpc, GoodMsg, GoodMsg
           rpc :AServerStreamer, GoodMsg, stream(GoodMsg)
           rpc :AClientStreamer, stream(GoodMsg), GoodMsg
-          rpc :ABidiStreamer, stream(GoodMsg), stream(GoodMsg)
+          rpc :ATwodiStreamer, stream(GoodMsg), stream(GoodMsg)
         end
         client_class = s.rpc_stub_class
         blk = proc do
@@ -262,14 +262,14 @@ describe GenericService do
           rpc :AnRpc, GoodMsg, GoodMsg
           rpc :AServerStreamer, GoodMsg, stream(GoodMsg)
           rpc :AClientStreamer, stream(GoodMsg), GoodMsg
-          rpc :ABidiStreamer, stream(GoodMsg), stream(GoodMsg)
+          rpc :ATwodiStreamer, stream(GoodMsg), stream(GoodMsg)
         end
         client_class = s.rpc_stub_class
         o = client_class.new('fakehostname', :this_channel_is_insecure)
         expect(o.methods).to include(:an_rpc)
-        expect(o.methods).to include(:a_bidi_streamer)
+        expect(o.methods).to include(:a_twodi_streamer)
         expect(o.methods).to include(:a_client_streamer)
-        expect(o.methods).to include(:a_bidi_streamer)
+        expect(o.methods).to include(:a_twodi_streamer)
       end
     end
   end

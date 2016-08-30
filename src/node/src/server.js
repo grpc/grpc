@@ -558,7 +558,7 @@ function handleClientStreaming(call, handler, metadata) {
  * @param {Object} handler Request handler object for the method that was called
  * @param {Metadata} metadata Metadata from the client
  */
-function handleBidiStreaming(call, handler, metadata) {
+function handleTwodiStreaming(call, handler, metadata) {
   var stream = new ServerDuplexStream(call, handler.serialize,
                                       handler.deserialize);
   stream.waitForCancel();
@@ -570,7 +570,7 @@ var streamHandlers = {
   unary: handleUnary,
   server_stream: handleServerStreaming,
   client_stream: handleClientStreaming,
-  bidi: handleBidiStreaming
+  twodi: handleTwodiStreaming
 };
 
 /**
@@ -699,7 +699,7 @@ var defaultHandler = {
   server_stream: function(call) {
     call.emit('error', unimplementedStatusResponse);
   },
-  bidi: function(call) {
+  twodi: function(call) {
     call.emit('error', unimplementedStatusResponse);
   }
 };
@@ -722,7 +722,7 @@ Server.prototype.addService = function(service, implementation) {
     var method_type;
     if (attrs.requestStream) {
       if (attrs.responseStream) {
-        method_type = 'bidi';
+        method_type = 'twodi';
       } else {
         method_type = 'client_stream';
       }

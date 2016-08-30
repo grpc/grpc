@@ -90,7 +90,7 @@ TEST_F(CrashTest, KillBeforeWrite) {
   ClientContext context;
   context.set_fail_fast(false);
 
-  auto stream = stub->BidiStream(&context);
+  auto stream = stub->TwodiStream(&context);
 
   request.set_message("Hello");
   EXPECT_TRUE(stream->Write(request));
@@ -116,7 +116,7 @@ TEST_F(CrashTest, KillAfterWrite) {
   ClientContext context;
   context.set_fail_fast(false);
 
-  auto stream = stub->BidiStream(&context);
+  auto stream = stub->TwodiStream(&context);
 
   request.set_message("Hello");
   EXPECT_TRUE(stream->Write(request));

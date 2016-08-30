@@ -193,10 +193,10 @@ module GRPC
                 GRPC.logger.debug("calling #{@host}:#{route}")
                 server_streamer(route, req, marshal, unmarshal, metadata, &blk)
               end
-            else  # is a bidi_stream
+            else  # is a twodi_stream
               define_method(mth_name) do |reqs, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                bidi_streamer(route, reqs, marshal, unmarshal, metadata, &blk)
+                twodi_streamer(route, reqs, marshal, unmarshal, metadata, &blk)
               end
             end
           end

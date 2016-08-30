@@ -175,7 +175,7 @@ def nulls(l)
   [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
-# a PingPongPlayer implements the ping pong bidi test.
+# a PingPongPlayer implements the ping pong twodi test.
 class PingPongPlayer
   include Grpc::Testing
   include Grpc::Testing::PayloadType

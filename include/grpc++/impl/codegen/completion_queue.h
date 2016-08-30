@@ -77,7 +77,7 @@ class ClientStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
-class BidiStreamingHandler;
+class TwodiStreamingHandler;
 class UnknownMethodHandler;
 
 class Channel;
@@ -186,7 +186,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ServerStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class BidiStreamingHandler;
+  friend class TwodiStreamingHandler;
   friend class UnknownMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;

@@ -196,11 +196,11 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
 }
 
 // One ping, one pong.
-TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
+TEST_F(GenericEnd2endTest, SimpleTwodiStreaming) {
   ResetStub();
 
   const grpc::string kMethodName(
-      "/grpc.cpp.test.util.EchoTestService/BidiStream");
+      "/grpc.cpp.test.util.EchoTestService/TwodiStream");
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;

@@ -475,7 +475,7 @@ class End2endServerTryCancelTest : public End2endTest {
   //   all the messages from/to the client
   //
   // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
-  void TestBidiStreamServerCancel(ServerTryCancelRequestPhase server_try_cancel,
+  void TestTwodiStreamServerCancel(ServerTryCancelRequestPhase server_try_cancel,
                                   int num_messages) {
     ResetStub();
     EchoRequest request;
@@ -486,7 +486,7 @@ class End2endServerTryCancelTest : public End2endTest {
     context.AddMetadata(kServerTryCancelRequest,
                         grpc::to_string(server_try_cancel));
 
-    auto stream = stub_->BidiStream(&context);
+    auto stream = stub_->TwodiStream(&context);
 
     int num_msgs_read = 0;
     int num_msgs_sent = 0;
@@ -592,20 +592,20 @@ TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelAfter) {
 }
 
 // Server to cancel before reading/writing any requests/responses on the stream
-TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelBefore) {
-  TestBidiStreamServerCancel(CANCEL_BEFORE_PROCESSING, 2);
+TEST_P(End2endServerTryCancelTest, TwodiStreamServerCancelBefore) {
+  TestTwodiStreamServerCancel(CANCEL_BEFORE_PROCESSING, 2);
 }
 
 // Server to cancel while reading/writing requests/responses on the stream in
 // parallel
-TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
-  TestBidiStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
+TEST_P(End2endServerTryCancelTest, TwodiStreamServerCancelDuring) {
+  TestTwodiStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
 // Server to cancel after reading/writing all requests/responses on the stream
 // but before returning to the client
-TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
-  TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
+TEST_P(End2endServerTryCancelTest, TwodiStreamServerCancelAfter) {
+  TestTwodiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
 }
 
 TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
@@ -702,14 +702,14 @@ TEST_P(End2endTest, ResponseStream) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(End2endTest, BidiStream) {
+TEST_P(End2endTest, TwodiStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
   grpc::string msg("hello");
 
-  auto stream = stub_->BidiStream(&context);
+  auto stream = stub_->TwodiStream(&context);
 
   request.set_message(msg + "0");
   EXPECT_TRUE(stream->Write(request));
@@ -827,15 +827,15 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
   EXPECT_GE(grpc::StatusCode::CANCELLED, s.error_code());
 }
 
-// Client cancels bidi stream after sending some messages
-TEST_P(End2endTest, ClientCancelsBidi) {
+// Client cancels twodi stream after sending some messages
+TEST_P(End2endTest, ClientCancelsTwodi) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
   grpc::string msg("hello");
 
-  auto stream = stub_->BidiStream(&context);
+  auto stream = stub_->TwodiStream(&context);
 
   request.set_message(msg + "0");
   EXPECT_TRUE(stream->Write(request));
@@ -911,7 +911,7 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
   ClientContext context;
   gpr_event ev;
   gpr_event_init(&ev);
-  auto stream = stub_->BidiStream(&context);
+  auto stream = stub_->TwodiStream(&context);
   std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   stream->WritesDone();

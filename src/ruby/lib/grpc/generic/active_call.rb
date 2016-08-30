@@ -29,7 +29,7 @@
 
 require 'forwardable'
 require 'weakref'
-require_relative 'bidi_call'
+require_relative 'twodi_call'
 
 class Struct
   # BatchResult is the struct returned by calls to call#start_batch.
@@ -379,7 +379,7 @@ module GRPC
       raise e
     end
 
-    # bidi_streamer sends a stream of requests to the GRPC server, and yields
+    # twodi_streamer sends a stream of requests to the GRPC server, and yields
     # a stream of responses.
     #
     # This method takes an Enumerable of requests, and returns and enumerable
@@ -406,9 +406,9 @@ module GRPC
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
-    def bidi_streamer(requests, metadata: {}, &blk)
+    def twodi_streamer(requests, metadata: {}, &blk)
       merge_metadata_to_send(metadata) && send_initial_metadata
-      bd = BidiCall.new(@call,
+      bd = TwodiCall.new(@call,
                         @marshal,
                         @unmarshal,
                         metadata_received: @metadata_received)
@@ -416,7 +416,7 @@ module GRPC
       bd.run_on_client(requests, @op_notifier, &blk)
     end
 
-    # run_server_bidi orchestrates a BiDi stream processing on a server.
+    # run_server_twodi orchestrates a TwoDi stream processing on a server.
     #
     # N.B. gen_each_reply is a func(Enumerable<Requests>)
     #
@@ -426,9 +426,9 @@ module GRPC
     # This does not mean that must necessarily be one.  E.g, the replies
     # produced by gen_each_reply could ignore the received_msgs
     #
-    # @param gen_each_reply [Proc] generates the BiDi stream replies
-    def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call,
+    # @param gen_each_reply [Proc] generates the TwoDi stream replies
+    def run_server_twodi(gen_each_reply)
+      bd = TwodiCall.new(@call,
                         @marshal,
                         @unmarshal,
                         metadata_received: @metadata_received,

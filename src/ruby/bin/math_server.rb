@@ -148,7 +148,7 @@ class Calculator < Math::Math::Service
           resp = Math::DivReply.new(quotient: req.dividend / req.divisor,
                                     remainder: req.dividend % req.divisor)
           q.push(resp)
-          Thread.pass  # let the internal Bidi threads run
+          Thread.pass  # let the internal Twodi threads run
         end
         GRPC.logger.info('finished reads')
         q.push(self)

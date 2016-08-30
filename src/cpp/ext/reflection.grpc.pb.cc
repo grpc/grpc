@@ -61,7 +61,7 @@ std::unique_ptr< ServerReflection::Stub> ServerReflection::NewStub(const std::sh
 }
 
 ServerReflection::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_ServerReflectionInfo_(ServerReflection_method_names[0], ::grpc::RpcMethod::BIDI_STREAMING, channel)
+  : channel_(channel), rpcmethod_ServerReflectionInfo_(ServerReflection_method_names[0], ::grpc::RpcMethod::TWODI_STREAMING, channel)
   {}
 
 ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* ServerReflection::Stub::ServerReflectionInfoRaw(::grpc::ClientContext* context) {
@@ -76,8 +76,8 @@ ServerReflection::Service::Service() {
   (void)ServerReflection_method_names;
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[0],
-      ::grpc::RpcMethod::BIDI_STREAMING,
-      new ::grpc::BidiStreamingHandler< ServerReflection::Service, ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>(
+      ::grpc::RpcMethod::TWODI_STREAMING,
+      new ::grpc::TwodiStreamingHandler< ServerReflection::Service, ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>(
           std::mem_fn(&ServerReflection::Service::ServerReflectionInfo), this)));
 }
 

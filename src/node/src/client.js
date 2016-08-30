@@ -588,9 +588,9 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
  * @param {function(*):Buffer} serialize The serialization function for inputs
  * @param {function(Buffer)} deserialize The deserialization function for
  *     outputs
- * @return {Function} makeBidiStreamRequest
+ * @return {Function} makeTwodiStreamRequest
  */
-function makeBidiStreamRequestFunction(method, serialize, deserialize) {
+function makeTwodiStreamRequestFunction(method, serialize, deserialize) {
   /**
    * Make a bidirectional stream request with this method on the given channel.
    * @this {SurfaceClient} Client object. Must have a channel member.
@@ -599,7 +599,7 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
    * @param {Options} options Options map
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeBidiStreamRequest(metadata, options) {
+  function makeTwodiStreamRequest(metadata, options) {
     /* jshint validthis: true */
     /* While the arguments are listed in the function signature, those variables
      * are not used directly. Instead, ArgueJS processes the arguments
@@ -635,7 +635,7 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
     });
     return stream;
   }
-  return makeBidiStreamRequest;
+  return makeTwodiStreamRequest;
 }
 
 
@@ -647,7 +647,7 @@ var requester_makers = {
   unary: makeUnaryRequestFunction,
   server_stream: makeServerStreamRequestFunction,
   client_stream: makeClientStreamRequestFunction,
-  bidi: makeBidiStreamRequestFunction
+  twodi: makeTwodiStreamRequestFunction
 };
 
 function getDefaultValues(metadata, options) {
@@ -681,7 +681,7 @@ var deprecated_request_wrap = {
     };
   },
   server_stream: _.identity,
-  bidi: _.identity
+  twodi: _.identity
 };
 
 /**
@@ -741,7 +741,7 @@ exports.makeClientConstructor = function(methods, serviceName,
     }
     if (attrs.requestStream) {
       if (attrs.responseStream) {
-        method_type = 'bidi';
+        method_type = 'twodi';
       } else {
         method_type = 'client_stream';
       }

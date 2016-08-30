@@ -47,6 +47,6 @@ service TestService {
   rpc ServerStream (Request) returns (stream Response) {
   }
 
-  rpc BidiStream (stream Request) returns (stream Response) {
+  rpc TwodiStream (stream Request) returns (stream Response) {
   }
 }

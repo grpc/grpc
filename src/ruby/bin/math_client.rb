@@ -79,7 +79,7 @@ def do_fib(stub)
 end
 
 def do_div_many(stub)
-  GRPC.logger.info('bidi_streamer')
+  GRPC.logger.info('twodi_streamer')
   GRPC.logger.info('-------------')
   reqs = []
   reqs << Math::DivArgs.new(dividend: 7, divisor: 3)

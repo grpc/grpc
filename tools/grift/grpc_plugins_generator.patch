@@ -1560,7 +1560,7 @@ index 2db8cb8..8b28fe2 100644
 +    "import static io.grpc.stub.ClientCalls.asyncUnaryCall;\n" +
 +    "import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;\n" +
 +    "import static io.grpc.stub.ClientCalls.asyncClientStreamingCall;\n" +
-+    "import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;\n" +
++    "import static io.grpc.stub.ClientCalls.asyncTwodiStreamingCall;\n" +
 +    "import static io.grpc.stub.ClientCalls.blockingUnaryCall;\n" +
 +    "import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;\n" +
 +    "import static io.grpc.stub.ClientCalls.futureUnaryCall;\n" +
@@ -1568,7 +1568,7 @@ index 2db8cb8..8b28fe2 100644
 +    "import static io.grpc.stub.ServerCalls.asyncUnaryCall;\n" +
 +    "import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;\n" +
 +    "import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;\n" +
-+    "import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;\n" +
++    "import static io.grpc.stub.ServerCalls.asyncTwodiStreamingCall;\n" +
 +    "import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;\n" +
 +    "import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;\n" +
 +    "import io.grpc.thrift.ThriftUtils;\n\n";
@@ -2283,7 +2283,7 @@ index 2db8cb8..8b28fe2 100644
 +    endl << indent() << "    io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>," <<
 +    endl << indent() << "    io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>," <<
 +    endl << indent() << "    io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>," <<
-+    endl << indent() << "    io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {" <<
++    endl << indent() << "    io.grpc.stub.ServerCalls.TwodiStreamingMethod<Req, Resp> {" <<
 +    endl;
 +  indent_up();
 +  f_service_ <<
