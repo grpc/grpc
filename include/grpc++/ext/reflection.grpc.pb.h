@@ -77,7 +77,6 @@
 #include <grpc++/impl/codegen/method_handler_impl.h>
 #include <grpc++/impl/codegen/proto_utils.h>
 #include <grpc++/impl/codegen/rpc_method.h>
-#include <grpc++/impl/codegen/server_streamed_unary.h>
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/stub_options.h>

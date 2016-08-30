@@ -68,8 +68,10 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+namespace internal {
 template <class W, class R>
-class ServerReaderWriterInterface;
+class ServerReaderWriterBody;
+}
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -178,7 +180,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class W>
   friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::ServerReaderWriterInterface;
+  friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>

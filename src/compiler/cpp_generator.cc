@@ -133,7 +133,6 @@ grpc::string GetHeaderIncludes(File *file, const Parameters &params) {
         "grpc++/impl/codegen/method_handler_impl.h",
         "grpc++/impl/codegen/proto_utils.h",
         "grpc++/impl/codegen/rpc_method.h",
-        "grpc++/impl/codegen/server_streamed_unary.h",
         "grpc++/impl/codegen/service_type.h",
         "grpc++/impl/codegen/status.h",
         "grpc++/impl/codegen/stub_options.h",
@@ -947,7 +946,6 @@ grpc::string GetSourceIncludes(File *file, const Parameters &params) {
         "grpc++/impl/codegen/client_unary_call.h",
         "grpc++/impl/codegen/method_handler_impl.h",
         "grpc++/impl/codegen/rpc_service_method.h",
-        "grpc++/impl/codegen/server_streamed_unary.h",
         "grpc++/impl/codegen/service_type.h",
         "grpc++/impl/codegen/sync_stream.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));

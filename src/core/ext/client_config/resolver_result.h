@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,22 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_SERVER_STREAMED_UNARY_H
-#define GRPCXX_SUPPORT_SERVER_STREAMED_UNARY_H
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_RESULT_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_RESULT_H
 
-#include <grpc++/impl/codegen/server_streamed_unary.h>
+#include "src/core/ext/client_config/lb_policy.h"
 
-#endif  // GRPCXX_SUPPORT_SERVER_STREAMED_UNARY_H
+/** Results reported from a grpc_resolver. */
+typedef struct grpc_resolver_result grpc_resolver_result;
+
+grpc_resolver_result *grpc_resolver_result_create();
+void grpc_resolver_result_ref(grpc_resolver_result *client_config);
+void grpc_resolver_result_unref(grpc_exec_ctx *exec_ctx,
+                                grpc_resolver_result *client_config);
+
+void grpc_resolver_result_set_lb_policy(grpc_resolver_result *client_config,
+                                        grpc_lb_policy *lb_policy);
+grpc_lb_policy *grpc_resolver_result_get_lb_policy(
+    grpc_resolver_result *client_config);
+
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_RESULT_H */

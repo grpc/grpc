@@ -31,23 +31,45 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
+#include "src/core/ext/client_config/resolver_result.h"
 
-#include "src/core/ext/client_config/lb_policy.h"
+#include <string.h>
 
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
+#include <grpc/support/alloc.h>
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_exec_ctx *exec_ctx,
-                              grpc_client_config *client_config);
+struct grpc_resolver_result {
+  gpr_refcount refs;
+  grpc_lb_policy *lb_policy;
+};
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
+grpc_resolver_result *grpc_resolver_result_create() {
+  grpc_resolver_result *c = gpr_malloc(sizeof(*c));
+  memset(c, 0, sizeof(*c));
+  gpr_ref_init(&c->refs, 1);
+  return c;
+}
 
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H */
+void grpc_resolver_result_ref(grpc_resolver_result *c) { gpr_ref(&c->refs); }
+
+void grpc_resolver_result_unref(grpc_exec_ctx *exec_ctx,
+                                grpc_resolver_result *c) {
+  if (gpr_unref(&c->refs)) {
+    if (c->lb_policy != NULL) {
+      GRPC_LB_POLICY_UNREF(exec_ctx, c->lb_policy, "resolver_result");
+    }
+    gpr_free(c);
+  }
+}
+
+void grpc_resolver_result_set_lb_policy(grpc_resolver_result *c,
+                                        grpc_lb_policy *lb_policy) {
+  GPR_ASSERT(c->lb_policy == NULL);
+  if (lb_policy) {
+    GRPC_LB_POLICY_REF(lb_policy, "resolver_result");
+  }
+  c->lb_policy = lb_policy;
+}
+
+grpc_lb_policy *grpc_resolver_result_get_lb_policy(grpc_resolver_result *c) {
+  return c->lb_policy;
+}

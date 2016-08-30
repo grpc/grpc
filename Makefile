@@ -2651,7 +2651,6 @@ LIBGRPC_SRC = \
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
     src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config.c \
     src/core/ext/client_config/client_config_plugin.c \
     src/core/ext/client_config/connector.c \
     src/core/ext/client_config/default_initial_connect_string.c \
@@ -2663,6 +2662,7 @@ LIBGRPC_SRC = \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
+    src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
     src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
@@ -2901,7 +2901,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
     src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config.c \
     src/core/ext/client_config/client_config_plugin.c \
     src/core/ext/client_config/connector.c \
     src/core/ext/client_config/default_initial_connect_string.c \
@@ -2913,6 +2912,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
+    src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
     src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
@@ -3360,7 +3360,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
     src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config.c \
     src/core/ext/client_config/client_config_plugin.c \
     src/core/ext/client_config/connector.c \
     src/core/ext/client_config/default_initial_connect_string.c \
@@ -3372,6 +3371,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
+    src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
     src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
