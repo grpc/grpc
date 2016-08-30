@@ -109,6 +109,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     bool sent_initial_metadata = s->sent_initial_metadata;
     bool now_writing = false;
 
+    gpr_log(GPR_DEBUG, "W:%d: sim=%d ann=%d fcb_len=%d (t,s)-win=%d,%d", (int)s->id,sent_initial_metadata, (int) s->announce_window, (int)s->flow_controlled_buffer.length, (int)t->outgoing_window,(int)s->outgoing_window);
+
     /* send initial metadata if it's available */
     if (!sent_initial_metadata && s->send_initial_metadata) {
       grpc_chttp2_encode_header(&t->hpack_compressor, s->id,
@@ -120,7 +122,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       now_writing = true;
     }
     /* send any window updates */
-    if (s->announce_window > 0 && s->sent_initial_metadata) {
+    if (s->announce_window > 0 && sent_initial_metadata) {
       uint32_t announce = s->announce_window;
       gpr_slice_buffer_add(&t->outbuf,
                            grpc_chttp2_window_update_create(
@@ -159,7 +161,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0) {
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing");
-            grpc_chttp2_list_add_writing_stream(t, s);
+            grpc_chttp2_list_add_writable_stream(t, s);
           }
         } else if (t->outgoing_window == 0) {
           grpc_chttp2_list_add_stalled_by_transport(t, s);

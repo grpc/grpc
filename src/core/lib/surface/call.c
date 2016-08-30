@@ -1197,6 +1197,10 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
+  char *msg = grpc_transport_stream_op_string(&bctl->op);
+  gpr_log(GPR_DEBUG, "receiving_stream_ready: %s", msg);
+  gpr_free(msg);
+
   gpr_mu_lock(&bctl->call->mu);
   if (bctl->call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
@@ -1306,6 +1310,10 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
   grpc_call *child_call;
   grpc_call *next_child_call;
+
+  char *msg = grpc_transport_stream_op_string(&bctl->op);
+  gpr_log(GPR_DEBUG, "finish_batch: %s", msg);
+  gpr_free(msg);
 
   GRPC_ERROR_REF(error);
 

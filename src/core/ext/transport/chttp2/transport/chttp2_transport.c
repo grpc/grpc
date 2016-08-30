@@ -720,6 +720,9 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
 static grpc_closure *add_closure_barrier(grpc_closure *closure) {
+  gpr_log(GPR_DEBUG, "add_closure_barrier: %p | %" PRIdPTR " -> %" PRIdPTR,
+          closure, closure->next_data.scratch,
+          closure->next_data.scratch + CLOSURE_BARRIER_FIRST_REF_BIT);
   closure->next_data.scratch += CLOSURE_BARRIER_FIRST_REF_BIT;
   return closure;
 }
@@ -734,6 +737,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
     return;
   }
+  gpr_log(GPR_DEBUG, "complete_closure_step: %p | %" PRIdPTR " -> %" PRIdPTR,
+          closure, closure->next_data.scratch,
+          closure->next_data.scratch - CLOSURE_BARRIER_FIRST_REF_BIT);
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
   if (error != GRPC_ERROR_NONE) {
     if (closure->error == GRPC_ERROR_NONE) {
@@ -859,6 +865,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   if (on_complete == NULL) {
     on_complete = grpc_closure_create(do_nothing, NULL);
   }
+
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "  on_complete = %p", on_complete);
+  }
+
   /* use final_data as a barrier until enqueue time; the inital counter is
      dropped at the end of this function */
   on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
@@ -1039,6 +1050,13 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_TIMER_BEGIN("perform_stream_op", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
+
+  if (grpc_http_trace) {
+    char *str = grpc_transport_stream_op_string(op);
+    gpr_log(GPR_DEBUG, "perform_stream_op: %s", str);
+    gpr_free(str);
+  }
+
   grpc_closure_init(&op->transport_private.closure, perform_stream_op_locked,
                     op);
   op->transport_private.args[0] = gt;
@@ -1961,40 +1979,30 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
  */
 
 static char *format_flowctl_context_var(const char *context, const char *var,
-                                        int64_t val, uint32_t id,
-                                        char **scope) {
-  char *underscore_pos;
-  char *buf;
-  char *result;
+                                        int64_t val, uint32_t id) {
+  char *name;
   if (context == NULL) {
-    *scope = NULL;
-    gpr_asprintf(&buf, "%s(%" PRId64 ")", var, val);
-    result = gpr_leftpad(buf, ' ', 60);
-    gpr_free(buf);
-    return result;
+    name = gpr_strdup(var);
+  } else if (0 == strcmp(context, "t")) {
+    GPR_ASSERT(id == 0);
+    gpr_asprintf(&name, "TRANSPORT:%s", var);
+  } else if (0 == strcmp(context, "s")) {
+    GPR_ASSERT(id != 0);
+    gpr_asprintf(&name, "STREAM[%d]:%s", id, var);
+  } else {
+    gpr_asprintf(&name, "BAD_CONTEXT[%s][%d]:%s", context, id, var);
   }
-  underscore_pos = strchr(context, '_');
-  *scope = gpr_strdup(context);
-  (*scope)[underscore_pos - context] = 0;
-  if (id != 0) {
-    char *tmp = *scope;
-    gpr_asprintf(scope, "%s[%d]", tmp, id);
-    gpr_free(tmp);
-  }
-  gpr_asprintf(&buf, "%s.%s(%" PRId64 ")", underscore_pos + 1, var, val);
-  result = gpr_leftpad(buf, ' ', 60);
-  gpr_free(buf);
+  char *name_fld = gpr_leftpad(name, ' ', 64);
+  char *value;
+  gpr_asprintf(&value, "%" PRId64, val);
+  char *value_fld = gpr_leftpad(value, ' ', 8);
+  char *result;
+  gpr_asprintf(&result, "%s %s", name_fld, value_fld);
+  gpr_free(name);
+  gpr_free(name_fld);
+  gpr_free(value);
+  gpr_free(value_fld);
   return result;
-}
-
-static int samestr(char *a, char *b) {
-  if (a == NULL) {
-    return b == NULL;
-  }
-  if (b == NULL) {
-    return 0;
-  }
-  return 0 == strcmp(a, b);
 }
 
 void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
@@ -2002,26 +2010,18 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                const char *var1, const char *context2,
                                const char *var2, int is_client,
                                uint32_t stream_id, int64_t val1, int64_t val2) {
-  char *scope1;
-  char *scope2;
   char *tmp_phase;
-  char *tmp_scope1;
-  char *label1 =
-      format_flowctl_context_var(context1, var1, val1, stream_id, &scope1);
-  char *label2 =
-      format_flowctl_context_var(context2, var2, val2, stream_id, &scope2);
+  char *label1 = format_flowctl_context_var(context1, var1, val1, stream_id);
+  char *label2 = format_flowctl_context_var(context2, var2, val2, stream_id);
   char *clisvr = is_client ? "client" : "server";
   char *prefix;
 
   tmp_phase = gpr_leftpad(phase, ' ', 8);
-  tmp_scope1 = gpr_leftpad(scope1, ' ', 11);
-  gpr_asprintf(&prefix, "FLOW %s: %s %s ", tmp_phase, clisvr, scope1);
+  gpr_asprintf(&prefix, "FLOW %s: %s ", tmp_phase, clisvr);
   gpr_free(tmp_phase);
-  gpr_free(tmp_scope1);
 
   switch (op) {
     case GRPC_CHTTP2_FLOWCTL_MOVE:
-      GPR_ASSERT(samestr(scope1, scope2));
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
                 "%sMOVE   %s <- %s giving %" PRId64, prefix, label1, label2,
@@ -2046,8 +2046,6 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
       break;
   }
 
-  gpr_free(scope1);
-  gpr_free(scope2);
   gpr_free(label1);
   gpr_free(label2);
   gpr_free(prefix);

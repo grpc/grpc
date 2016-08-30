@@ -134,9 +134,9 @@ bool grpc_chttp2_list_remove_writable_stream(grpc_chttp2_transport *t,
   return stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_WRITABLE);
 }
 
-void grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport *t,
+bool grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s) {
-  GPR_ASSERT(stream_list_add(t, s, GRPC_CHTTP2_LIST_WRITING));
+  return stream_list_add(t, s, GRPC_CHTTP2_LIST_WRITING);
 }
 
 int grpc_chttp2_list_have_writing_streams(grpc_chttp2_transport *t) {
