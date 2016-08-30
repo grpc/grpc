@@ -298,7 +298,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\channel_arguments.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\server_streamed_unary.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\status_code_enum.h" />
@@ -354,7 +353,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\serialization_traits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_streamed_unary.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h" />

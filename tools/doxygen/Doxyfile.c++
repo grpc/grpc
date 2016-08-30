@@ -800,7 +800,6 @@ include/grpc++/support/async_unary_call.h \
 include/grpc++/support/byte_buffer.h \
 include/grpc++/support/channel_arguments.h \
 include/grpc++/support/config.h \
-include/grpc++/support/server_streamed_unary.h \
 include/grpc++/support/slice.h \
 include/grpc++/support/status.h \
 include/grpc++/support/status_code_enum.h \
@@ -856,7 +855,6 @@ include/grpc++/impl/codegen/security/auth_context.h \
 include/grpc++/impl/codegen/serialization_traits.h \
 include/grpc++/impl/codegen/server_context.h \
 include/grpc++/impl/codegen/server_interface.h \
-include/grpc++/impl/codegen/server_streamed_unary.h \
 include/grpc++/impl/codegen/service_type.h \
 include/grpc++/impl/codegen/status.h \
 include/grpc++/impl/codegen/status_code_enum.h \
