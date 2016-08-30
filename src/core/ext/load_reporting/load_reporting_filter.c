@@ -221,7 +221,8 @@ static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
     calld->trailing_lr_token = gpr_slice_ref(md->value->slice);
     if (grpc_load_reporting_trace) {
       char *hexdump = gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_HEX);
-      char *asciidump = gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_ASCII);
+      char *asciidump =
+          gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "[LR] trailing token: '%s' [%s]", asciidump, hexdump);
       gpr_free(hexdump);
       gpr_free(asciidump);
