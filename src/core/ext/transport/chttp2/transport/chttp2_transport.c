@@ -949,7 +949,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       s->fetching_slice_end_offset =
           (ssize_t)s->flow_controlled_buffer.length + (ssize_t)len;
       if (flags & GRPC_WRITE_BUFFER_HINT) {
-        s->fetched_send_message_length -= 65536;
+        s->fetching_slice_end_offset -= 65536;
       }
       continue_fetching_send_locked(exec_ctx, t, s);
       if (s->id != 0) {
