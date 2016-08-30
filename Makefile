@@ -3714,7 +3714,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/byte_buffer.h \
     include/grpc++/support/channel_arguments.h \
     include/grpc++/support/config.h \
-    include/grpc++/support/fc_unary.h \
+    include/grpc++/support/server_streamed_unary.h \
     include/grpc++/support/slice.h \
     include/grpc++/support/status.h \
     include/grpc++/support/status_code_enum.h \
@@ -3762,7 +3762,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
-    include/grpc++/impl/codegen/fc_unary.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/rpc_method.h \
@@ -3771,6 +3770,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/server_streamed_unary.h \
     include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
@@ -3868,7 +3868,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
-    include/grpc++/impl/codegen/fc_unary.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/rpc_method.h \
@@ -3877,6 +3876,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/server_streamed_unary.h \
     include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
@@ -4096,7 +4096,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
-    include/grpc++/impl/codegen/fc_unary.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/rpc_method.h \
@@ -4105,6 +4104,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/server_streamed_unary.h \
     include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
@@ -4353,7 +4353,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/byte_buffer.h \
     include/grpc++/support/channel_arguments.h \
     include/grpc++/support/config.h \
-    include/grpc++/support/fc_unary.h \
+    include/grpc++/support/server_streamed_unary.h \
     include/grpc++/support/slice.h \
     include/grpc++/support/status.h \
     include/grpc++/support/status_code_enum.h \
@@ -4401,7 +4401,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
-    include/grpc++/impl/codegen/fc_unary.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/rpc_method.h \
@@ -4410,6 +4409,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/server_streamed_unary.h \
     include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \

@@ -492,7 +492,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\fc_unary.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\server_streamed_unary.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\slice.h">
@@ -636,9 +636,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\fc_unary.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -661,6 +658,9 @@
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_streamed_unary.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h">
