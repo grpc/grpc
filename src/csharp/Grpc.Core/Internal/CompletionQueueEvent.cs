@@ -42,10 +42,9 @@ namespace Grpc.Core.Internal
     [StructLayout(LayoutKind.Sequential)]
     internal struct CompletionQueueEvent
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_sizeof_grpc_event();
+        static readonly NativeMethods Native = NativeMethods.Get();
 
-        public GRPCCompletionType type;
+        public CompletionType type;
         public int success;
         public IntPtr tag;
 
@@ -53,8 +52,23 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return grpcsharp_sizeof_grpc_event();
+                return Native.grpcsharp_sizeof_grpc_event();
             }
+        }
+
+        /// <summary>
+        /// grpc_completion_type from grpc/grpc.h
+        /// </summary>
+        internal enum CompletionType
+        {
+            /* Shutting down */
+            Shutdown, 
+
+            /* No event before timeout */
+            Timeout,  
+
+            /* operation completion */
+            OpComplete
         }
     }
 }

@@ -39,13 +39,13 @@
 #include <memory>
 #include <sstream>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/security/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
@@ -97,30 +97,25 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
   snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
            FLAGS_server_port);
 
+  std::shared_ptr<CallCredentials> creds;
   if (test_case == "compute_engine_creds") {
-    std::shared_ptr<CallCredentials> creds;
     GPR_ASSERT(FLAGS_use_tls);
     creds = GoogleComputeEngineCredentials();
-    return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
+    GPR_ASSERT(creds);
   } else if (test_case == "jwt_token_creds") {
-    std::shared_ptr<CallCredentials> creds;
     GPR_ASSERT(FLAGS_use_tls);
     grpc::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
     creds =
         ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
-    return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
+    GPR_ASSERT(creds);
   } else if (test_case == "oauth2_auth_token") {
     grpc::string raw_token = GetOauth2AccessToken();
-    std::shared_ptr<CallCredentials> creds = AccessTokenCredentials(raw_token);
-    return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
-  } else {
-    return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, !FLAGS_use_test_ca);
+    creds = AccessTokenCredentials(raw_token);
+    GPR_ASSERT(creds);
   }
+  return CreateTestChannel(host_port, FLAGS_server_host_override, FLAGS_use_tls,
+                           !FLAGS_use_test_ca, creds);
 }
 
 }  // namespace testing

@@ -28,31 +28,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -e
+
 # directories to run against
-DIRS="src/core src/cpp test/core test/cpp include"
+DIRS="src/core/lib src/core/ext src/cpp test/core test/cpp include"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc"
 
 # clang format command
-CLANG_FORMAT=clang-format-3.6
+CLANG_FORMAT=clang-format-3.8
 
 files=
 for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find /local-code/$dir -name $glob`"
+    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
   done
 done
+
+# The CHANGED_FILES variable is used to restrict the set of files to check.
+# Here we set files to the intersection of files and CHANGED_FILES
+if [ -n "$CHANGED_FILES" ]; then
+  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
+fi
 
 if [ "x$TEST" = "x" ]
 then
   echo $files | xargs $CLANG_FORMAT -i
 else
+  ok=yes
   for file in $files
   do
-    $CLANG_FORMAT $file | diff $file -
+    tmp=`mktemp`
+    $CLANG_FORMAT $file > $tmp
+    diff -u $file $tmp || ok=no
+    rm $tmp
   done
+  if [ $ok == no ]
+  then
+    false
+  fi
 fi
-

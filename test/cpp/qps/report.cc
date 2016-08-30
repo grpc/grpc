@@ -33,17 +33,15 @@
 
 #include "test/cpp/qps/report.h"
 
+#include <fstream>
+
 #include <grpc/support/log.h>
 #include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
 
 namespace grpc {
 namespace testing {
-
-static double WallTime(ResourceUsage u) { return u.wall_time(); }
-static double UserTime(ResourceUsage u) { return u.user_time(); }
-static double SystemTime(ResourceUsage u) { return u.system_time(); }
-static int Cores(ResourceUsage u) { return u.cores(); }
 
 void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
@@ -74,102 +72,53 @@ void CompositeReporter::ReportTimes(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  gpr_log(
-      GPR_INFO, "QPS: %.1f",
-      result.latencies.Count() / average(result.client_resources, WallTime));
+  gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
-          qps / sum(result.server_resources, Cores));
+  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
+          result.summary().qps_per_server_core());
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
   gpr_log(GPR_INFO,
           "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(90) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+          result.summary().latency_50() / 1000,
+          result.summary().latency_90() / 1000,
+          result.summary().latency_95() / 1000,
+          result.summary().latency_99() / 1000,
+          result.summary().latency_999() / 1000);
 }
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_resources, SystemTime) /
-              sum(result.server_resources, WallTime));
+          result.summary().server_system_time());
   gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_resources, UserTime) /
-              sum(result.server_resources, WallTime));
+          result.summary().server_user_time());
   gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_resources, SystemTime) /
-              sum(result.client_resources, WallTime));
+          result.summary().client_system_time());
   gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_resources, UserTime) /
-              sum(result.client_resources, WallTime));
+          result.summary().client_user_time());
 }
 
-void PerfDbReporter::ReportQPS(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  perf_db_client_.setQps(qps);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void JsonReporter::ReportQPS(const ScenarioResult& result) {
+  grpc::string json_string =
+      SerializeJson(result, "type.googleapis.com/grpc.testing.ScenarioResult");
+  std::ofstream output_file(report_file_);
+  output_file << json_string;
+  output_file.close();
 }
 
-void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  auto qps_per_core = qps / sum(result.server_resources, Cores);
-
-  perf_db_client_.setQps(qps);
-  perf_db_client_.setQpsPerCore(qps_per_core);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void JsonReporter::ReportQPSPerCore(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
-void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
-  perf_db_client_.setLatencies(result.latencies.Percentile(50) / 1000,
-                               result.latencies.Percentile(90) / 1000,
-                               result.latencies.Percentile(95) / 1000,
-                               result.latencies.Percentile(99) / 1000,
-                               result.latencies.Percentile(99.9) / 1000);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void JsonReporter::ReportLatency(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
-void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
-  const double server_system_time = 100.0 *
-                                    sum(result.server_resources, SystemTime) /
-                                    sum(result.server_resources, WallTime);
-  const double server_user_time = 100.0 *
-                                  sum(result.server_resources, UserTime) /
-                                  sum(result.server_resources, WallTime);
-  const double client_system_time = 100.0 *
-                                    sum(result.client_resources, SystemTime) /
-                                    sum(result.client_resources, WallTime);
-  const double client_user_time = 100.0 *
-                                  sum(result.client_resources, UserTime) /
-                                  sum(result.client_resources, WallTime);
-
-  perf_db_client_.setTimes(server_system_time, server_user_time,
-                           client_system_time, client_user_time);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
-}
-
-void PerfDbReporter::SendData() {
-  // send data to performance database
-  bool data_state =
-      perf_db_client_.sendData(hashed_id_, test_name_, sys_info_, tag_);
-
-  // check state of data sending
-  if (data_state) {
-    gpr_log(GPR_INFO, "Data sent to performance database successfully");
-  } else {
-    gpr_log(GPR_INFO, "Data could not be sent to performance database");
-  }
+void JsonReporter::ReportTimes(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
 }  // namespace testing

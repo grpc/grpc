@@ -38,8 +38,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/transport/chttp2/alpn.h"
-#include "test/core/bad_ssl/server.h"
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "test/core/bad_ssl/server_common.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 /* This test starts a server that is configured to advertise (via alpn and npn)

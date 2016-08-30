@@ -34,6 +34,8 @@
 #ifndef GRPC_SUPPORT_STRING_UTIL_H
 #define GRPC_SUPPORT_STRING_UTIL_H
 
+#include <grpc/support/port_platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,7 +44,7 @@ extern "C" {
 
 /* Returns a copy of src that can be passed to gpr_free().
    If allocation fails or if src is NULL, returns NULL. */
-char *gpr_strdup(const char *src);
+GPRAPI char *gpr_strdup(const char *src);
 
 /* printf to a newly-allocated string.  The set of supported formats may vary
    between platforms.
@@ -52,7 +54,8 @@ char *gpr_strdup(const char *src);
 
    On error, returns -1 and sets *strp to NULL. If the format string is bad,
    the result is undefined. */
-int gpr_asprintf(char **strp, const char *format, ...);
+GPRAPI int gpr_asprintf(char **strp, const char *format, ...)
+    GPRC_PRINT_FORMAT_CHECK(2, 3);
 
 #ifdef __cplusplus
 }

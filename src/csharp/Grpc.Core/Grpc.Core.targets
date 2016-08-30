@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>grpc_csharp_ext.x86.dll</Link>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>grpc_csharp_ext.x64.dll</Link>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x86.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libgrpc_csharp_ext.x86.so</Link>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libgrpc_csharp_ext.x64.so</Link>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x86.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libgrpc_csharp_ext.x86.dylib</Link>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x64.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libgrpc_csharp_ext.x64.dylib</Link>
+    </Content>
+  </ItemGroup>
+</Project>

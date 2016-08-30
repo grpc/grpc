@@ -63,24 +63,27 @@ grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   return byte_buffer;
 }
 
+namespace {
+void delete_buffer(char *data, void *hint) { delete[] data; }
+}
+
 Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   Nan::EscapableHandleScope scope;
   if (buffer == NULL) {
     return scope.Escape(Nan::Null());
   }
-  size_t length = grpc_byte_buffer_length(buffer);
-  char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
-  size_t offset = 0;
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, buffer);
-  gpr_slice next;
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-    gpr_slice_unref(next);
+  if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
+    Nan::ThrowError("Error initializing byte buffer reader.");
+    return scope.Escape(Nan::Undefined());
   }
+  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
+  size_t length = GPR_SLICE_LENGTH(slice);
+  char *result = new char[length];
+  memcpy(result, GPR_SLICE_START_PTR(slice), length);
+  gpr_slice_unref(slice);
   return scope.Escape(MakeFastBuffer(
-      Nan::NewBuffer(result, length).ToLocalChecked()));
+      Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
 }
 
 Local<Value> MakeFastBuffer(Local<Value> slowBuffer) {

@@ -4,16 +4,17 @@ gRPC in 3 minutes (Node.js)
 PREREQUISITES
 -------------
 
-- `node`: This requires Node 0.10.x or greater.
-- [homebrew][] on Mac OS X.  This simplifies the installation of the gRPC C core.
+- `node`: This requires Node 0.12.x or greater.
 
 INSTALL
 -------
- - [Install gRPC Node][]
-
- - Install this package's dependencies
 
    ```sh
+   $ # Get the gRPC repository
+   $ export REPO_ROOT=grpc # REPO root can be any directory of your choice
+   $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
+   $ cd $REPO_ROOT
+
    $ cd examples/node
    $ npm install
    ```
@@ -21,29 +22,29 @@ INSTALL
 TRY IT!
 -------
 
+There are two ways to generate the code needed to work with protocol buffers in Node.js - one approach uses [Protobuf.js](https://github.com/dcodeIO/ProtoBuf.js/) to dynamically generate the code at runtime, the other uses code statically generated using the protocol buffer compiler `protoc`. The examples behave identically, and either server can be used with either client.
+
  - Run the server
 
    ```sh
-   $ # from this directory (grpc_common/node).
-   $ node ./greeter_server.js &
+   $ # from this directory
+   $ node ./dynamic_codegen/greeter_server.js &
+   $ # OR
+   $ node ./static_codegen/greeter_server.js &
    ```
 
  - Run the client
 
    ```sh
    $ # from this directory
-   $ node ./greeter_client.js
+   $ node ./dynamic_codegen/greeter_client.js
+   $ # OR
+   $ node ./dynamic_codegen/greeter_client.js
    ```
-
-NOTE
-----
-This directory has a copy of `helloworld.proto` because it currently depends on
-some Protocol Buffer 2.0 syntax that is deprecated in Protocol Buffer 3.0.
 
 TUTORIAL
 --------
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
-[homebrew]:http://brew.sh
 [Install gRPC Node]:../../src/node
 [gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html

@@ -1,0 +1,2 @@
+<%include file="ccache_setup.include"/>
+<%include file="run_tests_addons_nocache.include"/>

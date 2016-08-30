@@ -31,20 +31,20 @@
  *
  */
 
-#include "src/core/surface/completion_queue.h"
+#include "src/core/lib/surface/completion_queue.h"
 
-#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void *create_test_tag(void) {
-  static gpr_intptr i = 0;
+  static intptr_t i = 0;
   return (void *)(++i);
 }
 
@@ -61,6 +61,12 @@ static void shutdown_and_destroy(grpc_completion_queue *cc) {
 static void test_no_op(void) {
   LOG_TEST("test_no_op");
   shutdown_and_destroy(grpc_completion_queue_create(NULL));
+}
+
+static void test_pollset_conversion(void) {
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  GPR_ASSERT(grpc_cq_from_pollset(grpc_cq_pollset(cq)) == cq);
+  shutdown_and_destroy(cq);
 }
 
 static void test_wait_empty(void) {
@@ -90,8 +96,8 @@ static void test_cq_end_op(void) {
   cc = grpc_completion_queue_create(NULL);
 
   grpc_cq_begin_op(cc, tag);
-  grpc_cq_end_op(&exec_ctx, cc, tag, 1, do_nothing_end_completion, NULL,
-                 &completion);
+  grpc_cq_end_op(&exec_ctx, cc, tag, GRPC_ERROR_NONE, do_nothing_end_completion,
+                 NULL, &completion);
 
   ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -149,8 +155,8 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc, tags[i]);
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
-                   &completions[i]);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -161,8 +167,8 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc, tags[i]);
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
-                   &completions[i]);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -226,7 +232,7 @@ static void test_too_many_plucks(void) {
   }
 
   /* wait until all other threads are plucking */
-  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(1000));
 
   ev = grpc_completion_queue_pluck(cc, create_test_tag(),
                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
@@ -234,8 +240,8 @@ static void test_too_many_plucks(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc, tags[i]);
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
-                   &completions[i]);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -274,21 +280,21 @@ static void producer_thread(void *arg) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "producer %d started", opt->id);
-  gpr_event_set(&opt->on_started, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_started, (void *)(intptr_t)1);
   GPR_ASSERT(gpr_event_wait(opt->phase1, ten_seconds_time()));
 
   gpr_log(GPR_INFO, "producer %d phase 1", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_begin_op(opt->cc, (void *)(gpr_intptr)1);
+    grpc_cq_begin_op(opt->cc, (void *)(intptr_t)1);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 1 done", opt->id);
-  gpr_event_set(&opt->on_phase1_done, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_phase1_done, (void *)(intptr_t)1);
   GPR_ASSERT(gpr_event_wait(opt->phase2, ten_seconds_time()));
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_end_op(&exec_ctx, opt->cc, (void *)(gpr_intptr)1, 1,
+    grpc_cq_end_op(&exec_ctx, opt->cc, (void *)(intptr_t)1, GRPC_ERROR_NONE,
                    free_completion, NULL,
                    gpr_malloc(sizeof(grpc_cq_completion)));
     opt->events_triggered++;
@@ -296,7 +302,7 @@ static void producer_thread(void *arg) {
   }
 
   gpr_log(GPR_INFO, "producer %d phase 2 done", opt->id);
-  gpr_event_set(&opt->on_finished, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_finished, (void *)(intptr_t)1);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -305,13 +311,13 @@ static void consumer_thread(void *arg) {
   grpc_event ev;
 
   gpr_log(GPR_INFO, "consumer %d started", opt->id);
-  gpr_event_set(&opt->on_started, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_started, (void *)(intptr_t)1);
   GPR_ASSERT(gpr_event_wait(opt->phase1, ten_seconds_time()));
 
   gpr_log(GPR_INFO, "consumer %d phase 1", opt->id);
 
   gpr_log(GPR_INFO, "consumer %d phase 1 done", opt->id);
-  gpr_event_set(&opt->on_phase1_done, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_phase1_done, (void *)(intptr_t)1);
   GPR_ASSERT(gpr_event_wait(opt->phase2, ten_seconds_time()));
 
   gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
@@ -324,7 +330,7 @@ static void consumer_thread(void *arg) {
         break;
       case GRPC_QUEUE_SHUTDOWN:
         gpr_log(GPR_INFO, "consumer %d phase 2 done", opt->id);
-        gpr_event_set(&opt->on_finished, (void *)(gpr_intptr)1);
+        gpr_event_set(&opt->on_finished, (void *)(intptr_t)1);
         return;
       case GRPC_QUEUE_TIMEOUT:
         gpr_log(GPR_ERROR, "Invalid timeout received");
@@ -343,8 +349,8 @@ static void test_threading(size_t producers, size_t consumers) {
   size_t total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading",
-          producers, consumers);
+  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers",
+          "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
   for (i = 0; i < producers + consumers; i++) {
@@ -366,7 +372,7 @@ static void test_threading(size_t producers, size_t consumers) {
   /* start phase1: producers will pre-declare all operations they will
      complete */
   gpr_log(GPR_INFO, "start phase 1");
-  gpr_event_set(&phase1, (void *)(gpr_intptr)1);
+  gpr_event_set(&phase1, (void *)(intptr_t)1);
 
   gpr_log(GPR_INFO, "wait phase 1");
   for (i = 0; i < producers + consumers; i++) {
@@ -376,7 +382,7 @@ static void test_threading(size_t producers, size_t consumers) {
 
   /* start phase2: operations will complete, and consumers will consume them */
   gpr_log(GPR_INFO, "start phase 2");
-  gpr_event_set(&phase2, (void *)(gpr_intptr)1);
+  gpr_event_set(&phase2, (void *)(intptr_t)1);
 
   /* in parallel, we shutdown the completion channel - all events should still
      be consumed */
@@ -409,6 +415,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();
+  test_pollset_conversion();
   test_wait_empty();
   test_shutdown_then_next_polling();
   test_shutdown_then_next_with_timeout();

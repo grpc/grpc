@@ -47,7 +47,7 @@ def _filter_msg(msg, output_format):
     # that make XML report unparseable.
     filtered_msg = filter(
         lambda x: x in string.printable and x != '\f' and x != '\v',
-        msg.decode(errors='ignore'))
+        msg.decode('UTF-8', 'ignore'))
     if output_format == 'HTML':
       filtered_msg = filtered_msg.replace('"', '&quot;')
     return filtered_msg
@@ -77,7 +77,7 @@ def render_junit_xml_report(resultset, xml_report):
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases, 
-  resultset, num_failures, cloud_to_prod, http2_interop):
+  resultset, num_failures, cloud_to_prod, prod_servers, http2_interop):
   """Generate HTML report for interop tests."""
   template_file = 'tools/run_tests/interop_html_report.template'
   try:
@@ -94,6 +94,7 @@ def render_interop_html_report(
   sorted_http2_cases = sorted(http2_cases)
   sorted_client_langs = sorted(client_langs)
   sorted_server_langs = sorted(server_langs)
+  sorted_prod_servers = sorted(prod_servers)
 
   args = {'client_langs': sorted_client_langs, 
           'server_langs': sorted_server_langs,
@@ -103,6 +104,7 @@ def render_interop_html_report(
           'resultset': resultset,
           'num_failures': num_failures,
           'cloud_to_prod': cloud_to_prod,
+          'prod_servers': sorted_prod_servers,
           'http2_interop': http2_interop}
 
   html_report_out_dir = 'reports' 

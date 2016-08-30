@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/byte_buffer_reader.h>
 #include <grpc++/support/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 
 namespace grpc {
 
@@ -58,17 +58,22 @@ void ByteBuffer::Clear() {
   }
 }
 
-void ByteBuffer::Dump(std::vector<Slice>* slices) const {
+Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   slices->clear();
   if (!buffer_) {
-    return;
+    return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
   }
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, buffer_);
+  if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
+    return Status(StatusCode::INTERNAL,
+                  "Couldn't initialize byte buffer reader");
+  }
   gpr_slice s;
   while (grpc_byte_buffer_reader_next(&reader, &s)) {
     slices->push_back(Slice(s, Slice::STEAL_REF));
   }
+  grpc_byte_buffer_reader_destroy(&reader);
+  return Status::OK;
 }
 
 size_t ByteBuffer::Length() const {
@@ -77,6 +82,17 @@ size_t ByteBuffer::Length() const {
   } else {
     return 0;
   }
+}
+
+ByteBuffer::ByteBuffer(const ByteBuffer& buf)
+    : buffer_(grpc_byte_buffer_copy(buf.buffer_)) {}
+
+ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
+  Clear();  // first remove existing data
+  if (buf.buffer_) {
+    buffer_ = grpc_byte_buffer_copy(buf.buffer_);  // then copy
+  }
+  return *this;
 }
 
 }  // namespace grpc

@@ -52,21 +52,8 @@ namespace Grpc.IntegrationTesting
     {
         private class ServerOptions
         {
-            [Option("driver_port", DefaultValue = 0)]
+            [Option("driver_port", Default = 0)]
             public int DriverPort { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# performance testing worker",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ServerOptions options;
@@ -78,31 +65,33 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ServerOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
-
-            var workerServer = new QpsWorker(options);
-            workerServer.Run();
+            var parserResult = Parser.Default.ParseArguments<ServerOptions>(args)
+                .WithNotParsed((x) => Environment.Exit(1))
+                .WithParsed(options =>
+                {
+                    var workerServer = new QpsWorker(options);
+                    workerServer.RunAsync().Wait();
+                });
         }
 
-        private void Run()
+        private async Task RunAsync()
         {
             string host = "0.0.0.0";
             int port = options.DriverPort;
 
+            var tcs = new TaskCompletionSource<object>();
+            var workerServiceImpl = new WorkerServiceImpl(() => { Task.Run(() => tcs.SetResult(null)); });
+                
             var server = new Server
             {
-                Services = { WorkerService.BindService(new WorkerServiceImpl()) },
+                Services = { WorkerService.BindService(workerServiceImpl) },
                 Ports = { new ServerPort(host, options.DriverPort, ServerCredentials.Insecure )}
             };
             int boundPort = server.Ports.Single().BoundPort;
             Console.WriteLine("Running qps worker server on " + string.Format("{0}:{1}", host, boundPort));
             server.Start();
-
-            server.ShutdownTask.Wait();
+            await tcs.Task;
+            await server.ShutdownAsync();
         }
     }
 }

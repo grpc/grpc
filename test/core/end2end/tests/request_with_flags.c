@@ -41,12 +41,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/transport/byte_stream.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -76,9 +76,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -99,13 +99,13 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static void test_invoke_request_with_flags(
-    grpc_end2end_test_config config, gpr_uint32 *flags_for_op,
+    grpc_end2end_test_config config, uint32_t *flags_for_op,
     grpc_call_error call_start_batch_expected_result) {
   grpc_call *c;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10);
+  gpr_timespec deadline = five_seconds_time();
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_request_with_flags", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -131,6 +131,7 @@ static void test_invoke_request_with_flags(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -185,9 +186,9 @@ static void test_invoke_request_with_flags(
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void request_with_flags(grpc_end2end_test_config config) {
   size_t i;
-  gpr_uint32 flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
+  uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
   {
     /* check that all grpc_op_types fail when their flag value is set to an
@@ -205,8 +206,8 @@ void grpc_end2end_tests(grpc_end2end_test_config config) {
   }
   {
     /* check valid operation with allowed flags for GRPC_OP_SEND_BUFFER */
-    gpr_uint32 flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
-                          GRPC_WRITE_INTERNAL_COMPRESS};
+    uint32_t flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
+                        GRPC_WRITE_INTERNAL_COMPRESS};
     for (i = 0; i < GPR_ARRAY_SIZE(flags); ++i) {
       memset(flags_for_op, 0, sizeof(flags_for_op));
       flags_for_op[GRPC_OP_SEND_MESSAGE] = flags[i];
@@ -214,3 +215,5 @@ void grpc_end2end_tests(grpc_end2end_test_config config) {
     }
   }
 }
+
+void request_with_flags_pre_init(void) {}

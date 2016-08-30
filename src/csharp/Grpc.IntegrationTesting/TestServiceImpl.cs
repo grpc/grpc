@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,14 +45,14 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of TestService server
     /// </summary>
-    public class TestServiceImpl : TestService.ITestService
+    public class TestServiceImpl : TestService.TestServiceBase
     {
-        public Task<Empty> EmptyCall(Empty request, ServerCallContext context)
+        public override Task<Empty> EmptyCall(Empty request, ServerCallContext context)
         {
             return Task.FromResult(new Empty());
         }
 
-        public async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+        public override async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
             await EnsureEchoMetadataAsync(context);
             EnsureEchoStatus(request.ResponseStatus, context);
@@ -61,7 +61,7 @@ namespace Grpc.Testing
             return response;
         }
 
-        public async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
+        public override async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             await EnsureEchoMetadataAsync(context);
             EnsureEchoStatus(request.ResponseStatus, context);
@@ -73,7 +73,7 @@ namespace Grpc.Testing
             }
         }
 
-        public async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
+        public override async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
         {
             await EnsureEchoMetadataAsync(context);
 
@@ -85,7 +85,7 @@ namespace Grpc.Testing
             return new StreamingInputCallResponse { AggregatedPayloadSize = sum };
         }
 
-        public async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
+        public override async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             await EnsureEchoMetadataAsync(context);
 
@@ -100,7 +100,7 @@ namespace Grpc.Testing
             });
         }
 
-        public async Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
+        public override async Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }

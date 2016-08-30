@@ -31,9 +31,10 @@
  *
  */
 
-#include "rb_byte_buffer.h"
-
 #include <ruby/ruby.h>
+
+#include "rb_grpc_imports.generated.h"
+#include "rb_byte_buffer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer_reader.h>
@@ -48,21 +49,21 @@ grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
 }
 
 VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
-  size_t length = 0;
-  char *string = NULL;
-  size_t offset = 0;
+  VALUE rb_string;
   grpc_byte_buffer_reader reader;
   gpr_slice next;
   if (buffer == NULL) {
     return Qnil;
-
   }
-  length = grpc_byte_buffer_length(buffer);
-  string = xmalloc(length + 1);
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  rb_string = rb_str_buf_new(grpc_byte_buffer_length(buffer));
+  if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
+    rb_raise(rb_eRuntimeError, "Error initializing byte buffer reader.");
+    return Qnil;
+  }
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
+    rb_str_cat(rb_string, (const char *) GPR_SLICE_START_PTR(next),
+               GPR_SLICE_LENGTH(next));
+    gpr_slice_unref(next);
   }
-  return rb_str_new(string, length);
+  return rb_string;
 }

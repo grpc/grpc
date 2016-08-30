@@ -119,7 +119,7 @@ void grpc_split_slice_buffer(grpc_slice_split_mode mode, gpr_slice_buffer *src,
 }
 
 gpr_slice grpc_slice_merge(gpr_slice *slices, size_t nslices) {
-  gpr_uint8 *out = NULL;
+  uint8_t *out = NULL;
   size_t length = 0;
   size_t capacity = 0;
   size_t i;

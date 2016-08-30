@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,18 @@
  *
  */
 
-#ifndef GRPCXX_CREDENTIALS_H
-#define GRPCXX_CREDENTIALS_H
+#ifndef GRPCXX_SECURITY_CREDENTIALS_H
+#define GRPCXX_SECURITY_CREDENTIALS_H
 
 #include <map>
 #include <memory>
 
-#include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/security/auth_context.h>
-#include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
+
+struct grpc_call;
 
 namespace grpc {
 class ChannelArguments;
@@ -56,9 +57,10 @@ class SecureCallCredentials;
 /// for all the calls on that channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class ChannelCredentials : public GrpcLibrary {
+class ChannelCredentials : private GrpcLibraryCodegen {
  public:
-  ~ChannelCredentials() GRPC_OVERRIDE;
+  ChannelCredentials();
+  ~ChannelCredentials();
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -81,9 +83,10 @@ class ChannelCredentials : public GrpcLibrary {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class CallCredentials : public GrpcLibrary {
+class CallCredentials : private GrpcLibraryCodegen {
  public:
-  ~CallCredentials() GRPC_OVERRIDE;
+  CallCredentials();
+  ~CallCredentials();
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
@@ -226,4 +229,4 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CREDENTIALS_H
+#endif  // GRPCXX_SECURITY_CREDENTIALS_H

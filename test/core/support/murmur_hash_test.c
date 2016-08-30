@@ -31,23 +31,23 @@
  *
  */
 
-#include "src/core/support/murmur_hash.h"
+#include "src/core/lib/support/murmur_hash.h"
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/test_config.h"
 
 #include <string.h>
 
-typedef gpr_uint32 (*hash_func)(const void *key, size_t len, gpr_uint32 seed);
+typedef uint32_t (*hash_func)(const void *key, size_t len, uint32_t seed);
 
 /* From smhasher:
    This should hopefully be a thorough and uambiguous test of whether a hash
    is correctly implemented on a given platform */
 
-static void verification_test(hash_func hash, gpr_uint32 expected) {
-  gpr_uint8 key[256];
-  gpr_uint32 hashes[256];
-  gpr_uint32 final = 0;
+static void verification_test(hash_func hash, uint32_t expected) {
+  uint8_t key[256];
+  uint32_t hashes[256];
+  uint32_t final = 0;
   size_t i;
 
   memset(key, 0, sizeof(key));
@@ -57,8 +57,8 @@ static void verification_test(hash_func hash, gpr_uint32 expected) {
      the seed */
 
   for (i = 0; i < 256; i++) {
-    key[i] = (gpr_uint8)i;
-    hashes[i] = hash(key, i, (gpr_uint32)(256u - i));
+    key[i] = (uint8_t)i;
+    hashes[i] = hash(key, i, (uint32_t)(256u - i));
   }
 
   /* Then hash the result array */

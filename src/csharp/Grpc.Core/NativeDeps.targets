@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Condition=" '$(NativeDependenciesConfiguration)' == '' ">
+    <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Debug' ">Debug</NativeDependenciesConfiguration>
+    <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Release' ">Release</NativeDependenciesConfiguration>
+    <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'ReleaseSigned' ">Release</NativeDependenciesConfiguration>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(NativeDependenciesConfigurationUnix)' == '' ">
+    <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'Debug' ">dbg</NativeDependenciesConfigurationUnix>
+    <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'Release' ">opt</NativeDependenciesConfigurationUnix>
+    <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'ReleaseSigned' ">opt</NativeDependenciesConfigurationUnix>
+  </PropertyGroup>
+
+  <!-- Autodetect platform -->
+  <PropertyGroup Condition=" '$(OS)' != 'Unix' ">
+    <NativeDepsPlatform>Windows</NativeDepsPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(OS)' == 'Unix' And Exists('/Applications') And Exists('/Library') And Exists('/System') ">
+    <NativeDepsPlatform>Mac</NativeDepsPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(OS)' == 'Unix' And '$(NativeDepsPlatform)' == '' ">
+    <NativeDepsPlatform>Linux</NativeDepsPlatform>
+  </PropertyGroup>
+
+  <Import Project="NativeDeps.$(NativeDepsPlatform).targets" />
+</Project>

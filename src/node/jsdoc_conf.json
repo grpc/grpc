@@ -3,13 +3,13 @@
     "allowUnknownTags": true
   },
   "source": {
-    "include": [ "index.js", "src" ],
-    "includePattern": ".+\\.js(doc)?$",
+    "include": [ "src/node/index.js", "src/node/src" ],
+    "includePattern": "src/node/.+\\.js(doc)?$",
     "excludePattern": "(^|\\/|\\\\)_"
   },
   "opts": {
     "package": "package.json",
-    "readme": "README.md"
+    "readme": "src/node/README.md"
   },
   "plugins": [],
   "templates": {

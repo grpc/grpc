@@ -36,7 +36,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args.h"
 
 #include "test/core/util/test_config.h"
 
@@ -77,7 +77,8 @@ static void test_set_compression_algorithm(void) {
   ch_args =
       grpc_channel_args_set_compression_algorithm(NULL, GRPC_COMPRESS_GZIP);
   GPR_ASSERT(ch_args->num_args == 1);
-  GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_COMPRESSION_ALGORITHM_ARG) == 0);
+  GPR_ASSERT(strcmp(ch_args->args[0].key,
+                    GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_INTEGER);
 
   grpc_channel_args_destroy(ch_args);
@@ -135,8 +136,10 @@ static void test_compression_algorithm_states(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_create();
   test_set_compression_algorithm();
   test_compression_algorithm_states();
+  grpc_shutdown();
   return 0;
 }

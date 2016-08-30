@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,17 @@
  *
  */
 
+#include <ruby/ruby.h>
+
+#include "rb_grpc_imports.generated.h"
 #include "rb_call_credentials.h"
 
-#include <ruby/ruby.h>
 #include <ruby/thread.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "rb_call.h"
 #include "rb_event_thread.h"
@@ -48,9 +51,9 @@
  * grpc_call_credentials */
 static VALUE grpc_rb_cCallCredentials = Qnil;
 
-/* grpc_rb_call_credentials wraps a grpc_call_credentials. It provides a peer
- * ruby object, 'mark' to minimize copying when a credential is created from
- * ruby. */
+/* grpc_rb_call_credentials wraps a grpc_call_credentials. It provides a mark
+ * object that is used to hold references to any objects used to create the
+ * credentials. */
 typedef struct grpc_rb_call_credentials {
   /* Holder of ruby objects involved in contructing the credentials */
   VALUE mark;
@@ -79,13 +82,23 @@ static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
 static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
   VALUE result = rb_hash_new();
+  VALUE backtrace = rb_funcall(
+      rb_funcall(exception_object, rb_intern("backtrace"), 0),
+      rb_intern("join"),
+      1, rb_str_new2("\n\tfrom "));
+  VALUE rb_exception_info = rb_funcall(exception_object, rb_intern("to_s"), 0);
+  const char *exception_classname = rb_obj_classname(exception_object);
+  (void)args;
+  gpr_log(GPR_INFO, "Call credentials callback failed: %s: %s\n%s",
+          exception_classname, StringValueCStr(rb_exception_info),
+          StringValueCStr(backtrace));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   /* Currently only gives the exception class name. It should be possible get
      more details */
   rb_hash_aset(result, rb_str_new2("status"),
                INT2NUM(GRPC_STATUS_PERMISSION_DENIED));
   rb_hash_aset(result, rb_str_new2("details"),
-               rb_str_new2(rb_obj_classname(exception_object)));
+               rb_str_new2(exception_classname));
   return result;
 }
 
@@ -132,6 +145,7 @@ static void grpc_rb_call_credentials_plugin_get_metadata(
 }
 
 static void grpc_rb_call_credentials_plugin_destroy(void *state) {
+  (void)state;
   // Not sure what needs to be done here
 }
 
@@ -142,13 +156,8 @@ static void grpc_rb_call_credentials_free(void *p) {
     return;
   }
   wrapper = (grpc_rb_call_credentials *)p;
-
-  /* Delete the wrapped object if the mark object is Qnil, which indicates that
-   * no other object is the actual owner. */
-  if (wrapper->wrapped != NULL && wrapper->mark == Qnil) {
-    grpc_call_credentials_release(wrapper->wrapped);
-    wrapper->wrapped = NULL;
-  }
+  grpc_call_credentials_release(wrapper->wrapped);
+  wrapper->wrapped = NULL;
 
   xfree(p);
 }
@@ -160,8 +169,6 @@ static void grpc_rb_call_credentials_mark(void *p) {
     return;
   }
   wrapper = (grpc_rb_call_credentials *)p;
-
-  /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
     rb_gc_mark(wrapper->mark);
   }
@@ -190,7 +197,7 @@ static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
 /* Creates a wrapping object for a given call credentials. This should only be
  * called with grpc_call_credentials objects that are not already associated
  * with any Ruby object */
-VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c) {
+VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c, VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_call_credentials *wrapper;
   if (c == NULL) {
@@ -200,36 +207,8 @@ VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c) {
   TypedData_Get_Struct(rb_wrapper, grpc_rb_call_credentials,
                        &grpc_rb_call_credentials_data_type, wrapper);
   wrapper->wrapped = c;
+  wrapper->mark = mark;
   return rb_wrapper;
-}
-
-/* Clones CallCredentials instances.
-   Gives CallCredentials a consistent implementation of Ruby's object copy/dup
-   protocol. */
-static VALUE grpc_rb_call_credentials_init_copy(VALUE copy, VALUE orig) {
-  grpc_rb_call_credentials *orig_cred = NULL;
-  grpc_rb_call_credentials *copy_cred = NULL;
-
-  if (copy == orig) {
-    return copy;
-  }
-
-  /* Raise an error if orig is not a credentials object or a subclass. */
-  if (TYPE(orig) != T_DATA ||
-      RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_call_credentials_free) {
-    rb_raise(rb_eTypeError, "not a %s",
-             rb_obj_classname(grpc_rb_cCallCredentials));
-  }
-
-  TypedData_Get_Struct(orig, grpc_rb_call_credentials,
-                       &grpc_rb_call_credentials_data_type, orig_cred);
-  TypedData_Get_Struct(copy, grpc_rb_call_credentials,
-                       &grpc_rb_call_credentials_data_type, copy_cred);
-
-  /* use ruby's MEMCPY to make a byte-for-byte copy of the credentials
-   * wrapper object. */
-  MEMCPY(copy_cred, orig_cred, grpc_rb_call_credentials, 1);
-  return copy;
 }
 
 /* The attribute used on the mark object to hold the callback */
@@ -263,6 +242,7 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
     return Qnil;
   }
 
+  wrapper->mark = proc;
   wrapper->wrapped = creds;
   rb_ivar_set(self, id_callback, proc);
 
@@ -273,15 +253,18 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE *argv,
                                               VALUE self) {
   grpc_call_credentials *creds;
   grpc_call_credentials *other;
+  VALUE mark;
   if (argc == 0) {
     return self;
   }
+  mark = rb_ary_new();
   creds = grpc_rb_get_wrapped_call_credentials(self);
   for (int i = 0; i < argc; i++) {
+    rb_ary_push(mark, argv[i]);
     other = grpc_rb_get_wrapped_call_credentials(argv[i]);
     creds = grpc_composite_call_credentials_create(creds, other, NULL);
   }
-  return grpc_rb_wrap_call_credentials(creds);
+  return grpc_rb_wrap_call_credentials(creds, mark);
 }
 
 void Init_grpc_call_credentials() {
@@ -296,7 +279,7 @@ void Init_grpc_call_credentials() {
   rb_define_method(grpc_rb_cCallCredentials, "initialize",
                    grpc_rb_call_credentials_init, 1);
   rb_define_method(grpc_rb_cCallCredentials, "initialize_copy",
-                   grpc_rb_call_credentials_init_copy, 1);
+                   grpc_rb_cannot_init_copy, 1);
   rb_define_method(grpc_rb_cCallCredentials, "compose",
                    grpc_rb_call_credentials_compose, -1);
 

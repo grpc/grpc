@@ -33,19 +33,13 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-ROOT=`pwd`
-GRPCIO=$ROOT/src/python/grpcio
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=c89"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+PYTHON=`realpath -s "${1:-py27/bin/python}"`
 
-cd $GRPCIO
-tox
+ROOT=`pwd`
+
+$PYTHON $ROOT/src/python/grpcio_tests/setup.py test_lite
 
 mkdir -p $ROOT/reports
 rm -rf $ROOT/reports/python-coverage
-(mv -T $GRPCIO/htmlcov $ROOT/reports/python-coverage) || true
+(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
+

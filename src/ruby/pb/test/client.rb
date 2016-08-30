@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,23 +38,23 @@
 #                            --server_port=<port> \
 #                            --test_case=<testcase_name>
 
+# These lines are required for the generated files to load grpc
 this_dir = File.expand_path(File.dirname(__FILE__))
 lib_dir = File.join(File.dirname(File.dirname(this_dir)), 'lib')
-pb_dir = File.dirname(File.dirname(this_dir))
+pb_dir = File.dirname(this_dir)
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 $LOAD_PATH.unshift(pb_dir) unless $LOAD_PATH.include?(pb_dir)
-$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'optparse'
 require 'logger'
 
-require 'grpc'
+require_relative '../../lib/grpc'
 require 'googleauth'
 require 'google/protobuf'
 
-require 'test/proto/empty'
-require 'test/proto/messages'
-require 'test/proto/test_services'
+require_relative '../src/proto/grpc/testing/empty_pb'
+require_relative '../src/proto/grpc/testing/messages_pb'
+require_relative '../src/proto/grpc/testing/test_services_pb'
 
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
@@ -114,7 +114,9 @@ def create_stub(opts)
   if opts.secure
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      GRPC::Core::Channel::SSL_TARGET => opts.host_override
+      channel_args: {
+        GRPC::Core::Channel::SSL_TARGET => opts.host_override
+      }
     }
 
     # Add service account creds if specified
@@ -195,6 +197,25 @@ class PingPongPlayer
   end
 end
 
+class BlockingEnumerator
+  include Grpc::Testing
+  include Grpc::Testing::PayloadType
+
+  def initialize(req_size, sleep_time)
+    @req_size = req_size
+    @sleep_time = sleep_time
+  end
+
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    req_cls = StreamingOutputCallRequest
+    req = req_cls.new(payload: Payload.new(body: nulls(@req_size)))
+    yield req
+    # Sleep until after the deadline should have passed
+    sleep(@sleep_time)
+  end
+end
+
 # defines methods corresponding to each interop test case.
 class NamedTests
   include Grpc::Testing
@@ -208,12 +229,10 @@ class NamedTests
   def empty_unary
     resp = @stub.empty_call(Empty.new)
     assert('empty_unary: invalid response') { resp.is_a?(Empty) }
-    p 'OK: empty_unary'
   end
 
   def large_unary
     perform_large_unary
-    p 'OK: large_unary'
   end
 
   def service_account_creds
@@ -230,7 +249,6 @@ class NamedTests
     assert("#{__callee__}: bad oauth scope") do
       @args.oauth_scope.include?(resp.oauth_scope)
     end
-    p "OK: #{__callee__}"
   end
 
   def jwt_token_creds
@@ -238,7 +256,6 @@ class NamedTests
     wanted_email = MultiJson.load(json_key)['client_email']
     resp = perform_large_unary(fill_username: true)
     assert("#{__callee__}: bad username") { wanted_email == resp.username }
-    p "OK: #{__callee__}"
   end
 
   def compute_engine_creds
@@ -247,7 +264,6 @@ class NamedTests
     assert("#{__callee__}: bad username") do
       @args.default_service_account == resp.username
     end
-    p "OK: #{__callee__}"
   end
 
   def oauth2_auth_token
@@ -259,7 +275,6 @@ class NamedTests
     assert("#{__callee__}: bad oauth scope") do
       @args.oauth_scope.include?(resp.oauth_scope)
     end
-    p "OK: #{__callee__}"
   end
 
   def per_rpc_creds
@@ -279,7 +294,6 @@ class NamedTests
     assert("#{__callee__}: bad oauth scope") do
       @args.oauth_scope.include?(resp.oauth_scope)
     end
-    p "OK: #{__callee__}"
   end
 
   def client_streaming
@@ -293,7 +307,6 @@ class NamedTests
     assert("#{__callee__}: aggregate payload size is incorrect") do
       wanted_aggregate_size == resp.aggregated_payload_size
     end
-    p "OK: #{__callee__}"
   end
 
   def server_streaming
@@ -311,7 +324,6 @@ class NamedTests
         :COMPRESSABLE == r.payload.type
       end
     end
-    p "OK: #{__callee__}"
   end
 
   def ping_pong
@@ -319,20 +331,18 @@ class NamedTests
     ppp = PingPongPlayer.new(msg_sizes)
     resps = @stub.full_duplex_call(ppp.each_item)
     resps.each { |r| ppp.queue.push(r) }
-    p "OK: #{__callee__}"
   end
 
   def timeout_on_sleeping_server
-    msg_sizes = [[27_182, 31_415]]
-    ppp = PingPongPlayer.new(msg_sizes)
-    resps = @stub.full_duplex_call(ppp.each_item, timeout: 0.001)
-    resps.each { |r| ppp.queue.push(r) }
+    enum = BlockingEnumerator.new(27_182, 2)
+    deadline = GRPC::Core::TimeConsts::from_relative_time(1)
+    resps = @stub.full_duplex_call(enum.each_item, deadline: deadline)
+    resps.each { } # wait to receive each request (or timeout)
     fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
   rescue GRPC::BadStatus => e
     assert("#{__callee__}: status was wrong") do
       e.code == GRPC::Core::StatusCodes::DEADLINE_EXCEEDED
     end
-    p "OK: #{__callee__}"
   end
 
   def empty_stream
@@ -346,7 +356,6 @@ class NamedTests
     assert("#{__callee__}: too many responses expected 0") do
       count == 0
     end
-    p "OK: #{__callee__}"
   end
 
   def cancel_after_begin
@@ -360,8 +369,7 @@ class NamedTests
     op.execute
     fail 'Should have raised GRPC:Cancelled'
   rescue GRPC::Cancelled
-    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled }
-    p "OK: #{__callee__}"
+    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled? }
   end
 
   def cancel_after_first_response
@@ -372,9 +380,8 @@ class NamedTests
     op.execute.each { |r| ppp.queue.push(r) }
     fail 'Should have raised GRPC:Cancelled'
   rescue GRPC::Cancelled
-    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled }
+    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled? }
     op.wait
-    p "OK: #{__callee__}"
   end
 
   def all
@@ -442,7 +449,7 @@ def parse_args
     opts.on('--use_tls USE_TLS', ['false', 'true'],
             'require a secure connection?') do |v|
       args['secure'] = v == 'true'
-    end
+p    end
     opts.on('--use_test_ca USE_TEST_CA', ['false', 'true'],
             'if secure, use the test certificate?') do |v|
       args['use_test_ca'] = v == 'true'
@@ -464,6 +471,9 @@ def main
   opts = parse_args
   stub = create_stub(opts)
   NamedTests.new(stub, opts).method(opts['test_case']).call
+  p "OK: #{opts['test_case']}"
 end
 
-main
+if __FILE__ == $0
+  main
+end

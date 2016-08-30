@@ -42,13 +42,18 @@ var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var EventEmitter = require('events');
+
+var async = require('async');
 var _ = require('lodash');
 var PoissonProcess = require('poisson-process');
 var Histogram = require('./histogram');
+
+var genericService = require('./generic_service');
+
 var grpc = require('../../../');
 var serviceProto = grpc.load({
   root: __dirname + '/../../..',
-  file: 'test/proto/benchmarks/services.proto'}).grpc.testing;
+  file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
 
 /**
  * Create a buffer filled with size zeroes
@@ -104,9 +109,13 @@ function BenchmarkClient(server_targets, channels, histogram_params,
   }
 
   this.clients = [];
+  var GenericClient = grpc.makeGenericClientConstructor(genericService);
+  this.genericClients = [];
 
   for (var i = 0; i < channels; i++) {
     this.clients[i] = new serviceProto.BenchmarkService(
+        server_targets[i % server_targets.length], creds, options);
+    this.genericClients[i] = new GenericClient(
         server_targets[i % server_targets.length], creds, options);
   }
 
@@ -121,6 +130,36 @@ function BenchmarkClient(server_targets, channels, histogram_params,
 util.inherits(BenchmarkClient, EventEmitter);
 
 /**
+ * Start every client in the list of clients by waiting for each to be ready,
+ * then starting outstanding_rpcs_per_channel calls on each of them
+ * @param {Array<grpc.Client>} client_list The list of clients
+ * @param {Number} outstanding_rpcs_per_channel The number of calls to start
+ *     on each client
+ * @param {function(grpc.Client)} makeCall Function to make a single call on
+ *     a single client
+ * @param {EventEmitter} emitter The event emitter to send errors on, if
+ *     necessary
+ */
+function startAllClients(client_list, outstanding_rpcs_per_channel, makeCall,
+                         emitter) {
+  var ready_wait_funcs = _.map(client_list, function(client) {
+    return _.partial(grpc.waitForClientReady, client, Infinity);
+  });
+  async.parallel(ready_wait_funcs, function(err) {
+    if (err) {
+      emitter.emit('error', err);
+      return;
+    }
+
+    _.each(client_list, function(client) {
+      _.times(outstanding_rpcs_per_channel, function() {
+        makeCall(client);
+      });
+    });
+  });
+}
+
+/**
  * Start a closed-loop test. For each channel, start
  * outstanding_rpcs_per_channel RPCs. Then, whenever an RPC finishes, start
  * another one.
@@ -130,9 +169,11 @@ util.inherits(BenchmarkClient, EventEmitter);
  *     'STREAMING'
  * @param {number} req_size The size of the payload to send with each request
  * @param {number} resp_size The size of payload to request be sent in responses
+ * @param {boolean} generic Indicates that the generic (non-proto) clients
+ *     should be used
  */
 BenchmarkClient.prototype.startClosedLoop = function(
-    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size) {
+    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size, generic) {
   var self = this;
 
   self.running = true;
@@ -141,12 +182,20 @@ BenchmarkClient.prototype.startClosedLoop = function(
 
   var makeCall;
 
-  var argument = {
-    response_size: resp_size,
-    payload: {
-      body: zeroBuffer(req_size)
-    }
-  };
+  var argument;
+  var client_list;
+  if (generic) {
+    argument = zeroBuffer(req_size);
+    client_list = self.genericClients;
+  } else {
+    argument = {
+      response_size: resp_size,
+      payload: {
+        body: zeroBuffer(req_size)
+      }
+    };
+    client_list = self.clients;
+  }
 
   if (rpc_type == 'UNARY') {
     makeCall = function(client) {
@@ -195,11 +244,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
     };
   }
 
-  _.each(self.clients, function(client) {
-    _.times(outstanding_rpcs_per_channel, function() {
-      makeCall(client);
-    });
-  });
+  startAllClients(client_list, outstanding_rpcs_per_channel, makeCall, self);
 };
 
 /**
@@ -213,9 +258,12 @@ BenchmarkClient.prototype.startClosedLoop = function(
  * @param {number} req_size The size of the payload to send with each request
  * @param {number} resp_size The size of payload to request be sent in responses
  * @param {number} offered_load The load parameter for the Poisson process
+ * @param {boolean} generic Indicates that the generic (non-proto) clients
+ *     should be used
  */
 BenchmarkClient.prototype.startPoisson = function(
-    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size, offered_load) {
+    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size, offered_load,
+    generic) {
   var self = this;
 
   self.running = true;
@@ -224,12 +272,20 @@ BenchmarkClient.prototype.startPoisson = function(
 
   var makeCall;
 
-  var argument = {
-    response_size: resp_size,
-    payload: {
-      body: zeroBuffer(req_size)
-    }
-  };
+  var argument;
+  var client_list;
+  if (generic) {
+    argument = zeroBuffer(req_size);
+    client_list = self.genericClients;
+  } else {
+    argument = {
+      response_size: resp_size,
+      payload: {
+        body: zeroBuffer(req_size)
+      }
+    };
+    client_list = self.clients;
+  }
 
   if (rpc_type == 'UNARY') {
     makeCall = function(client, poisson) {
@@ -282,14 +338,12 @@ BenchmarkClient.prototype.startPoisson = function(
 
   var averageIntervalMs = (1 / offered_load) * 1000;
 
-  _.each(self.clients, function(client) {
-    _.times(outstanding_rpcs_per_channel, function() {
-      var p = PoissonProcess.create(averageIntervalMs, function() {
-        makeCall(client, p);
-      });
-      p.start();
+  startAllClients(client_list, outstanding_rpcs_per_channel, function(client){
+    var p = PoissonProcess.create(averageIntervalMs, function() {
+      makeCall(client, p);
     });
-  });
+    p.start();
+  }, self);
 };
 
 /**

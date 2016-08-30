@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_nosec_tests.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_accept.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_client_done.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_invoke.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_before_invoke.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_in_a_vacuum.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_with_status.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\compressed_payload.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\connectivity.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\default_host.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\disappearing_server.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\empty_batch.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\high_initial_seqno.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\hpack_size.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\idempotent_request.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\invoke_large_request.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\large_metadata.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_concurrent_streams.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_message_length.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\negative_deadline.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\network_status_change.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\ping.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\ping_pong_streaming.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\registered_call.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\request_with_flags.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\request_with_payload.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\server_finishes_request.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_calls.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_tags.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_delayed_request.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_metadata.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\streaming_error_response.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\trailing_metadata.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_test_helpers.h">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{95f38e16-d400-0c90-0b5f-7670d392e71f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{d58c2741-0940-80bc-ac98-9fe98ce69c36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{f4baa425-3c27-3025-ecbc-a83c877ac226}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\tests">
+      <UniqueIdentifier>{a828bc7b-f20c-0caa-e8ef-ca62e0bed371}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

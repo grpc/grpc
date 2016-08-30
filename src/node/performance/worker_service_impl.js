@@ -33,8 +33,15 @@
 
 'use strict';
 
+var os = require('os');
+var console = require('console');
 var BenchmarkClient = require('./benchmark_client');
 var BenchmarkServer = require('./benchmark_server');
+
+exports.quitWorker = function quitWorker(call, callback) {
+  callback(null, {});
+  process.exit(0);
+}
 
 exports.runClient = function runClient(call) {
   var client;
@@ -43,6 +50,7 @@ exports.runClient = function runClient(call) {
     switch (request.argtype) {
       case 'setup':
       var setup = request.setup;
+      console.log('ClientConfig %j', setup);
       client = new BenchmarkClient(setup.server_targets,
                                    setup.client_channels,
                                    setup.histogram_params,
@@ -50,18 +58,31 @@ exports.runClient = function runClient(call) {
       client.on('error', function(error) {
         call.emit('error', error);
       });
+      var req_size, resp_size, generic;
+      switch (setup.payload_config.payload) {
+        case 'bytebuf_params':
+        req_size = setup.payload_config.bytebuf_params.req_size;
+        resp_size = setup.payload_config.bytebuf_params.resp_size;
+        generic = true;
+        break;
+        case 'simple_params':
+        req_size = setup.payload_config.simple_params.req_size;
+        resp_size = setup.payload_config.simple_params.resp_size;
+        generic = false;
+        break;
+        default:
+        call.emit('error', new Error('Unsupported PayloadConfig type' +
+            setup.payload_config.payload));
+      }
       switch (setup.load_params.load) {
         case 'closed_loop':
         client.startClosedLoop(setup.outstanding_rpcs_per_channel,
-                               setup.rpc_type,
-                               setup.payload_config.simple_params.req_size,
-                               setup.payload_config.simple_params.resp_size);
+                               setup.rpc_type, req_size, resp_size, generic);
         break;
         case 'poisson':
         client.startPoisson(setup.outstanding_rpcs_per_channel,
-                            setup.rpc_type, setup.payload_config.req_size,
-                            setup.payload_config.resp_size,
-                            setup.load_params.poisson.offered_load);
+                            setup.rpc_type, req_size, resp_size,
+                            setup.load_params.poisson.offered_load, generic);
         break;
         default:
         call.emit('error', new Error('Unsupported LoadParams type' +
@@ -99,7 +120,8 @@ exports.runServer = function runServer(call) {
     var stats;
     switch (request.argtype) {
       case 'setup':
-      server = new BenchmarkServer(request.setup.host, request.setup.port,
+      console.log('ServerConfig %j', request.setup);
+      server = new BenchmarkServer('[::]', request.setup.port,
                                    request.setup.security_params);
       server.start();
       stats = server.mark();
@@ -129,4 +151,8 @@ exports.runServer = function runServer(call) {
       call.end();
     });
   });
+};
+
+exports.coreCount = function coreCount(call, callback) {
+  callback(null, {cores: os.cpus().length});
 };

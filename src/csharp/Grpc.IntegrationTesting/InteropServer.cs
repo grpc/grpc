@@ -51,25 +51,12 @@ namespace Grpc.IntegrationTesting
     {
         private class ServerOptions
         {
-            [Option("port", DefaultValue = 8070)]
+            [Option("port", Default = 8070)]
             public int Port { get; set; }
 
             // Deliberately using nullable bool type to allow --use_tls=true syntax (as opposed to --use_tls)
-            [Option("use_tls", DefaultValue = false)]
+            [Option("use_tls", Default = false)]
             public bool? UseTls { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# interop testing server",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ServerOptions options;
@@ -81,14 +68,13 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ServerOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
-
-            var interopServer = new InteropServer(options);
-            interopServer.Run();
+            var parserResult = Parser.Default.ParseArguments<ServerOptions>(args)
+                .WithNotParsed(errors => Environment.Exit(1))
+                .WithParsed(options =>
+                {
+                    var interopServer = new InteropServer(options);
+                    interopServer.Run();
+                });
         }
 
         private void Run()

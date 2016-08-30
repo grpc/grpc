@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/port_platform.h>
-#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <errno.h>
 #include <string.h>
@@ -47,14 +47,22 @@ int main(int argc, char **argv) {
   sock = socket(PF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(sock > 0);
 
-  GPR_ASSERT(grpc_set_socket_nonblocking(sock, 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(sock, 0));
-  GPR_ASSERT(grpc_set_socket_cloexec(sock, 1));
-  GPR_ASSERT(grpc_set_socket_cloexec(sock, 0));
-  GPR_ASSERT(grpc_set_socket_reuse_addr(sock, 1));
-  GPR_ASSERT(grpc_set_socket_reuse_addr(sock, 0));
-  GPR_ASSERT(grpc_set_socket_low_latency(sock, 1));
-  GPR_ASSERT(grpc_set_socket_low_latency(sock, 0));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
+                               grpc_set_socket_nonblocking(sock, 1)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
+                               grpc_set_socket_nonblocking(sock, 0)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_cloexec",
+                               grpc_set_socket_cloexec(sock, 1)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_cloexec",
+                               grpc_set_socket_cloexec(sock, 0)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
+                               grpc_set_socket_reuse_addr(sock, 1)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
+                               grpc_set_socket_reuse_addr(sock, 0)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
+                               grpc_set_socket_low_latency(sock, 1)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
+                               grpc_set_socket_low_latency(sock, 0)));
 
   close(sock);
 

@@ -34,12 +34,12 @@
 #ifndef GRPCXX_SUPPORT_SLICE_H
 #define GRPCXX_SUPPORT_SLICE_H
 
-#include <grpc/support/slice.h>
 #include <grpc++/support/config.h>
+#include <grpc/support/slice.h>
 
 namespace grpc {
 
-/// A wrapper around \a grpc_slice.
+/// A wrapper around \a gpr_slice.
 ///
 /// A slice represents a contiguous reference counted array of bytes.
 /// It is cheap to take references to a slice, and it is cheap to create a
@@ -72,10 +72,10 @@ class Slice GRPC_FINAL {
   size_t size() const { return GPR_SLICE_LENGTH(slice_); }
 
   /// Raw pointer to the beginning (first element) of the slice.
-  const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
+  const uint8_t* begin() const { return GPR_SLICE_START_PTR(slice_); }
 
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
-  const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
+  const uint8_t* end() const { return GPR_SLICE_END_PTR(slice_); }
 
  private:
   friend class ByteBuffer;

@@ -33,12 +33,12 @@
 
 /* Test of gpr thread local storage support. */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/tls.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "test/core/util/test_config.h"
 
 #define NUM_THREADS 100
@@ -46,11 +46,11 @@
 GPR_TLS_DECL(test_var);
 
 static void thd_body(void *arg) {
-  gpr_intptr i;
+  intptr_t i;
 
   GPR_ASSERT(gpr_tls_get(&test_var) == 0);
 
-  for (i = 0; i < 10000000; i++) {
+  for (i = 0; i < 100000; i++) {
     gpr_tls_set(&test_var, i);
     GPR_ASSERT(gpr_tls_get(&test_var) == i);
   }

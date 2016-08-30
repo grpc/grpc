@@ -29,7 +29,6 @@
 
 """A thread pool that logs exceptions raised by tasks executed within it."""
 
-import functools
 import logging
 
 from concurrent import futures
@@ -37,12 +36,12 @@ from concurrent import futures
 
 def _wrap(behavior):
   """Wraps an arbitrary callable behavior in exception-logging."""
-  @functools.wraps(behavior)
   def _wrapping(*args, **kwargs):
     try:
       return behavior(*args, **kwargs)
     except Exception as e:
-      logging.exception('Unexpected exception from task run in logging pool!')
+      logging.exception(
+          'Unexpected exception from %s executed in logging pool!', behavior)
       raise
   return _wrapping
 

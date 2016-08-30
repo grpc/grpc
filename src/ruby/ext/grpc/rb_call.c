@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,10 @@
  *
  */
 
-#include "rb_call.h"
-
 #include <ruby/ruby.h>
+
+#include "rb_grpc_imports.generated.h"
+#include "rb_call.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -62,22 +63,17 @@ static VALUE grpc_rb_sBatchResult;
  * grpc_metadata_array. */
 static VALUE grpc_rb_cMdAry;
 
-/* id_cq is the name of the hidden ivar that preserves a reference to a
- * completion queue */
-static ID id_cq;
-
-/* id_flags is the name of the hidden ivar that preserves the value of
- * the flags used to create metadata from a Hash */
-static ID id_flags;
-
-/* id_input_md is the name of the hidden ivar that preserves the hash used to
- * create metadata, so that references to the strings it contains last as long
- * as the call the metadata is added to. */
-static ID id_input_md;
+/* id_credentials is the name of the hidden ivar that preserves the value
+ * of the credentials added to the call */
+static ID id_credentials;
 
 /* id_metadata is name of the attribute used to access the metadata hash
  * received by the call and subsequently saved on it. */
 static ID id_metadata;
+
+/* id_trailing_metadata is the name of the attribute used to access the trailing
+ * metadata hash received by the call and subsequently saved on it. */
+static ID id_trailing_metadata;
 
 /* id_status is name of the attribute used to access the status object
  * received by the call and subsequently saved on it. */
@@ -96,30 +92,27 @@ static VALUE sym_message;
 static VALUE sym_status;
 static VALUE sym_cancelled;
 
-/* hash_all_calls is a hash of Call address -> reference count that is used to
- * track the creation and destruction of rb_call instances.
- */
-static VALUE hash_all_calls;
+typedef struct grpc_rb_call {
+  grpc_call *wrapped;
+  grpc_completion_queue *queue;
+} grpc_rb_call;
+
+static void destroy_call(grpc_rb_call *call) {
+  /* Ensure that we only try to destroy the call once */
+  if (call->wrapped != NULL) {
+    grpc_call_destroy(call->wrapped);
+    call->wrapped = NULL;
+    grpc_rb_completion_queue_destroy(call->queue);
+    call->queue = NULL;
+  }
+}
 
 /* Destroys a Call. */
 static void grpc_rb_call_destroy(void *p) {
-  grpc_call *call = NULL;
-  VALUE ref_count = Qnil;
   if (p == NULL) {
     return;
-  };
-  call = (grpc_call *)p;
-
-  ref_count = rb_hash_aref(hash_all_calls, OFFT2NUM((VALUE)call));
-  if (ref_count == Qnil) {
-    return; /* No longer in the hash, so already deleted */
-  } else if (NUM2UINT(ref_count) == 1) {
-    rb_hash_delete(hash_all_calls, OFFT2NUM((VALUE)call));
-    grpc_call_destroy(call);
-  } else {
-    rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)call),
-                 UINT2NUM(NUM2UINT(ref_count) - 1));
   }
+  destroy_call((grpc_rb_call*)p);
 }
 
 static size_t md_ary_datasize(const void *p) {
@@ -146,7 +139,7 @@ static const rb_data_type_t grpc_rb_md_ary_data_type = {
      * touches a hash object.
      * TODO(yugui) Directly use st_table and call the free function earlier?
      */
-    0,
+     0,
 #endif
 };
 
@@ -158,12 +151,7 @@ static const rb_data_type_t grpc_call_data_type = {
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    /* it is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because
-     * grpc_rb_call_destroy
-     * touches a hash object.
-     * TODO(yugui) Directly use st_table and call the free function earlier?
-     */
-    0,
+    RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -183,10 +171,15 @@ const char *grpc_call_error_detail_of(grpc_call_error err) {
 /* Called by clients to cancel an RPC on the server.
    Can be called multiple times, from any thread. */
 static VALUE grpc_rb_call_cancel(VALUE self) {
-  grpc_call *call = NULL;
+  grpc_rb_call *call = NULL;
   grpc_call_error err;
-  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
-  err = grpc_call_cancel(call, NULL);
+  if (RTYPEDDATA_DATA(self) == NULL) {
+    //This call has been closed
+    return Qnil;
+  }
+
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+  err = grpc_call_cancel(call->wrapped, NULL);
   if (err != GRPC_CALL_OK) {
     rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -195,15 +188,66 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   return Qnil;
 }
 
+/* Releases the c-level resources associated with a call
+   Once a call has been closed, no further requests can be
+   processed.
+*/
+static VALUE grpc_rb_call_close(VALUE self) {
+  grpc_rb_call *call = NULL;
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+  if(call != NULL) {
+    destroy_call(call);
+    RTYPEDDATA_DATA(self) = NULL;
+  }
+  return Qnil;
+}
+
 /* Called to obtain the peer that this call is connected to. */
 static VALUE grpc_rb_call_get_peer(VALUE self) {
   VALUE res = Qnil;
-  grpc_call *call = NULL;
+  grpc_rb_call *call = NULL;
   char *peer = NULL;
-  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
-  peer = grpc_call_get_peer(call);
+  if (RTYPEDDATA_DATA(self) == NULL) {
+    rb_raise(grpc_rb_eCallError, "Cannot get peer value on closed call");
+    return Qnil;
+  }
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+  peer = grpc_call_get_peer(call->wrapped);
   res = rb_str_new2(peer);
   gpr_free(peer);
+
+  return res;
+}
+
+/* Called to obtain the x509 cert of an authenticated peer. */
+static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
+  grpc_rb_call *call = NULL;
+  VALUE res = Qnil;
+  grpc_auth_context *ctx = NULL;
+  if (RTYPEDDATA_DATA(self) == NULL) {
+    rb_raise(grpc_rb_eCallError, "Cannot get peer cert on closed call");
+    return Qnil;
+  }
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+
+  ctx = grpc_call_auth_context(call->wrapped);
+
+  if (!ctx || !grpc_auth_context_peer_is_authenticated(ctx)) {
+    return Qnil;
+  }
+
+  {
+    grpc_auth_property_iterator it =
+        grpc_auth_context_find_properties_by_name(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+    const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+    if (prop == NULL) {
+      return Qnil;
+    }
+
+    res = rb_str_new2(prop->value);
+  }
+
+  grpc_auth_context_release(ctx);
 
   return res;
 }
@@ -258,6 +302,30 @@ static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
 
 /*
   call-seq:
+  trailing_metadata = call.trailing_metadata
+
+  Gets the trailing metadata object saved on the call */
+static VALUE grpc_rb_call_get_trailing_metadata(VALUE self) {
+  return rb_ivar_get(self, id_trailing_metadata);
+}
+
+/*
+  call-seq:
+  call.trailing_metadata = trailing_metadata
+
+  Saves the trailing metadata hash on the call. */
+static VALUE grpc_rb_call_set_trailing_metadata(VALUE self, VALUE metadata) {
+  if (!NIL_P(metadata) && TYPE(metadata) != T_HASH) {
+    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>",
+             rb_obj_classname(metadata));
+    return Qnil;
+  }
+
+  return rb_ivar_set(self, id_trailing_metadata, metadata);
+}
+
+/*
+  call-seq:
   write_flag = call.write_flag
 
   Gets the write_flag value saved the call.  */
@@ -286,17 +354,24 @@ static VALUE grpc_rb_call_set_write_flag(VALUE self, VALUE write_flag) {
 
   Sets credentials on a call */
 static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
-  grpc_call *call = NULL;
+  grpc_rb_call *call = NULL;
   grpc_call_credentials *creds;
   grpc_call_error err;
-  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
+  if (RTYPEDDATA_DATA(self) == NULL) {
+    rb_raise(grpc_rb_eCallError, "Cannot set credentials of closed call");
+    return Qnil;
+  }
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
   creds = grpc_rb_get_wrapped_call_credentials(credentials);
-  err = grpc_call_set_credentials(call, creds);
+  err = grpc_call_set_credentials(call->wrapped, creds);
   if (err != GRPC_CALL_OK) {
     rb_raise(grpc_rb_eCallError,
              "grpc_call_set_credentials failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
+  /* We need the credentials to be alive for as long as the call is alive,
+     but we don't care about destruction order. */
+  rb_ivar_set(self, id_credentials, credentials);
   return Qnil;
 }
 
@@ -352,7 +427,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
       md_ary->metadata[md_ary->count].value_length = value_len;
       md_ary->count += 1;
     }
-  } else {
+  } else if (TYPE(val) == T_STRING) {
     value_str = RSTRING_PTR(val);
     value_len = RSTRING_LEN(val);
     if (!grpc_is_binary_header(key_str, key_len) &&
@@ -366,6 +441,10 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     md_ary->metadata[md_ary->count].value = value_str;
     md_ary->metadata[md_ary->count].value_length = value_len;
     md_ary->count += 1;
+  } else {
+    rb_raise(rb_eArgError,
+               "Header values must be of type string or array");
+    return ST_STOP;
   }
 
   return ST_CONTINUE;
@@ -525,12 +604,13 @@ typedef struct run_batch_stack {
   grpc_status_code recv_status;
   char *recv_status_details;
   size_t recv_status_details_capacity;
-  uint write_flag;
+  unsigned write_flag;
 } run_batch_stack;
 
 /* grpc_run_batch_stack_init ensures the run_batch_stack is properly
  * initialized */
-static void grpc_run_batch_stack_init(run_batch_stack *st, uint write_flag) {
+static void grpc_run_batch_stack_init(run_batch_stack *st,
+                                      unsigned write_flag) {
   MEMZERO(st, run_batch_stack, 1);
   grpc_metadata_array_init(&st->send_metadata);
   grpc_metadata_array_init(&st->send_trailing_metadata);
@@ -543,12 +623,25 @@ static void grpc_run_batch_stack_init(run_batch_stack *st, uint write_flag) {
 /* grpc_run_batch_stack_cleanup ensures the run_batch_stack is properly
  * cleaned up */
 static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
+  size_t i = 0;
+
   grpc_metadata_array_destroy(&st->send_metadata);
   grpc_metadata_array_destroy(&st->send_trailing_metadata);
   grpc_metadata_array_destroy(&st->recv_metadata);
   grpc_metadata_array_destroy(&st->recv_trailing_metadata);
+
   if (st->recv_status_details != NULL) {
     gpr_free(st->recv_status_details);
+  }
+
+  if (st->recv_message != NULL) {
+    grpc_byte_buffer_destroy(st->recv_message);
+  }
+
+  for (i = 0; i < st->op_num; i++) {
+    if (st->ops[i].op == GRPC_OP_SEND_MESSAGE) {
+      grpc_byte_buffer_destroy(st->ops[i].data.send_message);
+    }
   }
 }
 
@@ -635,7 +728,6 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
         break;
       case GRPC_OP_SEND_MESSAGE:
         rb_struct_aset(result, sym_send_message, Qtrue);
-        grpc_byte_buffer_destroy(st->ops[i].data.send_message);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         rb_struct_aset(result, sym_send_close, Qtrue);
@@ -671,7 +763,6 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
 }
 
 /* call-seq:
-   cq = CompletionQueue.new
    ops = {
      GRPC::Core::CallOps::SEND_INITIAL_METADATA => <op_value>,
      GRPC::Core::CallOps::SEND_MESSAGE => <op_value>,
@@ -679,7 +770,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
    }
    tag = Object.new
    timeout = 10
-   call.start_batch(cqueue, tag, timeout, ops)
+   call.start_batch(tag, timeout, ops)
 
    Start a batch of operations defined in the array ops; when complete, post a
    completion of type 'tag' to the completion queue bound to the call.
@@ -688,16 +779,20 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
    The order of ops specified in the batch has no significance.
    Only one operation of each type can be active at once in any given
    batch */
-static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
-                                    VALUE timeout, VALUE ops_hash) {
+static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   run_batch_stack st;
-  grpc_call *call = NULL;
+  grpc_rb_call *call = NULL;
   grpc_event ev;
   grpc_call_error err;
   VALUE result = Qnil;
   VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
-  uint write_flag = 0;
-  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
+  unsigned write_flag = 0;
+  void *tag = (void*)&st;
+  if (RTYPEDDATA_DATA(self) == NULL) {
+    rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
+    return Qnil;
+  }
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
   if (TYPE(ops_hash) != T_HASH) {
@@ -712,7 +807,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
 
   /* call grpc_call_start_batch, then wait for it to complete using
    * pluck_event */
-  err = grpc_call_start_batch(call, st.ops, st.op_num, ROBJECT(tag), NULL);
+  err = grpc_call_start_batch(call->wrapped, st.ops, st.op_num, tag, NULL);
   if (err != GRPC_CALL_OK) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError,
@@ -720,13 +815,11 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
              grpc_call_error_detail_of(err), err);
     return Qnil;
   }
-  ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
-  if (ev.type == GRPC_QUEUE_TIMEOUT) {
-    grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
-    return Qnil;
+  ev = rb_completion_queue_pluck(call->queue, tag,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  if (!ev.success) {
+    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }
-
   /* Build and return the BatchResult struct result,
      if there is an error, it's reflected in the status */
   result = grpc_run_batch_stack_build_result(&st);
@@ -834,13 +927,19 @@ void Init_grpc_call() {
                    1);
 
   /* Add ruby analogues of the Call methods. */
-  rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 4);
+  rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 1);
   rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
+  rb_define_method(grpc_rb_cCall, "close", grpc_rb_call_close, 0);
   rb_define_method(grpc_rb_cCall, "peer", grpc_rb_call_get_peer, 0);
+  rb_define_method(grpc_rb_cCall, "peer_cert", grpc_rb_call_get_peer_cert, 0);
   rb_define_method(grpc_rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
   rb_define_method(grpc_rb_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
+  rb_define_method(grpc_rb_cCall, "trailing_metadata",
+                   grpc_rb_call_get_trailing_metadata, 0);
+  rb_define_method(grpc_rb_cCall, "trailing_metadata=",
+                   grpc_rb_call_set_trailing_metadata, 1);
   rb_define_method(grpc_rb_cCall, "write_flag", grpc_rb_call_get_write_flag, 0);
   rb_define_method(grpc_rb_cCall, "write_flag=", grpc_rb_call_set_write_flag,
                    1);
@@ -849,13 +948,12 @@ void Init_grpc_call() {
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
+  id_trailing_metadata = rb_intern("trailing_metadata");
   id_status = rb_intern("status");
   id_write_flag = rb_intern("write_flag");
 
   /* Ids used by the c wrapping internals. */
-  id_cq = rb_intern("__cq");
-  id_flags = rb_intern("__flags");
-  id_input_md = rb_intern("__input_md");
+  id_credentials = rb_intern("__credentials");
 
   /* Ids used in constructing the batch result. */
   sym_send_message = ID2SYM(rb_intern("send_message"));
@@ -871,11 +969,6 @@ void Init_grpc_call() {
       "BatchResult", "send_message", "send_metadata", "send_close",
       "send_status", "message", "metadata", "status", "cancelled", NULL);
 
-  /* The hash for reference counting calls, to ensure they can't be destroyed
-   * more than once */
-  hash_all_calls = rb_hash_new();
-  rb_define_const(grpc_rb_cCall, "INTERNAL_ALL_CALLs", hash_all_calls);
-
   Init_grpc_error_codes();
   Init_grpc_op_codes();
   Init_grpc_write_flags();
@@ -883,23 +976,19 @@ void Init_grpc_call() {
 
 /* Gets the call from the ruby object */
 grpc_call *grpc_rb_get_wrapped_call(VALUE v) {
-  grpc_call *c = NULL;
-  TypedData_Get_Struct(v, grpc_call, &grpc_call_data_type, c);
-  return c;
+  grpc_rb_call *call = NULL;
+  TypedData_Get_Struct(v, grpc_rb_call, &grpc_call_data_type, call);
+  return call->wrapped;
 }
 
 /* Obtains the wrapped object for a given call */
-VALUE grpc_rb_wrap_call(grpc_call *c) {
-  VALUE obj = Qnil;
-  if (c == NULL) {
+VALUE grpc_rb_wrap_call(grpc_call *c, grpc_completion_queue *q) {
+  grpc_rb_call *wrapper;
+  if (c == NULL || q == NULL) {
     return Qnil;
   }
-  obj = rb_hash_aref(hash_all_calls, OFFT2NUM((VALUE)c));
-  if (obj == Qnil) { /* Not in the hash add it */
-    rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c), UINT2NUM(1));
-  } else {
-    rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c),
-                 UINT2NUM(NUM2UINT(obj) + 1));
-  }
-  return TypedData_Wrap_Struct(grpc_rb_cCall, &grpc_call_data_type, c);
+  wrapper = ALLOC(grpc_rb_call);
+  wrapper->wrapped = c;
+  wrapper->queue = q;
+  return TypedData_Wrap_Struct(grpc_rb_cCall, &grpc_call_data_type, wrapper);
 }

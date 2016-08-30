@@ -51,7 +51,7 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestService.TestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -69,7 +69,7 @@ namespace Grpc.IntegrationTesting
             };
             int port = server.Ports.Single().BoundPort;
             channel = new Channel(Host, port, TestCredentials.CreateSslCredentials(), options);
-            client = TestService.NewClient(channel);
+            client = new TestService.TestServiceClient(channel);
         }
 
         [TestFixtureTearDown]
@@ -140,17 +140,15 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        [Ignore("TODO: see #4427")]
         public async Task StatusCodeAndMessage()
         {
             await InteropClient.RunStatusCodeAndMessageAsync(client);
         }
 
         [Test]
-        [Ignore("TODO: see #4427")]
         public void UnimplementedMethod()
         {
-            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
+            InteropClient.RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
         }
     }
 }

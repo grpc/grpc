@@ -1,0 +1,235 @@
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+syntax = "proto3";
+
+import "src/proto/grpc/testing/payloads.proto";
+import "src/proto/grpc/testing/stats.proto";
+
+package grpc.testing;
+
+enum ClientType {
+  // Many languages support a basic distinction between using
+  // sync or async client, and this allows the specification
+  SYNC_CLIENT = 0;
+  ASYNC_CLIENT = 1;
+  OTHER_CLIENT = 2; // used for some language-specific variants
+}
+
+enum ServerType {
+  SYNC_SERVER = 0;
+  ASYNC_SERVER = 1;
+  ASYNC_GENERIC_SERVER = 2;
+  OTHER_SERVER = 3; // used for some language-specific variants
+}
+
+enum RpcType {
+  UNARY = 0;
+  STREAMING = 1;
+}
+
+// Parameters of poisson process distribution, which is a good representation
+// of activity coming in from independent identical stationary sources.
+message PoissonParams {
+  // The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
+  double offered_load = 1;
+}
+
+// Once an RPC finishes, immediately start a new one.
+// No configuration parameters needed.
+message ClosedLoopParams {}
+
+message LoadParams {
+  oneof load {
+    ClosedLoopParams closed_loop = 1;
+    PoissonParams poisson = 2;
+  };
+}
+
+// presence of SecurityParams implies use of TLS
+message SecurityParams {
+  bool use_test_ca = 1;
+  string server_host_override = 2;
+}
+
+message ClientConfig {
+  // List of targets to connect to. At least one target needs to be specified.
+  repeated string server_targets = 1;
+  ClientType client_type = 2;
+  SecurityParams security_params = 3;
+  // How many concurrent RPCs to start for each channel.
+  // For synchronous client, use a separate thread for each outstanding RPC.
+  int32 outstanding_rpcs_per_channel = 4;
+  // Number of independent client channels to create.
+  // i-th channel will connect to server_target[i % server_targets.size()]
+  int32 client_channels = 5;
+  // Only for async client. Number of threads to use to start/manage RPCs.
+  int32 async_client_threads = 7;
+  RpcType rpc_type = 8;
+  // The requested load for the entire client (aggregated over all the threads).
+  LoadParams load_params = 10;
+  PayloadConfig payload_config = 11;
+  HistogramParams histogram_params = 12;
+
+  // Specify the cores we should run the client on, if desired
+  repeated int32 core_list = 13;
+  int32 core_limit = 14;
+
+  // If we use an OTHER_CLIENT client_type, this string gives more detail
+  string other_client_api = 15;
+}
+
+message ClientStatus { ClientStats stats = 1; }
+
+// Request current stats
+message Mark {
+  // if true, the stats will be reset after taking their snapshot.
+  bool reset = 1;
+}
+
+message ClientArgs {
+  oneof argtype {
+    ClientConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerConfig {
+  ServerType server_type = 1;
+  SecurityParams security_params = 2;
+  // Port on which to listen. Zero means pick unused port.
+  int32 port = 4;
+  // Only for async server. Number of threads used to serve the requests.
+  int32 async_server_threads = 7;
+  // Specify the number of cores to limit server to, if desired
+  int32 core_limit = 8;
+  // payload config, used in generic server
+  PayloadConfig payload_config = 9;
+
+  // Specify the cores we should run the server on, if desired
+  repeated int32 core_list = 10;
+
+  // If we use an OTHER_SERVER client_type, this string gives more detail
+  string other_server_api = 11;
+}
+
+message ServerArgs {
+  oneof argtype {
+    ServerConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerStatus {
+  ServerStats stats = 1;
+  // the port bound by the server
+  int32 port = 2;
+  // Number of cores available to the server
+  int32 cores = 3;
+}
+
+message CoreRequest {
+}
+
+message CoreResponse {
+  // Number of cores available on the server
+  int32 cores = 1;
+}
+
+message Void {
+}
+
+// A single performance scenario: input to qps_json_driver
+message Scenario {
+  // Human readable name for this scenario
+  string name = 1;
+  // Client configuration
+  ClientConfig client_config = 2;
+  // Number of clients to start for the test
+  int32 num_clients = 3;
+  // Server configuration
+  ServerConfig server_config = 4;
+  // Number of servers to start for the test
+  int32 num_servers = 5;
+  // Warmup period, in seconds
+  int32 warmup_seconds = 6;
+  // Benchmark time, in seconds
+  int32 benchmark_seconds = 7;
+  // Number of workers to spawn locally (usually zero)
+  int32 spawn_local_worker_count = 8;
+}
+
+// A set of scenarios to be run with qps_json_driver
+message Scenarios {
+  repeated Scenario scenarios = 1;
+}
+
+// Basic summary that can be computed from ClientStats and ServerStats
+// once the scenario has finished.
+message ScenarioResultSummary
+{
+  // Total number of operations per second over all clients.
+  double qps = 1;
+  // QPS per one server core.
+  double qps_per_server_core = 2;
+  // server load based on system_time (0.85 => 85%)
+  double server_system_time = 3;
+  // server load based on user_time (0.85 => 85%)
+  double server_user_time = 4;
+  // client load based on system_time (0.85 => 85%)
+  double client_system_time = 5;
+  // client load based on user_time (0.85 => 85%)
+  double client_user_time = 6;
+
+  // X% latency percentiles (in nanoseconds)
+  double latency_50 = 7;
+  double latency_90 = 8;
+  double latency_95 = 9;
+  double latency_99 = 10;
+  double latency_999 = 11;
+}
+
+// Results of a single benchmark scenario.
+message ScenarioResult {
+  // Inputs used to run the scenario.
+  Scenario scenario = 1;
+  // Histograms from all clients merged into one histogram.
+  HistogramData latencies = 2;
+  // Client stats for each client
+  repeated ClientStats client_stats = 3;
+  // Server stats for each server
+  repeated ServerStats server_stats = 4;
+  // Number of cores available to each server
+  repeated int32 server_cores = 5;
+  // An after-the-fact computed summary
+  ScenarioResultSummary summary = 6;
+  // Information on success or failure of each worker
+  repeated bool client_success = 7;
+  repeated bool server_success = 8;
+}

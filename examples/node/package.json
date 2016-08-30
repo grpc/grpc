@@ -1,0 +1,11 @@
+{
+  "name": "grpc-examples",
+  "version": "0.1.0",
+  "dependencies": {
+    "async": "^1.5.2",
+    "google-protobuf": "^3.0.0",
+    "grpc": "^1.0.0",
+    "lodash": "^4.6.1",
+    "minimist": "^1.2.0"
+  }
+}

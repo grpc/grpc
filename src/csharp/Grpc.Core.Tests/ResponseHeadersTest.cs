@@ -155,7 +155,7 @@ namespace Grpc.Core.Tests
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                Assert.Throws(typeof(ArgumentNullException), async () => await context.WriteResponseHeadersAsync(null));
+                Assert.ThrowsAsync(typeof(ArgumentNullException), async () => await context.WriteResponseHeadersAsync(null));
                 return "PASS";
             });
 
