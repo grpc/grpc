@@ -90,6 +90,7 @@ grpc_register_plugin_type grpc_register_plugin_import;
 grpc_init_type grpc_init_import;
 grpc_shutdown_type grpc_shutdown_import;
 grpc_version_string_type grpc_version_string_import;
+grpc_g_stands_for_type grpc_g_stands_for_import;
 grpc_completion_queue_create_type grpc_completion_queue_create_import;
 grpc_completion_queue_next_type grpc_completion_queue_next_import;
 grpc_completion_queue_pluck_type grpc_completion_queue_pluck_import;
@@ -358,6 +359,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_init_import = (grpc_init_type) GetProcAddress(library, "grpc_init");
   grpc_shutdown_import = (grpc_shutdown_type) GetProcAddress(library, "grpc_shutdown");
   grpc_version_string_import = (grpc_version_string_type) GetProcAddress(library, "grpc_version_string");
+  grpc_g_stands_for_import = (grpc_g_stands_for_type) GetProcAddress(library, "grpc_g_stands_for");
   grpc_completion_queue_create_import = (grpc_completion_queue_create_type) GetProcAddress(library, "grpc_completion_queue_create");
   grpc_completion_queue_next_import = (grpc_completion_queue_next_type) GetProcAddress(library, "grpc_completion_queue_next");
   grpc_completion_queue_pluck_import = (grpc_completion_queue_pluck_type) GetProcAddress(library, "grpc_completion_queue_pluck");

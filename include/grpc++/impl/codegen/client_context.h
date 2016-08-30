@@ -269,7 +269,7 @@ class ClientContext {
 
   /// Set \a algorithm to be the compression algorithm used for the client call.
   ///
-  /// \param algorith The compression algorithm used for the client call.
+  /// \param algorithm The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   /// Return the peer uri in a string.

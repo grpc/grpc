@@ -63,6 +63,15 @@ class ClientStreamingInterface {
   virtual Status Finish() = 0;
 };
 
+/// Common interface for all synchronous server side streaming.
+class ServerStreamingInterface {
+ public:
+  virtual ~ServerStreamingInterface() {}
+
+  /// Blocking send initial metadata to client.
+  virtual void SendInitialMetadata() = 0;
+};
+
 /// An interface that yields a sequence of messages of type \a R.
 template <class R>
 class ReaderInterface {
@@ -335,12 +344,17 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   Call call_;
 };
 
+/// Server-side interface for streaming reads of message of type \a R.
 template <class R>
-class ServerReader GRPC_FINAL : public ReaderInterface<R> {
+class ServerReaderInterface : public ServerStreamingInterface,
+                              public ReaderInterface<R> {};
+
+template <class R>
+class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
  public:
   ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() {
+  void SendInitialMetadata() GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -366,12 +380,17 @@ class ServerReader GRPC_FINAL : public ReaderInterface<R> {
   ServerContext* const ctx_;
 };
 
+/// Server-side interface for streaming writes of message of type \a W.
 template <class W>
-class ServerWriter GRPC_FINAL : public WriterInterface<W> {
+class ServerWriterInterface : public ServerStreamingInterface,
+                              public WriterInterface<W> {};
+
+template <class W>
+class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
  public:
   ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() {
+  void SendInitialMetadata() GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -410,12 +429,16 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
 
 /// Server-side interface for bi-directional streaming.
 template <class W, class R>
-class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
-                                      public ReaderInterface<R> {
+class ServerReaderWriterInterface : public ServerStreamingInterface,
+                                    public WriterInterface<W>,
+                                    public ReaderInterface<R> {};
+
+template <class W, class R>
+class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
  public:
   ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() {
+  void SendInitialMetadata() GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
