@@ -51,9 +51,11 @@ extern int grpc_load_reporting_trace;
 typedef struct call_data {
   /* load reporting token from the initial metadata */
   gpr_slice initial_lr_token;
+  size_t initial_lr_token_len;
 
-  /* load reporting token from the trailing metadata */
+  /* load reporting data from the initial metadata */
   gpr_slice trailing_lr_token;
+  size_t trailing_md_string_len;
 
   /* stores the recv_initial_metadata op's ready closure, which we wrap with our
    * own (on_initial_md_ready) in order to capture the incoming initial metadata
@@ -69,17 +71,29 @@ typedef struct call_data {
 
   /* corresponds to the :path header. */
   const char *service_method;
+  size_t service_method_len;
 
   /* which backend host the client thinks it's talking to. This may be different
    * from the actual backend in the case of, for example, load-balanced targets
    * */
   const char *target_host;
+  size_t target_host_len;
 
+  /* time at call creation */
+  gpr_timespec start_timespec;
+
+  /* we want to record the end of a call iff there's a corresponding start.
+   *
+   * Because the data needed for the start comes in the initial metadata and a
+   * very short lived call may not receive it before being terminated, there
+   * could be an inbalance. */
+  bool was_start_recorded;
 } call_data;
 
 typedef struct channel_data {
   /* peer's authenticated identity if available. NULL otherwise */
   char *peer_identity;
+  size_t peer_identity_len;
 } channel_data;
 
 typedef struct {
@@ -94,19 +108,27 @@ static grpc_mdelem *recv_md_filter(void *user_data, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_PATH) {
     calld->service_method = grpc_mdstr_as_c_string(md->value);
-    if (grpc_load_reporting_trace)
+    calld->service_method_len = GPR_SLICE_LENGTH(md->value->slice);
+    if (grpc_load_reporting_trace) {
       gpr_log(GPR_DEBUG, "[LR] Service method: '%s'", calld->service_method);
+    }
   } else if (calld->target_host == NULL && md->key == GRPC_MDSTR_AUTHORITY) {
-    /* the target host is constant per channel */
+    /* the target host is constant per channel, we only bother processing the
+     * value once. */
     calld->target_host = grpc_mdstr_as_c_string(md->value);
-    if (grpc_load_reporting_trace)
+    calld->target_host_len = GPR_SLICE_LENGTH(md->value->slice);
+    if (grpc_load_reporting_trace) {
       gpr_log(GPR_DEBUG, "[LR] Target host: '%s'", calld->target_host);
+    }
   } else if (md->key == GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN) {
     calld->initial_lr_token = gpr_slice_ref(md->value->slice);
+    calld->initial_lr_token_len = GPR_SLICE_LENGTH(md->value->slice);
     if (grpc_load_reporting_trace) {
       char *hexdump = gpr_dump_slice(calld->initial_lr_token, GPR_DUMP_HEX);
-      gpr_log(GPR_DEBUG, "[LR] Initial token: '%s'", hexdump);
+      char *asciidump = gpr_dump_slice(calld->initial_lr_token, GPR_DUMP_ASCII);
+      gpr_log(GPR_DEBUG, "[LR] Initial token: '%s' [%s]", asciidump, hexdump);
       gpr_free(hexdump);
+      gpr_free(asciidump);
     }
     return NULL;
   }
@@ -125,6 +147,9 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
     a.exec_ctx = exec_ctx;
     grpc_metadata_batch_filter(calld->recv_initial_metadata, recv_md_filter,
                                &a);
+
+    /* TODO(dgq): actually record something. */
+    calld->was_start_recorded = true;
   } else {
     GRPC_ERROR_REF(err);
   }
@@ -140,6 +165,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(call_data));
 
+  calld->start_timespec = gpr_now(GPR_CLOCK_PRECISE);
   grpc_closure_init(&calld->on_initial_md_ready, on_initial_md_ready, elem);
   return GRPC_ERROR_NONE;
 }
@@ -148,6 +174,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
+  /* TODO(dgq): actually record something. */
   call_data *calld = elem->call_data;
 
   gpr_slice_unref(calld->initial_lr_token);
@@ -171,8 +198,8 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
     const grpc_auth_property *auth_property =
         grpc_auth_property_iterator_next(&auth_it);
     if (auth_property != NULL) {
-      /* TODO(dgq): perhaps we can borrow the value ptr, saving an alloc */
-      chand->peer_identity = gpr_strdup(auth_property->value);
+      chand->peer_identity = auth_property->value;
+      chand->peer_identity_len = auth_property->value_length;
     }
   }
 
@@ -184,10 +211,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem) {
-  channel_data *chand = elem->channel_data;
-  gpr_free(chand->peer_identity);
-}
+                                 grpc_channel_element *elem) {}
 
 static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
@@ -195,9 +219,13 @@ static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN) {
     calld->trailing_lr_token = gpr_slice_ref(md->value->slice);
-    if (grpc_load_reporting_trace)
-      gpr_log(GPR_DEBUG, "[LR] Trailing token: '%s'",
-              gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_HEX));
+    if (grpc_load_reporting_trace) {
+      char *hexdump = gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_HEX);
+      char *asciidump = gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_ASCII);
+      gpr_log(GPR_DEBUG, "[LR] trailing token: '%s' [%s]", asciidump, hexdump);
+      gpr_free(hexdump);
+      gpr_free(asciidump);
+    }
     return NULL;
   }
 
