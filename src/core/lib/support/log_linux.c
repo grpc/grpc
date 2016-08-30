@@ -47,7 +47,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <linux/unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

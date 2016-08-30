@@ -52,21 +52,8 @@ namespace Grpc.IntegrationTesting
     {
         private class ServerOptions
         {
-            [Option("driver_port", DefaultValue = 0)]
+            [Option("driver_port", Default = 0)]
             public int DriverPort { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# performance testing worker",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ServerOptions options;
@@ -78,14 +65,13 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ServerOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
-
-            var workerServer = new QpsWorker(options);
-            workerServer.RunAsync().Wait();
+            var parserResult = Parser.Default.ParseArguments<ServerOptions>(args)
+                .WithNotParsed((x) => Environment.Exit(1))
+                .WithParsed(options =>
+                {
+                    var workerServer = new QpsWorker(options);
+                    workerServer.RunAsync().Wait();
+                });
         }
 
         private async Task RunAsync()

@@ -25,13 +25,13 @@
     },
     "dependencies": {
       "Grpc.Core": "${settings.csharp_version}",
-      "Google.Apis.Auth": "1.11.1"
+      "Google.Apis.Auth": "1.15.0"
     },
     "frameworks": {
       "net45": { },
       "netstandard1.5": {
         "imports": [
-          "net45"
+          "portable-net45"
         ],
         "dependencies": {
           "Microsoft.NETCore.Portable.Compatibility": "1.0.1",
