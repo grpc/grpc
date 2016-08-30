@@ -175,7 +175,7 @@ class ServerReflection GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
-  typedef Service FCUnaryService;
+  typedef Service StreamedUnaryService;
 };
 
 }  // namespace v1alpha
