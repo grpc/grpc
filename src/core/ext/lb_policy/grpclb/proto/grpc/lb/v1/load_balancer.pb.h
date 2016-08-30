@@ -172,7 +172,7 @@ extern const pb_field_t grpc_lb_v1_Server_fields[5];
 #define grpc_lb_v1_LoadBalanceResponse_size      (98 + grpc_lb_v1_ServerList_size)
 #define grpc_lb_v1_InitialLoadBalanceResponse_size 90
 /* grpc_lb_v1_ServerList_size depends on runtime parameters */
-#define grpc_lb_v1_Server_size 98
+#define grpc_lb_v1_Server_size                   98
 
 /* Message IDs (where set with "msgid" option) */
 #ifdef PB_MSGID
