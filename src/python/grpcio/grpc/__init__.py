@@ -1208,7 +1208,7 @@ def secure_channel(target, credentials, options=None):
   return _channel.Channel(target, options, credentials._credentials)
 
 
-def server(thread_pool, handlers=None):
+def server(thread_pool, handlers=None, args=None):
   """Creates a Server with which RPCs can be serviced.
 
   Args:
@@ -1219,12 +1219,14 @@ def server(thread_pool, handlers=None):
       only handlers the server will use to service RPCs; other handlers may
       later be added by calling add_generic_rpc_handlers any time before the
       returned Server is started.
+    args: A grpc._cython.ChannelArgs to be used to provide configuration options
+      for the channel.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
   from grpc import _server
-  return _server.Server(thread_pool, () if handlers is None else handlers)
+  return _server.Server(thread_pool, () if handlers is None else handlers, args)
 
 
 ###################################  __all__  #################################
