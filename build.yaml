@@ -14,13 +14,16 @@ filegroups:
   - include/grpc/census.h
   headers:
   - src/core/ext/census/aggregation.h
+  - src/core/ext/census/base_resources.h
   - src/core/ext/census/census_interface.h
   - src/core/ext/census/census_rpc_stats.h
   - src/core/ext/census/gen/census.pb.h
   - src/core/ext/census/grpc_filter.h
   - src/core/ext/census/mlog.h
+  - src/core/ext/census/resource.h
   - src/core/ext/census/rpc_metric_id.h
   src:
+  - src/core/ext/census/base_resources.c
   - src/core/ext/census/context.c
   - src/core/ext/census/gen/census.pb.c
   - src/core/ext/census/grpc_context.c
@@ -30,6 +33,7 @@ filegroups:
   - src/core/ext/census/mlog.c
   - src/core/ext/census/operation.c
   - src/core/ext/census/placeholders.c
+  - src/core/ext/census/resource.c
   - src/core/ext/census/tracing.c
   plugin: census_grpc_plugin
   uses:
@@ -145,6 +149,7 @@ filegroups:
   - include/grpc/compression.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security_constants.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -224,6 +229,7 @@ filegroups:
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/static_metadata.h
+  - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
@@ -313,6 +319,7 @@ filegroups:
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
   - src/core/lib/transport/static_metadata.c
+  - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
   deps:
@@ -323,7 +330,6 @@ filegroups:
   headers:
   - src/core/ext/client_config/client_channel.h
   - src/core/ext/client_config/client_channel_factory.h
-  - src/core/ext/client_config/client_config.h
   - src/core/ext/client_config/connector.h
   - src/core/ext/client_config/initial_connect_string.h
   - src/core/ext/client_config/lb_policy.h
@@ -333,6 +339,7 @@ filegroups:
   - src/core/ext/client_config/resolver.h
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
+  - src/core/ext/client_config/resolver_result.h
   - src/core/ext/client_config/subchannel.h
   - src/core/ext/client_config/subchannel_call_holder.h
   - src/core/ext/client_config/subchannel_index.h
@@ -341,7 +348,6 @@ filegroups:
   - src/core/ext/client_config/channel_connectivity.c
   - src/core/ext/client_config/client_channel.c
   - src/core/ext/client_config/client_channel_factory.c
-  - src/core/ext/client_config/client_config.c
   - src/core/ext/client_config/client_config_plugin.c
   - src/core/ext/client_config/connector.c
   - src/core/ext/client_config/default_initial_connect_string.c
@@ -353,6 +359,7 @@ filegroups:
   - src/core/ext/client_config/resolver.c
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
+  - src/core/ext/client_config/resolver_result.c
   - src/core/ext/client_config/subchannel.c
   - src/core/ext/client_config/subchannel_call_holder.c
   - src/core/ext/client_config/subchannel_index.c
@@ -425,7 +432,6 @@ filegroups:
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
-  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -528,7 +534,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/status_conversion.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
   - src/core/ext/transport/chttp2/transport/bin_decoder.c
@@ -550,7 +555,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/status_conversion.c
   - src/core/ext/transport/chttp2/transport/stream_lists.c
   - src/core/ext/transport/chttp2/transport/stream_map.c
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.c
   - src/core/ext/transport/chttp2/transport/varint.c
   - src/core/ext/transport/chttp2/transport/writing.c
   plugin: grpc_chttp2_plugin
@@ -684,6 +688,7 @@ filegroups:
   - include/grpc++/support/time.h
   headers:
   - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
   src:
@@ -696,6 +701,7 @@ filegroups:
   - src/cpp/client/generic_stub.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/rpc_method.cc
@@ -713,9 +719,8 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-  deps:
-  - grpc
   uses:
+  - grpc_base
   - grpc++_codegen_base
 - name: grpc++_codegen_base
   language: c++
@@ -779,6 +784,13 @@ filegroups:
   - src/cpp/ext/reflection.pb.cc
   uses:
   - grpc++_codegen_proto
+- name: thrift_util
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/thrift_serializer.h
+  - include/grpc++/impl/codegen/thrift_utils.h
+  uses:
+  - grpc++_codegen_base
 libs:
 - name: gpr
   build: all
@@ -815,7 +827,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -914,7 +925,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
@@ -1023,6 +1033,7 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
+  - thrift_util
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -1044,16 +1055,21 @@ libs:
   language: c++
   headers:
   - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - grpc++_reflection
   - grpc++
-  - grpc_plugin_support
+  - grpc++_test_config
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -1132,7 +1148,7 @@ libs:
   - grpc++
   - grpc
   - gpr
-- name: interop_server_main
+- name: interop_server_lib
   build: private
   language: c++
   src:
@@ -1149,6 +1165,13 @@ libs:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: interop_server_main
+  build: private
+  language: c++
+  src:
+  - test/cpp/interop/interop_server_bootstrap.cc
+  deps:
+  - interop_server_lib
 - name: qps
   build: private
   language: c++
@@ -1292,6 +1315,16 @@ targets:
   language: c
   src:
   - test/core/census/context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_resource_test
+  build: test
+  language: c
+  src:
+  - test/core/census/resource_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2351,7 +2384,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/timeout_encoding_test.c
+  - test/core/transport/timeout_encoding_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2641,6 +2674,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: filter_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/filter_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -2673,12 +2719,9 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_test_util
-  - grpc_test_util
   - grpc++_reflection
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: grpc_cpp_plugin
@@ -2740,6 +2783,28 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
+- name: grpc_tool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/string_ref_helper.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - test/cpp/util/grpc_tool_test.cc
+  - test/cpp/util/string_ref_helper.cc
+  deps:
+  - grpc_cli_libs
+  - grpc++_reflection
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -2806,6 +2871,7 @@ targets:
   deps:
   - interop_server_main
   - interop_server_helper
+  - interop_server_lib
   - grpc++_test_util
   - grpc_test_util
   - grpc++

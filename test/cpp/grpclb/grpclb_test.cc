@@ -676,11 +676,12 @@ int main(int argc, char **argv) {
   // If the LB server waits > 2000ms, the update arrives after the first two
   // request are done and the third pick is performed, which returns, in RR
   // fashion, the 1st server of the 1st update. Therefore, the second server of
-  // batch 1 is hit twice, whereas the first server of batch 2 is never hit.
-  tf_result = grpc::test_update(2100);
-  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 2);
-  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 1);
-  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced == 1);
+  // batch 1 is hit at least one, whereas the first server of batch 2 is never
+  // hit.
+  tf_result = grpc::test_update(2500);
+  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced >= 1);
+  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced > 0);
+  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced > 0);
   GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 0);
 
   grpc_shutdown();

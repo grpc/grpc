@@ -108,9 +108,9 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a subchannel call */
-grpc_subchannel_call *grpc_connected_subchannel_create_call(
+grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent);
+    grpc_polling_entity *pollent, grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(

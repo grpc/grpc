@@ -68,7 +68,7 @@ def get_distance(start, end):
   R = 6371000; # metres
   return R * c;
 
-class RouteGuideServicer(route_guide_pb2.BetaRouteGuideServicer):
+class RouteGuideServicer(route_guide_pb2.RouteGuideServicer):
   """Provides methods that implement functionality of route guide server."""
 
   def __init__(self):

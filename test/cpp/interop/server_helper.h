@@ -60,6 +60,12 @@ class InteropServerContextInspector {
   const ::grpc::ServerContext& context_;
 };
 
+namespace interop {
+
+extern bool g_got_sigint;
+void RunServer(std::shared_ptr<ServerCredentials> creds);
+
+}  // namespace interop
 }  // namespace testing
 }  // namespace grpc
 
