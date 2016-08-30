@@ -625,7 +625,7 @@ void PrintHeaderServerMethodStreamedUnary(
     printer->Print(*vars,
                    "WithStreamedUnaryMethod_$Method$() {\n"
                    "  ::grpc::Service::MarkMethodStreamedUnary($Idx$,\n"
-                   "    new ::grpc::StreamedUnaryHandler<$Request$, "
+                   "    new ::grpc::StreamedUnaryHandler< $Request$, "
                    "$Response$>(std::bind"
                    "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
                    "Streamed$Method$, this, std::placeholders::_1, "
