@@ -34,10 +34,8 @@
 #ifndef GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
 #define GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/slice_buffer.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/protocol/TCompactProtocol.h>
 #include <thrift/protocol/TProtocolException.h>

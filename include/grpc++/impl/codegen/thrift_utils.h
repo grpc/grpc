@@ -40,10 +40,8 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/status_code_enum.h>
 #include <grpc++/impl/codegen/thrift_serializer.h>
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/slice_buffer.h>
 #include <cstdint>
 #include <cstdlib>
 
