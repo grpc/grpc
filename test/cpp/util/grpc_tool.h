@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,24 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
+#ifndef GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#define GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
 
-#include "src/core/ext/client_config/lb_policy.h"
+#include <functional>
 
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
+#include <grpc++/support/config.h>
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_exec_ctx *exec_ctx,
-                              grpc_client_config *client_config);
+#include "test/cpp/util/cli_credentials.h"
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
+namespace grpc {
+namespace testing {
 
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H */
+typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
+
+int GrpcToolMainLib(int argc, const char **argv, CliCredentials cred,
+                    GrpcToolOutputCallback callback);
+
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H

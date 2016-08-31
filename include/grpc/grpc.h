@@ -90,6 +90,9 @@ GRPCAPI void grpc_shutdown(void);
 /** Return a string representing the current version of grpc */
 GRPCAPI const char *grpc_version_string(void);
 
+/** Return a string specifying what the 'g' in gRPC stands for */
+GRPCAPI const char *grpc_g_stands_for(void);
+
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
 
@@ -170,8 +173,9 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.
     If parent_call is non-NULL, it must be a server-side call. It will be used
-    to propagate properties from the server call to this new client call.
-    */
+    to propagate properties from the server call to this new client call,
+    depending on the value of \a propagation_mask (see propagation_bits.h for
+    possible values). */
 GRPCAPI grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, const char *method,
@@ -187,7 +191,8 @@ GRPCAPI void *grpc_channel_register_call(grpc_channel *channel,
                                          const char *method, const char *host,
                                          void *reserved);
 
-/** Create a call given a handle returned from grpc_channel_register_call */
+/** Create a call given a handle returned from grpc_channel_register_call.
+    \sa grpc_channel_create_call. */
 GRPCAPI grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,

@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0.0.alpha.5.0.3'
+  s.add_dependency 'google-protobuf', '~> 3.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -148,6 +148,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/compression.h )
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_posix.h )
+  s.files += %w( include/grpc/grpc_security_constants.h )
   s.files += %w( include/grpc/status.h )
   s.files += %w( include/grpc/impl/codegen/byte_buffer.h )
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
@@ -171,7 +172,6 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
   s.files += %w( include/grpc/impl/codegen/time.h )
   s.files += %w( include/grpc/grpc_security.h )
-  s.files += %w( include/grpc/grpc_security_constants.h )
   s.files += %w( include/grpc/census.h )
   s.files += %w( src/core/lib/channel/channel_args.h )
   s.files += %w( src/core/lib/channel/channel_stack.h )
@@ -301,7 +301,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/tsi/transport_security_interface.h )
   s.files += %w( src/core/ext/client_config/client_channel.h )
   s.files += %w( src/core/ext/client_config/client_channel_factory.h )
-  s.files += %w( src/core/ext/client_config/client_config.h )
   s.files += %w( src/core/ext/client_config/connector.h )
   s.files += %w( src/core/ext/client_config/initial_connect_string.h )
   s.files += %w( src/core/ext/client_config/lb_policy.h )
@@ -311,6 +310,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/resolver.h )
   s.files += %w( src/core/ext/client_config/resolver_factory.h )
   s.files += %w( src/core/ext/client_config/resolver_registry.h )
+  s.files += %w( src/core/ext/client_config/resolver_result.h )
   s.files += %w( src/core/ext/client_config/subchannel.h )
   s.files += %w( src/core/ext/client_config/subchannel_call_holder.h )
   s.files += %w( src/core/ext/client_config/subchannel_index.h )
@@ -479,7 +479,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/channel_connectivity.c )
   s.files += %w( src/core/ext/client_config/client_channel.c )
   s.files += %w( src/core/ext/client_config/client_channel_factory.c )
-  s.files += %w( src/core/ext/client_config/client_config.c )
   s.files += %w( src/core/ext/client_config/client_config_plugin.c )
   s.files += %w( src/core/ext/client_config/connector.c )
   s.files += %w( src/core/ext/client_config/default_initial_connect_string.c )
@@ -491,6 +490,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/resolver.c )
   s.files += %w( src/core/ext/client_config/resolver_factory.c )
   s.files += %w( src/core/ext/client_config/resolver_registry.c )
+  s.files += %w( src/core/ext/client_config/resolver_result.c )
   s.files += %w( src/core/ext/client_config/subchannel.c )
   s.files += %w( src/core/ext/client_config/subchannel_call_holder.c )
   s.files += %w( src/core/ext/client_config/subchannel_index.c )

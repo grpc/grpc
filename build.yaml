@@ -2,11 +2,17 @@
 '#2': It is used among other things to generate all of our project files.
 '#3': Please refer to the templates directory for more information.
 settings:
-  '#1': The public version number of the library.
-  '#2': Master always has a "-dev" suffix
-  '#3': Use "-preN" suffixes to identify pre-release versions
-  '#4': Per-language overrides are possible with (eg) ruby_version tag here
-  '#5': See the expand_version.py for all the quirks here
+  '#01': The public version number of the library.
+  '#02': ===
+  '#03': Please update the 'g_stands_for' field periodically with a new g word
+  '#04': not listed in doc/g_stands_for.md - and update that document to list the
+  '#05': new word.
+  '#06': ===
+  '#07': Master always has a "-dev" suffix
+  '#08': Use "-preN" suffixes to identify pre-release versions
+  '#09': Per-language overrides are possible with (eg) ruby_version tag here
+  '#10': See the expand_version.py for all the quirks here
+  g_stands_for: good
   version: 1.1.0-dev
 filegroups:
 - name: census
@@ -154,6 +160,7 @@ filegroups:
   - include/grpc/compression.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security_constants.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -336,7 +343,6 @@ filegroups:
   headers:
   - src/core/ext/client_config/client_channel.h
   - src/core/ext/client_config/client_channel_factory.h
-  - src/core/ext/client_config/client_config.h
   - src/core/ext/client_config/connector.h
   - src/core/ext/client_config/initial_connect_string.h
   - src/core/ext/client_config/lb_policy.h
@@ -346,6 +352,7 @@ filegroups:
   - src/core/ext/client_config/resolver.h
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
+  - src/core/ext/client_config/resolver_result.h
   - src/core/ext/client_config/subchannel.h
   - src/core/ext/client_config/subchannel_call_holder.h
   - src/core/ext/client_config/subchannel_index.h
@@ -354,7 +361,6 @@ filegroups:
   - src/core/ext/client_config/channel_connectivity.c
   - src/core/ext/client_config/client_channel.c
   - src/core/ext/client_config/client_channel_factory.c
-  - src/core/ext/client_config/client_config.c
   - src/core/ext/client_config/client_config_plugin.c
   - src/core/ext/client_config/connector.c
   - src/core/ext/client_config/default_initial_connect_string.c
@@ -366,6 +372,7 @@ filegroups:
   - src/core/ext/client_config/resolver.c
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
+  - src/core/ext/client_config/resolver_result.c
   - src/core/ext/client_config/subchannel.c
   - src/core/ext/client_config/subchannel_call_holder.c
   - src/core/ext/client_config/subchannel_index.c
@@ -439,7 +446,6 @@ filegroups:
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
-  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -727,9 +733,8 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-  deps:
-  - grpc
   uses:
+  - grpc_base
   - grpc++_codegen_base
 - name: grpc++_codegen_base
   language: c++
@@ -793,6 +798,13 @@ filegroups:
   - src/cpp/ext/reflection.pb.cc
   uses:
   - grpc++_codegen_proto
+- name: thrift_util
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/thrift_serializer.h
+  - include/grpc++/impl/codegen/thrift_utils.h
+  uses:
+  - grpc++_codegen_base
 libs:
 - name: gpr
   build: all
@@ -829,7 +841,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -928,7 +939,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
@@ -1037,6 +1047,7 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
+  - thrift_util
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -1058,16 +1069,21 @@ libs:
   language: c++
   headers:
   - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - grpc++_reflection
   - grpc++
-  - grpc_plugin_support
+  - grpc++_test_config
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -2737,12 +2753,9 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_test_util
-  - grpc_test_util
   - grpc++_reflection
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: grpc_cpp_plugin
@@ -2804,6 +2817,28 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
+- name: grpc_tool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/string_ref_helper.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - test/cpp/util/grpc_tool_test.cc
+  - test/cpp/util/string_ref_helper.cc
+  deps:
+  - grpc_cli_libs
+  - grpc++_reflection
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test

@@ -31,6 +31,8 @@
 # This script is invoked by Jenkins and runs interop test suite.
 set -ex
 
+export LANG=en_US.UTF-8
+
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 

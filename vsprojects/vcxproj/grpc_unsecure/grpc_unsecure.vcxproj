@@ -263,6 +263,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\compression.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
@@ -392,7 +393,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\initial_connect_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy.h" />
@@ -402,6 +402,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_result.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h" />
@@ -668,8 +669,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config_plugin.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\connector.c">
@@ -691,6 +690,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_result.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.c">
     </ClCompile>

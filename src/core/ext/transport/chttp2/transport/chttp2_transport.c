@@ -2414,9 +2414,12 @@ grpc_transport *grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
-                                         gpr_slice *slices, size_t nslices) {
+                                         gpr_slice_buffer *read_buffer) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)transport;
   REF_TRANSPORT(t, "reading_action"); /* matches unref inside reading_action */
-  gpr_slice_buffer_addn(&t->read_buffer, slices, nslices);
+  if (read_buffer != NULL) {
+    gpr_slice_buffer_move_into(read_buffer, &t->read_buffer);
+    gpr_free(read_buffer);
+  }
   reading_action(exec_ctx, t, GRPC_ERROR_NONE);
 }

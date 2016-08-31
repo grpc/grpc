@@ -1,8 +1,7 @@
 {
   "name": "grpc/grpc-demo",
   "description": "gRPC example for PHP",
-  "minimum-stability": "dev",
   "require": {
-    "grpc/grpc": "v0.15.2"
+    "grpc/grpc": "v1.0.0"
   }
 }

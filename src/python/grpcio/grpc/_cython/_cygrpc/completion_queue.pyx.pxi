@@ -38,6 +38,7 @@ cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 cdef class CompletionQueue:
 
   def __cinit__(self):
+    grpc_init()
     with nogil:
       self.c_completion_queue = grpc_completion_queue_create(NULL)
     self.is_shutting_down = False
@@ -129,3 +130,4 @@ cdef class CompletionQueue:
             self.c_completion_queue, c_deadline, NULL)
         self._interpret_event(event)
       grpc_completion_queue_destroy(self.c_completion_queue)
+    grpc_shutdown()
