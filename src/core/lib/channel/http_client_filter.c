@@ -167,13 +167,14 @@ static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
 }
 
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
-  grpc_call_element *elem) {
+                                  grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   uint8_t *wrptr = calld->payload_bytes;
   while (grpc_byte_stream_next(exec_ctx, calld->send_op.send_message,
-    &calld->incoming_slice, ~(size_t)0,
-    &calld->got_slice)) {
-    memcpy(wrptr, GPR_SLICE_START_PTR(calld->incoming_slice), GPR_SLICE_LENGTH(calld->incoming_slice));
+                               &calld->incoming_slice, ~(size_t)0,
+                               &calld->got_slice)) {
+    memcpy(wrptr, GPR_SLICE_START_PTR(calld->incoming_slice),
+           GPR_SLICE_LENGTH(calld->incoming_slice));
     wrptr += GPR_SLICE_LENGTH(calld->incoming_slice);
     gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
@@ -191,19 +192,17 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   if (calld->send_length == calld->slices.length) {
     /* Pass down the original send_message op that was blocked.*/
     grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
-      calld->send_flags);
+                                  calld->send_flags);
     calld->send_op.send_message = &calld->replacement_stream.base;
     calld->post_send = calld->send_op.on_complete;
     calld->send_op.on_complete = &calld->send_done;
     grpc_call_next_op(exec_ctx, elem, &calld->send_op);
-  }
-  else {
+  } else {
     continue_send_message(exec_ctx, elem);
   }
 }
 
-static void hc_mutate_op(grpc_exec_ctx *exec_ctx,
-                         grpc_call_element *elem,
+static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -215,7 +214,8 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx,
   for this request is immediately available. */
   grpc_mdelem *method = GRPC_MDELEM_METHOD_POST;
   calld->send_message_blocked = false;
-  if (op->send_initial_metadata != NULL && (op->send_initial_metadata_flags &
+  if (op->send_initial_metadata != NULL &&
+      (op->send_initial_metadata_flags &
        GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
       op->send_message != NULL &&
       op->send_message->length < channeld->max_payload_size_for_get) {
@@ -241,17 +241,18 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx,
       /* when all the send_message data is available, then create a MDELEM and
       append to headers */
       grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
-        GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-        grpc_mdstr_from_buffer(calld->payload_bytes,
-          op->send_message->length));
+          GRPC_MDSTR_GRPC_PAYLOAD_BIN,
+          grpc_mdstr_from_buffer(calld->payload_bytes,
+                                 op->send_message->length));
       grpc_metadata_batch_add_tail(op->send_initial_metadata,
-        &calld->payload_bin, payload_bin);
+                                   &calld->payload_bin, payload_bin);
       calld->on_complete = op->on_complete;
       op->on_complete = &calld->hc_on_complete;
       op->send_message = NULL;
     } else {
       /* Not all data is available. Fall back to POST. */
-      gpr_log(GPR_DEBUG, "Request is marked Cacheable but not all data is available.\
+      gpr_log(GPR_DEBUG,
+              "Request is marked Cacheable but not all data is available.\
                           Falling back to POST");
       method = GRPC_MDELEM_METHOD_POST;
     }
