@@ -219,8 +219,8 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "SUBCHANNEL: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val,
-          old_val + delta, reason);
+          "SUBCHANNEL: %p %s 0x%08" PRIxPTR " -> 0x%08" PRIxPTR " [%s]", c,
+          purpose, old_val, old_val + delta, reason);
 #endif
   return old_val;
 }
@@ -504,14 +504,13 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset_set *interested_parties,
                                           grpc_connectivity_state *state,
                                           grpc_closure *closure) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
-  op.connectivity_state = state;
-  op.on_connectivity_state_change = closure;
-  op.bind_pollset_set = interested_parties;
+  op->connectivity_state = state;
+  op->on_connectivity_state_change = closure;
+  op->bind_pollset_set = interested_parties;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 void grpc_connected_subchannel_notify_on_state_change(
@@ -525,12 +524,11 @@ void grpc_connected_subchannel_notify_on_state_change(
 void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
                                     grpc_connected_subchannel *con,
                                     grpc_closure *closure) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
-  op.send_ping = closure;
+  op->send_ping = closure;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 static void publish_transport_locked(grpc_exec_ctx *exec_ctx,

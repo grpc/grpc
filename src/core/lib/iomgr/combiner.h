@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,39 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H
+#ifndef GRPC_CORE_LIB_IOMGR_COMBINER_H
+#define GRPC_CORE_LIB_IOMGR_COMBINER_H
 
-#include <grpc/support/slice.h>
-#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include <stddef.h>
+
+#include <grpc/support/atm.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/support/mpscq.h"
 
-typedef struct {
-  uint8_t byte;
-  uint8_t is_connection_update;
-  uint32_t amount;
-} grpc_chttp2_window_update_parser;
+// Provides serialized access to some resource.
+// Each action queued on an aelock is executed serially in a borrowed thread.
+// The actual thread executing actions may change over time (but there will only
+// every be one at a time).
 
-gpr_slice grpc_chttp2_window_update_create(uint32_t id, uint32_t window_delta,
-                                           grpc_transport_one_way_stats *stats);
+// Initialize the lock, with an optional workqueue to shift load to when
+// necessary
+grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
+// Destroy the lock
+void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
+// Execute \a action within the lock.
+void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
+                           grpc_closure *closure, grpc_error *error);
+// Execute \a action within the lock just prior to unlocking.
+// if \a hint_async_break is additionally set, the combiner is tries to trip
+// through the workqueue between finishing the primary queue of combined
+// closures and executing the finally list.
+// Takes a very slow and round-about path if not called from a
+// grpc_combiner_execute closure
+void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
+                                   grpc_closure *closure, grpc_error *error,
+                                   bool hint_async_break);
+void grpc_combiner_force_async_finally(grpc_combiner *lock);
 
-grpc_error *grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags);
-grpc_error *grpc_chttp2_window_update_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global, gpr_slice slice, int is_last);
+extern int grpc_combiner_trace;
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

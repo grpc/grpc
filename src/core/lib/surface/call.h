@@ -49,15 +49,29 @@ typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
                                            grpc_call *call, int success,
                                            void *user_data);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
-                            uint32_t propagation_mask,
-                            grpc_completion_queue *cq,
-                            /* if not NULL, it'll be used in lieu of \a cq */
-                            grpc_pollset_set *pollset_set_alternative,
-                            const void *server_transport_data,
-                            grpc_mdelem **add_initial_metadata,
-                            size_t add_initial_metadata_count,
-                            gpr_timespec send_deadline);
+typedef struct grpc_call_create_args {
+  grpc_channel *channel;
+
+  grpc_call *parent_call;
+  uint32_t propagation_mask;
+
+  grpc_completion_queue *cq;
+  /* if not NULL, it'll be used in lieu of cq */
+  grpc_pollset_set *pollset_set_alternative;
+
+  const void *server_transport_data;
+
+  grpc_mdelem **add_initial_metadata;
+  size_t add_initial_metadata_count;
+
+  gpr_timespec send_deadline;
+} grpc_call_create_args;
+
+/* Create a new call based on \a args.
+   Regardless of success or failure, always returns a valid new call into *call
+   */
+grpc_error *grpc_call_create(const grpc_call_create_args *args,
+                             grpc_call **call);
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq);

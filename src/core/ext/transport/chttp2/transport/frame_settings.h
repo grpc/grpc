@@ -97,7 +97,7 @@ grpc_error *grpc_chttp2_settings_parser_begin_frame(
     uint32_t *settings);
 grpc_error *grpc_chttp2_settings_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, gpr_slice slice, int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

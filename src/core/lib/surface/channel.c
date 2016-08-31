@@ -208,9 +208,21 @@ static grpc_call *grpc_channel_create_call_internal(
     send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
-  return grpc_call_create(channel, parent_call, propagation_mask, cq,
-                          pollset_set_alternative, NULL, send_metadata,
-                          num_metadata, deadline);
+  grpc_call_create_args args;
+  memset(&args, 0, sizeof(args));
+  args.channel = channel;
+  args.parent_call = parent_call;
+  args.propagation_mask = propagation_mask;
+  args.cq = cq;
+  args.pollset_set_alternative = pollset_set_alternative;
+  args.server_transport_data = NULL;
+  args.add_initial_metadata = send_metadata;
+  args.add_initial_metadata_count = num_metadata;
+  args.send_deadline = deadline;
+
+  grpc_call *call;
+  GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
+  return call;
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
@@ -334,14 +346,13 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
-  memset(&op, 0, sizeof(op));
-  op.disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
+  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
-  elem->filter->start_transport_op(&exec_ctx, elem, &op);
+  elem->filter->start_transport_op(&exec_ctx, elem, op);
 
   GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "channel");
 

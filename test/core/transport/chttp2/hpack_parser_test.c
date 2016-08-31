@@ -45,7 +45,7 @@
 
 typedef struct { va_list args; } test_checker;
 
-static void onhdr(void *ud, grpc_mdelem *md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
   const char *ekey, *evalue;
   test_checker *chk = ud;
   ekey = va_arg(chk->args, char *);
@@ -75,9 +75,11 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
   gpr_slice_unref(input);
 
   for (i = 0; i < nslices; i++) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
-                   parser, GPR_SLICE_START_PTR(slices[i]),
+                   &exec_ctx, parser, GPR_SLICE_START_PTR(slices[i]),
                    GPR_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   for (i = 0; i < nslices; i++) {
