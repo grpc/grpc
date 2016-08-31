@@ -62,12 +62,12 @@ namespace {
 class ServiceImpl GRPC_FINAL
     : public ::grpc::testing::EchoTestService::Service {
  public:
-  ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
+  ServiceImpl() : twodi_stream_count_(0), response_stream_count_(0) {}
 
-  Status BidiStream(ServerContext* context,
+  Status TwodiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
-    bidi_stream_count_++;
+    twodi_stream_count_++;
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -95,12 +95,12 @@ class ServiceImpl GRPC_FINAL
     return Status::OK;
   }
 
-  int bidi_stream_count() { return bidi_stream_count_; }
+  int twodi_stream_count() { return twodi_stream_count_; }
 
   int response_stream_count() { return response_stream_count_; }
 
  private:
-  int bidi_stream_count_;
+  int twodi_stream_count_;
   int response_stream_count_;
 };
 
@@ -125,7 +125,7 @@ class CrashTest : public ::testing::Test {
 
   void KillClient() { client_.reset(); }
 
-  bool HadOneBidiStream() { return service_.bidi_stream_count() == 1; }
+  bool HadOneTwodiStream() { return service_.twodi_stream_count() == 1; }
 
   bool HadOneResponseStream() { return service_.response_stream_count() == 1; }
 
@@ -144,14 +144,14 @@ TEST_F(CrashTest, ResponseStream) {
   GPR_ASSERT(HadOneResponseStream());
 }
 
-TEST_F(CrashTest, BidiStream) {
-  auto server = CreateServerAndClient("bidi");
+TEST_F(CrashTest, TwodiStream) {
+  auto server = CreateServerAndClient("twodi");
 
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
-  GPR_ASSERT(HadOneBidiStream());
+  GPR_ASSERT(HadOneTwodiStream());
 }
 
 }  // namespace

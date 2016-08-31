@@ -55,7 +55,7 @@ using grpc_generator::GetMethodType;
 using grpc_generator::METHODTYPE_NO_STREAMING;
 using grpc_generator::METHODTYPE_CLIENT_STREAMING;
 using grpc_generator::METHODTYPE_SERVER_STREAMING;
-using grpc_generator::METHODTYPE_BIDI_STREAMING;
+using grpc_generator::METHODTYPE_TWODI_STREAMING;
 using grpc_generator::StringReplace;
 using std::map;
 using std::vector;
@@ -142,7 +142,7 @@ std::string GetCSharpMethodType(MethodType method_type) {
       return "MethodType.ClientStreaming";
     case METHODTYPE_SERVER_STREAMING:
       return "MethodType.ServerStreaming";
-    case METHODTYPE_BIDI_STREAMING:
+    case METHODTYPE_TWODI_STREAMING:
       return "MethodType.DuplexStreaming";
   }
   GOOGLE_LOG(FATAL) << "Can't get here.";
@@ -184,7 +184,7 @@ std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
     case METHODTYPE_SERVER_STREAMING:
       return "AsyncServerStreamingCall<" + GetClassName(method->output_type()) +
              ">";
-    case METHODTYPE_BIDI_STREAMING:
+    case METHODTYPE_TWODI_STREAMING:
       return "AsyncDuplexStreamingCall<" + GetClassName(method->input_type()) +
              ", " + GetClassName(method->output_type()) + ">";
   }
@@ -198,7 +198,7 @@ std::string GetMethodRequestParamServer(const MethodDescriptor *method) {
     case METHODTYPE_SERVER_STREAMING:
       return GetClassName(method->input_type()) + " request";
     case METHODTYPE_CLIENT_STREAMING:
-    case METHODTYPE_BIDI_STREAMING:
+    case METHODTYPE_TWODI_STREAMING:
       return "IAsyncStreamReader<" + GetClassName(method->input_type()) +
              "> requestStream";
   }
@@ -213,7 +213,7 @@ std::string GetMethodReturnTypeServer(const MethodDescriptor *method) {
       return "global::System.Threading.Tasks.Task<" +
              GetClassName(method->output_type()) + ">";
     case METHODTYPE_SERVER_STREAMING:
-    case METHODTYPE_BIDI_STREAMING:
+    case METHODTYPE_TWODI_STREAMING:
       return "global::System.Threading.Tasks.Task";
   }
   GOOGLE_LOG(FATAL) << "Can't get here.";
@@ -226,7 +226,7 @@ std::string GetMethodResponseStreamMaybe(const MethodDescriptor *method) {
     case METHODTYPE_CLIENT_STREAMING:
       return "";
     case METHODTYPE_SERVER_STREAMING:
-    case METHODTYPE_BIDI_STREAMING:
+    case METHODTYPE_TWODI_STREAMING:
       return ", IServerStreamWriter<" + GetClassName(method->output_type()) +
              "> responseStream";
   }
@@ -480,7 +480,7 @@ void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
             "options, request);\n",
             "methodfield", GetMethodFieldName(method));
         break;
-      case METHODTYPE_BIDI_STREAMING:
+      case METHODTYPE_TWODI_STREAMING:
         out->Print(
             "return CallInvoker.AsyncDuplexStreamingCall($methodfield$, null, "
             "options);\n",

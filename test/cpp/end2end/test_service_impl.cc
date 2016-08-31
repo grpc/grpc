@@ -272,7 +272,7 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   return Status::OK;
 }
 
-Status TestServiceImpl::BidiStream(
+Status TestServiceImpl::TwodiStream(
     ServerContext* context,
     ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
   // If server_try_cancel is set in the metadata, the RPC is cancelled by the

@@ -184,7 +184,7 @@ describe('Server.prototype.addProtoService', function() {
         done();
       });
     });
-    it('should respond to a bidi call with UNIMPLEMENTED', function(done) {
+    it('should respond to a twodi call with UNIMPLEMENTED', function(done) {
       var call = client.divMany();
       call.on('data', function(value) {
         assert.fail('No messages expected');
@@ -423,7 +423,7 @@ describe('Echo metadata', function() {
         stream.sendMetadata(stream.metadata);
         stream.end();
       },
-      bidiStream: function(stream) {
+      twodiStream: function(stream) {
         stream.on('data', function(data) {});
         stream.on('end', function() {
           stream.sendMetadata(stream.metadata);
@@ -468,8 +468,8 @@ describe('Echo metadata', function() {
       done();
     });
   });
-  it('with bidi stream call', function(done) {
-    var call = client.bidiStream(metadata);
+  it('with twodi stream call', function(done) {
+    var call = client.twodiStream(metadata);
     call.on('data', function() {});
     call.on('metadata', function(metadata) {
       assert.deepEqual(metadata.get('key'), ['value']);
@@ -529,8 +529,8 @@ describe('Client malformed response handling', function() {
         requestDeserialize: _.identity,
         responseSerialize: _.identity
       },
-      bidiStream: {
-        path: '/TestService/BidiStream',
+      twodiStream: {
+        path: '/TestService/TwodiStream',
         requestStream: true,
         responseStream: true,
         requestDeserialize: _.identity,
@@ -552,7 +552,7 @@ describe('Client malformed response handling', function() {
         stream.write(badArg);
         stream.end();
       },
-      bidiStream: function(stream) {
+      twodiStream: function(stream) {
         stream.on('data', function() {
           // Ignore requests
           stream.write(badArg);
@@ -594,8 +594,8 @@ describe('Client malformed response handling', function() {
       done();
     });
   });
-  it('should get an INTERNAL status with a bidi stream call', function(done) {
-    var call = client.bidiStream();
+  it('should get an INTERNAL status with a twodi stream call', function(done) {
+    var call = client.twodiStream();
     call.on('data', function(){});
     call.on('error', function(err) {
       assert.strictEqual(err.code, grpc.status.INTERNAL);
@@ -658,7 +658,7 @@ describe('Other conditions', function() {
           stream.end(trailer_metadata);
         }
       },
-      bidiStream: function(stream) {
+      twodiStream: function(stream) {
         var count = 0;
         stream.on('data', function(data) {
           if (data.error) {
@@ -689,7 +689,7 @@ describe('Other conditions', function() {
                        'string');
   });
   it('client should be able to pause and resume a stream', function(done) {
-    var call = client.bidiStream();
+    var call = client.twodiStream();
     call.on('data', function(data) {
       assert(data.count < 3);
       call.pause();
@@ -731,8 +731,8 @@ describe('Other conditions', function() {
           requestSerialize: _.identity,
           responseDeserialize: _.identity
         },
-        bidiStream: {
-          path: '/TestService/BidiStream',
+        twodiStream: {
+          path: '/TestService/TwodiStream',
           requestStream: true,
           responseStream: true,
           requestSerialize: _.identity,
@@ -771,8 +771,8 @@ describe('Other conditions', function() {
         done();
       });
     });
-    it('should respond correctly to a bidi stream', function(done) {
-      var call = misbehavingClient.bidiStream();
+    it('should respond correctly to a twodi stream', function(done) {
+      var call = misbehavingClient.twodiStream();
       call.on('data', function(data) {
         assert.fail(data, null, 'Unexpected data', '===');
       });
@@ -845,8 +845,8 @@ describe('Other conditions', function() {
         done();
       });
     });
-    it('should be present when a bidi stream succeeds', function(done) {
-      var call = client.bidiStream();
+    it('should be present when a twodi stream succeeds', function(done) {
+      var call = client.twodiStream();
       call.write({error: false});
       call.write({error: false});
       call.end();
@@ -857,8 +857,8 @@ describe('Other conditions', function() {
         done();
       });
     });
-    it('should be present when a bidi stream fails', function(done) {
-      var call = client.bidiStream();
+    it('should be present when a twodi stream fails', function(done) {
+      var call = client.twodiStream();
       call.write({error: false});
       call.write({error: true});
       call.end();
@@ -898,8 +898,8 @@ describe('Other conditions', function() {
         done();
       });
     });
-    it('for a bidi stream call', function(done) {
-      var call = client.bidiStream();
+    it('for a twodi stream call', function(done) {
+      var call = client.twodiStream();
       call.write({error: false});
       call.write({error: true});
       call.end();
@@ -937,8 +937,8 @@ describe('Other conditions', function() {
         done();
       });
     });
-    it('for a bidi stream call', function(done) {
-      var call = client.bidiStream();
+    it('for a twodi stream call', function(done) {
+      var call = client.twodiStream();
       assert.strictEqual(typeof call.getPeer(), 'string');
       call.write({error: false});
       call.end();
@@ -965,7 +965,7 @@ describe('Call propagation', function() {
       unary: function(call) {},
       clientStream: function(stream) {},
       serverStream: function(stream) {},
-      bidiStream: function(stream) {}
+      twodiStream: function(stream) {}
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     Client = surface_client.makeProtobufClientConstructor(test_service);
@@ -981,7 +981,7 @@ describe('Call propagation', function() {
       unary: function(call) {},
       clientStream: function(stream) {},
       serverStream: function(stream) {},
-      bidiStream: function(stream) {}
+      twodiStream: function(stream) {}
     };
   });
   afterEach(function() {
@@ -1056,11 +1056,11 @@ describe('Call propagation', function() {
         done();
       });
     });
-    it('With a bidi stream call', function(done) {
+    it('With a twodi stream call', function(done) {
       done = multiDone(done, 2);
       var call;
-      proxy_impl.bidiStream = function(parent) {
-        var child = client.bidiStream({parent: parent});
+      proxy_impl.twodiStream = function(parent) {
+        var child = client.twodiStream({parent: parent});
         child.on('data', function() {});
         child.on('error', function(err) {
           assert(err);
@@ -1074,7 +1074,7 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      call = proxy_client.bidiStream();
+      call = proxy_client.twodiStream();
       call.on('data', function() {});
       call.on('error', function(err) {
         done();
@@ -1111,10 +1111,10 @@ describe('Call propagation', function() {
         done();
       });
     });
-    it('With a bidi stream call', function(done) {
+    it('With a twodi stream call', function(done) {
       done = multiDone(done, 2);
-      proxy_impl.bidiStream = function(parent) {
-        var child = client.bidiStream(
+      proxy_impl.twodiStream = function(parent) {
+        var child = client.twodiStream(
             {parent: parent, propagate_flags: deadline_flags});
         child.on('data', function() {});
         child.on('error', function(err) {
@@ -1131,7 +1131,7 @@ describe('Call propagation', function() {
                                     grpc.credentials.createInsecure());
       var deadline = new Date();
       deadline.setSeconds(deadline.getSeconds() + 1);
-      var call = proxy_client.bidiStream({deadline: deadline});
+      var call = proxy_client.twodiStream({deadline: deadline});
       call.on('data', function() {});
       call.on('error', function(err) {
         done();
@@ -1181,7 +1181,7 @@ describe('Cancelling surface client', function() {
     });
     call.cancel();
   });
-  it('Should correctly cancel a bidi stream call', function(done) {
+  it('Should correctly cancel a twodi stream call', function(done) {
     var call = client.divMany();
     call.on('data', function() {});
     call.on('error', function(error) {

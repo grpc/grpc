@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
   grpc::ClientContext context;
   context.set_fail_fast(false);
 
-  if (FLAGS_mode == "bidi") {
-    auto stream = stub->BidiStream(&context);
+  if (FLAGS_mode == "twodi") {
+    auto stream = stub->TwodiStream(&context);
     for (int i = 0;; i++) {
       std::ostringstream msg;
       msg << "Hello " << i;

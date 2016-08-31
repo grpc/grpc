@@ -244,7 +244,7 @@ describe('client credentials', function() {
         stream.sendMetadata(stream.metadata);
         stream.end();
       },
-      bidiStream: function(stream) {
+      twodiStream: function(stream) {
         stream.on('data', function(data) {});
         stream.on('end', function() {
           stream.sendMetadata(stream.metadata);
@@ -429,8 +429,8 @@ describe('client credentials', function() {
         done();
       });
     });
-    it('should update metadata on a bidi streaming call', function(done) {
-      var call = client.bidiStream({credentials: updater_creds});
+    it('should update metadata on a twodi streaming call', function(done) {
+      var call = client.twodiStream({credentials: updater_creds});
       call.on('data', function() {});
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);

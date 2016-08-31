@@ -77,8 +77,8 @@ module GRPC
         req = active_call.remote_read
         replys = mth.call(req, active_call.single_req_view)
         replys.each { |r| active_call.remote_send(r) }
-      else  # is a bidi_stream
-        active_call.run_server_bidi(mth)
+      else  # is a twodi_stream
+        active_call.run_server_twodi(mth)
       end
       send_status(active_call, OK, 'OK', active_call.output_metadata)
     rescue BadStatus => e
@@ -104,9 +104,9 @@ module GRPC
     end
 
     def assert_arity_matches(mth)
-      # A bidi handler function can optionally be passed a second
+      # A twodi handler function can optionally be passed a second
       # call object parameter for access to metadata, cancelling, etc.
-      if bidi_streamer?
+      if twodi_streamer?
         if mth.arity != 2 && mth.arity != 1
           fail arity_error(mth, 2, "should be #{mth.name}(req, call) or " \
             "#{mth.name}(req)")
@@ -134,7 +134,7 @@ module GRPC
       !input.is_a?(Stream) && output.is_a?(Stream)
     end
 
-    def bidi_streamer?
+    def twodi_streamer?
       input.is_a?(Stream) && output.is_a?(Stream)
     end
 

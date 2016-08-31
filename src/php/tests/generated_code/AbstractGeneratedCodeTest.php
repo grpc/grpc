@@ -198,7 +198,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
-    public function testWriteFlagsBidiStreaming()
+    public function testWriteFlagsTwodiStreaming()
     {
         $call = self::$client->DivMany();
         $div_arg = new math\DivArgs();
@@ -254,7 +254,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
-    public function testBidiStreaming()
+    public function testTwodiStreaming()
     {
         $call = self::$client->DivMany();
         $this->assertTrue(is_string($call->getPeer()));

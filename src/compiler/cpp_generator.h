@@ -84,7 +84,7 @@ struct Method : public CommentHolder {
   virtual bool NoStreaming() const = 0;
   virtual bool ClientOnlyStreaming() const = 0;
   virtual bool ServerOnlyStreaming() const = 0;
-  virtual bool BidiStreaming() const = 0;
+  virtual bool TwodiStreaming() const = 0;
 };
 
 // An abstract interface representing a service.

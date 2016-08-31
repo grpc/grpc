@@ -45,7 +45,7 @@ describe GRPC::RpcDesc do
                                    'encode', 'decode')
     @server_streamer = RpcDesc.new('ss', Object.new, Stream.new(Object.new),
                                    'encode', 'decode')
-    @bidi_streamer = RpcDesc.new('ss', Stream.new(Object.new),
+    @twodi_streamer = RpcDesc.new('ss', Stream.new(Object.new),
                                  Stream.new(Object.new), 'encode', 'decode')
     @bs_code = INTERNAL
     @no_reason = 'no reason given'
@@ -153,7 +153,7 @@ describe GRPC::RpcDesc do
       end
     end
 
-    describe 'for bidi streamers' do
+    describe 'for twodi streamers' do
       before(:each) do
         @call = double('active_call')
         enq_th, rwl_th = double('enqueue_th'), ('read_write_loop_th')
@@ -163,25 +163,25 @@ describe GRPC::RpcDesc do
 
       it 'sends the specified status if BadStatus is raised' do
         e = GRPC::BadStatus.new(@bs_code, 'NOK')
-        expect(@call).to receive(:run_server_bidi).and_raise(e)
+        expect(@call).to receive(:run_server_twodi).and_raise(e)
         expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
                                                          metadata: {})
-        @bidi_streamer.run_server_method(@call, method(:bad_status_alt))
+        @twodi_streamer.run_server_method(@call, method(:bad_status_alt))
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
-        expect(@call).to receive(:run_server_bidi).and_raise(StandardError)
+        expect(@call).to receive(:run_server_twodi).and_raise(StandardError)
         expect(@call).to receive(:send_status).once.with(UNKNOWN, @no_reason,
                                                          false, metadata: {})
-        @bidi_streamer.run_server_method(@call, method(:other_error_alt))
+        @twodi_streamer.run_server_method(@call, method(:other_error_alt))
       end
 
       it 'closes the stream if there no errors' do
-        expect(@call).to receive(:run_server_bidi)
+        expect(@call).to receive(:run_server_twodi)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
                                                          metadata: fake_md)
-        @bidi_streamer.run_server_method(@call, method(:fake_bidistream))
+        @twodi_streamer.run_server_method(@call, method(:fake_twodistream))
       end
     end
   end
@@ -247,25 +247,25 @@ describe GRPC::RpcDesc do
       expect(&blk).to_not raise_error
     end
 
-    it 'raises when a bidi streamer does not have 1 or 2 args' do
+    it 'raises when a twodi streamer does not have 1 or 2 args' do
       [:fake_three_args, :no_arg].each do |mth|
         blk = proc do
-          @bidi_streamer.assert_arity_matches(method(mth))
+          @twodi_streamer.assert_arity_matches(method(mth))
         end
         expect(&blk).to raise_error
       end
     end
 
-    it 'passes when a bidi streamer has 1 arg' do
+    it 'passes when a twodi streamer has 1 arg' do
       blk = proc do
-        @bidi_streamer.assert_arity_matches(method(:fake_clstream))
+        @twodi_streamer.assert_arity_matches(method(:fake_clstream))
       end
       expect(&blk).to_not raise_error
     end
 
-    it 'passes when a bidi streamer has 2 args' do
+    it 'passes when a twodi streamer has 2 args' do
       blk = proc do
-        @bidi_streamer.assert_arity_matches(method(:fake_svstream))
+        @twodi_streamer.assert_arity_matches(method(:fake_svstream))
       end
       expect(&blk).to_not raise_error
     end
@@ -275,7 +275,7 @@ describe GRPC::RpcDesc do
     it 'is true only input and output are both not Streams' do
       expect(@request_response.request_response?).to be(true)
       expect(@client_streamer.request_response?).to be(false)
-      expect(@bidi_streamer.request_response?).to be(false)
+      expect(@twodi_streamer.request_response?).to be(false)
       expect(@server_streamer.request_response?).to be(false)
     end
   end
@@ -285,7 +285,7 @@ describe GRPC::RpcDesc do
       expect(@client_streamer.client_streamer?).to be(true)
       expect(@request_response.client_streamer?).to be(false)
       expect(@server_streamer.client_streamer?).to be(false)
-      expect(@bidi_streamer.client_streamer?).to be(false)
+      expect(@twodi_streamer.client_streamer?).to be(false)
     end
   end
 
@@ -294,16 +294,16 @@ describe GRPC::RpcDesc do
       expect(@server_streamer.server_streamer?).to be(true)
       expect(@client_streamer.server_streamer?).to be(false)
       expect(@request_response.server_streamer?).to be(false)
-      expect(@bidi_streamer.server_streamer?).to be(false)
+      expect(@twodi_streamer.server_streamer?).to be(false)
     end
   end
 
-  describe '#bidi_streamer?' do
+  describe '#twodi_streamer?' do
     it 'is true only when output is a Stream and input is a Stream' do
-      expect(@bidi_streamer.bidi_streamer?).to be(true)
-      expect(@server_streamer.bidi_streamer?).to be(false)
-      expect(@client_streamer.bidi_streamer?).to be(false)
-      expect(@request_response.bidi_streamer?).to be(false)
+      expect(@twodi_streamer.twodi_streamer?).to be(true)
+      expect(@server_streamer.twodi_streamer?).to be(false)
+      expect(@client_streamer.twodi_streamer?).to be(false)
+      expect(@request_response.twodi_streamer?).to be(false)
     end
   end
 
@@ -319,7 +319,7 @@ describe GRPC::RpcDesc do
     [@ok_response, @ok_response]
   end
 
-  def fake_bidistream(an_array)
+  def fake_twodistream(an_array)
     an_array
   end
 

@@ -341,7 +341,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     case RpcMethod::SERVER_STREAMING:
       return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
     case RpcMethod::CLIENT_STREAMING:
-    case RpcMethod::BIDI_STREAMING:
+    case RpcMethod::TWODI_STREAMING:
       return GRPC_SRM_PAYLOAD_NONE;
   }
   GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
@@ -410,7 +410,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   if (!has_generic_service_) {
     if (!sync_methods_->empty()) {
       unknown_method_.reset(new RpcServiceMethod(
-          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
+          "unknown", RpcMethod::TWODI_STREAMING, new UnknownMethodHandler));
       // Use of emplace_back with just constructor arguments is not accepted
       // here by gcc-4.4 because it can't match the anonymous nullptr with a
       // proper constructor implicitly. Construct the object and use push_back.

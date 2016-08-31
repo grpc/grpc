@@ -63,7 +63,7 @@ namespace Grpc.Core
         where TResponse : class;
 
     /// <summary>
-    /// Server-side handler for bidi streaming call.
+    /// Server-side handler for twodi streaming call.
     /// </summary>
     /// <typeparam name="TRequest">Request message type for this method.</typeparam>
     /// <typeparam name="TResponse">Response message type for this method.</typeparam>

@@ -316,7 +316,7 @@ module GRPC
       op
     end
 
-    # bidi_streamer sends a stream of requests to the GRPC server, and yields
+    # twodi_streamer sends a stream of requests to the GRPC server, and yields
     # a stream of responses.
     #
     # This method takes an Enumerable of requests, and returns and enumerable
@@ -347,7 +347,7 @@ module GRPC
     #
     # * the execution block parameters are two objects for sending and
     #   receiving responses, each of which blocks waiting for flow control.
-    #   E.g, calles to bidi_call#remote_send will wait until flow control
+    #   E.g, calles to twodi_call#remote_send will wait until flow control
     #   allows another write before returning; and obviously calls to
     #   responses#next block until the next response is available.
     #
@@ -356,18 +356,18 @@ module GRPC
     # As well as sending and receiving messages, the block passed to the
     # function is also responsible for:
     #
-    # * calling bidi_call#writes_done to indicate no further reqs will be
+    # * calling twodi_call#writes_done to indicate no further reqs will be
     #   sent.
     #
-    # * returning false if once the bidi stream is functionally completed.
+    # * returning false if once the twodi stream is functionally completed.
     #
     # Note that response#next will indicate that there are no further
     # responses by throwing StopIteration, but can only happen either
-    # if bidi_call#writes_done is called.
+    # if twodi_call#writes_done is called.
     #
     # To terminate the RPC correctly the block:
     #
-    # * must call bidi#writes_done and then
+    # * must call twodi#writes_done and then
     #
     #    * either return false as soon as there is no need for other responses
     #
@@ -389,7 +389,7 @@ module GRPC
     # executed with each response.
     #
     # if return_op is true, the function returns an Operation whose #execute
-    # method runs the Bidi call. Again, Operation#execute either calls a
+    # method runs the Twodi call. Again, Operation#execute either calls a
     # given block with each response or returns an Enumerator of the
     # responses.
     #
@@ -406,7 +406,7 @@ module GRPC
     # @param metadata [Hash] metadata to be sent to the server
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|nil|Operation] as discussed above
-    def bidi_streamer(method, requests, marshal, unmarshal,
+    def twodi_streamer(method, requests, marshal, unmarshal,
                       deadline: nil,
                       return_op: false,
                       parent: nil,
@@ -418,14 +418,14 @@ module GRPC
                           parent: parent,
                           credentials: credentials)
 
-      return c.bidi_streamer(requests, metadata: metadata,
+      return c.twodi_streamer(requests, metadata: metadata,
                              &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
-      # as a new method for this instance that invokes #bidi_streamer
+      # as a new method for this instance that invokes #twodi_streamer
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.bidi_streamer(requests, metadata: metadata, &blk)
+        c.twodi_streamer(requests, metadata: metadata, &blk)
       end
       op
     end

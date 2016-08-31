@@ -317,8 +317,8 @@ describe 'ClientStub' do
     end
   end
 
-  describe '#bidi_streamer' do
-    shared_examples 'bidi streaming' do
+  describe '#twodi_streamer' do
+    shared_examples 'twodi streaming' do
       before(:each) do
         @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
         @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
@@ -326,8 +326,8 @@ describe 'ClientStub' do
         @host = "localhost:#{server_port}"
       end
 
-      it 'supports sending all the requests first', bidi: true do
-        th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
+      it 'supports sending all the requests first', twodi: true do
+        th = run_twodi_streamer_handle_inputs_first(@sent_msgs, @replys,
                                                    @pass)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
@@ -335,16 +335,16 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'supports client-initiated ping pong', bidi: true do
-        th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, true)
+      it 'supports client-initiated ping pong', twodi: true do
+        th = run_twodi_streamer_echo_ping_pong(@sent_msgs, @pass, true)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@sent_msgs)
         th.join
       end
 
-      it 'supports a server-initiated ping pong', bidi: true do
-        th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, false)
+      it 'supports a server-initiated ping pong', twodi: true do
+        th = run_twodi_streamer_echo_ping_pong(@sent_msgs, @pass, false)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@sent_msgs)
@@ -354,17 +354,17 @@ describe 'ClientStub' do
 
     describe 'without a call operation' do
       def get_responses(stub)
-        e = stub.bidi_streamer(@method, @sent_msgs, noop, noop)
+        e = stub.twodi_streamer(@method, @sent_msgs, noop, noop)
         expect(e).to be_a(Enumerator)
         e
       end
 
-      it_behaves_like 'bidi streaming'
+      it_behaves_like 'twodi streaming'
     end
 
     describe 'via a call operation' do
       def get_responses(stub)
-        op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+        op = stub.twodi_streamer(@method, @sent_msgs, noop, noop,
                                 return_op: true)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         e = op.execute
@@ -372,7 +372,7 @@ describe 'ClientStub' do
         e
       end
 
-      it_behaves_like 'bidi streaming'
+      it_behaves_like 'twodi streaming'
     end
   end
 
@@ -389,7 +389,7 @@ describe 'ClientStub' do
     end
   end
 
-  def run_bidi_streamer_handle_inputs_first(expected_inputs, replys,
+  def run_twodi_streamer_handle_inputs_first(expected_inputs, replys,
                                             status)
     wakey_thread do |notifier|
       c = expect_server_to_be_invoked(notifier)
@@ -399,7 +399,7 @@ describe 'ClientStub' do
     end
   end
 
-  def run_bidi_streamer_echo_ping_pong(expected_inputs, status, client_starts)
+  def run_twodi_streamer_echo_ping_pong(expected_inputs, status, client_starts)
     wakey_thread do |notifier|
       c = expect_server_to_be_invoked(notifier)
       expected_inputs.each do |i|

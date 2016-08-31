@@ -238,7 +238,7 @@ void PrintHeaderClientMethodInterfaces(
                      "Async$Method$Raw(context, request, cq, tag));\n");
       printer->Outdent();
       printer->Print("}\n");
-    } else if (method->BidiStreaming()) {
+    } else if (method->TwodiStreaming()) {
       printer->Print(*vars,
                      "std::unique_ptr< ::grpc::ClientReaderWriterInterface< "
                      "$Request$, $Response$>> "
@@ -296,7 +296,7 @@ void PrintHeaderClientMethodInterfaces(
           "Async$Method$Raw("
           "::grpc::ClientContext* context, const $Request$& request, "
           "::grpc::CompletionQueue* cq, void* tag) = 0;\n");
-    } else if (method->BidiStreaming()) {
+    } else if (method->TwodiStreaming()) {
       printer->Print(*vars,
                      "virtual ::grpc::ClientReaderWriterInterface< $Request$, "
                      "$Response$>* "
@@ -385,7 +385,7 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
           "Async$Method$Raw(context, request, cq, tag));\n");
       printer->Outdent();
       printer->Print("}\n");
-    } else if (method->BidiStreaming()) {
+    } else if (method->TwodiStreaming()) {
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientReaderWriter< $Request$, $Response$>>"
@@ -437,7 +437,7 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
           "::grpc::ClientAsyncReader< $Response$>* Async$Method$Raw("
           "::grpc::ClientContext* context, const $Request$& request, "
           "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
-    } else if (method->BidiStreaming()) {
+    } else if (method->TwodiStreaming()) {
       printer->Print(
           *vars,
           "::grpc::ClientReaderWriter< $Request$, $Response$>* "
@@ -479,7 +479,7 @@ void PrintHeaderServerMethodSync(Printer *printer, const Method *method,
                    "virtual ::grpc::Status $Method$("
                    "::grpc::ServerContext* context, const $Request$* request, "
                    "::grpc::ServerWriter< $Response$>* writer);\n");
-  } else if (method->BidiStreaming()) {
+  } else if (method->TwodiStreaming()) {
     printer->Print(
         *vars,
         "virtual ::grpc::Status $Method$("
@@ -577,7 +577,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
         "  ::grpc::Service::RequestAsyncServerStreaming($Idx$, "
         "context, request, writer, new_call_cq, notification_cq, tag);\n");
     printer->Print("}\n");
-  } else if (method->BidiStreaming()) {
+  } else if (method->TwodiStreaming()) {
     printer->Print(
         *vars,
         "// disable synchronous version of this method\n"
@@ -596,7 +596,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
         "::grpc::CompletionQueue* new_call_cq, "
         "::grpc::ServerCompletionQueue* notification_cq, void *tag) {\n");
     printer->Print(*vars,
-                   "  ::grpc::Service::RequestAsyncBidiStreaming($Idx$, "
+                   "  ::grpc::Service::RequestAsyncTwodiStreaming($Idx$, "
                    "context, stream, new_call_cq, notification_cq, tag);\n");
     printer->Print("}\n");
   }
@@ -658,7 +658,7 @@ void PrintHeaderServerMethodGeneric(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-  } else if (method->BidiStreaming()) {
+  } else if (method->TwodiStreaming()) {
     printer->Print(
         *vars,
         "// disable synchronous version of this method\n"
@@ -964,7 +964,7 @@ void PrintSourceClientMethod(Printer *printer, const Method *method,
                    "rpcmethod_$Method$_, "
                    "context, request, tag);\n"
                    "}\n\n");
-  } else if (method->BidiStreaming()) {
+  } else if (method->TwodiStreaming()) {
     printer->Print(
         *vars,
         "::grpc::ClientReaderWriter< $Request$, $Response$>* "
@@ -1034,7 +1034,7 @@ void PrintSourceServerMethod(Printer *printer, const Method *method,
         "  return ::grpc::Status("
         "::grpc::StatusCode::UNIMPLEMENTED, \"\");\n");
     printer->Print("}\n\n");
-  } else if (method->BidiStreaming()) {
+  } else if (method->TwodiStreaming()) {
     printer->Print(*vars,
                    "::grpc::Status $ns$$Service$::Service::$Method$("
                    "::grpc::ServerContext* context, "
@@ -1085,7 +1085,7 @@ void PrintSourceService(Printer *printer, const Service *service,
     } else if (method->ServerOnlyStreaming()) {
       (*vars)["StreamingType"] = "SERVER_STREAMING";
     } else {
-      (*vars)["StreamingType"] = "BIDI_STREAMING";
+      (*vars)["StreamingType"] = "TWODI_STREAMING";
     }
     printer->Print(*vars,
                    ", rpcmethod_$Method$_("
@@ -1139,13 +1139,13 @@ void PrintSourceService(Printer *printer, const Service *service,
           "    new ::grpc::ServerStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
           "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
-    } else if (method->BidiStreaming()) {
+    } else if (method->TwodiStreaming()) {
       printer->Print(
           *vars,
           "AddMethod(new ::grpc::RpcServiceMethod(\n"
           "    $prefix$$Service$_method_names[$Idx$],\n"
-          "    ::grpc::RpcMethod::BIDI_STREAMING,\n"
-          "    new ::grpc::BidiStreamingHandler< "
+          "    ::grpc::RpcMethod::TWODI_STREAMING,\n"
+          "    new ::grpc::TwodiStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
           "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
     }

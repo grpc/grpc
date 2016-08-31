@@ -42,9 +42,9 @@ end
 SPEC_SUITES = [
   { id: :wrapper, title: 'wrapper layer', files: %w(src/ruby/spec/*.rb) },
   { id: :idiomatic, title: 'idiomatic layer', dir: %w(src/ruby/spec/generic),
-    tags: ['~bidi', '~server'] },
-  { id: :bidi, title: 'bidi tests', dir: %w(src/ruby/spec/generic),
-    tag: 'bidi' },
+    tags: ['~twodi', '~server'] },
+  { id: :twodi, title: 'twodi tests', dir: %w(src/ruby/spec/generic),
+    tag: 'twodi' },
   { id: :server, title: 'rpc server thread tests', dir: %w(src/ruby/spec/generic),
     tag: 'server' },
   { id: :pb, title: 'protobuf service tests', dir: %w(src/ruby/spec/pb) }
@@ -113,10 +113,10 @@ end
 # Define dependencies between the suites.
 task 'suite:wrapper' => [:compile, :rubocop]
 task 'suite:idiomatic' => 'suite:wrapper'
-task 'suite:bidi' => 'suite:wrapper'
+task 'suite:twodi' => 'suite:wrapper'
 task 'suite:server' => 'suite:wrapper'
 task 'suite:pb' => 'suite:server'
 
 desc 'Compiles the gRPC extension then runs all the tests'
-task all: ['suite:idiomatic', 'suite:bidi', 'suite:pb', 'suite:server']
+task all: ['suite:idiomatic', 'suite:twodi', 'suite:pb', 'suite:server']
 task default: :all

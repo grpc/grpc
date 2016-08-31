@@ -531,7 +531,7 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
 }
 
 // One ping, one pong.
-TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
+TEST_P(AsyncEnd2endTest, SimpleTwodiStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -545,9 +545,9 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
 
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+      cli_stream(stub_->AsyncTwodiStream(&cli_ctx, cq_.get(), tag(1)));
 
-  service_.RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
+  service_.RequestTwodiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                              tag(2));
 
   Verifier(GetParam().disable_blocking)
@@ -1207,7 +1207,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
   //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
   //   messages from the client (but before sending any status back to the
   //   client)
-  void TestBidiStreamingServerCancel(
+  void TestTwodiStreamingServerCancel(
       ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
 
@@ -1222,13 +1222,13 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Initiate the call from the client side
     std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-        cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+        cli_stream(stub_->AsyncTwodiStream(&cli_ctx, cq_.get(), tag(1)));
     Verifier(GetParam().disable_blocking).Expect(1, true).Verify(cq_.get());
 
-    // On the server, request to be notified of the 'BidiStream' call and
+    // On the server, request to be notified of the 'TwodiStream' call and
     // receive the call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
-    service_.RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
+    service_.RequestTwodiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                tag(2));
     Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
 
@@ -1386,16 +1386,16 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelAfter) {
   TestServerStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
-TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelBefore) {
-  TestBidiStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerTwodiStreamingTryCancelBefore) {
+  TestTwodiStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
-TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelDuring) {
-  TestBidiStreamingServerCancel(CANCEL_DURING_PROCESSING);
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerTwodiStreamingTryCancelDuring) {
+  TestTwodiStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
-  TestBidiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerTwodiStreamingTryCancelAfter) {
+  TestTwodiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,

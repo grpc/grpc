@@ -57,7 +57,7 @@ Logging.logger.root.appenders = Logging.appenders.stdout
 Logging.logger.root.level = :info
 Logging.logger['GRPC'].level = :info
 Logging.logger['GRPC::ActiveCall'].level = :info
-Logging.logger['GRPC::BidiCall'].level = :info
+Logging.logger['GRPC::TwodiCall'].level = :info
 
 # Configure RSpec to capture log messages for each test. The output from the
 # logs will be stored in the @log_output variable. It is a StringIO instance.

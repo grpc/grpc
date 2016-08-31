@@ -153,7 +153,7 @@ class ServerReflection GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestServerReflectionInfo(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionResponse, ::grpc::reflection::v1alpha::ServerReflectionRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncTwodiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
     }
   };
   typedef WithAsyncMethod_ServerReflectionInfo<Service > AsyncService;

@@ -74,7 +74,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE;
 
-  Status BidiStream(ServerContext* context,
+  Status TwodiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE;
 

@@ -390,7 +390,7 @@ Procedure:
 
 ### ping_pong
 
-This test verifies that full duplex bidi is supported.
+This test verifies that full duplex twodi is supported.
 
 Server features:
 * [FullDuplexCall][]

@@ -517,9 +517,9 @@ describe GRPC::ActiveCall do
     end
   end
 
-  # Test sending of the initial metadata in #run_server_bidi
+  # Test sending of the initial metadata in #run_server_twodi
   # from the server handler both implicitly and explicitly.
-  describe '#run_server_bidi metadata sending tests', run_server_bidi: true do
+  describe '#run_server_twodi metadata sending tests', run_server_twodi: true do
     before(:each) do
       @requests = ['first message', 'second message']
       @server_to_client_metadata = { 'test_key' => 'test_val' }
@@ -574,7 +574,7 @@ describe GRPC::ActiveCall do
       end
 
       @server_thread = Thread.new do
-        @server_call.run_server_bidi(
+        @server_call.run_server_twodi(
           fake_gen_each_reply_with_no_call_param)
         @server_call.send_status(@server_status)
       end
@@ -590,7 +590,7 @@ describe GRPC::ActiveCall do
       end
 
       @server_thread = Thread.new do
-        @server_call.run_server_bidi(
+        @server_call.run_server_twodi(
           fake_gen_each_reply_with_call_param)
         @server_call.send_status(@server_status)
       end
