@@ -217,6 +217,10 @@ static void test_max_message_length(grpc_end2end_test_config config,
 
 done:
   GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
+  GPR_ASSERT(strcmp(details,
+                    send_limit
+                        ? "Sent message larger than max (11 vs. 5)"
+                        : "Received message larger than max (11 vs. 5)") == 0);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

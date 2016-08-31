@@ -69,7 +69,9 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
   if (*calld->recv_message != NULL &&
       (*calld->recv_message)->length > chand->max_recv_size) {
     char* message_string;
-    gpr_asprintf(&message_string, "Received message larger than max (%lu)",
+    gpr_asprintf(&message_string,
+                 "Received message larger than max (%lu vs. %lu)",
+                 (unsigned long)(*calld->recv_message)->length,
                  (unsigned long)chand->max_recv_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
@@ -91,7 +93,8 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
   if (op->send_message != NULL &&
       op->send_message->length > chand->max_send_size) {
     char* message_string;
-    gpr_asprintf(&message_string, "Sent message larger than max (%lu)",
+    gpr_asprintf(&message_string, "Sent message larger than max (%lu vs. %lu)",
+                 (unsigned long)op->send_message->length,
                  (unsigned long)chand->max_send_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
