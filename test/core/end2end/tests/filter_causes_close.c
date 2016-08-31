@@ -46,8 +46,6 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static bool g_enable_filter = false;
 
 static void *tag(intptr_t t) { return (void *)t; }

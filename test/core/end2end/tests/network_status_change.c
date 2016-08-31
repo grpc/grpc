@@ -46,8 +46,6 @@
 /* this is a private API but exposed here for testing*/
 extern void grpc_network_status_shutdown_all_endpoints();
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
