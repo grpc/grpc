@@ -62,6 +62,12 @@ BIG_GENERIC_PAYLOAD = {
     'resp_size': 65536,
   }
 }
+BIG_PROTO_PAYLOAD = {
+  'simple_params': {
+    'req_size': 65536,
+    'resp_size': 65536,
+  }
+}
 
 # deep is the number of RPCs outstanding on a channel in non-ping-pong tests
 # (the value used is 1 otherwise)
@@ -73,6 +79,10 @@ WIDE=64
 # For most synchronous clients, DEEP*WIDE threads will be created.
 SYNC_DEEP=10
 SYNC_WIDE=8
+
+# big-wide-deep is the number of outstanding RPCs in multi-channel big message
+# tests
+BIG_WIDE_DEEP=10
 
 
 def _get_secargs(is_secure):
@@ -95,6 +105,7 @@ def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
                         use_generic_payload=False,
+                        use_big_payload=False,
                         unconstrained_client=None,
                         client_language=None,
                         server_language=None,
@@ -131,11 +142,18 @@ def _ping_pong_scenario(name, rpc_type,
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
-    scenario['client_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
-    scenario['server_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
+    if use_big_payload:
+      scenario['client_config']['payload_config'] = BIG_GENERIC_PAYLOAD
+      scenario['server_config']['payload_config'] = BIG_GENERIC_PAYLOAD
+    else:
+      scenario['client_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
+      scenario['server_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
   else:
     # For proto payload, only the client should get the config.
-    scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
+    if use_big_payload:
+      scenario['client_config']['payload_config'] = BIG_PROTO_PAYLOAD
+    else:
+      scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
 
   if unconstrained_client:
     if unconstrained_client == 'async':
@@ -144,6 +162,12 @@ def _ping_pong_scenario(name, rpc_type,
     elif unconstrained_client == 'sync':
       deep = SYNC_DEEP
       wide = SYNC_WIDE
+    elif unconstrained_client == 'bandwidth-1chan':
+      deep = DEEP
+      wide = 1
+    elif unconstrained_client == 'bandwidth-wide':
+      deep = BIG_WIDE_DEEP
+      wide = WIDE
     else:
       raise Exception('Illegal value of unconstrained_client option.')
 
@@ -237,6 +261,20 @@ class CXXLanguage:
           unconstrained_client='async', use_generic_payload=True,
           server_core_limit=1, async_server_threads=1,
           secure=secure)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_1channel_bandwidth_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='bandwidth-1chan', use_generic_payload=True,
+          use_big_payload=True, secure=secure,
+          categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_Nchannel_bandwidth_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='bandwidth-wide', use_generic_payload=True,
+          use_big_payload=True, secure=secure,
+          categories=smoketest_categories+[SCALABLE])
 
   def __str__(self):
     return 'c++'
