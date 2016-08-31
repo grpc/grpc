@@ -164,7 +164,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
   }
   if (max_message_size_ > 0) {
-    args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_message_size_);
   }
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               enabled_compression_algorithms_bitset_);
