@@ -349,6 +349,7 @@ struct grpc_chttp2_stream {
   uint32_t fetched_send_message_length;
   gpr_slice fetching_slice;
   int64_t fetching_slice_end_offset;
+  bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
@@ -643,7 +644,7 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            gpr_slice slice);
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
-    grpc_error *error, int from_parsing_thread);
+    grpc_error *error);
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                           const uint8_t *opaque_8bytes);

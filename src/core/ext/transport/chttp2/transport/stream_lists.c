@@ -163,9 +163,8 @@ void grpc_chttp2_list_add_check_read_ops(grpc_exec_ctx *exec_ctx,
                                          grpc_chttp2_stream *s) {
   if (!t->check_read_ops_scheduled) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "initiate_read_flush_locked");
-    grpc_combiner_execute_finally(exec_ctx, t->combiner,
-                                  &t->read_action_flush_locked, GRPC_ERROR_NONE,
-                                  false);
+    grpc_combiner_execute_finally(
+        exec_ctx, t->combiner, &t->read_action_flush_locked, GRPC_ERROR_NONE);
     t->check_read_ops_scheduled = true;
   }
   stream_list_add(t, s, GRPC_CHTTP2_LIST_CHECK_READ_OPS);

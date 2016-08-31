@@ -51,7 +51,7 @@ void grpc_closure_list_append(grpc_closure_list *closure_list,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  closure->error = error;
+  closure->error_data.error = error;
   closure->next_data.next = NULL;
   if (closure_list->head == NULL) {
     closure_list->head = closure;
@@ -64,8 +64,8 @@ void grpc_closure_list_append(grpc_closure_list *closure_list,
 void grpc_closure_list_fail_all(grpc_closure_list *list,
                                 grpc_error *forced_failure) {
   for (grpc_closure *c = list->head; c != NULL; c = c->next_data.next) {
-    if (c->error == GRPC_ERROR_NONE) {
-      c->error = GRPC_ERROR_REF(forced_failure);
+    if (c->error_data.error == GRPC_ERROR_NONE) {
+      c->error_data.error = GRPC_ERROR_REF(forced_failure);
     }
   }
   GRPC_ERROR_UNREF(forced_failure);

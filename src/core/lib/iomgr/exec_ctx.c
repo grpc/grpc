@@ -67,7 +67,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
       while (c != NULL) {
         grpc_closure *next = c->next_data.next;
-        grpc_error *error = c->error;
+        grpc_error *error = c->error_data.error;
         did_something = true;
         GPR_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
         c->cb(exec_ctx, c->cb_arg, error);
@@ -87,7 +87,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
     if (grpc_exec_ctx_ready_to_finish(exec_ctx)) {
       grpc_workqueue_enqueue(exec_ctx, exec_ctx->stealing_from_workqueue,
                              exec_ctx->stolen_closure,
-                             exec_ctx->stolen_closure->error);
+                             exec_ctx->stolen_closure->error_data.error);
       GRPC_WORKQUEUE_UNREF(exec_ctx, exec_ctx->stealing_from_workqueue,
                            "exec_ctx_sched");
       exec_ctx->stealing_from_workqueue = NULL;
@@ -98,7 +98,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
                            "exec_ctx_sched");
       exec_ctx->stealing_from_workqueue = NULL;
       exec_ctx->stolen_closure = NULL;
-      grpc_error *error = c->error;
+      grpc_error *error = c->error_data.error;
       GPR_TIMER_BEGIN("grpc_exec_ctx_flush.stolen_cb", 0);
       c->cb(exec_ctx, c->cb_arg, error);
       GRPC_ERROR_UNREF(error);
@@ -125,7 +125,7 @@ void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
   } else if (exec_ctx->stealing_from_workqueue == NULL) {
     exec_ctx->stealing_from_workqueue = offload_target_or_null;
-    closure->error = error;
+    closure->error_data.error = error;
     exec_ctx->stolen_closure = closure;
   } else if (exec_ctx->stealing_from_workqueue != offload_target_or_null) {
     grpc_workqueue_enqueue(exec_ctx, offload_target_or_null, closure, error);
@@ -133,8 +133,8 @@ void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   } else { /* stealing_from_workqueue == offload_target_or_null */
     grpc_workqueue_enqueue(exec_ctx, offload_target_or_null,
                            exec_ctx->stolen_closure,
-                           exec_ctx->stolen_closure->error);
-    closure->error = error;
+                           exec_ctx->stolen_closure->error_data.error);
+    closure->error_data.error = error;
     exec_ctx->stolen_closure = closure;
     GRPC_WORKQUEUE_UNREF(exec_ctx, offload_target_or_null, "exec_ctx_sched");
   }

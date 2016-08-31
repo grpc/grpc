@@ -113,6 +113,10 @@ typedef struct grpc_transport_stream_op {
       have been completed. */
   grpc_closure *on_complete;
 
+  /** Is the completion of this op covered by a poller (if false: the op should
+      complete independently of some pollset being polled) */
+  bool covered_by_poller;
+
   /** Send initial metadata to the peer, from the provided metadata batch.
       idempotent_request MUST be set if this is non-null */
   grpc_metadata_batch *send_initial_metadata;

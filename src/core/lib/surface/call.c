@@ -1405,6 +1405,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   grpc_transport_stream_op *stream_op = &bctl->op;
   memset(stream_op, 0, sizeof(*stream_op));
+  stream_op->covered_by_poller = true;
 
   if (nops == 0) {
     GRPC_CALL_INTERNAL_REF(call, "completion");
