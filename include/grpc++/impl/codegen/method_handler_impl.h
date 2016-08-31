@@ -195,7 +195,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
         // If we needed a write but never did one, we need to mark the
         // status as a fail
         status = Status(StatusCode::INTERNAL,
-			"Service did not provide response message");
+                        "Service did not provide response message");
       }
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
