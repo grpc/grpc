@@ -143,11 +143,6 @@ enum StatusCode {
   /// Unrecoverable data loss or corruption.
   DATA_LOSS = 15,
 
-  // Service was improperly implemented, violated a gRPC API requirement
-  // Not quite the same as unimplemented since it could just be that the API
-  // requirement was violated in this particular circumstance
-  IMPROPER_IMPLEMENTATION = 16,
-
   /// Force users to include a default branch:
   DO_NOT_USE = -1
 };

@@ -194,8 +194,8 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
       if (write_needed_ && status.ok()) {
         // If we needed a write but never did one, we need to mark the
         // status as a fail
-        status = Status(IMPROPER_IMPLEMENTATION,
-                        "Service did not provide response message");
+        status = Status(StatusCode::INTERNAL,
+			"Service did not provide response message");
       }
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
