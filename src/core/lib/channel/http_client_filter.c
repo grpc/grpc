@@ -208,57 +208,57 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  /* Decide which HTTP VERB to use. We use GET if the request is marked
-  cacheable, and the operation contains both initial metadata and send message,
-  and the payload is below the size threshold, and all the data
-  for this request is immediately available. */
-  grpc_mdelem *method = GRPC_MDELEM_METHOD_POST;
-  calld->send_message_blocked = false;
-  if (op->send_initial_metadata != NULL &&
-      (op->send_initial_metadata_flags &
-       GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
-      op->send_message != NULL &&
-      op->send_message->length < channeld->max_payload_size_for_get) {
-    method = GRPC_MDELEM_METHOD_GET;
-    calld->send_message_blocked = true;
-  } else if (op->send_initial_metadata_flags &
-             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
-    method = GRPC_MDELEM_METHOD_PUT;
-  }
-  /* Attempt to read the data from send_message and create a header field. */
-  if (method == GRPC_MDELEM_METHOD_GET) {
-    /* allocate memory to hold the entire payload */
-    calld->payload_bytes = gpr_malloc(op->send_message->length);
-    GPR_ASSERT(calld->payload_bytes);
-
-    /* read slices of send_message and copy into payload_bytes */
-    calld->send_op = *op;
-    calld->send_length = op->send_message->length;
-    calld->send_flags = op->send_message->flags;
-    continue_send_message(exec_ctx, elem);
-
-    if (calld->send_message_blocked == false) {
-      /* when all the send_message data is available, then create a MDELEM and
-      append to headers */
-      grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
-          GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-          grpc_mdstr_from_buffer(calld->payload_bytes,
-                                 op->send_message->length));
-      grpc_metadata_batch_add_tail(op->send_initial_metadata,
-                                   &calld->payload_bin, payload_bin);
-      calld->on_complete = op->on_complete;
-      op->on_complete = &calld->hc_on_complete;
-      op->send_message = NULL;
-    } else {
-      /* Not all data is available. Fall back to POST. */
-      gpr_log(GPR_DEBUG,
-              "Request is marked Cacheable but not all data is available.\
-                          Falling back to POST");
-      method = GRPC_MDELEM_METHOD_POST;
-    }
-  }
-
   if (op->send_initial_metadata != NULL) {
+    /* Decide which HTTP VERB to use. We use GET if the request is marked
+    cacheable, and the operation contains both initial metadata and send
+    message, and the payload is below the size threshold, and all the data
+    for this request is immediately available. */
+    grpc_mdelem *method = GRPC_MDELEM_METHOD_POST;
+    calld->send_message_blocked = false;
+    if ((op->send_initial_metadata_flags &
+         GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
+        op->send_message != NULL &&
+        op->send_message->length < channeld->max_payload_size_for_get) {
+      method = GRPC_MDELEM_METHOD_GET;
+      calld->send_message_blocked = true;
+    } else if (op->send_initial_metadata_flags &
+               GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
+      method = GRPC_MDELEM_METHOD_PUT;
+    }
+
+    /* Attempt to read the data from send_message and create a header field. */
+    if (method == GRPC_MDELEM_METHOD_GET) {
+      /* allocate memory to hold the entire payload */
+      calld->payload_bytes = gpr_malloc(op->send_message->length);
+      GPR_ASSERT(calld->payload_bytes);
+
+      /* read slices of send_message and copy into payload_bytes */
+      calld->send_op = *op;
+      calld->send_length = op->send_message->length;
+      calld->send_flags = op->send_message->flags;
+      continue_send_message(exec_ctx, elem);
+
+      if (calld->send_message_blocked == false) {
+        /* when all the send_message data is available, then create a MDELEM and
+        append to headers */
+        grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
+            GRPC_MDSTR_GRPC_PAYLOAD_BIN,
+            grpc_mdstr_from_buffer(calld->payload_bytes,
+                                   op->send_message->length));
+        grpc_metadata_batch_add_tail(op->send_initial_metadata,
+                                     &calld->payload_bin, payload_bin);
+        calld->on_complete = op->on_complete;
+        op->on_complete = &calld->hc_on_complete;
+        op->send_message = NULL;
+      } else {
+        /* Not all data is available. Fall back to POST. */
+        gpr_log(GPR_DEBUG,
+                "Request is marked Cacheable but not all data is available.\
+                            Falling back to POST");
+        method = GRPC_MDELEM_METHOD_POST;
+      }
+    }
+
     grpc_metadata_batch_filter(op->send_initial_metadata, client_strip_filter,
                                elem);
     /* Send : prefixed headers, which have to be before any application
