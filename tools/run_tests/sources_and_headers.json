@@ -2164,14 +2164,11 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_reflection", 
       "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_cli_libs", 
-      "grpc_test_util"
+      "grpc_cli_libs"
     ], 
     "headers": [], 
     "language": "c++", 
@@ -2256,6 +2253,35 @@
     "name": "grpc_ruby_plugin", 
     "src": [
       "src/compiler/ruby_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_codegen_proto", 
+      "grpc++_config_proto", 
+      "grpc++_reflection", 
+      "grpc_cli_libs", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "test/cpp/util/string_ref_helper.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc_tool_test", 
+    "src": [
+      "test/cpp/util/grpc_tool_test.cc", 
+      "test/cpp/util/string_ref_helper.cc", 
+      "test/cpp/util/string_ref_helper.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4421,6 +4447,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -4502,7 +4529,8 @@
       "grpc++_codegen_base_src", 
       "grpc++_codegen_proto", 
       "grpc++_config_proto", 
-      "grpc_test_util"
+      "grpc_test_util", 
+      "thrift_util"
     ], 
     "headers": [
       "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
@@ -4540,7 +4568,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -4559,10 +4586,13 @@
     "deps": [
       "grpc++", 
       "grpc++_reflection", 
-      "grpc_plugin_support"
+      "grpc++_test_config"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
+      "test/cpp/util/cli_credentials.h", 
+      "test/cpp/util/config_grpc_cli.h", 
+      "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.h", 
       "test/cpp/util/proto_reflection_descriptor_database.h"
     ], 
@@ -4571,6 +4601,11 @@
     "src": [
       "test/cpp/util/cli_call.cc", 
       "test/cpp/util/cli_call.h", 
+      "test/cpp/util/cli_credentials.cc", 
+      "test/cpp/util/cli_credentials.h", 
+      "test/cpp/util/config_grpc_cli.h", 
+      "test/cpp/util/grpc_tool.cc", 
+      "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.cc", 
       "test/cpp/util/proto_file_parser.h", 
       "test/cpp/util/proto_reflection_descriptor_database.cc", 
@@ -5814,6 +5849,7 @@
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
+      "include/grpc/grpc_security_constants.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -5904,6 +5940,7 @@
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
+      "include/grpc/grpc_security_constants.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
@@ -6086,7 +6123,6 @@
     "headers": [
       "src/core/ext/client_config/client_channel.h", 
       "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/client_config.h", 
       "src/core/ext/client_config/connector.h", 
       "src/core/ext/client_config/http_connect_handshaker.h", 
       "src/core/ext/client_config/initial_connect_string.h", 
@@ -6097,6 +6133,7 @@
       "src/core/ext/client_config/resolver.h", 
       "src/core/ext/client_config/resolver_factory.h", 
       "src/core/ext/client_config/resolver_registry.h", 
+      "src/core/ext/client_config/resolver_result.h", 
       "src/core/ext/client_config/subchannel.h", 
       "src/core/ext/client_config/subchannel_call_holder.h", 
       "src/core/ext/client_config/subchannel_index.h", 
@@ -6110,8 +6147,6 @@
       "src/core/ext/client_config/client_channel.h", 
       "src/core/ext/client_config/client_channel_factory.c", 
       "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/client_config.c", 
-      "src/core/ext/client_config/client_config.h", 
       "src/core/ext/client_config/client_config_plugin.c", 
       "src/core/ext/client_config/connector.c", 
       "src/core/ext/client_config/connector.h", 
@@ -6134,6 +6169,8 @@
       "src/core/ext/client_config/resolver_factory.h", 
       "src/core/ext/client_config/resolver_registry.c", 
       "src/core/ext/client_config/resolver_registry.h", 
+      "src/core/ext/client_config/resolver_result.c", 
+      "src/core/ext/client_config/resolver_result.h", 
       "src/core/ext/client_config/subchannel.c", 
       "src/core/ext/client_config/subchannel.h", 
       "src/core/ext/client_config/subchannel_call_holder.c", 
@@ -6287,7 +6324,6 @@
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/security/context/security_context.h", 
       "src/core/lib/security/credentials/composite/composite_credentials.h", 
       "src/core/lib/security/credentials/credentials.h", 
@@ -6312,7 +6348,6 @@
     "name": "grpc_secure", 
     "src": [
       "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
       "src/core/lib/security/context/security_context.c", 
       "src/core/lib/security/context/security_context.h", 
@@ -6636,8 +6671,9 @@
   }, 
   {
     "deps": [
-      "grpc", 
-      "grpc++_codegen_base"
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 
@@ -6907,6 +6943,23 @@
       "include/grpc++/ext/reflection.pb.h", 
       "src/cpp/ext/reflection.grpc.pb.cc", 
       "src/cpp/ext/reflection.pb.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen_base"
+    ], 
+    "headers": [
+      "include/grpc++/impl/codegen/thrift_serializer.h", 
+      "include/grpc++/impl/codegen/thrift_utils.h"
+    ], 
+    "language": "c++", 
+    "name": "thrift_util", 
+    "src": [
+      "include/grpc++/impl/codegen/thrift_serializer.h", 
+      "include/grpc++/impl/codegen/thrift_utils.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -1,7 +1,7 @@
 %YAML 1.2
 --- |
   {
-    <%include file="../build_options.include" args="executable=True,includeRuntimes=False"/>
+    <%include file="../build_options.include" args="executable=True"/>
     "dependencies": {
       "Grpc.Examples": {
         "target": "project"

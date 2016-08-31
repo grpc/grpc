@@ -380,7 +380,7 @@
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
   OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
+  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
   else # HAS_PKG_CONFIG
 
   ifeq ($(SYSTEM),MINGW32)
@@ -692,13 +692,6 @@
 
   ifeq ($(MAKECMDGOALS),clean)
   NO_DEPS = true
-  endif
-
-  INSTALL_OK = false
-  ifeq ($(HAS_VALID_PROTOC),true)
-  ifeq ($(HAS_SYSTEM_PROTOBUF_VERIFY),true)
-  INSTALL_OK = true
-  endif
   endif
 
   .SECONDARY = %.pb.h %.pb.cc
@@ -1193,7 +1186,7 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-  install: install_c install_cxx install-plugins install-certs verify-install
+  install: install_c install_cxx install-plugins install-certs
 
   install_c: install-headers_c install-static_c install-shared_c
 
@@ -1310,28 +1303,6 @@
   	$(E) "[INSTALL] Installing root certificates"
   	$(Q) $(INSTALL) -d $(prefix)/share/grpc
   	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
-
-  verify-install:
-  ifeq ($(INSTALL_OK),true)
-  	@echo "Your system looks ready to go."
-  	@echo
-  else
-  	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
-  	@echo "which means that you won't be able to compile .proto files for use"
-  	@echo "with gRPC."
-  	@echo
-  	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
-  	@echo "have no need to compile .proto files, you can ignore this."
-  	@echo
-  	@echo "If you do need protobuf for some reason, you can download and install"
-  	@echo "it from:"
-  	@echo
-  	@echo "   https://github.com/google/protobuf/releases"
-  	@echo
-  	@echo "Once you've done so, you can re-run this check by doing:"
-  	@echo
-  	@echo "   make verify-install"
-  endif
 
   clean:
   	$(E) "[CLEAN]   Cleaning build directories."
