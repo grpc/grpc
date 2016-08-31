@@ -52,7 +52,7 @@ static void test_ping(grpc_end2end_test_config config) {
   config.init_server(&f, NULL);
 
   grpc_channel_ping(f.client, f.cq, tag(0), NULL);
-  cq_expect_completion(cqv, tag(0), 0);
+  CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
 
   /* check that we're still in idle, and start connecting */
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
@@ -62,7 +62,7 @@ static void test_ping(grpc_end2end_test_config config) {
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(99));
-    cq_expect_completion(cqv, tag(99), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -72,12 +72,12 @@ static void test_ping(grpc_end2end_test_config config) {
 
   for (i = 1; i <= 5; i++) {
     grpc_channel_ping(f.client, f.cq, tag(i), NULL);
-    cq_expect_completion(cqv, tag(i), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
     cq_verify(cqv);
   }
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cq_expect_completion(cqv, tag(0xdead), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
   cq_verify(cqv);
 
   /* cleanup server */
