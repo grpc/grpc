@@ -1930,21 +1930,32 @@ static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("incoming_byte_stream_destroy", 0);
 }
 
-typedef struct {
-  grpc_chttp2_incoming_byte_stream *byte_stream;
-  gpr_slice slice;
-} incoming_byte_stream_push_arg;
+static void incoming_byte_stream_publish_error(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
+    grpc_error *error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_REF(error), NULL);
+  bs->on_next = NULL;
+  GRPC_ERROR_UNREF(bs->error);
+  bs->error = error;
+}
 
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            gpr_slice slice) {
   gpr_mu_lock(&bs->slice_mu);
-  if (bs->on_next != NULL) {
-    *bs->next = slice;
-    grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);
-    bs->on_next = NULL;
+  if (bs->remaining_bytes < GPR_SLICE_LENGTH(slice)) {
+    incoming_byte_stream_publish_error(
+        exec_ctx, bs, GRPC_ERROR_CREATE("Too many bytes in stream"));
   } else {
-    gpr_slice_buffer_add(&bs->slices, slice);
+    bs->remaining_bytes -= GPR_SLICE_LENGTH(slice);
+    if (bs->on_next != NULL) {
+      *bs->next = slice;
+      grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);
+      bs->on_next = NULL;
+    } else {
+      gpr_slice_buffer_add(&bs->slices, slice);
+    }
   }
   gpr_mu_unlock(&bs->slice_mu);
 }
@@ -1952,11 +1963,15 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
     grpc_error *error) {
+  if (error == GRPC_ERROR_NONE) {
+    gpr_mu_lock(&bs->slice_mu);
+    if (bs->remaining_bytes != 0) {
+      error = GRPC_ERROR_CREATE("Truncated message");
+    }
+    gpr_mu_unlock(&bs->slice_mu);
+  }
   if (error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_REF(error), NULL);
-    bs->on_next = NULL;
-    GRPC_ERROR_UNREF(bs->error);
-    bs->error = error;
+    incoming_byte_stream_publish_error(exec_ctx, bs, error);
   }
   incoming_byte_stream_unref(exec_ctx, bs);
 }
@@ -1967,6 +1982,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
       gpr_malloc(sizeof(*incoming_byte_stream));
   incoming_byte_stream->base.length = frame_size;
+  incoming_byte_stream->remaining_bytes = frame_size;
   incoming_byte_stream->base.flags = flags;
   incoming_byte_stream->base.next = incoming_byte_stream_next;
   incoming_byte_stream->base.destroy = incoming_byte_stream_destroy;

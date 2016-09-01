@@ -167,6 +167,7 @@ struct grpc_chttp2_incoming_byte_stream {
   gpr_slice_buffer slices;
   grpc_closure *on_next;
   gpr_slice *next;
+  uint32_t remaining_bytes;
 
   struct {
     grpc_closure closure;
