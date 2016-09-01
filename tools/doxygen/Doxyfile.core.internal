@@ -941,6 +941,7 @@ src/core/ext/census/base_resources.h \
 src/core/ext/census/census_interface.h \
 src/core/ext/census/census_rpc_stats.h \
 src/core/ext/census/gen/census.pb.h \
+src/core/ext/census/gen/trace_context.pb.h \
 src/core/ext/census/grpc_filter.h \
 src/core/ext/census/mlog.h \
 src/core/ext/census/resource.h \
@@ -1125,6 +1126,7 @@ src/core/ext/load_reporting/load_reporting_filter.c \
 src/core/ext/census/base_resources.c \
 src/core/ext/census/context.c \
 src/core/ext/census/gen/census.pb.c \
+src/core/ext/census/gen/trace_context.pb.c \
 src/core/ext/census/grpc_context.c \
 src/core/ext/census/grpc_filter.c \
 src/core/ext/census/grpc_plugin.c \

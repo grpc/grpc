@@ -31,7 +31,14 @@
 # This script is invoked by Jenkins and runs interop test suite.
 set -ex
 
+export LANG=en_US.UTF-8
+
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --prod_servers default cloud_gateway gateway_v2 cloud_gateway_v2 gateway_v4 cloud_gateway_v4 --use_docker --http2_interop -t -j 12 $@ || true
+tools/run_tests/run_interop_tests.py \
+    -l all \
+    --cloud_to_prod \
+    --cloud_to_prod_auth \
+    --prod_servers default cloud_gateway gateway_v4 cloud_gateway_v4 \
+    --use_docker -t -j 12 $@ || true
