@@ -76,7 +76,10 @@ struct grpc_closure {
   void *cb_arg;
 
   /** Once queued, the result of the closure. Before then: scratch space */
-  grpc_error *error;
+  union {
+    grpc_error *error;
+    uintptr_t scratch;
+  } error_data;
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. */

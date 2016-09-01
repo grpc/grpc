@@ -171,7 +171,7 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
           wakeup(exec_ctx, workqueue);
       }
       grpc_closure *cl = (grpc_closure *)n;
-      grpc_error *clerr = cl->error;
+      grpc_error *clerr = cl->error_data.error;
       cl->cb(exec_ctx, cl->cb_arg, clerr);
       GRPC_ERROR_UNREF(clerr);
     }
@@ -185,7 +185,7 @@ void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
   GPR_TIMER_BEGIN("workqueue.enqueue", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&workqueue->state, 2);
   GPR_ASSERT(last & 1);
-  closure->error = error;
+  closure->error_data.error = error;
   gpr_mpscq_push(&workqueue->queue, &closure->next_data.atm_next);
   if (last == 1) {
     wakeup(exec_ctx, workqueue);

@@ -279,6 +279,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
   grpc_channel_element *elem;
 
   op->send_goaway = send_goaway;
+  op->set_accept_stream = true;
   sc->slice = gpr_slice_from_copied_string("Server shutdown");
   op->goaway_message = &sc->slice;
   op->goaway_status = GRPC_STATUS_OK;
@@ -437,14 +438,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
   maybe_finish_shutdown(exec_ctx, chand->server);
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
-
-  grpc_transport_op *op =
-      grpc_make_transport_op(&chand->finish_destroy_channel_closure);
-  op->set_accept_stream = true;
-  grpc_channel_next_op(exec_ctx,
-                       grpc_channel_stack_element(
-                           grpc_channel_get_channel_stack(chand->channel), 0),
-                       op);
 
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
@@ -824,11 +817,20 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
                           const void *transport_server_data) {
   channel_data *chand = cd;
   /* create a call */
-  grpc_call *call = grpc_call_create(chand->channel, NULL, 0, NULL, NULL,
-                                     transport_server_data, NULL, 0,
-                                     gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  grpc_call_create_args args;
+  memset(&args, 0, sizeof(args));
+  args.channel = chand->channel;
+  args.server_transport_data = transport_server_data;
+  args.send_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  grpc_call *call;
+  grpc_error *error = grpc_call_create(&args, &call);
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
+  if (error != GRPC_ERROR_NONE) {
+    got_initial_metadata(exec_ctx, elem, error);
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   call_data *calld = elem->call_data;
   grpc_op op;
   memset(&op, 0, sizeof(op));

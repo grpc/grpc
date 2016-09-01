@@ -73,10 +73,10 @@ grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_ping_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
+grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s,
+                                          gpr_slice slice, int is_last) {
   uint8_t *const beg = GPR_SLICE_START_PTR(slice);
   uint8_t *const end = GPR_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
@@ -91,10 +91,11 @@ grpc_error *grpc_chttp2_ping_parser_parse(
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      grpc_chttp2_ack_ping(exec_ctx, transport_parsing, p->opaque_8bytes);
+      grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
-      gpr_slice_buffer_add(&transport_parsing->qbuf,
+      gpr_slice_buffer_add(&t->qbuf,
                            grpc_chttp2_ping_create(1, p->opaque_8bytes));
+      grpc_chttp2_initiate_write(exec_ctx, t, false, "ping response");
     }
   }
 

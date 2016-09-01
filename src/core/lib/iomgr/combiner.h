@@ -52,7 +52,8 @@ grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
 // Execute \a action within the lock.
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
-                           grpc_closure *closure, grpc_error *error);
+                           grpc_closure *closure, grpc_error *error,
+                           bool covered_by_poller);
 // Execute \a action within the lock just prior to unlocking.
 // if \a hint_async_break is additionally set, the combiner is tries to trip
 // through the workqueue between finishing the primary queue of combined
@@ -60,9 +61,9 @@ void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
 // Takes a very slow and round-about path if not called from a
 // grpc_combiner_execute closure
 void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
-                                   grpc_closure *closure, grpc_error *error,
-                                   bool hint_async_break);
-void grpc_combiner_force_async_finally(grpc_combiner *lock);
+                                   grpc_closure *closure, grpc_error *error);
+
+bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
 
 extern int grpc_combiner_trace;
 

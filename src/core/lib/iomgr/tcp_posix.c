@@ -209,11 +209,11 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  GPR_TIMER_BEGIN("recvmsg", 1);
+  GPR_TIMER_BEGIN("recvmsg", 0);
   do {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
-  GPR_TIMER_END("recvmsg", 0);
+  GPR_TIMER_END("recvmsg", read_bytes >= 0);
 
   if (read_bytes < 0) {
     /* NB: After calling call_read_cb a parallel call of the read handler may

@@ -265,7 +265,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   } else {
     out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
-    gpr_log(GPR_DEBUG, "%p create copying", out);
+    gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
     out->ints = gpr_avl_ref(in->ints);
     out->strs = gpr_avl_ref(in->strs);

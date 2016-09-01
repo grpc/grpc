@@ -69,7 +69,6 @@ typedef struct {
   grpc_error *error;
 
   int is_frame_compressed;
-  grpc_chttp2_incoming_frame_queue incoming_frames;
   grpc_chttp2_incoming_byte_stream *parsing_frame;
 } grpc_chttp2_data_parser;
 
@@ -92,10 +91,10 @@ grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
-grpc_error *grpc_chttp2_data_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
+grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s,
+                                          gpr_slice slice, int is_last);
 
 void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,

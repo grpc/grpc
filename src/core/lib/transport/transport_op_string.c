@@ -41,6 +41,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
@@ -135,6 +136,82 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_asprintf(&tmp, "CLOSE:%s", msg);
     grpc_error_free_string(msg);
     gpr_strvec_add(&b, tmp);
+  }
+
+  out = gpr_strvec_flatten(&b, NULL);
+  gpr_strvec_destroy(&b);
+
+  return out;
+}
+
+char *grpc_transport_op_string(grpc_transport_op *op) {
+  char *tmp;
+  char *out;
+  int first = 1;
+
+  gpr_strvec b;
+  gpr_strvec_init(&b);
+
+  if (op->on_connectivity_state_change != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    if (op->connectivity_state != NULL) {
+      gpr_asprintf(&tmp, "ON_CONNECTIVITY_STATE_CHANGE:p=%p:from=%s",
+                   op->on_connectivity_state_change,
+                   grpc_connectivity_state_name(*op->connectivity_state));
+      gpr_strvec_add(&b, tmp);
+    } else {
+      gpr_asprintf(&tmp, "ON_CONNECTIVITY_STATE_CHANGE:p=%p:unsubscribe",
+                   op->on_connectivity_state_change);
+      gpr_strvec_add(&b, tmp);
+    }
+  }
+
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    const char *err = grpc_error_string(op->disconnect_with_error);
+    gpr_asprintf(&tmp, "DISCONNECT:%s", err);
+    gpr_strvec_add(&b, tmp);
+    grpc_error_free_string(err);
+  }
+
+  if (op->send_goaway) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    char *msg = op->goaway_message == NULL
+                    ? "null"
+                    : gpr_dump_slice(*op->goaway_message,
+                                     GPR_DUMP_ASCII | GPR_DUMP_HEX);
+    gpr_asprintf(&tmp, "SEND_GOAWAY:status=%d:msg=%s", op->goaway_status, msg);
+    if (op->goaway_message != NULL) gpr_free(msg);
+    gpr_strvec_add(&b, tmp);
+  }
+
+  if (op->set_accept_stream) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_asprintf(&tmp, "SET_ACCEPT_STREAM:%p(%p,...)", op->set_accept_stream_fn,
+                 op->set_accept_stream_user_data);
+    gpr_strvec_add(&b, tmp);
+  }
+
+  if (op->bind_pollset != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("BIND_POLLSET"));
+  }
+
+  if (op->bind_pollset_set != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("BIND_POLLSET_SET"));
+  }
+
+  if (op->send_ping != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("SEND_PING"));
   }
 
   out = gpr_strvec_flatten(&b, NULL);
