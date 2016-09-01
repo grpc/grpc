@@ -2,11 +2,17 @@
 '#2': It is used among other things to generate all of our project files.
 '#3': Please refer to the templates directory for more information.
 settings:
-  '#1': The public version number of the library.
-  '#2': Master always has a "-dev" suffix
-  '#3': Use "-preN" suffixes to identify pre-release versions
-  '#4': Per-language overrides are possible with (eg) ruby_version tag here
-  '#5': See the expand_version.py for all the quirks here
+  '#01': The public version number of the library.
+  '#02': ===
+  '#03': Please update the 'g_stands_for' field periodically with a new g word
+  '#04': not listed in doc/g_stands_for.md - and update that document to list the
+  '#05': new word.
+  '#06': ===
+  '#07': Master always has a "-dev" suffix
+  '#08': Use "-preN" suffixes to identify pre-release versions
+  '#09': Per-language overrides are possible with (eg) ruby_version tag here
+  '#10': See the expand_version.py for all the quirks here
+  g_stands_for: good
   version: 1.1.0-dev
 filegroups:
 - name: census
