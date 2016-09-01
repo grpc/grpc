@@ -446,6 +446,13 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
     grpc_error_free_string(msg);
   }
   GRPC_ERROR_UNREF(error);
+
+  grpc_transport_op *op = grpc_make_transport_op(&chand->finish_destroy_channel_closure);
+  op->set_accept_stream = true;
+  grpc_channel_next_op(exec_ctx,
+                       grpc_channel_stack_element(
+                           grpc_channel_get_channel_stack(chand->channel), 0),
+                       op);
 }
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
