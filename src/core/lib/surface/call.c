@@ -1311,10 +1311,6 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *child_call;
   grpc_call *next_child_call;
 
-  char *msg = grpc_transport_stream_op_string(&bctl->op);
-  gpr_log(GPR_DEBUG, "finish_batch: %s", msg);
-  gpr_free(msg);
-
   GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&call->mu);

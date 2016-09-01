@@ -546,8 +546,6 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING;
-      gpr_log(GPR_DEBUG, "W:%s:%p: IDLE -> WRITING",
-              t->is_client ? "CLIENT" : "SERVER", t);
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->combiner,
                                     &t->write_action_begin_locked,
@@ -555,8 +553,6 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
       t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING -> WRITING_MORE",
-              t->is_client ? "CLIENT" : "SERVER", t);
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME:
       break;
@@ -581,12 +577,8 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   if (!t->closed && grpc_chttp2_begin_write(exec_ctx, t)) {
     t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING;
-    gpr_log(GPR_DEBUG, "W:%s:%p: WRITING|WRITING_MORE -> WRITING",
-            t->is_client ? "CLIENT" : "SERVER", t);
     grpc_exec_ctx_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE, NULL);
   } else {
-    gpr_log(GPR_DEBUG, "W:%s:%p: WRITING|WRITING_MORE -> IDLE",
-            t->is_client ? "CLIENT" : "SERVER", t);
     t->write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
   }
@@ -626,14 +618,10 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
       GPR_TIMER_MARK("state=writing", 0);
       t->write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING -> IDLE",
-              t->is_client ? "CLIENT" : "SERVER", t);
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME:
       GPR_TIMER_MARK("state=writing_stale_with_poller", 0);
       t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING_MORE -> WRITING",
-              t->is_client ? "CLIENT" : "SERVER", t);
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->combiner,
                                     &t->write_action_begin_locked,
@@ -734,9 +722,6 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
 static grpc_closure *add_closure_barrier(grpc_closure *closure) {
-  gpr_log(GPR_DEBUG, "add_closure_barrier: %p | %" PRIdPTR " -> %" PRIdPTR,
-          closure, closure->next_data.scratch,
-          closure->next_data.scratch + CLOSURE_BARRIER_FIRST_REF_BIT);
   closure->next_data.scratch += CLOSURE_BARRIER_FIRST_REF_BIT;
   return closure;
 }
@@ -751,9 +736,6 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  gpr_log(GPR_DEBUG, "complete_closure_step: %p | %" PRIdPTR " -> %" PRIdPTR,
-          closure, closure->next_data.scratch,
-          closure->next_data.scratch - CLOSURE_BARRIER_FIRST_REF_BIT);
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
   if (error != GRPC_ERROR_NONE) {
     if (closure->error_data.error == GRPC_ERROR_NONE) {
@@ -794,10 +776,6 @@ static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
 static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s) {
-  gpr_log(GPR_DEBUG,
-          "continue_fetching_send_locked[%d]: fsm=%p fetched=%d tgt=%d", s->id,
-          s->fetching_send_message, s->fetched_send_message_length,
-          s->fetching_send_message->length);
   if (s->fetching_send_message == NULL) {
     /* Stream was cancelled before message fetch completed */
     abort(); /* TODO(ctiller): what cleanup here? */
@@ -1131,10 +1109,6 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = op->transport_private.args[0];
   grpc_error *close_transport = op->disconnect_with_error;
 
-  char *msg = grpc_transport_op_string(op);
-  gpr_log(GPR_DEBUG, "run:%p: %s", t, msg);
-  gpr_free(msg);
-
   if (op->on_connectivity_state_change != NULL) {
     grpc_connectivity_state_notify_on_state_change(
         exec_ctx, &t->channel_callback.state_tracker, op->connectivity_state,
@@ -1184,7 +1158,6 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                  grpc_transport_op *op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   char *msg = grpc_transport_op_string(op);
-  gpr_log(GPR_DEBUG, "scd:%p: %s", t, msg);
   gpr_free(msg);
   op->transport_private.args[0] = gt;
   grpc_closure_init(&op->transport_private.closure, perform_transport_op_locked,
