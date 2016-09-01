@@ -472,6 +472,7 @@ add_library(grpc
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
+  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.c
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
@@ -934,6 +935,7 @@ add_library(grpc_unsecure
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
+  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.c
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c

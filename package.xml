@@ -337,6 +337,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
@@ -522,6 +523,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />

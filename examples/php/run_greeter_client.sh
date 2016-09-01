@@ -30,5 +30,5 @@
 
 set -e
 cd $(dirname $0)
-php $extension_dir -d extension=grpc.so -d max_execution_time=300 \
+php -d extension=grpc.so -d max_execution_time=300 \
   greeter_client.php $1
