@@ -546,7 +546,8 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING;
-      gpr_log(GPR_DEBUG, "W:%s:%p: IDLE -> WRITING", t->is_client ? "CLIENT" : "SERVER", t);
+      gpr_log(GPR_DEBUG, "W:%s:%p: IDLE -> WRITING",
+              t->is_client ? "CLIENT" : "SERVER", t);
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->combiner,
                                     &t->write_action_begin_locked,
@@ -554,7 +555,8 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
       t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING -> WRITING_MORE", t->is_client ? "CLIENT" : "SERVER", t);
+      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING -> WRITING_MORE",
+              t->is_client ? "CLIENT" : "SERVER", t);
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME:
       break;
@@ -579,10 +581,12 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   if (!t->closed && grpc_chttp2_begin_write(exec_ctx, t)) {
     t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING|WRITING_MORE -> WRITING", t->is_client ? "CLIENT" : "SERVER", t);
+    gpr_log(GPR_DEBUG, "W:%s:%p: WRITING|WRITING_MORE -> WRITING",
+            t->is_client ? "CLIENT" : "SERVER", t);
     grpc_exec_ctx_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE, NULL);
   } else {
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING|WRITING_MORE -> IDLE", t->is_client ? "CLIENT" : "SERVER", t);
+    gpr_log(GPR_DEBUG, "W:%s:%p: WRITING|WRITING_MORE -> IDLE",
+            t->is_client ? "CLIENT" : "SERVER", t);
     t->write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
   }
@@ -622,14 +626,17 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
       GPR_TIMER_MARK("state=writing", 0);
       t->write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING -> IDLE", t->is_client ? "CLIENT" : "SERVER", t);
+      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING -> IDLE",
+              t->is_client ? "CLIENT" : "SERVER", t);
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME:
       GPR_TIMER_MARK("state=writing_stale_with_poller", 0);
       t->write_state = GRPC_CHTTP2_WRITE_STATE_WRITING;
-      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING_MORE -> WRITING", t->is_client ? "CLIENT" : "SERVER", t);
+      gpr_log(GPR_DEBUG, "W:%s:%p: WRITING_MORE -> WRITING",
+              t->is_client ? "CLIENT" : "SERVER", t);
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
-      grpc_combiner_execute_finally(exec_ctx, t->combiner, &t->write_action_begin_locked,
+      grpc_combiner_execute_finally(exec_ctx, t->combiner,
+                                    &t->write_action_begin_locked,
                                     GRPC_ERROR_NONE);
       break;
   }
@@ -1429,7 +1436,17 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                     &s->send_trailing_metadata_finished,
                                     GRPC_ERROR_REF(error));
   grpc_chttp2_complete_closure_step(exec_ctx, t, s,
-                                    &s->fetching_send_message_finished, error);
+                                    &s->fetching_send_message_finished,
+                                    GRPC_ERROR_REF(error));
+  while (s->on_write_finished_cbs) {
+    grpc_chttp2_write_cb *cb = s->on_write_finished_cbs;
+    s->on_write_finished_cbs = cb->next;
+    grpc_chttp2_complete_closure_step(exec_ctx, t, s, &cb->closure,
+                                      GRPC_ERROR_REF(error));
+    cb->next = t->write_cb_pool;
+    t->write_cb_pool = cb;
+  }
+  GRPC_ERROR_UNREF(error);
 }
 
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
@@ -1624,14 +1641,19 @@ static void update_global_window(void *args, uint32_t id, void *stream) {
   int is_zero;
   int64_t initial_window_update = t->initial_window_update;
 
-  was_zero = s->outgoing_window <= 0;
-  GRPC_CHTTP2_FLOW_CREDIT_STREAM("settings", t, s, outgoing_window,
-                                 initial_window_update);
-  is_zero = s->outgoing_window <= 0;
+  if (initial_window_update > 0) {
+    was_zero = s->outgoing_window <= 0;
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM("settings", t, s, outgoing_window,
+                                   initial_window_update);
+    is_zero = s->outgoing_window <= 0;
 
-  if (was_zero && !is_zero) {
-    grpc_chttp2_become_writable(a->exec_ctx, t, s, true,
-                                "update_global_window");
+    if (was_zero && !is_zero) {
+      grpc_chttp2_become_writable(a->exec_ctx, t, s, true,
+                                  "update_global_window");
+    }
+  } else {
+    GRPC_CHTTP2_FLOW_DEBIT_STREAM("settings", t, s, outgoing_window,
+                                  -initial_window_update);
   }
 }
 
