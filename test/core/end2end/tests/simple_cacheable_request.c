@@ -116,7 +116,8 @@ static void test_cacheable_request_response_with_metadata_and_payload(
       {"key3", "val3", 4, 0, {{NULL, NULL, NULL, NULL}}},
       {"key4", "val4", 4, 0, {{NULL, NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_cacheable_request_response_with_metadata_and_payload", NULL, NULL);
+      config, "test_cacheable_request_response_with_metadata_and_payload", NULL,
+      NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
