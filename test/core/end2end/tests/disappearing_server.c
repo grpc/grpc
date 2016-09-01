@@ -137,7 +137,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
       grpc_server_request_call(f->server, &s, &call_details,
                                &request_metadata_recv, f->cq, f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   /* should be able to shut down the server early
@@ -166,9 +166,9 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
-  cq_expect_completion(cqv, tag(1), 1);
-  cq_expect_completion(cqv, tag(1000), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);

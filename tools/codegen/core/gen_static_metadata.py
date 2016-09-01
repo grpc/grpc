@@ -42,6 +42,7 @@ import sys
 CONFIG = [
     'grpc-timeout',
     'grpc-internal-encoding-request',
+    'grpc-payload-bin',
     ':path',
     'grpc-encoding',
     'grpc-accept-encoding',

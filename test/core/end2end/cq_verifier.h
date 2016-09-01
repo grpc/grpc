@@ -62,7 +62,10 @@ void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec);
    Any functions taking ... expect a NULL terminated list of key/value pairs
    (each pair using two parameter slots) of metadata that MUST be present in
    the event. */
-void cq_expect_completion(cq_verifier *v, void *tag, bool success);
+void cq_expect_completion(cq_verifier *v, const char *file, int line, void *tag,
+                          bool success);
+#define CQ_EXPECT_COMPLETION(v, tag, success) \
+  cq_expect_completion(v, __FILE__, __LINE__, tag, success)
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
 int contains_metadata(grpc_metadata_array *array, const char *key,

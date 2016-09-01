@@ -45,6 +45,7 @@
 "\x1Egrpc-internal-encoding-request"
 "\x19grpc-load-reporting-token"
 "\x0Cgrpc-message"
+"\x10grpc-payload-bin"
 "\x0Bgrpc-status"
 "\x0Cgrpc-timeout"
 "\x10grpc-tracing-bin"
