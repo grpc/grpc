@@ -182,7 +182,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
                                    tag(200));
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s] up", sf->servers_hostport);
-  cq_expect_completion(cqv, tag(200), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(200), 1);
   cq_verify(cqv);
   gpr_log(GPR_INFO, "LB Server[%s] after tag 200", sf->servers_hostport);
 
@@ -199,7 +199,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(202), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
   cq_verify(cqv);
   gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG", sf->servers_hostport);
 
@@ -254,7 +254,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(203), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(203), 1);
     cq_verify(cqv);
     gpr_log(GPR_INFO, "LB Server[%s] after SEND_MESSAGE, iter %d",
             sf->servers_hostport, i);
@@ -275,8 +275,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(204), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(201), 1);
-  cq_expect_completion(cqv, tag(204), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(204), 1);
   cq_verify(cqv);
   gpr_log(GPR_INFO, "LB Server[%s] after tag 204. All done. LB server out",
           sf->servers_hostport);
@@ -424,8 +424,8 @@ static void start_backend_server(server_fixture *sf) {
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cq_expect_completion(cqv, tag(101), 1);
-    cq_expect_completion(cqv, tag(104), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
     cq_verify(cqv);
     gpr_log(GPR_INFO, "Server[%s] DONE. After servicing %d calls",
             sf->servers_hostport, sf->num_calls_serviced);
@@ -504,7 +504,7 @@ static void perform_request(client_fixture *cf) {
     error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cq_expect_completion(cqv, tag(2), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     cq_verify(cqv);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, PAYLOAD));
 
@@ -522,8 +522,8 @@ static void perform_request(client_fixture *cf) {
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
-  cq_expect_completion(cqv, tag(3), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
   cq_verify(cqv);
   peer = grpc_call_get_peer(c);
   gpr_log(GPR_INFO, "Client DONE WITH SERVER %s ", peer);

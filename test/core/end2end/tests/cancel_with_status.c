@@ -150,7 +150,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
 
   grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED, "xyz", NULL);
 
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);

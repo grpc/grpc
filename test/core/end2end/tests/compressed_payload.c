@@ -196,7 +196,7 @@ static void request_for_disabled_algorithm(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
   op = ops;
@@ -213,7 +213,7 @@ static void request_for_disabled_algorithm(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), false);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), false);
 
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -224,8 +224,8 @@ static void request_for_disabled_algorithm(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(103), true);
-  cq_expect_completion(cqv, tag(1), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   /* call was cancelled (closed) ... */
@@ -359,7 +359,7 @@ static void request_with_payload_template(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(100), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(100), true);
   cq_verify(cqv);
 
   GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(
@@ -419,7 +419,7 @@ static void request_with_payload_template(
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(102), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
     cq_verify(cqv);
 
     GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
@@ -436,8 +436,8 @@ static void request_with_payload_template(
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(103), 1);
-    cq_expect_completion(cqv, tag(2), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     cq_verify(cqv);
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
@@ -482,10 +482,10 @@ static void request_with_payload_template(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
-  cq_expect_completion(cqv, tag(3), 1);
-  cq_expect_completion(cqv, tag(101), 1);
-  cq_expect_completion(cqv, tag(104), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
