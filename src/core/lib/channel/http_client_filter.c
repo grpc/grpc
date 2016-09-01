@@ -43,6 +43,9 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
+/* default maximum size of payload eligable for GET request */
+static const size_t kMaxPayloadSizeForGet = 2048;
+
 typedef struct call_data {
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
