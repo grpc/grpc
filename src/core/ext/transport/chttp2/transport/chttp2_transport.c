@@ -1948,7 +1948,7 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
     incoming_byte_stream_publish_error(
         exec_ctx, bs, GRPC_ERROR_CREATE("Too many bytes in stream"));
   } else {
-    bs->remaining_bytes -= GPR_SLICE_LENGTH(slice);
+    bs->remaining_bytes -= (uint32_t)GPR_SLICE_LENGTH(slice);
     if (bs->on_next != NULL) {
       *bs->next = slice;
       grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);

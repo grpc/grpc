@@ -125,8 +125,9 @@ static void queue_on_exec_ctx(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *cl, grpc_error *error,
                            bool covered_by_poller) {
-  GRPC_COMBINER_TRACE(
-      gpr_log(GPR_DEBUG, "C:%p grpc_combiner_execute c=%p cov=%d", lock, cl, covered_by_poller));
+  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
+                              "C:%p grpc_combiner_execute c=%p cov=%d", lock,
+                              cl, covered_by_poller));
   GPR_TIMER_BEGIN("combiner.execute", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, 2);
   GPR_ASSERT(last & 1);  // ensure lock has not been destroyed
@@ -194,7 +195,8 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       // queue is in an inconsistant state: use this as a cue that we should
       // go off and do something else for a while (and come back later)
       GPR_TIMER_MARK("delay_busy", 0);
-      if (lock->optional_workqueue != NULL && gpr_atm_acq_load(&lock->covered_by_poller) > 0) {
+      if (lock->optional_workqueue != NULL &&
+          gpr_atm_acq_load(&lock->covered_by_poller) > 0) {
         queue_offload(exec_ctx, lock);
       }
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);

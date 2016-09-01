@@ -82,11 +82,11 @@ void gpr_log_verbosity_init() {
 
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
   if (verbosity != NULL) {
-    if (strcmp(verbosity, "DEBUG") == 0) {
+    if (gpr_stricmp(verbosity, "DEBUG") == 0) {
       min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
-    } else if (strcmp(verbosity, "INFO") == 0) {
+    } else if (gpr_stricmp(verbosity, "INFO") == 0) {
       min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_INFO;
-    } else if (strcmp(verbosity, "ERROR") == 0) {
+    } else if (gpr_stricmp(verbosity, "ERROR") == 0) {
       min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_ERROR;
     }
     gpr_free(verbosity);

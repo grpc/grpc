@@ -118,6 +118,8 @@ void gpr_strvec_add(gpr_strvec *strs, char *add);
    total_length as per gpr_strjoin */
 char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
 
+int gpr_stricmp(const char *a, const char *b);
+
 #ifdef __cplusplus
 }
 #endif

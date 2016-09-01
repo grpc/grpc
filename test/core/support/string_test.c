@@ -366,6 +366,13 @@ static void test_leftpad() {
   gpr_free(padded);
 }
 
+static void test_stricmp(void) {
+  GPR_ASSERT(0 == gpr_stricmp("hello", "hello"));
+  GPR_ASSERT(0 == gpr_stricmp("HELLO", "hello"));
+  GPR_ASSERT(gpr_stricmp("a", "b") < 0);
+  GPR_ASSERT(gpr_stricmp("b", "a") > 0);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
@@ -379,5 +386,6 @@ int main(int argc, char **argv) {
   test_ltoa();
   test_int64toa();
   test_leftpad();
+  test_stricmp();
   return 0;
 }

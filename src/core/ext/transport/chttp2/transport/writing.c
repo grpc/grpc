@@ -158,6 +158,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
+            if (!t->is_client && !s->read_closed) {
+              gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
+                                                   s->id, GRPC_CHTTP2_NO_ERROR,
+                                                   &s->stats.outgoing));
+            }
           }
           s->sending_bytes += send_bytes;
           now_writing = true;
@@ -178,6 +183,11 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                   &s->stats.outgoing, &t->outbuf);
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
+        if (!t->is_client && !s->read_closed) {
+          gpr_slice_buffer_add(
+              &t->outbuf, grpc_chttp2_rst_stream_create(
+                              s->id, GRPC_CHTTP2_NO_ERROR, &s->stats.outgoing));
+        }
         now_writing = true;
       }
     }
