@@ -158,28 +158,6 @@ int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
   return stream_list_pop(t, s, GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY);
 }
 
-void grpc_chttp2_list_add_check_read_ops(grpc_exec_ctx *exec_ctx,
-                                         grpc_chttp2_transport *t,
-                                         grpc_chttp2_stream *s) {
-  if (!t->check_read_ops_scheduled) {
-    GRPC_CHTTP2_REF_TRANSPORT(t, "initiate_read_flush_locked");
-    grpc_combiner_execute_finally(
-        exec_ctx, t->combiner, &t->read_action_flush_locked, GRPC_ERROR_NONE);
-    t->check_read_ops_scheduled = true;
-  }
-  stream_list_add(t, s, GRPC_CHTTP2_LIST_CHECK_READ_OPS);
-}
-
-bool grpc_chttp2_list_remove_check_read_ops(grpc_chttp2_transport *t,
-                                            grpc_chttp2_stream *s) {
-  return stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_CHECK_READ_OPS);
-}
-
-int grpc_chttp2_list_pop_check_read_ops(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s) {
-  return stream_list_pop(t, s, GRPC_CHTTP2_LIST_CHECK_READ_OPS);
-}
-
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s) {
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);

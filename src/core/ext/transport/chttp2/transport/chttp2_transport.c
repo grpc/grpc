@@ -79,8 +79,6 @@ static void read_action_begin(grpc_exec_ctx *exec_ctx, void *t,
                               grpc_error *error);
 static void read_action_locked(grpc_exec_ctx *exec_ctx, void *t,
                                grpc_error *error);
-static void read_action_flush_locked(grpc_exec_ctx *exec_ctx, void *t,
-                                     grpc_error *error);
 
 static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
                                   grpc_error *error);
@@ -105,8 +103,6 @@ static void connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
                                    grpc_connectivity_state state,
                                    grpc_error *error, const char *reason);
-
-static void check_read_ops(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
 
 static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
                                                      grpc_chttp2_transport *t,
@@ -242,7 +238,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->write_action_end_locked, write_action_end_locked, t);
   grpc_closure_init(&t->read_action_begin, read_action_begin, t);
   grpc_closure_init(&t->read_action_locked, read_action_locked, t);
-  grpc_closure_init(&t->read_action_flush_locked, read_action_flush_locked, t);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->hpack_parser);
@@ -479,7 +474,6 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   }
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
-  grpc_chttp2_list_remove_check_read_ops(t, s);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (s->included[i]) {
@@ -917,7 +911,6 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     } else {
       if (contains_non_ok_status(op->send_initial_metadata)) {
         s->seen_error = true;
-        grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
       }
       if (!s->write_closed) {
         if (t->is_client) {
@@ -994,7 +987,6 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     } else {
       if (contains_non_ok_status(op->send_trailing_metadata)) {
         s->seen_error = true;
-        grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
       }
       if (s->write_closed) {
         s->send_trailing_metadata = NULL;
@@ -1017,7 +1009,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     GPR_ASSERT(s->recv_initial_metadata_ready == NULL);
     s->recv_initial_metadata_ready = op->recv_initial_metadata_ready;
     s->recv_initial_metadata = op->recv_initial_metadata;
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 
   if (op->recv_message != NULL) {
@@ -1029,7 +1021,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       incoming_byte_stream_update_flow_control(exec_ctx, t, s,
                                                t->stream_lookahead, 0);
     }
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
 
   if (op->recv_trailing_metadata != NULL) {
@@ -1037,7 +1029,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     s->recv_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->recv_trailing_metadata = op->recv_trailing_metadata;
     s->final_metadata_requested = true;
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
 
   grpc_chttp2_complete_closure_step(exec_ctx, t, s, &on_complete,
@@ -1177,75 +1169,73 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
  * INPUT PROCESSING - GENERAL
  */
 
-static void read_action_flush_locked(grpc_exec_ctx *exec_ctx, void *tp,
-                                     grpc_error *error) {
-  grpc_chttp2_transport *t = tp;
-  t->check_read_ops_scheduled = false;
-  check_read_ops(exec_ctx, t);
-  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "initiate_read_flush_locked");
-}
-
-static void check_read_ops(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
-  GPR_TIMER_BEGIN("check_read_ops", 0);
-  grpc_chttp2_stream *s;
+void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
+                                                      grpc_chttp2_transport *t,
+                                                      grpc_chttp2_stream *s) {
   grpc_byte_stream *bs;
-  while (grpc_chttp2_list_pop_check_read_ops(t, &s)) {
-    if (s->recv_initial_metadata_ready != NULL && s->published_metadata[0]) {
-      if (s->seen_error) {
-        while ((bs = grpc_chttp2_incoming_frame_queue_pop(
-                    &s->incoming_frames)) != NULL) {
-          incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
-        }
-      }
-      grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
-                                                   s->recv_initial_metadata);
-      grpc_closure_run(exec_ctx, s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
-      s->recv_initial_metadata_ready = NULL;
-    }
-    if (s->recv_message_ready != NULL) {
-      while (s->final_metadata_requested && s->seen_error &&
-             (bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
-                 NULL) {
+  if (s->recv_initial_metadata_ready != NULL && s->published_metadata[0]) {
+    if (s->seen_error) {
+      while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
+             NULL) {
         incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
       }
-      if (s->incoming_frames.head != NULL) {
-        *s->recv_message =
-            grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames);
-        GPR_ASSERT(*s->recv_message != NULL);
-        grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
-        s->recv_message_ready = NULL;
-      } else if (s->published_metadata[1]) {
-        *s->recv_message = NULL;
-        grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
-        s->recv_message_ready = NULL;
-      }
     }
-    if (s->recv_trailing_metadata_finished != NULL && s->read_closed &&
-        s->write_closed) {
-      if (s->seen_error) {
-        while ((bs = grpc_chttp2_incoming_frame_queue_pop(
-                    &s->incoming_frames)) != NULL) {
-          incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
-        }
-      }
-      if (s->all_incoming_byte_streams_finished) {
-        grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
-                                                     s->recv_trailing_metadata);
-        grpc_chttp2_complete_closure_step(exec_ctx, t, s,
-                                          &s->recv_trailing_metadata_finished,
-                                          GRPC_ERROR_NONE);
-      }
+    grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
+                                                 s->recv_initial_metadata);
+    grpc_closure_run(exec_ctx, s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
+    s->recv_initial_metadata_ready = NULL;
+  }
+}
+
+void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
+                                             grpc_chttp2_transport *t,
+                                             grpc_chttp2_stream *s) {
+  grpc_byte_stream *bs;
+  if (s->recv_message_ready != NULL) {
+    while (s->final_metadata_requested && s->seen_error &&
+           (bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
+               NULL) {
+      incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
+    }
+    if (s->incoming_frames.head != NULL) {
+      *s->recv_message =
+          grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames);
+      GPR_ASSERT(*s->recv_message != NULL);
+      grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
+      s->recv_message_ready = NULL;
+    } else if (s->published_metadata[1]) {
+      *s->recv_message = NULL;
+      grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
+      s->recv_message_ready = NULL;
     }
   }
-  GPR_TIMER_END("check_read_ops", 0);
+}
+
+void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
+                                                       grpc_chttp2_transport *t,
+                                                       grpc_chttp2_stream *s) {
+  grpc_byte_stream *bs;
+  if (s->recv_trailing_metadata_finished != NULL && s->read_closed &&
+      s->write_closed) {
+    if (s->seen_error) {
+      while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
+             NULL) {
+        incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
+      }
+    }
+    if (s->all_incoming_byte_streams_finished) {
+      grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
+                                                   s->recv_trailing_metadata);
+      grpc_chttp2_complete_closure_step(
+          exec_ctx, t, s, &s->recv_trailing_metadata_finished, GRPC_ERROR_NONE);
+    }
+  }
 }
 
 static void decrement_active_streams_locked(grpc_exec_ctx *exec_ctx,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
-  if ((s->all_incoming_byte_streams_finished = gpr_unref(&s->active_streams))) {
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
-  }
+  s->all_incoming_byte_streams_finished = gpr_unref(&s->active_streams);
 }
 
 static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -1333,7 +1323,6 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
   }
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
   }
   grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, due_to_error);
 }
@@ -1343,7 +1332,6 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              gpr_slice *slice) {
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
   }
   /* stream_global->recv_trailing_metadata_finished gives us a
      last chance replacement: we've received trailing metadata,
@@ -1366,7 +1354,7 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
               grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
     }
     s->published_metadata[1] = true;
-    grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (slice) {
     gpr_slice_unref(*slice);
@@ -1434,18 +1422,21 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
   if (close_reads && !s->read_closed) {
     s->read_closed_error = GRPC_ERROR_REF(error);
     s->read_closed = true;
     s->published_metadata[0] = true;
     s->published_metadata[1] = true;
     decrement_active_streams_locked(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (close_writes && !s->write_closed) {
     s->write_closed_error = GRPC_ERROR_REF(error);
     s->write_closed = true;
     fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (s->read_closed && s->write_closed) {
     if (s->id != 0) {
@@ -1852,7 +1843,8 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
     *bs->next_action.slice = gpr_slice_buffer_take_first(&bs->slices);
     grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
   } else if (bs->error != GRPC_ERROR_NONE) {
-    grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_REF(bs->error));
+    grpc_closure_run(exec_ctx, bs->next_action.on_complete,
+                     GRPC_ERROR_REF(bs->error));
   } else {
     bs->on_next = bs->next_action.on_complete;
     bs->next = bs->next_action.slice;

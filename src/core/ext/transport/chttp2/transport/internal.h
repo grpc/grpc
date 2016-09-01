@@ -56,7 +56,6 @@
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
-  GRPC_CHTTP2_LIST_CHECK_READ_OPS,
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
@@ -161,7 +160,7 @@ struct grpc_chttp2_incoming_byte_stream {
 
   grpc_chttp2_transport *transport;
   grpc_chttp2_stream *stream;
-  int is_tail;
+  bool is_tail;
 
   gpr_mu slice_mu;  // protects slices, on_next
   gpr_slice_buffer slices;
@@ -189,8 +188,6 @@ struct grpc_chttp2_transport {
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state;
-  /** has a check_read_ops been scheduled */
-  bool check_read_ops_scheduled;
 
   /** is the transport destroying itself? */
   uint8_t destroying;
@@ -213,7 +210,6 @@ struct grpc_chttp2_transport {
 
   grpc_closure read_action_begin;
   grpc_closure read_action_locked;
-  grpc_closure read_action_flush_locked;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -468,14 +464,6 @@ void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
 int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                  grpc_chttp2_stream **s);
 
-void grpc_chttp2_list_add_check_read_ops(grpc_exec_ctx *exec_ctx,
-                                         grpc_chttp2_transport *t,
-                                         grpc_chttp2_stream *s);
-bool grpc_chttp2_list_remove_check_read_ops(grpc_chttp2_transport *t,
-                                            grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_check_read_ops(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s);
-
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
 int grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
@@ -660,5 +648,15 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,
                                grpc_error *due_to_error);
+
+void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
+                                                      grpc_chttp2_transport *t,
+                                                      grpc_chttp2_stream *s);
+void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
+                                             grpc_chttp2_transport *t,
+                                             grpc_chttp2_stream *s);
+void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
+                                                       grpc_chttp2_transport *t,
+                                                       grpc_chttp2_stream *s);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

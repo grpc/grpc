@@ -1571,6 +1571,13 @@ grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
   return p->state(exec_ctx, p, beg, end);
 }
 
+typedef void (*maybe_complete_func_type)(grpc_exec_ctx *exec_ctx,
+                                         grpc_chttp2_transport *t,
+                                         grpc_chttp2_stream *s);
+static const maybe_complete_func_type maybe_complete_funcs[] = {
+    grpc_chttp2_maybe_complete_recv_initial_metadata,
+    grpc_chttp2_maybe_complete_recv_trailing_metadata};
+
 grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *hpack_parser,
                                             grpc_chttp2_transport *t,
@@ -1601,8 +1608,8 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
           return GRPC_ERROR_CREATE("Too many trailer frames");
         }
         s->published_metadata[s->header_frames_received] = true;
+        maybe_complete_funcs[s->header_frames_received](exec_ctx, t, s);
         s->header_frames_received++;
-        grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
       }
       if (parser->is_eof) {
         grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,

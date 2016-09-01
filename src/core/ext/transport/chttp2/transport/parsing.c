@@ -717,9 +717,6 @@ static grpc_error *parse_frame_slice(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s = t->incoming_stream;
   grpc_error *err = t->parser(exec_ctx, t->parser_data, t, s, slice, is_last);
   if (err == GRPC_ERROR_NONE) {
-    if (s != NULL) {
-      grpc_chttp2_list_add_check_read_ops(exec_ctx, t, s);
-    }
     return err;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     if (grpc_http_trace) {
