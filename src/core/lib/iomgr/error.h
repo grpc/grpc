@@ -47,7 +47,8 @@
 ///  if a grpc_error is passed to a grpc_closure callback function (functions
 ///    with the signature:
 ///      void (*f)(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error))
-///    then those functions do not automatically own a ref to error
+///    then those functions do not own a ref to error (but are free to manually
+///    take a reference).
 ///  if a grpc_error is passed to *ANY OTHER FUNCTION* then that function takes
 ///    ownership of the error
 /// Errors have:

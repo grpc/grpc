@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- TBD
+- Reject metadata keys which are not legal #7881
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -307,7 +307,6 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
@@ -317,8 +316,8 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
@@ -485,7 +484,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/channel_connectivity.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_config_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/default_initial_connect_string.c" role="src" />
@@ -497,8 +495,8 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
@@ -1183,7 +1181,7 @@ Update to wrap gRPC C Core version 0.10.0
    <date>2016-08-22</date>
    <license>BSD</license>
    <notes>
-- TBD
+- Reject metadata keys which are not legal #7881
    </notes>
   </release>
  </changelog>

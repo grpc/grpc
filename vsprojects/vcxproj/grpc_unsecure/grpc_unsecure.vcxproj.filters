@@ -364,9 +364,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.c">
-      <Filter>src\core\ext\client_config</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config_plugin.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
@@ -400,10 +397,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_result.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.c">
@@ -890,9 +887,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.h">
-      <Filter>src\core\ext\client_config</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\connector.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
@@ -920,10 +914,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_result.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h">

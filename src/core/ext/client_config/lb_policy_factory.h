@@ -43,8 +43,6 @@
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
-/** grpc_lb_policy provides grpc_client_config objects to grpc_channel
-    objects */
 struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
 };
