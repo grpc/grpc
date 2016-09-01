@@ -165,6 +165,10 @@ class ServerContext {
     async_notify_when_done_tag_ = tag;
   }
 
+  // Should be used for framework-level extensions only.
+  // Applications never need to call this method.
+  grpc_call* c_call() { return call_; }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::ServerInterface;

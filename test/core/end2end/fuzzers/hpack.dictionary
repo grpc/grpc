@@ -44,6 +44,7 @@
 "\x0Dgrpc-encoding"
 "\x1Egrpc-internal-encoding-request"
 "\x0Cgrpc-message"
+"\x10grpc-payload-bin"
 "\x0Bgrpc-status"
 "\x0Cgrpc-timeout"
 "\x10grpc-tracing-bin"
