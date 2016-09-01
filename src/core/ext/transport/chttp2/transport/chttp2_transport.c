@@ -1169,6 +1169,12 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
  * INPUT PROCESSING - GENERAL
  */
 
+static void run_closure_and_null(grpc_exec_ctx *exec_ctx, grpc_closure **closure, grpc_error *error) {
+  grpc_closure *c = *closure;
+  *closure = NULL;
+  grpc_closure_run(exec_ctx, c, error);
+}
+
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
                                                       grpc_chttp2_transport *t,
                                                       grpc_chttp2_stream *s) {
@@ -1182,8 +1188,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
     }
     grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
                                                  s->recv_initial_metadata);
-    grpc_closure_run(exec_ctx, s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
-    s->recv_initial_metadata_ready = NULL;
+    run_closure_and_null(exec_ctx, &s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
   }
 }
 
@@ -1201,12 +1206,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
       *s->recv_message =
           grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames);
       GPR_ASSERT(*s->recv_message != NULL);
-      grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
-      s->recv_message_ready = NULL;
+      run_closure_and_null(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
     } else if (s->published_metadata[1]) {
       *s->recv_message = NULL;
-      grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
-      s->recv_message_ready = NULL;
+      run_closure_and_null(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
     }
   }
 }

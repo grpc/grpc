@@ -1092,7 +1092,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   grpc_call *call = bctl->call;
   if (bctl->is_notify_tag_closure) {
     /* unrefs bctl->error */
-    grpc_exec_ctx_sched(exec_ctx, bctl->notify_tag, bctl->error, NULL);
+    grpc_closure_run(exec_ctx, bctl->notify_tag, bctl->error);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (uint8_t)(bctl->call->used_batches &
@@ -1258,6 +1258,14 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void add_batch_error(batch_control *bctl, grpc_error *error) {
+  if (error == GRPC_ERROR_NONE) return;
+  if (bctl->error == GRPC_ERROR_NONE) {
+    bctl->error = GRPC_ERROR_CREATE("Call batch operation failed");
+  }
+  bctl->error = grpc_error_add_child(bctl->error, error);
+}
+
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                              void *bctlp, grpc_error *error) {
   batch_control *bctl = bctlp;
@@ -1265,9 +1273,8 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&call->mu);
 
-  if (error != GRPC_ERROR_NONE) {
-    bctl->error = GRPC_ERROR_REF(error);
-  } else {
+    add_batch_error(bctl, GRPC_ERROR_REF(error));
+  if (error == GRPC_ERROR_NONE) {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
     grpc_metadata_batch_filter(md, recv_initial_filter, call);
@@ -1360,8 +1367,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
-  GRPC_ERROR_UNREF(bctl->error);
-  bctl->error = GRPC_ERROR_REF(error);
+    add_batch_error(bctl, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
