@@ -652,8 +652,8 @@ retry:
           fail_locked(exec_ctx, calld, GRPC_ERROR_REF(op->cancel_error));
           break;
         case GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL:
-          pick_subchannel(exec_ctx, elem, NULL, 0,
-                          &calld->connected_subchannel, NULL);
+          pick_subchannel(exec_ctx, elem, NULL, 0, &calld->connected_subchannel,
+                          NULL);
           break;
       }
       gpr_mu_unlock(&calld->mu);
@@ -670,10 +670,9 @@ retry:
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
     grpc_closure_init(&calld->next_step, subchannel_ready, calld);
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
-    if (pick_subchannel(
-            exec_ctx, elem, op->send_initial_metadata,
-            op->send_initial_metadata_flags, &calld->connected_subchannel,
-            &calld->next_step)) {
+    if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
+                        op->send_initial_metadata_flags,
+                        &calld->connected_subchannel, &calld->next_step)) {
       calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     }
