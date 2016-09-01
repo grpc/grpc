@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,36 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
+enum { TIMEOUT = 200000 };
+
 static void *tag(intptr_t t) { return (void *)t; }
+
+extern void gpr_default_log(gpr_log_func_args *args);
+
+static void test_no_log(gpr_log_func_args *args) {
+  char *message = NULL;
+  gpr_asprintf(&message, "Unwanted log: %s", args->message);
+  args->message = message;
+  gpr_default_log(args);
+  gpr_free(message);
+  abort();
+}
+
+static void test_no_error_log(gpr_log_func_args *args) {
+  if (args->severity == GPR_LOG_SEVERITY_ERROR) {
+    test_no_log(args);
+  }
+}
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -95,44 +118,32 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Request/response with metadata and payload.*/
-static void test_request_response_with_metadata_and_payload(
-    grpc_end2end_test_config config) {
+static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
-  grpc_byte_buffer *request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {
-      {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {
-      {"key3", "val3", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key4", "val4", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer *request_payload_recv = NULL;
-  grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
+  char *peer;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", "foo.test.google.fr:1234", deadline,
+                               NULL);
   GPR_ASSERT(c);
+
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_free(peer);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -142,13 +153,7 @@ static void test_request_response_with_metadata_and_payload(
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 2;
-  op->data.send_initial_metadata.metadata = meta_c;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -158,11 +163,6 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -184,16 +184,29 @@ static void test_request_response_with_metadata_and_payload(
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  peer = grpc_call_get_peer(s);
+  GPR_ASSERT(peer != NULL);
+  gpr_free(peer);
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_free(peer);
+
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 2;
-  op->data.send_initial_metadata.metadata = meta_s;
+  op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status_details = "xyz";
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -201,45 +214,15 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = response_payload;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "key2", "val2"));
-  GPR_ASSERT(contains_metadata(&initial_metadata_recv, "key3", "val3"));
-  GPR_ASSERT(contains_metadata(&initial_metadata_recv, "key4", "val4"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT(0 == call_details.flags);
+  GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -251,18 +234,60 @@ static void test_request_response_with_metadata_and_payload(
   grpc_call_destroy(s);
 
   cq_verifier_destroy(cqv);
+}
 
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
+static void test_invoke_simple_request(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f;
 
+  f = begin_test(config, "test_invoke_simple_request_with_no_error_logging",
+                 NULL, NULL);
+  simple_request_body(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void simple_metadata(grpc_end2end_test_config config) {
-  test_request_response_with_metadata_and_payload(config);
+static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
+  int i;
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_invoke_10_simple_requests_with_no_error_logging",
+                 NULL, NULL);
+  for (i = 0; i < 10; i++) {
+    simple_request_body(f);
+    gpr_log(GPR_INFO, "Passed simple request %d", i);
+  }
+  simple_request_body(f);
+  end_test(&f);
+  config.tear_down_data(&f);
 }
 
-void simple_metadata_pre_init(void) {}
+static void test_no_error_logging_in_entire_process(
+    grpc_end2end_test_config config) {
+  int i;
+  gpr_set_log_function(test_no_error_log);
+  for (i = 0; i < 10; i++) {
+    test_invoke_simple_request(config);
+  }
+  test_invoke_10_simple_requests(config);
+  gpr_set_log_function(gpr_default_log);
+}
+
+static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
+  int i;
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_no_logging_in_last_request", NULL, NULL);
+  for (i = 0; i < 10; i++) {
+    simple_request_body(f);
+  }
+  gpr_set_log_function(test_no_log);
+  simple_request_body(f);
+  gpr_set_log_function(gpr_default_log);
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+void no_logging(grpc_end2end_test_config config) {
+  test_no_logging_in_one_request(config);
+  test_no_error_logging_in_entire_process(config);
+}
+
+void no_logging_pre_init(void) {}

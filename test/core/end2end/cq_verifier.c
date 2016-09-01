@@ -61,6 +61,8 @@ typedef struct metadata {
    list to detail other expectations */
 typedef struct expectation {
   struct expectation *next;
+  const char *file;
+  int line;
   grpc_completion_type type;
   void *tag;
   int success;
@@ -180,7 +182,8 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->success);
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d %s:%d", e->success,
+                   e->file, e->line);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_QUEUE_TIMEOUT:
@@ -214,25 +217,16 @@ static void fail_no_event_received(cq_verifier *v) {
 }
 
 void cq_verify(cq_verifier *v) {
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-  grpc_event ev;
-  expectation *e;
-  char *s;
-  gpr_strvec have_tags;
-
-  gpr_strvec_init(&have_tags);
-
+  const gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
   while (v->first_expectation != NULL) {
-    ev = grpc_completion_queue_next(v->cq, deadline, NULL);
+    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, NULL);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
     }
-
+    expectation *e;
     expectation *prev = NULL;
     for (e = v->first_expectation; e != NULL; e = e->next) {
-      gpr_asprintf(&s, " %p", e->tag);
-      gpr_strvec_add(&have_tags, s);
       if (e->tag == ev.tag) {
         verify_matches(e, &ev);
         if (e == v->first_expectation) v->first_expectation = e->next;
@@ -243,18 +237,19 @@ void cq_verify(cq_verifier *v) {
       prev = e;
     }
     if (e == NULL) {
-      s = grpc_event_string(&ev);
+      char *s = grpc_event_string(&ev);
       gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
       gpr_free(s);
-      s = gpr_strvec_flatten(&have_tags, NULL);
-      gpr_log(GPR_ERROR, "expected tags:%s", s);
+      gpr_strvec expectations;
+      gpr_strvec_init(&expectations);
+      expectations_to_strvec(&expectations, v);
+      s = gpr_strvec_flatten(&expectations, NULL);
+      gpr_strvec_destroy(&expectations);
+      gpr_log(GPR_ERROR, "expected tags:\n%s", s);
       gpr_free(s);
-      gpr_strvec_destroy(&have_tags);
       abort();
     }
   }
-
-  gpr_strvec_destroy(&have_tags);
 }
 
 void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec) {
@@ -276,16 +271,19 @@ void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec) {
 
 void cq_verify_empty(cq_verifier *v) { cq_verify_empty_timeout(v, 1); }
 
-static void add(cq_verifier *v, grpc_completion_type type, void *tag,
-                bool success) {
+static void add(cq_verifier *v, const char *file, int line,
+                grpc_completion_type type, void *tag, bool success) {
   expectation *e = gpr_malloc(sizeof(expectation));
   e->type = type;
+  e->file = file;
+  e->line = line;
   e->tag = tag;
   e->success = success;
   e->next = v->first_expectation;
   v->first_expectation = e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
-  add(v, GRPC_OP_COMPLETE, tag, success);
+void cq_expect_completion(cq_verifier *v, const char *file, int line, void *tag,
+                          bool success) {
+  add(v, file, line, GRPC_OP_COMPLETE, tag, success);
 }
