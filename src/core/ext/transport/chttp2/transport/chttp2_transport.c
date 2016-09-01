@@ -759,7 +759,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = NULL;
     }
-    grpc_exec_ctx_sched(exec_ctx, closure, closure->error_data.error, NULL);
+    grpc_closure_run(exec_ctx, closure, closure->error_data.error);
   }
   *pclosure = NULL;
 }
@@ -1155,7 +1155,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
     close_transport_locked(exec_ctx, t, close_transport);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
+  grpc_closure_run(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "transport_op");
 }
@@ -1199,8 +1199,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
       }
       grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
                                                    s->recv_initial_metadata);
-      grpc_exec_ctx_sched(exec_ctx, s->recv_initial_metadata_ready,
-                          GRPC_ERROR_NONE, NULL);
+      grpc_closure_run(exec_ctx, s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
       s->recv_initial_metadata_ready = NULL;
     }
     if (s->recv_message_ready != NULL) {
@@ -1213,13 +1212,11 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
         *s->recv_message =
             grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames);
         GPR_ASSERT(*s->recv_message != NULL);
-        grpc_exec_ctx_sched(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE,
-                            NULL);
+        grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
         s->recv_message_ready = NULL;
       } else if (s->published_metadata[1]) {
         *s->recv_message = NULL;
-        grpc_exec_ctx_sched(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE,
-                            NULL);
+        grpc_closure_run(exec_ctx, s->recv_message_ready, GRPC_ERROR_NONE);
         s->recv_message_ready = NULL;
       }
     }
@@ -1853,11 +1850,9 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&bs->slice_mu);
   if (bs->slices.count > 0) {
     *bs->next_action.slice = gpr_slice_buffer_take_first(&bs->slices);
-    grpc_exec_ctx_sched(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE,
-                        NULL);
+    grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
   } else if (bs->error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_sched(exec_ctx, bs->next_action.on_complete,
-                        GRPC_ERROR_REF(bs->error), NULL);
+    grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_REF(bs->error));
   } else {
     bs->on_next = bs->next_action.on_complete;
     bs->next = bs->next_action.slice;

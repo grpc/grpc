@@ -773,8 +773,7 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
         GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path", &error, 1);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, calld->on_done_recv_initial_metadata, error,
-                      NULL);
+  grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata, error);
 }
 
 static void server_mutate_op(grpc_call_element *elem,
