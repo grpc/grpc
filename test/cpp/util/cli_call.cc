@@ -35,18 +35,19 @@
 
 #include <iostream>
 
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/completion_queue.h>
+#include <grpc++/generic/generic_stub.h>
+#include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
-#include <grpc++/support/byte_buffer.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/generic/generic_stub.h>
 
 namespace grpc {
 namespace testing {
 namespace {
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(intptr_t)i; }
 }  // namespace
 
 Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
@@ -85,7 +86,6 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
   cq.Next(&got_tag, &ok);
   if (!ok) {
     std::cout << "Failed to read response." << std::endl;
-    return Status(StatusCode::INTERNAL, "Failed to read response");
   }
   grpc::Status status;
   call->Finish(&status, tag(5));
@@ -102,6 +102,7 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
                        slices[i].size());
     }
   }
+
   *server_initial_metadata = ctx.GetServerInitialMetadata();
   *server_trailing_metadata = ctx.GetServerTrailingMetadata();
   return status;

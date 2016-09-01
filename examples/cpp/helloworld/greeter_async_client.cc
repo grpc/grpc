@@ -53,7 +53,7 @@ class GreeterClient {
   explicit GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assambles the client's payload, sends it and presents the response back
+  // Assembles the client's payload, sends it and presents the response back
   // from the server.
   std::string SayHello(const std::string& user) {
     // Data we are sending to the server.
@@ -74,9 +74,9 @@ class GreeterClient {
     // Storage for the status of the RPC upon completion.
     Status status;
 
-    // stub_->AsyncSayHello() perform the RPC call, returning an instance we
-    // store in "rpc". Because we are using the asynchronous API, we need the
-    // hold on to the "rpc" instance in order to get updates on the ongoig RPC.
+    // stub_->AsyncSayHello() performs the RPC call, returning an instance we
+    // store in "rpc". Because we are using the asynchronous API, we need to
+    // hold on to the "rpc" instance in order to get updates on the ongoing RPC.
     std::unique_ptr<ClientAsyncResponseReader<HelloReply> > rpc(
         stub_->AsyncSayHello(&context, request, &cq));
 
@@ -87,7 +87,9 @@ class GreeterClient {
     void* got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".
-    cq.Next(&got_tag, &ok);
+    // The return value of Next should always be checked. This return value
+    // tells us whether there is any kind of event or the cq_ is shutting down.
+    GPR_ASSERT(cq.Next(&got_tag, &ok));
 
     // Verify that the result from "cq" corresponds, by its tag, our previous
     // request.

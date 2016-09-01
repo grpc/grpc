@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\hkdf\hkdf_test.c">
+      <Filter>third_party\boringssl\crypto\hkdf</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{3ea66df2-1bd7-a65d-0aea-8311904d616a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{8881db75-0db6-1a1a-d917-aed225227cb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{d99524e4-9e9c-ce95-621b-d588a890d5d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\hkdf">
+      <UniqueIdentifier>{5cfd8c8d-bb59-cad4-f1fe-d51adcc23e03}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

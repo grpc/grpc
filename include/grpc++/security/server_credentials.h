@@ -31,14 +31,15 @@
  *
  */
 
-#ifndef GRPCXX_SERVER_CREDENTIALS_H
-#define GRPCXX_SERVER_CREDENTIALS_H
+#ifndef GRPCXX_SECURITY_SERVER_CREDENTIALS_H
+#define GRPCXX_SECURITY_SERVER_CREDENTIALS_H
 
 #include <memory>
 #include <vector>
 
 #include <grpc++/security/auth_metadata_processor.h>
 #include <grpc++/support/config.h>
+#include <grpc/grpc_security_constants.h>
 
 struct grpc_server;
 
@@ -69,7 +70,13 @@ class ServerCredentials {
 
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
-  SslServerCredentialsOptions() : force_client_auth(false) {}
+  // Deprecated
+  SslServerCredentialsOptions()
+      : force_client_auth(false),
+        client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
+  SslServerCredentialsOptions(
+      grpc_ssl_client_certificate_request_type request_type)
+      : force_client_auth(false), client_certificate_request(request_type) {}
 
   struct PemKeyCertPair {
     grpc::string private_key;
@@ -77,7 +84,13 @@ struct SslServerCredentialsOptions {
   };
   grpc::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
+  // Deprecated
   bool force_client_auth;
+
+  // If both force_client_auth and client_certificate_request fields are set,
+  // force_client_auth takes effect i.e
+  // REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY will be enforced.
+  grpc_ssl_client_certificate_request_type client_certificate_request;
 };
 
 /// Builds SSL ServerCredentials given SSL specific options
@@ -89,4 +102,4 @@ std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SERVER_CREDENTIALS_H
+#endif  // GRPCXX_SECURITY_SERVER_CREDENTIALS_H

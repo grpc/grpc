@@ -1,0 +1,1 @@
+Defaults        env_keep += "http_proxy https_proxy ftp_proxy RCD_HOST_RUBY_PLATFORM RCD_HOST_RUBY_VERSION RCD_IMAGE RUBY_CC_VERSION"

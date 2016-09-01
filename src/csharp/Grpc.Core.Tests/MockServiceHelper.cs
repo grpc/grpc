@@ -102,7 +102,7 @@ namespace Grpc.Core.Tests
                 marshaller,
                 marshaller);
 
-            serviceDefinition = ServerServiceDefinition.CreateBuilder(ServiceName)
+            serviceDefinition = ServerServiceDefinition.CreateBuilder()
                 .AddMethod(unaryMethod, (request, context) => unaryHandler(request, context))
                 .AddMethod(clientStreamingMethod, (requestStream, context) => clientStreamingHandler(requestStream, context))
                 .AddMethod(serverStreamingMethod, (request, responseStream, context) => serverStreamingHandler(request, responseStream, context))

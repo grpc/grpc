@@ -33,6 +33,57 @@
  */
 class TimevalTest extends PHPUnit_Framework_TestCase
 {
+    public function setUp()
+    {
+    }
+
+    public function tearDown()
+    {
+        unset($this->time);
+    }
+
+    public function testConstructorWithInt()
+    {
+        $this->time = new Grpc\Timeval(1234);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithNegative()
+    {
+        $this->time = new Grpc\Timeval(-123);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithZero()
+    {
+        $this->time = new Grpc\Timeval(0);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithOct()
+    {
+        $this->time = new Grpc\Timeval(0123);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithHex()
+    {
+        $this->time = new Grpc\Timeval(0x1A);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithFloat()
+    {
+        $this->time = new Grpc\Timeval(123.456);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
     public function testCompareSame()
     {
         $zero = Grpc\Timeval::zero();
@@ -70,6 +121,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     public function testNowAndAdd()
     {
         $now = Grpc\Timeval::now();
+        $this->assertNotNull($now);
         $delta = new Grpc\Timeval(1000);
         $deadline = $now->add($delta);
         $this->assertGreaterThan(0, Grpc\Timeval::compare($deadline, $now));
@@ -90,5 +142,70 @@ class TimevalTest extends PHPUnit_Framework_TestCase
         $deadline = $now->add($delta);
         $back_to_now = $deadline->subtract($delta);
         $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
+    }
+
+    public function testSimilar()
+    {
+        $a = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $b = $a->add($delta);
+        $thresh = new Grpc\Timeval(1100);
+        $this->assertTrue(Grpc\Timeval::similar($a, $b, $thresh));
+        $thresh = new Grpc\Timeval(900);
+        $this->assertFalse(Grpc\Timeval::similar($a, $b, $thresh));
+    }
+
+    public function testSleepUntil()
+    {
+        $curr_microtime = microtime(true);
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $deadline = $now->add($delta);
+        $deadline->sleepUntil();
+        $done_microtime = microtime(true);
+        $this->assertTrue(($done_microtime - $curr_microtime) > 0.0009);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testConstructorInvalidParam()
+    {
+        $delta = new Grpc\Timeval('abc');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testAddInvalidParam()
+    {
+        $a = Grpc\Timeval::now();
+        $a->add(1000);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSubtractInvalidParam()
+    {
+        $a = Grpc\Timeval::now();
+        $a->subtract(1000);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testCompareInvalidParam()
+    {
+        $a = Grpc\Timeval::compare(1000, 1100);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSimilarInvalidParam()
+    {
+        $a = Grpc\Timeval::similar(1000, 1100, 1200);
+        $this->assertNull($delta);
     }
 }

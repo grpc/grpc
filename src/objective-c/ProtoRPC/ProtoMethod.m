@@ -46,10 +46,14 @@
 }
 
 - (NSString *)HTTPPath {
-  if (_package) {
+  if (_package && _package.length > 0) {
     return [NSString stringWithFormat:@"/%@.%@/%@", _package, _service, _method];
   } else {
     return [NSString stringWithFormat:@"/%@/%@", _service, _method];
   }
 }
+@end
+
+@implementation GRPCProtoMethod
+
 @end

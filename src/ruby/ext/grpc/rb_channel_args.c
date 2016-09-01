@@ -31,9 +31,10 @@
  *
  */
 
-#include "rb_channel_args.h"
-
 #include <ruby/ruby.h>
+
+#include "rb_grpc_imports.generated.h"
+#include "rb_channel_args.h"
 
 #include <grpc/grpc.h>
 

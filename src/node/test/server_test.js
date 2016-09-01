@@ -36,7 +36,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var grpc = require('bindings')('grpc_node');
+var grpc = require('../src/grpc_extension');
 
 describe('server', function() {
   describe('constructor', function() {

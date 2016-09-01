@@ -88,7 +88,13 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Token that can be used for cancelling the call.
+        /// Token that can be used for cancelling the call on the client side.
+        /// Cancelling the token will request cancellation
+        /// of the remote call. Best effort will be made to deliver the cancellation
+        /// notification to the server and interaction of the call with the server side
+        /// will be terminated. Unless the call finishes before the cancellation could
+        /// happen (there is an inherent race),
+        /// the call will finish with <c>StatusCode.Cancelled</c> status.
         /// </summary>
         public CancellationToken CancellationToken
         {
@@ -100,10 +106,7 @@ namespace Grpc.Core
         /// </summary>
         public WriteOptions WriteOptions
         {
-            get
-            {
-                return this.writeOptions;
-            }
+            get { return this.writeOptions; }
         }
 
         /// <summary>
@@ -111,10 +114,7 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken PropagationToken
         {
-            get
-            {
-                return this.propagationToken;
-            }
+            get { return this.propagationToken; }
         }
 
         /// <summary>
@@ -122,10 +122,7 @@ namespace Grpc.Core
         /// </summary>
         public CallCredentials Credentials
         {
-            get
-            {
-                return this.credentials;
-            }
+            get { return this.credentials; }
         }
 
         /// <summary>
@@ -165,6 +162,42 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>WriteOptions</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="writeOptions">The write options.</param>
+        public CallOptions WithWriteOptions(WriteOptions writeOptions)
+        {
+            var newOptions = this;
+            newOptions.writeOptions = writeOptions;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>PropagationToken</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="propagationToken">The context propagation token.</param>
+        public CallOptions WithPropagationToken(ContextPropagationToken propagationToken)
+        {
+            var newOptions = this;
+            newOptions.propagationToken = propagationToken;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>Credentials</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="credentials">The call credentials.</param>
+        public CallOptions WithCredentials(CallCredentials credentials)
+        {
+            var newOptions = this;
+            newOptions.credentials = credentials;
+            return newOptions;
+        }
+
+        /// <summary>
         /// Returns a new instance of <see cref="CallOptions"/> with 
         /// all previously unset values set to their defaults and deadline and cancellation
         /// token propagated when appropriate.
@@ -176,13 +209,13 @@ namespace Grpc.Core
             {
                 if (propagationToken.Options.IsPropagateDeadline)
                 {
-                    Preconditions.CheckArgument(!newOptions.deadline.HasValue,
+                    GrpcPreconditions.CheckArgument(!newOptions.deadline.HasValue,
                         "Cannot propagate deadline from parent call. The deadline has already been set explicitly.");
                     newOptions.deadline = propagationToken.ParentDeadline;
                 }
                 if (propagationToken.Options.IsPropagateCancellation)
                 {
-                    Preconditions.CheckArgument(!newOptions.cancellationToken.CanBeCanceled,
+                    GrpcPreconditions.CheckArgument(!newOptions.cancellationToken.CanBeCanceled,
                         "Cannot propagate cancellation token from parent call. The cancellation token has already been set to a non-default value.");
                     newOptions.cancellationToken = propagationToken.ParentCancellationToken;
                 }

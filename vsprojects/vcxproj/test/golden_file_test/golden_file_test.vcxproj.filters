@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\compiler_test.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\golden_file_test.cc">
+      <Filter>test\cpp\codegen</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{cd916cf8-bce0-7051-b6d4-e1cd0bf3894c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{a2d414fe-b561-a38e-58a9-40d8bc68a107}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{edbc155a-ceb8-62b4-2b73-37228e5fa736}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{761a3503-8934-4ee6-8bf1-77ba1385baa7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{4f08cfc5-a59d-7cb4-9ef5-a603b2025936}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{af281cac-e23b-109b-8e63-c7cff85c81f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\codegen">
+      <UniqueIdentifier>{e105f656-566f-3d70-fbe5-e03fee8e612d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

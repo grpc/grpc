@@ -29,10 +29,10 @@
 
 """Run a group of subprocesses and then finish."""
 
-import hashlib
 import multiprocessing
 import os
 import platform
+import re
 import signal
 import subprocess
 import sys
@@ -40,8 +40,18 @@ import tempfile
 import time
 
 
+# cpu cost measurement
+measure_cpu_costs = False
+
+
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
+
+def sanitized_environment(env):
+  sanitized = {}
+  for key, value in env.items():
+    sanitized[str(key).encode()] = str(value).encode()
+  return sanitized
 
 def platform_string():
   if platform.system() == 'Windows':
@@ -144,41 +154,40 @@ def which(filename):
 class JobSpec(object):
   """Specifies what to run for a job."""
 
-  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
+  def __init__(self, cmdline, shortname=None, environ=None,
                cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
-               timeout_retries=0, kill_handler=None):
+               timeout_retries=0, kill_handler=None, cpu_cost=1.0,
+               verbose_success=False):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
       environ: a dictionary of environment variables to set in the child process
-      hash_targets: which files to include in the hash representing the jobs version
-                    (or empty, indicating the job should not be hashed)
       kill_handler: a handler that will be called whenever job.kill() is invoked
+      cpu_cost: number of cores per second this job needs
     """
     if environ is None:
       environ = {}
-    if hash_targets is None:
-      hash_targets = []
     self.cmdline = cmdline
     self.environ = environ
     self.shortname = cmdline[0] if shortname is None else shortname
-    self.hash_targets = hash_targets or []
     self.cwd = cwd
     self.shell = shell
     self.timeout_seconds = timeout_seconds
     self.flake_retries = flake_retries
     self.timeout_retries = timeout_retries
     self.kill_handler = kill_handler
+    self.cpu_cost = cpu_cost
+    self.verbose_success = verbose_success
 
   def identity(self):
-    return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
+    return '%r %r' % (self.cmdline, self.environ)
 
   def __hash__(self):
     return hash(self.identity())
 
   def __cmp__(self, other):
     return self.identity() == other.identity()
-    
+
   def __repr__(self):
     return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
@@ -191,14 +200,13 @@ class JobResult(object):
     self.num_failures = 0
     self.retries = 0
     self.message = ''
-    
+
 
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, bin_hash, newline_on_success, travis, add_env):
+  def __init__(self, spec, newline_on_success, travis, add_env):
     self._spec = spec
-    self._bin_hash = bin_hash
     self._newline_on_success = newline_on_success
     self._travis = travis
     self._add_env = add_env.copy()
@@ -217,8 +225,12 @@ class Job(object):
     env = dict(os.environ)
     env.update(self._spec.environ)
     env.update(self._add_env)
+    env = sanitized_environment(env)
     self._start = time.time()
-    try_start = lambda: subprocess.Popen(args=self._spec.cmdline,
+    cmdline = self._spec.cmdline
+    if measure_cpu_costs:
+      cmdline = ['time', '--portability'] + cmdline
+    try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
                                          cwd=self._spec.cwd,
@@ -237,11 +249,13 @@ class Job(object):
       self._process = try_start()
     self._state = _RUNNING
 
-  def state(self, update_cache):
+  def state(self):
     """Poll current state of the job. Prints messages at completion."""
-    self._tempfile.seek(0)
-    stdout = self._tempfile.read()
-    self.result.message = stdout[-_MAX_RESULT_SIZE:]
+    def stdout(self=self):
+      self._tempfile.seek(0)
+      stdout = self._tempfile.read()
+      self.result.message = stdout[-_MAX_RESULT_SIZE:]
+      return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
       elapsed = time.time() - self._start
       self.result.elapsed_time = elapsed
@@ -249,7 +263,7 @@ class Job(object):
         if self._retries < self._spec.flake_retries:
           message('FLAKE', '%s [ret=%d, pid=%d]' % (
             self._spec.shortname, self._process.returncode, self._process.pid),
-            stdout, do_newline=True)
+            stdout(), do_newline=True)
           self._retries += 1
           self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
@@ -259,21 +273,31 @@ class Job(object):
           if not self._suppress_failure_message:
             message('FAILED', '%s [ret=%d, pid=%d]' % (
                 self._spec.shortname, self._process.returncode, self._process.pid),
-                stdout, do_newline=True)
+                stdout(), do_newline=True)
           self.result.state = 'FAILED'
           self.result.num_failures += 1
           self.result.returncode = self._process.returncode
       else:
         self._state = _SUCCESS
-        message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
-                    self._spec.shortname, elapsed, self._retries, self._timeout_retries),
+        measurement = ''
+        if measure_cpu_costs:
+          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          real = float(m.group(1))
+          user = float(m.group(2))
+          sys = float(m.group(3))
+          if real > 0.5:
+            cores = (user + sys) / real
+            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
+        message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
+            self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
+            stdout() if self._spec.verbose_success else None,
             do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
-        if self._bin_hash:
-          update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
+    elif (self._state == _RUNNING and
+          self._spec.timeout_seconds is not None and
+          time.time() - self._start > self._spec.timeout_seconds):
       if self._timeout_retries < self._spec.timeout_retries:
-        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
+        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self._timeout_retries += 1
         self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
@@ -282,7 +306,7 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
+        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1
@@ -297,13 +321,13 @@ class Job(object):
 
   def suppress_failure_message(self):
     self._suppress_failure_message = True
-    
+
 
 class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env, cache):
+               stop_on_failure, add_env):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -312,12 +336,11 @@ class Jobset(object):
     self._maxjobs = maxjobs
     self._newline_on_success = newline_on_success
     self._travis = travis
-    self._cache = cache
     self._stop_on_failure = stop_on_failure
-    self._hashes = {}
     self._add_env = add_env
     self.resultset = {}
     self._remaining = None
+    self._start_time = time.time()
 
   def set_remaining(self, remaining):
     self._remaining = remaining
@@ -325,33 +348,27 @@ class Jobset(object):
   def get_num_failures(self):
     return self._failures
 
+  def cpu_cost(self):
+    c = 0
+    for job in self._running:
+      c += job._spec.cpu_cost
+    return c
+
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
-    while len(self._running) >= self._maxjobs:
+    while True:
       if self.cancelled(): return False
+      current_cpu_cost = self.cpu_cost()
+      if current_cpu_cost == 0: break
+      if current_cpu_cost + spec.cpu_cost <= self._maxjobs: break
       self.reap()
     if self.cancelled(): return False
-    if spec.hash_targets:
-      if spec.identity() in self._hashes:
-        bin_hash = self._hashes[spec.identity()]
-      else:
-        bin_hash = hashlib.sha1()
-        for fn in spec.hash_targets:
-          with open(which(fn)) as f:
-            bin_hash.update(f.read())
-        bin_hash = bin_hash.hexdigest()
-        self._hashes[spec.identity()] = bin_hash
-      should_run = self._cache.should_run(spec.identity(), bin_hash)
-    else:
-      bin_hash = None
-      should_run = True
-    if should_run:
-      job = Job(spec,
-                bin_hash,
-                self._newline_on_success,
-                self._travis,
-                self._add_env)
-      self._running.add(job)
+    job = Job(spec,
+              self._newline_on_success,
+              self._travis,
+              self._add_env)
+    self._running.add(job)
+    if not self.resultset.has_key(job.GetSpec().shortname):
       self.resultset[job.GetSpec().shortname] = []
     return True
 
@@ -360,7 +377,7 @@ class Jobset(object):
     while self._running:
       dead = set()
       for job in self._running:
-        st = job.state(self._cache)
+        st = job.state()
         if st == _RUNNING: continue
         if st == _FAILURE or st == _KILLED:
           self._failures += 1
@@ -377,6 +394,11 @@ class Jobset(object):
       if dead: return
       if (not self._travis):
         rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
+        if self._remaining is not None and self._completed > 0:
+          now = time.time()
+          sofar = now - self._start_time
+          remaining = sofar / self._completed * (self._remaining + len(self._running))
+          rstr = 'ETA %.1f sec; %s' % (remaining, rstr)
         message('WAITING', '%s%d jobs running, %d complete, %d failed' % (
             rstr, len(self._running), self._completed, self._failures))
       if platform_string() == 'windows':
@@ -408,20 +430,11 @@ def _never_cancelled():
   return False
 
 
-# cache class that caches nothing
-class NoCache(object):
-  def should_run(self, cmdline, bin_hash):
-    return True
-
-  def finished(self, cmdline, bin_hash):
-    pass
-
-
 def tag_remaining(xs):
   staging = []
   for x in xs:
     staging.append(x)
-    if len(staging) > 1000:
+    if len(staging) > 5000:
       yield (staging.pop(0), None)
   n = len(staging)
   for i, x in enumerate(staging):
@@ -435,12 +448,10 @@ def run(cmdlines,
         travis=False,
         infinite_runs=False,
         stop_on_failure=False,
-        cache=None,
         add_env={}):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success, travis, stop_on_failure, add_env,
-              cache if cache is not None else NoCache())
+              newline_on_success, travis, stop_on_failure, add_env)
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break
@@ -448,4 +459,3 @@ def run(cmdlines,
       js.set_remaining(remaining)
   js.finish()
   return js.get_num_failures(), js.resultset
-

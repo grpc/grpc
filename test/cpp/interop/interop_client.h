@@ -36,50 +36,59 @@
 
 #include <memory>
 
-#include <grpc/grpc.h>
 #include <grpc++/channel.h>
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/test.grpc.pb.h"
+#include <grpc/grpc.h>
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
+// Function pointer for custom checks.
+typedef std::function<void(const InteropClientContextInspector&,
+                           const SimpleRequest*, const SimpleResponse*)>
+    CheckerFn;
+
 class InteropClient {
  public:
-  explicit InteropClient(std::shared_ptr<Channel> channel);
-  explicit InteropClient(
-      std::shared_ptr<Channel> channel,
-      bool new_stub_every_test_case);  // If new_stub_every_test_case is true,
-                                       // a new TestService::Stub object is
-                                       // created for every test case below
+  /// If new_stub_every_test_case is true, a new TestService::Stub object is
+  /// created for every test case
+  /// If do_not_abort_on_transient_failures is true, abort() is not called in
+  /// case of transient failures (like connection failures)
+  explicit InteropClient(std::shared_ptr<Channel> channel,
+                         bool new_stub_every_test_case,
+                         bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
   void Reset(std::shared_ptr<Channel> channel);
 
-  void DoEmpty();
-  void DoLargeUnary();
-  void DoLargeCompressedUnary();
-  void DoPingPong();
-  void DoHalfDuplex();
-  void DoRequestStreaming();
-  void DoResponseStreaming();
-  void DoResponseCompressedStreaming();
-  void DoResponseStreamingWithSlowConsumer();
-  void DoCancelAfterBegin();
-  void DoCancelAfterFirstResponse();
-  void DoTimeoutOnSleepingServer();
-  void DoEmptyStream();
-  void DoStatusWithMessage();
+  bool DoEmpty();
+  bool DoLargeUnary();
+  bool DoServerCompressedUnary();
+  bool DoClientCompressedUnary();
+  bool DoPingPong();
+  bool DoHalfDuplex();
+  bool DoRequestStreaming();
+  bool DoResponseStreaming();
+  bool DoServerCompressedStreaming();
+  bool DoClientCompressedStreaming();
+  bool DoResponseStreamingWithSlowConsumer();
+  bool DoCancelAfterBegin();
+  bool DoCancelAfterFirstResponse();
+  bool DoTimeoutOnSleepingServer();
+  bool DoEmptyStream();
+  bool DoStatusWithMessage();
+  bool DoCustomMetadata();
   // Auth tests.
   // username is a string containing the user email
-  void DoJwtTokenCreds(const grpc::string& username);
-  void DoComputeEngineCreds(const grpc::string& default_service_account,
+  bool DoJwtTokenCreds(const grpc::string& username);
+  bool DoComputeEngineCreds(const grpc::string& default_service_account,
                             const grpc::string& oauth_scope);
   // username the GCE default service account email
-  void DoOauth2AuthToken(const grpc::string& username,
+  bool DoOauth2AuthToken(const grpc::string& username,
                          const grpc::string& oauth_scope);
   // username is a string containing the user email
-  void DoPerRpcCreds(const grpc::string& json_key);
+  bool DoPerRpcCreds(const grpc::string& json_key);
 
  private:
   class ServiceStub {
@@ -99,9 +108,18 @@ class InteropClient {
                                 // Get() call
   };
 
-  void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
-  void AssertOkOrPrintErrorStatus(const Status& s);
+  bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
+
+  /// Run \a custom_check_fn as an additional check.
+  bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
+                         CheckerFn custom_checks_fn);
+  bool AssertStatusOk(const Status& s);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  bool TransientFailureOrAbort();
   ServiceStub serviceStub_;
+
+  /// If true, abort() is not called for transient failures
+  bool do_not_abort_on_transient_failures_;
 };
 
 }  // namespace testing

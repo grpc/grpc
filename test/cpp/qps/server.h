@@ -34,23 +34,27 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
-#include <grpc/support/cpu.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc/support/cpu.h>
+#include <vector>
 
+#include "src/proto/grpc/testing/control.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
-#include "test/cpp/qps/timer.h"
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/benchmarks/control.grpc.pb.h"
+#include "test/cpp/qps/limit_cores.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
 
 class Server {
  public:
-  explicit Server(const ServerConfig& config) : timer_(new Timer) {
+  explicit Server(const ServerConfig& config) : timer_(new UsageTimer) {
+    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
     if (config.port()) {
       port_ = config.port();
+
     } else {
       port_ = grpc_pick_unused_port_or_die();
     }
@@ -58,9 +62,9 @@ class Server {
   virtual ~Server() {}
 
   ServerStats Mark(bool reset) {
-    Timer::Result timer_result;
+    UsageTimer::Result timer_result;
     if (reset) {
-      std::unique_ptr<Timer> timer(new Timer);
+      std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer.swap(timer_);
       timer_result = timer->Mark();
     } else {
@@ -75,19 +79,18 @@ class Server {
   }
 
   static bool SetPayload(PayloadType type, int size, Payload* payload) {
-    PayloadType response_type = type;
     // TODO(yangg): Support UNCOMPRESSABLE payload.
     if (type != PayloadType::COMPRESSABLE) {
       return false;
     }
-    payload->set_type(response_type);
+    payload->set_type(type);
     std::unique_ptr<char[]> body(new char[size]());
     payload->set_body(body.get(), size);
     return true;
   }
 
   int port() const { return port_; }
-  int cores() const { return gpr_cpu_num_cores(); }
+  int cores() const { return cores_; }
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
@@ -104,11 +107,13 @@ class Server {
 
  private:
   int port_;
-  std::unique_ptr<Timer> timer_;
+  int cores_;
+  std::unique_ptr<UsageTimer> timer_;
 };
 
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

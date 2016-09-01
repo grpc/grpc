@@ -35,9 +35,11 @@
 
 #include <grpc/status.h>
 
+#import <Cronet/Cronet.h>
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
-#import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
@@ -56,7 +58,7 @@
                  requestedResponseSize:(NSNumber *)responseSize {
   RMTStreamingOutputCallRequest *request = [self message];
   RMTResponseParameters *parameters = [RMTResponseParameters message];
-  parameters.size = responseSize.integerValue;
+  parameters.size = responseSize.intValue;
   [request.responseParametersArray addObject:parameters];
   request.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
   return request;
@@ -86,20 +88,36 @@
   return nil;
 }
 
+- (int32_t)encodingOverhead {
+  return 0;
+}
+
 - (void)setUp {
+  self.continueAfterFailure = NO;
+
+  [GRPCCall resetHostSettings];
+
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
+#ifdef GRPC_COMPILE_WITH_CRONET
+  if (cronetEngine == NULL) {
+    // Cronet setup
+    [Cronet setHttp2Enabled:YES];
+    [Cronet start];
+    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+  }
+#endif
 }
 
 - (void)testEmptyUnaryRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
 
-  RMTEmpty *request = [RMTEmpty message];
+  GPBEmpty *request = [GPBEmpty message];
 
-  [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+  [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
-    id expectedResponse = [RMTEmpty message];
+    id expectedResponse = [GPBEmpty message];
     XCTAssertEqualObjects(response, expectedResponse);
 
     [expectation fulfill];
@@ -125,6 +143,64 @@
     expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
     XCTAssertEqualObjects(response, expectedResponse);
 
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+- (void)test4MBResponsesAreAccepted {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"MaxResponseSize"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead; // 4MB - encoding overhead
+  request.responseSize = kPayloadSize;
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertEqual(response.payload.body.length, kPayloadSize);
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+- (void)testResponsesOverMaxSizeFailWithActionableMessage {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ResponseOverMaxSize"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  const int32_t kPayloadSize = 4 * 1024 * 1024 - self.encodingOverhead + 1; // 1B over max size
+  request.responseSize = kPayloadSize;
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    // TODO(jcanizales): Catch the error and rethrow it with an actionable message:
+    // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a higher limit.
+    // - If you're developing the server, consider using response streaming, or let clients filter
+    //   responses by setting a google.protobuf.FieldMask in the request:
+    //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
+    XCTAssertEqualObjects(error.localizedDescription, @"Max message size exceeded");
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+- (void)testResponsesOver4MBAreAcceptedIfOptedIn {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"HigherResponseSizeLimit"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  const size_t kPayloadSize = 5 * 1024 * 1024; // 5MB
+  request.responseSize = kPayloadSize;
+
+  [GRPCCall setResponseSizeLimit:6 * 1024 * 1024 forHost:self.class.host];
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertEqual(response.payload.body.length, kPayloadSize);
     [expectation fulfill];
   }];
 
@@ -173,7 +249,7 @@
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
   for (NSNumber *size in expectedSizes) {
     RMTResponseParameters *parameters = [RMTResponseParameters message];
-    parameters.size = [size integerValue];
+    parameters.size = [size intValue];
     [request.responseParametersArray addObject:parameters];
   }
 
@@ -245,6 +321,8 @@
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
+#ifndef GRPC_COMPILE_WITH_CRONET
+// TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
@@ -258,6 +336,7 @@
   }];
   [self waitForExpectationsWithTimeout:2 handler:nil];
 }
+#endif
 
 - (void)testCancelAfterBeginRPC {
   XCTAssertNotNil(self.class.host);
@@ -266,14 +345,21 @@
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
-  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
-                                                               handler:^(RMTStreamingInputCallResponse *response,
-                                                                         NSError *error) {
+  GRPCProtoCall *call =
+      [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
+                                                  handler:^(RMTStreamingInputCallResponse *response,
+                                                            NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
+  XCTAssertEqual(call.state, GRXWriterStateNotStarted);
+
   [call start];
+  XCTAssertEqual(call.state, GRXWriterStateStarted);
+
   [call cancel];
+  XCTAssertEqual(call.state, GRXWriterStateFinished);
+
   [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
@@ -291,7 +377,7 @@
 
   [requestsBuffer writeValue:request];
 
-  __block ProtoRPC *call =
+  __block GRPCProtoCall *call =
       [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
                                          eventHandler:^(BOOL done,
                                                         RMTStreamingOutputCallResponse *response,
@@ -310,6 +396,30 @@
   }];
   [call start];
   [self waitForExpectationsWithTimeout:8 handler:nil];
+}
+
+- (void)testRPCAfterClosingOpenConnections {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"RPC after closing connection"];
+
+  GPBEmpty *request = [GPBEmpty message];
+
+  [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
+    XCTAssertNil(error, @"First RPC finished with unexpected error: %@", error);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
+
+    [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
+      XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
+      [expectation fulfill];
+    }];
+  }];
+
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end

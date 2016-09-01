@@ -6,24 +6,25 @@ Background
 For this sample, we've already generated the server and client stubs from
 [helloworld.proto][] and we'll be using a specific reference platform.
 
-Prerequisites
--------------
 
-- Debian 8.2 "Jessie" platform with `root` access
-- `git`
-- `python2.7`
-- `pip`
-- Python development headers
+Install gRPC:
+```sh
+  $ pip install grpcio
+```
+Or, to install it system wide:
+```sh
+  $ sudo pip install grpcio
+```
 
-Set-up
--------
-  ```sh
-  $ # install the gRPC Core:
-  $ sudo apt-get install libgrpc-dev
-  $ # install gRPC Python:
-  $ sudo pip install -U grpcio==0.11.0b1
-  $ # Since this "hello, world" example uses protocol buffers:
-  $ sudo pip install -U protobuf==3.0.0a3
+If you're on Windows, make sure you installed the `pip.exe` component when you
+installed Python. Invoke as above but with `pip.exe` instead of `pip` (you may
+also need to invoke from a `cmd.exe` ran as administrator):
+```sh
+  $ pip.exe install grpcio
+```
+
+Download the example
+```sh
   $ # Clone the repository to get the example code:
   $ git clone https://github.com/grpc/grpc
   $ # Navigate to the "hello, world" Python example:

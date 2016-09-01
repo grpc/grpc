@@ -42,6 +42,8 @@ import abc
 import enum
 import threading  # pylint: disable=unused-import
 
+import six
+
 # abandonment is referenced from specification in this module.
 from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
 
@@ -95,7 +97,7 @@ class Outcome(object):
     REMOTE_FAILURE = 'remote failure'
 
 
-class Completion(object):
+class Completion(six.with_metaclass(abc.ABCMeta)):
   """An aggregate of the values exchanged upon operation completion.
 
   Attributes:
@@ -103,12 +105,10 @@ class Completion(object):
     code: A code value for the operation.
     message: A message value for the operation.
   """
-  __metaclass__ = abc.ABCMeta
 
 
-class OperationContext(object):
+class OperationContext(six.with_metaclass(abc.ABCMeta)):
   """Provides operation-related information and action."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def outcome(self):
@@ -162,9 +162,8 @@ class OperationContext(object):
     raise NotImplementedError()
 
 
-class Operator(object):
+class Operator(six.with_metaclass(abc.ABCMeta)):
   """An interface through which to participate in an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def advance(
@@ -184,9 +183,8 @@ class Operator(object):
     """
     raise NotImplementedError()
 
-class ProtocolReceiver(object):
+class ProtocolReceiver(six.with_metaclass(abc.ABCMeta)):
   """A means of receiving protocol values during an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def context(self, protocol_context):
@@ -198,7 +196,7 @@ class ProtocolReceiver(object):
     raise NotImplementedError()
 
 
-class Subscription(object):
+class Subscription(six.with_metaclass(abc.ABCMeta)):
   """Describes customer code's interest in values from the other side.
 
   Attributes:
@@ -216,7 +214,6 @@ class Subscription(object):
       become available during the operation. Must be non-None if kind is
       Kind.FULL.
   """
-  __metaclass__ = abc.ABCMeta
 
   @enum.unique
   class Kind(enum.Enum):
@@ -226,9 +223,8 @@ class Subscription(object):
     FULL = 'full'
 
 
-class Servicer(object):
+class Servicer(six.with_metaclass(abc.ABCMeta)):
   """Interface for service implementations."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, group, method, context, output_operator):
@@ -255,9 +251,8 @@ class Servicer(object):
     raise NotImplementedError()
 
 
-class End(object):
+class End(six.with_metaclass(abc.ABCMeta)):
   """Common type for entry-point objects on both sides of an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def start(self):

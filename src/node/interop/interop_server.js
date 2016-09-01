@@ -40,13 +40,10 @@ var AsyncDelayQueue = require('./async_delay_queue');
 var grpc = require('..');
 var testProto = grpc.load({
   root: __dirname + '/../../..',
-  file: 'test/proto/test.proto'}).grpc.testing;
+  file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
 var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
-
-var incompressible_data = fs.readFileSync(
-    __dirname + '/../../../test/cpp/interop/rnd.dat');
 
 /**
  * Create a buffer filled with size zeroes
@@ -88,15 +85,7 @@ function getEchoTrailer(call) {
 }
 
 function getPayload(payload_type, size) {
-  if (payload_type === 'RANDOM') {
-    payload_type = ['COMPRESSABLE',
-                    'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
-  }
-  var body;
-  switch (payload_type) {
-    case 'COMPRESSABLE': body = zeroBuffer(size); break;
-    case 'UNCOMPRESSABLE': incompressible_data.slice(size); break;
-  }
+  var body = zeroBuffer(size);
   return {type: payload_type, body: body};
 }
 

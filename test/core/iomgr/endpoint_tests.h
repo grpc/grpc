@@ -36,7 +36,7 @@
 
 #include <sys/types.h>
 
-#include "src/core/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 typedef struct grpc_endpoint_test_config grpc_endpoint_test_config;
 typedef struct grpc_endpoint_test_fixture grpc_endpoint_test_fixture;
@@ -53,6 +53,6 @@ struct grpc_endpoint_test_config {
 };
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config,
-                         grpc_pollset *pollset);
+                         grpc_pollset *pollset, gpr_mu *mu);
 
 #endif /* GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H */

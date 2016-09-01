@@ -41,7 +41,7 @@
    A minimal wrapper that should be implementable across many compilers,
    and implementable efficiently across most modern compilers.
 
-   Thread locals have type gpr_intptr.
+   Thread locals have type intptr_t.
 
    Declaring a thread local variable 'foo':
      GPR_TLS_DECL(foo);
@@ -74,4 +74,4 @@
 #include <grpc/support/tls_pthread.h>
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_TLS_H */

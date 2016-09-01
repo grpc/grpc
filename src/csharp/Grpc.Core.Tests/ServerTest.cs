@@ -54,6 +54,17 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void StartAndKillServer()
+        {
+            Server server = new Server
+            {
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+            };
+            server.Start();
+            server.KillAsync().Wait();
+        }
+
+        [Test]
         public void PickUnusedPort()
         {
             Server server = new Server
@@ -78,9 +89,24 @@ namespace Grpc.Core.Tests
             };
             server.Start();
             Assert.Throws(typeof(InvalidOperationException), () => server.Ports.Add("localhost", 9999, ServerCredentials.Insecure));
-            Assert.Throws(typeof(InvalidOperationException), () => server.Services.Add(ServerServiceDefinition.CreateBuilder("serviceName").Build()));
+            Assert.Throws(typeof(InvalidOperationException), () => server.Services.Add(ServerServiceDefinition.CreateBuilder().Build()));
 
             server.ShutdownAsync().Wait();
+        }
+
+        [Test]
+        public void UnstartedServerCanBeShutdown()
+        {
+            var server = new Server();
+            server.ShutdownAsync().Wait();
+            Assert.Throws(typeof(InvalidOperationException), () => server.Start());
+        }
+
+        [Test]
+        public void UnstartedServerDoesNotPreventShutdown()
+        {
+            // just create a server, don't start it, and make sure it doesn't prevent shutdown.
+            var server = new Server();
         }
     }
 }

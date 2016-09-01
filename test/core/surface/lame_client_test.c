@@ -36,24 +36,25 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/iomgr/closure.h"
-#include "src/core/surface/channel.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
 grpc_closure transport_op_cb;
 
-static void *tag(gpr_intptr x) { return (void *)x; }
+static void *tag(intptr_t x) { return (void *)x; }
 
-void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
   grpc_transport_op *op = arg;
-  GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE == *op->connectivity_state);
-  GPR_ASSERT(success);
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *op->connectivity_state);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
 }
 
-void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
+void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 void test_transport_op(grpc_channel *channel) {
   grpc_transport_op op;
@@ -104,7 +105,7 @@ int main(int argc, char **argv) {
 
   test_transport_op(chan);
 
-  GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE ==
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
              grpc_channel_check_connectivity_state(chan, 0));
 
   cq = grpc_completion_queue_create(NULL);
@@ -115,6 +116,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -133,6 +135,7 @@ int main(int argc, char **argv) {
   cq_expect_completion(cqv, tag(1), 0);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;

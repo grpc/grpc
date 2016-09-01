@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
 #include <stdarg.h>
 
@@ -76,7 +76,8 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
   for (i = 0; i < nslices; i++) {
     GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
-        parser, GPR_SLICE_START_PTR(slices[i]), GPR_SLICE_END_PTR(slices[i])));
+                   parser, GPR_SLICE_START_PTR(slices[i]),
+                   GPR_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
   }
 
   for (i = 0; i < nslices; i++) {

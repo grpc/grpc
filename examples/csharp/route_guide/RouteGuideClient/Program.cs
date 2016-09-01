@@ -43,9 +43,9 @@ namespace Routeguide
         /// </summary>
         public class RouteGuideClient
         {
-            readonly RouteGuide.IRouteGuideClient client;
+            readonly RouteGuide.RouteGuideClient client;
 
-            public RouteGuideClient(RouteGuide.IRouteGuideClient client)
+            public RouteGuideClient(RouteGuide.RouteGuideClient client)
             {
                 this.client = client;
             }
@@ -230,8 +230,8 @@ namespace Routeguide
 
         static void Main(string[] args)
         {
-            var channel = new Channel("127.0.0.1:50052", Credentials.Insecure);
-            var client = new RouteGuideClient(RouteGuide.NewClient(channel));
+            var channel = new Channel("127.0.0.1:50052", ChannelCredentials.Insecure);
+            var client = new RouteGuideClient(new RouteGuide.RouteGuideClient(channel));
 
             // Looking for a valid feature
             client.GetFeature(409146138, -746188906);

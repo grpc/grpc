@@ -1,0 +1,13 @@
+diff --git a/configure b/configure
+index 898730c..cfe6253 100755
+--- a/configure
++++ b/configure
+@@ -14695,7 +14695,7 @@ for ac_func in fmod killpg wait4 waitpid fork spawnv syscall __syscall chroot ge
+ 	      setsid telldir seekdir fchmod cosh sinh tanh log2 round\
+ 	      setuid setgid daemon select_large_fdset setenv unsetenv\
+               mktime timegm gmtime_r clock_gettime gettimeofday poll ppoll\
+-              pread sendfile shutdown sigaltstack dl_iterate_phdr
++              pread shutdown sigaltstack dl_iterate_phdr
+ do :
+   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"

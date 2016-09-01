@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,36 +43,28 @@ namespace Math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : Math.IMath
+    public class MathServiceImpl : Math.MathBase
     {
-        public Task<DivReply> Div(DivArgs request, ServerCallContext context)
+        public override Task<DivReply> Div(DivArgs request, ServerCallContext context)
         {
             return Task.FromResult(DivInternal(request));
         }
 
-        public async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream, ServerCallContext context)
+        public override async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream, ServerCallContext context)
         {
-            if (request.Limit <= 0)
-            {
-                // keep streaming the sequence until cancelled.
-                IEnumerator<Num> fibEnumerator = FibInternal(long.MaxValue).GetEnumerator();
-                while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
-                {
-                    await responseStream.WriteAsync(fibEnumerator.Current);
-                    await Task.Delay(100);
-                }
-            }
+            var limit = request.Limit > 0 ? request.Limit : long.MaxValue;
+            var fibEnumerator = FibInternal(limit).GetEnumerator();
 
-            if (request.Limit > 0)
+            // Keep streaming the sequence until the call is cancelled.
+            // Use CancellationToken from ServerCallContext to detect the cancellation.
+            while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
             {
-                foreach (var num in FibInternal(request.Limit))
-                {
-                    await responseStream.WriteAsync(num);
-                }
+                await responseStream.WriteAsync(fibEnumerator.Current);
+                await Task.Delay(100);
             }
         }
 
-        public async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
+        public override async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
         {
             long sum = 0;
             await requestStream.ForEachAsync(async num =>
@@ -82,13 +74,20 @@ namespace Math
             return new Num { Num_ = sum };
         }
 
-        public async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
+        public override async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
         {
             await requestStream.ForEachAsync(async divArgs => await responseStream.WriteAsync(DivInternal(divArgs)));
         }
 
         static DivReply DivInternal(DivArgs args)
         {
+            if (args.Divisor == 0)
+            {
+                // One can finish the RPC with non-ok status by throwing RpcException instance.
+                // Alternatively, resulting status can be set using ServerCallContext.Status
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Division by zero"));
+            }
+
             long quotient = args.Dividend / args.Divisor;
             long remainder = args.Dividend % args.Divisor;
             return new DivReply { Quotient = quotient, Remainder = remainder };

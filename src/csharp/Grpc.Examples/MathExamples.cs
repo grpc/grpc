@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,25 +32,26 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
 namespace Math
 {
     public static class MathExamples
     {
-        public static void DivExample(Math.IMathClient client)
+        public static void DivExample(Math.MathClient client)
         {
             DivReply result = client.Div(new DivArgs { Dividend = 10, Divisor = 3 });
             Console.WriteLine("Div Result: " + result);
         }
 
-        public static async Task DivAsyncExample(Math.IMathClient client)
+        public static async Task DivAsyncExample(Math.MathClient client)
         {
             DivReply result = await client.DivAsync(new DivArgs { Dividend = 4, Divisor = 5 });
             Console.WriteLine("DivAsync Result: " + result);
         }
 
-        public static async Task FibExample(Math.IMathClient client)
+        public static async Task FibExample(Math.MathClient client)
         {
             using (var call = client.Fib(new FibArgs { Limit = 5 }))
             {
@@ -59,7 +60,7 @@ namespace Math
             }
         }
 
-        public static async Task SumExample(Math.IMathClient client)
+        public static async Task SumExample(Math.MathClient client)
         {
             var numbers = new List<Num>
             {
@@ -75,7 +76,7 @@ namespace Math
             }
         }
 
-        public static async Task DivManyExample(Math.IMathClient client)
+        public static async Task DivManyExample(Math.MathClient client)
         {
             var divArgsList = new List<DivArgs>
             {
@@ -90,7 +91,7 @@ namespace Math
             }
         }
 
-        public static async Task DependendRequestsExample(Math.IMathClient client)
+        public static async Task DependendRequestsExample(Math.MathClient client)
         {
             var numbers = new List<Num>
             {
@@ -108,6 +109,43 @@ namespace Math
 
             DivReply result = await client.DivAsync(new DivArgs { Dividend = sum.Num_, Divisor = numbers.Count });
             Console.WriteLine("Avg Result: " + result);
+        }
+
+        /// <summary>
+        /// Shows how to handle a call ending with non-OK status.
+        /// </summary>
+        public static async Task HandleErrorExample(Math.MathClient client)
+        {
+            try
+            {
+                 DivReply result = await client.DivAsync(new DivArgs { Dividend = 5, Divisor = 0 });
+            }
+            catch (RpcException ex)
+            {
+                Console.WriteLine(string.Format("RPC ended with status {0}", ex.Status));
+            }
+        }
+
+        /// <summary>
+        /// Shows how to send request headers and how to access response headers
+        /// and response trailers.
+        /// </summary>
+        public static async Task MetadataExample(Math.MathClient client)
+        {
+            var requestHeaders = new Metadata
+            {
+                { "custom-header", "custom-value" }
+            };
+
+            var call = client.DivAsync(new DivArgs { Dividend = 5, Divisor = 0 }, requestHeaders);
+
+            // Get response headers
+            Metadata responseHeaders = await call.ResponseHeadersAsync;
+
+            var result = await call;
+
+            // Get response trailers after the call has finished.
+            Metadata responseTrailers = call.GetTrailers();
         }
     }
 }

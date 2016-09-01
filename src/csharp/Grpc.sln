@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.HealthCheck.Tests", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.IntegrationTesting.QpsWorker", "Grpc.IntegrationTesting.QpsWorker\Grpc.IntegrationTesting.QpsWorker.csproj", "{B82B7DFE-7F7B-40EF-B3D6-064FF2B01294}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.IntegrationTesting.StressClient", "Grpc.IntegrationTesting.StressClient\Grpc.IntegrationTesting.StressClient.csproj", "{ADEBA147-80AE-4710-82E9-5B7F93690266}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,12 @@ Global
 		{AA5E328A-8835-49D7-98ED-C29F2B3049F0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AA5E328A-8835-49D7-98ED-C29F2B3049F0}.ReleaseSigned|Any CPU.ActiveCfg = ReleaseSigned|Any CPU
 		{AA5E328A-8835-49D7-98ED-C29F2B3049F0}.ReleaseSigned|Any CPU.Build.0 = ReleaseSigned|Any CPU
+		{ADEBA147-80AE-4710-82E9-5B7F93690266}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADEBA147-80AE-4710-82E9-5B7F93690266}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADEBA147-80AE-4710-82E9-5B7F93690266}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADEBA147-80AE-4710-82E9-5B7F93690266}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADEBA147-80AE-4710-82E9-5B7F93690266}.ReleaseSigned|Any CPU.ActiveCfg = Release|Any CPU
+		{ADEBA147-80AE-4710-82E9-5B7F93690266}.ReleaseSigned|Any CPU.Build.0 = Release|Any CPU
 		{AE21D0EE-9A2C-4C15-AB7F-5224EED5B0EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AE21D0EE-9A2C-4C15-AB7F-5224EED5B0EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE21D0EE-9A2C-4C15-AB7F-5224EED5B0EA}.Release|Any CPU.ActiveCfg = Release|Any CPU

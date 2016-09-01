@@ -29,22 +29,26 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""Generates the appropriate build.json data for all the end2end tests."""
+"""Generates the appropriate build.json data for all the bad_client tests."""
 
 
 import collections
 import yaml
 
-TestOptions = collections.namedtuple('TestOptions', 'flaky')
-default_test_options = TestOptions(False)
+TestOptions = collections.namedtuple('TestOptions', 'flaky cpu_cost')
+default_test_options = TestOptions(False, 1.0)
 
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'badreq': default_test_options,
-    'connection_prefix': default_test_options,
-    'headers': default_test_options,
-    'initial_settings_frame': default_test_options,
+    'connection_prefix': default_test_options._replace(cpu_cost=0.2),
+    'headers': default_test_options._replace(cpu_cost=0.2),
+    'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
+    'head_of_line_blocking': default_test_options,
+    'large_metadata': default_test_options,
+    'server_registered_method': default_test_options,
     'simple_request': default_test_options,
+    'window_overflow': default_test_options,
     'unknown_frame': default_test_options,
 }
 
@@ -62,7 +66,7 @@ def main():
             'headers': [
               'test/core/bad_client/bad_client.h'
             ],
-            'vs_proj_dir': 'test',
+            'vs_proj_dir': 'test/bad_client',
             'deps': [
               'grpc_test_util_unsecure',
               'grpc_unsecure',
@@ -73,6 +77,7 @@ def main():
       'targets': [
           {
               'name': '%s_bad_client_test' % t,
+              'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
               'language': 'c',
               'secure': 'no',

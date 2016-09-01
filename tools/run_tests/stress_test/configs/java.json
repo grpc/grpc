@@ -1,0 +1,98 @@
+{
+  "dockerImages": {
+    "grpc_stress_java" : {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_java"
+    }
+  },
+
+  "clientTemplates": {
+    "baseTemplates": {
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
+        "pollIntervalSecs": 100,
+        "clientArgs": {
+          "num_channels_per_server":5,
+          "num_stubs_per_channel":10,
+          "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
+          "metrics_port": 8081
+        },
+        "metricsPort": 8081,
+        "metricsArgs": {
+          "metrics_server_address": "localhost:8081",
+          "total_only": "true",
+          "deadline_secs": 60
+        },
+        "env": {
+          "STRESSTEST_CLIENT_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m -XX:+UseConcMarkSweepGC"
+        }
+      }
+    },
+    "templates": {
+      "java_client": {
+        "baseTemplate": "default",
+        "stressClientCmd": [
+          "/var/local/git/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/stresstest-client"
+        ],
+        "metricsClientCmd": [
+          "/var/local/git/grpc/bins/opt/metrics_client"
+        ]
+      }
+    }
+  },
+
+  "serverTemplates": {
+    "baseTemplates":{
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_server.py",
+        "serverPort": 8080,
+        "serverArgs": {
+          "port": 8080,
+          "use_tls": "false"
+        },
+        "env": {
+          "TEST_SERVER_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m  -XX:+UseConcMarkSweepGC"
+        }
+      }
+    },
+    "templates": {
+      "java_server": {
+        "baseTemplate": "default",
+        "stressServerCmd": [
+          "/var/local/git/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/test-server"
+        ]
+      }
+    }
+  },
+
+  "testMatrix": {
+    "serverPodSpecs": {
+      "java-stress-server": {
+        "serverTemplate": "java_server",
+        "dockerImage": "grpc_stress_java",
+        "numInstances": 1
+      }
+    },
+
+    "clientPodSpecs": {
+      "java-stress-client": {
+        "clientTemplate": "java_client",
+        "dockerImage": "grpc_stress_java",
+        "numInstances": 10,
+        "serverPodSpec": "java-stress-server"
+      }
+    }
+  },
+
+  "globalSettings": {
+    "buildDockerImages": true,
+    "pollIntervalSecs": 100,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8008,
+    "datasetIdNamePrefix": "stress_test_java",
+    "summaryTableId": "summary",
+    "qpsTableId": "qps",
+    "podWarmupSecs": 60
+  }
+}
+

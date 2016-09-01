@@ -30,23 +30,99 @@
 """Provides distutils command classes for the GRPC Python setup process."""
 
 import distutils
+import glob
 import os
 import os.path
+import platform
 import re
+import shutil
 import subprocess
 import sys
+import traceback
 
 import setuptools
+from setuptools.command import build_ext
 from setuptools.command import build_py
+from setuptools.command import easy_install
+from setuptools.command import install
 from setuptools.command import test
+
+import support
+
+PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
+GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
+PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
+PROTO_GEN_STEM = os.path.join(GRPC_STEM, 'src', 'python', 'gens')
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
+napoleon_include_special_with_doc = True
 
 html_theme = 'sphinx_rtd_theme'
 """
+
+API_GLOSSARY = """
+
+Glossary
+================
+
+.. glossary::
+
+  metadatum
+    A key-value pair included in the HTTP header.  It is a 
+    2-tuple where the first entry is the key and the
+    second is the value, i.e. (key, value).  The metadata key is an ASCII str,
+    and must be a valid HTTP header name.  The metadata value can be
+    either a valid HTTP ASCII str, or bytes.  If bytes are provided,
+    the key must end with '-bin', i.e.
+    ``('binary-metadata-bin', b'\\x00\\xFF')``
+
+  metadata
+    A sequence of metadatum.
+"""
+
+
+class CommandError(Exception):
+  """Simple exception class for GRPC custom commands."""
+
+
+# TODO(atash): Remove this once PyPI has better Linux bdist support. See
+# https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
+def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
+  """Returns a string path to a bdist file for Linux to install.
+
+  If we can retrieve a pre-compiled bdist from online, uses it. Else, emits a
+  warning and builds from source.
+  """
+  # TODO(atash): somehow the name that's returned from `wheel` is different
+  # between different versions of 'wheel' (but from a compatibility standpoint,
+  # the names are compatible); we should have some way of determining name
+  # compatibility in the same way `wheel` does to avoid having to rename all of
+  # the custom wheels that we build/upload to GCS.
+
+  # Break import style to ensure that setup.py has had a chance to install the
+  # relevant package.
+  from six.moves.urllib import request
+  decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
+  try:
+    url = BINARIES_REPOSITORY + '/{target}'.format(target=decorated_path)
+    bdist_data = request.urlopen(url).read()
+  except IOError as error:
+    raise CommandError(
+        '{}\n\nCould not find the bdist {}: {}'
+            .format(traceback.format_exc(), decorated_path, error.message))
+  # Our chosen local bdist path.
+  bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT
+  try:
+    with open(bdist_path, 'w') as bdist_file:
+      bdist_file.write(bdist_data)
+  except IOError as error:
+    raise CommandError(
+        '{}\n\nCould not write grpcio bdist: {}'
+            .format(traceback.format_exc(), error.message))
+  return bdist_path
 
 
 class SphinxDocumentation(setuptools.Command):
@@ -67,8 +143,7 @@ class SphinxDocumentation(setuptools.Command):
     import sphinx
     import sphinx.apidoc
     metadata = self.distribution.metadata
-    src_dir = os.path.join(
-        os.getcwd(), self.distribution.package_dir[''], 'grpc')
+    src_dir = os.path.join(PYTHON_STEM, 'grpc')
     sys.path.append(src_dir)
     sphinx.apidoc.main([
         '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
@@ -77,54 +152,10 @@ class SphinxDocumentation(setuptools.Command):
     conf_filepath = os.path.join('doc', 'src', 'conf.py')
     with open(conf_filepath, 'a') as conf_file:
       conf_file.write(CONF_PY_ADDENDUM)
+    glossary_filepath = os.path.join('doc', 'src', 'grpc.rst')
+    with open(glossary_filepath, 'a') as glossary_filepath:
+      glossary_filepath.write(API_GLOSSARY)
     sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
-
-
-class BuildProtoModules(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
-
-  description = 'build protobuf modules'
-  user_options = [
-    ('include=', None, 'path patterns to include in protobuf generation'),
-    ('exclude=', None, 'path patterns to exclude from protobuf generation')
-  ]
-
-  def initialize_options(self):
-    self.exclude = None
-    self.include = r'.*\.proto$'
-    self.protoc_command = None
-    self.grpc_python_plugin_command = None
-
-  def finalize_options(self):
-    self.protoc_command = distutils.spawn.find_executable('protoc')
-    self.grpc_python_plugin_command = distutils.spawn.find_executable(
-        'grpc_python_plugin')
-
-  def run(self):
-    include_regex = re.compile(self.include)
-    exclude_regex = re.compile(self.exclude) if self.exclude else None
-    paths = []
-    root_directory = os.getcwd()
-    for walk_root, directories, filenames in os.walk(root_directory):
-      for filename in filenames:
-        path = os.path.join(walk_root, filename)
-        if include_regex.match(path) and not (
-            exclude_regex and exclude_regex.match(path)):
-          paths.append(path)
-    command = [
-        self.protoc_command,
-        '--plugin=protoc-gen-python-grpc={}'.format(
-            self.grpc_python_plugin_command),
-        '-I {}'.format(root_directory),
-        '--python_out={}'.format(root_directory),
-        '--python-grpc_out={}'.format(root_directory),
-    ] + paths
-    try:
-      subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
-                              stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-      raise Exception('Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
-          command, e.message, e.output))
 
 
 class BuildProjectMetadata(setuptools.Command):
@@ -140,7 +171,7 @@ class BuildProjectMetadata(setuptools.Command):
     pass
 
   def run(self):
-    with open('grpc/_grpcio_metadata.py', 'w') as module_file:
+    with open(os.path.join(PYTHON_STEM, 'grpc/_grpcio_metadata.py'), 'w') as module_file:
       module_file.write('__version__ = """{}"""'.format(
           self.distribution.get_version()))
 
@@ -149,9 +180,34 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
-    self.run_command('build_proto_modules')
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)
+
+
+class BuildExt(build_ext.build_ext):
+  """Custom build_ext command to enable compiler-specific flags."""
+
+  C_OPTIONS = {
+      'unix': ('-pthread', '-std=gnu99'),
+      'msvc': (),
+  }
+  LINK_OPTIONS = {}
+
+  def build_extensions(self):
+    compiler = self.compiler.compiler_type
+    if compiler in BuildExt.C_OPTIONS:
+      for extension in self.extensions:
+        extension.extra_compile_args += list(BuildExt.C_OPTIONS[compiler])
+    if compiler in BuildExt.LINK_OPTIONS:
+      for extension in self.extensions:
+        extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
+    try:
+      build_ext.build_ext.build_extensions(self)
+    except Exception as error:
+      formatted_exception = traceback.format_exc()
+      support.diagnose_build_ext_error(self, error, formatted_exception)
+      raise CommandError(
+          "Failed `build_ext` step:\n{}".format(formatted_exception))
 
 
 class Gather(setuptools.Command):
@@ -176,46 +232,3 @@ class Gather(setuptools.Command):
       self.distribution.fetch_build_eggs(self.distribution.install_requires)
     if self.test and self.distribution.tests_require:
       self.distribution.fetch_build_eggs(self.distribution.tests_require)
-
-
-class RunInterop(test.test):
-
-  description = 'run interop test client/server'
-  user_options = [
-    ('args=', 'a', 'pass-thru arguments for the client/server'),
-    ('client', 'c', 'flag indicating to run the client'),
-    ('server', 's', 'flag indicating to run the server')
-  ]
-
-  def initialize_options(self):
-    self.args = ''
-    self.client = False
-    self.server = False
-
-  def finalize_options(self):
-    if self.client and self.server:
-      raise DistutilsOptionError('you may only specify one of client or server')
-
-  def run(self):
-    if self.distribution.install_requires:
-      self.distribution.fetch_build_eggs(self.distribution.install_requires)
-    if self.distribution.tests_require:
-      self.distribution.fetch_build_eggs(self.distribution.tests_require)
-    if self.client:
-      self.run_client()
-    elif self.server:
-      self.run_server()
-
-  def run_server(self):
-    # We import here to ensure that our setuptools parent has had a chance to
-    # edit the Python system path.
-    from tests.interop import server
-    sys.argv[1:] = self.args.split()
-    server.serve()
-
-  def run_client(self):
-    # We import here to ensure that our setuptools parent has had a chance to
-    # edit the Python system path.
-    from tests.interop import client
-    sys.argv[1:] = self.args.split()
-    client.test_interoperability()

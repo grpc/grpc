@@ -37,8 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/surface/event_string.h"
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -46,6 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/event_string.h"
 
 #define ROOT_EXPECTATION 1000
 
@@ -110,7 +110,7 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
-  gpr_uint8 *cursor;
+  uint8_t *cursor;
   gpr_slice out;
 
   for (i = 0; i < nslices; i++) {
@@ -149,7 +149,8 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   grpc_byte_buffer *rbb;
   int res;
 
-  grpc_byte_buffer_reader_init(&reader, bb);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
+             "Couldn't init byte buffer reader");
   rbb = grpc_raw_byte_buffer_from_reader(&reader);
   res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
   grpc_byte_buffer_reader_destroy(&reader);
@@ -284,6 +285,6 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, int success) {
+void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
   add(v, GRPC_OP_COMPLETE, tag)->success = success;
 }

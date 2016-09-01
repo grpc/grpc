@@ -35,13 +35,13 @@
 import collections
 import yaml
 
-TestOptions = collections.namedtuple('TestOptions', 'flaky')
-default_test_options = TestOptions(False)
+TestOptions = collections.namedtuple('TestOptions', 'flaky cpu_cost')
+default_test_options = TestOptions(False, 1.0)
 
 # maps test names to options
 BAD_CLIENT_TESTS = {
-  'cert': default_test_options,
-  'alpn': default_test_options,
+    'cert': default_test_options._replace(cpu_cost=0.1),
+    'alpn': default_test_options._replace(cpu_cost=0.1),
 }
 
 def main():
@@ -52,8 +52,8 @@ def main():
               'name': 'bad_ssl_test_server',
               'build': 'private',
               'language': 'c',
-              'src': ['test/core/bad_ssl/server.c'],
-              'headers': ['test/core/bad_ssl/server.h'],
+              'src': ['test/core/bad_ssl/server_common.c'],
+              'headers': ['test/core/bad_ssl/server_common.h'],
               'vs_proj_dir': 'test',
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [
@@ -71,7 +71,7 @@ def main():
               'language': 'c',
               'run': False,
               'src': ['test/core/bad_ssl/servers/%s.c' % t],
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/bad_ssl',
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'bad_ssl_test_server',
@@ -84,6 +84,7 @@ def main():
       for t in sorted(BAD_CLIENT_TESTS.keys())] + [
           {
               'name': 'bad_ssl_%s_test' % t,
+              'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
               'language': 'c',
               'src': ['test/core/bad_ssl/bad_ssl_test.c'],

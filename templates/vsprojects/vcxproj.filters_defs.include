@@ -5,7 +5,7 @@
   def calc_to_filter(path):
     return '\\'.join(path.split('/')[:-1])
 %>\
-<%def name="get_repo_root(proj)">${'..\..\..' + ('\..' if proj.vs_proj_dir != '.' else '')}</%def>\
+<%def name="get_repo_root(proj)">${'$(SolutionDir)\..'}</%def>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="to_filter(path)">${calc_to_filter(path)}</%def>\
 <%def name="filter_to_guid(proj, filter)">${re.sub('(........)(....)(....)(....)', r'\1-\2-\3-\4-', hashlib.md5(''.join([filter, proj])).hexdigest())}</%def>\
@@ -21,6 +21,11 @@
       <Filter>${to_filter(src_name)}</Filter>
     </ClCompile>
     % endfor
+  </ItemGroup>
+  % endif
+  % if project.get('dll_def', None):
+  <ItemGroup>
+    <None Include="${get_repo_root(project)}\${to_windows_path(project.dll_def)}" />
   </ItemGroup>
   % endif
   % if project.get('public_headers',[]):

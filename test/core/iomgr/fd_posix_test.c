@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -49,9 +49,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
-static grpc_pollset g_pollset;
+static gpr_mu *g_mu;
+static grpc_pollset *g_pollset;
 
 /* buffer size used to send and receive data.
    1024 is the minimal value to set TCP send and receive buffer. */
@@ -64,17 +69,15 @@ static void create_test_socket(int port, int *socket_fd,
                                struct sockaddr_in *sin) {
   int fd;
   int one = 1;
-  int buf_size = BUF_SIZE;
+  int buffer_size_bytes = BUF_SIZE;
   int flags;
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  GPR_ASSERT(
-      setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size)) != -1);
-  GPR_ASSERT(
-      setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buf_size, sizeof(buf_size)) != -1);
+  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
@@ -84,7 +87,7 @@ static void create_test_socket(int port, int *socket_fd,
   sin->sin_family = AF_INET;
   sin->sin_addr.s_addr = htonl(0x7f000001);
   GPR_ASSERT(port >= 0 && port < 65536);
-  sin->sin_port = htons((gpr_uint16)port);
+  sin->sin_port = htons((uint16_t)port);
 }
 
 /* Dummy gRPC callback */
@@ -118,7 +121,7 @@ typedef struct {
 /* Called when an upload session can be safely shutdown.
    Close session FD and start to shutdown listen FD. */
 static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
-                                int success) {
+                                bool success) {
   session *se = arg;
   server *sv = se->sv;
   grpc_fd_orphan(exec_ctx, se->em_fd, NULL, NULL, "a");
@@ -129,14 +132,14 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
 
 /* Called when data become readable in a session. */
 static void session_read_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
-                            int success) {
+                            grpc_error *error) {
   session *se = arg;
-  int fd = se->em_fd->fd;
+  int fd = grpc_fd_wrapped_fd(se->em_fd);
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     session_shutdown_cb(exec_ctx, arg, 1);
     return;
   }
@@ -179,15 +182,16 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
 
   grpc_fd_orphan(exec_ctx, sv->em_fd, NULL, NULL, "b");
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   sv->done = 1;
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  gpr_mu_unlock(g_mu);
 }
 
 /* Called when a new TCP connection request arrives in the listening port. */
 static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
-                      int success) {
+                      grpc_error *error) {
   server *sv = arg;
   int fd;
   int flags;
@@ -196,12 +200,12 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   socklen_t slen = sizeof(ss);
   grpc_fd *listen_em_fd = sv->em_fd;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     listen_shutdown_cb(exec_ctx, arg, 1);
     return;
   }
 
-  fd = accept(listen_em_fd->fd, (struct sockaddr *)&ss, &slen);
+  fd = accept(grpc_fd_wrapped_fd(listen_em_fd), (struct sockaddr *)&ss, &slen);
   GPR_ASSERT(fd >= 0);
   GPR_ASSERT(fd < FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
@@ -209,7 +213,7 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   se = gpr_malloc(sizeof(*se));
   se->sv = sv;
   se->em_fd = grpc_fd_create(fd, "listener");
-  grpc_pollset_add_fd(exec_ctx, &g_pollset, se->em_fd);
+  grpc_pollset_add_fd(exec_ctx, g_pollset, se->em_fd);
   se->session_read_closure.cb = session_read_cb;
   se->session_read_closure.cb_arg = se;
   grpc_fd_notify_on_read(exec_ctx, se->em_fd, &se->session_read_closure);
@@ -238,7 +242,7 @@ static int server_start(grpc_exec_ctx *exec_ctx, server *sv) {
   GPR_ASSERT(listen(fd, MAX_NUM_FD) == 0);
 
   sv->em_fd = grpc_fd_create(fd, "server");
-  grpc_pollset_add_fd(exec_ctx, &g_pollset, sv->em_fd);
+  grpc_pollset_add_fd(exec_ctx, g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
   sv->listen_closure.cb = listen_cb;
   sv->listen_closure.cb_arg = sv;
@@ -249,18 +253,20 @@ static int server_start(grpc_exec_ctx *exec_ctx, server *sv) {
 
 /* Wait and shutdown a sever. */
 static void server_wait_and_shutdown(server *sv) {
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   while (!sv->done) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    grpc_pollset_worker *worker = NULL;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 }
 
 /* ===An upload client to test notify_on_write=== */
@@ -296,20 +302,21 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
   client *cl = arg;
   grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, "c");
   cl->done = 1;
-  grpc_pollset_kick(&g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
 }
 
 /* Write as much as possible, then register notify_on_write. */
 static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
-                                 int success) {
+                                 grpc_error *error) {
   client *cl = arg;
-  int fd = cl->em_fd->fd;
+  int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
-  if (!success) {
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  if (error != GRPC_ERROR_NONE) {
+    gpr_mu_lock(g_mu);
     client_session_shutdown_cb(exec_ctx, arg, 1);
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_unlock(g_mu);
     return;
   }
 
@@ -319,7 +326,7 @@ static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
   } while (write_once > 0);
 
   if (errno == EAGAIN) {
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_lock(g_mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
       cl->write_closure.cb = client_session_write;
       cl->write_closure.cb_arg = cl;
@@ -328,7 +335,7 @@ static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
     } else {
       client_session_shutdown_cb(exec_ctx, arg, 1);
     }
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_unlock(g_mu);
   } else {
     gpr_log(GPR_ERROR, "unknown errno %s", strerror(errno));
     abort();
@@ -357,25 +364,27 @@ static void client_start(grpc_exec_ctx *exec_ctx, client *cl, int port) {
   }
 
   cl->em_fd = grpc_fd_create(fd, "client");
-  grpc_pollset_add_fd(exec_ctx, &g_pollset, cl->em_fd);
+  grpc_pollset_add_fd(exec_ctx, g_pollset, cl->em_fd);
 
-  client_session_write(exec_ctx, cl, 1);
+  client_session_write(exec_ctx, cl, GRPC_ERROR_NONE);
 }
 
 /* Wait for the signal to shutdown a client. */
 static void client_wait_and_shutdown(client *cl) {
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   while (!cl->done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 }
 
 /* Test grpc_fd. Start an upload server and client, upload a stream of
@@ -395,11 +404,11 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   GPR_ASSERT(sv.read_bytes_total == cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %d", sv.read_bytes_total);
+  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
 }
 
 typedef struct fd_change_data {
-  void (*cb_that_ran)(grpc_exec_ctx *exec_ctx, void *, int success);
+  grpc_iomgr_cb_func cb_that_ran;
 } fd_change_data;
 
 void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
@@ -407,23 +416,27 @@ void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
 void destroy_change_data(fd_change_data *fdc) {}
 
 static void first_read_callback(grpc_exec_ctx *exec_ctx,
-                                void *arg /* fd_change_data */, int success) {
+                                void *arg /* fd_change_data */,
+                                grpc_error *error) {
   fd_change_data *fdc = arg;
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   fdc->cb_that_ran = first_read_callback;
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  gpr_mu_unlock(g_mu);
 }
 
 static void second_read_callback(grpc_exec_ctx *exec_ctx,
-                                 void *arg /* fd_change_data */, int success) {
+                                 void *arg /* fd_change_data */,
+                                 grpc_error *error) {
   fd_change_data *fdc = arg;
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   fdc->cb_that_ran = second_read_callback;
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  gpr_mu_unlock(g_mu);
 }
 
 /* Test that changing the callback we use for notify_on_read actually works.
@@ -456,7 +469,7 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
   em_fd = grpc_fd_create(sv[0], "test_grpc_fd_change");
-  grpc_pollset_add_fd(&exec_ctx, &g_pollset, em_fd);
+  grpc_pollset_add_fd(&exec_ctx, g_pollset, em_fd);
 
   /* Register the first callback, then make its FD readable */
   grpc_fd_notify_on_read(&exec_ctx, em_fd, &first_closure);
@@ -465,18 +478,20 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(result == 1);
 
   /* And now wait for it to run. */
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   while (a.cb_that_ran == NULL) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    grpc_pollset_worker *worker = NULL;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(a.cb_that_ran == first_read_callback);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 
   /* And drain the socket so we can generate a new read edge */
   result = read(sv[0], &data, 1);
@@ -489,19 +504,21 @@ static void test_grpc_fd_change(void) {
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   while (b.cb_that_ran == NULL) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    grpc_pollset_worker *worker = NULL;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_lock(g_mu);
   }
   /* Except now we verify that second_read_callback ran instead */
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 
   grpc_fd_orphan(&exec_ctx, em_fd, NULL, NULL, "d");
   grpc_exec_ctx_finish(&exec_ctx);
@@ -510,7 +527,8 @@ static void test_grpc_fd_change(void) {
   close(sv[1]);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 
@@ -519,12 +537,14 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
-  grpc_pollset_init(&g_pollset);
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(g_pollset);
   grpc_iomgr_shutdown();
   return 0;
 }

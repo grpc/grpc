@@ -45,7 +45,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  NSString * const kRemoteHost = @"grpc-test.sandbox.google.com";
+  NSString * const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 
   RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
   request.responseSize = 10;
@@ -66,9 +66,9 @@
 
   // Same example call using the generic gRPC client library:
 
-  ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:@"grpc.testing"
-                                                     service:@"TestService"
-                                                      method:@"UnaryCall"];
+  GRPCProtoMethod *method = [[GRPCProtoMethod alloc] initWithPackage:@"grpc.testing"
+                                                             service:@"TestService"
+                                                              method:@"UnaryCall"];
 
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 

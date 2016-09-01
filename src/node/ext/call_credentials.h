@@ -34,8 +34,11 @@
 #ifndef GRPC_NODE_CALL_CREDENTIALS_H_
 #define GRPC_NODE_CALL_CREDENTIALS_H_
 
+#include <list>
+
 #include <node.h>
 #include <nan.h>
+#include <uv.h>
 #include "grpc/grpc_security.h"
 
 namespace grpc {
@@ -73,16 +76,19 @@ class CallCredentials : public Nan::ObjectWrap {
 
 /* Auth metadata plugin functionality */
 
-typedef struct plugin_state {
-  Nan::Callback *callback;
-} plugin_state;
-
 typedef struct plugin_callback_data {
-  plugin_state *state;
   const char *service_url;
   grpc_credentials_plugin_metadata_cb cb;
   void *user_data;
 } plugin_callback_data;
+
+typedef struct plugin_state {
+  Nan::Callback *callback;
+  std::list<plugin_callback_data*> *pending_callbacks;
+  uv_mutex_t plugin_mutex;
+  // async.data == this
+  uv_async_t plugin_async;
+} plugin_state;
 
 void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,

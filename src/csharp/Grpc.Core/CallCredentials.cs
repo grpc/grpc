@@ -87,7 +87,7 @@ namespace Grpc.Core
         /// <param name="interceptor">authentication interceptor</param>
         public MetadataCredentials(AsyncAuthInterceptor interceptor)
         {
-            this.interceptor = Preconditions.CheckNotNull(interceptor);
+            this.interceptor = GrpcPreconditions.CheckNotNull(interceptor);
         }
 
         internal override CallCredentialsSafeHandle ToNativeCredentials()
@@ -111,7 +111,7 @@ namespace Grpc.Core
         /// <param name="credentials">credentials to compose</param>
         public CompositeCallCredentials(params CallCredentials[] credentials)
         {
-            Preconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
+            GrpcPreconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
             this.credentials = new List<CallCredentials>(credentials);
         }
 
