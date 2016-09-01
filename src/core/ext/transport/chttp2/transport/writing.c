@@ -205,14 +205,14 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                          0, announced, &throwaway_stats));
   }
 
-  GPR_TIMER_END("grpc_chttp2_unlocking_check_writes", 0);
+  GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
   return t->outbuf.count > 0;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_error *error) {
-  GPR_TIMER_BEGIN("grpc_chttp2_cleanup_writing", 0);
+  GPR_TIMER_BEGIN("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream *s;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
@@ -237,5 +237,5 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   gpr_slice_buffer_reset_and_unref(&t->outbuf);
   GRPC_ERROR_UNREF(error);
-  GPR_TIMER_END("grpc_chttp2_cleanup_writing", 0);
+  GPR_TIMER_END("grpc_chttp2_end_write", 0);
 }
