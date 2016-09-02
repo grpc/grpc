@@ -1090,9 +1090,14 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
 static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
+  grpc_error *error = bctl->error;
+  if (bctl->recv_final_op) {
+    GRPC_ERROR_UNREF(error);
+    error = GRPC_ERROR_NONE;
+  }
   if (bctl->is_notify_tag_closure) {
     /* unrefs bctl->error */
-    grpc_closure_run(exec_ctx, bctl->notify_tag, bctl->error);
+    grpc_closure_run(exec_ctx, bctl->notify_tag, error);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (uint8_t)(bctl->call->used_batches &
@@ -1101,7 +1106,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
     /* unrefs bctl->error */
-    grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, bctl->error,
+    grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, error,
                    finish_batch_completion, bctl, &bctl->cq_completion);
   }
 }
@@ -1273,7 +1278,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&call->mu);
 
-    add_batch_error(bctl, GRPC_ERROR_REF(error));
+  add_batch_error(bctl, GRPC_ERROR_REF(error));
   if (error == GRPC_ERROR_NONE) {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1367,7 +1372,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
-    add_batch_error(bctl, GRPC_ERROR_REF(error));
+  add_batch_error(bctl, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
