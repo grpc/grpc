@@ -88,22 +88,23 @@ GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
                  '..', '..', '..'))
 
-GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'tools/distrib/python/grpcio_tools')
+GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'tools', 'distrib',
+                                'python', 'grpcio_tools')
 
-GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT = 'third_party/protobuf/src'
+GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT = os.path.join('third_party', 'protobuf', 'src')
 GRPC_PROTOBUF = os.path.join(GRPC_ROOT, GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT)
-GRPC_PROTOC_PLUGINS = os.path.join(GRPC_ROOT, 'src/compiler')
-GRPC_PYTHON_PROTOBUF = os.path.join(GRPC_PYTHON_ROOT,
-                                    'third_party/protobuf/src')
-GRPC_PYTHON_PROTOC_PLUGINS = os.path.join(GRPC_PYTHON_ROOT,
-                                          'grpc_root/src/compiler')
+GRPC_PROTOC_PLUGINS = os.path.join(GRPC_ROOT, 'src', 'compiler')
+GRPC_PYTHON_PROTOBUF = os.path.join(GRPC_PYTHON_ROOT, 'third_party', 'protobuf',
+                                    'src')
+GRPC_PYTHON_PROTOC_PLUGINS = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root', 'src',
+                                          'compiler')
 GRPC_PYTHON_PROTOC_LIB_DEPS = os.path.join(GRPC_PYTHON_ROOT,
                                            'protoc_lib_deps.py')
 
 GRPC_INCLUDE = os.path.join(GRPC_ROOT, 'include')
-GRPC_PYTHON_INCLUDE = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root/include')
+GRPC_PYTHON_INCLUDE = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root', 'include')
 
-BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools/distrib/python/bazel_deps.sh')
+BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools', 'distrib', 'python', 'bazel_deps.sh')
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
 BAZEL_DEPS_COMMON_PROTOS_QUERY = '//:well_known_protos'
 
@@ -136,64 +137,6 @@ def long_path(path):
   else:
     return path
 
-def atomic_file_copy(src, dst):
-  """Based on the lock-free-whack-a-mole algorithm, depending on filesystem
-     renaming being atomic. Described at http://stackoverflow.com/a/28090883.
-  """
-  try:
-    if filecmp.cmp(src, dst):
-      return
-  except:
-    pass
-  dst_dir = os.path.abspath(os.path.dirname(dst))
-  dst_base = os.path.basename(dst)
-  this_id = str(uuid.uuid4()).replace('.', '-')
-  temporary_file = os.path.join(dst_dir, '{}.{}.tmp'.format(dst_base, this_id))
-  mole_file = os.path.join(dst_dir, '{}.{}.mole.tmp'.format(dst_base, this_id))
-  mole_pattern = os.path.join(dst_dir, '{}.*.mole.tmp'.format(dst_base))
-  src = long_path(src)
-  dst = long_path(dst)
-  temporary_file = long_path(temporary_file)
-  mole_file = long_path(mole_file)
-  mole_pattern = long_path(mole_pattern)
-  shutil.copy2(src, temporary_file)
-  try:
-    os.rename(temporary_file, mole_file)
-  except:
-    print('Error moving temporary file {} to {}'.format(temporary_file, mole_file), file=sys.stderr)
-    print('while trying to copy file {} to {}'.format(src, dst), file=sys.stderr)
-    raise
-  for other_file in glob.glob(mole_pattern):
-    other_id = other_file.split('.')[-3]
-    if this_id == other_id:
-      pass
-    elif this_id < other_id:
-      try:
-        os.remove(other_file)
-      except:
-        pass
-    else:
-      try:
-        os.remove(mole_file)
-      except:
-        pass
-      this_id = other_id
-      mole_file = other_file
-  try:
-    if filecmp.cmp(src, dst):
-      try:
-        os.remove(mole_file)
-      except:
-        pass
-      return
-  except:
-    pass
-  try:
-    os.rename(mole_file, dst)
-  except:
-    pass
-
-
 def main():
   os.chdir(GRPC_ROOT)
 
@@ -211,7 +154,7 @@ def main():
       for relative_file in files:
         source_file = os.path.abspath(os.path.join(source_dir, relative_file))
         target_file = os.path.abspath(os.path.join(target_dir, relative_file))
-        atomic_file_copy(source_file, target_file)
+        shutil.copyfile(source_file, target_file)
 
   try:
     protoc_lib_deps_content = get_deps()

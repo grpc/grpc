@@ -102,7 +102,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
                                         f.cq, tag(2));
 
   /* and now the watch should trigger */
-  cq_expect_completion(cqv, tag(2), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
@@ -112,7 +112,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_CONNECTING,
                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3),
                                         f.cq, tag(3));
-  cq_expect_completion(cqv, tag(3), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
@@ -130,7 +130,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(4));
-    cq_expect_completion(cqv, tag(4), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -148,8 +148,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
 
-  cq_expect_completion(cqv, tag(5), 1);
-  cq_expect_completion(cqv, tag(0xdead), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(5), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||

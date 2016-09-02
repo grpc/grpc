@@ -4443,6 +4443,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -4563,7 +4564,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -5531,6 +5531,7 @@
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
       "test/core/end2end/tests/network_status_change.c", 
+      "test/core/end2end/tests/no_logging.c", 
       "test/core/end2end/tests/no_op.c", 
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
@@ -5593,6 +5594,7 @@
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
       "test/core/end2end/tests/network_status_change.c", 
+      "test/core/end2end/tests/no_logging.c", 
       "test/core/end2end/tests/no_op.c", 
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
@@ -5625,6 +5627,7 @@
       "src/core/ext/census/census_interface.h", 
       "src/core/ext/census/census_rpc_stats.h", 
       "src/core/ext/census/gen/census.pb.h", 
+      "src/core/ext/census/gen/trace_context.pb.h", 
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
@@ -5642,6 +5645,8 @@
       "src/core/ext/census/context.c", 
       "src/core/ext/census/gen/census.pb.c", 
       "src/core/ext/census/gen/census.pb.h", 
+      "src/core/ext/census/gen/trace_context.pb.c", 
+      "src/core/ext/census/gen/trace_context.pb.h", 
       "src/core/ext/census/grpc_context.c", 
       "src/core/ext/census/grpc_filter.c", 
       "src/core/ext/census/grpc_filter.h", 
@@ -5848,6 +5853,7 @@
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
+      "include/grpc/grpc_security_constants.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -5939,6 +5945,7 @@
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
+      "include/grpc/grpc_security_constants.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
@@ -6123,7 +6130,6 @@
     "headers": [
       "src/core/ext/client_config/client_channel.h", 
       "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/client_config.h", 
       "src/core/ext/client_config/connector.h", 
       "src/core/ext/client_config/initial_connect_string.h", 
       "src/core/ext/client_config/lb_policy.h", 
@@ -6133,8 +6139,8 @@
       "src/core/ext/client_config/resolver.h", 
       "src/core/ext/client_config/resolver_factory.h", 
       "src/core/ext/client_config/resolver_registry.h", 
+      "src/core/ext/client_config/resolver_result.h", 
       "src/core/ext/client_config/subchannel.h", 
-      "src/core/ext/client_config/subchannel_call_holder.h", 
       "src/core/ext/client_config/subchannel_index.h", 
       "src/core/ext/client_config/uri_parser.h"
     ], 
@@ -6146,8 +6152,6 @@
       "src/core/ext/client_config/client_channel.h", 
       "src/core/ext/client_config/client_channel_factory.c", 
       "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/client_config.c", 
-      "src/core/ext/client_config/client_config.h", 
       "src/core/ext/client_config/client_config_plugin.c", 
       "src/core/ext/client_config/connector.c", 
       "src/core/ext/client_config/connector.h", 
@@ -6168,10 +6172,10 @@
       "src/core/ext/client_config/resolver_factory.h", 
       "src/core/ext/client_config/resolver_registry.c", 
       "src/core/ext/client_config/resolver_registry.h", 
+      "src/core/ext/client_config/resolver_result.c", 
+      "src/core/ext/client_config/resolver_result.h", 
       "src/core/ext/client_config/subchannel.c", 
       "src/core/ext/client_config/subchannel.h", 
-      "src/core/ext/client_config/subchannel_call_holder.c", 
-      "src/core/ext/client_config/subchannel_call_holder.h", 
       "src/core/ext/client_config/subchannel_index.c", 
       "src/core/ext/client_config/subchannel_index.h", 
       "src/core/ext/client_config/uri_parser.c", 
@@ -6321,7 +6325,6 @@
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/security/context/security_context.h", 
       "src/core/lib/security/credentials/composite/composite_credentials.h", 
       "src/core/lib/security/credentials/credentials.h", 
@@ -6346,7 +6349,6 @@
     "name": "grpc_secure", 
     "src": [
       "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
       "src/core/lib/security/context/security_context.c", 
       "src/core/lib/security/context/security_context.h", 
@@ -6667,8 +6669,9 @@
   }, 
   {
     "deps": [
-      "grpc", 
-      "grpc++_codegen_base"
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 

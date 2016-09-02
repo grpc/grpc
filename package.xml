@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-08-09</date>
+ <date>2016-08-22</date>
  <time>16:06:07</time>
  <version>
-  <release>1.1.0</release>
-  <api>1.1.0</api>
+  <release>1.1.0dev</release>
+  <api>1.1.0dev</api>
  </version>
  <stability>
   <release>stable</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- Fixed Ubuntu compile error #7571, #7642
+- Reject metadata keys which are not legal #7881
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -156,6 +156,7 @@
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer_reader.h" role="src" />
@@ -179,7 +180,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
@@ -309,7 +309,6 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
@@ -319,8 +318,8 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
@@ -337,6 +336,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
@@ -487,7 +487,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/channel_connectivity.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_config_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/default_initial_connect_string.c" role="src" />
@@ -499,8 +498,8 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
@@ -522,6 +521,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />
@@ -1156,6 +1156,36 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Fixed Ubuntu compile error #7571, #7642
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0</release>
+    <api>1.0.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-08-18</date>
+   <license>BSD</license>
+   <notes>
+- gRPC 1.0.0 release
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0dev</release>
+    <api>1.1.0dev</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-08-22</date>
+   <license>BSD</license>
+   <notes>
+- Reject metadata keys which are not legal #7881
    </notes>
   </release>
  </changelog>
