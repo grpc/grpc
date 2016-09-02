@@ -173,8 +173,8 @@ int main(int argc, char **argv) {
   set_resolve_port(port1);
 
   /* first call should now start */
-  cq_expect_completion(cqv, tag(0x101), 1);
-  cq_expect_completion(cqv, tag(0x301), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x301), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(GRPC_CHANNEL_READY ==
@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
    * we should see a connectivity change and then nothing */
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
-  cq_expect_completion(cqv, tag(0x9999), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x9999), 1);
   cq_verify(cqv);
   cq_verify_empty(cqv);
 
@@ -248,8 +248,8 @@ int main(int argc, char **argv) {
                                       &request_metadata2, cq, cq, tag(0x401)));
 
   /* second call should now start */
-  cq_expect_completion(cqv, tag(0x201), 1);
-  cq_expect_completion(cqv, tag(0x401), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x201), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x401), 1);
   cq_verify(cqv);
 
   /* listen for close on the server call to probe for finishing */
@@ -271,12 +271,12 @@ int main(int argc, char **argv) {
   grpc_call_cancel(call2, NULL);
 
   /* now everything else should finish */
-  cq_expect_completion(cqv, tag(0x102), 1);
-  cq_expect_completion(cqv, tag(0x202), 1);
-  cq_expect_completion(cqv, tag(0x302), 1);
-  cq_expect_completion(cqv, tag(0x402), 1);
-  cq_expect_completion(cqv, tag(0xdead1), 1);
-  cq_expect_completion(cqv, tag(0xdead2), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x202), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x302), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0x402), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead2), 1);
   cq_verify(cqv);
 
   grpc_call_destroy(call1);

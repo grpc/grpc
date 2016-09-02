@@ -191,6 +191,9 @@ extern grpc_shutdown_type grpc_shutdown_import;
 typedef const char *(*grpc_version_string_type)(void);
 extern grpc_version_string_type grpc_version_string_import;
 #define grpc_version_string grpc_version_string_import
+typedef const char *(*grpc_g_stands_for_type)(void);
+extern grpc_g_stands_for_type grpc_g_stands_for_import;
+#define grpc_g_stands_for grpc_g_stands_for_import
 typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(void *reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import

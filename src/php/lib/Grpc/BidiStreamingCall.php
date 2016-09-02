@@ -45,7 +45,7 @@ class BidiStreamingCall extends AbstractCall
      *
      * @param array $metadata Metadata to send with the call, if applicable
      */
-    public function start($metadata = [])
+    public function start(array $metadata = [])
     {
         $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,
@@ -55,7 +55,7 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Reads the next value from the server.
      *
-     * @return The next value from the server, or null if there is none
+     * @return mixed The next value from the server, or null if there is none
      */
     public function read()
     {
@@ -82,7 +82,7 @@ class BidiStreamingCall extends AbstractCall
     public function write($data, $options = [])
     {
         $message_array = ['message' => $data->serialize()];
-        if (isset($options['flags'])) {
+        if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
         $this->call->startBatch([
@@ -103,8 +103,8 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Wait for the server to send the status, and return it.
      *
-     * @return object The status object, with integer $code, string $details,
-     *                and array $metadata members
+     * @return \stdClass The status object, with integer $code, string $details,
+     *                   and array $metadata members
      */
     public function getStatus()
     {

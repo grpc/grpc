@@ -121,7 +121,7 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
@@ -148,7 +148,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
@@ -171,7 +171,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   op.reserved = NULL;
   error = grpc_call_start_batch(s, &op, 1, tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(102), 0);  // Operation fails.
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 0);  // Operation fails.
   cq_verify(cqv);
 
   gpr_free((char *)meta.value);

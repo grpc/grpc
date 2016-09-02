@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
-  cq_expect_completion(cqv, tag(1), 0);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 0);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
-  cq_expect_completion(cqv, tag(2), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   cq_verify(cqv);
 
   peer = grpc_call_get_peer(call);
