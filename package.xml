@@ -320,7 +320,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
@@ -501,7 +500,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />

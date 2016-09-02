@@ -235,6 +235,9 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       gpr_log(GPR_DEBUG, "C:%p finish old_state=%" PRIdPTR, lock, old_state));
   lock->time_to_execute_final_list = false;
   switch (old_state) {
+    default:
+      // we have multiple queued work items: just continue executing them
+      break;
     case 5:  // we're down to one queued item: if it's the final list we
     case 4:  // should do that
       if (!grpc_closure_list_empty(lock->final_list)) {
