@@ -261,13 +261,10 @@ grpc_call *grpc_call_create(
       &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
       server_transport_data, CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
-    intptr_t status;
-    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status))
-      status = GRPC_STATUS_UNKNOWN;
-    const char *error_str =
-        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
-    close_with_status(&exec_ctx, call, (grpc_status_code)status,
-                      error_str == NULL ? "unknown error" : error_str);
+    grpc_status_code status;
+    const char *error_str;
+    grpc_error_get_status(error, &status, &error_str);
+    close_with_status(&exec_ctx, call, status, error_str);
     GRPC_ERROR_UNREF(error);
   }
   if (cq != NULL) {
@@ -440,20 +437,11 @@ static void set_status_details(grpc_call *call, status_source source,
 
 static void set_status_from_error(grpc_call *call, status_source source,
                                   grpc_error *error) {
-  intptr_t status;
-  if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status)) {
-    set_status_code(call, source, (uint32_t)status);
-  } else {
-    set_status_code(call, source, GRPC_STATUS_INTERNAL);
-  }
-  const char *msg = grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE);
-  bool free_msg = false;
-  if (msg == NULL) {
-    free_msg = true;
-    msg = grpc_error_string(error);
-  }
+  grpc_status_code status;
+  const char* msg;
+  grpc_error_get_status(error, &status, &msg);
+  set_status_code(call, source, (uint32_t)status);
   set_status_details(call, source, grpc_mdstr_from_string(msg));
-  if (free_msg) grpc_error_free_string(msg);
 }
 
 static void set_incoming_compression_algorithm(
@@ -1256,12 +1244,16 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *child_call;
   grpc_call *next_child_call;
 
+const char* msg = grpc_error_string(error);
+gpr_log(GPR_INFO, "==> finish_batch(): is_client=%d, error=%s", call->is_client, msg);
+grpc_error_free_string(msg);
+
   GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&call->mu);
   if (bctl->send_initial_metadata) {
     if (error != GRPC_ERROR_NONE) {
-      set_status_code(call, STATUS_FROM_CORE, GRPC_STATUS_UNAVAILABLE);
+      set_status_from_error(call, STATUS_FROM_CORE, error);
     }
     grpc_metadata_batch_destroy(
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
