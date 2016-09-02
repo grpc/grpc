@@ -119,6 +119,8 @@ extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_delayed_request_pre_init(void);
 extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
+extern void simple_metadata_2(grpc_end2end_test_config config);
+extern void simple_metadata_2_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
@@ -167,6 +169,7 @@ void grpc_end2end_tests_pre_init(void) {
   shutdown_finishes_tags_pre_init();
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
+  simple_metadata_2_pre_init();
   simple_request_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
@@ -217,6 +220,7 @@ void grpc_end2end_tests(int argc, char **argv,
     shutdown_finishes_tags(config);
     simple_delayed_request(config);
     simple_metadata(config);
+    simple_metadata_2(config);
     simple_request(config);
     streaming_error_response(config);
     trailing_metadata(config);
@@ -374,6 +378,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("simple_metadata", argv[i])) {
       simple_metadata(config);
+      continue;
+    }
+    if (0 == strcmp("simple_metadata_2", argv[i])) {
+      simple_metadata_2(config);
       continue;
     }
     if (0 == strcmp("simple_request", argv[i])) {
