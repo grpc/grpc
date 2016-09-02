@@ -163,7 +163,7 @@ static void test_invoke_request_with_flags(
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {
-    cq_expect_completion(cqv, tag(1), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     cq_verify(cqv);
   }
 

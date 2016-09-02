@@ -320,7 +320,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
@@ -337,6 +336,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
@@ -500,7 +500,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
@@ -522,6 +521,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />

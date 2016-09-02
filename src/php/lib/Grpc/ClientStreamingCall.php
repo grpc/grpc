@@ -60,10 +60,10 @@ class ClientStreamingCall extends AbstractCall
      * @param array      $options an array of options, possible keys:
      *                            'flags' => a number
      */
-    public function write($data, $options = [])
+    public function write($data, array $options = [])
     {
         $message_array = ['message' => $data->serialize()];
-        if (isset($options['flags'])) {
+        if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
         $this->call->startBatch([
@@ -74,7 +74,7 @@ class ClientStreamingCall extends AbstractCall
     /**
      * Wait for the server to respond with data and a status.
      *
-     * @return [response data, status]
+     * @return array [response data, status]
      */
     public function wait()
     {
