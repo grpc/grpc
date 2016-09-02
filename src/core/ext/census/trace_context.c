@@ -59,9 +59,9 @@ bool encode_trace_context(google_trace_TraceContext *ctxt,
 }
 
 bool decode_trace_context(google_trace_TraceContext *ctxt,
-                          uint8_t *buffer, size_t msg_length) {
-  // Create a stream that reads from the buffer.
-  pb_istream_t stream = pb_istream_from_buffer(buffer, msg_length);
+                          uint8_t *buffer, size_t nbytes) {
+  // Create a stream that reads nbytes from the buffer.
+  pb_istream_t stream = pb_istream_from_buffer(buffer, nbytes);
 
   // decode message
   bool status = pb_decode(&stream, google_trace_TraceContext_fields, ctxt);
