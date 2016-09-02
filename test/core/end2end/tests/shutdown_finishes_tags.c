@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -104,8 +102,8 @@ static void test_early_server_shutdown_finishes_tags(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
-  cq_expect_completion(cqv, tag(101), 0);
-  cq_expect_completion(cqv, tag(1000), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 0);
+  CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);
   cq_verify(cqv);
   GPR_ASSERT(s == NULL);
 

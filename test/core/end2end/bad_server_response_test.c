@@ -206,7 +206,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   gpr_log(GPR_DEBUG, "Rpc status: %d, details: %s", status, details);
