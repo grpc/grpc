@@ -147,6 +147,17 @@ class Service {
     methods_[index].reset();
   }
 
+  void MarkMethodStreamedUnary(int index,
+                               MethodHandler* streamed_unary_method) {
+    GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
+                       "Cannot mark an async or generic method Streamed Unary");
+    methods_[index]->SetHandler(streamed_unary_method);
+
+    // From the server's point of view, streamed unary is a special
+    // case of BIDI_STREAMING that has 1 read and 1 write, in that order.
+    methods_[index]->SetMethodType(::grpc::RpcMethod::BIDI_STREAMING);
+  }
+
  private:
   friend class Server;
   friend class ServerInterface;
