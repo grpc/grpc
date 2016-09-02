@@ -335,6 +335,9 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
             (intptr_t)glb_policy->rr_policy);
   }
   GPR_ASSERT(glb_policy->rr_policy != NULL);
+  grpc_pollset_set_add_pollset_set(exec_ctx,
+                                   glb_policy->rr_policy->interested_parties,
+                                   glb_policy->base.interested_parties);
   glb_policy->rr_connectivity->state = grpc_lb_policy_check_connectivity(
       exec_ctx, glb_policy->rr_policy, &error);
   grpc_lb_policy_notify_on_state_change(
