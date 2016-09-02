@@ -50,7 +50,7 @@ void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
   gpr_atm_no_barrier_store(&n->next, (gpr_atm)NULL);
   gpr_mpscq_node *prev =
       (gpr_mpscq_node *)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
-  gpr_atm_no_barrier_store(&prev->next, (gpr_atm)n);
+  gpr_atm_rel_store(&prev->next, (gpr_atm)n);
 }
 
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
