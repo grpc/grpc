@@ -928,7 +928,6 @@ src/core/ext/client_config/resolver_factory.h \
 src/core/ext/client_config/resolver_registry.h \
 src/core/ext/client_config/resolver_result.h \
 src/core/ext/client_config/subchannel.h \
-src/core/ext/client_config/subchannel_call_holder.h \
 src/core/ext/client_config/subchannel_index.h \
 src/core/ext/client_config/uri_parser.h \
 src/core/ext/lb_policy/grpclb/grpclb.h \
@@ -945,6 +944,7 @@ src/core/ext/census/base_resources.h \
 src/core/ext/census/census_interface.h \
 src/core/ext/census/census_rpc_stats.h \
 src/core/ext/census/gen/census.pb.h \
+src/core/ext/census/gen/trace_context.pb.h \
 src/core/ext/census/grpc_filter.h \
 src/core/ext/census/mlog.h \
 src/core/ext/census/resource.h \
@@ -1107,7 +1107,6 @@ src/core/ext/client_config/resolver_factory.c \
 src/core/ext/client_config/resolver_registry.c \
 src/core/ext/client_config/resolver_result.c \
 src/core/ext/client_config/subchannel.c \
-src/core/ext/client_config/subchannel_call_holder.c \
 src/core/ext/client_config/subchannel_index.c \
 src/core/ext/client_config/uri_parser.c \
 src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
@@ -1129,6 +1128,7 @@ src/core/ext/load_reporting/load_reporting_filter.c \
 src/core/ext/census/base_resources.c \
 src/core/ext/census/context.c \
 src/core/ext/census/gen/census.pb.c \
+src/core/ext/census/gen/trace_context.pb.c \
 src/core/ext/census/grpc_context.c \
 src/core/ext/census/grpc_filter.c \
 src/core/ext/census/grpc_plugin.c \
