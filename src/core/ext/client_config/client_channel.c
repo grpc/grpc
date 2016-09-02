@@ -511,6 +511,9 @@ typedef struct {
   grpc_closure closure;
 } continue_picking_args;
 
+/** Return true if subchannel is available immediately (in which case on_ready
+    should not be called), or false otherwise (in which case on_ready should be
+    called when the subchannel is available). */
 static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             grpc_metadata_batch *initial_metadata,
                             uint32_t initial_metadata_flags,
@@ -674,6 +677,9 @@ retry:
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
     grpc_closure_init(&calld->next_step, subchannel_ready, elem);
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
+    /* If a subchannel is not available immediately, the polling entity from
+       call_data should be provided to channel_data's interested_parties, so
+       that IO of the lb_policy and resolver could be done under it. */
     if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
                         op->send_initial_metadata_flags,
                         &calld->connected_subchannel, &calld->next_step)) {
