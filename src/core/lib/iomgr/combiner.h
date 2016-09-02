@@ -55,7 +55,7 @@ void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *closure, grpc_error *error,
                            bool covered_by_poller);
 // Execute \a action within the lock just prior to unlocking.
-// if \a hint_async_break is true, the combiner is tries to hand execution to
+// if \a hint_async_break is true, the combiner tries to hand execution to
 // another thread before finishing the primary queue of combined closures and
 // executing the finally list.
 // Deprecation warning: \a hint_async_break will be removed in a future version
