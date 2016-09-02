@@ -42,7 +42,7 @@ service EchoTestService {
   rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }
 
-service UnimplementedService {
+service UnimplementedEchoService {
   rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }
 
