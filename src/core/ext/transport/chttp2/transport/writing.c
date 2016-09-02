@@ -49,7 +49,7 @@ static void add_to_write_list(grpc_chttp2_write_cb **list,
 static void finish_write_cb(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                             grpc_chttp2_stream *s, grpc_chttp2_write_cb *cb,
                             grpc_error *error) {
-  grpc_chttp2_complete_closure_step(exec_ctx, t, s, &cb->closure, error);
+  grpc_chttp2_complete_closure_step(exec_ctx, t, s, &cb->closure, error, "finish_write_cb");
   cb->next = t->write_cb_pool;
   t->write_cb_pool = cb;
 }
@@ -219,7 +219,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     if (s->sent_initial_metadata) {
       grpc_chttp2_complete_closure_step(exec_ctx, t, s,
                                         &s->send_initial_metadata_finished,
-                                        GRPC_ERROR_REF(error));
+                                        GRPC_ERROR_REF(error), "send_initial_metadata_finished");
     }
     if (s->sending_bytes != 0) {
       update_list(exec_ctx, t, s, s->sending_bytes, &s->on_write_finished_cbs,
@@ -229,7 +229,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     if (s->sent_trailing_metadata) {
       grpc_chttp2_complete_closure_step(exec_ctx, t, s,
                                         &s->send_trailing_metadata_finished,
-                                        GRPC_ERROR_REF(error));
+                                        GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
       grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
                                      GRPC_ERROR_REF(error));
     }
