@@ -41,8 +41,8 @@
 // implementation from Dmitry Vyukov here:
 // http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
 
-// List node (include this in a data structure and dangle the rest of the
-// interesting bits off the end)
+// List node (include this in a data structure at the top, and add application
+// fields after it - to simulate inheritance)
 typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
 
 // Actual queue type

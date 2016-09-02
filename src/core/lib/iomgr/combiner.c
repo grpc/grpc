@@ -176,8 +176,10 @@ static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
       gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
   GPR_ASSERT(exec_ctx->active_combiner == lock);
   if (n == NULL) {
-    // queue is in an inconsistant state: use this as a cue that we should
-    // go off and do something else for a while (and come back later)
+    // Queue is in an transiently inconsistent state: a new item is being queued
+    // but is not visible to this thread yet.
+    // Use this as a cue that we should go off and do something else for a while
+    // (and come back later)
     grpc_closure_init(&lock->continue_finishing, continue_finishing_mainline,
                       lock);
     grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
@@ -204,6 +206,9 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
                                 "C:%p finish[%d] old_state=%" PRIdPTR, lock,
                                 loops, old_state));
     switch (old_state) {
+      default:
+        // we have multiple queued work items: just continue executing them
+        break;
       case 5:  // we're down to one queued item: if it's the final list we
       case 4:  // should do that
         if (!grpc_closure_list_empty(lock->final_list)) {

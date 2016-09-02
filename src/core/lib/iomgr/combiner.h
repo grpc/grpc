@@ -41,7 +41,7 @@
 #include "src/core/lib/support/mpscq.h"
 
 // Provides serialized access to some resource.
-// Each action queued on an aelock is executed serially in a borrowed thread.
+// Each action queued on a combiner is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
 // every be one at a time).
 

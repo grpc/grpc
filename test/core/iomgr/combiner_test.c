@@ -80,7 +80,6 @@ typedef struct {
 
 static void check_one(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
   ex_args *args = a;
-  // gpr_log(GPR_DEBUG, "*%p=%d; step %d", args->ctr, *args->ctr, args->value);
   GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
   gpr_free(a);
@@ -99,6 +98,8 @@ static void execute_many_loop(void *a) {
                             grpc_closure_create(check_one, c), GRPC_ERROR_NONE);
       grpc_exec_ctx_flush(&exec_ctx);
     }
+    // sleep for a little bit, to test a combiner draining and another thread
+    // picking it up
     gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
   }
   grpc_exec_ctx_finish(&exec_ctx);
