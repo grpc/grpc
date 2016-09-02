@@ -35,7 +35,6 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_LB_POLICY_H
 
 #include "src/core/ext/client_config/subchannel.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
@@ -60,7 +59,6 @@ struct grpc_lb_policy_vtable {
 
   /** implement grpc_lb_policy_pick */
   int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-              grpc_polling_entity *pollent,
               grpc_metadata_batch *initial_metadata,
               uint32_t initial_metadata_flags,
               grpc_connected_subchannel **target, grpc_closure *on_complete);
@@ -127,9 +125,9 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 /** Given initial metadata in \a initial_metadata, find an appropriate
     target for this rpc, and 'return' it by calling \a on_complete after setting
     \a target.
-    Picking can be asynchronous. Any IO should be done under \a pollent. */
+    Picking can be asynchronous. Any IO should be done under the pollset_set
+    interested_parties. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_polling_entity *pollent,
                         grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,
