@@ -462,10 +462,8 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&calld->mu);
   GPR_ASSERT(calld->creation_phase ==
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
-  // gpr_mu_lock(&chand->mu);
   grpc_polling_entity_del_from_pollset_set(exec_ctx, calld->pollent,
                                            chand->interested_parties);
-  // gpr_mu_unlock(&chand->mu);
   calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (calld->connected_subchannel == NULL) {
     gpr_atm_no_barrier_store(&calld->subchannel_call, 1);
@@ -676,20 +674,14 @@ retry:
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
     grpc_closure_init(&calld->next_step, subchannel_ready, elem);
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
-    // grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
-    //                                        chand->interested_parties);
     if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
                         op->send_initial_metadata_flags,
                         &calld->connected_subchannel, &calld->next_step)) {
       calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
-      // grpc_polling_entity_del_from_pollset_set(exec_ctx, calld->pollent,
-      //                                          chand->interested_parties);
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     } else {
-      // gpr_mu_lock(&chand->mu);
       grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
                                              chand->interested_parties);
-      // gpr_mu_unlock(&chand->mu);
     }
   }
   /* if we've got a subchannel, then let's ask it to create a call */
