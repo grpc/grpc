@@ -52,8 +52,8 @@ int grpc_chttp2_unlocking_check_writes(
   GPR_TIMER_BEGIN("grpc_chttp2_unlocking_check_writes", 0);
 
   transport_writing->max_frame_size =
-      transport_global
-          ->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      transport_global->settings[GRPC_ACKED_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* simple writes are queued to qbuf, and flushed here */
   gpr_slice_buffer_swap(&transport_global->qbuf, &transport_writing->outbuf);
