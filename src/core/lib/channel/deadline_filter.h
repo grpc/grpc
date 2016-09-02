@@ -33,7 +33,48 @@
 #define GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/timer.h"
 
+// State used for filters that enforce call deadlines.
+// Should be the first field in the filter's call_data.
+typedef struct grpc_deadline_state {
+  // We take a reference to the call stack for the timer callback.
+  grpc_call_stack* call_stack;
+  // Guards access to timer_pending and timer.
+  gpr_mu timer_mu;
+  // True if the timer callback is currently pending.
+  bool timer_pending;
+  // The deadline timer.
+  grpc_timer timer;
+  // Closure to invoke when the call is complete.
+  // We use this to cancel the timer.
+  grpc_closure on_complete;
+  // The original on_complete closure, which we chain to after our own
+  // closure is invoked.
+  grpc_closure* next_on_complete;
+
+// FIXME: remove
+bool is_client;
+
+} grpc_deadline_state;
+
+void grpc_deadline_state_init(grpc_deadline_state* call_data,
+                              grpc_call_stack* call_stack);
+void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
+                                 grpc_deadline_state* call_data);
+
+// To be used in a filter's start_transport_stream_op() method to
+// enforce call deadlines.
+// It is the caller's responsibility to chain to the next filter if
+// necessary after this function returns.
+// REQUIRES: The first field in elem is a grpc_deadline_state struct.
+void grpc_deadline_state_client_start_transport_stream_op(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op* op);
+
+// Deadline filters for direct client channels and server channels.
+// Note: Deadlines for non-direct client channels are handled by the
+// client_channel filter.
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 

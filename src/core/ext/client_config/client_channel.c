@@ -45,6 +45,7 @@
 #include "src/core/ext/client_config/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/deadline_filter.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
@@ -377,6 +378,15 @@ typedef enum {
     for initial metadata before trying to create a call object,
     and handling cancellation gracefully. */
 typedef struct client_channel_call_data {
+  // State for handling deadlines.
+  // The code in deadline_filter.c requires this to be the first field.
+// FIXME
+  // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
+  // and this struct both independently store a pointer to the call
+  // stack and each has its own mutex.  If/when we have time, find a way
+  // to avoid this without breaking either abstraction.
+  grpc_deadline_state deadline_state;
+
   /** either 0 for no call, 1 for cancelled, or a pointer to a
       grpc_subchannel_call */
   gpr_atm subchannel_call;
@@ -465,7 +475,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_atm_no_barrier_store(&calld->subchannel_call, 1);
     fail_locked(exec_ctx, calld, GRPC_ERROR_CREATE_REFERENCING(
                                      "Failed to create subchannel", &error, 1));
-  } else if (1 == gpr_atm_acq_load(&calld->subchannel_call)) {
+  } else if (GET_CALL(calld) == CANCELLED_CALL) {
     /* already cancelled before subchannel became ready */
     fail_locked(exec_ctx, calld,
                 GRPC_ERROR_CREATE_REFERENCING(
@@ -511,7 +521,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             grpc_metadata_batch *initial_metadata,
                             uint32_t initial_metadata_flags,
                             grpc_connected_subchannel **connected_subchannel,
-                            grpc_closure *on_ready);
+                            grpc_closure *on_ready, grpc_error *error);
 
 static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
@@ -522,7 +532,8 @@ static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error), NULL);
   } else if (pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
                              cpa->initial_metadata_flags,
-                             cpa->connected_subchannel, cpa->on_ready)) {
+                             cpa->connected_subchannel, cpa->on_ready,
+                             GRPC_ERROR_NONE)) {
     grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE, NULL);
   }
   gpr_free(cpa);
@@ -532,7 +543,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             grpc_metadata_batch *initial_metadata,
                             uint32_t initial_metadata_flags,
                             grpc_connected_subchannel **connected_subchannel,
-                            grpc_closure *on_ready) {
+                            grpc_closure *on_ready, grpc_error *error) {
   GPR_TIMER_BEGIN("pick_subchannel", 0);
 
   channel_data *chand = elem->channel_data;
@@ -554,7 +565,8 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       if (cpa->connected_subchannel == connected_subchannel) {
         cpa->connected_subchannel = NULL;
         grpc_exec_ctx_sched(exec_ctx, cpa->on_ready,
-                            GRPC_ERROR_CREATE("Pick cancelled"), NULL);
+                            GRPC_ERROR_CREATE_REFERENCING(
+                                "Pick cancelled", &error, 1), NULL);
       }
     }
     gpr_mu_unlock(&chand->mu);
@@ -609,6 +621,7 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                          grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
   /* try to (atomically) get the call */
   grpc_subchannel_call *call = GET_CALL(calld);
   GPR_TIMER_BEGIN("cc_start_transport_stream_op", 0);
@@ -645,20 +658,23 @@ retry:
   if (op->cancel_error != GRPC_ERROR_NONE) {
     if (!gpr_atm_rel_cas(&calld->subchannel_call, 0,
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
+gpr_log(GPR_INFO, "CANCELLED_CALL");
       goto retry;
     } else {
       switch (calld->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
+gpr_log(GPR_INFO, "GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING");
           fail_locked(exec_ctx, calld, GRPC_ERROR_REF(op->cancel_error));
           break;
         case GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL:
+gpr_log(GPR_INFO, "GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL");
           pick_subchannel(exec_ctx, elem, NULL, 0, &calld->connected_subchannel,
-                          NULL);
+                          NULL, GRPC_ERROR_REF(op->cancel_error));
           break;
       }
       gpr_mu_unlock(&calld->mu);
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op,
-                                                   GRPC_ERROR_CANCELLED);
+      grpc_transport_stream_op_finish_with_failure(
+          exec_ctx, op, GRPC_ERROR_REF(op->cancel_error));
       GPR_TIMER_END("cc_start_transport_stream_op", 0);
       return;
     }
@@ -672,7 +688,8 @@ retry:
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
     if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
                         op->send_initial_metadata_flags,
-                        &calld->connected_subchannel, &calld->next_step)) {
+                        &calld->connected_subchannel, &calld->next_step,
+                        GRPC_ERROR_NONE)) {
       calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     }
@@ -705,6 +722,11 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
+  grpc_deadline_state_init(&calld->deadline_state, args->call_stack);
+
+// FIXME: remove
+calld->deadline_state.is_client = true;
+
   gpr_atm_rel_store(&calld->subchannel_call, 0);
   gpr_mu_init(&calld->mu);
   calld->connected_subchannel = NULL;
@@ -723,6 +745,7 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  const grpc_call_final_info *final_info,
                                  void *and_free_memory) {
   call_data *calld = elem->call_data;
+  grpc_deadline_state_destroy(exec_ctx, &calld->deadline_state);
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, call, "client_channel_destroy_call");
