@@ -122,6 +122,11 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
 
   memset(ops, 0, sizeof(ops));
   op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
@@ -135,15 +140,14 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  // Need to send at least the SEND_INITIAL_METADATA and
+  // RECV_STATUS_ON_CLIENT ops, since the former allows the client to set
+  // the deadline timer, and the latter returns status to the test.
+  GPR_ASSERT(num_ops >= 2);
   GPR_ASSERT(num_ops <= (size_t)(op - ops));
   error = grpc_call_start_batch(c, ops, num_ops, tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -174,7 +178,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config,
 
 void negative_deadline(grpc_end2end_test_config config) {
   size_t i;
-  for (i = 1; i <= 4; i++) {
+  for (i = 2; i <= 4; i++) {
     test_invoke_simple_request(config, i);
   }
 }
