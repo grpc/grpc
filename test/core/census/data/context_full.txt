@@ -1,0 +1,3 @@
+trace_id { hi : 5; lo : 1 }
+span_id : 7
+is_sampled : true
