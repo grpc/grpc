@@ -112,12 +112,22 @@ void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   }
 }
 
-static void queue_on_exec_ctx(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+static void push_last_on_exec_ctx(grpc_exec_ctx *exec_ctx,
+                                  grpc_combiner *lock) {
   lock->next_combiner_on_this_exec_ctx = NULL;
   if (exec_ctx->active_combiner == NULL) {
     exec_ctx->active_combiner = exec_ctx->last_combiner = lock;
   } else {
     exec_ctx->last_combiner->next_combiner_on_this_exec_ctx = lock;
+    exec_ctx->last_combiner = lock;
+  }
+}
+
+static void push_first_on_exec_ctx(grpc_exec_ctx *exec_ctx,
+                                   grpc_combiner *lock) {
+  lock->next_combiner_on_this_exec_ctx = exec_ctx->active_combiner;
+  exec_ctx->active_combiner = lock;
+  if (lock->next_combiner_on_this_exec_ctx == NULL) {
     exec_ctx->last_combiner = lock;
   }
 }
@@ -140,7 +150,7 @@ void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
   if (last == 1) {
     // code will be written when the exec_ctx calls
     // grpc_combiner_continue_exec_ctx
-    queue_on_exec_ctx(exec_ctx, lock);
+    push_last_on_exec_ctx(exec_ctx, lock);
   }
   GPR_TIMER_END("combiner.execute", 0);
 }
@@ -155,7 +165,7 @@ static void move_next(grpc_exec_ctx *exec_ctx) {
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_combiner *lock = arg;
-  queue_on_exec_ctx(exec_ctx, lock);
+  push_last_on_exec_ctx(exec_ctx, lock);
 }
 
 static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
@@ -230,10 +240,11 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
   }
 
   GPR_TIMER_MARK("unref", 0);
+  move_next(exec_ctx);
+  lock->time_to_execute_final_list = false;
   gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -2);
   GRPC_COMBINER_TRACE(
       gpr_log(GPR_DEBUG, "C:%p finish old_state=%" PRIdPTR, lock, old_state));
-  lock->time_to_execute_final_list = false;
   switch (old_state) {
     default:
       // we have multiple queued work items: just continue executing them
@@ -245,11 +256,9 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       }
       break;
     case 3:  // had one count, one unorphaned --> unlocked unorphaned
-      move_next(exec_ctx);
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);
       return true;
     case 2:  // and one count, one orphaned --> unlocked and orphaned
-      move_next(exec_ctx);
       really_destroy(exec_ctx, lock);
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);
       return true;
@@ -260,6 +269,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);
       GPR_UNREACHABLE_CODE(return true);
   }
+  push_first_on_exec_ctx(exec_ctx, lock);
   GPR_TIMER_END("combiner.continue_exec_ctx", 0);
   return true;
 }

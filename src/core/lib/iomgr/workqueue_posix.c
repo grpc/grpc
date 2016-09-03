@@ -76,7 +76,8 @@ static void workqueue_destroy(grpc_exec_ctx *exec_ctx,
 
 static void workqueue_orphan(grpc_exec_ctx *exec_ctx,
                              grpc_workqueue *workqueue) {
-  if (gpr_atm_full_fetch_add(&workqueue->state, -1) == 1) {
+  gpr_atm last = gpr_atm_full_fetch_add(&workqueue->state, -1);
+  if (last == 1) {
     workqueue_destroy(exec_ctx, workqueue);
   }
 }
@@ -143,37 +144,40 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     gpr_free(workqueue);
   } else {
     error = grpc_wakeup_fd_consume_wakeup(&workqueue->wakeup_fd);
-    gpr_mpscq_node *n = gpr_mpscq_pop(&workqueue->queue);
-    if (error == GRPC_ERROR_NONE) {
-      grpc_fd_notify_on_read(exec_ctx, workqueue->wakeup_read_fd,
-                             &workqueue->read_closure);
-    } else {
+    if (error != GRPC_ERROR_NONE) {
       /* recurse to get error handling */
       on_readable(exec_ctx, arg, error);
-    }
-    if (n == NULL) {
-      /* try again - queue in an inconsistant state */
-      wakeup(exec_ctx, workqueue);
     } else {
-      switch (gpr_atm_full_fetch_add(&workqueue->state, -2)) {
-        case 3:  // had one count, one unorphaned --> done, unorphaned
-          break;
-        case 2:  // had one count, one orphaned --> done, orphaned
-          workqueue_destroy(exec_ctx, workqueue);
-          break;
-        case 1:
-        case 0:
-          // these values are illegal - representing an already done or
-          // deleted workqueue
-          GPR_UNREACHABLE_CODE(break);
-        default:
-          // schedule a wakeup since there's more to do
-          wakeup(exec_ctx, workqueue);
+      gpr_mpscq_node *n = gpr_mpscq_pop(&workqueue->queue);
+      if (n == NULL) {
+        /* try again - queue in an ephemerally inconsistent state */
+        wakeup(exec_ctx, workqueue);
+        grpc_fd_notify_on_read(exec_ctx, workqueue->wakeup_read_fd,
+                               &workqueue->read_closure);
+      } else {
+        gpr_atm last = gpr_atm_full_fetch_add(&workqueue->state, -2);
+        switch (last) {
+          default:
+            // schedule a wakeup since there's more to do
+            wakeup(exec_ctx, workqueue);
+            break;
+          case 3:  // had one count, one unorphaned --> done, unorphaned
+            break;
+          case 2:  // had one count, one orphaned --> done, orphaned
+            workqueue_destroy(exec_ctx, workqueue);
+            break;
+          case 1:
+          case 0:
+            // these values are illegal - representing an already done or
+            // deleted workqueue
+            GPR_UNREACHABLE_CODE(break);
+        }
+        grpc_fd_notify_on_read(exec_ctx, workqueue->wakeup_read_fd,
+                               &workqueue->read_closure);
+        grpc_closure *cl = (grpc_closure *)n;
+        grpc_error *clerr = cl->error_data.error;
+        grpc_closure_run(exec_ctx, cl, clerr);
       }
-      grpc_closure *cl = (grpc_closure *)n;
-      grpc_error *clerr = cl->error_data.error;
-      cl->cb(exec_ctx, cl->cb_arg, clerr);
-      GRPC_ERROR_UNREF(clerr);
     }
   }
 
@@ -183,6 +187,7 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                             grpc_closure *closure, grpc_error *error) {
   GPR_TIMER_BEGIN("workqueue.enqueue", 0);
+  GRPC_WORKQUEUE_REF(workqueue, "enqueue");
   gpr_atm last = gpr_atm_full_fetch_add(&workqueue->state, 2);
   GPR_ASSERT(last & 1);
   closure->error_data.error = error;
@@ -190,6 +195,7 @@ void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
   if (last == 1) {
     wakeup(exec_ctx, workqueue);
   }
+  GRPC_WORKQUEUE_UNREF(exec_ctx, workqueue, "enqueue");
   GPR_TIMER_END("workqueue.enqueue", 0);
 }
 
