@@ -50,10 +50,6 @@
 
 /* grpc_workqueue is forward declared in exec_ctx.h */
 
-/* Deprecated: do not use.
-   This has *already* been removed in a future commit. */
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
-
 /* Reference counting functions. Use the macro's always
    (GRPC_WORKQUEUE_{REF,UNREF}).
 

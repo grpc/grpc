@@ -45,6 +45,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -415,6 +416,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   gpr_sleep_until(gpr_time_add(
       start,
       gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
+
+  gpr_timer_set_enabled(0);
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);

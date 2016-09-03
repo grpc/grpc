@@ -209,11 +209,10 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
     // close the stream with an error.
     gpr_slice message =
         gpr_slice_from_copied_string("Failure that's not preventable.");
-    grpc_transport_stream_op op;
-    memset(&op, 0, sizeof(op));
-    grpc_transport_stream_op_add_close(&op, GRPC_STATUS_PERMISSION_DENIED,
+    grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
+    grpc_transport_stream_op_add_close(op, GRPC_STATUS_PERMISSION_DENIED,
                                        &message);
-    grpc_call_next_op(exec_ctx, elem, &op);
+    grpc_call_next_op(exec_ctx, elem, op);
   }
   grpc_exec_ctx_sched(
       exec_ctx, calld->recv_im_ready,

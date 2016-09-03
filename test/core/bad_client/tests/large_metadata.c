@@ -50,6 +50,7 @@
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* headers: generated from        \
                                             large_metadata.headers in this \
                                             directory */                   \
+  "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
   "\x00"                                                                   \
   "5{\x01\x05\x00\x00\x00\x01"                                             \
   "\x10\x05:path\x08/foo/bar"                                              \
@@ -92,6 +93,7 @@
                                                                     in this                \
                                                                     directory              \
                                                                     */                     \
+  "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                                   \
   "\x00\x00\xc9\x01\x04\x00\x00\x00\x01"                                                   \
   "\x10\x05:path\x08/foo/bar"                                                              \
   "\x10\x07:scheme\x04http"                                                                \

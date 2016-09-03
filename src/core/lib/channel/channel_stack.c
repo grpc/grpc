@@ -32,6 +32,7 @@
  */
 
 #include "src/core/lib/channel/channel_stack.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include <stdlib.h>
@@ -270,21 +271,27 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
       sizeof(grpc_call_stack)));
 }
 
+static void destroy_op(grpc_exec_ctx *exec_ctx, void *op, grpc_error *error) {
+  gpr_free(op);
+}
+
 void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *cur_elem) {
-  grpc_transport_stream_op op;
-  memset(&op, 0, sizeof(op));
-  op.cancel_error = GRPC_ERROR_CANCELLED;
-  grpc_call_next_op(exec_ctx, cur_elem, &op);
+  grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
+  memset(op, 0, sizeof(*op));
+  op->cancel_error = GRPC_ERROR_CANCELLED;
+  op->on_complete = grpc_closure_create(destroy_op, op);
+  grpc_call_next_op(exec_ctx, cur_elem, op);
 }
 
 void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_element *cur_elem,
                                                 grpc_status_code status,
                                                 gpr_slice *optional_message) {
-  grpc_transport_stream_op op;
-  memset(&op, 0, sizeof(op));
-  grpc_transport_stream_op_add_cancellation_with_message(&op, status,
+  grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
+  memset(op, 0, sizeof(*op));
+  op->on_complete = grpc_closure_create(destroy_op, op);
+  grpc_transport_stream_op_add_cancellation_with_message(op, status,
                                                          optional_message);
-  grpc_call_next_op(exec_ctx, cur_elem, &op);
+  grpc_call_next_op(exec_ctx, cur_elem, op);
 }
