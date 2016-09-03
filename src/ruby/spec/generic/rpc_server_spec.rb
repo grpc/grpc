@@ -395,9 +395,9 @@ describe GRPC::RpcServer do
       it 'should return RESOURCE_EXHAUSTED on too many jobs', server: true do
         opts = {
           server_args: { a_channel_arg: 'an_arg' },
-          pool_size: 1,
+          pool_size: 2,
           poll_period: 1,
-          max_waiting_requests: 0
+          max_waiting_requests: 1
         }
         alt_srv = RpcServer.new(**opts)
         alt_srv.handle(SlowService)
@@ -406,24 +406,23 @@ describe GRPC::RpcServer do
         t = Thread.new { alt_srv.run }
         alt_srv.wait_till_running
         req = EchoMsg.new
-        n = 5  # arbitrary, use as many to ensure the server pool is exceeded
+        n = 20 # arbitrary, use as many to ensure the server pool is exceeded
         threads = []
-        one_failed_as_unavailable = false
+        bad_status_code = nil
         n.times do
           threads << Thread.new do
             stub = SlowStub.new(alt_host, :this_channel_is_insecure)
             begin
               stub.an_rpc(req)
             rescue GRPC::BadStatus => e
-              one_failed_as_unavailable =
-                e.code == StatusCodes::RESOURCE_EXHAUSTED
+              bad_status_code = e.code
             end
           end
         end
         threads.each(&:join)
         alt_srv.stop
         t.join
-        expect(one_failed_as_unavailable).to be(true)
+        expect(bad_status_code).to be(StatusCodes::RESOURCE_EXHAUSTED)
       end
     end
 

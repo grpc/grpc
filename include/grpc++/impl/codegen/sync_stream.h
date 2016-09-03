@@ -78,6 +78,9 @@ class ReaderInterface {
  public:
   virtual ~ReaderInterface() {}
 
+  /// Upper bound on the next message size available for reading on this stream
+  virtual bool NextMessageSize(uint32_t* sz) = 0;
+
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
   /// This is thread-safe with respect to \a Write or \WritesDone methods on
   /// the same stream. It should not be called concurrently with another \a
@@ -154,6 +157,11 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  /// status ignored
+  }
+
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    *sz = call_.max_message_size();
+    return true;
   }
 
   bool Read(R* msg) GRPC_OVERRIDE {
@@ -301,6 +309,11 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);  // status ignored
   }
 
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    *sz = call_.max_message_size();
+    return true;
+  }
+
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
@@ -368,6 +381,11 @@ class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    *sz = call_->max_message_size();
+    return true;
+  }
+
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
@@ -433,12 +451,15 @@ class ServerReaderWriterInterface : public ServerStreamingInterface,
                                     public WriterInterface<W>,
                                     public ReaderInterface<R> {};
 
+// Actual implementation of bi-directional streaming
+namespace internal {
 template <class W, class R>
-class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
+class ServerReaderWriterBody GRPC_FINAL {
  public:
-  ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerReaderWriterBody(Call* call, ServerContext* ctx)
+      : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() GRPC_OVERRIDE {
+  void SendInitialMetadata() {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -452,15 +473,19 @@ class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
     call_->cq()->Pluck(&ops);
   }
 
-  bool Read(R* msg) GRPC_OVERRIDE {
+  bool NextMessageSize(uint32_t* sz) {
+    *sz = call_->max_message_size();
+    return true;
+  }
+
+  bool Read(R* msg) {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
     return call_->cq()->Pluck(&ops) && ops.got_message;
   }
 
-  using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const W& msg, const WriteOptions& options) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return false;
@@ -480,6 +505,76 @@ class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
  private:
   Call* const call_;
   ServerContext* const ctx_;
+};
+}
+
+// class to represent the user API for a bidirectional streaming call
+template <class W, class R>
+class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
+ public:
+  ServerReaderWriter(Call* call, ServerContext* ctx) : body_(call, ctx) {}
+
+  void SendInitialMetadata() GRPC_OVERRIDE { body_.SendInitialMetadata(); }
+
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    return body_.NextMessageSize(sz);
+  }
+
+  bool Read(R* msg) GRPC_OVERRIDE { return body_.Read(msg); }
+
+  using WriterInterface<W>::Write;
+  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+    return body_.Write(msg, options);
+  }
+
+ private:
+  internal::ServerReaderWriterBody<W, R> body_;
+};
+
+/// A class to represent a flow-controlled unary call. This is something
+/// of a hybrid between conventional unary and streaming. This is invoked
+/// through a unary call on the client side, but the server responds to it
+/// as though it were a single-ping-pong streaming call. The server can use
+/// the \a NextMessageSize method to determine an upper-bound on the size of
+/// the message.
+/// A key difference relative to streaming: ServerUnaryStreamer
+///  must have exactly 1 Read and exactly 1 Write, in that order, to function
+/// correctly. Otherwise, the RPC is in error.
+template <class RequestType, class ResponseType>
+class ServerUnaryStreamer GRPC_FINAL
+    : public ServerReaderWriterInterface<ResponseType, RequestType> {
+ public:
+  ServerUnaryStreamer(Call* call, ServerContext* ctx)
+      : body_(call, ctx), read_done_(false), write_done_(false) {}
+
+  void SendInitialMetadata() GRPC_OVERRIDE { body_.SendInitialMetadata(); }
+
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    return body_.NextMessageSize(sz);
+  }
+
+  bool Read(RequestType* request) GRPC_OVERRIDE {
+    if (read_done_) {
+      return false;
+    }
+    read_done_ = true;
+    return body_.Read(request);
+  }
+
+  using WriterInterface<ResponseType>::Write;
+  bool Write(const ResponseType& response,
+             const WriteOptions& options) GRPC_OVERRIDE {
+    if (write_done_ || !read_done_) {
+      return false;
+    }
+    write_done_ = true;
+    return body_.Write(response, options);
+  }
+
+ private:
+  internal::ServerReaderWriterBody<ResponseType, RequestType> body_;
+  bool read_done_;
+  bool write_done_;
 };
 
 }  // namespace grpc

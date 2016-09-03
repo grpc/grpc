@@ -85,6 +85,7 @@ class RpcServiceMethod : public RpcMethod {
   // if MethodHandler is nullptr, then this is an async method
   MethodHandler* handler() const { return handler_.get(); }
   void ResetHandler() { handler_.reset(); }
+  void SetHandler(MethodHandler* handler) { handler_.reset(handler); }
 
  private:
   void* server_tag_;
