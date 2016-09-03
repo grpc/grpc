@@ -82,7 +82,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
+                ILogger Logger = GrpcEnvironment.GetLoggerForType<CompletionRegistry>();
                 Logger.Error(e, "Exception occured while invoking completion delegate.");
             }
             finally

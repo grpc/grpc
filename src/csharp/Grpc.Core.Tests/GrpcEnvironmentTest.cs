@@ -32,8 +32,10 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Linq;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
@@ -89,6 +91,23 @@ namespace Grpc.Core.Tests
             var coreVersion = GrpcEnvironment.GetCoreVersionString();
             var parts = coreVersion.Split('.');
             Assert.AreEqual(3, parts.Length);
+        }
+
+        [Test]
+        public void ChangingTheGlobalLogger()
+        {
+            // Note this relies partially on NullLogger and TextWriterLoggerImplementations, 
+            // in that their ForType methods return instances of their same types.
+            NullLogger nullLogger = new NullLogger();
+            GrpcEnvironment.SetLogger(nullLogger);
+
+            Assert.IsInstanceOf<NullLogger>(GrpcEnvironment.GetLoggerForType<Channel>());
+
+            TextWriterLogger textWriterLogger = new TextWriterLogger(new StringWriter());
+            GrpcEnvironment.SetLogger(textWriterLogger);
+
+            Assert.IsInstanceOf<TextWriterLogger>(GrpcEnvironment.GetLoggerForType<Channel>());
+            Assert.IsInstanceOf<TextWriterLogger>(GrpcEnvironment.GetLoggerForType<Server>());
         }
     }
 }

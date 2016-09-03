@@ -59,7 +59,7 @@ namespace Grpc.Core.Internal
 
             DefaultSslRootsOverride.Override(this.nativeMethods);
 
-            GrpcEnvironment.Logger.ForType<NativeExtension>().Debug("gRPC native library loaded successfully.");
+            GrpcEnvironment.GetLoggerForType<NativeExtension>().Debug("gRPC native library loaded successfully.");
         }
 
         /// <summary>

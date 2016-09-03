@@ -58,7 +58,7 @@ namespace Grpc.IntegrationTesting
         /// </summary>
         public static IServerRunner CreateStarted(ServerConfig config)
         {
-            ILogger Logger = GrpcEnvironment.Logger.ForType<ServerRunners>();
+            ILogger Logger = GrpcEnvironment.GetLoggerForType<ServerRunners>();
             Logger.Debug("ServerConfig: {0}", config);
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslServerCredentials() : ServerCredentials.Insecure;
 

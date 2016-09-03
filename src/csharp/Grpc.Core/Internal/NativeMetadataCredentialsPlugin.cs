@@ -82,7 +82,7 @@ namespace Grpc.Core.Internal
             catch (Exception e)
             {
                 Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>().Error(e, GetMetadataExceptionMsg);
+                GrpcEnvironment.GetLoggerForType<NativeMetadataCredentialsPlugin>().Error(e, GetMetadataExceptionMsg);
             }
         }
 
@@ -101,7 +101,7 @@ namespace Grpc.Core.Internal
             catch (Exception e)
             {
                 Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>().Error(e, GetMetadataExceptionMsg);
+                GrpcEnvironment.GetLoggerForType<NativeMetadataCredentialsPlugin>().Error(e, GetMetadataExceptionMsg);
             }
         }
     }

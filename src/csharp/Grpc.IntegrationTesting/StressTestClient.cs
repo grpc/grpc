@@ -151,7 +151,7 @@ namespace Grpc.IntegrationTesting
 
         async Task RunBodyAsync(TestService.TestServiceClient client)
         {
-            ILogger Logger = GrpcEnvironment.Logger.ForType<StressTestClient>();
+            ILogger Logger = GrpcEnvironment.GetLoggerForType<StressTestClient>();
             Logger.Info("Starting stress test client thread.");
             while (!finishedTokenSource.Token.IsCancellationRequested)
             {

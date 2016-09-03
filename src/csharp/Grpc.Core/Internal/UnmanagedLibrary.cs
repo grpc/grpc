@@ -63,7 +63,7 @@ namespace Grpc.Core.Internal
         {
             this.libraryPath = FirstValidLibraryPath(libraryPathAlternatives);
 
-            ILogger Logger = GrpcEnvironment.Logger.ForType<UnmanagedLibrary>();
+            ILogger Logger = GrpcEnvironment.GetLoggerForType<UnmanagedLibrary>();
             Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
             this.handle = PlatformSpecificLoadLibrary(this.libraryPath);

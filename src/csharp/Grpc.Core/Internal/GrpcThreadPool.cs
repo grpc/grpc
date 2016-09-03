@@ -168,7 +168,7 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
-                        ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
+                        ILogger Logger = GrpcEnvironment.GetLoggerForType<GrpcThreadPool>();
                         Logger.Error(e, "Exception occured while invoking completion delegate");
                     }
                 }

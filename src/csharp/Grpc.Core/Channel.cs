@@ -237,7 +237,7 @@ namespace Grpc.Core
             var activeCallCount = activeCallCounter.Count;
             if (activeCallCount > 0)
             {
-                ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
+                ILogger Logger = GrpcEnvironment.GetLoggerForType<Channel>();
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
             }
 

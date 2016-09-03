@@ -87,7 +87,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
+                    ILogger Logger = GrpcEnvironment.GetLoggerForType<UnaryServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
@@ -143,7 +143,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
+                    ILogger Logger = GrpcEnvironment.GetLoggerForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
@@ -200,7 +200,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
+                    ILogger Logger = GrpcEnvironment.GetLoggerForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);
@@ -255,7 +255,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
+                    ILogger Logger = GrpcEnvironment.GetLoggerForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
                     Logger.Warning(e, "Exception occured in handler.");
                 }
                 status = HandlerUtils.StatusFromException(e);

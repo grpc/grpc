@@ -70,7 +70,7 @@ namespace Grpc.IntegrationTesting
         /// </summary>
         public static IClientRunner CreateStarted(ClientConfig config)
         {
-            ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
+            ILogger Logger = GrpcEnvironment.GetLoggerForType<ClientRunners>();
 
             Logger.Debug("ClientConfig: {0}", config);
 
