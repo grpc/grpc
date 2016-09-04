@@ -141,7 +141,7 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
     binaryAsBase64 = options.binaryAsBase64;
     longsAsStrings = options.longsAsStrings;
   }
-  return _.object(_.map(service.children, function(method) {
+  return _.fromPairs(_.map(service.children, function(method) {
     return [_.camelCase(method.name), {
       path: prefix + method.name,
       requestStream: method.requestStream,
