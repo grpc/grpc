@@ -7,7 +7,7 @@ A Ruby implementation of gRPC.
 Status
 ------
 
-Beta
+GA
 
 PREREQUISITES
 -------------

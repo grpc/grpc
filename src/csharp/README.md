@@ -7,7 +7,7 @@ A C# implementation of gRPC.
 Status
 ------
 
-Beta
+GA
 
 PREREQUISITES
 --------------
