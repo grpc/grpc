@@ -1,6 +1,8 @@
 grpc (1.0.0-1) unstable; urgency=medium
 
   * New upstream release
+  * debian/rules: disable pie hardening as it conflicts with upstream's pic
+    hardening in the Makefile
 
  -- Andrew Pollock <apollock@debian.org>  Fri, 02 Sep 2016 14:27:15 +1000
 
