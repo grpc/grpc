@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "Grpc.Core": "1.1.0-dev",
-    "Google.Apis.Auth": "1.15.0"
+    "Google.Apis.Auth": "1.16.0"
   },
   "frameworks": {
     "net45": { },
