@@ -15,7 +15,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all,-pie
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 override_dh_auto_build:
-	make shared_c prefix=/usr V=1
+	make shared_c prefix=/usr
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
