@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "Grpc.Core": "1.1.0-dev",
-    "Google.Protobuf": "3.0.0-beta3"
+    "Google.Protobuf": "3.0.0"
   },
   "frameworks": {
     "net45": {
