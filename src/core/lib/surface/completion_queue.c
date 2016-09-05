@@ -319,6 +319,7 @@ typedef struct {
   gpr_timespec deadline;
   grpc_cq_completion *stolen_completion;
   void *tag; /* for pluck */
+  bool first_loop;
 } cq_is_finished_arg;
 
 static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
@@ -342,7 +343,8 @@ static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
     }
     gpr_mu_unlock(cq->mu);
   }
-  return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
+  return !a->first_loop &&
+         gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
 }
 
 #ifndef NDEBUG
@@ -370,7 +372,6 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
                                       gpr_timespec deadline, void *reserved) {
   grpc_event ret;
   grpc_pollset_worker *worker = NULL;
-  int first_loop = 1;
   gpr_timespec now;
 
   GPR_TIMER_BEGIN("grpc_completion_queue_next", 0);
@@ -392,8 +393,13 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   GRPC_CQ_INTERNAL_REF(cc, "next");
   gpr_mu_lock(cc->mu);
   cq_is_finished_arg is_finished_arg = {
-      gpr_atm_no_barrier_load(&cc->things_queued_ever), cc, deadline, NULL,
-      NULL};
+      .last_seen_things_queued_ever =
+          gpr_atm_no_barrier_load(&cc->things_queued_ever),
+      .cq = cc,
+      .deadline = deadline,
+      .stolen_completion = NULL,
+      .tag = NULL,
+      .first_loop = true};
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(
       cq_is_next_finished, &is_finished_arg);
   for (;;) {
@@ -427,14 +433,13 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       break;
     }
     now = gpr_now(GPR_CLOCK_MONOTONIC);
-    if (!first_loop && gpr_time_cmp(now, deadline) >= 0) {
+    if (!is_finished_arg.first_loop && gpr_time_cmp(now, deadline) >= 0) {
       gpr_mu_unlock(cc->mu);
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
       dump_pending_tags(cc);
       break;
     }
-    first_loop = 0;
     /* Check alarms - these are a global resource so we just ping
        each time through on every pollset.
        May update deadline to ensure timely wakeups.
@@ -461,6 +466,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
         break;
       }
     }
+    is_finished_arg.first_loop = false;
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   GRPC_CQ_INTERNAL_UNREF(cc, "next");
@@ -523,7 +529,8 @@ static bool cq_is_pluck_finished(grpc_exec_ctx *exec_ctx, void *arg) {
     }
     gpr_mu_unlock(cq->mu);
   }
-  return gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
+  return !a->first_loop &&
+         gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
 }
 
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
@@ -533,7 +540,6 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   grpc_cq_completion *prev;
   grpc_pollset_worker *worker = NULL;
   gpr_timespec now;
-  int first_loop = 1;
 
   GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
 
@@ -556,8 +562,13 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   GRPC_CQ_INTERNAL_REF(cc, "pluck");
   gpr_mu_lock(cc->mu);
   cq_is_finished_arg is_finished_arg = {
-      gpr_atm_no_barrier_load(&cc->things_queued_ever), cc, deadline, NULL,
-      tag};
+      .last_seen_things_queued_ever =
+          gpr_atm_no_barrier_load(&cc->things_queued_ever),
+      .cq = cc,
+      .deadline = deadline,
+      .stolen_completion = NULL,
+      .tag = tag,
+      .first_loop = true};
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(
       cq_is_pluck_finished, &is_finished_arg);
   for (;;) {
@@ -607,7 +618,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       break;
     }
     now = gpr_now(GPR_CLOCK_MONOTONIC);
-    if (!first_loop && gpr_time_cmp(now, deadline) >= 0) {
+    if (!is_finished_arg.first_loop && gpr_time_cmp(now, deadline) >= 0) {
       del_plucker(cc, tag, &worker);
       gpr_mu_unlock(cc->mu);
       memset(&ret, 0, sizeof(ret));
@@ -615,7 +626,6 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       dump_pending_tags(cc);
       break;
     }
-    first_loop = 0;
     /* Check alarms - these are a global resource so we just ping
        each time through on every pollset.
        May update deadline to ensure timely wakeups.
@@ -642,6 +652,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         break;
       }
     }
+    is_finished_arg.first_loop = false;
     del_plucker(cc, tag, &worker);
   }
 done:
