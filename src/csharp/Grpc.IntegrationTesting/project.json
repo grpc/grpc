@@ -59,14 +59,12 @@
     },
     "Google.Protobuf": "3.0.0",
     "CommandLineParser.Unofficial": "2.0.275",
+    "Moq": "4.6.38-alpha",
     "NUnit": "3.2.0",
     "NUnitLite": "3.2.0-*"
   },
   "frameworks": {
     "net45": {
-      "dependencies": {
-        "Moq": "4.2.1510.2205"
-      },
       "frameworkAssemblies": {
         "System.Runtime": "",
         "System.IO": ""
@@ -74,8 +72,7 @@
     },
     "netcoreapp1.0": {
       "imports": [
-        "portable-net45",
-        "net45"
+        "portable-net45"
       ],
       "dependencies": {
         "Microsoft.NETCore.App": "1.0.0",
