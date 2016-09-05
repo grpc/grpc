@@ -30,13 +30,8 @@
     "frameworks": {
       "net45": { },
       "netstandard1.5": {
-        "imports": [
-          "portable-net45"
-        ],
         "dependencies": {
-          "Microsoft.NETCore.Portable.Compatibility": "1.0.1",
-          "NETStandard.Library": "1.6.0",
-          "System.Threading.Tasks": "4.0.11"
+          "NETStandard.Library": "1.6.0"
         }
       }
     }
