@@ -33,9 +33,6 @@
       }
     },
     "netstandard1.5": {
-      "imports": [
-        "portable-net45"
-      ],
       "dependencies": {
         "NETStandard.Library": "1.6.0"
       }
