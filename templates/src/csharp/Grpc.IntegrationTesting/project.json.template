@@ -9,7 +9,7 @@
       "Grpc.Core": {
         "target": "project"
       },
-      "Google.Protobuf": "3.0.0-beta3",
+      "Google.Protobuf": "3.0.0",
       "CommandLineParser.Unofficial": "2.0.275",
       "NUnit": "3.2.0",
       "NUnitLite": "3.2.0-*"

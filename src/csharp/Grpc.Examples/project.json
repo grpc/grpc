@@ -11,7 +11,7 @@
     "Grpc.Core": {
       "target": "project"
     },
-    "Google.Protobuf": "3.0.0-beta3"
+    "Google.Protobuf": "3.0.0"
   },
   "frameworks": {
     "net45": {
