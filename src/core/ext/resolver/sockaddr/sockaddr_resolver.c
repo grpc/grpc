@@ -63,7 +63,7 @@ typedef struct {
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** have we published? */
-  int published;
+  bool published;
   /** pending next completion, or NULL */
   grpc_closure *next_completion;
   /** target result address for next completion */
@@ -102,7 +102,7 @@ static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
-  r->published = 0;
+  r->published = false;
   sockaddr_maybe_finish_next_locked(exec_ctx, r);
   gpr_mu_unlock(&r->mu);
 }
@@ -131,7 +131,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
     grpc_resolver_result_set_lb_policy(result, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
-    r->published = 1;
+    r->published = true;
     *r->target_result = result;
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
@@ -175,7 +175,7 @@ static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
     grpc_resolver_args *args, const char *default_lb_policy_name,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
-  int errors_found = 0; /* GPR_FALSE */
+  bool errors_found = false;
   sockaddr_resolver *r;
   gpr_slice path_slice;
   gpr_slice_buffer path_parts;
@@ -228,9 +228,10 @@ static grpc_resolver *sockaddr_create(
     if (!parse(&ith_uri,
                (struct sockaddr_storage *)(&r->addresses->addrs[i].addr),
                &r->addresses->addrs[i].len)) {
-      errors_found = 1; /* GPR_TRUE */
+      errors_found = true;
     }
     gpr_free(part_str);
+    r->addresses->addrs[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
 

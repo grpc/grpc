@@ -309,6 +309,11 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
     if (parse_ipv4(&uri, &sa, &sa_len)) { /* TODO(dgq): add support for ipv6 */
       memcpy(args.addresses->addrs[out_addrs_idx].addr, &sa, sa_len);
       args.addresses->addrs[out_addrs_idx].len = sa_len;
+      // These are, of course, actually balancer addresses.  However, we
+      // want the round_robin LB policy to treat them as normal backend
+      // addresses, since we don't need to talk to balancers in order to
+      // find the balancers themselves.
+      args.addresses->addrs[out_addrs_idx].is_balancer = false;
       ++out_addrs_idx;
     } else {
       gpr_log(GPR_ERROR, "Invalid LB service address '%s', ignoring.",
@@ -414,6 +419,20 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
+  // Count the number of gRPC-LB addresses.  There must be at least one.
+  // TODO(roth): For now, we ignore non-balancer addresses, so there must be
+  // at least one balancer address.  In the future, we may change the
+  // behavior such that we fall back to using the non-balancer addresses
+  // if we cannot reach any balancers.  At that time, this should be
+  // changed to allow a list with no balancer addresses, since the
+  // resolver might fail to return a balancer address even when this is
+  // the right LB policy to use.
+  size_t num_grpclb_addrs = 0;
+  for (size_t i = 0; i < args->addresses->naddrs; ++i) {
+    if (args->addresses->addrs[i].is_balancer) ++num_grpclb_addrs;
+  }
+  if (num_grpclb_addrs == 0) return NULL;
+
   glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
   memset(glb_policy, 0, sizeof(*glb_policy));
 
@@ -424,25 +443,25 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * Create a client channel over them to communicate with a LB service */
   glb_policy->cc_factory = args->client_channel_factory;
   GPR_ASSERT(glb_policy->cc_factory != NULL);
-  if (args->addresses->naddrs == 0) {
-    return NULL;
-  }
 
   /* construct a target from the args->addresses, in the form
    * ipvX://ip1:port1,ip2:port2,...
    * TODO(dgq): support mixed ip version */
-  char **addr_strs = gpr_malloc(sizeof(char *) * args->addresses->naddrs);
+  char **addr_strs = gpr_malloc(sizeof(char *) * num_grpclb_addrs);
   addr_strs[0] =
       grpc_sockaddr_to_uri((const struct sockaddr *)&args->addresses->addrs[0]);
+  size_t addr_index = 1;
   for (size_t i = 1; i < args->addresses->naddrs; i++) {
-    GPR_ASSERT(grpc_sockaddr_to_string(
-                   &addr_strs[i],
-                   (const struct sockaddr *)&args->addresses->addrs[i],
-                   true) == 0);
+    if (args->addresses->addrs[i].is_balancer) {
+      GPR_ASSERT(grpc_sockaddr_to_string(
+                     &addr_strs[addr_index++],
+                     (const struct sockaddr *)&args->addresses->addrs[i],
+                     true) == 0);
+    }
   }
   size_t uri_path_len;
   char *target_uri_str = gpr_strjoin_sep(
-      (const char **)addr_strs, args->addresses->naddrs, ",", &uri_path_len);
+      (const char **)addr_strs, num_grpclb_addrs, ",", &uri_path_len);
 
   /* will pick using pick_first */
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
@@ -450,7 +469,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
       GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
 
   gpr_free(target_uri_str);
-  for (size_t i = 0; i < args->addresses->naddrs; i++) {
+  for (size_t i = 0; i < num_grpclb_addrs; i++) {
     gpr_free(addr_strs[i]);
   }
   gpr_free(addr_strs);
