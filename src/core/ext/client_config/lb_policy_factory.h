@@ -48,7 +48,7 @@ struct grpc_lb_policy_factory {
 };
 
 typedef struct grpc_lb_policy_args {
-  char *server_name;  // Does not own.
+  char *server_name;
   grpc_resolved_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;

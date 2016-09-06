@@ -54,12 +54,9 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     was not NULL).
     If a resolver factory was found, use it to instantiate a resolver and
     return it.
-    If a resolver factory was not found, return NULL.
-    If \a target specifies an http_proxy as a query arg, sets \a http_proxy
-    to the value (which the caller takes ownership of). */
+    If a resolver factory was not found, return NULL. */
 grpc_resolver *grpc_resolver_create(
-    const char *target, grpc_client_channel_factory *client_channel_factory,
-    char **http_proxy);
+    const char *target, grpc_client_channel_factory *client_channel_factory);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */

@@ -37,6 +37,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_config/http_connect_handshaker.h"
 #include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -262,10 +263,11 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
-  // Get name and (optionally) proxy address from args.
+  // Get name from args.
   const char *path = args->uri->path;
   if (path[0] == '/') ++path;
-  const char *proxy_name = grpc_uri_get_query_arg(args->uri, "http_proxy");
+  // Get proxy name, if any.
+  char *proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
@@ -273,7 +275,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->target_name = gpr_strdup(path);
-  r->name_to_resolve = gpr_strdup(proxy_name == NULL ? path : proxy_name);
+  r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
   r->client_channel_factory = args->client_channel_factory;
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,

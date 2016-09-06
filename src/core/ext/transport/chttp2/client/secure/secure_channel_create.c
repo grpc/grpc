@@ -222,7 +222,6 @@ typedef struct {
   grpc_channel_args *merge_args;
   grpc_channel_security_connector *security_connector;
   grpc_channel *master;
-  char *http_proxy;
 } client_channel_factory;
 
 static void client_channel_factory_ref(
@@ -242,7 +241,6 @@ static void client_channel_factory_unref(
                                   "client_channel_factory");
     }
     grpc_channel_args_destroy(f->merge_args);
-    if (f->http_proxy != NULL) gpr_free(f->http_proxy);
     gpr_free(f);
   }
 }
@@ -259,10 +257,12 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
   c->handshake_mgr = grpc_handshake_manager_create();
-  if (f->http_proxy != NULL) {
+  char *proxy_name = grpc_get_http_proxy_server();
+  if (proxy_name != NULL) {
     grpc_handshake_manager_add(
         c->handshake_mgr,
-        grpc_http_connect_handshaker_create(f->http_proxy, args->server_name));
+        grpc_http_connect_handshaker_create(proxy_name, args->server_name));
+    gpr_free(proxy_name);
   }
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
@@ -284,8 +284,7 @@ static grpc_channel *client_channel_factory_create_channel(
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(final_args);
 
-  grpc_resolver *resolver =
-      grpc_resolver_create(target, &f->base, &f->http_proxy);
+  grpc_resolver *resolver = grpc_resolver_create(target, &f->base);
   if (resolver != NULL) {
     grpc_client_channel_set_resolver(
         exec_ctx, grpc_channel_get_channel_stack(channel), resolver);

@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/fixtures/http_proxy.h"
@@ -76,12 +77,12 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *client_args) {
   fullstack_fixture_data *ffd = f->fixture_data;
-  char *target_uri;
-  gpr_asprintf(&target_uri, "%s?http_proxy=%s", ffd->server_addr,
+  char *proxy_uri;
+  gpr_asprintf(&proxy_uri, "http://%s",
                grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
-  gpr_log(GPR_INFO, "target_uri: %s", target_uri);
-  f->client = grpc_insecure_channel_create(target_uri, client_args, NULL);
-  gpr_free(target_uri);
+  gpr_setenv("http_proxy", proxy_uri);
+  gpr_free(proxy_uri);
+  f->client = grpc_insecure_channel_create(ffd->server_addr, client_args, NULL);
   GPR_ASSERT(f->client);
 }
 

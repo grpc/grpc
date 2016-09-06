@@ -40,4 +40,8 @@
 grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
                                                      const char* server_name);
 
+/// Returns the name of the proxy to use, or NULL if no proxy is configured.
+/// Caller takes ownership of result.
+char* grpc_get_http_proxy_server();
+
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H */

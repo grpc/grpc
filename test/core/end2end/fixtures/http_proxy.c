@@ -122,7 +122,7 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
                                     proxy_connection* conn, bool is_client,
                                     const char* prefix, grpc_error* error) {
   const char* msg = grpc_error_string(error);
-  gpr_log(GPR_ERROR, "%s: %s", prefix, msg);
+  gpr_log(GPR_INFO, "%s: %s", prefix, msg);
   grpc_error_free_string(msg);
   grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint);
   if (conn->server_endpoint != NULL)
