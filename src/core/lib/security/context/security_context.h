@@ -84,6 +84,16 @@ void grpc_auth_context_unref(grpc_auth_context *policy);
 
 void grpc_auth_property_reset(grpc_auth_property *property);
 
+/* --- grpc_security_context_extension ---
+
+   Extension to the security context that may be set in a filter and accessed
+   later by a higher level method on a grpc_call object. */
+
+typedef struct {
+  void *instance;
+  void (*destroy)(void *);
+} grpc_security_context_extension;
+
 /* --- grpc_client_security_context ---
 
    Internal client-side security context. */
@@ -91,6 +101,7 @@ void grpc_auth_property_reset(grpc_auth_property *property);
 typedef struct {
   grpc_call_credentials *creds;
   grpc_auth_context *auth_context;
+  grpc_security_context_extension extension;
 } grpc_client_security_context;
 
 grpc_client_security_context *grpc_client_security_context_create(void);
@@ -102,6 +113,7 @@ void grpc_client_security_context_destroy(void *ctx);
 
 typedef struct {
   grpc_auth_context *auth_context;
+  grpc_security_context_extension extension;
 } grpc_server_security_context;
 
 grpc_server_security_context *grpc_server_security_context_create(void);

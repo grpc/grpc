@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'google-protobuf', '~> 3.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
+  s.add_dependency 'concurrent-ruby'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
@@ -298,7 +299,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/tsi/transport_security_interface.h )
   s.files += %w( src/core/ext/client_config/client_channel.h )
   s.files += %w( src/core/ext/client_config/client_channel_factory.h )
-  s.files += %w( src/core/ext/client_config/client_config.h )
   s.files += %w( src/core/ext/client_config/connector.h )
   s.files += %w( src/core/ext/client_config/initial_connect_string.h )
   s.files += %w( src/core/ext/client_config/lb_policy.h )
@@ -308,8 +308,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/resolver.h )
   s.files += %w( src/core/ext/client_config/resolver_factory.h )
   s.files += %w( src/core/ext/client_config/resolver_registry.h )
+  s.files += %w( src/core/ext/client_config/resolver_result.h )
   s.files += %w( src/core/ext/client_config/subchannel.h )
-  s.files += %w( src/core/ext/client_config/subchannel_call_holder.h )
   s.files += %w( src/core/ext/client_config/subchannel_index.h )
   s.files += %w( src/core/ext/client_config/uri_parser.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/grpclb.h )
@@ -326,6 +326,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/census/census_interface.h )
   s.files += %w( src/core/ext/census/census_rpc_stats.h )
   s.files += %w( src/core/ext/census/gen/census.pb.h )
+  s.files += %w( src/core/ext/census/gen/trace_context.pb.h )
   s.files += %w( src/core/ext/census/grpc_filter.h )
   s.files += %w( src/core/ext/census/mlog.h )
   s.files += %w( src/core/ext/census/resource.h )
@@ -475,7 +476,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/channel_connectivity.c )
   s.files += %w( src/core/ext/client_config/client_channel.c )
   s.files += %w( src/core/ext/client_config/client_channel_factory.c )
-  s.files += %w( src/core/ext/client_config/client_config.c )
   s.files += %w( src/core/ext/client_config/client_config_plugin.c )
   s.files += %w( src/core/ext/client_config/connector.c )
   s.files += %w( src/core/ext/client_config/default_initial_connect_string.c )
@@ -487,8 +487,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/resolver.c )
   s.files += %w( src/core/ext/client_config/resolver_factory.c )
   s.files += %w( src/core/ext/client_config/resolver_registry.c )
+  s.files += %w( src/core/ext/client_config/resolver_result.c )
   s.files += %w( src/core/ext/client_config/subchannel.c )
-  s.files += %w( src/core/ext/client_config/subchannel_call_holder.c )
   s.files += %w( src/core/ext/client_config/subchannel_index.c )
   s.files += %w( src/core/ext/client_config/uri_parser.c )
   s.files += %w( src/core/ext/transport/chttp2/server/insecure/server_chttp2.c )
@@ -510,6 +510,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/census/base_resources.c )
   s.files += %w( src/core/ext/census/context.c )
   s.files += %w( src/core/ext/census/gen/census.pb.c )
+  s.files += %w( src/core/ext/census/gen/trace_context.pb.c )
   s.files += %w( src/core/ext/census/grpc_context.c )
   s.files += %w( src/core/ext/census/grpc_filter.c )
   s.files += %w( src/core/ext/census/grpc_plugin.c )
