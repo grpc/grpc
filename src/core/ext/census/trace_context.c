@@ -37,12 +37,11 @@
 #include <grpc/support/log.h>
 #include <stdbool.h>
 
-#include "third_party/nanopb/pb_encode.h"
 #include "third_party/nanopb/pb_decode.h"
+#include "third_party/nanopb/pb_encode.h"
 
-bool encode_trace_context(google_trace_TraceContext *ctxt,
-                          uint8_t *buffer, const size_t size,
-                          size_t *msg_length) {
+bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                          const size_t size, size_t *msg_length) {
   // Create a stream that will write to our buffer.
   pb_ostream_t stream = pb_ostream_from_buffer(buffer, size);
 
@@ -58,8 +57,8 @@ bool encode_trace_context(google_trace_TraceContext *ctxt,
   return true;
 }
 
-bool decode_trace_context(google_trace_TraceContext *ctxt,
-                          uint8_t *buffer, size_t nbytes) {
+bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                          size_t nbytes) {
   // Create a stream that reads nbytes from the buffer.
   pb_istream_t stream = pb_istream_from_buffer(buffer, nbytes);
 

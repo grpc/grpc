@@ -31,7 +31,6 @@
  *
  */
 
-#include "src/core/ext/census/resource.h"
 #include <grpc/census.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -40,17 +39,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "src/core/ext/census/base_resources.h"
+#include "src/core/ext/census/resource.h"
 #include "test/core/util/test_config.h"
 
-#include "src/core/ext/census/trace_context.h"
-#include "third_party/nanopb/pb_encode.h"
-#include "third_party/nanopb/pb_decode.h"
 #include "src/core/ext/census/gen/trace_context.pb.h"
+#include "src/core/ext/census/trace_context.h"
+#include "third_party/nanopb/pb_decode.h"
+#include "third_party/nanopb/pb_encode.h"
 
 #define BUF_SIZE 512
 
 bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
-                                    uint8_t* buffer, size_t buf_size) {
+                                    uint8_t *buffer, size_t buf_size) {
   google_trace_TraceContext ctxt2 = google_trace_TraceContext_init_zero;
   size_t msg_length;
 
@@ -73,10 +73,10 @@ bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
   return true;
 }
 
-bool validate_decode_context(uint8_t* buffer, size_t msg_length) {
+bool validate_decode_context(uint8_t *buffer, size_t msg_length) {
   google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
 
-  //validate the decoding of a context written to buffer
+  // validate the decoding of a context written to buffer
   if (!decode_trace_context(&ctxt, buffer, msg_length)) {
     return false;
   }
@@ -110,13 +110,11 @@ static void test_empty() {
 }
 
 static void test_trace_only() {
-  read_context_from_file(
-      "test/core/census/data/context_trace_only.pb", false);
+  read_context_from_file("test/core/census/data/context_trace_only.pb", false);
 }
 
 static void test_span_only() {
-  read_context_from_file(
-      "test/core/census/data/context_span_only.pb", false);
+  read_context_from_file("test/core/census/data/context_span_only.pb", false);
 }
 
 static void test_encode_decode() {
@@ -154,7 +152,7 @@ static void test_corrupt() {
   ctxt1.span_id = 3;
   encode_trace_context(&ctxt1, buffer, sizeof(buffer), &msg_length);
 
-  //corrupt some bytes
+  // corrupt some bytes
   buffer[1] = 255;
 
   bool res = validate_decode_context(buffer, msg_length);

@@ -39,13 +39,12 @@
 /* Data from trace context ctxt is encoded to buffer with a
    max length of size.  The resulting number of bytes encoded is
    written to msg_length. */
-bool encode_trace_context(google_trace_TraceContext *ctxt,
-                          uint8_t *buffer, const size_t size,
-                          size_t *msg_length);
+bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                          const size_t size, size_t *msg_length);
 
 /* Data of length nbytes from trace context ctxt is decoded
    and written to buffer. */
-bool decode_trace_context(google_trace_TraceContext *ctxt,
-                          uint8_t *buffer, size_t nbytes);
+bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                          size_t nbytes);
 
 #endif
