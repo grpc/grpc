@@ -168,7 +168,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, NULL));
 
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);

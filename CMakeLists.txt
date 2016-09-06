@@ -449,7 +449,6 @@ add_library(grpc
   src/core/ext/client_config/resolver_registry.c
   src/core/ext/client_config/resolver_result.c
   src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_call_holder.c
   src/core/ext/client_config/subchannel_index.c
   src/core/ext/client_config/uri_parser.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
@@ -471,6 +470,7 @@ add_library(grpc
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
+  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.c
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
@@ -682,7 +682,6 @@ add_library(grpc_cronet
   src/core/ext/client_config/resolver_registry.c
   src/core/ext/client_config/resolver_result.c
   src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_call_holder.c
   src/core/ext/client_config/subchannel_index.c
   src/core/ext/client_config/uri_parser.c
   src/core/lib/http/httpcli_security_connector.c
@@ -915,7 +914,6 @@ add_library(grpc_unsecure
   src/core/ext/client_config/resolver_registry.c
   src/core/ext/client_config/resolver_result.c
   src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_call_holder.c
   src/core/ext/client_config/subchannel_index.c
   src/core/ext/client_config/uri_parser.c
   src/core/ext/resolver/dns/native/dns_resolver.c
@@ -933,6 +931,7 @@ add_library(grpc_unsecure
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
+  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.c
   src/core/ext/census/grpc_filter.c
   src/core/ext/census/grpc_plugin.c
