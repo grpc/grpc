@@ -90,8 +90,10 @@ typedef struct proxy_connection {
   grpc_closure on_server_write_done;
 
   gpr_slice_buffer client_read_buffer;
+  gpr_slice_buffer client_deferred_write_buffer;
   gpr_slice_buffer client_write_buffer;
   gpr_slice_buffer server_read_buffer;
+  gpr_slice_buffer server_deferred_write_buffer;
   gpr_slice_buffer server_write_buffer;
 
   grpc_http_parser http_parser;
@@ -107,8 +109,10 @@ static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
       grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
     grpc_pollset_set_destroy(conn->pollset_set);
     gpr_slice_buffer_destroy(&conn->client_read_buffer);
+    gpr_slice_buffer_destroy(&conn->client_deferred_write_buffer);
     gpr_slice_buffer_destroy(&conn->client_write_buffer);
     gpr_slice_buffer_destroy(&conn->server_read_buffer);
+    gpr_slice_buffer_destroy(&conn->server_deferred_write_buffer);
     gpr_slice_buffer_destroy(&conn->server_write_buffer);
     grpc_http_parser_destroy(&conn->http_parser);
     grpc_http_request_destroy(&conn->http_request);
@@ -130,10 +134,6 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
   proxy_connection_unref(exec_ctx, conn);
 }
 
-// Forward declarations.
-static void do_client_read(grpc_exec_ctx* exec_ctx, proxy_connection* conn);
-static void do_server_read(grpc_exec_ctx* exec_ctx, proxy_connection* conn);
-
 // Callback for writing proxy data to the client.
 static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                                  grpc_error* error) {
@@ -143,10 +143,20 @@ static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                             "HTTP proxy client write", error);
     return;
   }
-  // Clear write buffer.
+  // Clear write buffer (the data we just wrote).
   gpr_slice_buffer_reset_and_unref(&conn->client_write_buffer);
-  // Unref the connection.
-  proxy_connection_unref(exec_ctx, conn);
+  // If more data was read from the server since we started this write,
+  // write that data now.
+  if (conn->client_deferred_write_buffer.length > 0) {
+    gpr_slice_buffer_move_into(&conn->client_deferred_write_buffer,
+                               &conn->client_write_buffer);
+    grpc_endpoint_write(exec_ctx, conn->client_endpoint,
+                        &conn->client_write_buffer,
+                        &conn->on_client_write_done);
+  } else {
+    // No more writes.  Unref the connection.
+    proxy_connection_unref(exec_ctx, conn);
+  }
 }
 
 // Callback for writing proxy data to the backend server.
@@ -158,10 +168,20 @@ static void on_server_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                             "HTTP proxy server write", error);
     return;
   }
-  // Clear write buffer.
+  // Clear write buffer (the data we just wrote).
   gpr_slice_buffer_reset_and_unref(&conn->server_write_buffer);
-  // Unref the connection.
-  proxy_connection_unref(exec_ctx, conn);
+  // If more data was read from the client since we started this write,
+  // write that data now.
+  if (conn->server_deferred_write_buffer.length > 0) {
+    gpr_slice_buffer_move_into(&conn->server_deferred_write_buffer,
+                               &conn->server_write_buffer);
+    grpc_endpoint_write(exec_ctx, conn->server_endpoint,
+                        &conn->server_write_buffer,
+                        &conn->on_server_write_done);
+  } else {
+    // No more writes.  Unref the connection.
+    proxy_connection_unref(exec_ctx, conn);
+  }
 }
 
 // Callback for reading data from the client, which will be proxied to
@@ -174,14 +194,26 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                             "HTTP proxy client read", error);
     return;
   }
-  // Move read data into write buffer and write it.
-  // The write operation inherits our reference to conn.
-  gpr_slice_buffer_move_into(&conn->client_read_buffer,
-                             &conn->server_write_buffer);
-  grpc_endpoint_write(exec_ctx, conn->server_endpoint,
-                      &conn->server_write_buffer, &conn->on_server_write_done);
+  // If there is already a pending write (i.e., server_write_buffer is
+  // not empty), then move the read data into server_deferred_write_buffer,
+  // and the next write will be requested in on_server_write_done(), when
+  // the current write is finished.
+  //
+  // Otherwise, move the read data into the write buffer and write it.
+  if (conn->client_write_buffer.length > 0) {
+    gpr_slice_buffer_move_into(&conn->client_read_buffer,
+                               &conn->server_deferred_write_buffer);
+  } else {
+    gpr_slice_buffer_move_into(&conn->client_read_buffer,
+                               &conn->server_write_buffer);
+    gpr_ref(&conn->refcount);
+    grpc_endpoint_write(exec_ctx, conn->server_endpoint,
+                        &conn->server_write_buffer,
+                        &conn->on_server_write_done);
+  }
   // Read more data.
-  do_client_read(exec_ctx, conn);
+  grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
+                     &conn->on_client_read_done);
 }
 
 // Callback for reading data from the backend server, which will be
@@ -194,14 +226,26 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                             "HTTP proxy server read", error);
     return;
   }
-  // Move read data into write buffer and write it.
-  // The write operation inherits our reference to conn.
-  gpr_slice_buffer_move_into(&conn->server_read_buffer,
-                             &conn->client_write_buffer);
-  grpc_endpoint_write(exec_ctx, conn->client_endpoint,
-                      &conn->client_write_buffer, &conn->on_client_write_done);
+  // If there is already a pending write (i.e., client_write_buffer is
+  // not empty), then move the read data into client_deferred_write_buffer,
+  // and the next write will be requested in on_client_write_done(), when
+  // the current write is finished.
+  //
+  // Otherwise, move the read data into the write buffer and write it.
+  if (conn->client_write_buffer.length > 0) {
+    gpr_slice_buffer_move_into(&conn->server_read_buffer,
+                               &conn->client_deferred_write_buffer);
+  } else {
+    gpr_slice_buffer_move_into(&conn->server_read_buffer,
+                               &conn->client_write_buffer);
+    gpr_ref(&conn->refcount);
+    grpc_endpoint_write(exec_ctx, conn->client_endpoint,
+                        &conn->client_write_buffer,
+                        &conn->on_client_write_done);
+  }
   // Read more data.
-  do_server_read(exec_ctx, conn);
+  grpc_endpoint_read(exec_ctx, conn->server_endpoint, &conn->server_read_buffer,
+                     &conn->on_server_read_done);
 }
 
 // Callback to write the HTTP response for the CONNECT request.
@@ -213,24 +257,14 @@ static void on_write_response_done(grpc_exec_ctx* exec_ctx, void* arg,
                             "HTTP proxy write response", error);
     return;
   }
-  gpr_unref(&conn->refcount);
   // Clear write buffer.
   gpr_slice_buffer_reset_and_unref(&conn->client_write_buffer);
-  // Start reading from both client and server.
-  do_client_read(exec_ctx, conn);
-  do_server_read(exec_ctx, conn);
-}
-
-// Start a read from the client.
-static void do_client_read(grpc_exec_ctx* exec_ctx, proxy_connection* conn) {
+  // Start reading from both client and server.  One of the read
+  // requests inherits our ref to conn, but we need to take a new ref
+  // for the other one.
   gpr_ref(&conn->refcount);
   grpc_endpoint_read(exec_ctx, conn->client_endpoint, &conn->client_read_buffer,
                      &conn->on_client_read_done);
-}
-
-// Start a read from the server.
-static void do_server_read(grpc_exec_ctx* exec_ctx, proxy_connection* conn) {
-  gpr_ref(&conn->refcount);
   grpc_endpoint_read(exec_ctx, conn->server_endpoint, &conn->server_read_buffer,
                      &conn->on_server_read_done);
 }
@@ -350,8 +384,10 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_closure_init(&conn->on_server_read_done, on_server_read_done, conn);
   grpc_closure_init(&conn->on_server_write_done, on_server_write_done, conn);
   gpr_slice_buffer_init(&conn->client_read_buffer);
+  gpr_slice_buffer_init(&conn->client_deferred_write_buffer);
   gpr_slice_buffer_init(&conn->client_write_buffer);
   gpr_slice_buffer_init(&conn->server_read_buffer);
+  gpr_slice_buffer_init(&conn->server_deferred_write_buffer);
   gpr_slice_buffer_init(&conn->server_write_buffer);
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
