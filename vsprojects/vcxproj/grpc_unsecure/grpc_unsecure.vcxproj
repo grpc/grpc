@@ -404,7 +404,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_result.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
@@ -421,6 +420,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\trace_context.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h" />
@@ -695,8 +695,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.c">
@@ -730,6 +728,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\trace_context.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
     </ClCompile>

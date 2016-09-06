@@ -60,11 +60,12 @@ class RpcMethod {
 
   const char* name() const { return name_; }
   RpcType method_type() const { return method_type_; }
+  void SetMethodType(RpcType type) { method_type_ = type; }
   void* channel_tag() const { return channel_tag_; }
 
  private:
   const char* const name_;
-  const RpcType method_type_;
+  RpcType method_type_;
   void* const channel_tag_;
 };
 

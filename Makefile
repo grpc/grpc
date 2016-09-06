@@ -2665,7 +2665,6 @@ LIBGRPC_SRC = \
     src/core/ext/client_config/resolver_registry.c \
     src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
@@ -2687,6 +2686,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
@@ -2916,7 +2916,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_config/resolver_registry.c \
     src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/lib/http/httpcli_security_connector.c \
@@ -3377,7 +3376,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_config/resolver_registry.c \
     src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
@@ -3395,6 +3393,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
@@ -6776,6 +6775,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
     test/core/end2end/tests/network_status_change.c \
+    test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
@@ -6856,6 +6856,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
     test/core/end2end/tests/network_status_change.c \
+    test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \

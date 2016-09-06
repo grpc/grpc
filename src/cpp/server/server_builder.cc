@@ -35,10 +35,9 @@
 
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
-#include "include/grpc/support/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
@@ -156,14 +155,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*option)->UpdateArguments(&args);
     (*option)->UpdatePlugins(&plugins_);
   }
-  if (!thread_pool) {
-    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-      if ((*plugin)->has_sync_methods()) {
-        thread_pool.reset(CreateDefaultThreadPool());
-        has_sync_methods = true;
-        break;
-      }
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    if (!thread_pool && (*plugin)->has_sync_methods()) {
+      thread_pool.reset(CreateDefaultThreadPool());
+      has_sync_methods = true;
     }
+    (*plugin)->UpdateChannelArguments(&args);
   }
   if (max_receive_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);

@@ -669,8 +669,8 @@ class Call GRPC_FINAL {
     call_hook_->PerformOpsOnCall(ops, this);
   }
 
-  grpc_call* call() { return call_; }
-  CompletionQueue* cq() { return cq_; }
+  grpc_call* call() const { return call_; }
+  CompletionQueue* cq() const { return cq_; }
 
   int max_receive_message_size() { return max_receive_message_size_; }
 
