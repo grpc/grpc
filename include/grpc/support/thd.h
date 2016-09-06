@@ -84,6 +84,19 @@ GPRAPI gpr_thd_id gpr_thd_currentid(void);
    Calling this on a detached thread has unpredictable results. */
 GPRAPI void gpr_thd_join(gpr_thd_id t);
 
+/* Provides hooks for a custom thread initializer.
+   init() is called from the parent thread, and set() from the child
+   thread. */
+typedef struct gpr_thd_ctx_vtable {
+  void *(*init)(void);
+  void (*set)(void *ctx);
+  void (*destroy)(void *ctx);
+} gpr_thd_ctx_vtable;
+
+/* Registers a custom thread initializer.  Should only be
+   called on grpc_init(). */
+GPRAPI void gpr_thd_set_ctx_vtable(gpr_thd_ctx_vtable *vtable);
+
 #ifdef __cplusplus
 }
 #endif
