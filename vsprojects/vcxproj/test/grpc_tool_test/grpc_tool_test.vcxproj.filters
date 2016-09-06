@@ -87,6 +87,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>

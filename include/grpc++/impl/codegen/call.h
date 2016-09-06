@@ -46,6 +46,7 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
+#include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
 #include <grpc/impl/codegen/alloc.h>
@@ -434,7 +435,7 @@ class CallOpServerSendStatus {
     trailing_metadata_count_ = trailing_metadata.size();
     trailing_metadata_ = FillMetadataArray(trailing_metadata);
     send_status_available_ = true;
-    send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+    send_status_code_ = static_cast<grpc_status_code>(GetCanonicalCode(status));
     send_status_details_ = status.error_message();
   }
 
