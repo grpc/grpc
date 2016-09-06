@@ -81,6 +81,7 @@ static grpc_error *my_resolve_address(const char *name, const char *addr,
     (*addrs)->naddrs = 1;
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
+    (*addrs)->addrs[0].is_balancer = false;
     return GRPC_ERROR_NONE;
   }
 }
