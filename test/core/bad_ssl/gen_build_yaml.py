@@ -41,7 +41,8 @@ default_test_options = TestOptions(False, 1.0)
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'cert': default_test_options._replace(cpu_cost=0.1),
-    'alpn': default_test_options._replace(cpu_cost=0.1),
+    # Disabling this test because it does not link correctly as written
+    # 'alpn': default_test_options._replace(cpu_cost=0.1),
 }
 
 def main():
