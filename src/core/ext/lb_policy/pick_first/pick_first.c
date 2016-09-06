@@ -454,8 +454,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  p->subchannels =
-      gpr_malloc(sizeof(grpc_subchannel *) * num_addrs);
+  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * num_addrs);
   memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;

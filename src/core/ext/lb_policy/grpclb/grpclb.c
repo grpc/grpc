@@ -460,8 +460,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     }
   }
   size_t uri_path_len;
-  char *target_uri_str = gpr_strjoin_sep(
-      (const char **)addr_strs, num_grpclb_addrs, ",", &uri_path_len);
+  char *target_uri_str = gpr_strjoin_sep((const char **)addr_strs,
+                                         num_grpclb_addrs, ",", &uri_path_len);
 
   /* will pick using pick_first */
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(

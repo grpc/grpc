@@ -582,8 +582,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  p->subchannels =
-      gpr_malloc(sizeof(*p->subchannels) * num_addrs);
+  p->subchannels = gpr_malloc(sizeof(*p->subchannels) * num_addrs);
   memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
 
   grpc_subchannel_args sc_args;
