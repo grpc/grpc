@@ -161,7 +161,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
   }
 
   bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = call_.max_message_size();
+    *sz = call_.max_receive_message_size();
     return true;
   }
 
@@ -311,7 +311,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   }
 
   bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = call_.max_message_size();
+    *sz = call_.max_receive_message_size();
     return true;
   }
 
@@ -383,7 +383,7 @@ class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
   }
 
   bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = call_->max_message_size();
+    *sz = call_->max_receive_message_size();
     return true;
   }
 
@@ -475,7 +475,7 @@ class ServerReaderWriterBody GRPC_FINAL {
   }
 
   bool NextMessageSize(uint32_t* sz) {
-    *sz = call_->max_message_size();
+    *sz = call_->max_receive_message_size();
     return true;
   }
 
