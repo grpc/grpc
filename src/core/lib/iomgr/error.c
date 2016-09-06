@@ -372,7 +372,7 @@ void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
   // until we find the first one that has a status code.
   intptr_t status = GRPC_STATUS_UNKNOWN;  // Default in case we don't find one.
   grpc_error* found_error = recursively_find_error_with_status(error, &status);
-  *code = status;
+  *code = (grpc_status_code)status;
   // Now populate msg.
   // If we found an error with a status code above, use that; otherwise,
   // fall back to using the parent error.

@@ -197,7 +197,7 @@ typedef struct server_call_data {
 static grpc_error *init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   grpc_call_element_args* args) {
-gpr_log(GPR_INFO, "==> %s() -- call_data_size=%lu", __func__, elem->filter->sizeof_call_data);
+gpr_log(GPR_INFO, "==> %s() -- call_data_size=%lu", __func__, (unsigned long)elem->filter->sizeof_call_data);
   base_call_data* calld = elem->call_data;
   // Note: size of call data is different between client and server.
   memset(calld, 0, elem->filter->sizeof_call_data);
