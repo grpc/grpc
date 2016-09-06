@@ -129,7 +129,7 @@ class ServerInterface : public CallHook {
 
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 
-  virtual int max_message_size() const = 0;
+  virtual int max_receive_message_size() const = 0;
 
   virtual grpc_server* server() = 0;
 
@@ -200,8 +200,8 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(payload_, request_,
-                                                    server_->max_message_size())
+          SerializationTraits<Message>::Deserialize(
+              payload_, request_, server_->max_receive_message_size())
               .ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
       *status = serialization_status && *status;

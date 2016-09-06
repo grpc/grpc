@@ -116,10 +116,10 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \param thread_pool The threadpool instance to use for call processing.
   /// \param thread_pool_owned Does the server own the \a thread_pool instance?
-  /// \param max_message_size Maximum message length that the channel can
-  /// receive.
+  /// \param max_receive_message_size Maximum message length that the channel
+  /// can receive.
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         int max_message_size, ChannelArguments* args);
+         int max_receive_message_size, ChannelArguments* args);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -164,13 +164,15 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
 
   void ShutdownInternal(gpr_timespec deadline) GRPC_OVERRIDE;
 
-  int max_message_size() const GRPC_OVERRIDE { return max_message_size_; };
+  int max_receive_message_size() const GRPC_OVERRIDE {
+    return max_receive_message_size_;
+  };
 
   grpc_server* server() GRPC_OVERRIDE { return server_; };
 
   ServerInitializer* initializer();
 
-  const int max_message_size_;
+  const int max_receive_message_size_;
 
   // Completion queue.
   CompletionQueue cq_;
