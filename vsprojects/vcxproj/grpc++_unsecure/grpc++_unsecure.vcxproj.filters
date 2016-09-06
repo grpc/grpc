@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\insecure_create_auth_context.cc">
       <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
+      <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\channel_cc.cc">
       <Filter>src\cpp\client</Filter>
@@ -25,9 +31,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
-      <Filter>src\cpp\client</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -47,9 +50,6 @@
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
-      <Filter>src\cpp\server</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">

@@ -452,6 +452,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\auth_property_iterator.cc">
@@ -461,6 +463,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\secure_channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\secure_create_auth_context.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.cc">
     </ClCompile>
@@ -478,8 +482,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue_cc.cc">
@@ -493,8 +495,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
     </ClCompile>

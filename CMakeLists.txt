@@ -693,11 +693,13 @@ target_link_libraries(grpc_unsecure
 
   
 add_library(grpc++
+  src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/secure_auth_context.cc
   src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
+  src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
@@ -706,7 +708,6 @@ add_library(grpc++
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
@@ -714,7 +715,6 @@ add_library(grpc++
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
@@ -854,7 +854,9 @@ target_link_libraries(grpc++_reflection
 
   
 add_library(grpc++_unsecure
+  src/cpp/client/insecure_credentials.cc
   src/cpp/common/insecure_create_auth_context.cc
+  src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
@@ -862,7 +864,6 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
@@ -870,7 +871,6 @@ add_library(grpc++_unsecure
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
