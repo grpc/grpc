@@ -58,6 +58,8 @@
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
+    <Compile Include="Logging\GlobalLoggerProxy.cs" />
+    <Compile Include="Logging\LoggerChangedEventArgs.cs" />
     <Compile Include="Logging\TextWriterLogger.cs" />
     <Compile Include="Logging\NullLogger.cs" />
     <Compile Include="ServerPort.cs" />

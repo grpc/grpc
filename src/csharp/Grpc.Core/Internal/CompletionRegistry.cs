@@ -49,6 +49,8 @@ namespace Grpc.Core.Internal
         readonly GrpcEnvironment environment;
         readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();
 
+        static GlobalLoggerProxy<CompletionRegistry> GlobalLoggerProxy = new GlobalLoggerProxy<CompletionRegistry>();
+
         public CompletionRegistry(GrpcEnvironment environment)
         {
             this.environment = environment;
@@ -82,8 +84,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                ILogger Logger = GrpcEnvironment.GetLoggerForType<CompletionRegistry>();
-                Logger.Error(e, "Exception occured while invoking completion delegate.");
+                GlobalLoggerProxy.GetLogger().Error(e, "Exception occured while invoking completion delegate.");
             }
             finally
             {

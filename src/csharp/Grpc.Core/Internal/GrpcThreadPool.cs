@@ -56,6 +56,8 @@ namespace Grpc.Core.Internal
 
         IReadOnlyCollection<CompletionQueueSafeHandle> completionQueues;
 
+        GlobalLoggerProxy<GrpcThreadPool> globalLoggerProxy = new GlobalLoggerProxy<GrpcThreadPool>();
+
         /// <summary>
         /// Creates a thread pool threads polling on a set of completions queues.
         /// </summary>
@@ -168,8 +170,7 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
-                        ILogger Logger = GrpcEnvironment.GetLoggerForType<GrpcThreadPool>();
-                        Logger.Error(e, "Exception occured while invoking completion delegate");
+                        globalLoggerProxy.GetLogger().Error(e, "Exception occured while invoking completion delegate");
                     }
                 }
             }

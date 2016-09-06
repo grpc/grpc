@@ -60,8 +60,7 @@ namespace Grpc.Core
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), DefaultLogLevel);
-        static Dictionary<Type, ILogger> loggerCache = new Dictionary<Type, ILogger>();
-        static object loggerLock = new object();
+        internal static EventHandler<LoggerChangedEventArgs> LoggerChangedEvent;
 
         readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
@@ -190,10 +189,7 @@ namespace Grpc.Core
         {
             get
             {
-                lock (loggerLock)
-                {
-                    return logger;
-                }
+                return logger;
             }
         }
 
@@ -202,29 +198,12 @@ namespace Grpc.Core
         /// </summary>
         public static void SetLogger(ILogger customLogger)
         {
-            lock (loggerLock)
-            {
-                GrpcPreconditions.CheckNotNull(customLogger, "customLogger");
-                logger = customLogger;
-                loggerCache.Clear();
-            }
-        }
+            GrpcPreconditions.CheckNotNull(customLogger, "customLogger");
+            logger = customLogger;
 
-        internal static ILogger GetLoggerForType<T>() {
-            lock (loggerLock)
+            if (LoggerChangedEvent != null)
             {
-                ILogger typedLogger;
-
-                if (loggerCache.TryGetValue(typeof(T), out typedLogger))
-                {
-                    return typedLogger;
-                }
-                else
-                {
-                    ILogger newLogger = Logger.ForType<T>();
-                    loggerCache.Add(typeof(T), newLogger);
-                    return newLogger;
-                }
+                LoggerChangedEvent(null, new LoggerChangedEventArgs(customLogger));
             }
         }
 

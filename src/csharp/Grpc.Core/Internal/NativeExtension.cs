@@ -49,6 +49,8 @@ namespace Grpc.Core.Internal
 
         readonly NativeMethods nativeMethods;
 
+        GlobalLoggerProxy<NativeExtension> globalLoggerProxy = new GlobalLoggerProxy<NativeExtension>();
+
         private NativeExtension()
         {
             this.nativeMethods = new NativeMethods(Load());
@@ -59,7 +61,7 @@ namespace Grpc.Core.Internal
 
             DefaultSslRootsOverride.Override(this.nativeMethods);
 
-            GrpcEnvironment.GetLoggerForType<NativeExtension>().Debug("gRPC native library loaded successfully.");
+            globalLoggerProxy.GetLogger().Debug("gRPC native library loaded successfully.");
         }
 
         /// <summary>

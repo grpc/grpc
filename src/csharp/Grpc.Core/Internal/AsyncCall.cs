@@ -61,6 +61,9 @@ namespace Grpc.Core.Internal
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
 
+        GlobalLoggerProxy<AsyncCall<TRequest, TResponse>> globalLoggerProxy 
+            = new GlobalLoggerProxy<AsyncCall<TRequest, TResponse>>();
+
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
             : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
         {
@@ -119,8 +122,7 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
-                        ILogger AsyncCallLogger = GrpcEnvironment.GetLoggerForType<AsyncCall<TRequest, TResponse>>();
-                        AsyncCallLogger.Error(e, "Exception occured while invoking completion delegate.");
+                        globalLoggerProxy.GetLogger().Error(e, "Exception occured while invoking completion delegate.");
                     }
                 }
                     

@@ -59,12 +59,13 @@ namespace Grpc.Core.Internal
         readonly string libraryPath;
         readonly IntPtr handle;
 
+        GlobalLoggerProxy<UnmanagedLibrary> globalLoggerProxy = new GlobalLoggerProxy<UnmanagedLibrary>();
+
         public UnmanagedLibrary(string[] libraryPathAlternatives)
         {
             this.libraryPath = FirstValidLibraryPath(libraryPathAlternatives);
 
-            ILogger Logger = GrpcEnvironment.GetLoggerForType<UnmanagedLibrary>();
-            Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
+            globalLoggerProxy.GetLogger().Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
             this.handle = PlatformSpecificLoadLibrary(this.libraryPath);
 

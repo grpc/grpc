@@ -98,16 +98,20 @@ namespace Grpc.Core.Tests
         {
             // Note this relies partially on NullLogger and TextWriterLoggerImplementations, 
             // in that their ForType methods return instances of their same types.
+            GlobalLoggerProxy<Channel> globalLoggerProxyForChannel = new GlobalLoggerProxy<Channel>();
+            GlobalLoggerProxy<Server> globalLoggerProxyForServer = new GlobalLoggerProxy<Server>();
+
             NullLogger nullLogger = new NullLogger();
             GrpcEnvironment.SetLogger(nullLogger);
 
-            Assert.IsInstanceOf<NullLogger>(GrpcEnvironment.GetLoggerForType<Channel>());
+            Assert.IsInstanceOf<NullLogger>(globalLoggerProxyForChannel.GetLogger());
+            Assert.IsInstanceOf<NullLogger>(globalLoggerProxyForServer.GetLogger());
 
             TextWriterLogger textWriterLogger = new TextWriterLogger(new StringWriter());
             GrpcEnvironment.SetLogger(textWriterLogger);
 
-            Assert.IsInstanceOf<TextWriterLogger>(GrpcEnvironment.GetLoggerForType<Channel>());
-            Assert.IsInstanceOf<TextWriterLogger>(GrpcEnvironment.GetLoggerForType<Server>());
+            Assert.IsInstanceOf<TextWriterLogger>(globalLoggerProxyForChannel.GetLogger());
+            Assert.IsInstanceOf<TextWriterLogger>(globalLoggerProxyForServer.GetLogger());
         }
     }
 }

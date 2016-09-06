@@ -59,6 +59,8 @@ namespace Grpc.IntegrationTesting
         // Profilers to use for clients.
         static readonly BlockingCollection<BasicProfiler> profilers = new BlockingCollection<BasicProfiler>();
 
+        static GlobalLoggerProxy<ClientRunners> GlobalLoggerProxy = new GlobalLoggerProxy<ClientRunners>();
+
         internal static void AddProfiler(BasicProfiler profiler)
         {
             GrpcPreconditions.CheckNotNull(profiler);
@@ -70,21 +72,21 @@ namespace Grpc.IntegrationTesting
         /// </summary>
         public static IClientRunner CreateStarted(ClientConfig config)
         {
-            ILogger Logger = GrpcEnvironment.GetLoggerForType<ClientRunners>();
+            ILogger logger = GlobalLoggerProxy.GetLogger();
 
-            Logger.Debug("ClientConfig: {0}", config);
+            logger.Debug("ClientConfig: {0}", config);
 
             if (config.AsyncClientThreads != 0)
             {
-                Logger.Warning("ClientConfig.AsyncClientThreads is not supported for C#. Ignoring the value");
+                logger.Warning("ClientConfig.AsyncClientThreads is not supported for C#. Ignoring the value");
             }
             if (config.CoreLimit != 0)
             {
-                Logger.Warning("ClientConfig.CoreLimit is not supported for C#. Ignoring the value");
+                logger.Warning("ClientConfig.CoreLimit is not supported for C#. Ignoring the value");
             }
             if (config.CoreList.Count > 0)
             {
-                Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
+                logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
             var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams);
