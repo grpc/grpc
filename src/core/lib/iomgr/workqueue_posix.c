@@ -83,18 +83,21 @@ static void workqueue_orphan(grpc_exec_ctx *exec_ctx,
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
-                        const char *reason) {
-  if (workqueue == NULL) return;
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
+  if (workqueue == NULL) return NULL;
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p   ref %d -> %d %s",
           workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count + 1,
           reason);
   gpr_ref(&workqueue->refs);
+  return workqueue;
 }
 #else
-void grpc_workqueue_ref(grpc_workqueue *workqueue) {
-  if (workqueue == NULL) return;
-  gpr_ref(&workqueue->refs);
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  if (workqueue != NULL) {
+    gpr_ref(&workqueue->refs);
+  }
+  return workqueue;
 }
 #endif
 
