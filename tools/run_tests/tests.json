@@ -2901,25 +2901,6 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "bad_ssl_alpn_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
     "name": "bad_ssl_cert_test", 
     "platforms": [
       "linux", 
