@@ -58,7 +58,6 @@ grpc_error *grpc_resolve_unix_domain_address(const char *name,
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, name);
   (*addrs)->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-  (*addrs)->addrs->is_balancer = false;
   return GRPC_ERROR_NONE;
 }
 

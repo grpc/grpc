@@ -37,6 +37,30 @@
 
 #include <grpc/support/alloc.h>
 
+grpc_addresses *grpc_addresses_create(size_t num_addresses) {
+  grpc_addresses *addresses = gpr_malloc(sizeof(grpc_addresses));
+  addresses->num_addresses = num_addresses;
+  const size_t addresses_size = sizeof(grpc_address) * num_addresses;
+  addresses->addresses = gpr_malloc(addresses_size);
+  memset(addresses->addresses, 0, addresses_size);
+  return addresses;
+}
+
+void grpc_addresses_set_address(grpc_addresses *addresses, size_t index,
+                                void *address, size_t address_len,
+                                bool is_balancer) {
+  GPR_ASSERT(index < addresses->num_addresses);
+  grpc_address *target = &addresses->addresses[index];
+  memcpy(target->address.addr, address, address_len);
+  target->address.len = address_len;
+  target->is_balancer = is_balancer;
+}
+
+void grpc_addresses_destroy(grpc_addresses *addresses) {
+  gpr_free(addresses->addresses);
+  gpr_free(addresses);
+}
+
 struct grpc_resolver_result {
   gpr_refcount refs;
   grpc_lb_policy *lb_policy;

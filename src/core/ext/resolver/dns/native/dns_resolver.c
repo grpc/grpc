@@ -170,20 +170,25 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
   r->resolving = 0;
-  grpc_resolved_addresses *addresses = r->addresses;
-  if (addresses != NULL) {
+  if (r->addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
-    result = grpc_resolver_result_create();
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.addresses = addresses;
+    lb_policy_args.addresses = grpc_addresses_create(r->addresses->naddrs);
+    for (size_t i = 0; i < r->addresses->naddrs; ++i) {
+      grpc_addresses_set_address(
+          lb_policy_args.addresses, i, &r->addresses->addrs[i].addr,
+          r->addresses->addrs[i].len, false /* is_balancer */);
+    }
+    grpc_resolved_addresses_destroy(r->addresses);
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
+    grpc_addresses_destroy(lb_policy_args.addresses);
+    result = grpc_resolver_result_create();
     if (lb_policy != NULL) {
       grpc_resolver_result_set_lb_policy(result, lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
     }
-    grpc_resolved_addresses_destroy(addresses);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);

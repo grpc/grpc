@@ -443,11 +443,11 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->addresses != NULL);
   GPR_ASSERT(args->client_channel_factory != NULL);
 
-  // Find the number of backend addresses.  We ignore balancer
-  // addresses, since we don't know how to handle them.
+  /* Find the number of backend addresses. We ignore balancer
+   * addresses, since we don't know how to handle them. */
   size_t num_addrs = 0;
-  for (size_t i = 0; i < args->addresses->naddrs; i++) {
-    if (!args->addresses->addrs[i].is_balancer) ++num_addrs;
+  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+    if (!args->addresses->addresses[i].is_balancer) ++num_addrs;
   }
   if (num_addrs == 0) return NULL;
 
@@ -458,13 +458,14 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
-  for (size_t i = 0; i < args->addresses->naddrs; i++) {
-    // Skip balancer addresses, since we only know how to handle backends.
-    if (args->addresses->addrs[i].is_balancer) continue;
+  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+    /* Skip balancer addresses, since we only know how to handle backends. */
+    if (args->addresses->addresses[i].is_balancer) continue;
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
-    sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
+    sc_args.addr =
+        (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
+    sc_args.addr_len = args->addresses->addresses[i].address.len;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);

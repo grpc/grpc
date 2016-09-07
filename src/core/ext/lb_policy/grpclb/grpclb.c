@@ -296,10 +296,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
 
   grpc_lb_policy_args args;
   args.client_channel_factory = glb_policy->cc_factory;
-  args.addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-  args.addresses->naddrs = serverlist->num_servers;
-  args.addresses->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * args.addresses->naddrs);
+  args.addresses = grpc_addresses_create(serverlist->num_servers);
   size_t out_addrs_idx = 0;
   for (size_t i = 0; i < serverlist->num_servers; ++i) {
     grpc_uri uri;
@@ -307,13 +304,12 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
     size_t sa_len;
     uri.path = host_ports[i];
     if (parse_ipv4(&uri, &sa, &sa_len)) { /* TODO(dgq): add support for ipv6 */
-      memcpy(args.addresses->addrs[out_addrs_idx].addr, &sa, sa_len);
-      args.addresses->addrs[out_addrs_idx].len = sa_len;
-      // These are, of course, actually balancer addresses.  However, we
-      // want the round_robin LB policy to treat them as normal backend
-      // addresses, since we don't need to talk to balancers in order to
-      // find the balancers themselves.
-      args.addresses->addrs[out_addrs_idx].is_balancer = false;
+      /* These are, of course, actually balancer addresses. However, we
+       * want the round_robin LB policy to treat them as normal backend
+       * addresses, since we don't need to talk to balancers in order to
+       * find the balancers themselves, so we set is_balancer=false. */
+      grpc_addresses_set_address(args.addresses, out_addrs_idx, &sa, sa_len,
+                                 false /* is_balancer */);
       ++out_addrs_idx;
     } else {
       gpr_log(GPR_ERROR, "Invalid LB service address '%s', ignoring.",
@@ -328,8 +324,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
     gpr_free(host_ports[i]);
   }
   gpr_free(host_ports);
-  gpr_free(args.addresses->addrs);
-  gpr_free(args.addresses);
+  grpc_addresses_destroy(args.addresses);
   return rr;
 }
 
@@ -419,17 +414,16 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
-  // Count the number of gRPC-LB addresses.  There must be at least one.
-  // TODO(roth): For now, we ignore non-balancer addresses, so there must be
-  // at least one balancer address.  In the future, we may change the
-  // behavior such that we fall back to using the non-balancer addresses
-  // if we cannot reach any balancers.  At that time, this should be
-  // changed to allow a list with no balancer addresses, since the
-  // resolver might fail to return a balancer address even when this is
-  // the right LB policy to use.
+  /* Count the number of gRPC-LB addresses. There must be at least one.
+   * TODO(roth): For now, we ignore non-balancer addresses, but in the
+   * future, we may change the behavior such that we fall back to using
+   * the non-balancer addresses if we cannot reach any balancers. At that
+   * time, this should be changed to allow a list with no balancer addresses,
+   * since the resolver might fail to return a balancer address even when
+   * this is the right LB policy to use. */
   size_t num_grpclb_addrs = 0;
-  for (size_t i = 0; i < args->addresses->naddrs; ++i) {
-    if (args->addresses->addrs[i].is_balancer) ++num_grpclb_addrs;
+  for (size_t i = 0; i < args->addresses->num_addresses; ++i) {
+    if (args->addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
   }
   if (num_grpclb_addrs == 0) return NULL;
 
@@ -448,14 +442,15 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * ipvX://ip1:port1,ip2:port2,...
    * TODO(dgq): support mixed ip version */
   char **addr_strs = gpr_malloc(sizeof(char *) * num_grpclb_addrs);
-  addr_strs[0] =
-      grpc_sockaddr_to_uri((const struct sockaddr *)&args->addresses->addrs[0]);
+  addr_strs[0] = grpc_sockaddr_to_uri(
+      (const struct sockaddr *)&args->addresses->addresses[0].address.addr);
   size_t addr_index = 1;
-  for (size_t i = 1; i < args->addresses->naddrs; i++) {
-    if (args->addresses->addrs[i].is_balancer) {
+  for (size_t i = 1; i < args->addresses->num_addresses; i++) {
+    if (args->addresses->addresses[i].is_balancer) {
       GPR_ASSERT(grpc_sockaddr_to_string(
                      &addr_strs[addr_index++],
-                     (const struct sockaddr *)&args->addresses->addrs[i],
+                     (const struct sockaddr *)&args->addresses->addresses[i]
+                         .address.addr,
                      true) == 0);
     }
   }

@@ -58,7 +58,7 @@ typedef struct {
   char *lb_policy_name;
 
   /** the addresses that we've 'resolved' */
-  grpc_resolved_addresses *addresses;
+  grpc_addresses *addresses;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -142,7 +142,7 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
-  grpc_resolved_addresses_destroy(r->addresses);
+  grpc_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
@@ -216,22 +216,18 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_init(&path_parts);
 
   gpr_slice_split(path_slice, ",", &path_parts);
-  r->addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-  r->addresses->naddrs = path_parts.count;
-  r->addresses->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * r->addresses->naddrs);
-
-  for (size_t i = 0; i < r->addresses->naddrs; i++) {
+  r->addresses = grpc_addresses_create(path_parts.count);
+  for (size_t i = 0; i < r->addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri,
-               (struct sockaddr_storage *)(&r->addresses->addrs[i].addr),
-               &r->addresses->addrs[i].len)) {
+    if (!parse(&ith_uri, (struct sockaddr_storage *)(&r->addresses->addresses[i]
+                                                          .address.addr),
+               &r->addresses->addresses[i].address.len)) {
       errors_found = true;
     }
     gpr_free(part_str);
-    r->addresses->addrs[i].is_balancer = lb_enabled;
+    r->addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
 
@@ -239,7 +235,7 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_unref(path_slice);
   if (errors_found) {
     gpr_free(r->lb_policy_name);
-    grpc_resolved_addresses_destroy(r->addresses);
+    grpc_addresses_destroy(r->addresses);
     gpr_free(r);
     return NULL;
   }

@@ -34,7 +34,6 @@
 #ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -44,7 +43,6 @@
 typedef struct {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
   size_t len;
-  bool is_balancer;
 } grpc_resolved_address;
 
 typedef struct {

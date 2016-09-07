@@ -36,7 +36,7 @@
 
 #include "src/core/ext/client_config/client_channel_factory.h"
 #include "src/core/ext/client_config/lb_policy.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/ext/client_config/resolver_result.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -48,7 +48,7 @@ struct grpc_lb_policy_factory {
 };
 
 typedef struct grpc_lb_policy_args {
-  grpc_resolved_addresses *addresses;
+  grpc_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;
 
