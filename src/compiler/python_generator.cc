@@ -230,8 +230,11 @@ static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
 
 bool PrintBetaServicer(const ServiceDescriptor* service, Printer* out) {
   out->Print("\n\n");
-  out->Print("class Beta$Service$Servicer(object):\n", "Service",
-             service->name());
+  out->Print("class Beta$Service$Servicer(object):\n"
+    "\"\"\"The Beta API is deprecated for 0.15.0 and later. It is recommended\n"
+    "to use the GA API for all further purposes. This class was generated only\n"
+    "to ease transition from grpcio<0.15.0 to grpcio>=0.15.0\"\"\"\n",
+    "Service", service->name());
   {
     IndentScope raii_class_indent(out);
     PrintAllComments(service, out);
@@ -253,7 +256,11 @@ bool PrintBetaServicer(const ServiceDescriptor* service, Printer* out) {
 
 bool PrintBetaStub(const ServiceDescriptor* service, Printer* out) {
   out->Print("\n\n");
-  out->Print("class Beta$Service$Stub(object):\n", "Service", service->name());
+  out->Print("class Beta$Service$Stub(object):\n"
+   "\"\"\"The Beta API is deprecated for 0.15.0 and later. It is recommended\n"
+   "to use the GA API for all further purposes. This class was generated only\n"
+   "to ease transition from grpcio<0.15.0 to grpcio>=0.15.0\"\"\"\n",
+   "Service", service->name());
   {
     IndentScope raii_class_indent(out);
     PrintAllComments(service, out);
@@ -282,8 +289,11 @@ bool PrintBetaServerFactory(const grpc::string& package_qualified_service_name,
                             const ServiceDescriptor* service, Printer* out) {
   out->Print("\n\n");
   out->Print(
-      "def beta_create_$Service$_server(servicer, pool=None, "
-      "pool_size=None, default_timeout=None, maximum_timeout=None):\n",
+    "def beta_create_$Service$_server(servicer, pool=None, "
+    "pool_size=None, default_timeout=None, maximum_timeout=None):\n"
+    "\"\"\"The Beta API is deprecated for 0.15.0 and later. It is recommended\n"
+    "to use the GA API for all further purposes. This function was generated only\n"
+    "to ease transition from grpcio<0.15.0 to grpcio>=0.15.0\"\"\"\n",
       "Service", service->name());
   {
     IndentScope raii_create_server_indent(out);
@@ -382,8 +392,12 @@ bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
   });
   out->Print("\n\n");
   out->Print(dict,
-             "def beta_create_$Service$_stub(channel, host=None,"
-             " metadata_transformer=None, pool=None, pool_size=None):\n");
+    "def beta_create_$Service$_stub(channel, host=None,"
+    " metadata_transformer=None, pool=None, pool_size=None):\n"
+    "\"\"\"The Beta API is deprecated for 0.15.0 and later. It is recommended\n"
+    "to use the GA API for all further purposes. This function was generated only\n"
+    "to ease transition from grpcio<0.15.0 to grpcio>=0.15.0\"\"\"\n",
+             );
   {
     IndentScope raii_create_server_indent(out);
     map<grpc::string, grpc::string> method_cardinalities;
