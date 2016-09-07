@@ -47,18 +47,20 @@
 #include "third_party/nanopb/pb_decode.h"
 #include "third_party/nanopb/pb_encode.h"
 
-#define BUF_SIZE 512
+#define BUF_SIZE 256
 
-// Encodes a proto-encoded TraceContext (ctxt1) to a buffer, and then decodes it
-// to a second TraceContext (ctxt2).  Validates that the resulting TraceContext
-// has a span_id, trace_id, and that the values are equal to those in initial
-// TraceContext.
+/* Encodes a proto-encoded TraceContext (ctxt1) to a buffer, and then decodes it
+to a second TraceContext (ctxt2).  Validates that the resulting TraceContext
+has a span_id, trace_id, and that the values are equal to those in initial
+TraceContext. */
 bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
                                     uint8_t *buffer, size_t buf_size) {
   google_trace_TraceContext ctxt2 = google_trace_TraceContext_init_zero;
   size_t msg_length;
+  GPR_ASSERT(ctxt1->has_trace_id && ctxt1->has_span_id);
 
-  if (!encode_trace_context(ctxt1, buffer, buf_size, &msg_length)) {
+  msg_length = encode_trace_context(ctxt1, buffer, buf_size);
+  if (msg_length == 0) {
     return false;
   }
 
@@ -70,9 +72,12 @@ bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
     return false;
   }
 
-  GPR_ASSERT(ctxt1->trace_id.hi == ctxt2.trace_id.hi &&
-             ctxt1->trace_id.lo == ctxt2.trace_id.lo &&
-             ctxt1->span_id == ctxt2.span_id);
+  GPR_ASSERT(
+      ctxt1->trace_id.hi == ctxt2.trace_id.hi &&
+      ctxt1->trace_id.lo == ctxt2.trace_id.lo &&
+      ctxt1->span_id == ctxt2.span_id &&
+      ctxt1->has_is_sampled == ctxt2.has_is_sampled &&
+      (ctxt1->has_is_sampled ? ctxt1->is_sampled == ctxt2.is_sampled : true));
 
   return true;
 }
@@ -92,8 +97,8 @@ bool validate_decode_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   return true;
 }
 
-// Read an encoded trace context from a file.  Validates that the decoding
-// gives the expected result (succeed).
+/* Read an encoded trace context from a file.  Validates that the decoding
+gives the expected result (succeed). */
 static void read_context_from_file(google_trace_TraceContext *ctxt,
                                    const char *file, const bool succeed) {
   uint8_t buffer[BUF_SIZE];
@@ -175,7 +180,7 @@ static void test_corrupt() {
   ctxt1.trace_id.hi = 2;
   ctxt1.has_span_id = true;
   ctxt1.span_id = 3;
-  encode_trace_context(&ctxt1, buffer, sizeof(buffer), &msg_length);
+  msg_length = encode_trace_context(&ctxt1, buffer, sizeof(buffer));
 
   // corrupt some bytes
   buffer[1] = 255;

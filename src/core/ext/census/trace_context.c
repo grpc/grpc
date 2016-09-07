@@ -40,25 +40,27 @@
 #include "third_party/nanopb/pb_decode.h"
 #include "third_party/nanopb/pb_encode.h"
 
-bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
-                          const size_t size, size_t *msg_length) {
+// This function assumes the TraceContext is valid.
+size_t encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                            const size_t buf_size) {
   // Create a stream that will write to our buffer.
-  pb_ostream_t stream = pb_ostream_from_buffer(buffer, size);
+  pb_ostream_t stream = pb_ostream_from_buffer(buffer, buf_size);
 
   // encode message
   bool status = pb_encode(&stream, google_trace_TraceContext_fields, ctxt);
-  *msg_length = stream.bytes_written;
+  size_t nbytes = stream.bytes_written;
 
   if (!status) {
     gpr_log(GPR_DEBUG, "TraceContext encoding failed: %s",
             PB_GET_ERROR(&stream));
+    nbytes = 0;
   }
 
-  return status;
+  return nbytes;
 }
 
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
-                          size_t nbytes) {
+                          const size_t nbytes) {
   // Create a stream that reads nbytes from the buffer.
   pb_istream_t stream = pb_istream_from_buffer(buffer, nbytes);
 

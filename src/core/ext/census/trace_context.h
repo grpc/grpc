@@ -38,21 +38,31 @@
 
 #include "src/core/ext/census/gen/trace_context.pb.h"
 
-// Maximum number of bytes required to encode a TraceContext
+/* Maximum number of bytes required to encode a TraceContext (31)
+1 byte for trace_id field
+1 byte for trace_id length
+1 byte for trace_id.hi field
+8 bytes for trace_id.hi (uint64_t)
+1 byte for trace_id.lo field
+8 bytes for trace_id.lo (uint64_t)
+1 byte for span_id field
+8 bytes for span_id (uint64_t)
+1 byte for is_sampled field
+1 byte for is_sampled (bool) */
 #define TRACE_MAX_CONTEXT_SIZE 31
 
-/* Encode a trace context (ctxt) in proto format to the buffer provided.  The
+/* Encode a trace context (ctxt) into proto format to the buffer provided.  The
 size of buffer must be at least TRACE_MAX_CONTEXT_SIZE.  On success, returns the
-number of bytes consumed in buffer in msg_length. On failure, returns 0 in
-msg_length. */
-bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
-                          const size_t size, size_t *msg_length);
+number of bytes successfully encoded into buffer.  On failure, returns 0. */
+size_t encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                            const size_t buf_size);
 
 /* Decode a proto-encoded TraceContext from the provided buffer into the
 TraceContext structure (ctxt).  The function expects to be supplied the number
 of bytes to be read from buffer (nbytes).  This function will also validate that
-the TraceContext has a span_id and a trace_id. */
+the TraceContext has a span_id and a trace_id, and will return false if either
+of these do not exist. On success, returns true and false otherwise. */
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
-                          size_t nbytes);
+                          const size_t nbytes);
 
 #endif
