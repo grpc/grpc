@@ -486,6 +486,17 @@
     "type": "target"
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gen_percent_encoding_tables", 
+    "src": [
+      "tools/codegen/core/gen_percent_encoding_tables.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
     "deps": [
       "gpr", 
       "gpr_test_util", 
@@ -609,6 +620,20 @@
     "name": "gpr_log_test", 
     "src": [
       "test/core/support/log_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gpr_percent_encoding_test", 
+    "src": [
+      "test/core/support/percent_encoding_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1445,6 +1470,38 @@
     "name": "no_server_test", 
     "src": [
       "test/core/end2end/no_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "percent_decode_fuzzer", 
+    "src": [
+      "test/core/support/percent_decode_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "percent_encode_fuzzer", 
+    "src": [
+      "test/core/support/percent_encode_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4235,6 +4292,40 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "src": [
+      "test/core/support/percent_decode_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "percent_encode_fuzzer_one_entry", 
+    "src": [
+      "test/core/support/percent_encode_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "server_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/server_fuzzer.c", 
@@ -5546,6 +5637,7 @@
       "test/core/end2end/tests/server_finishes_request.c", 
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
+      "test/core/end2end/tests/simple_cacheable_request.c", 
       "test/core/end2end/tests/simple_delayed_request.c", 
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
@@ -5609,6 +5701,7 @@
       "test/core/end2end/tests/server_finishes_request.c", 
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
+      "test/core/end2end/tests/simple_cacheable_request.c", 
       "test/core/end2end/tests/simple_delayed_request.c", 
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
@@ -5706,6 +5799,7 @@
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
       "src/core/lib/support/murmur_hash.h", 
+      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -5770,6 +5864,8 @@
       "src/core/lib/support/log_windows.c", 
       "src/core/lib/support/murmur_hash.c", 
       "src/core/lib/support/murmur_hash.h", 
+      "src/core/lib/support/percent_encoding.c", 
+      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/slice.c", 
       "src/core/lib/support/slice_buffer.c", 
       "src/core/lib/support/stack_lockfree.c", 

@@ -128,6 +128,7 @@ END2END_TESTS = {
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
+    'simple_cacheable_request': default_test_options,
     'simple_delayed_request': connectivity_test_options,
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
