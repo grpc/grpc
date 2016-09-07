@@ -31,7 +31,7 @@
  *
  */
 
-/* Functions for manipulating trace contexts as define in
+/* Functions for manipulating trace contexts as defined in
    src/proto/census/trace.proto */
 #ifndef GRPC_CORE_EXT_CENSUS_TRACE_CONTEXT_H
 #define GRPC_CORE_EXT_CENSUS_TRACE_CONTEXT_H
