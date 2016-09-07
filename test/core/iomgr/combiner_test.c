@@ -134,8 +134,9 @@ static void in_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void add_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_combiner_execute_finally(
-      exec_ctx, arg, grpc_closure_create(in_finally, NULL), GRPC_ERROR_NONE);
+  grpc_combiner_execute_finally(exec_ctx, arg,
+                                grpc_closure_create(in_finally, NULL),
+                                GRPC_ERROR_NONE, false);
 }
 
 static void test_execute_finally(void) {

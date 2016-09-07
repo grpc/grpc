@@ -68,7 +68,8 @@ typedef enum {
 typedef enum {
   GRPC_CHTTP2_WRITE_STATE_IDLE,
   GRPC_CHTTP2_WRITE_STATE_WRITING,
-  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_TO_COME,
+  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
+  GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
 } grpc_chttp2_write_state;
 
 /* deframer state for the overall http2 stream of bytes */
