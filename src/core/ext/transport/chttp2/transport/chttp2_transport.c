@@ -388,7 +388,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     /* flush writable stream list to avoid dangling references */
     grpc_chttp2_stream *s;
     while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
-      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing");
+      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:close");
     }
   }
   GRPC_ERROR_UNREF(error);
@@ -579,7 +579,7 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_stream *s, bool covered_by_poller,
                                  const char *reason) {
   if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s)) {
-    GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing");
+    GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
     grpc_chttp2_initiate_write(exec_ctx, t, covered_by_poller, reason);
   }
 }
@@ -1279,7 +1279,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          "Last stream closed after sending GOAWAY", &error, 1));
   }
   if (grpc_chttp2_list_remove_writable_stream(t, s)) {
-    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing");
+    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:remove_stream");
   }
 
   GRPC_ERROR_UNREF(error);

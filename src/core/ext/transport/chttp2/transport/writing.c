@@ -163,7 +163,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           s->sending_bytes += send_bytes;
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0) {
-            GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing");
+            GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
             grpc_chttp2_list_add_writable_stream(t, s);
           }
         } else if (t->outgoing_window == 0) {
@@ -189,9 +189,12 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     }
 
     if (now_writing) {
-      grpc_chttp2_list_add_writing_stream(t, s);
+      if (!grpc_chttp2_list_add_writing_stream(t, s)) {
+        /* already in writing list: drop ref */
+        GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:already_writing");
+      }
     } else {
-      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing");
+      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:no_write");
     }
   }
 
@@ -235,7 +238,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
                                      GRPC_ERROR_REF(error));
     }
-    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing");
+    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");
   }
   gpr_slice_buffer_reset_and_unref(&t->outbuf);
   GRPC_ERROR_UNREF(error);
