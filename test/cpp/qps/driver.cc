@@ -187,6 +187,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count) {
+  // Log everything from the driver
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
 
