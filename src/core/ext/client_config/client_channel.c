@@ -571,8 +571,10 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     }
     gpr_mu_unlock(&chand->mu);
     GPR_TIMER_END("pick_subchannel", 0);
+    GRPC_ERROR_UNREF(error);
     return true;
   }
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (chand->lb_policy != NULL) {
     grpc_lb_policy *lb_policy = chand->lb_policy;
     int r;

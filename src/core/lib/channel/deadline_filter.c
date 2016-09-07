@@ -63,6 +63,7 @@ gpr_log(GPR_INFO, "DEADLINE_EXCEEDED");
         GRPC_ERROR_CREATE("Deadline Exceeded"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
     elem->filter->start_transport_stream_op(exec_ctx, elem, &op);
+    GRPC_ERROR_UNREF(op.cancel_error);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
