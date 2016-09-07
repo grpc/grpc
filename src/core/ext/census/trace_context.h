@@ -31,19 +31,27 @@
  *
  */
 
+/* Functions for manipulating trace contexts as define in
+   src/proto/census/trace.proto */
 #ifndef GRPC_CORE_EXT_CENSUS_TRACE_CONTEXT_H
 #define GRPC_CORE_EXT_CENSUS_TRACE_CONTEXT_H
 
 #include "src/core/ext/census/gen/trace_context.pb.h"
 
-/* Data from trace context ctxt is encoded to buffer with a
-   max length of size.  The resulting number of bytes encoded is
-   written to msg_length. */
+// Maximum number of bytes required to encode a TraceContext
+#define TRACE_MAX_CONTEXT_SIZE 31
+
+/* Encode a trace context (ctxt) in proto format to the buffer provided.  The
+size of buffer must be at least TRACE_MAX_CONTEXT_SIZE.  On success, returns the
+number of bytes consumed in buffer in msg_length. On failure, returns 0 in
+msg_length. */
 bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
                           const size_t size, size_t *msg_length);
 
-/* Data of length nbytes from trace context ctxt is decoded
-   and written to buffer. */
+/* Decode a proto-encoded TraceContext from the provided buffer into the
+TraceContext structure (ctxt).  The function expects to be supplied the number
+of bytes to be read from buffer (nbytes).  This function will also validate that
+the TraceContext has a span_id and a trace_id. */
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
                           size_t nbytes);
 

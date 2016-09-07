@@ -50,11 +50,11 @@ bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   *msg_length = stream.bytes_written;
 
   if (!status) {
-    gpr_log(GPR_DEBUG, "Encoding failed: %s\n", PB_GET_ERROR(&stream));
-    return false;
+    gpr_log(GPR_DEBUG, "TraceContext encoding failed: %s\n",
+            PB_GET_ERROR(&stream));
   }
 
-  return true;
+  return status;
 }
 
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
@@ -66,19 +66,19 @@ bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   bool status = pb_decode(&stream, google_trace_TraceContext_fields, ctxt);
 
   if (!status) {
-    gpr_log(GPR_DEBUG, "Decoding failed: %s\n", PB_GET_ERROR(&stream));
-    return false;
+    gpr_log(GPR_DEBUG, "TraceContext decoding failed: %s\n",
+            PB_GET_ERROR(&stream));
   }
 
   // check fields
   if (!ctxt->has_trace_id) {
-    gpr_log(GPR_DEBUG, "Invalid Context: missing trace_id");
-    return false;
+    gpr_log(GPR_DEBUG, "Invalid TraceContext: missing trace_id");
+    status = false;
   }
   if (!ctxt->has_span_id) {
-    gpr_log(GPR_DEBUG, "Invalid Context: missing span_id");
-    return false;
+    gpr_log(GPR_DEBUG, "Invalid TraceContext: missing span_id");
+    status = false;
   }
 
-  return true;
+  return status;
 }
