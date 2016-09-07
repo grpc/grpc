@@ -41,7 +41,7 @@
 ///
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistant at channel construction time
+/// compression options, can be made persistent at channel construction time
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
@@ -271,7 +271,7 @@ class ClientContext {
 
   /// Set \a algorithm to be the compression algorithm used for the client call.
   ///
-  /// \param algorith The compression algorithm used for the client call.
+  /// \param algorithm The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   /// Return the peer uri in a string.
@@ -306,6 +306,10 @@ class ClientContext {
     virtual void Destructor(ClientContext* context) = 0;
   };
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+
+  // Should be used for framework-level extensions only.
+  // Applications never need to call this method.
+  grpc_call* c_call() { return call_; }
 
  private:
   // Disallow copy and assign.

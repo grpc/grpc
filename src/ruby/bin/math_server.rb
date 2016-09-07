@@ -42,7 +42,7 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'forwardable'
 require 'grpc'
 require 'logger'
-require 'math_services'
+require 'math_services_pb'
 require 'optparse'
 
 # RubyLogger defines a logger for gRPC based on the standard ruby logger.

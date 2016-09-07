@@ -46,7 +46,7 @@ extern "C" {
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
-typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
+typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
 typedef grpc_lb_v1_Server grpc_grpclb_server;
 typedef grpc_lb_v1_Duration grpc_grpclb_duration;
 typedef struct grpc_grpclb_serverlist {
@@ -64,19 +64,37 @@ gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
 /** Destroy \a request */
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
 
-/** Parse (ie, decode) the bytes in \a encoded_response as a \a
- * grpc_grpclb_response */
-grpc_grpclb_response *grpc_grpclb_response_parse(gpr_slice encoded_response);
+/** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
+ * grpc_grpclb_initial_response */
+grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
+    gpr_slice encoded_grpc_grpclb_response);
+
+/** Parse the list of servers from an encoded \a grpc_grpclb_response */
+grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
+    gpr_slice encoded_grpc_grpclb_response);
+
+/** Return a copy of \a sl. The caller is responsible for calling \a
+ * grpc_grpclb_destroy_serverlist on the returned copy. */
+grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
+    const grpc_grpclb_serverlist *sl);
+
+bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
+                                   const grpc_grpclb_serverlist *rhs);
+
+bool grpc_grpclb_server_equals(const grpc_grpclb_server *lhs,
+                               const grpc_grpclb_server *rhs);
 
 /** Destroy \a serverlist */
 void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist);
 
-/** Parse the list of servers from an encoded \a grpc_grpclb_response */
-grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
-    gpr_slice encoded_response);
+/** Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
+ * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
+int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
+                                 const grpc_grpclb_duration *rhs);
 
-/** Destroy \a response */
-void grpc_grpclb_response_destroy(grpc_grpclb_response *response);
+/** Destroy \a initial_response */
+void grpc_grpclb_initial_response_destroy(
+    grpc_grpclb_initial_response *response);
 
 #ifdef __cplusplus
 }

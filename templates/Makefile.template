@@ -282,6 +282,29 @@
   LDFLAGS += -pthread
   endif
 
+  #
+  # The steps for cross-compiling are as follows:
+  # First, clone and make install of grpc using the native compilers for the host.
+  # Also, install protoc (e.g., from a package like apt-get)
+  # Then clone a fresh grpc for the actual cross-compiled build
+  # Set the environment variable GRPC_CROSS_COMPILE to true
+  # Set CC, CXX, LD, LDXX, AR, and STRIP to the cross-compiling binaries
+  # Also set PROTOBUF_CONFIG_OPTS to indicate cross-compilation to protobuf (e.g.,
+  #  PROTOBUF_CONFIG_OPTS="--host=arm-linux --with-protoc=/usr/local/bin/protoc" )
+  # Set HAS_PKG_CONFIG=false
+  # To build tests, go to third_party/gflags and follow its ccmake instructions
+  # Make sure that you enable building shared libraries and set your prefix to
+  # something useful like /usr/local/cross
+  # You will also need to set GRPC_CROSS_LDOPTS and GRPC_CROSS_AROPTS to hold
+  # additional required arguments for LD and AR (examples below)
+  # Then you can do a make from the cross-compiling fresh clone!
+  #
+  ifeq ($(GRPC_CROSS_COMPILE),true)
+  LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
+  AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+  USE_BUILT_PROTOC = false
+  endif
+
   GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
   GTEST_LIB += -lgflags
   ifeq ($(V),1)
@@ -357,7 +380,7 @@
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
   OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
+  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
   else # HAS_PKG_CONFIG
 
   ifeq ($(SYSTEM),MINGW32)
@@ -597,6 +620,15 @@
 
   CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
 
+  PROTOC_PLUGINS_ALL =\
+  % for tgt in targets:
+  % if tgt.build == 'protoc':
+   $(BINDIR)/$(CONFIG)/${tgt.name}\
+  % endif
+  % endfor
+
+  PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
+
   ifeq ($(HAS_SYSTEM_PROTOBUF),true)
   ifeq ($(HAS_PKG_CONFIG),true)
   PROTOBUF_PKG_CONFIG = true
@@ -611,12 +643,19 @@
   else
   PC_LIBS_GRPCXX = -lprotobuf
   endif
+  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
   else
   ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
   PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
   CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
+  ifneq ($(USE_BUILT_PROTOC),false)
   PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
+  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
+  else
+  PROTOC_PLUGINS =
+  PROTOC_PLUGINS_DIR = $(prefix)/bin
+  endif
   else
   NO_PROTOBUF = true
   endif
@@ -655,21 +694,7 @@
   NO_DEPS = true
   endif
 
-  INSTALL_OK = false
-  ifeq ($(HAS_VALID_PROTOC),true)
-  ifeq ($(HAS_SYSTEM_PROTOBUF_VERIFY),true)
-  INSTALL_OK = true
-  endif
-  endif
-
   .SECONDARY = %.pb.h %.pb.cc
-
-  PROTOC_PLUGINS =\
-  % for tgt in targets:
-  % if tgt.build == 'protoc':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
 
   ifeq ($(DEP_MISSING),)
   all: static shared plugins\
@@ -792,7 +817,7 @@
 
   $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
   	$(E) "[MAKE]    Building protobuf"
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static)
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -1124,7 +1149,7 @@
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
   endif
 
   % endfor
@@ -1161,7 +1186,7 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-  install: install_c install_cxx install-plugins install-certs verify-install
+  install: install_c install_cxx install-plugins install-certs
 
   install_c: install-headers_c install-static_c install-shared_c
 
@@ -1279,28 +1304,6 @@
   	$(Q) $(INSTALL) -d $(prefix)/share/grpc
   	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
 
-  verify-install:
-  ifeq ($(INSTALL_OK),true)
-  	@echo "Your system looks ready to go."
-  	@echo
-  else
-  	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
-  	@echo "which means that you won't be able to compile .proto files for use"
-  	@echo "with gRPC."
-  	@echo
-  	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
-  	@echo "have no need to compile .proto files, you can ignore this."
-  	@echo
-  	@echo "If you do need protobuf for some reason, you can download and install"
-  	@echo "it from:"
-  	@echo
-  	@echo "   https://github.com/google/protobuf/releases"
-  	@echo
-  	@echo "Once you've done so, you can re-run this check by doing:"
-  	@echo
-  	@echo "   make verify-install"
-  endif
-
   clean:
   	$(E) "[CLEAN]   Cleaning build directories."
   	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR) cache.mk
@@ -1416,7 +1419,7 @@
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
+  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \

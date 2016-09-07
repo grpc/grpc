@@ -134,33 +134,18 @@ extern census_get_trace_record_type census_get_trace_record_import;
 typedef void(*census_trace_scan_end_type)();
 extern census_trace_scan_end_type census_trace_scan_end_import;
 #define census_trace_scan_end census_trace_scan_end_import
+typedef int32_t(*census_define_resource_type)(const uint8_t *resource_pb, size_t resource_pb_size);
+extern census_define_resource_type census_define_resource_import;
+#define census_define_resource census_define_resource_import
+typedef void(*census_delete_resource_type)(int32_t resource_id);
+extern census_delete_resource_type census_delete_resource_import;
+#define census_delete_resource census_delete_resource_import
+typedef int32_t(*census_resource_id_type)(const char *name);
+extern census_resource_id_type census_resource_id_import;
+#define census_resource_id census_resource_id_import
 typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
 extern census_record_values_type census_record_values_import;
 #define census_record_values census_record_values_import
-typedef census_view *(*census_view_create_type)(uint32_t metric_id, const census_context *tags, const census_aggregation *aggregations, size_t naggregations);
-extern census_view_create_type census_view_create_import;
-#define census_view_create census_view_create_import
-typedef void(*census_view_delete_type)(census_view *view);
-extern census_view_delete_type census_view_delete_import;
-#define census_view_delete census_view_delete_import
-typedef size_t(*census_view_metric_type)(const census_view *view);
-extern census_view_metric_type census_view_metric_import;
-#define census_view_metric census_view_metric_import
-typedef size_t(*census_view_naggregations_type)(const census_view *view);
-extern census_view_naggregations_type census_view_naggregations_import;
-#define census_view_naggregations census_view_naggregations_import
-typedef const census_context *(*census_view_tags_type)(const census_view *view);
-extern census_view_tags_type census_view_tags_import;
-#define census_view_tags census_view_tags_import
-typedef const census_aggregation *(*census_view_aggregrations_type)(const census_view *view);
-extern census_view_aggregrations_type census_view_aggregrations_import;
-#define census_view_aggregrations census_view_aggregrations_import
-typedef const census_view_data *(*census_view_get_data_type)(const census_view *view);
-extern census_view_get_data_type census_view_get_data_import;
-#define census_view_get_data census_view_get_data_import
-typedef void(*census_view_reset_type)(census_view *view);
-extern census_view_reset_type census_view_reset_import;
-#define census_view_reset census_view_reset_import
 typedef int(*grpc_compression_algorithm_parse_type)(const char *name, size_t name_length, grpc_compression_algorithm *algorithm);
 extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 #define grpc_compression_algorithm_parse grpc_compression_algorithm_parse_import
@@ -206,6 +191,9 @@ extern grpc_shutdown_type grpc_shutdown_import;
 typedef const char *(*grpc_version_string_type)(void);
 extern grpc_version_string_type grpc_version_string_import;
 #define grpc_version_string grpc_version_string_import
+typedef const char *(*grpc_g_stands_for_type)(void);
+extern grpc_g_stands_for_type grpc_g_stands_for_import;
+#define grpc_g_stands_for grpc_g_stands_for_import
 typedef grpc_completion_queue *(*grpc_completion_queue_create_type)(void *reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
@@ -509,6 +497,9 @@ extern gpr_slice_unref_type gpr_slice_unref_import;
 typedef gpr_slice(*gpr_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
 extern gpr_slice_new_type gpr_slice_new_import;
 #define gpr_slice_new gpr_slice_new_import
+typedef gpr_slice(*gpr_slice_new_with_user_data_type)(void *p, size_t len, void (*destroy)(void *), void *user_data);
+extern gpr_slice_new_with_user_data_type gpr_slice_new_with_user_data_import;
+#define gpr_slice_new_with_user_data gpr_slice_new_with_user_data_import
 typedef gpr_slice(*gpr_slice_new_with_len_type)(void *p, size_t len, void (*destroy)(void *, size_t));
 extern gpr_slice_new_with_len_type gpr_slice_new_with_len_import;
 #define gpr_slice_new_with_len gpr_slice_new_with_len_import

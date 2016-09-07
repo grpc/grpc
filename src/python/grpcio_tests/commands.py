@@ -138,7 +138,7 @@ class BuildPy(build_py.build_py):
 
   def run(self):
     try:
-      self.run_command('build_proto_modules')
+      self.run_command('build_package_protos')
     except CommandError as error:
       sys.stderr.write('warning: %s\n' % error.message)
     build_py.build_py.run(self)

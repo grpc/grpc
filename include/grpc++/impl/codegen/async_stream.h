@@ -330,6 +330,9 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
     meta_ops_.set_output_tag(tag);
     meta_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                   ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      meta_ops_.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_ops_);
   }
@@ -345,6 +348,9 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        finish_ops_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
@@ -363,6 +369,9 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        finish_ops_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
@@ -400,6 +409,9 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
     meta_ops_.set_output_tag(tag);
     meta_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                   ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      meta_ops_.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_ops_);
   }
@@ -409,6 +421,9 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                      ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        write_ops_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
@@ -421,6 +436,9 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        finish_ops_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
@@ -459,6 +477,9 @@ class ServerAsyncReaderWriter GRPC_FINAL
     meta_ops_.set_output_tag(tag);
     meta_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                   ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      meta_ops_.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_ops_);
   }
@@ -474,6 +495,9 @@ class ServerAsyncReaderWriter GRPC_FINAL
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                      ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        write_ops_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
@@ -486,6 +510,9 @@ class ServerAsyncReaderWriter GRPC_FINAL
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        finish_ops_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);

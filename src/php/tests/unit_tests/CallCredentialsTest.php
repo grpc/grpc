@@ -148,7 +148,8 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
             $this->call_credentials,
             $call_credentials2
         );
-        $this->assertSame('Grpc\CallCredentials', get_class($call_credentials3));
+        $this->assertSame('Grpc\CallCredentials',
+                          get_class($call_credentials3));
     }
 
     /**

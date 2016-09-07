@@ -9,23 +9,12 @@ GA
 
 ## Environment
 
-Prerequisite: `php` >=5.5, `phpize`, `pecl`, `phpunit`
+Prerequisite:
+* `php` 5.5 or above, 7.0 or above
+* `pear` and `pecl`
+* `phpunit`
 
-**Linux (Debian):**
-
-```sh
-$ sudo apt-get install php5 php5-dev php-pear
-```
-
-**Linux (CentOS):**
-
-```sh
-$ yum install php55w
-$ yum --enablerepo=remi,remi-php55 install php-devel php-pear
-```
-
-**Mac OS X:**
-
+**PEAR:**
 ```sh
 $ curl -O http://pear.php.net/go-pear.phar
 $ sudo php -d detect_unicode=0 go-pear.phar
@@ -72,13 +61,7 @@ $ sudo make install
 
 ### gRPC PHP extension
 
-Install the gRPC PHP extension from PECL
-
-```sh
-$ sudo pecl install grpc
-```
-
-Or, compile from source
+Compile the gRPC PHP extension
 
 ```sh
 $ cd grpc/src/php/ext/grpc
@@ -148,12 +131,8 @@ Alternatively, you can download `protoc` binaries from [the protocol buffers Git
 You need to install `protoc-gen-php` to generate stub class `.php` files from service definition `.proto` files.
 
 ```sh
-$ cd grpc/src/php/vendor/stanley-cheung/protobuf-php # if you had run `composer install` in the previous step
-
-OR
-
-$ git clone https://github.com/stanley-cheung/Protobuf-PHP # clone from github repo
-
+$ git clone https://github.com/stanley-cheung/Protobuf-PHP
+$ cd Protobuf-PHP
 $ gem install rake ronn
 $ rake pear:package version=1.0
 $ sudo pear install Protobuf-1.0.tgz
@@ -175,7 +154,7 @@ Run a local server serving the math services. Please see [Node][] for how to run
 ```sh
 $ cd grpc
 $ npm install
-$ nodejs src/node/test/math/math_server.js
+$ node src/node/test/math/math_server.js
 ```
 
 ### Run test client
@@ -212,7 +191,7 @@ Make sure the Node math server is still running, as above.
 ```sh
 $ cd grpc
 $ npm install
-$ nodejs src/node/test/math/math_server.js
+$ node src/node/test/math/math_server.js
 ```
 
 Make sure you have run `composer install` to generate the `vendor/autoload.php` file
@@ -282,7 +261,7 @@ Make sure the Node math server is still running, as above.
 ```sh
 $ cd grpc
 $ npm install
-$ nodejs src/node/test/math/math_server.js
+$ node src/node/test/math/math_server.js
 ```
 
 Make sure you have run `composer install` to generate the `vendor/autoload.php` file

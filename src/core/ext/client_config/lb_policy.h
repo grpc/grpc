@@ -73,7 +73,7 @@ struct grpc_lb_policy_vtable {
   void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                    grpc_closure *closure);
 
-  /** try to enter a READY connectivity state */
+  /** Try to enter a READY connectivity state */
   void (*exit_idle)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
   /** check the current connectivity of the lb_policy */
@@ -82,7 +82,9 @@ struct grpc_lb_policy_vtable {
       grpc_error **connectivity_error);
 
   /** call notify when the connectivity state of a channel changes from *state.
-      Updates *state with the new state of the policy */
+      Updates *state with the new state of the policy. Calling with a NULL \a
+      state cancels the subscription.
+      */
   void (*notify_on_state_change)(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  grpc_connectivity_state *state,
@@ -125,7 +127,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 /** Given initial metadata in \a initial_metadata, find an appropriate
     target for this rpc, and 'return' it by calling \a on_complete after setting
     \a target.
-    Picking can be asynchronous. Any IO should be done under \a pollset. */
+    Picking can be asynchronous. Any IO should be done under \a pollent. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         grpc_polling_entity *pollent,
                         grpc_metadata_batch *initial_metadata,
@@ -147,8 +149,11 @@ void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
                                  uint32_t initial_metadata_flags_mask,
                                  uint32_t initial_metadata_flags_eq);
 
+/** Try to enter a READY connectivity state */
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
+/* Call notify when the connectivity state of a channel changes from \a *state.
+ * Updates \a *state with the new state of the policy */
 void grpc_lb_policy_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                            grpc_lb_policy *policy,
                                            grpc_connectivity_state *state,

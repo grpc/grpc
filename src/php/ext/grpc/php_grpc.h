@@ -57,6 +57,8 @@ extern zend_module_entry grpc_module_entry;
 
 #include "php.h"
 
+#include "php7_wrapper.h"
+
 #include "grpc/grpc.h"
 
 #define RETURN_DESTROY_ZVAL(val)                               \
@@ -72,8 +74,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc);
 PHP_MINFO_FUNCTION(grpc);
 
 /*
-        Declare any global variables you may need between the BEGIN
-        and END macros here:
+  Declare any global variables you may need between the BEGIN
+  and END macros here:
 
 ZEND_BEGIN_MODULE_GLOBALS(grpc)
 ZEND_END_MODULE_GLOBALS(grpc)

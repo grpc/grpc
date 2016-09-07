@@ -45,6 +45,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -63,6 +64,8 @@ typedef struct {
   grpc_endpoint *tcp;
 
   grpc_closure connected;
+
+  grpc_handshake_manager *handshake_mgr;
 } connector;
 
 static void connector_ref(grpc_connector *con) {
@@ -74,6 +77,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     /* c->initial_string_buffer does not need to be destroyed */
+    grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
     gpr_free(c);
   }
 }
@@ -83,9 +87,29 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
   connector_unref(exec_ctx, arg);
 }
 
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
+                              grpc_channel_args *args,
+                              gpr_slice_buffer *read_buffer, void *user_data,
+                              grpc_error *error) {
+  connector *c = user_data;
+  if (error != GRPC_ERROR_NONE) {
+    grpc_channel_args_destroy(args);
+    gpr_free(read_buffer);
+  } else {
+    c->result->transport =
+        grpc_create_chttp2_transport(exec_ctx, args, endpoint, 1);
+    GPR_ASSERT(c->result->transport);
+    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport,
+                                        read_buffer);
+    c->result->channel_args = args;
+  }
+  grpc_closure *notify = c->notify;
+  c->notify = NULL;
+  grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+}
+
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   connector *c = arg;
-  grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
   if (tcp != NULL) {
     if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
@@ -97,19 +121,17 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       connector_ref(arg);
       grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
                           &c->initial_string_sent);
+    } else {
+      grpc_handshake_manager_do_handshake(
+          exec_ctx, c->handshake_mgr, tcp, c->args.channel_args,
+          c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
     }
-    c->result->transport =
-        grpc_create_chttp2_transport(exec_ctx, c->args.channel_args, tcp, 1);
-    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
-                                        0);
-    GPR_ASSERT(c->result->transport);
-    c->result->channel_args = grpc_channel_args_copy(c->args.channel_args);
   } else {
     memset(c->result, 0, sizeof(*c->result));
+    grpc_closure *notify = c->notify;
+    c->notify = NULL;
+    grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
   }
-  notify = c->notify;
-  c->notify = NULL;
-  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
 }
 
 static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {}
@@ -171,6 +193,7 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
   gpr_ref_init(&c->refs, 1);
+  c->handshake_mgr = grpc_handshake_manager_create();
   args->args = final_args;
   s = grpc_subchannel_create(exec_ctx, &c->base, args);
   grpc_connector_unref(exec_ctx, &c->base);

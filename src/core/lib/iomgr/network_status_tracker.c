@@ -56,6 +56,15 @@ void grpc_network_status_init(void) {
   // TODO(makarandd): Install callback with OS to monitor network status.
 }
 
+void grpc_destroy_network_status_monitor() {
+  for (endpoint_ll_node *curr = head; curr != NULL;) {
+    endpoint_ll_node *next = curr->next;
+    gpr_free(curr);
+    curr = next;
+  }
+  gpr_mu_destroy(&g_endpoint_mutex);
+}
+
 void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
   gpr_mu_lock(&g_endpoint_mutex);
   if (head == NULL) {

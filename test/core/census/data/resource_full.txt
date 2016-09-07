@@ -1,0 +1,9 @@
+# A full resource definition - all fields filled out.
+name : 'full_resource'
+description : 'A resource with everything defined'
+unit {
+  # Megabits per second.
+  prefix : 6
+  numerator : BITS
+  denominator : SECS
+}

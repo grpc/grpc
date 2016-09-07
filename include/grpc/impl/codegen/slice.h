@@ -120,6 +120,14 @@ GPRAPI void gpr_slice_unref(gpr_slice s);
    passed in at destruction. */
 GPRAPI gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *));
 
+/* Equivalent to gpr_slice_new, but with a separate pointer that is
+   passed to the destroy function.  This function can be useful when
+   the data is part of a larger structure that must be destroyed when
+   the data is no longer needed. */
+GPRAPI gpr_slice gpr_slice_new_with_user_data(void *p, size_t len,
+                                              void (*destroy)(void *),
+                                              void *user_data);
+
 /* Equivalent to gpr_slice_new, but with a two argument destroy function that
    also takes the slice length. */
 GPRAPI gpr_slice gpr_slice_new_with_len(void *p, size_t len,

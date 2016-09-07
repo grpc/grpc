@@ -105,4 +105,8 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
    a call (exec_ctx!=NULL) to shutdown_complete. */
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s);
 
+/* Shutdown the fds of listeners. */
+void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
+                                        grpc_tcp_server *s);
+
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_SERVER_H */

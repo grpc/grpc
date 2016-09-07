@@ -37,35 +37,76 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
-                          grpc_endpoint *tcp, grpc_pollset *accepting_pollset,
-                          grpc_tcp_server_acceptor *acceptor) {
-  /*
-   * Beware that the call to grpc_create_chttp2_transport() has to happen before
-   * grpc_tcp_server_destroy(). This is fine here, but similar code
-   * asynchronously doing a handshake instead of calling grpc_tcp_server_start()
-   * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
-   * case.
-   */
-  grpc_transport *transport = grpc_create_chttp2_transport(
-      exec_ctx, grpc_server_get_channel_args(server), tcp, 0);
-  grpc_server_setup_transport(exec_ctx, server, transport, accepting_pollset,
-                              grpc_server_get_channel_args(server));
-  grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+typedef struct server_connect_state {
+  grpc_server *server;
+  grpc_pollset *accepting_pollset;
+  grpc_tcp_server_acceptor *acceptor;
+  grpc_handshake_manager *handshake_mgr;
+} server_connect_state;
+
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
+                              grpc_channel_args *args,
+                              gpr_slice_buffer *read_buffer, void *user_data,
+                              grpc_error *error) {
+  server_connect_state *state = user_data;
+  if (error != GRPC_ERROR_NONE) {
+    const char *error_str = grpc_error_string(error);
+    gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
+    grpc_error_free_string(error_str);
+    GRPC_ERROR_UNREF(error);
+    grpc_handshake_manager_shutdown(exec_ctx, state->handshake_mgr);
+    gpr_free(read_buffer);
+  } else {
+    // Beware that the call to grpc_create_chttp2_transport() has to happen
+    // before grpc_tcp_server_destroy(). This is fine here, but similar code
+    // asynchronously doing a handshake instead of calling
+    // grpc_tcp_server_start() (as in server_secure_chttp2.c) needs to add
+    // synchronization to avoid this case.
+    grpc_transport *transport =
+        grpc_create_chttp2_transport(exec_ctx, args, endpoint, 0);
+    grpc_server_setup_transport(exec_ctx, state->server, transport,
+                                state->accepting_pollset,
+                                grpc_server_get_channel_args(state->server));
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, read_buffer);
+  }
+  // Clean up.
+  grpc_channel_args_destroy(args);
+  grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
+  gpr_free(state);
+}
+
+static void on_accept(grpc_exec_ctx *exec_ctx, void *server, grpc_endpoint *tcp,
+                      grpc_pollset *accepting_pollset,
+                      grpc_tcp_server_acceptor *acceptor) {
+  server_connect_state *state = gpr_malloc(sizeof(server_connect_state));
+  state->server = server;
+  state->accepting_pollset = accepting_pollset;
+  state->acceptor = acceptor;
+  state->handshake_mgr = grpc_handshake_manager_create();
+  // TODO(roth): We should really get this timeout value from channel
+  // args instead of hard-coding it.
+  const gpr_timespec deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
+  grpc_handshake_manager_do_handshake(
+      exec_ctx, state->handshake_mgr, tcp, grpc_server_get_channel_args(server),
+      deadline, acceptor, on_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
 static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
                   grpc_pollset **pollsets, size_t pollset_count) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(exec_ctx, tcp, pollsets, pollset_count, new_transport,
+  grpc_tcp_server_start(exec_ctx, tcp, pollsets, pollset_count, on_accept,
                         server);
 }
 
@@ -74,6 +115,7 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
 static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
                     grpc_closure *destroy_done) {
   grpc_tcp_server *tcp = tcpp;
+  grpc_tcp_server_shutdown_listeners(exec_ctx, tcp);
   grpc_tcp_server_unref(exec_ctx, tcp);
   grpc_exec_ctx_sched(exec_ctx, destroy_done, GRPC_ERROR_NONE, NULL);
 }

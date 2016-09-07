@@ -70,7 +70,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
   g_number_of_reads++;
   g_number_of_bytes_read += (int)byte_count;
 
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -179,8 +180,10 @@ static void test_receive(int number_of_clients) {
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker *worker = NULL;
-      grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                        gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                            gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
       gpr_mu_unlock(g_mu);
       grpc_exec_ctx_finish(&exec_ctx);
       gpr_mu_lock(g_mu);
@@ -199,7 +202,8 @@ static void test_receive(int number_of_clients) {
   GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

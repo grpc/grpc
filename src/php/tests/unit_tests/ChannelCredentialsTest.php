@@ -42,10 +42,23 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
     {
     }
 
-    public function testCreateDefault()
+    public function testCreateSslWith3Null()
     {
-        $channel_credentials = Grpc\ChannelCredentials::createDefault();
-        $this->assertSame('Grpc\ChannelCredentials', get_class($channel_credentials));
+        $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
+                                                                  null);
+        $this->assertNotNull($channel_credentials);
+    }
+
+    public function testCreateSslWith3NullString()
+    {
+        $channel_credentials = Grpc\ChannelCredentials::createSsl('', '', '');
+        $this->assertNotNull($channel_credentials);
+    }
+
+    public function testCreateInsecure()
+    {
+        $channel_credentials = Grpc\ChannelCredentials::createInsecure();
+        $this->assertNull($channel_credentials);
     }
 
     /**
@@ -63,11 +76,5 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
     {
         $channel_credentials = Grpc\ChannelCredentials::createComposite(
             'something', 'something');
-    }
-
-    public function testCreateInsecure()
-    {
-        $channel_credentials = Grpc\ChannelCredentials::createInsecure();
-        $this->assertNull($channel_credentials);
     }
 }

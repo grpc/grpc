@@ -1,0 +1,26 @@
+{
+  "title": "GreeterClient",
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "debugType": "portable",
+    "emitEntryPoint": "true"
+  },
+  "dependencies": {
+    "Google.Protobuf": "3.0.0",
+    "Grpc": "1.0.0",
+    "Greeter": {
+      "target": "project"
+    }
+  },
+  "frameworks": {
+    "net45": {
+      "frameworkAssemblies": {
+        "System.Runtime": "",
+        "System.IO": ""
+      },
+      "dependencies": {
+	"Microsoft.NETCore.Platforms": "1.0.1" 
+      }
+    }
+  }
+}

@@ -46,8 +46,6 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static bool g_enable_filter = false;
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -172,7 +170,7 @@ static void test_request(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
@@ -233,11 +231,14 @@ static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   grpc_call_next_op(exec_ctx, elem, op);
 }
 
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {}
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats,
+                              const grpc_call_final_info *final_info,
                               void *and_free_memory) {}
 
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,

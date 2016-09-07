@@ -44,3 +44,5 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python -
 
 # "which" command required by python's run_distrib_test.sh
 RUN yum install -y which
+
+RUN pip install virtualenv

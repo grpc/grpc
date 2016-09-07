@@ -71,6 +71,8 @@
 
 #define UNPARSEABLE_DETAIL_MSG "Failed parsing HTTP/2"
 
+#define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
+
 /* TODO(zyc) Check the content of incomming data instead of using this length */
 #define EXPECTED_INCOMING_DATA_LENGTH (size_t)310
 
@@ -204,7 +206,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   gpr_log(GPR_DEBUG, "Rpc status: %d, details: %s", status, details);
@@ -334,7 +336,7 @@ int main(int argc, char **argv) {
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
-           UNPARSEABLE_DETAIL_MSG);
+           HTTP1_DETAIL_MSG);
 
   return 0;
 }

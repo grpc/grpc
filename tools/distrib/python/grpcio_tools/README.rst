@@ -122,6 +122,7 @@ Help, I ...
     third_party/protobuf/src/google/protobuf/stubs/mathlimits.h:173:31: note: in expansion of macro 'SIGNED_INT_MAX'
     static const Type kPosMax = SIGNED_INT_MAX(Type); \\
                                ^
+
   And your toolchain is GCC (at the time of this writing, up through at least
   GCC 6.0), this is probably a bug where GCC chokes on constant expressions
   when the :code:`-fwrapv` flag is specified. You should consider setting your
@@ -136,3 +137,42 @@ Given protobuf include directories :code:`$INCLUDE`, an output directory
 ::
 
   $ python -m grpc.tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
+
+To use as a build step in distutils-based projects, you may use the provided
+command class in your :code:`setup.py`:
+
+::
+
+  setuptools.setup(
+    # ...
+    cmdclass={
+      'build_proto_modules': grpc.tools.command.BuildPackageProtos,
+    }
+    # ...
+  )
+
+Invocation of the command will walk the project tree and transpile every
+:code:`.proto` file into a :code:`_pb2.py` file in the same directory.
+
+Note that this particular approach requires :code:`grpcio-tools` to be
+installed on the machine before the setup script is invoked (i.e. no
+combination of :code:`setup_requires` or :code:`install_requires` will provide
+access to :code:`grpc.tools.command.BuildPackageProtos` if it isn't already
+installed). One way to work around this can be found in our
+:code:`grpcio-health-checking`
+`package <https://pypi.python.org/pypi/grpcio-health-checking>`_:
+
+::
+
+  class BuildPackageProtos(setuptools.Command):
+    """Command to generate project *_pb2.py modules from proto files."""
+    # ...
+    def run(self):
+      from grpc.tools import command
+      command.build_package_protos(self.distribution.package_dir[''])
+
+Now including :code:`grpcio-tools` in :code:`setup_requires` will provide the
+command on-setup as desired.
+
+For more information on command classes, consult :code:`distutils` and
+:code:`setuptools` documentation.

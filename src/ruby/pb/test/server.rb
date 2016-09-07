@@ -50,9 +50,9 @@ require 'optparse'
 
 require 'grpc'
 
-require_relative '../src/proto/grpc/testing/empty'
-require_relative '../src/proto/grpc/testing/messages'
-require_relative '../src/proto/grpc/testing/test_services'
+require_relative '../src/proto/grpc/testing/empty_pb'
+require_relative '../src/proto/grpc/testing/messages_pb'
+require_relative '../src/proto/grpc/testing/test_services_pb'
 
 # DebugIsTruncated extends the default Logger to truncate debug messages
 class DebugIsTruncated < Logger

@@ -200,6 +200,10 @@ class Verifier {
   bool spin_;
 };
 
+bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
+  return plugin->has_sync_methods();
+}
+
 // This class disables the server builder plugins that may add sync services to
 // the server. If there are sync services, UnimplementedRpc test will triger
 // the sync unkown rpc routine on the server side, rather than the async one
@@ -210,14 +214,9 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
   void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
-    auto plugin = plugins->begin();
-    while (plugin != plugins->end()) {
-      if ((*plugin)->has_sync_methods()) {
-        plugins->erase(plugin++);
-      } else {
-        plugin++;
-      }
-    }
+    plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
+                                  plugin_has_sync_methods),
+                   plugins->end());
   }
 };
 

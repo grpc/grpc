@@ -268,6 +268,31 @@ class PHPLanguage:
     return 'php'
 
 
+class PHP7Language:
+
+  def __init__(self):
+    self.client_cwd = None
+    self.safename = str(self)
+
+  def client_cmd(self, args):
+    return ['src/php/bin/interop_client.sh'] + args
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    return _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return []
+
+  def __str__(self):
+    return 'php7'
+
+
 class RubyLanguage:
 
   def __init__(self):
@@ -346,6 +371,7 @@ _LANGUAGES = {
     'java' : JavaLanguage(),
     'node' : NodeLanguage(),
     'php' :  PHPLanguage(),
+    'php7' :  PHP7Language(),
     'ruby' : RubyLanguage(),
     'python' : PythonLanguage(),
 }
@@ -409,7 +435,7 @@ def auth_options(language, test_case):
   default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
   if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
-    if language in ['csharp', 'node', 'php', 'python', 'ruby']:
+    if language in ['csharp', 'node', 'php', 'php7', 'python', 'ruby']:
       env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
     else:
       cmdargs += [key_file_arg]
@@ -597,15 +623,15 @@ def aggregate_http2_results(stdout):
 # TODO(adelez): implement logic for errors_allowed where if the indicated tests
 # fail, they don't impact the overall test result.
 prod_servers = {
-    'default': ('grpc-test.sandbox.googleapis.com',
+    'default': ('216.239.32.254',
                 'grpc-test.sandbox.googleapis.com', False),
-    'gateway_v2': ('grpc-test2.sandbox.googleapis.com',
+    'gateway_v2': ('216.239.32.254',
                    'grpc-test2.sandbox.googleapis.com', True),
     'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com',
                       False),
     'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
                          True),
-    'gateway_v4': ('grpc-test4.sandbox.googleapis.com',
+    'gateway_v4': ('216.239.32.254',
                    'grpc-test4.sandbox.googleapis.com', True),
     'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
                          True),
@@ -636,7 +662,7 @@ argp.add_argument('--prod_servers',
                         'cloud_to_prod_auth tests against.'))
 argp.add_argument('-s', '--server',
                   choices=['all'] + sorted(_SERVERS),
-                  action='append',
+                  nargs='+',
                   help='Run cloud_to_cloud servers in a separate docker ' +
                        'image. Servers can only be started automatically if ' +
                        '--use_docker option is enabled.',

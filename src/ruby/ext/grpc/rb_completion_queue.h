@@ -38,9 +38,6 @@
 
 #include <grpc/grpc.h>
 
-/* Gets the wrapped completion queue from the ruby wrapper */
-grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);
-
 void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq);
 
 /**

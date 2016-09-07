@@ -38,9 +38,9 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
 require 'qps-common'
-require 'src/proto/grpc/testing/messages'
-require 'src/proto/grpc/testing/services_services'
-require 'src/proto/grpc/testing/stats'
+require 'src/proto/grpc/testing/messages_pb'
+require 'src/proto/grpc/testing/services_services_pb'
+require 'src/proto/grpc/testing/stats_pb'
 
 class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
   def unary_call(req, _call)

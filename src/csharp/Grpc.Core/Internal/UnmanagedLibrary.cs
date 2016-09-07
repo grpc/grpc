@@ -82,6 +82,32 @@ namespace Grpc.Core.Internal
         /// <returns></returns>
         public IntPtr LoadSymbol(string symbolName)
         {
+            if (PlatformApis.IsWindows)
+            {
+                // See http://stackoverflow.com/questions/10473310 for background on this.
+                if (PlatformApis.Is64Bit)
+                {
+                    return Windows.GetProcAddress(this.handle, symbolName);
+                }
+                else
+                {
+                    // Yes, we could potentially predict the size... but it's a lot simpler to just try
+                    // all the candidates. Most functions have a suffix of @0, @4 or @8 so we won't be trying
+                    // many options - and if it takes a little bit longer to fail if we've really got the wrong
+                    // library, that's not a big problem. This is only called once per function in the native library.
+                    symbolName = "_" + symbolName + "@";
+                    for (int stackSize = 0; stackSize < 128; stackSize += 4)
+                    {
+                        IntPtr candidate = Windows.GetProcAddress(this.handle, symbolName + stackSize);
+                        if (candidate != IntPtr.Zero)
+                        {
+                            return candidate;
+                        }
+                    }
+                    // Fail.
+                    return IntPtr.Zero;
+                }
+            }
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
@@ -142,13 +168,18 @@ namespace Grpc.Core.Internal
                     return path;
                 }
             }
-            throw new FileNotFoundException(String.Format("Error loading native library. Not found in any of the possible locations {0}", libraryPathAlternatives));
+            throw new FileNotFoundException(
+                String.Format("Error loading native library. Not found in any of the possible locations: {0}", 
+                    string.Join(",", libraryPathAlternatives)));
         }
 
         private static class Windows
         {
             [DllImport("kernel32.dll")]
             internal static extern IntPtr LoadLibrary(string filename);
+
+            [DllImport("kernel32.dll")]
+            internal static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
         }
 
         private static class Linux

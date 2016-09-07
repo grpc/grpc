@@ -157,12 +157,13 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack *channel_stack, int initial_refs,
-                          grpc_iomgr_cb_func destroy, void *destroy_arg,
-                          grpc_call_context_element *context,
-                          const void *transport_server_data,
-                          grpc_call_stack *call_stack) {
+grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack *channel_stack,
+                                 int initial_refs, grpc_iomgr_cb_func destroy,
+                                 void *destroy_arg,
+                                 grpc_call_context_element *context,
+                                 const void *transport_server_data,
+                                 grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   grpc_call_element_args args;
   size_t count = channel_stack->count;
@@ -178,6 +179,7 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
+  grpc_error *first_error = GRPC_ERROR_NONE;
   for (i = 0; i < count; i++) {
     args.call_stack = call_stack;
     args.server_transport_data = transport_server_data;
@@ -185,10 +187,19 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
-    call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
+    grpc_error *error =
+        call_elems[i].filter->init_call_elem(exec_ctx, &call_elems[i], &args);
+    if (error != GRPC_ERROR_NONE) {
+      if (first_error == GRPC_ERROR_NONE) {
+        first_error = error;
+      } else {
+        GRPC_ERROR_UNREF(error);
+      }
+    }
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
+  return first_error;
 }
 
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -217,7 +228,7 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
     grpc_polling_entity *pollent) {}
 
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
-                             const grpc_call_stats *call_stats,
+                             const grpc_call_final_info *final_info,
                              void *and_free_memory) {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
@@ -225,7 +236,7 @@ void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i], call_stats,
+    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i], final_info,
                                        i == count - 1 ? and_free_memory : NULL);
   }
 }

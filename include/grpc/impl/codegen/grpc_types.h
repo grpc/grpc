@@ -106,58 +106,71 @@ typedef struct {
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
     by arbitrary parties.
     All evaluation is performed at channel creation time (i.e. the values in
-    this structure need only live through the creation invocation). */
+    this structure need only live through the creation invocation).
+
+    See the description of the \ref grpc_arg_keys "available args" for more
+    details. */
 typedef struct {
   size_t num_args;
   grpc_arg *args;
 } grpc_channel_args;
 
-/* Channel argument keys: */
-/** Enable census for tracing and stats collection */
+/** \defgroup grpc_arg_keys
+ * Channel argument keys.
+ * \{
+ */
+/** If non-zero, enable census for tracing and stats collection. */
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
-/** Enable load reporting */
+/** If non-zero, enable load reporting. */
 #define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
 /** Maximum number of concurrent incoming streams to allow on a http2
-    connection */
+    connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
-/** Maximum message length that the channel can receive */
+/** Maximum message length that the channel can receive. Int valued, bytes. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH "grpc.max_message_length"
-/** Initial sequence number for http2 transports */
+/** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
 /** Amount to read ahead on individual streams. Defaults to 64kb, larger
     values can help throughput on high-latency connections.
     NOTE: at some point we'd like to auto-tune this, and this parameter
-    will become a no-op. */
+    will become a no-op. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES "grpc.http2.lookahead_bytes"
-/** How much memory to use for hpack decoding */
+/** How much memory to use for hpack decoding. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
   "grpc.http2.hpack_table_size.decoder"
-/** How much memory to use for hpack encoding */
+/** How much memory to use for hpack encoding. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
-/** Default authority to pass if none specified on call construction */
+/** How big a frame are we willing to receive via HTTP2.
+    Min 16384, max 16777215.
+    Larger values give lower CPU usage for large messages, but more head of line
+    blocking for small messages. */
+#define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
+/** Default authority to pass if none specified on call construction. A string.
+ * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
-    sent on each request */
+    sent on each request. A string. */
 #define GRPC_ARG_PRIMARY_USER_AGENT_STRING "grpc.primary_user_agent"
 /** Secondary user agent: goes at the end of the user-agent metadata
-    sent on each request */
+    sent on each request. A string. */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /* The caller of the secure_channel_create functions may override the target
    name used for SSL host name checking using this channel argument which is of
-   type GRPC_ARG_STRING. This *should* be used for testing only.
+   type \a GRPC_ARG_STRING. This *should* be used for testing only.
    If this argument is not specified, the name used for SSL host name checking
    will be the target parameter (assuming that the secure channel is an SSL
    channel). If this parameter is specified and the underlying is not an SSL
    channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-/* Maximum metadata size */
+/* Maximum metadata size, in bytes. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.
@@ -214,10 +227,14 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+/** Signal that the call is cacheable. GRPC is free to use GET verb */
+#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK       \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
+#define GRPC_INITIAL_METADATA_USED_MASK        \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
+   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

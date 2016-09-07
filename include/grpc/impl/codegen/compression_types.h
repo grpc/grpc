@@ -46,12 +46,27 @@ extern "C" {
 #define GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
   "grpc-internal-encoding-request"
 
-/** To be used in channel arguments */
+/** To be used in channel arguments.
+ *
+ * \addtogroup grpc_arg_keys
+ * \{ */
+/** Default compression algorithm for the channel.
+ * Its value is an int from the \a grpc_compression_algorithm enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
   "grpc.default_compression_algorithm"
+/** Default compression level for the channel.
+ * Its value is an int from the \a grpc_compression_level enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
+/** Compression algorithms supported by the channel.
+ * Its value is a bitset (an int). Bits correspond to algorithms in \a
+ * grpc_compression_algorithm. For example, its LSB corresponds to
+ * GRPC_COMPRESS_NONE, the next bit to GRPC_COMPRESS_DEFLATE, etc.
+ * Unset bits disable support for the algorithm. By default all algorithms are
+ * supported. It's not possible to disable GRPC_COMPRESS_NONE (the attempt will
+ * be ignored). */
 #define GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET \
   "grpc.compression_enabled_algorithms_bitset"
+/** \} */
 
 /* The various compression algorithms supported by gRPC */
 typedef enum {

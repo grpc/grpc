@@ -57,4 +57,10 @@
  * more than one invocation of the methods of this category.
  */
 + (void)useInsecureConnectionsForHost:(NSString *)host;
+
+/**
+ * Resets all host configurations to their default values, and flushes all connections from the
+ * cache.
+ */
++ (void)resetHostSettings;
 @end

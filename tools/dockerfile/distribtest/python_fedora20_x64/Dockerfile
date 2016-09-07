@@ -35,3 +35,5 @@ RUN yum clean all && yum update -y && yum install -y python python-pip
 # Trying twice makes it work fine.
 # https://github.com/docker/docker/issues/10180
 RUN pip install --upgrade six || pip install --upgrade six
+
+RUN pip install virtualenv

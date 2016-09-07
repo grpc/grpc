@@ -49,16 +49,33 @@
 extern zend_class_entry *grpc_ce_channel;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */
-typedef struct wrapped_grpc_channel {
-  zend_object std;
-
+PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_channel)
   grpc_channel *wrapped;
-} wrapped_grpc_channel;
+PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_channel)
+
+#if PHP_MAJOR_VERSION < 7
+
+#define Z_WRAPPED_GRPC_CHANNEL_P(zv) \
+  (wrapped_grpc_channel *)zend_object_store_get_object(zv TSRMLS_CC)
+
+#else
+
+static inline wrapped_grpc_channel
+*wrapped_grpc_channel_from_obj(zend_object *obj) {
+  return (wrapped_grpc_channel*)((char*)(obj) -
+                                 XtOffsetOf(wrapped_grpc_channel, std));
+}
+
+#define Z_WRAPPED_GRPC_CHANNEL_P(zv) \
+  wrapped_grpc_channel_from_obj(Z_OBJ_P((zv)))
+
+#endif /* PHP_MAJOR_VERSION */
 
 /* Initializes the Channel class */
 void grpc_init_channel(TSRMLS_D);
 
 /* Iterates through a PHP array and populates args with the contents */
-void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args TSRMLS_DC);
+void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args
+                              TSRMLS_DC);
 
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */
