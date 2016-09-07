@@ -30,3 +30,4 @@
 FROM fedora:22
 
 RUN yum clean all && yum update -y && yum install -y python python-pip
+RUN pip install virtualenv

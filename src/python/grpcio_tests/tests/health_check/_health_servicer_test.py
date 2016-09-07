@@ -27,48 +27,68 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests of grpc_health.health.v1.health."""
+"""Tests of grpc.health.v1.health."""
 
 import unittest
 
-from grpc_health.health.v1 import health
-from grpc_health.health.v1 import health_pb2
+import grpc
+from grpc.framework.foundation import logging_pool
+from grpc.health.v1 import health
+from grpc.health.v1 import health_pb2
+
+from tests.unit.framework.common import test_constants
 
 
 class HealthServicerTest(unittest.TestCase):
 
   def setUp(self):
-    self.servicer = health.HealthServicer()
-    self.servicer.set('', health_pb2.HealthCheckResponse.SERVING)
-    self.servicer.set('grpc.test.TestServiceServing',
-                      health_pb2.HealthCheckResponse.SERVING)
-    self.servicer.set('grpc.test.TestServiceUnknown',
-                      health_pb2.HealthCheckResponse.UNKNOWN)
-    self.servicer.set('grpc.test.TestServiceNotServing',
-                      health_pb2.HealthCheckResponse.NOT_SERVING)
+    servicer = health.HealthServicer()
+    servicer.set('', health_pb2.HealthCheckResponse.SERVING)
+    servicer.set('grpc.test.TestServiceServing',
+                 health_pb2.HealthCheckResponse.SERVING)
+    servicer.set('grpc.test.TestServiceUnknown',
+                 health_pb2.HealthCheckResponse.UNKNOWN)
+    servicer.set('grpc.test.TestServiceNotServing',
+                 health_pb2.HealthCheckResponse.NOT_SERVING)
+    server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
+    self._server = grpc.server(server_pool)
+    port = self._server.add_insecure_port('[::]:0')
+    health_pb2.add_HealthServicer_to_server(servicer, self._server)
+    self._server.start()
+
+    channel = grpc.insecure_channel('localhost:%d' % port)
+    self._stub = health_pb2.HealthStub(channel)
 
   def test_empty_service(self):
     request = health_pb2.HealthCheckRequest()
-    resp = self.servicer.Check(request, None)
-    self.assertEqual(resp.status, health_pb2.HealthCheckResponse.SERVING)
+    resp = self._stub.Check(request)
+    self.assertEqual(health_pb2.HealthCheckResponse.SERVING, resp.status)
 
   def test_serving_service(self):
     request = health_pb2.HealthCheckRequest(
         service='grpc.test.TestServiceServing')
-    resp = self.servicer.Check(request, None)
-    self.assertEqual(resp.status, health_pb2.HealthCheckResponse.SERVING)
+    resp = self._stub.Check(request)
+    self.assertEqual(health_pb2.HealthCheckResponse.SERVING, resp.status)
 
   def test_unknown_serivce(self):
     request = health_pb2.HealthCheckRequest(
         service='grpc.test.TestServiceUnknown')
-    resp = self.servicer.Check(request, None)
-    self.assertEqual(resp.status, health_pb2.HealthCheckResponse.UNKNOWN)
+    resp = self._stub.Check(request)
+    self.assertEqual(health_pb2.HealthCheckResponse.UNKNOWN, resp.status)
 
   def test_not_serving_service(self):
     request = health_pb2.HealthCheckRequest(
         service='grpc.test.TestServiceNotServing')
-    resp = self.servicer.Check(request, None)
-    self.assertEqual(resp.status, health_pb2.HealthCheckResponse.NOT_SERVING)
+    resp = self._stub.Check(request)
+    self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING, resp.status)
+
+  def test_not_found_service(self):
+    request = health_pb2.HealthCheckRequest(
+        service='not-found')
+    with self.assertRaises(grpc.RpcError) as context:
+      resp = self._stub.Check(request)
+  
+    self.assertEqual(grpc.StatusCode.NOT_FOUND, context.exception.code())
 
 
 if __name__ == '__main__':

@@ -94,19 +94,26 @@ static void new_slice_unref(void *p) {
   }
 }
 
-gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *)) {
+gpr_slice gpr_slice_new_with_user_data(void *p, size_t len,
+                                       void (*destroy)(void *),
+                                       void *user_data) {
   gpr_slice slice;
   new_slice_refcount *rc = gpr_malloc(sizeof(new_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.ref = new_slice_ref;
   rc->rc.unref = new_slice_unref;
   rc->user_destroy = destroy;
-  rc->user_data = p;
+  rc->user_data = user_data;
 
   slice.refcount = &rc->rc;
   slice.data.refcounted.bytes = p;
   slice.data.refcounted.length = len;
   return slice;
+}
+
+gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *)) {
+  /* Pass "p" to *destroy when the slice is no longer needed. */
+  return gpr_slice_new_with_user_data(p, len, destroy, p);
 }
 
 /* gpr_slice_new_with_len support structures - we create a refcount object

@@ -23,15 +23,10 @@ EXPORTS
     census_trace_scan_start
     census_get_trace_record
     census_trace_scan_end
+    census_define_resource
+    census_delete_resource
+    census_resource_id
     census_record_values
-    census_view_create
-    census_view_delete
-    census_view_metric
-    census_view_naggregations
-    census_view_tags
-    census_view_aggregrations
-    census_view_get_data
-    census_view_reset
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
     grpc_compression_algorithm_for_level
@@ -47,6 +42,7 @@ EXPORTS
     grpc_init
     grpc_shutdown
     grpc_version_string
+    grpc_g_stands_for
     grpc_completion_queue_create
     grpc_completion_queue_next
     grpc_completion_queue_pluck
@@ -148,6 +144,7 @@ EXPORTS
     gpr_slice_ref
     gpr_slice_unref
     gpr_slice_new
+    gpr_slice_new_with_user_data
     gpr_slice_new_with_len
     gpr_slice_malloc
     gpr_slice_from_copied_string

@@ -38,19 +38,19 @@
 #include <unordered_set>
 #include <vector>
 
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/descriptor_database.h>
+// GRPC_NO_GENERATED_CODE indicates generated pb files should not be used
+#ifdef GRPC_NO_GENERATED_CODE
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#else
 #include <grpc++/ext/reflection.grpc.pb.h>
+#endif  // GRPC_NO_GENERATED_CODE
 #include <grpc++/grpc++.h>
-
 namespace grpc {
 
 // ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and
 // provides the methods defined by DescriptorDatabase interfaces. It can be used
 // to feed a DescriptorPool instance.
-class ProtoReflectionDescriptorDatabase
-    : public google::protobuf::DescriptorDatabase {
+class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
  public:
   explicit ProtoReflectionDescriptorDatabase(
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
@@ -65,14 +65,13 @@ class ProtoReflectionDescriptorDatabase
   // Find a file by file name.  Fills in in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
   bool FindFileByName(const string& filename,
-                      google::protobuf::FileDescriptorProto* output)
-      GRPC_OVERRIDE;
+                      protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
   bool FindFileContainingSymbol(const string& symbol_name,
-                                google::protobuf::FileDescriptorProto* output)
+                                protobuf::FileDescriptorProto* output)
       GRPC_OVERRIDE;
 
   // Find the file which defines an extension extending the given message type
@@ -81,7 +80,7 @@ class ProtoReflectionDescriptorDatabase
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
       const string& containing_type, int field_number,
-      google::protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
+      protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
 
   // Finds the tag numbers used by all known extensions of
   // extendee_type, and appends them to output in an undefined
@@ -102,7 +101,7 @@ class ProtoReflectionDescriptorDatabase
       grpc::reflection::v1alpha::ServerReflectionResponse>
       ClientStream;
 
-  const google::protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
+  const protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
       const std::string& byte_fd_proto);
 
   void AddFileFromResponse(
@@ -123,7 +122,7 @@ class ProtoReflectionDescriptorDatabase
   std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
   std::mutex stream_mutex_;
 
-  google::protobuf::SimpleDescriptorDatabase cached_db_;
+  protobuf::SimpleDescriptorDatabase cached_db_;
 };
 
 }  // namespace grpc

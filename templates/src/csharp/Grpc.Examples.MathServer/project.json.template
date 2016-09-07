@@ -9,12 +9,10 @@
     },
     "frameworks": {
       "net45": { },
-      "netstandard1.5": {
-        "imports": [
-          "portable-net45"
-        ],
+      "netcoreapp1.0": {
         "dependencies": {
-          "NETStandard.Library": "1.5.0-rc2-24027"
+          "Microsoft.NETCore.App": "1.0.0",
+          "NETStandard.Library": "1.6.0"
         }
       }
     }

@@ -46,4 +46,11 @@
  * Override in a subclass to perform these tests against a specific address.
  */
 + (NSString *)host;
+
+/**
+ * Bytes of overhead of test proto responses due to encoding. This is used to excercise the behavior
+ * when responses are just above or below the max response size. For some reason, the local and
+ * remote servers enconde responses with different overhead (?), so this is defined per-subclass.
+ */
+- (int32_t)encodingOverhead;
 @end

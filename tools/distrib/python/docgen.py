@@ -71,6 +71,8 @@ environment.update({
 
 subprocess_arguments_list = [
     {'args': ['virtualenv', VIRTUALENV_DIR], 'env': environment},
+    {'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip'],
+     'env': environment},
     {'args': [VIRTUALENV_PIP_PATH, 'install', '-r', REQUIREMENTS_PATH],
      'env': environment},
     {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'build'], 'env': environment},

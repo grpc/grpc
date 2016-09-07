@@ -68,6 +68,8 @@ using v8::Value;
 Nan::Callback *CallCredentials::constructor;
 Persistent<FunctionTemplate> CallCredentials::fun_tpl;
 
+static Callback *plugin_callback;
+
 CallCredentials::CallCredentials(grpc_call_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
@@ -88,6 +90,11 @@ void CallCredentials::Init(Local<Object> exports) {
                Nan::New<FunctionTemplate>(CreateFromPlugin)).ToLocalChecked());
   Nan::Set(exports, Nan::New("CallCredentials").ToLocalChecked(), ctr);
   constructor = new Nan::Callback(ctr);
+
+  Local<FunctionTemplate> callback_tpl =
+      Nan::New<FunctionTemplate>(PluginCallback);
+  plugin_callback = new Callback(
+      Nan::GetFunction(callback_tpl).ToLocalChecked());
 }
 
 bool CallCredentials::HasInstance(Local<Value> val) {
@@ -195,23 +202,28 @@ NAN_METHOD(PluginCallback) {
     return Nan::ThrowTypeError(
         "The callback's third argument must be an object");
   }
+  if (!info[3]->IsObject()) {
+    return Nan::ThrowTypeError(
+        "The callback's fourth argument must be an object");
+  }
   shared_ptr<Resources> resources(new Resources);
   grpc_status_code code = static_cast<grpc_status_code>(
       Nan::To<uint32_t>(info[0]).FromJust());
   Utf8String details_utf8_str(info[1]);
   char *details = *details_utf8_str;
   grpc_metadata_array array;
+  Local<Object> callback_data = Nan::To<Object>(info[3]).ToLocalChecked();
   if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),
                            &array, resources)){
     return Nan::ThrowError("Failed to parse metadata");
   }
   grpc_credentials_plugin_metadata_cb cb =
       reinterpret_cast<grpc_credentials_plugin_metadata_cb>(
-          Nan::Get(info.Callee(),
+          Nan::Get(callback_data,
                    Nan::New("cb").ToLocalChecked()
                    ).ToLocalChecked().As<External>()->Value());
   void *user_data =
-      Nan::Get(info.Callee(),
+      Nan::Get(callback_data,
                Nan::New("user_data").ToLocalChecked()
                ).ToLocalChecked().As<External>()->Value();
   cb(user_data, array.metadata, array.count, code, details);
@@ -227,17 +239,17 @@ NAUV_WORK_CB(SendPluginCallback) {
   while (!callbacks.empty()) {
     plugin_callback_data *data = callbacks.front();
     callbacks.pop_front();
-    // Attach cb and user_data to plugin_callback so that it can access them later
-    v8::Local<v8::Function> plugin_callback = Nan::GetFunction(
-        Nan::New<v8::FunctionTemplate>(PluginCallback)).ToLocalChecked();
-    Nan::Set(plugin_callback, Nan::New("cb").ToLocalChecked(),
+    Local<Object> callback_data = Nan::New<Object>();
+    Nan::Set(callback_data, Nan::New("cb").ToLocalChecked(),
              Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
-    Nan::Set(plugin_callback, Nan::New("user_data").ToLocalChecked(),
+    Nan::Set(callback_data, Nan::New("user_data").ToLocalChecked(),
              Nan::New<v8::External>(data->user_data));
-    const int argc = 2;
+    const int argc = 3;
     v8::Local<v8::Value> argv[argc] = {
       Nan::New(data->service_url).ToLocalChecked(),
-      plugin_callback
+      callback_data,
+      // Get Local<Function> from Nan::Callback*
+      **plugin_callback
     };
     Nan::Callback *callback = state->callback;
     callback->Call(argc, argv);

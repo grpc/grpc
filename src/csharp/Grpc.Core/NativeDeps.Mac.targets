@@ -3,7 +3,7 @@
   <ItemGroup>
     <Content Include="..\..\..\libs\$(NativeDependenciesConfigurationUnix)\libgrpc_csharp_ext.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\macosx_x86\libgrpc_csharp_ext.dylib</Link>
+      <Link>libgrpc_csharp_ext.x86.dylib</Link>
     </Content>
   </ItemGroup>
 </Project>

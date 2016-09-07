@@ -1,29 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\windows_x86\grpc_csharp_ext.dll">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x86.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\windows_x86\grpc_csharp_ext.dll</Link>
+      <Link>grpc_csharp_ext.x86.dll</Link>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\windows_x64\grpc_csharp_ext.dll">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\win\native\grpc_csharp_ext.x64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\windows_x64\grpc_csharp_ext.dll</Link>
+      <Link>grpc_csharp_ext.x64.dll</Link>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\linux_x86\libgrpc_csharp_ext.so">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x86.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\linux_x86\libgrpc_csharp_ext.so</Link>
+      <Link>libgrpc_csharp_ext.x86.so</Link>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\linux_x64\libgrpc_csharp_ext.so">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\linux\native\libgrpc_csharp_ext.x64.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\linux_x64\libgrpc_csharp_ext.so</Link>
+      <Link>libgrpc_csharp_ext.x64.so</Link>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\macosx_x86\libgrpc_csharp_ext.dylib">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x86.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\macosx_x86\libgrpc_csharp_ext.dylib</Link>
+      <Link>libgrpc_csharp_ext.x86.dylib</Link>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\macosx_x64\libgrpc_csharp_ext.dylib">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\runtimes\osx\native\libgrpc_csharp_ext.x64.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\macosx_x64\libgrpc_csharp_ext.dylib</Link>
+      <Link>libgrpc_csharp_ext.x64.dylib</Link>
     </Content>
   </ItemGroup>
 </Project>

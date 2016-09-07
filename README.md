@@ -23,16 +23,16 @@ This repository contains source code for gRPC libraries for multiple languages w
 
 Libraries in different languages are in different states of development. We are seeking contributions for all of these libraries.
 
-| Language                | Source                              | Status                           |
-|-------------------------|-------------------------------------|----------------------------------|
-| Shared C [core library] | [src/core] (src/core)               | Beta - the surface API is stable |
-| C++                     | [src/cpp] (src/cpp)                 | Beta - the surface API is stable |
-| Ruby                    | [src/ruby] (src/ruby)               | Beta - the surface API is stable |
-| NodeJS                  | [src/node] (src/node)               | Beta - the surface API is stable |
-| Python                  | [src/python] (src/python)           | Beta - the surface API is stable |
-| PHP                     | [src/php] (src/php)                 | Beta - the surface API is stable |
-| C#                      | [src/csharp] (src/csharp)           | Beta - the surface API is stable |
-| Objective-C             | [src/objective-c] (src/objective-c) | Beta - the surface API is stable |
+| Language                | Source                              | Status  |
+|-------------------------|-------------------------------------|---------|
+| Shared C [core library] | [src/core] (src/core)               | 1.0     |
+| C++                     | [src/cpp] (src/cpp)                 | 1.0     |
+| Ruby                    | [src/ruby] (src/ruby)               | 1.0     |
+| NodeJS                  | [src/node] (src/node)               | 1.0     |
+| Python                  | [src/python] (src/python)           | 1.0     |
+| PHP                     | [src/php] (src/php)                 | 1.0     |
+| C#                      | [src/csharp] (src/csharp)           | 1.0     |
+| Objective-C             | [src/objective-c] (src/objective-c) | 1.0     |
 
 <small>
 Java source code is in the [grpc-java] (http://github.com/grpc/grpc-java) repository.

@@ -35,4 +35,4 @@ cd $(dirname $0)/../../src/csharp
 # TODO(jtattermusch): introduce caching
 dotnet restore .
 
-dotnet build -f netstandard1.5 --configuration $MSBUILD_CONFIG '**/project.json'
+dotnet build --configuration $MSBUILD_CONFIG '**/project.json'

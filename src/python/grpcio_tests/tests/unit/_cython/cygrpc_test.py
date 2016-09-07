@@ -30,6 +30,7 @@
 import time
 import threading
 import unittest
+import platform
 
 from grpc._cython import cygrpc
 from tests.unit._cython import test_utilities

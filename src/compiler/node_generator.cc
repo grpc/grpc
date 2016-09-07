@@ -114,8 +114,8 @@ map<grpc::string, const Descriptor *> GetAllMessages(
       const MethodDescriptor *method = service->method(method_num);
       const Descriptor *input_type = method->input_type();
       const Descriptor *output_type = method->output_type();
-      message_types[input_type->name()] = input_type;
-      message_types[output_type->name()] = output_type;
+      message_types[input_type->full_name()] = input_type;
+      message_types[output_type->full_name()] = output_type;
     }
   }
   return message_types;
@@ -127,7 +127,7 @@ grpc::string MessageIdentifierName(const grpc::string &name) {
 
 grpc::string NodeObjectPath(const Descriptor *descriptor) {
   grpc::string module_alias = ModuleAlias(descriptor->file()->name());
-  grpc::string name = descriptor->name();
+  grpc::string name = descriptor->full_name();
   grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
   return module_alias + "." + name;
 }
@@ -135,8 +135,9 @@ grpc::string NodeObjectPath(const Descriptor *descriptor) {
 // Prints out the message serializer and deserializer functions
 void PrintMessageTransformer(const Descriptor *descriptor, Printer *out) {
   map<grpc::string, grpc::string> template_vars;
-  template_vars["identifier_name"] = MessageIdentifierName(descriptor->name());
-  template_vars["name"] = descriptor->name();
+  grpc::string full_name = descriptor->full_name();
+  template_vars["identifier_name"] = MessageIdentifierName(full_name);
+  template_vars["name"] = full_name;
   template_vars["node_name"] = NodeObjectPath(descriptor);
   // Print the serializer
   out->Print(template_vars, "function serialize_$identifier_name$(arg) {\n");
@@ -169,9 +170,9 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
   vars["input_type"] = NodeObjectPath(input_type);
-  vars["input_type_id"] = MessageIdentifierName(input_type->name());
+  vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
   vars["output_type"] = NodeObjectPath(output_type);
-  vars["output_type_id"] = MessageIdentifierName(output_type->name());
+  vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
   vars["client_stream"] = method->client_streaming() ? "true" : "false";
   vars["server_stream"] = method->server_streaming() ? "true" : "false";
   out->Print("{\n");

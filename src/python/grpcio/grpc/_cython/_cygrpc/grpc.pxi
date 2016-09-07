@@ -30,18 +30,28 @@
 cimport libc.time
 
 
-cdef extern from "grpc/_cython/loader.h":
+# Typedef types with approximately the same semantics to provide their names to
+# Cython
+ctypedef int int32_t
+ctypedef unsigned uint32_t
+ctypedef long int64_t
 
-  ctypedef int int32_t
-  ctypedef unsigned uint32_t
-  ctypedef long int64_t
 
-  int pygrpc_load_core(char*)
-  int pygrpc_initialize_core()
+cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
   void gpr_free(void *ptr) nogil
   void *gpr_realloc(void *p, size_t size) nogil
+
+
+cdef extern from "grpc/byte_buffer_reader.h":
+
+  struct grpc_byte_buffer_reader:
+    # We don't care about the internals
+    pass
+
+
+cdef extern from "grpc/grpc.h":
 
   ctypedef struct gpr_slice:
     # don't worry about writing out the members of gpr_slice; we never access
@@ -86,7 +96,22 @@ cdef extern from "grpc/_cython/loader.h":
   gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
 
   int gpr_time_cmp(gpr_timespec a, gpr_timespec b) nogil
-  
+
+  ctypedef struct grpc_byte_buffer:
+    # We don't care about the internals.
+    pass
+
+  grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+                                                size_t nslices) nogil
+  size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
+  void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
+
+  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                   grpc_byte_buffer *buffer) nogil
+  int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
+                                   gpr_slice *slice) nogil
+  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
+
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
     GRPC_STATUS_CANCELLED
@@ -106,37 +131,6 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_STATUS_UNAVAILABLE
     GRPC_STATUS_DATA_LOSS
     GRPC_STATUS__DO_NOT_USE
-
-  ctypedef enum grpc_ssl_roots_override_result:
-    GRPC_SSL_ROOTS_OVERRIDE_OK
-    GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
-    GRPC_SSL_ROOTS_OVERRIDE_FAILED
-
-  ctypedef enum grpc_ssl_client_certificate_request_type:
-    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
-    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
-    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
-    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-
-  struct grpc_byte_buffer_reader:
-    # We don't care about the internals
-    pass
-
-  ctypedef struct grpc_byte_buffer:
-    # We don't care about the internals.
-    pass
-
-  grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
-                                                size_t nslices) nogil
-  size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
-  void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
-
-  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                   grpc_byte_buffer *buffer) nogil
-  int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                   gpr_slice *slice) nogil
-  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
 
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_ENABLE_CENSUS
@@ -353,6 +347,21 @@ cdef extern from "grpc/_cython/loader.h":
   void grpc_server_cancel_all_calls(grpc_server *server) nogil
   void grpc_server_destroy(grpc_server *server) nogil
 
+
+cdef extern from "grpc/grpc_security.h":
+
+  ctypedef enum grpc_ssl_roots_override_result:
+    GRPC_SSL_ROOTS_OVERRIDE_OK
+    GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
+    GRPC_SSL_ROOTS_OVERRIDE_FAILED
+
+  ctypedef enum grpc_ssl_client_certificate_request_type:
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key
     const char *certificate_chain "cert_chain"
@@ -438,6 +447,9 @@ cdef extern from "grpc/_cython/loader.h":
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, void *reserved) nogil
 
+
+cdef extern from "grpc/compression.h":
+
   ctypedef enum grpc_compression_algorithm:
     GRPC_COMPRESS_NONE
     GRPC_COMPRESS_DEFLATE
@@ -472,3 +484,4 @@ cdef extern from "grpc/_cython/loader.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
+

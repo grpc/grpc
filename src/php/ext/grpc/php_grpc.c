@@ -64,15 +64,19 @@ const zend_function_entry grpc_functions[] = {
  */
 zend_module_entry grpc_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
-    STANDARD_MODULE_HEADER,
+  STANDARD_MODULE_HEADER,
 #endif
-    "grpc",                    grpc_functions, PHP_MINIT(grpc),
-    PHP_MSHUTDOWN(grpc),       NULL,           NULL,
-    PHP_MINFO(grpc),
+  "grpc",
+  grpc_functions,
+  PHP_MINIT(grpc),
+  PHP_MSHUTDOWN(grpc),
+  NULL,
+  NULL,
+  PHP_MINFO(grpc),
 #if ZEND_MODULE_API_NO >= 20010901
-    PHP_GRPC_VERSION,
+  PHP_GRPC_VERSION,
 #endif
-    STANDARD_MODULE_PROPERTIES};
+  STANDARD_MODULE_PROPERTIES};
 /* }}} */
 
 #ifdef COMPILE_DL_GRPC
@@ -82,23 +86,24 @@ ZEND_GET_MODULE(grpc)
 /* {{{ PHP_INI
  */
 /* Remove comments and fill if you need to have entries in php.ini
-PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("grpc.global_value",      "42", PHP_INI_ALL, OnUpdateLong,
-global_value, zend_grpc_globals, grpc_globals)
-    STD_PHP_INI_ENTRY("grpc.global_string", "foobar", PHP_INI_ALL,
-OnUpdateString, global_string, zend_grpc_globals, grpc_globals)
-PHP_INI_END()
+   PHP_INI_BEGIN()
+   STD_PHP_INI_ENTRY("grpc.global_value", "42", PHP_INI_ALL, OnUpdateLong,
+                     global_value, zend_grpc_globals, grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.global_string", "foobar", PHP_INI_ALL,
+                     OnUpdateString, global_string, zend_grpc_globals,
+                     grpc_globals)
+   PHP_INI_END()
 */
 /* }}} */
 
 /* {{{ php_grpc_init_globals
  */
 /* Uncomment this function if you have INI entries
-static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
-{
-    grpc_globals->global_value = 0;
-    grpc_globals->global_string = NULL;
-}
+   static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
+   {
+     grpc_globals->global_value = 0;
+     grpc_globals->global_string = NULL;
+   }
 */
 /* }}} */
 
@@ -106,7 +111,7 @@ static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
  */
 PHP_MINIT_FUNCTION(grpc) {
   /* If you have INI entries, uncomment these lines
-  REGISTER_INI_ENTRIES();
+     REGISTER_INI_ENTRIES();
   */
   /* Register call error constants */
   grpc_init();
@@ -246,7 +251,7 @@ PHP_MINIT_FUNCTION(grpc) {
  */
 PHP_MSHUTDOWN_FUNCTION(grpc) {
   /* uncomment this line if you have INI entries
-  UNREGISTER_INI_ENTRIES();
+     UNREGISTER_INI_ENTRIES();
   */
   // WARNING: This function IS being called by PHP when the extension
   // is unloaded but the logs were somehow suppressed.
@@ -265,7 +270,7 @@ PHP_MINFO_FUNCTION(grpc) {
   php_info_print_table_end();
 
   /* Remove comments if you have entries in php.ini
-  DISPLAY_INI_ENTRIES();
+     DISPLAY_INI_ENTRIES();
   */
 }
 /* }}} */
@@ -274,12 +279,3 @@ PHP_MINFO_FUNCTION(grpc) {
    function definition, where the functions purpose is also documented. Please
    follow this convention for the convenience of others editing your code.
 */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

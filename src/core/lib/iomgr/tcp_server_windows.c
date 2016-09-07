@@ -540,4 +540,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
   gpr_mu_unlock(&s->mu);
 }
 
+void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
+                                        grpc_tcp_server *s) {}
+
 #endif /* GPR_WINSOCK_SOCKET */

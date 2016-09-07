@@ -54,6 +54,15 @@ function hardAssert($value, $error_message)
     }
 }
 
+function hardAssertIfStatusOk($status)
+{
+    if ($status->code !== Grpc\STATUS_OK) {
+        echo "Call did not complete successfully. Status object:\n";
+        var_dump($status);
+        exit(1);
+    }
+}
+
 /**
  * Run the empty_unary test.
  *
@@ -62,7 +71,7 @@ function hardAssert($value, $error_message)
 function emptyUnary($stub)
 {
     list($result, $status) = $stub->EmptyCall(new grpc\testing\EmptyMessage())->wait();
-    hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
+    hardAssertIfStatusOk($status);
     hardAssert($result !== null, 'Call completed with a null response');
 }
 
@@ -99,13 +108,13 @@ function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false
     $request->setFillUsername($fillUsername);
     $request->setFillOauthScope($fillOauthScope);
 
-    $options = false;
+    $options = [];
     if ($callback) {
         $options['call_credentials_callback'] = $callback;
     }
 
     list($result, $status) = $stub->UnaryCall($request, [], $options)->wait();
-    hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
+    hardAssertIfStatusOk($status);
     hardAssert($result !== null, 'Call returned a null response');
     $payload = $result->getPayload();
     hardAssert($payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
@@ -197,7 +206,12 @@ function updateAuthMetadataCallback($context)
     $methodName = $context->method_name;
     $auth_credentials = ApplicationDefaultCredentials::getCredentials();
 
-    return $auth_credentials->updateMetadata($metadata = [], $authUri);
+    $metadata = [];
+    $result = $auth_credentials->updateMetadata([], $authUri);
+    foreach ($result as $key => $value) {
+      $metadata[strtolower($key)] = $value;
+    }
+    return $metadata;
 }
 
 /**
@@ -242,7 +256,7 @@ function clientStreaming($stub)
         $call->write($request);
     }
     list($result, $status) = $call->wait();
-    hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
+    hardAssertIfStatusOk($status);
     hardAssert($result->getAggregatedPayloadSize() === 74922,
               'aggregated_payload_size was incorrect');
 }
@@ -275,8 +289,7 @@ function serverStreaming($stub)
                 'Response '.$i.' had the wrong length');
         $i += 1;
     }
-    hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
-             'Call did not complete successfully');
+    hardAssertIfStatusOk($call->getStatus());
 }
 
 /**
@@ -312,8 +325,7 @@ function pingPong($stub)
     }
     $call->writesDone();
     hardAssert($call->read() === null, 'Server returned too many responses');
-    hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
-              'Call did not complete successfully');
+    hardAssertIfStatusOk($call->getStatus());
 }
 
 /**
@@ -326,8 +338,7 @@ function emptyStream($stub)
     $call = $stub->FullDuplexCall();
     $call->writesDone();
     hardAssert($call->read() === null, 'Server returned too many responses');
-    hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
-             'Call did not complete successfully');
+    hardAssertIfStatusOk($call->getStatus());
 }
 
 /**
@@ -419,8 +430,7 @@ function customMetadata($stub)
                'Incorrect initial metadata value');
 
     list($result, $status) = $call->wait();
-    hardAssert($status->code === Grpc\STATUS_OK,
-               'Call did not complete successfully');
+    hardAssertIfStatusOk($status);
 
     $trailing_metadata = $call->getTrailingMetadata();
     hardAssert(array_key_exists($ECHO_TRAILING_KEY, $trailing_metadata),
@@ -435,8 +445,7 @@ function customMetadata($stub)
     $streaming_call->write($streaming_request);
     $streaming_call->writesDone();
 
-    hardAssert($streaming_call->getStatus()->code === Grpc\STATUS_OK,
-               'Call did not complete successfully');
+    hardAssertIfStatusOk($streaming_call->getStatus());
 
     $streaming_trailing_metadata = $streaming_call->getTrailingMetadata();
     hardAssert(array_key_exists($ECHO_TRAILING_KEY,
@@ -450,7 +459,7 @@ function statusCodeAndMessage($stub)
 {
     $echo_status = new grpc\testing\EchoStatus();
     $echo_status->setCode(2);
-    $echo_status->setMessage("test status message");
+    $echo_status->setMessage('test status message');
 
     $request = new grpc\testing\SimpleRequest();
     $request->setResponseStatus($echo_status);
@@ -460,7 +469,7 @@ function statusCodeAndMessage($stub)
 
     hardAssert($status->code === 2,
                'Received unexpected status code');
-    hardAssert($status->details === "test status message",
+    hardAssert($status->details === 'test status message',
                'Received unexpected status details');
 
     $streaming_call = $stub->FullDuplexCall();
@@ -473,7 +482,7 @@ function statusCodeAndMessage($stub)
     $status = $streaming_call->getStatus();
     hardAssert($status->code === 2,
                'Received unexpected status code');
-    hardAssert($status->details === "test status message",
+    hardAssert($status->details === 'test status message',
                'Received unexpected status details');
 }
 
@@ -570,9 +579,9 @@ function _makeStub($args)
     }
 
     if ($test_case == 'unimplemented_method') {
-      $stub = new grpc\testing\UnimplementedServiceClient($server_address, $opts);
+        $stub = new grpc\testing\UnimplementedServiceClient($server_address, $opts);
     } else {
-      $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+        $stub = new grpc\testing\TestServiceClient($server_address, $opts);
     }
 
     return $stub;

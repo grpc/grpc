@@ -30,13 +30,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+/*
+  - If the generated header `grpc++/ext/reflection.grpc.pb.h` needs to be
+    installed, target `grpc++_reflection` in `build.yaml` should use the
+    filegroup `grpc++_reflection_proto`, and GRPC_NO_GENERATED_CODE should not
+    be defined.
+  - If the server reflection library needs to generate `reflection.grpc.pb.h`
+    from `reflection.proto` at compile time, the generated header
+    `grpc++/ext/reflection.grpc.pb.h` should not be installed. In this case,
+    target `grpc++_reflection` should depend on `grpc++_reflection_codegen`, and
+    GRPC_NO_GENERATED_CODE should be defined.
+*/
+
 #ifndef GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
 #define GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
 #include <unordered_set>
 #include <vector>
 
+// GRPC_NO_GENERATED_CODE indicates generated pb files should not be used
+#ifdef GRPC_NO_GENERATED_CODE
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#else
 #include <grpc++/ext/reflection.grpc.pb.h>
+#endif  // GRPC_NO_GENERATED_CODE
 #include <grpc++/grpc++.h>
 
 namespace grpc {

@@ -33,6 +33,57 @@
  */
 class TimevalTest extends PHPUnit_Framework_TestCase
 {
+    public function setUp()
+    {
+    }
+
+    public function tearDown()
+    {
+        unset($this->time);
+    }
+
+    public function testConstructorWithInt()
+    {
+        $this->time = new Grpc\Timeval(1234);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithNegative()
+    {
+        $this->time = new Grpc\Timeval(-123);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithZero()
+    {
+        $this->time = new Grpc\Timeval(0);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithOct()
+    {
+        $this->time = new Grpc\Timeval(0123);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithHex()
+    {
+        $this->time = new Grpc\Timeval(0x1A);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
+    public function testConstructorWithFloat()
+    {
+        $this->time = new Grpc\Timeval(123.456);
+        $this->assertNotNull($this->time);
+        $this->assertSame('Grpc\Timeval', get_class($this->time));
+    }
+
     public function testCompareSame()
     {
         $zero = Grpc\Timeval::zero();
@@ -70,6 +121,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     public function testNowAndAdd()
     {
         $now = Grpc\Timeval::now();
+        $this->assertNotNull($now);
         $delta = new Grpc\Timeval(1000);
         $deadline = $now->add($delta);
         $this->assertGreaterThan(0, Grpc\Timeval::compare($deadline, $now));
@@ -154,5 +206,6 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     public function testSimilarInvalidParam()
     {
         $a = Grpc\Timeval::similar(1000, 1100, 1200);
+        $this->assertNull($delta);
     }
 }

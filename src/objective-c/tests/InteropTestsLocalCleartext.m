@@ -47,11 +47,15 @@ static NSString * const kLocalCleartextHost = @"localhost:5050";
   return kLocalCleartextHost;
 }
 
+- (int32_t)encodingOverhead {
+  return 10; // bytes
+}
+
 - (void)setUp {
+  [super setUp];
+
   // Register test server as non-SSL.
   [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
-
-  [super setUp];
 }
 
 @end

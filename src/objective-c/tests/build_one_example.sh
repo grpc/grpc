@@ -31,7 +31,7 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -e
+set -ev
 
 # Params:
 # EXAMPLE_PATH - directory of the example
@@ -54,7 +54,7 @@ pod install
 set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
 xcodebuild \
-    clean build \
+    build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
     -destination name="iPhone 6" \

@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.0.0-beta-3.1'
+  v = '3.0.0'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -97,10 +97,9 @@ Pod::Spec.new do |s|
   s.authors  = { 'The Protocol Buffers contributors' => 'protobuf@googlegroups.com' }
 
   repo = 'google/protobuf'
-  release = "v#{v}"
   file = "protoc-#{v}-osx-x86_64.zip"
   s.source = {
-    :http => "https://github.com/#{repo}/releases/download/#{release}/#{file}",
+    :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
@@ -109,7 +108,7 @@ Pod::Spec.new do |s|
                      'google/**/*.proto' # Well-known protobuf types
 
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
-  s.dependency 'Protobuf', v
+  s.dependency 'Protobuf', '~> 3.0'
   # For the Protobuf dependency not to complain:
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
@@ -121,7 +120,7 @@ Pod::Spec.new do |s|
   repo_root = '../..'
   plugin = 'grpc_objective_c_plugin'
   s.prepare_command = <<-CMD
-    if [ ! -f protoc ]; then
+    if [ ! -f bin/protoc ]; then
       cd #{repo_root}
       # This will build protoc from the Protobuf submodule of gRPC, and put it in
       # #{repo_root}/bins/opt/protobuf.
@@ -130,7 +129,9 @@ Pod::Spec.new do |s|
       # _we do not want_. Find a way for this to always build from source.
       make #{plugin}
       cd -
+    else
+      mv bin/protoc .
+      mv include/google .
     fi
   CMD
-
 end

@@ -31,44 +31,33 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -eo pipefail
+set -evo pipefail
 
 cd `dirname $0`
 
-BINDIR=`pwd`/../../../bins/$CONFIG
-TMP_PATH=$PATH
-
-# If `protoc` is not found, add bins/$CONFIG/protobuf/protoc to the search path
-hash protoc 2>/dev/null || TMP_PATH=$BINDIR/protobuf:$TMP_PATH
-
-# If `protoc-gen-objcgrpc` is not found, make a symlink from
-# bins/$CONGIF/grpc_objective_c_plugin and add it to the search path
-PATH=$TMP_PATH hash protoc-gen-objcgrpc 2>/dev/null || {
-  ln -sf $BINDIR/grpc_objective_c_plugin $BINDIR/protoc-gen-objcgrpc
-  TMP_PATH=$BINDIR:$TMP_PATH
-}
-
 SCHEME=HelloWorld                              \
   EXAMPLE_PATH=examples/objective-c/helloworld \
-  PATH=$TMP_PATH                               \
   ./build_one_example.sh
 
 SCHEME=RouteGuideClient                         \
   EXAMPLE_PATH=examples/objective-c/route_guide \
-  PATH=$TMP_PATH                                \
   ./build_one_example.sh
 
 SCHEME=AuthSample                               \
   EXAMPLE_PATH=examples/objective-c/auth_sample \
-  PATH=$TMP_PATH                                \
+  ./build_one_example.sh
+
+rm -f ../examples/RemoteTestClient/*.{h,m}
+
+SCHEME=Sample                                  \
+  EXAMPLE_PATH=src/objective-c/examples/Sample \
   ./build_one_example.sh
 
 SCHEME=Sample                                  \
   EXAMPLE_PATH=src/objective-c/examples/Sample \
-  PATH=$TMP_PATH                               \
+  FRAMEWORKS=YES                               \
   ./build_one_example.sh
 
 SCHEME=SwiftSample                                  \
   EXAMPLE_PATH=src/objective-c/examples/SwiftSample \
-  PATH=$TMP_PATH                                    \
   ./build_one_example.sh

@@ -199,8 +199,9 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -222,11 +223,14 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   args->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
   args->context[GRPC_CONTEXT_SECURITY].destroy =
       grpc_server_security_context_destroy;
+
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats, void *ignored) {}
+                              const grpc_call_final_info *final_info,
+                              void *ignored) {}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,

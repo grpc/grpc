@@ -29,8 +29,11 @@
 
 """The Python implementation of the gRPC route guide server."""
 
+from concurrent import futures
 import time
 import math
+
+import grpc
 
 import route_guide_pb2
 import route_guide_resources
@@ -65,7 +68,7 @@ def get_distance(start, end):
   R = 6371000; # metres
   return R * c;
 
-class RouteGuideServicer(route_guide_pb2.BetaRouteGuideServicer):
+class RouteGuideServicer(route_guide_pb2.RouteGuideServicer):
   """Provides methods that implement functionality of route guide server."""
 
   def __init__(self):
@@ -121,7 +124,9 @@ class RouteGuideServicer(route_guide_pb2.BetaRouteGuideServicer):
 
 
 def serve():
-  server = route_guide_pb2.beta_create_RouteGuide_server(RouteGuideServicer())
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+  route_guide_pb2.add_RouteGuideServicer_to_server(
+      RouteGuideServicer(), server)
   server.add_insecure_port('[::]:50051')
   server.start()
   try:

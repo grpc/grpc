@@ -521,7 +521,8 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
     public function testGetConnectivityState()
     {
-        $this->assertTrue($this->channel->getConnectivityState() == Grpc\CHANNEL_IDLE);
+        $this->assertTrue($this->channel->getConnectivityState() ==
+                          Grpc\CHANNEL_IDLE);
     }
 
     public function testWatchConnectivityStateFailed()

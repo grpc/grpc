@@ -208,13 +208,9 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
         // don't want to throw, because the app shouldn't crash for a behavior
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
-        //
-        // TODO(jcanizales): No canonical code is appropriate for this situation
-        // (because it's just a client problem). Use another domain and an
-        // appropriately-documented code.
         [weakSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                      code:GRPCErrorCodeInternal
-                                                  userInfo:nil]];
+                                                      code:GRPCErrorCodeResourceExhausted
+                                                  userInfo:@{NSLocalizedDescriptionKey: @"Client does not have enough memory to hold the server response."}]];
         [weakSelf cancelCall];
         return;
       }

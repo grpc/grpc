@@ -104,7 +104,14 @@ module GRPC
     end
 
     def assert_arity_matches(mth)
-      if request_response? || server_streamer?
+      # A bidi handler function can optionally be passed a second
+      # call object parameter for access to metadata, cancelling, etc.
+      if bidi_streamer?
+        if mth.arity != 2 && mth.arity != 1
+          fail arity_error(mth, 2, "should be #{mth.name}(req, call) or " \
+            "#{mth.name}(req)")
+        end
+      elsif request_response? || server_streamer?
         if mth.arity != 2
           fail arity_error(mth, 2, "should be #{mth.name}(req, call)")
         end

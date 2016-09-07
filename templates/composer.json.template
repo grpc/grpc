@@ -9,7 +9,7 @@
     "license": "BSD-3-Clause",
     "require": {
       "php": ">=5.5.0",
-      "stanley-cheung/protobuf-php": "dev-master"
+      "stanley-cheung/protobuf-php": "v0.6"
     },
     "require-dev": {
       "google/auth": "v0.9"

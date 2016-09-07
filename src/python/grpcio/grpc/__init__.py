@@ -345,7 +345,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
     This method blocks until the value is available.
 
     Returns:
-      The bytes of the details of the RPC.
+      The details string of the RPC.
     """
     raise NotImplementedError()
 
@@ -764,7 +764,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     details to transmit.
 
     Args:
-      details: The details bytes of the RPC to be transmitted to
+      details: The details string of the RPC to be transmitted to
         the invocation side of the RPC.
     """
     raise NotImplementedError()

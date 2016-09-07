@@ -186,6 +186,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count) {
+  // Log everything from the driver
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
 
@@ -310,6 +313,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // clients is array rather than std::vector to avoid gcc-4.4 issues
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
+  size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
@@ -344,6 +348,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
         }
       }
     }
+
+    // Reduce channel count so that total channels specified is held regardless
+    // of the number of clients available
+    size_t num_channels =
+        (client_config.client_channels() - channels_allocated) /
+        (num_clients - i);
+    channels_allocated += num_channels;
+    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i,
+            num_channels);
+    per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
     *args.mutable_setup() = per_client_config;

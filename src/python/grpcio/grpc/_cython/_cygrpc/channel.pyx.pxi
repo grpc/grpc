@@ -34,6 +34,7 @@ cdef class Channel:
 
   def __cinit__(self, bytes target, ChannelArgs arguments=None,
                 ChannelCredentials channel_credentials=None):
+    grpc_init()
     cdef grpc_channel_args *c_arguments = NULL
     cdef char *c_target = NULL
     self.c_channel = NULL
@@ -103,3 +104,4 @@ cdef class Channel:
   def __dealloc__(self):
     if self.c_channel != NULL:
       grpc_channel_destroy(self.c_channel)
+    grpc_shutdown()

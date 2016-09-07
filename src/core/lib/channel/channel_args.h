@@ -37,6 +37,8 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
+// Channel args are intentionally immutable, to avoid the need for locking.
+
 /** Copy the arguments in \a src into a new instance */
 grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src);
 

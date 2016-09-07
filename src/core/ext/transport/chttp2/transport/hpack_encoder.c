@@ -47,10 +47,10 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 #define HASH_FRAGMENT_1(x) ((x)&255)
 #define HASH_FRAGMENT_2(x) ((x >> 8) & 255)
@@ -78,6 +78,8 @@ typedef struct {
   uint32_t stream_id;
   gpr_slice_buffer *output;
   grpc_transport_one_way_stats *stats;
+  /* maximum size of a frame */
+  size_t max_frame_size;
 } framer_state;
 
 /* fills p (which is expected to be 9 bytes long) with a data frame header */
@@ -123,7 +125,7 @@ static void begin_frame(framer_state *st) {
    needed */
 static void ensure_space(framer_state *st, size_t need_bytes) {
   if (st->output->length - st->output_length_at_start_of_frame + need_bytes <=
-      GRPC_CHTTP2_MAX_PAYLOAD_LENGTH) {
+      st->max_frame_size) {
     return;
   }
   finish_frame(st, 0, 0);
@@ -149,8 +151,8 @@ static void add_header_data(framer_state *st, gpr_slice slice) {
   size_t len = GPR_SLICE_LENGTH(slice);
   size_t remaining;
   if (len == 0) return;
-  remaining = GRPC_CHTTP2_MAX_PAYLOAD_LENGTH +
-              st->output_length_at_start_of_frame - st->output->length;
+  remaining = st->max_frame_size + st->output_length_at_start_of_frame -
+              st->output->length;
   if (len <= remaining) {
     st->stats->header_bytes += len;
     gpr_slice_buffer_add(st->output, slice);
@@ -456,9 +458,9 @@ static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
 
 static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
                          framer_state *st) {
-  char timeout_str[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
+  char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem *mdelem;
-  grpc_chttp2_encode_timeout(
+  grpc_http2_encode_timeout(
       gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
       GRPC_MDSTR_GRPC_TIMEOUT, grpc_mdstr_from_string(timeout_str));
@@ -542,6 +544,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
                                uint32_t stream_id,
                                grpc_metadata_batch *metadata, int is_eof,
+                               size_t max_frame_size,
                                grpc_transport_one_way_stats *stats,
                                gpr_slice_buffer *outbuf) {
   framer_state st;
@@ -555,6 +558,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
   st.output = outbuf;
   st.is_first_frame = 1;
   st.stats = stats;
+  st.max_frame_size = max_frame_size;
 
   /* Encode a metadata batch; store the returned values, representing
      a metadata element that needs to be unreffed back into the metadata
