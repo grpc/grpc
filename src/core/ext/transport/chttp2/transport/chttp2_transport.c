@@ -1235,11 +1235,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
       GPR_ASSERT(*s->recv_message != NULL);
       null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
-      const char *m = grpc_error_string(s->read_closed_error);
-      gpr_log(GPR_ERROR, "publish null :: %s", m);
-      abort();
-      grpc_error_free_string(m);
-
       *s->recv_message = NULL;
       null_then_run_closure(exec_ctx, &s->recv_message_ready, GRPC_ERROR_NONE);
     }
