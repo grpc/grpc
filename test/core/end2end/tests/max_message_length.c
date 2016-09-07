@@ -180,7 +180,7 @@ static void test_max_message_length(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (send_limit) {
-    cq_expect_completion(cqv, tag(1), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     cq_verify(cqv);
     goto done;
   }
