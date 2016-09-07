@@ -57,6 +57,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_posix.c \
     src/core/lib/support/log_windows.c \
     src/core/lib/support/murmur_hash.c \
+    src/core/lib/support/percent_encoding.c \
     src/core/lib/support/slice.c \
     src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
@@ -239,7 +240,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/resolver_registry.c \
     src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \

@@ -153,14 +153,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*option)->UpdateArguments(&args);
     (*option)->UpdatePlugins(&plugins_);
   }
-  if (!thread_pool) {
-    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-      if ((*plugin)->has_sync_methods()) {
-        thread_pool.reset(CreateDefaultThreadPool());
-        has_sync_methods = true;
-        break;
-      }
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    if (!thread_pool && (*plugin)->has_sync_methods()) {
+      thread_pool.reset(CreateDefaultThreadPool());
+      has_sync_methods = true;
     }
+    (*plugin)->UpdateChannelArguments(&args);
   }
   if (max_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
