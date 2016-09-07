@@ -1766,11 +1766,13 @@ target_include_directories(gen_percent_encoding_tables
 
 
 
-install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_create_jwt

@@ -85469,6 +85469,120 @@
   }, 
   {
     "args": [
+      "test/core/support/percent_decode_corpus/2040c1ff65f52a7ae668c2c8f324de5dacc9d695"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/26b0d1da23027ae54db96e125e4a9e98842d77fb"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/2a089c0db45acdb4c6ed8e7ff81ca7235792c0b9"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/35b7b3bc3a740d5c3abca0d75b53f0e1e1ee998a"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/36367ba1adba47a1cbc3a88707fde8cc7abdc248"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/39c2ba51548a0beaf0d6d1164531f1447dc311b5"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/support/percent_decode_corpus/56d08fea787c041395c6697ce26cfbc0decbe688"
     ], 
     "ci_platforms": [
@@ -85545,6 +85659,25 @@
   }, 
   {
     "args": [
+      "test/core/support/percent_decode_corpus/7b302090e090a5829b6d1dd7be30bd4e36a7e60f"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/support/percent_decode_corpus/875e1022169c9e4c541a9ad894e69e989df22ba1"
     ], 
     "ci_platforms": [
@@ -85564,7 +85697,64 @@
   }, 
   {
     "args": [
+      "test/core/support/percent_decode_corpus/8c1051ce066f5a26de9a9d133180621d0da957b4"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/8e084e628ab83a18ac7ca7cb3506525263655c63"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/support/percent_decode_corpus/9d316c4675f40ddccaf8f1cc7aea94170b1e4223"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/ad1c7c11d18a7d116e2c2ef4d4c5afb1270836ae"
     ], 
     "ci_platforms": [
       "linux"
@@ -85641,6 +85831,44 @@
   {
     "args": [
       "test/core/support/percent_decode_corpus/de867b64c54a7ed773dc611fc5cd2f17c5433113"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/e3948dbe004950591630dd5c52f4e0fcbd5e388a"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/support/percent_decode_corpus/e7064f0b80f61dbc65915311032d27baa569ae2a"
     ], 
     "ci_platforms": [
       "linux"
