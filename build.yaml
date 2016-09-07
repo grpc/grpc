@@ -83,6 +83,7 @@ filegroups:
   - src/core/lib/support/block_annotate.h
   - src/core/lib/support/env.h
   - src/core/lib/support/murmur_hash.h
+  - src/core/lib/support/percent_encoding.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
@@ -111,6 +112,7 @@ filegroups:
   - src/core/lib/support/log_posix.c
   - src/core/lib/support/log_windows.c
   - src/core/lib/support/murmur_hash.c
+  - src/core/lib/support/percent_encoding.c
   - src/core/lib/support/slice.c
   - src/core/lib/support/slice_buffer.c
   - src/core/lib/support/stack_lockfree.c
@@ -1576,6 +1578,12 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: gen_percent_encoding_tables
+  build: tool
+  language: c
+  src:
+  - tools/codegen/core/gen_percent_encoding_tables.c
+  deps: []
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
@@ -1652,6 +1660,14 @@ targets:
   language: c
   src:
   - test/core/support/log_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_percent_encoding_test
+  build: test
+  language: c
+  src:
+  - test/core/support/percent_encoding_test.c
   deps:
   - gpr_test_util
   - gpr
@@ -2216,6 +2232,32 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: percent_decode_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/support/percent_decode_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/support/percent_decode_corpus
+  maxlen: 32
+- name: percent_encode_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/support/percent_encode_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/support/percent_encode_corpus
+  maxlen: 32
 - name: resolve_address_test
   build: test
   language: c
