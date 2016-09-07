@@ -119,6 +119,8 @@ extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
 extern void shutdown_finishes_tags_pre_init(void);
+extern void simple_cacheable_request(grpc_end2end_test_config config);
+extern void simple_cacheable_request_pre_init(void);
 extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_delayed_request_pre_init(void);
 extern void simple_metadata(grpc_end2end_test_config config);
@@ -171,6 +173,7 @@ void grpc_end2end_tests_pre_init(void) {
   server_finishes_request_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
+  simple_cacheable_request_pre_init();
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
@@ -223,6 +226,7 @@ void grpc_end2end_tests(int argc, char **argv,
     server_finishes_request(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
+    simple_cacheable_request(config);
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
@@ -382,6 +386,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("shutdown_finishes_tags", argv[i])) {
       shutdown_finishes_tags(config);
+      continue;
+    }
+    if (0 == strcmp("simple_cacheable_request", argv[i])) {
+      simple_cacheable_request(config);
       continue;
     }
     if (0 == strcmp("simple_delayed_request", argv[i])) {
