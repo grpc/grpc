@@ -751,7 +751,6 @@ typedef struct termination_closure {
   grpc_closure closure;
   grpc_call *call;
   grpc_error *error;
-  grpc_closure *op_closure;
   enum { TC_CANCEL, TC_CLOSE } type;
 } termination_closure;
 
@@ -767,13 +766,12 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
       break;
   }
   GRPC_ERROR_UNREF(tc->error);
-  grpc_exec_ctx_sched(exec_ctx, tc->op_closure, GRPC_ERROR_NONE, NULL);
   gpr_free(tc);
 }
 
 static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  grpc_transport_stream_op op;
   termination_closure *tc = tcp;
+  grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
   op.cancel_error = tc->error;
   /* reuse closure to catch completion */
@@ -783,13 +781,12 @@ static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
 }
 
 static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  grpc_transport_stream_op op;
   termination_closure *tc = tcp;
+  grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
   op.close_error = tc->error;
   /* reuse closure to catch completion */
   grpc_closure_init(&tc->closure, done_termination, tc);
-  tc->op_closure = op.on_complete;
   op.on_complete = &tc->closure;
   execute_op(exec_ctx, tc->call, &op);
 }
