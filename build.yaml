@@ -1684,6 +1684,9 @@ targets:
   language: c
   src:
   - test/core/support/mpscq_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_percent_encoding_test
   build: test
   language: c

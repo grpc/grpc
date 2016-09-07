@@ -641,7 +641,10 @@
     "type": "target"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
     "headers": [], 
     "language": "c", 
     "name": "gpr_mpscq_test", 
