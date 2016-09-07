@@ -192,6 +192,7 @@ add_library(gpr
   src/core/lib/support/log_posix.c
   src/core/lib/support/log_windows.c
   src/core/lib/support/murmur_hash.c
+  src/core/lib/support/percent_encoding.c
   src/core/lib/support/slice.c
   src/core/lib/support/slice_buffer.c
   src/core/lib/support/stack_lockfree.c
@@ -1753,6 +1754,28 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 endif()
+
+
+add_executable(gen_percent_encoding_tables
+  tools/codegen/core/gen_percent_encoding_tables.c
+)
+
+target_include_directories(gen_percent_encoding_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+
+
+install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 
 add_executable(grpc_create_jwt
