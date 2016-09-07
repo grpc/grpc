@@ -1607,7 +1607,8 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
           return GRPC_ERROR_CREATE("Too many trailer frames");
         }
-        s->published_metadata[s->header_frames_received] = true;
+        s->published_metadata[s->header_frames_received] =
+            GRPC_METADATA_PUBLISHED_FROM_WIRE;
         maybe_complete_funcs[s->header_frames_received](exec_ctx, t, s);
         s->header_frames_received++;
       }

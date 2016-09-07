@@ -317,6 +317,13 @@ struct grpc_chttp2_transport {
   grpc_chttp2_write_cb *write_cb_pool;
 };
 
+typedef enum {
+  GRPC_METADATA_NOT_PUBLISHED,
+  GRPC_METADATA_SYNTHESIZED_FROM_FAKE,
+  GRPC_METADATA_PUBLISHED_FROM_WIRE,
+  GPRC_METADATA_PUBLISHED_AT_CLOSE
+} grpc_published_metadata_method;
+
 struct grpc_chttp2_stream {
   grpc_chttp2_transport *t;
   grpc_stream_refcount *refcount;
@@ -370,8 +377,6 @@ struct grpc_chttp2_stream {
   bool read_closed;
   /** Are all published incoming byte streams closed. */
   bool all_incoming_byte_streams_finished;
-  /** Is this stream in the stream map. */
-  bool in_stream_map;
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
@@ -381,7 +386,7 @@ struct grpc_chttp2_stream {
   /** the error that resulted in this stream being write-closed */
   grpc_error *write_closed_error;
 
-  bool published_metadata[2];
+  grpc_published_metadata_method published_metadata[2];
   bool final_metadata_requested;
 
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];

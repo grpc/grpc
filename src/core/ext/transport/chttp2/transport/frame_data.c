@@ -140,22 +140,16 @@ void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
   stats->data_bytes += write_bytes;
 }
 
-grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s,
-                                          gpr_slice slice, int is_last) {
+static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
+                               grpc_chttp2_data_parser *p,
+                               grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                               gpr_slice slice) {
   uint8_t *const beg = GPR_SLICE_START_PTR(slice);
   uint8_t *const end = GPR_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
-  grpc_chttp2_data_parser *p = parser;
   uint32_t message_flags;
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream;
   char *msg;
-
-  if (is_last && p->is_last_frame) {
-    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
-                                   GRPC_ERROR_NONE);
-  }
 
   if (cur == end) {
     return GRPC_ERROR_NONE;
@@ -271,4 +265,19 @@ grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   }
 
   GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
+}
+
+grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s,
+                                          gpr_slice slice, int is_last) {
+  grpc_chttp2_data_parser *p = parser;
+  grpc_error *error = parse_inner(exec_ctx, p, t, s, slice);
+
+  if (is_last && p->is_last_frame) {
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
+                                   GRPC_ERROR_NONE);
+  }
+
+  return error;
 }
