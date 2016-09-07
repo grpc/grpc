@@ -200,7 +200,6 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     addrs->naddrs = 1;
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
     addrs->addrs[0].len = 0;
-    addrs->addrs[0].is_balancer = false;
     *r->addrs = addrs;
     grpc_exec_ctx_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
   } else {
