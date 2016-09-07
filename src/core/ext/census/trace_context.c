@@ -50,7 +50,7 @@ bool encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   *msg_length = stream.bytes_written;
 
   if (!status) {
-    gpr_log(GPR_DEBUG, "TraceContext encoding failed: %s\n",
+    gpr_log(GPR_DEBUG, "TraceContext encoding failed: %s",
             PB_GET_ERROR(&stream));
   }
 
@@ -66,7 +66,7 @@ bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   bool status = pb_decode(&stream, google_trace_TraceContext_fields, ctxt);
 
   if (!status) {
-    gpr_log(GPR_DEBUG, "TraceContext decoding failed: %s\n",
+    gpr_log(GPR_DEBUG, "TraceContext decoding failed: %s",
             PB_GET_ERROR(&stream));
   }
 

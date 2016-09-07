@@ -78,15 +78,14 @@ bool validate_encode_decode_context(google_trace_TraceContext *ctxt1,
 }
 
 // Decodes and proto-encoded TraceContext from a buffer.
-bool validate_decode_context(uint8_t *buffer, size_t msg_length) {
-  google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
-
+bool validate_decode_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                             size_t msg_length) {
   // validate the decoding of a context written to buffer
-  if (!decode_trace_context(&ctxt, buffer, msg_length)) {
+  if (!decode_trace_context(ctxt, buffer, msg_length)) {
     return false;
   }
 
-  if (!ctxt.has_trace_id || !ctxt.has_span_id) {
+  if (!ctxt->has_trace_id || !ctxt->has_span_id) {
     return false;
   }
 
@@ -95,40 +94,51 @@ bool validate_decode_context(uint8_t *buffer, size_t msg_length) {
 
 // Read an encoded trace context from a file.  Validates that the decoding
 // gives the expected result (succeed).
-static void read_context_from_file(const char *file, const bool succeed) {
+static void read_context_from_file(google_trace_TraceContext *ctxt,
+                                   const char *file, const bool succeed) {
   uint8_t buffer[BUF_SIZE];
   FILE *input = fopen(file, "rb");
   GPR_ASSERT(input != NULL);
   size_t nbytes = fread(buffer, 1, BUF_SIZE, input);
   GPR_ASSERT(nbytes < BUF_SIZE && feof(input) && !ferror(input));
-  bool res = validate_decode_context(buffer, nbytes);
+  bool res = validate_decode_context(ctxt, buffer, nbytes);
   GPR_ASSERT(res == succeed);
   GPR_ASSERT(fclose(input) == 0);
 }
 
 // Test full proto-buffer
 static void test_full() {
-  read_context_from_file("test/core/census/data/context_full.pb", true);
+  google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
+  read_context_from_file(&ctxt, "test/core/census/data/context_full.pb", true);
 }
 
 // Test empty proto-buffer
 static void test_empty() {
-  read_context_from_file("test/core/census/data/context_empty.pb", false);
+  google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
+  read_context_from_file(&ctxt, "test/core/census/data/context_empty.pb",
+                         false);
 }
 
 // Test proto-buffer with only trace_id
 static void test_trace_only() {
-  read_context_from_file("test/core/census/data/context_trace_only.pb", false);
+  google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
+  read_context_from_file(&ctxt, "test/core/census/data/context_trace_only.pb",
+                         false);
 }
 
 // Test proto-buffer with only span_id
 static void test_span_only() {
-  read_context_from_file("test/core/census/data/context_span_only.pb", false);
+  google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
+  read_context_from_file(&ctxt, "test/core/census/data/context_span_only.pb",
+                         false);
 }
 
 // Test proto-buffer without is_sampled value
 static void test_no_sample() {
-  read_context_from_file("test/core/census/data/context_no_sample.pb", true);
+  google_trace_TraceContext ctxt = google_trace_TraceContext_init_zero;
+  read_context_from_file(&ctxt, "test/core/census/data/context_no_sample.pb",
+                         true);
+  GPR_ASSERT(ctxt.has_is_sampled == false && ctxt.is_sampled == false);
 }
 
 static void test_encode_decode() {
@@ -170,7 +180,7 @@ static void test_corrupt() {
   // corrupt some bytes
   buffer[1] = 255;
 
-  bool res = validate_decode_context(buffer, msg_length);
+  bool res = validate_decode_context(&ctxt1, buffer, msg_length);
   GPR_ASSERT(res == false);
 }
 
