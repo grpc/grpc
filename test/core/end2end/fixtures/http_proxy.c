@@ -200,7 +200,7 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // the current write is finished.
   //
   // Otherwise, move the read data into the write buffer and write it.
-  if (conn->client_write_buffer.length > 0) {
+  if (conn->server_write_buffer.length > 0) {
     gpr_slice_buffer_move_into(&conn->client_read_buffer,
                                &conn->server_deferred_write_buffer);
   } else {
