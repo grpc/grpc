@@ -196,6 +196,7 @@ static void test_corrupt() {
   GPR_ASSERT(res == false);
 }
 
+<<<<<<< HEAD
 static void test_buffer_size() {
   // This buffer is too small, so the encode should fail.
   uint8_t buffer[16] = {0};
@@ -215,6 +216,8 @@ static void test_buffer_size() {
   GPR_ASSERT(msg_length == 0);
 }
 
+=======
+>>>>>>> 4da31fdaf9f9361a09a8e6047bfdadcf92ef7810
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_full();
@@ -224,7 +227,10 @@ int main(int argc, char **argv) {
   test_encode_decode();
   test_corrupt();
   test_no_sample();
+<<<<<<< HEAD
   test_buffer_size();
+=======
+>>>>>>> 4da31fdaf9f9361a09a8e6047bfdadcf92ef7810
 
   return 0;
 }
