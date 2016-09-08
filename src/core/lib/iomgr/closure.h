@@ -112,6 +112,7 @@ bool grpc_closure_list_empty(grpc_closure_list list);
 /** Run a closure directly. Caller ensures that no locks are being held above.
  *  Note that calling this at the end of a closure callback function itself is
  *  by definition safe. */
-void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_error *error);
+void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                      grpc_error *error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */
