@@ -165,6 +165,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "census_trace_context_test", 
+    "src": [
+      "test/core/census/trace_context_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.c"
@@ -486,17 +502,6 @@
     "type": "target"
   }, 
   {
-    "deps": [], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gen_percent_encoding_tables", 
-    "src": [
-      "tools/codegen/core/gen_percent_encoding_tables.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
     "deps": [
       "gpr", 
       "gpr_test_util", 
@@ -620,20 +625,6 @@
     "name": "gpr_log_test", 
     "src": [
       "test/core/support/log_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_percent_encoding_test", 
-    "src": [
-      "test/core/support/percent_encoding_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1470,38 +1461,6 @@
     "name": "no_server_test", 
     "src": [
       "test/core/end2end/no_server_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "percent_decode_fuzzer", 
-    "src": [
-      "test/core/support/percent_decode_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "percent_encode_fuzzer", 
-    "src": [
-      "test/core/support/percent_encode_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4258,40 +4217,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "percent_decode_fuzzer_one_entry", 
-    "src": [
-      "test/core/support/percent_decode_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "percent_encode_fuzzer_one_entry", 
-    "src": [
-      "test/core/support/percent_encode_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "server_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/server_fuzzer.c", 
@@ -5694,7 +5619,8 @@
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
-      "src/core/ext/census/rpc_metric_id.h"
+      "src/core/ext/census/rpc_metric_id.h", 
+      "src/core/ext/census/trace_context.h"
     ], 
     "language": "c", 
     "name": "census", 
@@ -5722,6 +5648,8 @@
       "src/core/ext/census/resource.c", 
       "src/core/ext/census/resource.h", 
       "src/core/ext/census/rpc_metric_id.h", 
+      "src/core/ext/census/trace_context.c", 
+      "src/core/ext/census/trace_context.h", 
       "src/core/ext/census/tracing.c"
     ], 
     "third_party": false, 
@@ -5765,7 +5693,6 @@
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
       "src/core/lib/support/murmur_hash.h", 
-      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -5830,8 +5757,6 @@
       "src/core/lib/support/log_windows.c", 
       "src/core/lib/support/murmur_hash.c", 
       "src/core/lib/support/murmur_hash.h", 
-      "src/core/lib/support/percent_encoding.c", 
-      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/slice.c", 
       "src/core/lib/support/slice_buffer.c", 
       "src/core/lib/support/stack_lockfree.c", 

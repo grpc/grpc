@@ -909,6 +909,7 @@ bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 census_resource_test: $(BINDIR)/$(CONFIG)/census_resource_test
+census_trace_context_test: $(BINDIR)/$(CONFIG)/census_trace_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
 chttp2_hpack_encoder_test: $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test
 chttp2_status_conversion_test: $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test
@@ -930,7 +931,6 @@ fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
 gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
-gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
 gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_backoff_test: $(BINDIR)/$(CONFIG)/gpr_backoff_test
@@ -940,7 +940,6 @@ gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
 gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
-gpr_percent_encoding_test: $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
 gpr_slice_buffer_test: $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
 gpr_slice_test: $(BINDIR)/$(CONFIG)/gpr_slice_test
 gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
@@ -995,8 +994,6 @@ murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 nanopb_fuzzer_response_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test
 nanopb_fuzzer_serverlist_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
-percent_decode_fuzzer: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
-percent_encode_fuzzer: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
 secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
 secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
@@ -1163,8 +1160,6 @@ http_response_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_response_fuzzer_te
 json_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry
 nanopb_fuzzer_response_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry
 nanopb_fuzzer_serverlist_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry
-percent_decode_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry
-percent_encode_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry
 server_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry
 uri_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry
 
@@ -1237,6 +1232,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
   $(BINDIR)/$(CONFIG)/census_resource_test \
+  $(BINDIR)/$(CONFIG)/census_trace_context_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
   $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test \
   $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test \
@@ -1264,7 +1260,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
-  $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test \
   $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
   $(BINDIR)/$(CONFIG)/gpr_slice_test \
   $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
@@ -1383,8 +1378,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry \
   $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry \
-  $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry \
-  $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry \
 
@@ -1551,6 +1544,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/census_context_test || ( echo test census_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_resource_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_resource_test || ( echo test census_resource_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_trace_context_test"
+	$(Q) $(BINDIR)/$(CONFIG)/census_trace_context_test || ( echo test census_trace_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_create_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_create_test || ( echo test channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_hpack_encoder_test"
@@ -1601,8 +1596,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_percent_encoding_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test || ( echo test gpr_percent_encoding_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_slice_buffer_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_slice_test"
@@ -1836,7 +1829,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 
 tools_cxx: privatelibs_cxx
 
@@ -2385,7 +2378,6 @@ LIBGPR_SRC = \
     src/core/lib/support/log_posix.c \
     src/core/lib/support/log_windows.c \
     src/core/lib/support/murmur_hash.c \
-    src/core/lib/support/percent_encoding.c \
     src/core/lib/support/slice.c \
     src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
@@ -2706,6 +2698,7 @@ LIBGRPC_SRC = \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
     src/core/ext/census/resource.c \
+    src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
@@ -3410,6 +3403,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
     src/core/ext/census/resource.c \
+    src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
@@ -7227,6 +7221,38 @@ endif
 endif
 
 
+CENSUS_TRACE_CONTEXT_TEST_SRC = \
+    test/core/census/trace_context_test.c \
+
+CENSUS_TRACE_CONTEXT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_TRACE_CONTEXT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/census_trace_context_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/census_trace_context_test: $(CENSUS_TRACE_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_TRACE_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_trace_context_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/census/trace_context_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_census_trace_context_test: $(CENSUS_TRACE_CONTEXT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CENSUS_TRACE_CONTEXT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHANNEL_CREATE_TEST_SRC = \
     test/core/surface/channel_create_test.c \
 
@@ -7899,38 +7925,6 @@ endif
 endif
 
 
-GEN_PERCENT_ENCODING_TABLES_SRC = \
-    tools/codegen/core/gen_percent_encoding_tables.c \
-
-GEN_PERCENT_ENCODING_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_PERCENT_ENCODING_TABLES_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_PERCENT_ENCODING_TABLES_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_percent_encoding_tables.o: 
-
-deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
-endif
-endif
-
-
 GOAWAY_SERVER_TEST_SRC = \
     test/core/end2end/goaway_server_test.c \
 
@@ -8215,38 +8209,6 @@ deps_gpr_log_test: $(GPR_LOG_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_LOG_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_PERCENT_ENCODING_TEST_SRC = \
-    test/core/support/percent_encoding_test.c \
-
-GPR_PERCENT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_PERCENT_ENCODING_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_percent_encoding_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_percent_encoding_test: $(GPR_PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encoding_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_percent_encoding_test: $(GPR_PERCENT_ENCODING_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_PERCENT_ENCODING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -9975,70 +9937,6 @@ deps_no_server_test: $(NO_SERVER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(NO_SERVER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-PERCENT_DECODE_FUZZER_SRC = \
-    test/core/support/percent_decode_fuzzer.c \
-
-PERCENT_DECODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/percent_decode_fuzzer: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/percent_decode_fuzzer: $(PERCENT_DECODE_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(PERCENT_DECODE_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_percent_decode_fuzzer: $(PERCENT_DECODE_FUZZER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PERCENT_DECODE_FUZZER_OBJS:.o=.dep)
-endif
-endif
-
-
-PERCENT_ENCODE_FUZZER_SRC = \
-    test/core/support/percent_encode_fuzzer.c \
-
-PERCENT_ENCODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/percent_encode_fuzzer: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/percent_encode_fuzzer: $(PERCENT_ENCODE_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(PERCENT_ENCODE_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_percent_encode_fuzzer: $(PERCENT_ENCODE_FUZZER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PERCENT_ENCODE_FUZZER_OBJS:.o=.dep)
 endif
 endif
 
@@ -15512,76 +15410,6 @@ deps_nanopb_fuzzer_serverlist_test_one_entry: $(NANOPB_FUZZER_SERVERLIST_TEST_ON
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_OBJS:.o=.dep)
-endif
-endif
-
-
-PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/support/percent_decode_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
-
-PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry: $(PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_percent_decode_fuzzer_one_entry: $(PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-endif
-endif
-
-
-PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/support/percent_encode_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
-
-PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry: $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_percent_encode_fuzzer_one_entry: $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
 
