@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'google-protobuf', '~> 3.0'
   s.add_dependency 'googleauth',      '~> 0.5.1'
+  s.add_dependency 'concurrent-ruby'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
@@ -91,6 +92,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/env.h )
   s.files += %w( src/core/lib/support/mpscq.h )
   s.files += %w( src/core/lib/support/murmur_hash.h )
+  s.files += %w( src/core/lib/support/percent_encoding.h )
   s.files += %w( src/core/lib/support/stack_lockfree.h )
   s.files += %w( src/core/lib/support/string.h )
   s.files += %w( src/core/lib/support/string_windows.h )
@@ -119,6 +121,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/log_windows.c )
   s.files += %w( src/core/lib/support/mpscq.c )
   s.files += %w( src/core/lib/support/murmur_hash.c )
+  s.files += %w( src/core/lib/support/percent_encoding.c )
   s.files += %w( src/core/lib/support/slice.c )
   s.files += %w( src/core/lib/support/slice_buffer.c )
   s.files += %w( src/core/lib/support/stack_lockfree.c )

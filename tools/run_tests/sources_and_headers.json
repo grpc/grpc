@@ -502,6 +502,17 @@
     "type": "target"
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gen_percent_encoding_tables", 
+    "src": [
+      "tools/codegen/core/gen_percent_encoding_tables.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
     "deps": [
       "gpr", 
       "gpr_test_util", 
@@ -639,6 +650,20 @@
     "name": "gpr_mpscq_test", 
     "src": [
       "test/core/support/mpscq_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gpr_percent_encoding_test", 
+    "src": [
+      "test/core/support/percent_encoding_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1475,6 +1500,38 @@
     "name": "no_server_test", 
     "src": [
       "test/core/end2end/no_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "percent_decode_fuzzer", 
+    "src": [
+      "test/core/support/percent_decode_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "percent_encode_fuzzer", 
+    "src": [
+      "test/core/support/percent_encode_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3537,42 +3594,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "bad_ssl_alpn_server", 
-    "src": [
-      "test/core/bad_ssl/servers/alpn.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "bad_ssl_test_server", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "bad_ssl_cert_server", 
     "src": [
       "test/core/bad_ssl/servers/cert.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bad_ssl_alpn_test", 
-    "src": [
-      "test/core/bad_ssl/bad_ssl_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4231,6 +4255,40 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "src": [
+      "test/core/support/percent_decode_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "percent_encode_fuzzer_one_entry", 
+    "src": [
+      "test/core/support/percent_encode_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "server_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/server_fuzzer.c", 
@@ -4459,6 +4517,7 @@
     "name": "grpc++", 
     "src": [
       "include/grpc++/impl/codegen/core_codegen.h", 
+      "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
       "src/cpp/common/auth_property_iterator.cc", 
@@ -4466,6 +4525,7 @@
       "src/cpp/common/secure_auth_context.h", 
       "src/cpp/common/secure_channel_arguments.cc", 
       "src/cpp/common/secure_create_auth_context.cc", 
+      "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h"
     ], 
@@ -4512,8 +4572,8 @@
     "language": "c++", 
     "name": "grpc++_test_config", 
     "src": [
-      "test/cpp/util/test_config.cc", 
-      "test/cpp/util/test_config.h"
+      "test/cpp/util/test_config.h", 
+      "test/cpp/util/test_config_cc.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -4573,7 +4633,9 @@
     "language": "c++", 
     "name": "grpc++_unsecure", 
     "src": [
-      "src/cpp/common/insecure_create_auth_context.cc"
+      "src/cpp/client/insecure_credentials.cc", 
+      "src/cpp/common/insecure_create_auth_context.cc", 
+      "src/cpp/server/insecure_server_credentials.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -5542,6 +5604,7 @@
       "test/core/end2end/tests/server_finishes_request.c", 
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
+      "test/core/end2end/tests/simple_cacheable_request.c", 
       "test/core/end2end/tests/simple_delayed_request.c", 
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
@@ -5605,6 +5668,7 @@
       "test/core/end2end/tests/server_finishes_request.c", 
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
+      "test/core/end2end/tests/simple_cacheable_request.c", 
       "test/core/end2end/tests/simple_delayed_request.c", 
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
@@ -5703,6 +5767,7 @@
       "src/core/lib/support/env.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
+      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -5769,6 +5834,8 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.c", 
       "src/core/lib/support/murmur_hash.h", 
+      "src/core/lib/support/percent_encoding.c", 
+      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/slice.c", 
       "src/core/lib/support/slice_buffer.c", 
       "src/core/lib/support/stack_lockfree.c", 
@@ -6776,37 +6843,35 @@
       "include/grpc++/support/stub_options.h", 
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
-      "src/cpp/client/channel.cc", 
+      "src/cpp/client/channel_cc.cc", 
       "src/cpp/client/client_context.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/client/create_channel_posix.cc", 
-      "src/cpp/client/credentials.cc", 
+      "src/cpp/client/credentials_cc.cc", 
       "src/cpp/client/generic_stub.cc", 
-      "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/channel_filter.cc", 
       "src/cpp/common/channel_filter.h", 
-      "src/cpp/common/completion_queue.cc", 
+      "src/cpp/common/completion_queue_cc.cc", 
       "src/cpp/common/core_codegen.cc", 
       "src/cpp/common/rpc_method.cc", 
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/insecure_server_credentials.cc", 
-      "src/cpp/server/server.cc", 
       "src/cpp/server/server_builder.cc", 
+      "src/cpp/server/server_cc.cc", 
       "src/cpp/server/server_context.cc", 
       "src/cpp/server/server_credentials.cc", 
       "src/cpp/server/server_posix.cc", 
       "src/cpp/server/thread_pool_interface.h", 
-      "src/cpp/util/byte_buffer.cc", 
-      "src/cpp/util/slice.cc", 
+      "src/cpp/util/byte_buffer_cc.cc", 
+      "src/cpp/util/slice_cc.cc", 
       "src/cpp/util/status.cc", 
       "src/cpp/util/string_ref.cc", 
-      "src/cpp/util/time.cc"
+      "src/cpp/util/time_cc.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

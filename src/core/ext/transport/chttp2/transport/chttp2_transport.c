@@ -354,6 +354,19 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        (uint32_t)channel_args->args[i].value.integer);
         }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_FRAME_SIZE)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_MAX_FRAME_SIZE);
+        } else if (channel_args->args[i].value.integer < 16384 ||
+                   channel_args->args[i].value.integer > 16777215) {
+          gpr_log(GPR_ERROR, "%s: must be between 16384 and 16777215",
+                  GRPC_ARG_HTTP2_MAX_FRAME_SIZE);
+        } else {
+          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+                       (uint32_t)channel_args->args[i].value.integer);
+        }
       }
     }
   }

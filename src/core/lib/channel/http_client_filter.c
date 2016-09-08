@@ -233,7 +233,6 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     if (method == GRPC_MDELEM_METHOD_GET) {
       /* allocate memory to hold the entire payload */
       calld->payload_bytes = gpr_malloc(op->send_message->length);
-      GPR_ASSERT(calld->payload_bytes);
 
       /* read slices of send_message and copy into payload_bytes */
       calld->send_op = *op;

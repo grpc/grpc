@@ -114,7 +114,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     /* send initial metadata if it's available */
     if (!sent_initial_metadata && s->send_initial_metadata) {
       grpc_chttp2_encode_header(&t->hpack_compressor, s->id,
-                                s->send_initial_metadata, 0, &s->stats.outgoing,
+                                s->send_initial_metadata, 0, 
+t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+                                &s->stats.outgoing,
                                 &t->outbuf);
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
@@ -133,7 +135,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
       /* send any body bytes, if allowed by flow control */
       if (s->flow_controlled_buffer.length > 0) {
         uint32_t max_outgoing =
-            (uint32_t)GPR_MIN(GRPC_CHTTP2_MAX_PAYLOAD_LENGTH,
+            (uint32_t)GPR_MIN(t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
                               GPR_MIN(s->outgoing_window, t->outgoing_window));
         if (max_outgoing > 0) {
           uint32_t send_bytes =
@@ -176,6 +178,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           s->flow_controlled_buffer.length == 0) {
         grpc_chttp2_encode_header(&t->hpack_compressor, s->id,
                                   s->send_trailing_metadata, true,
+t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
                                   &s->stats.outgoing, &t->outbuf);
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;

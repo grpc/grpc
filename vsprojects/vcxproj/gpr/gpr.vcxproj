@@ -197,6 +197,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\percent_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string_windows.h" />
@@ -248,6 +249,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\percent_encoding.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice.c">
     </ClCompile>
