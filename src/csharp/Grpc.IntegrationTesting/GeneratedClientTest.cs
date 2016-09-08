@@ -48,8 +48,6 @@ namespace Grpc.IntegrationTesting
     {
         TestService.TestServiceClient unimplementedClient = new UnimplementedTestServiceClient();
 
-        // TODO: replace Moq by some mocking library with CoreCLR support.
-#if !NETCOREAPP1_0
         [Test]
         public void ExpandedParamOverloadCanBeMocked()
         {
@@ -72,7 +70,6 @@ namespace Grpc.IntegrationTesting
 
             Assert.AreSame(expected, mockClient.Object.UnaryCall(new SimpleRequest(), new CallOptions()));
         }
-#endif
 
         [Test]
         public void DefaultMethodStubThrows_UnaryCall()
