@@ -48,15 +48,14 @@ size_t encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
 
   // encode message
   bool status = pb_encode(&stream, google_trace_TraceContext_fields, ctxt);
-  size_t nbytes = stream.bytes_written;
 
   if (!status) {
     gpr_log(GPR_DEBUG, "TraceContext encoding failed: %s",
             PB_GET_ERROR(&stream));
-    nbytes = 0;
+    return 0;
   }
 
-  return nbytes;
+  return stream.bytes_written;
 }
 
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
@@ -75,12 +74,12 @@ bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   // check fields
   if (!ctxt->has_trace_id) {
     gpr_log(GPR_DEBUG, "Invalid TraceContext: missing trace_id");
-    status = false;
+    return false;
   }
   if (!ctxt->has_span_id) {
     gpr_log(GPR_DEBUG, "Invalid TraceContext: missing span_id");
-    status = false;
+    return false;
   }
 
-  return status;
+  return true;
 }

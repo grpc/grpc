@@ -196,6 +196,25 @@ static void test_corrupt() {
   GPR_ASSERT(res == false);
 }
 
+static void test_buffer_size() {
+  // This buffer is too small, so the encode should fail.
+  uint8_t buffer[16] = {0};
+  google_trace_TraceContext ctxt1 = google_trace_TraceContext_init_zero;
+  size_t msg_length;
+
+  ctxt1.has_trace_id = true;
+  ctxt1.trace_id.has_hi = true;
+  ctxt1.trace_id.has_lo = true;
+  ctxt1.trace_id.lo = 1;
+  ctxt1.trace_id.hi = 2;
+  ctxt1.has_span_id = true;
+  ctxt1.span_id = 3;
+  ctxt1.is_sampled = true;
+  msg_length = encode_trace_context(&ctxt1, buffer, sizeof(buffer));
+
+  GPR_ASSERT(msg_length == 0);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_full();
@@ -205,6 +224,7 @@ int main(int argc, char **argv) {
   test_encode_decode();
   test_corrupt();
   test_no_sample();
+  test_buffer_size();
 
   return 0;
 }
