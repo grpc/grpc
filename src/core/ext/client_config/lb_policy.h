@@ -65,7 +65,7 @@ struct grpc_lb_policy_vtable {
               uint32_t initial_metadata_flags,
               grpc_connected_subchannel **target, grpc_closure *on_complete);
   void (*cancel_pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                      grpc_connected_subchannel **target);
+                      grpc_connected_subchannel **target, grpc_error *error);
   void (*cancel_picks)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                        uint32_t initial_metadata_flags_mask,
                        uint32_t initial_metadata_flags_eq);
@@ -139,7 +139,8 @@ void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              grpc_closure *closure);
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                                grpc_connected_subchannel **target);
+                                grpc_connected_subchannel **target,
+                                grpc_error *error);
 
 /** Cancel all pending picks which have:
     (initial_metadata_flags & initial_metadata_flags_mask) ==

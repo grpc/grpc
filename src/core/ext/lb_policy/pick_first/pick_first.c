@@ -128,7 +128,8 @@ static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                           grpc_connected_subchannel **target) {
+                           grpc_connected_subchannel **target,
+                           grpc_error *error) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
@@ -141,7 +142,8 @@ static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                                p->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
-                          GRPC_ERROR_CREATE("Pick Cancelled"), NULL);
+                          GRPC_ERROR_CREATE_REFERENCING(
+                              "Pick Cancelled", &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -150,6 +152,7 @@ static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&p->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,

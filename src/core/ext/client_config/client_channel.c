@@ -466,6 +466,9 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
 
 static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
+const char* msg = grpc_error_string(error);
+gpr_log(GPR_INFO, "==> %s(): error=%s", __func__, msg);
+grpc_error_free_string(msg);
   call_data *calld = arg;
   gpr_mu_lock(&calld->mu);
   GPR_ASSERT(calld->creation_phase ==
@@ -544,6 +547,8 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             uint32_t initial_metadata_flags,
                             grpc_connected_subchannel **connected_subchannel,
                             grpc_closure *on_ready, grpc_error *error) {
+gpr_log(GPR_INFO, "==> %s()", __func__);
+
   GPR_TIMER_BEGIN("pick_subchannel", 0);
 
   channel_data *chand = elem->channel_data;
@@ -556,11 +561,13 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   gpr_mu_lock(&chand->mu);
   if (initial_metadata == NULL) {
     if (chand->lb_policy != NULL) {
+gpr_log(GPR_INFO, "asking LB policy to cancel pick");
       grpc_lb_policy_cancel_pick(exec_ctx, chand->lb_policy,
-                                 connected_subchannel);
+                                 connected_subchannel, GRPC_ERROR_REF(error));
     }
     for (closure = chand->waiting_for_config_closures.head; closure != NULL;
          closure = closure->next_data.next) {
+gpr_log(GPR_INFO, "top of closure loop");
       cpa = closure->cb_arg;
       if (cpa->connected_subchannel == connected_subchannel) {
         cpa->connected_subchannel = NULL;
@@ -572,6 +579,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     gpr_mu_unlock(&chand->mu);
     GPR_TIMER_END("pick_subchannel", 0);
     GRPC_ERROR_UNREF(error);
+gpr_log(GPR_INFO, "returning from pick_subchannel()");
     return true;
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -621,6 +629,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
+gpr_log(GPR_INFO, "==> %s()", __func__);
   call_data *calld = elem->call_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);

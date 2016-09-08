@@ -110,8 +110,9 @@ int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 }
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                                grpc_connected_subchannel **target) {
-  policy->vtable->cancel_pick(exec_ctx, policy, target);
+                                grpc_connected_subchannel **target,
+                                grpc_error *error) {
+  policy->vtable->cancel_pick(exec_ctx, policy, target, error);
 }
 
 void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
