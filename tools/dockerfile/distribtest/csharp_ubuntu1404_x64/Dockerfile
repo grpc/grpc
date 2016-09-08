@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates-mono \
     nuget
 
-RUN nuget update -self
+# make sure we have nuget 2.12+ (in case there's an older cached docker image)
+RUN apt-get update && apt-get install -y nuget
 
 RUN apt-get update && apt-get install -y unzip
