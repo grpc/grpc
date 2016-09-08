@@ -35,7 +35,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.0.0-pre1'
+  version = '1.0.0'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -44,7 +44,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "objective-c-v#{version}",
+    :tag => "v#{version}",
     # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
     :submodules => true,
   }
@@ -163,6 +163,7 @@ Pod::Spec.new do |s|
                       'include/grpc/compression.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
+                      'include/grpc/grpc_security_constants.h',
                       'include/grpc/status.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
                       'include/grpc/impl/codegen/byte_buffer_reader.h',
@@ -186,14 +187,13 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_windows.h',
                       'include/grpc/impl/codegen/time.h',
                       'include/grpc/grpc_security.h',
-                      'include/grpc/grpc_security_constants.h',
                       'include/grpc/census.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 5.0'
+    ss.dependency 'BoringSSL', '~> 6.0'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -201,6 +201,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/block_annotate.h',
                       'src/core/lib/support/env.h',
                       'src/core/lib/support/murmur_hash.h',
+                      'src/core/lib/support/percent_encoding.h',
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
@@ -228,6 +229,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_posix.c',
                       'src/core/lib/support/log_windows.c',
                       'src/core/lib/support/murmur_hash.c',
+                      'src/core/lib/support/percent_encoding.c',
                       'src/core/lib/support/slice.c',
                       'src/core/lib/support/slice_buffer.c',
                       'src/core/lib/support/stack_lockfree.c',
@@ -379,7 +381,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/tsi/transport_security_interface.h',
                       'src/core/ext/client_config/client_channel.h',
                       'src/core/ext/client_config/client_channel_factory.h',
-                      'src/core/ext/client_config/client_config.h',
                       'src/core/ext/client_config/connector.h',
                       'src/core/ext/client_config/initial_connect_string.h',
                       'src/core/ext/client_config/lb_policy.h',
@@ -389,8 +390,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/resolver.h',
                       'src/core/ext/client_config/resolver_factory.h',
                       'src/core/ext/client_config/resolver_registry.h',
+                      'src/core/ext/client_config/resolver_result.h',
                       'src/core/ext/client_config/subchannel.h',
-                      'src/core/ext/client_config/subchannel_call_holder.h',
                       'src/core/ext/client_config/subchannel_index.h',
                       'src/core/ext/client_config/uri_parser.h',
                       'src/core/ext/lb_policy/grpclb/grpclb.h',
@@ -407,6 +408,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/census_interface.h',
                       'src/core/ext/census/census_rpc_stats.h',
                       'src/core/ext/census/gen/census.pb.h',
+                      'src/core/ext/census/gen/trace_context.pb.h',
                       'src/core/ext/census/grpc_filter.h',
                       'src/core/ext/census/mlog.h',
                       'src/core/ext/census/resource.h',
@@ -556,7 +558,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/channel_connectivity.c',
                       'src/core/ext/client_config/client_channel.c',
                       'src/core/ext/client_config/client_channel_factory.c',
-                      'src/core/ext/client_config/client_config.c',
                       'src/core/ext/client_config/client_config_plugin.c',
                       'src/core/ext/client_config/connector.c',
                       'src/core/ext/client_config/default_initial_connect_string.c',
@@ -568,8 +569,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/resolver.c',
                       'src/core/ext/client_config/resolver_factory.c',
                       'src/core/ext/client_config/resolver_registry.c',
+                      'src/core/ext/client_config/resolver_result.c',
                       'src/core/ext/client_config/subchannel.c',
-                      'src/core/ext/client_config/subchannel_call_holder.c',
                       'src/core/ext/client_config/subchannel_index.c',
                       'src/core/ext/client_config/uri_parser.c',
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
@@ -591,6 +592,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/base_resources.c',
                       'src/core/ext/census/context.c',
                       'src/core/ext/census/gen/census.pb.c',
+                      'src/core/ext/census/gen/trace_context.pb.c',
                       'src/core/ext/census/grpc_context.c',
                       'src/core/ext/census/grpc_filter.c',
                       'src/core/ext/census/grpc_plugin.c',
@@ -607,6 +609,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/block_annotate.h',
                               'src/core/lib/support/env.h',
                               'src/core/lib/support/murmur_hash.h',
+                              'src/core/lib/support/percent_encoding.h',
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
@@ -740,7 +743,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/tsi/transport_security_interface.h',
                               'src/core/ext/client_config/client_channel.h',
                               'src/core/ext/client_config/client_channel_factory.h',
-                              'src/core/ext/client_config/client_config.h',
                               'src/core/ext/client_config/connector.h',
                               'src/core/ext/client_config/initial_connect_string.h',
                               'src/core/ext/client_config/lb_policy.h',
@@ -750,8 +752,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_config/resolver.h',
                               'src/core/ext/client_config/resolver_factory.h',
                               'src/core/ext/client_config/resolver_registry.h',
+                              'src/core/ext/client_config/resolver_result.h',
                               'src/core/ext/client_config/subchannel.h',
-                              'src/core/ext/client_config/subchannel_call_holder.h',
                               'src/core/ext/client_config/subchannel_index.h',
                               'src/core/ext/client_config/uri_parser.h',
                               'src/core/ext/lb_policy/grpclb/grpclb.h',
@@ -768,6 +770,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/census_interface.h',
                               'src/core/ext/census/census_rpc_stats.h',
                               'src/core/ext/census/gen/census.pb.h',
+                              'src/core/ext/census/gen/trace_context.pb.h',
                               'src/core/ext/census/grpc_filter.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',

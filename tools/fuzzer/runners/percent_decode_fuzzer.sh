@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,10 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by Jenkins and runs interop test suite.
-set -ex
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=32 -timeout=120"
 
-tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --prod_servers default cloud_gateway gateway_v2 cloud_gateway_v2 gateway_v4 cloud_gateway_v4 --use_docker --http2_interop -t -j 12 $@ || true
+
+if [ "$jobs" != "1" ]
+then
+  flags="-jobs=$jobs -workers=$jobs $flags"
+fi
+
+if [ "$config" == "asan-trace-cmp" ]
+then
+  flags="-use_traces=1 $flags"
+fi
+
+bins/$config/percent_decode_fuzzer $flags fuzzer_output test/core/support/percent_decode_corpus

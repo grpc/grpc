@@ -30,7 +30,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.0.0-pre1'
+  version = '1.0.0'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'http://www.grpc.io'
@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "objective-c-v#{version}",
+    :tag => "v#{version}",
   }
 
   s.ios.deployment_target = '7.1'
@@ -56,8 +56,10 @@ Pod::Spec.new do |s|
   s.dependency 'gRPC', version
   s.dependency 'gRPC-RxLibrary', version
   s.dependency 'Protobuf', '~> 3.0'
-  # This is needed by all pods that depend on Protobuf:
   s.pod_target_xcconfig = {
+    # This is needed by all pods that depend on Protobuf:
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
+    # This is needed by all pods that depend on gRPC-RxLibrary:
+    'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
   }
 end

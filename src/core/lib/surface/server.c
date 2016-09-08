@@ -149,6 +149,7 @@ struct call_data {
 
   grpc_metadata_batch *recv_initial_metadata;
   bool recv_idempotent_request;
+  bool recv_cacheable_request;
   grpc_metadata_array initial_metadata;
 
   request_matcher *request_matcher;
@@ -497,9 +498,12 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
             &rc->data.batch.details->method_capacity, calld->path);
       rc->data.batch.details->deadline = calld->deadline;
       rc->data.batch.details->flags =
-          0 | (calld->recv_idempotent_request
-                   ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
-                   : 0);
+          (calld->recv_idempotent_request
+               ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+               : 0) |
+          (calld->recv_cacheable_request
+               ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST
+               : 0);
       break;
     case REGISTERED_CALL:
       *rc->data.registered.deadline = calld->deadline;
@@ -779,6 +783,7 @@ static void server_mutate_op(grpc_call_element *elem,
     calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
     op->recv_idempotent_request = &calld->recv_idempotent_request;
+    op->recv_cacheable_request = &calld->recv_cacheable_request;
   }
 }
 

@@ -192,23 +192,15 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   /* call the user callback function */
   zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
 
-  if (Z_TYPE_P(retval) != IS_ARRAY) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "plugin callback must return metadata array",
-                         1 TSRMLS_CC);
-    return;
-  }
-
-  grpc_metadata_array metadata;
-  if (!create_metadata_array(retval, &metadata)) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "invalid metadata", 1 TSRMLS_CC);
-    grpc_metadata_array_destroy(&metadata);
-    return;
-  }
-
-  /* TODO: handle error */
   grpc_status_code code = GRPC_STATUS_OK;
+  grpc_metadata_array metadata;
+
+  if (Z_TYPE_P(retval) != IS_ARRAY) {
+    code = GRPC_STATUS_INVALID_ARGUMENT;
+  } else if (!create_metadata_array(retval, &metadata)) {
+    grpc_metadata_array_destroy(&metadata);
+    code = GRPC_STATUS_INVALID_ARGUMENT;
+  }
 
   /* Pass control back to core */
   cb(user_data, metadata.metadata, metadata.count, code, NULL);
