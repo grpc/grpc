@@ -72,15 +72,22 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
 class CSharpDistribTest(object):
   """Tests C# NuGet package"""
 
-  def __init__(self, platform, arch, docker_suffix=None):
+  def __init__(self, platform, arch, docker_suffix=None, use_dotnet_cli=False):
     self.name = 'csharp_nuget_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
     self.labels = ['distribtest', 'csharp', platform, arch]
+    self.script_suffix = ''
     if docker_suffix:
       self.name += '_%s' % docker_suffix
       self.labels.append(docker_suffix)
+    if use_dotnet_cli:
+      self.name += '_dotnetcli'
+      self.script_suffix = '_dotnetcli'
+      self.labels.append('dotnetcli')
+    else:
+      self.labels.append('olddotnet')
 
   def pre_build_jobspecs(self):
     return []
@@ -91,10 +98,10 @@ class CSharpDistribTest(object):
           'tools/dockerfile/distribtest/csharp_%s_%s' % (
               self.docker_suffix,
               self.arch),
-          'test/distrib/csharp/run_distrib_test.sh')
+          'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix)
     elif self.platform == 'macos':
       return create_jobspec(self.name,
-          ['test/distrib/csharp/run_distrib_test.sh'],
+          ['test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix],
           environ={'EXTERNAL_GIT_ROOT': '../../..'})
     elif self.platform == 'windows':
       if self.arch == 'x64':
@@ -103,7 +110,7 @@ class CSharpDistribTest(object):
       else:
         environ={'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\\Debug'}
       return create_jobspec(self.name,
-          ['test\\distrib\\csharp\\run_distrib_test.bat'],
+          ['test\\distrib\\csharp\\run_distrib_test%s.bat' % self.script_suffix],
           environ=environ)
     else:
       raise Exception("Not supported yet.")
@@ -276,6 +283,7 @@ def targets():
           CSharpDistribTest('linux', 'x64', 'ubuntu1504'),
           CSharpDistribTest('linux', 'x64', 'ubuntu1510'),
           CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
+          CSharpDistribTest('linux', 'x64', 'ubuntu1404', use_dotnet_cli=True),
           CSharpDistribTest('macos', 'x86'),
           CSharpDistribTest('windows', 'x86'),
           CSharpDistribTest('windows', 'x64'),

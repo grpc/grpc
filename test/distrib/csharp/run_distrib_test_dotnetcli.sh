@@ -28,17 +28,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
+set -ex
 
 cd $(dirname $0)
 
-CSHARP_VERSION="$1"
-if [ "$CSHARP_VERSION" == "auto" ]
-then
-  # autodetect C# version from the name of Grpc.Core.0.0.0-x.nupkg file
-  CSHARP_VERSION=$(ls TestNugetFeed | grep -m 1 '^Grpc\.Core\.[0-9].*\.nupkg$' | sed s/^Grpc\.Core\.// | sed s/\.nupkg$// | sed s/\.symbols$//)
-  echo "Autodetected nuget ${CSHARP_VERSION}"
-fi
+unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets.zip" -d TestNugetFeed
 
-# Replaces version placeholder with value provided as first argument.
-sed -ibak "s/__GRPC_NUGET_VERSION__/${CSHARP_VERSION}/g" DistribTest/packages.config DistribTest/DistribTest.csproj DistribTest/project.json
+./update_version.sh auto
+
+cd DistribTest
+
+# TODO(jtattermusch): make sure we don't pollute the global nuget cache with
+# the nugets being tested.
+dotnet restore
+
+dotnet build
+dotnet publish
+
+# .NET 4.5 target after dotnet build
+mono bin/Debug/net45/*-x64/DistribTest.exe
+
+# .NET 4.5 target after dotnet publish
+mono bin/Debug/net45/*-x64/publish/DistribTest.exe
+
+# .NET Core target after dotnet build
+dotnet exec bin/Debug/netcoreapp1.0/DistribTest.dll
+
+# .NET Core target after dotnet publish
+dotnet exec bin/Debug/netcoreapp1.0/publish/DistribTest.dll
