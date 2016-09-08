@@ -55,7 +55,7 @@ static void plugin_destruct(grpc_call_credentials *creds) {
 }
 
 static void plugin_md_request_metadata_ready(void *request,
-                                             const grpc_metadata *md,
+                                             const grpc_mdelem **md,
                                              size_t num_md,
                                              grpc_status_code status,
                                              const char *error_details) {
@@ -75,9 +75,8 @@ static void plugin_md_request_metadata_ready(void *request,
     if (num_md > 0) {
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
-        md_array[i].key = gpr_slice_from_copied_string(md[i].key);
-        md_array[i].value =
-            gpr_slice_from_copied_buffer(md[i].value, md[i].value_length);
+        md_array[i].key = gpr_slice_ref(md[i]->key->slice);
+        md_array[i].value = gpr_slice_ref(md[i]->value->slice);
       }
     }
     r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK, NULL);

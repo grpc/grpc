@@ -42,15 +42,16 @@
 
 namespace grpc {
 
-void AuthMetadataProcessorAyncWrapper::Destroy(void* wrapper) {
-  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+void AuthMetadataProcessorAsyncWrapper::Destroy(void* wrapper) {
+  auto* w = reinterpret_cast<AuthMetadataProcessorAsyncWrapper*>(wrapper);
   delete w;
 }
 
-void AuthMetadataProcessorAyncWrapper::Process(
-    void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
-    size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+void AuthMetadataProcessorAsyncWrapper::Process(
+    void* wrapper, grpc_auth_context* context,
+    const grpc_metadata_array* md_arr, grpc_process_auth_metadata_done_cb cb,
+    void* user_data) {
+  auto* w = reinterpret_cast<AuthMetadataProcessorAsyncWrapper*>(wrapper);
   if (!w->processor_) {
     // Early exit.
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_OK, nullptr);
@@ -58,21 +59,23 @@ void AuthMetadataProcessorAyncWrapper::Process(
   }
   if (w->processor_->IsBlocking()) {
     w->thread_pool_->Add(
-        std::bind(&AuthMetadataProcessorAyncWrapper::InvokeProcessor, w,
-                  context, md, num_md, cb, user_data));
+        std::bind(&AuthMetadataProcessorAsyncWrapper::InvokeProcessor, w,
+                  context, md_arr, cb, user_data));
   } else {
     // invoke directly.
-    w->InvokeProcessor(context, md, num_md, cb, user_data);
+    w->InvokeProcessor(context, md_arr, cb, user_data);
   }
 }
 
-void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
-    grpc_auth_context* ctx, const grpc_metadata* md, size_t num_md,
+void AuthMetadataProcessorAsyncWrapper::InvokeProcessor(
+    grpc_auth_context* ctx, const grpc_metadata_array* md_arr,
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
-  for (size_t i = 0; i < num_md; i++) {
+  for (size_t i = 0; i < md_arr->count; i++) {
     metadata.insert(std::make_pair(
-        md[i].key, grpc::string_ref(md[i].value, md[i].value_length)));
+        grpc_mdstr_as_c_string(md_arr->metadata[i]->key),
+        grpc::string_ref(grpc_mdstr_as_c_string(md_arr->metadata[i]->value),
+                         grpc_mdstr_length(md_arr->metadata[i]->value))));
   }
   SecureAuthContext context(ctx, false);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
@@ -81,28 +84,22 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   Status status = processor_->Process(metadata, &context, &consumed_metadata,
                                       &response_metadata);
 
-  std::vector<grpc_metadata> consumed_md;
+  std::vector<grpc_mdelem*> consumed_md;
   for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
        ++it) {
-    grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
-    md_entry.flags = 0;
-    consumed_md.push_back(md_entry);
+    consumed_md.push_back(grpc_mdelem_from_string_and_buffer(
+        it->first.c_str(), (const uint8_t*)it->second.data(),
+        it->second.length()));
   }
-  std::vector<grpc_metadata> response_md;
+  std::vector<grpc_mdelem*> response_md;
   for (auto it = response_metadata.begin(); it != response_metadata.end();
        ++it) {
-    grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
-    md_entry.flags = 0;
-    response_md.push_back(md_entry);
+    response_md.push_back(grpc_mdelem_from_string_and_buffer(
+        it->first.c_str(), (const uint8_t*)it->second.data(),
+        it->second.length()));
   }
-  auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];
-  auto response_md_data = response_md.empty() ? nullptr : &response_md[0];
+  auto* consumed_md_data = consumed_md.empty() ? nullptr : consumed_md[0];
+  auto* response_md_data = response_md.empty() ? nullptr : response_md[0];
   cb(user_data, consumed_md_data, consumed_md.size(), response_md_data,
      response_md.size(), static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
@@ -115,10 +112,10 @@ int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
     const std::shared_ptr<AuthMetadataProcessor>& processor) {
-  auto* wrapper = new AuthMetadataProcessorAyncWrapper(processor);
+  auto* wrapper = new AuthMetadataProcessorAsyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      creds_, {AuthMetadataProcessorAyncWrapper::Process,
-               AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
+      creds_, {AuthMetadataProcessorAsyncWrapper::Process,
+               AuthMetadataProcessorAsyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(

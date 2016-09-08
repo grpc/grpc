@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
 
@@ -71,48 +72,12 @@ extern "C" {
    They are not refcounted, but can be passed to _ref and _unref functions
    declared here - in which case those functions are effectively no-ops. */
 
-/* Forward declarations */
-typedef struct grpc_mdstr grpc_mdstr;
-typedef struct grpc_mdelem grpc_mdelem;
-
-/* if changing this, make identical changes in internal_string in metadata.c */
-struct grpc_mdstr {
-  const gpr_slice slice;
-  const uint32_t hash;
-  /* there is a private part to this in metadata.c */
-};
-
-/* if changing this, make identical changes in internal_metadata in
-   metadata.c */
-struct grpc_mdelem {
-  grpc_mdstr *const key;
-  grpc_mdstr *const value;
-  /* there is a private part to this in metadata.c */
-};
-
 void grpc_test_only_set_metadata_hash_seed(uint32_t seed);
 
-/* Constructors for grpc_mdstr instances; take a variety of data types that
-   clients may have handy */
-grpc_mdstr *grpc_mdstr_from_string(const char *str);
-/* Unrefs the slice. */
-grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice);
-grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
 gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
-
-/* Constructors for grpc_mdelem instances; take a variety of data types that
-   clients may have handy */
-grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
-                                               grpc_mdstr *value);
-grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
-/* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
-grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
-                                                const uint8_t *value,
-                                                size_t value_length);
 
 size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem);
 
@@ -144,10 +109,6 @@ void grpc_mdstr_unref(grpc_mdstr *s);
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
 void grpc_mdelem_unref(grpc_mdelem *md);
 #endif
-
-/* Recover a char* from a grpc_mdstr. The returned string is null terminated.
-   Does not promise that the returned string has no embedded nulls however. */
-const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
 #define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
 

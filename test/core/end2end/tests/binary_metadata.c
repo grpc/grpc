@@ -107,28 +107,19 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {
-      {"key1-bin",
-       "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
-       13,
-       0,
-       {{NULL, NULL, NULL, NULL}}},
-      {"key2-bin",
-       "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-       14,
-       0,
-       {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {
-      {"key3-bin",
-       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
-       15,
-       0,
-       {{NULL, NULL, NULL, NULL}}},
-      {"key4-bin",
-       "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff",
-       16,
-       0,
-       {{NULL, NULL, NULL, NULL}}}};
+  grpc_mdelem *meta_c[2] = {
+      grpc_mdelem_from_strings(
+          "key1-bin", "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc"),
+      grpc_mdelem_from_strings(
+          "key2-bin",
+          "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d")};
+  grpc_mdelem *meta_s[2] = {
+      grpc_mdelem_from_strings(
+          "key3-bin",
+          "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee"),
+      grpc_mdelem_from_strings(
+          "key4-bin",
+          "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff")};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -155,11 +146,21 @@ static void test_request_response_with_metadata_and_payload(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  grpc_linked_mdelem c_initial_md_storage[2];
+  memset(&c_initial_md_storage, 0, sizeof(grpc_linked_mdelem) * 2);
+
+  grpc_linked_mdelem s_initial_md_storage[2];
+  memset(&s_initial_md_storage, 0, sizeof(grpc_linked_mdelem) * 2);
+
+  grpc_linked_mdelem trailing_md_storage[2];
+  memset(&trailing_md_storage, 0, sizeof(grpc_linked_mdelem) * 2);
+
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_c;
+  op->data.send_initial_metadata.metadata_storage = c_initial_md_storage;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -205,6 +206,7 @@ static void test_request_response_with_metadata_and_payload(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_s;
+  op->data.send_initial_metadata.metadata_storage = s_initial_md_storage;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -233,6 +235,7 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.metadata_storage = trailing_md_storage;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
@@ -252,18 +255,10 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
-  GPR_ASSERT(contains_metadata(
-      &request_metadata_recv, "key1-bin",
-      "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc"));
-  GPR_ASSERT(contains_metadata(
-      &request_metadata_recv, "key2-bin",
-      "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d"));
-  GPR_ASSERT(contains_metadata(
-      &initial_metadata_recv, "key3-bin",
-      "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee"));
-  GPR_ASSERT(contains_metadata(
-      &initial_metadata_recv, "key4-bin",
-      "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[0]));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[1]));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[0]));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[1]));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

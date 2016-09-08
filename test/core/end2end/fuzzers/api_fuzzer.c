@@ -428,18 +428,19 @@ static void add_to_free(call_state *call, void *p) {
 }
 
 static void read_metadata(input_stream *inp, size_t *count,
-                          grpc_metadata **metadata, call_state *cs) {
+                          grpc_mdelem **metadata, call_state *cs) {
   *count = next_byte(inp);
-  if (*count) {
-    *metadata = gpr_malloc(*count * sizeof(**metadata));
-    memset(*metadata, 0, *count * sizeof(**metadata));
+  if (*count > 0) {
+    memset(*metadata, 0, *count * sizeof(grpc_mdelem *));
     for (size_t i = 0; i < *count; i++) {
-      (*metadata)[i].key = read_string(inp);
-      read_buffer(inp, (char **)&(*metadata)[i].value,
-                  &(*metadata)[i].value_length);
-      (*metadata)[i].flags = read_uint32(inp);
-      add_to_free(cs, (void *)(*metadata)[i].key);
-      add_to_free(cs, (void *)(*metadata)[i].value);
+      char *key = read_string(inp);
+      char *value;
+      size_t value_length;
+      read_buffer(inp, &value, &value_length);
+      metadata[i] = grpc_mdelem_from_string_and_buffer(key, (uint8_t *)value,
+                                                       value_length);
+      add_to_free(cs, key);
+      add_to_free(cs, value);
     }
   } else {
     *metadata = gpr_malloc(1);
@@ -759,10 +760,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               ok = false;
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
+              break;
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
               has_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
               read_metadata(&inp, &op->data.send_initial_metadata.count,
-                            &op->data.send_initial_metadata.metadata,
+                            op->data.send_initial_metadata.metadata,
                             g_active_call);
               break;
             case GRPC_OP_SEND_MESSAGE:
@@ -780,12 +782,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               has_ops |= 1 << GRPC_OP_SEND_CLOSE_FROM_CLIENT;
               break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
+              break;
               op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
               has_ops |= 1 << GRPC_OP_SEND_STATUS_FROM_SERVER;
               read_metadata(
                   &inp,
                   &op->data.send_status_from_server.trailing_metadata_count,
-                  &op->data.send_status_from_server.trailing_metadata,
+                  op->data.send_status_from_server.trailing_metadata,
                   g_active_call);
               op->data.send_status_from_server.status = next_byte(&inp);
               op->data.send_status_from_server.status_details =

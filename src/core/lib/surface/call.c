@@ -582,85 +582,113 @@ no_details:
   **out_details = 0;
 }
 
-static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
-  return (grpc_linked_mdelem *)&md->internal_data;
+typedef struct mdelem_and_storage {
+  grpc_mdelem *mdelem;
+  grpc_linked_mdelem *storage;
+} mdelem_and_storage;
+
+static void get_md_and_storage(grpc_mdelem **metadata,
+                               grpc_mdelem **additional_metadata,
+                               grpc_linked_mdelem *storage,
+                               grpc_linked_mdelem *additional_storage, int i,
+                               int count, mdelem_and_storage *result) {
+  result->mdelem = i < count ? metadata[i] : additional_metadata[i - count];
+  result->storage = i < count ? &storage[i] : &additional_storage[i - count];
+  GPR_ASSERT(result->mdelem);
+  GPR_ASSERT(result->storage);
 }
 
-static grpc_metadata *get_md_elem(grpc_metadata *metadata,
-                                  grpc_metadata *additional_metadata, int i,
-                                  int count) {
-  grpc_metadata *res =
-      i < count ? &metadata[i] : &additional_metadata[i - count];
-  GPR_ASSERT(res);
-  return res;
-}
-
-static int prepare_application_metadata(grpc_call *call, int count,
-                                        grpc_metadata *metadata,
-                                        int is_trailing,
-                                        int prepend_extra_metadata,
-                                        grpc_metadata *additional_metadata,
-                                        int additional_metadata_count) {
+static bool prepare_application_metadata(
+    grpc_call *call, int count, grpc_mdelem **metadata,
+    grpc_linked_mdelem *metadata_storage, bool is_trailing,
+    bool prepend_extra_metadata, grpc_mdelem **additional_metadata,
+    grpc_linked_mdelem *additional_metadata_storage,
+    int additional_metadata_count) {
   int total_count = count + additional_metadata_count;
-  int i;
   grpc_metadata_batch *batch =
       &call->metadata_batch[0 /* is_receiving */][is_trailing];
-  for (i = 0; i < total_count; i++) {
-    const grpc_metadata *md =
-        get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(
-        md->key, (const uint8_t *)md->value, md->value_length);
-    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
-                                  GRPC_MDSTR_LENGTH(l->md->key))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
-              grpc_mdstr_as_c_string(l->md->key));
-      break;
-    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
-                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
-               !grpc_header_nonbin_value_is_legal(
-                   grpc_mdstr_as_c_string(l->md->value),
-                   GRPC_MDSTR_LENGTH(l->md->value))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
-      break;
-    }
-  }
-  if (i != total_count) {
-    for (int j = 0; j <= i; j++) {
-      const grpc_metadata *md =
-          get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-      GRPC_MDELEM_UNREF(l->md);
-    }
-    return 0;
-  }
+  //  for (i = 0; i < total_count; i++) {
+  //    const grpc_mdelem *md =
+  //        get_md_elem(metadata, additional_metadata, i, count);
+  //    /* XXX la instancia de grpc_linked_mdelem "l" no es una instancia
+  //     * inicializada: se saca un puntero a md_internal_data que se va
+  //     llenando
+  //     * despues. Que necesidad hay de guardar el linked_mdelem dentro de las
+  //     * instancias de la difunta grpc_metadata? */
+  //    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+  //    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
+  //    /* XXX y era aqui donde realmente se guardaban los k/v, segun entraban
+  //    via
+  //     * los campos key/value de grpc_metadata. En principio ahora ya no haria
+  //     * falta, ya que todo esto esta directamente en el nuevo "md" de tipo
+  //     * grpc_mdelem */
+  //    l->md = grpc_mdelem_from_string_and_buffer(
+  //        md->key, (const uint8_t *)md->value, md->value_length);
+  //    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
+  //                                  GRPC_MDSTR_LENGTH(l->md->key))) {
+  //      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
+  //              grpc_mdstr_as_c_string(l->md->key));
+  //      break;
+  //    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
+  //                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
+  //               !grpc_header_nonbin_value_is_legal(
+  //                   grpc_mdstr_as_c_string(l->md->value),
+  //                   GRPC_MDSTR_LENGTH(l->md->value))) {
+  //      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
+  //      break;
+  //    }
+  //  }
+  //  if (i != total_count) {
+  //    /* If we are in here, some keys were invalid. Cleanup (undo) the created
+  //     * mdelems */
+  //    /* XXX todo esto no deberia de hacer falta, ya que a call solo deberian
+  //     * entrar ya mdelems completamente validos */
+  //    for (int j = 0; j <= i; j++) {
+  //      const grpc_metadata *md =
+  //          get_md_elem(metadata, additional_metadata, j, count);
+  //      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+  //      GRPC_MDELEM_UNREF(l->md);
+  //    }
+  //    return false;
+  //  }
   if (prepend_extra_metadata) {
     if (call->send_extra_metadata_count == 0) {
       prepend_extra_metadata = 0;
     } else {
-      for (i = 0; i < call->send_extra_metadata_count; i++) {
+      for (int i = 0; i < call->send_extra_metadata_count; i++) {
         GRPC_MDELEM_REF(call->send_extra_metadata[i].md);
       }
-      for (i = 1; i < call->send_extra_metadata_count; i++) {
+      for (int i = 1; i < call->send_extra_metadata_count; i++) {
         call->send_extra_metadata[i].prev = &call->send_extra_metadata[i - 1];
       }
-      for (i = 0; i < call->send_extra_metadata_count - 1; i++) {
+      for (int i = 0; i < call->send_extra_metadata_count - 1; i++) {
         call->send_extra_metadata[i].next = &call->send_extra_metadata[i + 1];
       }
     }
   }
-  for (i = 1; i < total_count; i++) {
-    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_metadata *prev_md =
-        get_md_elem(metadata, additional_metadata, i - 1, count);
-    linked_from_md(md)->prev = linked_from_md(prev_md);
+
+  /* XXX crea la grpc_linked_mdelem a partir de los inputs */
+  mdelem_and_storage md_st, prev_md_st, next_md_st;
+  /* XXX: the next three loops can be merged into a single one */
+  for (int i = 0; i < total_count; i++) {
+    get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                       additional_metadata_storage, i, count, &md_st);
+    md_st.storage->md = md_st.mdelem;
   }
-  for (i = 0; i < total_count - 1; i++) {
-    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_metadata *next_md =
-        get_md_elem(metadata, additional_metadata, i + 1, count);
-    linked_from_md(md)->next = linked_from_md(next_md);
+
+  for (int i = 1; i < total_count; i++) {
+    get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                       additional_metadata_storage, i, count, &md_st);
+    get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                       additional_metadata_storage, i - 1, count, &prev_md_st);
+    md_st.storage->prev = prev_md_st.storage;
+  }
+  for (int i = 0; i < total_count - 1; i++) {
+    get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                       additional_metadata_storage, i, count, &md_st);
+    get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                       additional_metadata_storage, i + 1, count, &next_md_st);
+    md_st.storage->next = next_md_st.storage;
   }
 
   switch (prepend_extra_metadata * 2 + (total_count != 0)) {
@@ -670,12 +698,19 @@ static int prepare_application_metadata(grpc_call *call, int count,
       break;
     case 1: {
       /* metadata, but no prepend */
-      grpc_metadata *first_md =
-          get_md_elem(metadata, additional_metadata, 0, count);
-      grpc_metadata *last_md =
-          get_md_elem(metadata, additional_metadata, total_count - 1, count);
-      batch->list.head = linked_from_md(first_md);
-      batch->list.tail = linked_from_md(last_md);
+
+      mdelem_and_storage first, last;
+      get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                         additional_metadata_storage, 0, count, &first);
+
+      get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                         additional_metadata_storage, total_count - 1, count,
+                         &last);
+
+      /* XXX nodo de tipo grpc_linked_mdelem. Lo unico que contiene es punteros
+       * next/prev y grpc_mdelem *md */
+      batch->list.head = first.storage;
+      batch->list.tail = last.storage;
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
       break;
@@ -690,25 +725,30 @@ static int prepare_application_metadata(grpc_call *call, int count,
       break;
     case 3: {
       /* prepend AND md */
-      grpc_metadata *first_md =
-          get_md_elem(metadata, additional_metadata, 0, count);
-      grpc_metadata *last_md =
-          get_md_elem(metadata, additional_metadata, total_count - 1, count);
+
+      mdelem_and_storage first, last;
+      get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                         additional_metadata_storage, 0, count, &first);
+
+      get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                         additional_metadata_storage, total_count - 1, count,
+                         &last);
+
       batch->list.head = &call->send_extra_metadata[0];
       call->send_extra_metadata[call->send_extra_metadata_count - 1].next =
-          linked_from_md(first_md);
-      linked_from_md(first_md)->prev =
+          first.storage;
+      first.storage->prev =
           &call->send_extra_metadata[call->send_extra_metadata_count - 1];
-      batch->list.tail = linked_from_md(last_md);
+      batch->list.tail = last.storage;
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
       break;
     }
     default:
-      GPR_UNREACHABLE_CODE(return 0);
+      GPR_UNREACHABLE_CODE(return false);
   }
 
-  return 1;
+  return true;
 }
 
 void grpc_call_destroy(grpc_call *c) {
@@ -981,19 +1021,14 @@ static grpc_mdelem *recv_common_filter(grpc_call *call, grpc_mdelem *elem) {
 
 static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
                                          int is_trailing) {
-  grpc_metadata_array *dest;
-  grpc_metadata *mdusr;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
-  dest = call->buffered_metadata[is_trailing];
+  grpc_metadata_array *dest = call->buffered_metadata[is_trailing];
   if (dest->count == dest->capacity) {
     dest->capacity = GPR_MAX(dest->capacity + 8, dest->capacity * 2);
     dest->metadata =
-        gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
+        gpr_realloc(dest->metadata, sizeof(grpc_mdelem *) * dest->capacity);
   }
-  mdusr = &dest->metadata[dest->count++];
-  mdusr->key = grpc_mdstr_as_c_string(elem->key);
-  mdusr->value = grpc_mdstr_as_c_string(elem->value);
-  mdusr->value_length = GPR_SLICE_LENGTH(elem->value->slice);
+  dest->metadata[dest->count++] = elem;
   GPR_TIMER_END("publish_app_metadata", 0);
   return elem;
 }
@@ -1378,7 +1413,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_call_error error = GRPC_CALL_OK;
 
   // sent_initial_metadata guards against variable reuse.
-  grpc_metadata compression_md;
+  grpc_mdelem *compression_md = NULL;
+  grpc_linked_mdelem compression_md_storage;
 
   GPR_TIMER_BEGIN("grpc_call_start_batch", 0);
 
@@ -1425,7 +1461,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* process compression level */
-        memset(&compression_md, 0, sizeof(compression_md));
+        memset(&compression_md_storage, 0, sizeof(grpc_linked_mdelem));
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level;
         bool level_set = false;
@@ -1449,9 +1485,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           grpc_compression_algorithm_name(calgo, &calgo_name);
           // the following will be picked up by the compress filter and used as
           // the call's compression algorithm.
-          compression_md.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
-          compression_md.value = calgo_name;
-          compression_md.value_length = strlen(calgo_name);
+          compression_md = grpc_mdelem_from_strings(
+              GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, calgo_name);
           additional_metadata_count++;
         }
 
@@ -1464,8 +1499,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->sent_initial_metadata = 1;
         if (!prepare_application_metadata(
                 call, (int)op->data.send_initial_metadata.count,
-                op->data.send_initial_metadata.metadata, 0, call->is_client,
-                &compression_md, (int)additional_metadata_count)) {
+                op->data.send_initial_metadata.metadata,
+                op->data.send_initial_metadata.metadata_storage, false,
+                call->is_client, &compression_md, &compression_md_storage,
+                (int)additional_metadata_count)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1553,8 +1590,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         if (!prepare_application_metadata(
                 call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
-                op->data.send_status_from_server.trailing_metadata, 1, 1, NULL,
-                0)) {
+                op->data.send_status_from_server.trailing_metadata,
+                op->data.send_status_from_server.metadata_storage, true, true,
+                NULL, NULL, 0)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }

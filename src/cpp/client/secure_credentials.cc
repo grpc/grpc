@@ -203,16 +203,14 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
 
   Status status = plugin_->GetMetadata(context.service_url, context.method_name,
                                        cpp_channel_auth_context, &metadata);
-  std::vector<grpc_metadata> md;
+  std::vector<grpc_mdelem*> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
-    grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
-    md_entry.flags = 0;
-    md.push_back(md_entry);
+    md.push_back(grpc_mdelem_from_string_and_buffer(
+        it->first.c_str(), (const uint8_t*)it->second.data(),
+        it->second.length()));
   }
-  cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
+  // XXX: don't use a c style cast
+  cb(user_data, md.empty() ? nullptr : (const grpc_mdelem**)&md[0], md.size(),
      static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
 }

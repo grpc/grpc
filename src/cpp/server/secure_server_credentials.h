@@ -44,22 +44,22 @@
 
 namespace grpc {
 
-class AuthMetadataProcessorAyncWrapper GRPC_FINAL {
+class AuthMetadataProcessorAsyncWrapper GRPC_FINAL {
  public:
   static void Destroy(void* wrapper);
 
   static void Process(void* wrapper, grpc_auth_context* context,
-                      const grpc_metadata* md, size_t num_md,
+                      const grpc_metadata_array* md_arr,
                       grpc_process_auth_metadata_done_cb cb, void* user_data);
 
-  AuthMetadataProcessorAyncWrapper(
+  AuthMetadataProcessorAsyncWrapper(
       const std::shared_ptr<AuthMetadataProcessor>& processor)
       : thread_pool_(CreateDefaultThreadPool()), processor_(processor) {}
 
  private:
-  void InvokeProcessor(grpc_auth_context* context, const grpc_metadata* md,
-                       size_t num_md, grpc_process_auth_metadata_done_cb cb,
-                       void* user_data);
+  void InvokeProcessor(grpc_auth_context* context,
+                       const grpc_metadata_array* md_arr,
+                       grpc_process_auth_metadata_done_cb cb, void* user_data);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
@@ -80,7 +80,7 @@ class SecureServerCredentials GRPC_FINAL : public ServerCredentials {
 
  private:
   grpc_server_credentials* creds_;
-  std::unique_ptr<AuthMetadataProcessorAyncWrapper> processor_;
+  std::unique_ptr<AuthMetadataProcessorAsyncWrapper> processor_;
 };
 
 }  // namespace grpc

@@ -227,6 +227,7 @@ typedef enum grpc_call_error {
   (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
    GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
 
+#if 0
 /** A single metadata element */
 typedef struct grpc_metadata {
   const char *key;
@@ -238,9 +239,10 @@ typedef struct grpc_metadata {
       There is no need to initialize them, and they will be set to garbage
       during calls to grpc. */
   struct {
-    void *obfuscated[4];
+    void *obfuscated[4]; /* XXX: contains a grpc_linked_mdelem */
   } internal_data;
 } grpc_metadata;
+#endif
 
 /** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
@@ -266,10 +268,33 @@ typedef struct grpc_event {
   void *tag;
 } grpc_event;
 
+/* if changing this, make identical changes in internal_string in metadata.c */
+typedef struct grpc_mdstr {
+  const gpr_slice slice;
+  const uint32_t hash;
+  /* there is a private part to this in metadata.c */
+} grpc_mdstr;
+
+/* if changing this, make identical changes in internal_metadata in
+   metadata.c */
+typedef struct grpc_mdelem {
+  grpc_mdstr *const key;
+  grpc_mdstr *const value;
+  /* there is a private part to this in metadata.c */
+} grpc_mdelem;
+
+/* XXX: docs */
+typedef struct grpc_linked_mdelem {
+  grpc_mdelem *md;
+  struct grpc_linked_mdelem *next;
+  struct grpc_linked_mdelem *prev;
+  void *reserved;
+} grpc_linked_mdelem;
+
 typedef struct {
   size_t count;
   size_t capacity;
-  grpc_metadata *metadata;
+  grpc_mdelem **metadata;
 } grpc_metadata_array;
 
 typedef struct {
@@ -343,7 +368,8 @@ typedef struct grpc_op {
     } reserved;
     struct {
       size_t count;
-      grpc_metadata *metadata;
+      grpc_mdelem **metadata;
+      grpc_linked_mdelem *metadata_storage;
       /** If \a is_set, \a compression_level will be used for the call.
        * Otherwise, \a compression_level won't be considered */
       struct {
@@ -354,7 +380,8 @@ typedef struct grpc_op {
     grpc_byte_buffer *send_message;
     struct {
       size_t trailing_metadata_count;
-      grpc_metadata *trailing_metadata;
+      grpc_mdelem **trailing_metadata;
+      grpc_linked_mdelem *metadata_storage;
       grpc_status_code status;
       const char *status_details;
     } send_status_from_server;

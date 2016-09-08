@@ -58,6 +58,29 @@ extern "C" {
 GRPCAPI void grpc_metadata_array_init(grpc_metadata_array *array);
 GRPCAPI void grpc_metadata_array_destroy(grpc_metadata_array *array);
 
+/* Constructors for grpc_mdstr instances; take a variety of data types that
+   clients may have handy */
+GRPCAPI grpc_mdstr *grpc_mdstr_from_string(const char *str);
+/* Unrefs the slice. */
+GRPCAPI grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice);
+GRPCAPI grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *str, size_t length);
+
+/* Recover a char* from a grpc_mdstr. The returned string is null terminated.
+   Does not promise that the returned string has no embedded nulls however. */
+GRPCAPI const char *grpc_mdstr_as_c_string(const grpc_mdstr *s);
+GRPCAPI size_t grpc_mdstr_length(const grpc_mdstr *s);
+
+/* Constructors for grpc_mdelem instances; take a variety of data types that
+   clients may have handy */
+GRPCAPI grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
+                                                       grpc_mdstr *value);
+grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
+/* Unrefs the slices. */
+GRPCAPI grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
+GRPCAPI grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
+                                                        const uint8_t *value,
+                                                        size_t value_length);
+
 GRPCAPI void grpc_call_details_init(grpc_call_details *details);
 GRPCAPI void grpc_call_details_destroy(grpc_call_details *details);
 

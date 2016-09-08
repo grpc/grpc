@@ -207,7 +207,7 @@ class ServerContext {
 
   void BeginCompletionOp(Call* call);
 
-  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
+  ServerContext(gpr_timespec deadline, grpc_mdelem** metadata,
                 size_t metadata_count);
 
   void set_call(grpc_call* call) { call_ = call; }

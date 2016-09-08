@@ -43,6 +43,8 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
+enum { TIMEOUT = 200000 };
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -96,7 +98,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 /* Request/response with metadata and payload.*/
-static void test_request_response_with_metadata_and_payload(
+static void test_cacheable_request_response_with_metadata_and_payload(
     grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -107,12 +109,16 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
+
   grpc_mdelem *meta_c[2] = {grpc_mdelem_from_strings("key1", "val1"),
                             grpc_mdelem_from_strings("key2", "val2")};
+
   grpc_mdelem *meta_s[2] = {grpc_mdelem_from_strings("key3", "val3"),
                             grpc_mdelem_from_strings("key4", "val4")};
+
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_request_response_with_metadata_and_payload", NULL, NULL);
+      config, "test_cacheable_request_response_with_metadata_and_payload", NULL,
+      NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -149,7 +155,7 @@ static void test_request_response_with_metadata_and_payload(
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_c;
   op->data.send_initial_metadata.metadata_storage = meta_c_storage;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
@@ -186,7 +192,7 @@ static void test_request_response_with_metadata_and_payload(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -206,7 +212,7 @@ static void test_request_response_with_metadata_and_payload(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -231,14 +237,19 @@ static void test_request_response_with_metadata_and_payload(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(103), 1);
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
+    // Our simple proxy does not support cacheable requests
+  } else {
+    GPR_ASSERT(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST & call_details.flags);
+  }
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
@@ -267,8 +278,8 @@ static void test_request_response_with_metadata_and_payload(
   config.tear_down_data(&f);
 }
 
-void simple_metadata(grpc_end2end_test_config config) {
-  test_request_response_with_metadata_and_payload(config);
+void simple_cacheable_request(grpc_end2end_test_config config) {
+  test_cacheable_request_response_with_metadata_and_payload(config);
 }
 
-void simple_metadata_pre_init(void) {}
+void simple_cacheable_request_pre_init(void) {}

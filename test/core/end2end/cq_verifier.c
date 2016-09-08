@@ -46,6 +46,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/event_string.h"
+#include "src/core/lib/transport/metadata.h"
 
 #define ROOT_EXPECTATION 1000
 
@@ -86,21 +87,20 @@ void cq_verifier_destroy(cq_verifier *v) {
   gpr_free(v);
 }
 
-static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
-                        const char *value) {
-  size_t i;
-  for (i = 0; i < count; i++) {
-    if (0 == strcmp(key, md[i].key) && strlen(value) == md[i].value_length &&
-        0 == memcmp(md[i].value, value, md[i].value_length)) {
-      return 1;
-    }
+bool contains_metadata(const grpc_metadata_array *haystack,
+                       const grpc_mdelem *needle) {
+  for (size_t i = 0; i < haystack->count; i++) {
+    if (haystack->metadata[i] == needle) return true;
   }
-  return 0;
+  return false;
 }
 
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value) {
-  return has_metadata(array->metadata, array->count, key, value);
+bool contains_metadata_strings(const grpc_metadata_array *haystack,
+                               const char *key, const char *value) {
+  grpc_mdelem *md = grpc_mdelem_from_strings(key, value);
+  const bool found = contains_metadata(haystack, md);
+  GRPC_MDELEM_UNREF(md);
+  return found;
 }
 
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {

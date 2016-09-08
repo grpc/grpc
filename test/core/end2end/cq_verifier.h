@@ -65,7 +65,13 @@ void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec);
 void cq_expect_completion(cq_verifier *v, void *tag, bool success);
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value);
+
+/* Returns true if \a needle is in \a haystack, false otherwise. */
+bool contains_metadata(const grpc_metadata_array *haystack,
+                       const grpc_mdelem *needle);
+
+/* Convenience version of \a contains_metadata */
+bool contains_metadata_strings(const grpc_metadata_array *haystack,
+                               const char *key, const char *value);
 
 #endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */

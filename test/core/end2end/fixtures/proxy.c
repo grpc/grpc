@@ -44,6 +44,8 @@
 
 #include "test/core/util/port.h"
 
+#include "src/core/lib/transport/metadata.h"  // XXX: remove!!
+
 struct grpc_end2end_proxy {
   gpr_thd_id thd;
   char *proxy_port;
@@ -73,12 +75,15 @@ typedef struct {
   grpc_call *p2s;
 
   grpc_metadata_array c2p_initial_metadata;
+  grpc_linked_mdelem *c2p_initial_metadata_storage;
   grpc_metadata_array p2s_initial_metadata;
+  grpc_linked_mdelem *p2s_initial_metadata_storage;
 
   grpc_byte_buffer *c2p_msg;
   grpc_byte_buffer *p2s_msg;
 
   grpc_metadata_array p2s_trailing_metadata;
+  grpc_linked_mdelem *p2s_trailing_metadata_storage;
   grpc_status_code p2s_status;
   char *p2s_status_details;
   size_t p2s_status_details_capacity;
@@ -151,8 +156,11 @@ static void unrefpc(proxy_call *pc, const char *reason) {
     grpc_call_destroy(pc->c2p);
     grpc_call_destroy(pc->p2s);
     grpc_metadata_array_destroy(&pc->c2p_initial_metadata);
+    gpr_free(pc->c2p_initial_metadata_storage);
     grpc_metadata_array_destroy(&pc->p2s_initial_metadata);
+    gpr_free(pc->p2s_initial_metadata_storage);
     grpc_metadata_array_destroy(&pc->p2s_trailing_metadata);
+    gpr_free(pc->p2s_trailing_metadata_storage);
     gpr_free(pc->p2s_status_details);
     gpr_free(pc);
   }
@@ -177,6 +185,13 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
     op.reserved = NULL;
     op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
+    pc->p2s_initial_metadata_storage =
+        gpr_malloc(sizeof(grpc_linked_mdelem) * pc->p2s_initial_metadata.count);
+    op.data.send_initial_metadata.metadata_storage =
+        pc->p2s_initial_metadata_storage;
+    for (size_t i = 0; i < pc->p2s_initial_metadata.count; i++) {
+      GRPC_MDELEM_REF(pc->p2s_initial_metadata.metadata[i]);
+    }
     refpc(pc, "on_c2p_sent_initial_metadata");
     err = grpc_call_start_batch(
         pc->c2p, &op, 1, new_closure(on_c2p_sent_initial_metadata, pc), NULL);
@@ -301,6 +316,12 @@ static void on_p2s_status(void *arg, int success) {
 
   if (!pc->proxy->shutdown) {
     GPR_ASSERT(success);
+    for (size_t i = 0; i < pc->p2s_trailing_metadata.count; ++i) {
+      GRPC_MDELEM_REF(pc->p2s_trailing_metadata.metadata[i]);
+    }
+    pc->p2s_trailing_metadata_storage = gpr_malloc(
+        sizeof(grpc_linked_mdelem) * pc->p2s_trailing_metadata.count);
+
     op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op.flags = 0;
     op.reserved = NULL;
@@ -308,6 +329,8 @@ static void on_p2s_status(void *arg, int success) {
         pc->p2s_trailing_metadata.count;
     op.data.send_status_from_server.trailing_metadata =
         pc->p2s_trailing_metadata.metadata;
+    op.data.send_status_from_server.metadata_storage =
+        pc->p2s_trailing_metadata_storage;
     op.data.send_status_from_server.status = pc->p2s_status;
     op.data.send_status_from_server.status_details = pc->p2s_status_details;
     refpc(pc, "on_c2p_sent_status");
@@ -336,6 +359,24 @@ static void on_new_call(void *arg, int success) {
     pc->proxy = proxy;
     GPR_SWAP(grpc_metadata_array, pc->c2p_initial_metadata,
              proxy->new_call_metadata);
+
+    for (size_t i = 0; i < pc->c2p_initial_metadata.count; ++i) {
+      GRPC_MDELEM_REF(pc->c2p_initial_metadata.metadata[i]);
+    }
+    /*grpc_metadata_array_init(&pc->c2p_initial_metadata);*/
+    /*pc->c2p_initial_metadata.count = proxy->new_call_metadata.count;*/
+    /*pc->c2p_initial_metadata.capacity = proxy->new_call_metadata.capacity;*/
+    /*pc->c2p_initial_metadata.metadata =*/
+    /*gpr_malloc(sizeof(grpc_mdelem *) * proxy->new_call_metadata.count);*/
+    /*for (size_t i = 0; i < proxy->new_call_metadata.count; ++i) {*/
+    /*gpr_log(GPR_INFO, "LOOOOOOOOOOOOL"); // XXX*/
+    /*pc->c2p_initial_metadata.metadata[i] =*/
+    /*GRPC_MDELEM_REF(proxy->new_call_metadata.metadata[i]);*/
+    /*}*/
+
+    pc->c2p_initial_metadata_storage =
+        gpr_malloc(sizeof(grpc_linked_mdelem) * pc->c2p_initial_metadata.count);
+
     pc->c2p = proxy->new_call;
     pc->p2s = grpc_channel_create_call(
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,
@@ -357,6 +398,8 @@ static void on_new_call(void *arg, int success) {
     op.flags = proxy->new_call_details.flags;
     op.data.send_initial_metadata.count = pc->c2p_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->c2p_initial_metadata.metadata;
+    op.data.send_initial_metadata.metadata_storage =
+        pc->c2p_initial_metadata_storage;
     refpc(pc, "on_p2s_sent_initial_metadata");
     err = grpc_call_start_batch(
         pc->p2s, &op, 1, new_closure(on_p2s_sent_initial_metadata, pc), NULL);
