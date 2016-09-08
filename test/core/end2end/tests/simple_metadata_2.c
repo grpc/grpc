@@ -147,12 +147,22 @@ static void test_request_response_with_metadata_and_payload(
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -182,9 +192,19 @@ static void test_request_response_with_metadata_and_payload(
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = response_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
+  
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   cq_verify(cqv);
 
@@ -195,6 +215,14 @@ static void test_request_response_with_metadata_and_payload(
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  
+  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  cq_verify(cqv);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
@@ -202,10 +230,10 @@ static void test_request_response_with_metadata_and_payload(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
