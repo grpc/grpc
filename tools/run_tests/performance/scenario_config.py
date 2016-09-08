@@ -69,7 +69,7 @@ BIG_GENERIC_PAYLOAD = {
 DEEP=100
 
 # wide is the number of client channels in multi-channel tests (1 otherwise)
-WIDE=64
+WIDE=1024
 
 # For most synchronous clients, DEEP*WIDE threads will be created.
 SYNC_DEEP=10
