@@ -189,7 +189,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
   }
 
   if (lock->optional_workqueue != NULL &&
-      grpc_exec_ctx_ready_to_finish(exec_ctx) && is_covered_by_poller(lock)) {
+      is_covered_by_poller(lock) && grpc_exec_ctx_ready_to_finish(exec_ctx)) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on, and we have a workqueue (and
     // so can help the execution context out): schedule remaining work to be

@@ -1299,7 +1299,7 @@ static void pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->polling_island == NULL);
 }
 
-#define GRPC_EPOLL_MAX_EVENTS 1000
+#define GRPC_EPOLL_MAX_EVENTS 100
 /* Note: sig_mask contains the signal mask to use *during* epoll_wait() */
 static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset *pollset,
