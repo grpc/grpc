@@ -1078,7 +1078,7 @@ def access_token_call_credentials(access_token):
 
   Args:
     access_token: A string to place directly in the http request
-      authorization header, ie "Authorization: Bearer <access_token>".
+      authorization header, ie "authorization: Bearer <access_token>".
 
   Returns:
     A CallCredentials.
@@ -1193,7 +1193,7 @@ def insecure_channel(target, options=None):
 
 
 def secure_channel(target, credentials, options=None):
-  """Creates an insecure Channel to a server.
+  """Creates a secure Channel to a server.
 
   Args:
     target: The target to which to connect.

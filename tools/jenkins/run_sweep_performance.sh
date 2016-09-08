@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,20 +27,19 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#
+# This script is invoked by Jenkins and runs full performance test suite.
 set -ex
 
-outdir=`pwd`
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-tmpdir=`mktemp -d`
-mkdir -p $tmpdir/logs
-repos="grpc grpc-common grpc-go grpc-java grpc.github.io"
-for repo in $repos
-do
-  cd $tmpdir
-  git clone https://github.com/grpc/$repo.git
-  cd $repo
-  gource --output-custom-log $tmpdir/logs/$repo
-  sed -i "s,|/,|/$repo/,g" $tmpdir/logs/$repo
-done
-cat $tmpdir/logs/* | sort -n > $outdir/all-logs.txt
+# scalability with 32cores (and upload to a different BQ table)
+tools/run_tests/run_performance_tests.py \
+    -l c++ \
+    --category sweep \
+    --bq_result_table performance_test.performance_experiment_32core \
+    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
+    || EXIT_CODE=1
+
+exit $EXIT_CODE

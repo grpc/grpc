@@ -1124,9 +1124,7 @@ server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
 window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
-bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
 bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
-bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
 bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 h2_census_test: $(BINDIR)/$(CONFIG)/h2_census_test
 h2_compress_test: $(BINDIR)/$(CONFIG)/h2_compress_test
@@ -1346,9 +1344,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
   $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_census_test \
   $(BINDIR)/$(CONFIG)/h2_compress_test \
@@ -1751,8 +1747,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing window_overflow_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bad_ssl_alpn_test"
-	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_cert_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
@@ -3573,39 +3567,39 @@ endif
 
 
 LIBGRPC++_SRC = \
+    src/cpp/client/insecure_credentials.cc \
     src/cpp/client/secure_credentials.cc \
     src/cpp/common/auth_property_iterator.cc \
     src/cpp/common/secure_auth_context.cc \
     src/cpp/common/secure_channel_arguments.cc \
     src/cpp/common/secure_create_auth_context.cc \
+    src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/secure_server_credentials.cc \
-    src/cpp/client/channel.cc \
+    src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
-    src/cpp/client/credentials.cc \
+    src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/client/insecure_credentials.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
-    src/cpp/common/completion_queue.cc \
+    src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/insecure_server_credentials.cc \
-    src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
-    src/cpp/util/byte_buffer.cc \
-    src/cpp/util/slice.cc \
+    src/cpp/util/byte_buffer_cc.cc \
+    src/cpp/util/slice_cc.cc \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
-    src/cpp/util/time.cc \
+    src/cpp/util/time_cc.cc \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -4045,7 +4039,7 @@ endif
 
 
 LIBGRPC++_TEST_CONFIG_SRC = \
-    test/cpp/util/test_config.cc \
+    test/cpp/util/test_config_cc.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -4214,34 +4208,34 @@ $(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/tes
 
 
 LIBGRPC++_UNSECURE_SRC = \
+    src/cpp/client/insecure_credentials.cc \
     src/cpp/common/insecure_create_auth_context.cc \
-    src/cpp/client/channel.cc \
+    src/cpp/server/insecure_server_credentials.cc \
+    src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
-    src/cpp/client/credentials.cc \
+    src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/client/insecure_credentials.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
-    src/cpp/common/completion_queue.cc \
+    src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/insecure_server_credentials.cc \
-    src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
-    src/cpp/util/byte_buffer.cc \
-    src/cpp/util/slice.cc \
+    src/cpp/util/byte_buffer_cc.cc \
+    src/cpp/util/slice_cc.cc \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
-    src/cpp/util/time.cc \
+    src/cpp/util/time_cc.cc \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -14403,38 +14397,6 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-BAD_SSL_ALPN_SERVER_SRC = \
-    test/core/bad_ssl/servers/alpn.c \
-
-BAD_SSL_ALPN_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_SERVER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/alpn.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
 BAD_SSL_CERT_SERVER_SRC = \
     test/core/bad_ssl/servers/cert.c \
 
@@ -14463,38 +14425,6 @@ deps_bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
-BAD_SSL_ALPN_TEST_SRC = \
-    test/core/bad_ssl/bad_ssl_test.c \
-
-BAD_SSL_ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -15827,7 +15757,7 @@ test/cpp/util/proto_file_parser.cc: $(OPENSSL_DEP)
 test/cpp/util/proto_reflection_descriptor_database.cc: $(OPENSSL_DEP)
 test/cpp/util/string_ref_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
-test/cpp/util/test_config.cc: $(OPENSSL_DEP)
+test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 

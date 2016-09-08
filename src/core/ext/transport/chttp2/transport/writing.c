@@ -207,14 +207,15 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
     uint32_t max_outgoing =
-        (uint32_t)GPR_MIN(GRPC_CHTTP2_MAX_PAYLOAD_LENGTH,
+        (uint32_t)GPR_MIN(transport_writing->max_frame_size,
                           GPR_MIN(stream_writing->outgoing_window,
                                   transport_writing->outgoing_window));
     /* send initial metadata if it's available */
     if (stream_writing->send_initial_metadata != NULL) {
       grpc_chttp2_encode_header(
           &transport_writing->hpack_compressor, stream_writing->id,
-          stream_writing->send_initial_metadata, 0, &stream_writing->stats,
+          stream_writing->send_initial_metadata, 0,
+          transport_writing->max_frame_size, &stream_writing->stats,
           &transport_writing->outbuf);
       stream_writing->send_initial_metadata = NULL;
       stream_writing->sent_initial_metadata = 1;
@@ -304,7 +305,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_chttp2_encode_header(
             &transport_writing->hpack_compressor, stream_writing->id,
-            stream_writing->send_trailing_metadata, 1, &stream_writing->stats,
+            stream_writing->send_trailing_metadata, 1,
+            transport_writing->max_frame_size, &stream_writing->stats,
             &transport_writing->outbuf);
       }
       if (!transport_writing->is_client && !stream_writing->read_closed) {
