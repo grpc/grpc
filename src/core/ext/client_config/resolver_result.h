@@ -63,14 +63,19 @@ void grpc_addresses_destroy(grpc_addresses *addresses);
 /** Results reported from a grpc_resolver. */
 typedef struct grpc_resolver_result grpc_resolver_result;
 
-grpc_resolver_result *grpc_resolver_result_create();
-void grpc_resolver_result_ref(grpc_resolver_result *client_config);
+/** Takes ownership of \a addresses. */
+grpc_resolver_result *grpc_resolver_result_create(grpc_addresses *addresses,
+                                                  const char *lb_policy_name);
+void grpc_resolver_result_ref(grpc_resolver_result *result);
 void grpc_resolver_result_unref(grpc_exec_ctx *exec_ctx,
-                                grpc_resolver_result *client_config);
+                                grpc_resolver_result *result);
 
-void grpc_resolver_result_set_lb_policy(grpc_resolver_result *client_config,
-                                        grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_resolver_result_get_lb_policy(
-    grpc_resolver_result *client_config);
+/** Caller does NOT take ownership of result. */
+grpc_addresses *grpc_resolver_result_get_addresses(
+    grpc_resolver_result *result);
+
+/** Caller does NOT take ownership of result. */
+const char *grpc_resolver_result_get_lb_policy_name(
+    grpc_resolver_result *result);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_RESULT_H */

@@ -276,10 +276,10 @@ static grpc_channel *client_channel_factory_create_channel(
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(final_args);
 
-  grpc_resolver *resolver = grpc_resolver_create(target, &f->base);
+  grpc_resolver *resolver = grpc_resolver_create(target);
   if (resolver != NULL) {
-    grpc_client_channel_set_resolver(
-        exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
+    grpc_client_channel_set_resolver_and_client_channel_factory(
+        exec_ctx, grpc_channel_get_channel_stack(channel), resolver, &f->base);
     GRPC_RESOLVER_UNREF(exec_ctx, resolver, "create");
   } else {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
