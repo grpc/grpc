@@ -255,8 +255,10 @@ GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
   }
 
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, ctx->recv_message));
+  intptr_t result = (intptr_t)grpc_byte_buffer_length(reader.buffer_out);
+  grpc_byte_buffer_reader_destroy(&reader);
 
-  return (intptr_t)grpc_byte_buffer_length(reader.buffer_out);
+  return result;
 }
 
 /*
@@ -279,6 +281,8 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
     offset += len;
     gpr_slice_unref(slice);
   }
+
+  grpc_byte_buffer_reader_destroy(&reader);
 }
 
 GPR_EXPORT grpc_status_code GPR_CALLTYPE
