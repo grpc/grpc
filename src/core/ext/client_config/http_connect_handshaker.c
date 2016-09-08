@@ -269,6 +269,7 @@ char* grpc_get_http_proxy_server() {
   }
   proxy_name = gpr_strdup(uri->authority);
 done:
+  gpr_free(uri_str);
   grpc_uri_destroy(uri);
   return proxy_name;
 }
