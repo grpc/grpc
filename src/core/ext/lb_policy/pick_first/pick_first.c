@@ -170,9 +170,9 @@ static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         initial_metadata_flags_eq) {
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
                                                p->base.interested_parties);
-      grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
-                          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled",
-                                                        &error, 1), NULL);
+      grpc_exec_ctx_sched(
+          exec_ctx, pp->on_complete,
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
