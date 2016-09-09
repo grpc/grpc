@@ -545,9 +545,9 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(
           exec_ctx, pp->pollent, glb_policy->base.interested_parties);
       *target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
-                          GRPC_ERROR_CREATE_REFERENCING(
-                              "Pick Cancelled", &error, 1), NULL);
+      grpc_exec_ctx_sched(
+          exec_ctx, &pp->wrapped_on_complete,
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = glb_policy->pending_picks;

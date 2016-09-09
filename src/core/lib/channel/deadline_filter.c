@@ -45,8 +45,8 @@
 //
 
 // Timer callback.
-static void timer_callback(grpc_exec_ctx *exec_ctx, void *arg,
-                           grpc_error *error) {
+static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
+                           grpc_error* error) {
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
   gpr_mu_lock(&deadline_state->timer_mu);
@@ -54,16 +54,15 @@ static void timer_callback(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&deadline_state->timer_mu);
   if (error != GRPC_ERROR_CANCELLED) {
     gpr_slice msg = gpr_slice_from_static_string("Deadline Exceeded");
-    grpc_call_element_send_cancel_with_message(exec_ctx, elem,
-                                               GRPC_STATUS_DEADLINE_EXCEEDED,
-                                               &msg);
+    grpc_call_element_send_cancel_with_message(
+        exec_ctx, elem, GRPC_STATUS_DEADLINE_EXCEEDED, &msg);
     gpr_slice_unref(msg);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
 
 // Starts the deadline timer.
-static void start_timer_if_needed(grpc_exec_ctx *exec_ctx,
+static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   gpr_timespec deadline) {
   grpc_deadline_state* deadline_state = elem->call_data;
@@ -91,7 +90,7 @@ static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
 }
 
 // Callback run when the call is complete.
-static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = arg;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   // Invoke the next callback.
@@ -159,8 +158,7 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
 
 // Destructor for channel_data.  Used for both client and server filters.
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
-                                 grpc_channel_element* elem) {
-}
+                                 grpc_channel_element* elem) {}
 
 // Call data used for both client and server filter.
 typedef struct base_call_data {
@@ -180,7 +178,7 @@ typedef struct server_call_data {
 } server_call_data;
 
 // Constructor for call_data.  Used for both client and server filters.
-static grpc_error *init_call_elem(grpc_exec_ctx* exec_ctx,
+static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   grpc_call_element_args* args) {
   base_call_data* calld = elem->call_data;
@@ -208,13 +206,12 @@ static void client_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
 }
 
 // Callback for receiving initial metadata on the server.
-static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
-                                        grpc_error *error) {
+static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
+                                        grpc_error* error) {
   grpc_call_element* elem = arg;
   server_call_data* calld = elem->call_data;
   // Get deadline from metadata and start the timer if needed.
-  start_timer_if_needed(exec_ctx, elem,
-                        calld->recv_initial_metadata->deadline);
+  start_timer_if_needed(exec_ctx, elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
   calld->next_recv_initial_metadata_ready->cb(
       exec_ctx, calld->next_recv_initial_metadata_ready->cb_arg, error);

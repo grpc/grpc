@@ -253,8 +253,7 @@ grpc_call *grpc_call_create(
       call->metadata_batch[i][j].deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
     }
   }
-  send_deadline =
-      gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
+  send_deadline = gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
   grpc_error *error = grpc_call_stack_init(
@@ -438,7 +437,7 @@ static void set_status_details(grpc_call *call, status_source source,
 static void set_status_from_error(grpc_call *call, status_source source,
                                   grpc_error *error) {
   grpc_status_code status;
-  const char* msg;
+  const char *msg;
   grpc_error_get_status(error, &status, &msg);
   set_status_code(call, source, (uint32_t)status);
   set_status_details(call, source, grpc_mdstr_from_string(msg));

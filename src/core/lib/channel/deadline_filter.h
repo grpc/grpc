@@ -74,4 +74,4 @@ void grpc_deadline_state_client_start_transport_stream_op(
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 
-#endif  // GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H
+#endif /* GRPC_CORE_LIB_CHANNEL_DEADLINE_FILTER_H */

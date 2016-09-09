@@ -563,9 +563,9 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       cpa = closure->cb_arg;
       if (cpa->connected_subchannel == connected_subchannel) {
         cpa->connected_subchannel = NULL;
-        grpc_exec_ctx_sched(exec_ctx, cpa->on_ready,
-                            GRPC_ERROR_CREATE_REFERENCING(
-                                "Pick cancelled", &error, 1), NULL);
+        grpc_exec_ctx_sched(
+            exec_ctx, cpa->on_ready,
+            GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1), NULL);
       }
     }
     gpr_mu_unlock(&chand->mu);
