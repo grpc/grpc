@@ -654,15 +654,9 @@ class CSharpLanguage(object):
     assembly_extension = '.exe'
 
     if self.args.compiler == 'coreclr':
-      if self.platform == 'linux':
-        assembly_subdir += '/netstandard1.5/debian.8-x64'
-        assembly_extension = ''
-      elif self.platform == 'mac':
-        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
-        assembly_extension = ''
-      else:
-        assembly_subdir += '/netstandard1.5/win7-x64'
-      runtime_cmd = []
+      assembly_subdir += '/netcoreapp1.0'
+      runtime_cmd = ['dotnet', 'exec']
+      assembly_extension = '.dll'
     else:
       nunit_args += ['--noresult', '--workers=1']
       if self.platform == 'windows':
