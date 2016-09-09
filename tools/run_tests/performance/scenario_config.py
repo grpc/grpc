@@ -35,6 +35,7 @@ BENCHMARK_SECONDS=30
 
 SMOKETEST='smoketest'
 SCALABLE='scalable'
+SWEEP='sweep'
 
 SECURE_SECARGS = {'use_test_ca': True,
                   'server_host_override': 'foo.test.google.fr'}
@@ -101,7 +102,8 @@ def _ping_pong_scenario(name, rpc_type,
                         server_core_limit=0,
                         async_server_threads=0,
                         warmup_seconds=WARMUP_SECONDS,
-                        categories=[]):
+                        categories=[],
+                        channels=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -156,6 +158,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
 
+  if channels is not None:
+    scenario['client_config']['client_channels'] = channels
+
   if client_language:
     # the CLIENT_LANGUAGE field is recognized by run_performance_tests.py
     scenario['CLIENT_LANGUAGE'] = client_language
@@ -185,58 +190,75 @@ class CXXLanguage:
       smoketest_categories = [SMOKETEST] if secure else []
 
       yield _ping_pong_scenario(
-          'cpp_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          'cpp_generic_async_streaming_ping_pong_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
           use_generic_payload=True, server_core_limit=1, async_server_threads=1,
           secure=secure,
           categories=smoketest_categories)
 
       yield _ping_pong_scenario(
-          'cpp_protobuf_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          server_core_limit=1, async_server_threads=1,
-          secure=secure)
-
-      yield _ping_pong_scenario(
-          'cpp_protobuf_async_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          server_core_limit=1, async_server_threads=1,
-          secure=secure,
-          categories=smoketest_categories)
-
-      yield _ping_pong_scenario(
-          'cpp_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
-          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-          server_core_limit=1, async_server_threads=1,
-          secure=secure)
-
-      yield _ping_pong_scenario(
-          'cpp_protobuf_async_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          unconstrained_client='async',
-          secure=secure,
-          categories=smoketest_categories+[SCALABLE])
-
-      yield _ping_pong_scenario(
-          'cpp_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          unconstrained_client='async',
-          secure=secure,
-          categories=[SCALABLE])
-
-      yield _ping_pong_scenario(
-          'cpp_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          'cpp_generic_async_streaming_qps_unconstrained_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
           categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
-          'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           server_core_limit=1, async_server_threads=1,
           secure=secure)
+
+      for synchronicity in ['sync', 'async']:
+        yield _ping_pong_scenario(
+            'cpp_protobuf_%s_streaming_ping_pong_%s' % (synchronicity, secstr),
+            rpc_type='STREAMING',
+            client_type='%s_CLIENT' % synchronicity.upper(),
+            server_type='%s_SERVER' % synchronicity.upper(),
+            server_core_limit=1, async_server_threads=1,
+            secure=secure)
+
+        yield _ping_pong_scenario(
+            'cpp_protobuf_%s_unary_ping_pong_%s' % (synchronicity, secstr),
+            rpc_type='UNARY',
+            client_type='%s_CLIENT' % synchronicity.upper(),
+            server_type='%s_SERVER' % synchronicity.upper(),
+            server_core_limit=1, async_server_threads=1,
+            secure=secure,
+            categories=smoketest_categories)
+
+        yield _ping_pong_scenario(
+            'cpp_protobuf_%s_unary_qps_unconstrained_%s' % (synchronicity, secstr),
+            rpc_type='UNARY',
+            client_type='%s_CLIENT' % synchronicity.upper(),
+            server_type='%s_SERVER' % synchronicity.upper(),
+            unconstrained_client=synchronicity,
+            secure=secure,
+            categories=smoketest_categories+[SCALABLE])
+
+        yield _ping_pong_scenario(
+            'cpp_protobuf_%s_streaming_qps_unconstrained_%s' % (synchronicity, secstr),
+            rpc_type='STREAMING',
+            client_type='%s_CLIENT' % synchronicity.upper(),
+            server_type='%s_SERVER' % synchronicity.upper(),
+            unconstrained_client=synchronicity,
+            secure=secure,
+            categories=[SCALABLE])
+
+        for channels in [1, 3, 10, 31, 100, 316, 1000]:
+          yield _ping_pong_scenario(
+              'cpp_protobuf_async_unary_qps_unconstrained_%s_%d_channels' % (secstr, channels),
+              rpc_type='UNARY',
+              client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+              unconstrained_client=synchronicity, secure=secure,
+              categories=[SWEEP], channels=channels)
 
   def __str__(self):
     return 'c++'
@@ -548,7 +570,7 @@ class JavaLanguage:
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 
-      # TODO(jtattermusch): add scenarios java vs C++ 
+      # TODO(jtattermusch): add scenarios java vs C++
 
   def __str__(self):
     return 'java'
@@ -572,7 +594,7 @@ class GoLanguage:
       smoketest_categories = [SMOKETEST] if secure else []
 
       # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
-      # but that's mostly because of lack of better name of the enum value. 
+      # but that's mostly because of lack of better name of the enum value.
       yield _ping_pong_scenario(
           'go_generic_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
@@ -619,7 +641,7 @@ class GoLanguage:
           secure=secure,
           categories=[SCALABLE])
 
-      # TODO(jtattermusch): add scenarios go vs C++ 
+      # TODO(jtattermusch): add scenarios go vs C++
 
   def __str__(self):
     return 'go'

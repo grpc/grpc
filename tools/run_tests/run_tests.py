@@ -346,7 +346,7 @@ class NodeLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5'])
+                                         'node4', 'node5', 'node6'])
     if self.args.compiler == 'default':
       self.node_version = '4'
     else:

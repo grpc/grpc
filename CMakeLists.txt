@@ -1008,39 +1008,39 @@ endif()
 
   
 add_library(grpc++
+  src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/secure_auth_context.cc
   src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
+  src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/secure_server_credentials.cc
-  src/cpp/client/channel.cc
+  src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials.cc
+  src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue.cc
+  src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
-  src/cpp/util/byte_buffer.cc
-  src/cpp/util/slice.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
-  src/cpp/util/time.cc
+  src/cpp/util/time_cc.cc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1371,34 +1371,34 @@ endif()
 
   
 add_library(grpc++_unsecure
+  src/cpp/client/insecure_credentials.cc
   src/cpp/common/insecure_create_auth_context.cc
-  src/cpp/client/channel.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials.cc
+  src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue.cc
+  src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
-  src/cpp/util/byte_buffer.cc
-  src/cpp/util/slice.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
-  src/cpp/util/time.cc
+  src/cpp/util/time_cc.cc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1771,11 +1771,13 @@ target_include_directories(gen_percent_encoding_tables
 
 
 
-install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+if (gRPC_INSTALL)
+  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
 
 
 add_executable(grpc_create_jwt
