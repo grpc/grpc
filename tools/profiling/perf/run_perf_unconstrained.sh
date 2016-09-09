@@ -90,8 +90,6 @@ export config=mutrace
 
 make CONFIG=$config -j$CPUS qps_json_driver
 
-bins/$config/qps_json_driver --scenarios_json="$SCENARIOS_JSON_ARG"
-
-#sudo perf record -F 997 -g bins/$config/qps_json_driver --scenarios_json="$SCENARIOS_JSON_ARG"
-#sudo perf report
+sudo perf record -F 997 -g bins/$config/qps_json_driver --scenarios_json="$SCENARIOS_JSON_ARG"
+sudo perf report
 
