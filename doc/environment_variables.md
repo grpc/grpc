@@ -6,13 +6,16 @@ some configuration as environment variables that can be set.
 
 * GRPC_ABORT_ON_LEAKS
   A debugging aid to cause a call to abort() when gRPC objects are leaked past
-  grpc_shutdown()
+  grpc_shutdown(). Set to 1 to cause the abort, if unset or 0 it does not
+  abort the process.
 
 * GRPC_GOOGLE_CREDENTIALS_ENV_VAR
   The path to find the credentials to use when Google credentials are created
 
 * GRPC_SSL_CIPHER_SUITES
   A colon separated list of cipher suites to use with OpenSSL
+  Defaults to:
+    ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-GCM-SHA384
 
 * GRPC_POLL_STRATEGY [posix-style environments only]
   Declares which polling engines to try when starting gRPC.
