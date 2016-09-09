@@ -51,6 +51,10 @@ int grpc_chttp2_unlocking_check_writes(
 
   GPR_TIMER_BEGIN("grpc_chttp2_unlocking_check_writes", 0);
 
+  transport_writing->max_frame_size =
+      transport_global->settings[GRPC_ACKED_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+
   if (transport_global->dirtied_local_settings &&
       !transport_global->sent_local_settings) {
     gpr_slice_buffer_add(
