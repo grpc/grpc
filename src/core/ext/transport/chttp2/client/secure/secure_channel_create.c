@@ -220,7 +220,6 @@ typedef struct {
   gpr_refcount refs;
   grpc_channel_args *merge_args;
   grpc_channel_security_connector *security_connector;
-  grpc_channel *master;
 } client_channel_factory;
 
 static void client_channel_factory_ref(
@@ -235,10 +234,6 @@ static void client_channel_factory_unref(
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "client_channel_factory");
-    if (f->master != NULL) {
-      GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master,
-                                  "client_channel_factory");
-    }
     grpc_channel_args_destroy(f->merge_args);
     gpr_free(f);
   }
@@ -356,10 +351,6 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
 
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
-  if (channel != NULL) {
-    f->master = channel;
-    GRPC_CHANNEL_INTERNAL_REF(f->master, "grpc_secure_channel_create");
-  }
 
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);
