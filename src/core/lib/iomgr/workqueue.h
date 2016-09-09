@@ -54,7 +54,7 @@
    string will be printed alongside the refcount. When it is not defined, the
    string will be discarded at compilation time. */
 
-//#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
+#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
   grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
