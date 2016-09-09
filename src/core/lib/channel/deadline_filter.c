@@ -145,10 +145,6 @@ void grpc_deadline_state_client_start_transport_stream_op(
 // filter code
 //
 
-// Used for both client and server filters.
-typedef struct channel_data {
-} channel_data;
-
 // Constructor for channel_data.  Used for both client and server filters.
 static void init_channel_elem(grpc_exec_ctx* exec_ctx,
                               grpc_channel_element* elem,
@@ -256,7 +252,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
-    sizeof(channel_data),
+    0,  // sizeof(channel_data)
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
@@ -270,7 +266,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
-    sizeof(channel_data),
+    0,  // sizeof(channel_data)
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
