@@ -290,6 +290,11 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_status_code status,
                                                 gpr_slice *optional_message);
 
+void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *cur_elem,
+                                               grpc_status_code status,
+                                               gpr_slice *optional_message);
+
 extern int grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \

@@ -288,3 +288,13 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                          optional_message);
   elem->filter->start_transport_stream_op(exec_ctx, elem, &op);
 }
+
+void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *elem,
+                                               grpc_status_code status,
+                                               gpr_slice *optional_message) {
+  grpc_transport_stream_op op;
+  memset(&op, 0, sizeof(op));
+  grpc_transport_stream_op_add_close(&op, status, optional_message);
+  elem->filter->start_transport_stream_op(exec_ctx, elem, &op);
+}

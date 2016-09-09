@@ -55,15 +55,11 @@ gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client)
   gpr_mu_unlock(&deadline_state->timer_mu);
   if (error != GRPC_ERROR_CANCELLED) {
 gpr_log(GPR_INFO, "DEADLINE_EXCEEDED");
-// FIXME: change grpc_call_element_send_cancel_with_message to not call close
-//    grpc_call_element_send_cancel(exec_ctx, elem);
-    grpc_transport_stream_op op;
-    memset(&op, 0, sizeof(op));
-    op.cancel_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE("Deadline Exceeded"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-    elem->filter->start_transport_stream_op(exec_ctx, elem, &op);
-    GRPC_ERROR_UNREF(op.cancel_error);
+    gpr_slice msg = gpr_slice_from_static_string("Deadline Exceeded");
+    grpc_call_element_send_cancel_with_message(exec_ctx, elem,
+                                               GRPC_STATUS_DEADLINE_EXCEEDED,
+                                               &msg);
+    gpr_slice_unref(msg);
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
