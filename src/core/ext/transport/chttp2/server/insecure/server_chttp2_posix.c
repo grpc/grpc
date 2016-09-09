@@ -38,6 +38,8 @@
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
+#include <fcntl.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -56,6 +58,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char *name;
   gpr_asprintf(&name, "fd:%d", fd);
+
+  int flags = fcntl(fd, F_GETFL, 0);
+  GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
 
   grpc_resource_quota *resource_quota = grpc_resource_quota_from_channel_args(
       grpc_server_get_channel_args(server));
