@@ -100,19 +100,19 @@ namespace Grpc.Core.Internal
 
             // With old-style VS projects, the native libraries get copied using a .targets rule to the build output folder
             // alongside the compiled assembly.
-            // With dotnet cli projects, the native libraries (just the required ones) are similarly copied to the built output folder,
-            // through the magic of Microsoft.NETCore.Platforms.
+            // With dotnet cli projects targeting net45 framework, the native libraries (just the required ones)
+            // are similarly copied to the built output folder, through the magic of Microsoft.NETCore.Platforms.
             var classicPath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
 
-            // DNX-style project.json projects will use Grpc.Core assembly directly in the location where it got restored
+            // With dotnet cli project targeting netcoreapp1.0, projects will use Grpc.Core assembly directly in the location where it got restored
             // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
+            // When "dotnet publish" is used, the runtimes directory is copied next to the published assemblies.
+            string runtimesDirectory = string.Format("runtimes/{0}/native", GetPlatformString());
+            var netCorePublishedAppStylePath = Path.Combine(assemblyDirectory, runtimesDirectory, GetNativeLibraryFilename());
+            var netCoreAppStylePath = Path.Combine(assemblyDirectory, "../..", runtimesDirectory, GetNativeLibraryFilename());
 
-            // TODO: Support .NET Core applications, which act slightly differently. We may be okay if "dotnet publish"
-            // is used, but "dotnet run" leaves the native libraries in-package, while copying assemblies.
-            string platform = GetPlatformString();
-            string relativeDirectory = string.Format("../../runtimes/{0}/native", platform);
-            var dnxStylePath = Path.Combine(assemblyDirectory, relativeDirectory, GetNativeLibraryFilename());
-            string[] paths = new[] { classicPath, dnxStylePath };
+            // Look for all native library in all possible locations in given order.
+            string[] paths = new[] { classicPath, netCorePublishedAppStylePath, netCoreAppStylePath};
             return new UnmanagedLibrary(paths);
         }
 
