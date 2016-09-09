@@ -142,7 +142,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_posix.c \
     src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \

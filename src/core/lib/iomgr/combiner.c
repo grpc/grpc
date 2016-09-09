@@ -92,6 +92,7 @@ grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   lock->next_combiner_on_this_exec_ctx = NULL;
   lock->time_to_execute_final_list = false;
   lock->optional_workqueue = optional_workqueue;
+  lock->final_list_covered_by_poller = false;
   gpr_atm_no_barrier_store(&lock->state, 1);
   gpr_atm_no_barrier_store(&lock->covered_by_poller, 0);
   gpr_mpscq_init(&lock->queue);
@@ -188,8 +189,8 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     return false;
   }
 
-  if (lock->optional_workqueue != NULL &&
-      is_covered_by_poller(lock) && grpc_exec_ctx_ready_to_finish(exec_ctx)) {
+  if (lock->optional_workqueue != NULL && is_covered_by_poller(lock) &&
+      grpc_exec_ctx_ready_to_finish(exec_ctx)) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on, and we have a workqueue (and
     // so can help the execution context out): schedule remaining work to be

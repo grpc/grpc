@@ -351,7 +351,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_posix.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -610,7 +609,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_posix.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -842,7 +840,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_posix.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -1100,7 +1097,6 @@ add_library(grpc++
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_posix.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -1458,7 +1454,6 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
-  src/core/lib/iomgr/workqueue_posix.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c

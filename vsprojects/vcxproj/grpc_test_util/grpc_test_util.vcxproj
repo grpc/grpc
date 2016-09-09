@@ -246,7 +246,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
@@ -422,8 +421,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
     </ClCompile>

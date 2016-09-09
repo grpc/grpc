@@ -40,10 +40,6 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/lib/iomgr/workqueue_posix.h"
-#endif
-
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/workqueue_windows.h"
 #endif
