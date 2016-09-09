@@ -325,8 +325,9 @@ static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 void grpc_do_security_handshake(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector, bool is_client_side,
-    grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
-    grpc_security_handshake_done_cb cb, void *user_data) {
+    grpc_endpoint *nonsecure_endpoint, gpr_slice_buffer *read_buffer,
+    gpr_timespec deadline, grpc_security_handshake_done_cb cb,
+    void *user_data) {
   grpc_security_connector_handshake_list *handshake_node;
   grpc_security_handshake *h = gpr_malloc(sizeof(grpc_security_handshake));
   memset(h, 0, sizeof(grpc_security_handshake));
@@ -346,6 +347,10 @@ void grpc_do_security_handshake(
   gpr_slice_buffer_init(&h->left_overs);
   gpr_slice_buffer_init(&h->outgoing);
   gpr_slice_buffer_init(&h->incoming);
+  if (read_buffer != NULL) {
+    gpr_slice_buffer_move_into(read_buffer, &h->incoming);
+    gpr_free(read_buffer);
+  }
   if (!is_client_side) {
     grpc_server_security_connector *server_connector =
         (grpc_server_security_connector *)connector;

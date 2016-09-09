@@ -81,7 +81,14 @@ class CSharpPackage:
       self.labels += ['windows']
 
   def pre_build_jobspecs(self):
-    return []
+    if 'windows' in self.labels:
+      return [create_jobspec('prebuild_%s' % self.name,
+                             ['tools\\run_tests\\pre_build_csharp.bat'],
+                             shell=True,
+                             flake_retries=5,
+                             timeout_retries=2)]
+    else:
+      return []
 
   def build_jobspec(self):
     if self.use_coreclr:

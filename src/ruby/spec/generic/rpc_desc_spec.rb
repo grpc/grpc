@@ -196,6 +196,9 @@ describe GRPC::RpcDesc do
     def fake_svstream(_arg1, _arg2)
     end
 
+    def fake_three_args(_arg1, _arg2, _arg3)
+    end
+
     it 'raises when a request_response does not have 2 args' do
       [:fake_clstream, :no_arg].each do |mth|
         blk = proc do
@@ -244,8 +247,8 @@ describe GRPC::RpcDesc do
       expect(&blk).to_not raise_error
     end
 
-    it 'raises when a bidi streamer does not have 1 arg' do
-      [:fake_svstream, :no_arg].each do |mth|
+    it 'raises when a bidi streamer does not have 1 or 2 args' do
+      [:fake_three_args, :no_arg].each do |mth|
         blk = proc do
           @bidi_streamer.assert_arity_matches(method(mth))
         end
@@ -256,6 +259,13 @@ describe GRPC::RpcDesc do
     it 'passes when a bidi streamer has 1 arg' do
       blk = proc do
         @bidi_streamer.assert_arity_matches(method(:fake_clstream))
+      end
+      expect(&blk).to_not raise_error
+    end
+
+    it 'passes when a bidi streamer has 2 args' do
+      blk = proc do
+        @bidi_streamer.assert_arity_matches(method(:fake_svstream))
       end
       expect(&blk).to_not raise_error
     end

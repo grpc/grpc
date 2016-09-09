@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 // TODO(jcanizales): Generate the version in a standalone header, from templates. Like
 // templates/src/core/surface/version.c.template .
-#define GRPC_OBJC_VERSION_STRING @"0.13.0"
+#define GRPC_OBJC_VERSION_STRING @"1.0.0"
 
 static NSMutableDictionary *kHostCache;
 
@@ -110,6 +110,12 @@ static NSMutableDictionary *kHostCache;
                                                     BOOL * _Nonnull stop) {
       [host disconnect];
     }];
+  }
+}
+
++ (void)resetAllHostSettings {
+  @synchronized (kHostCache) {
+    kHostCache = [NSMutableDictionary dictionary];
   }
 }
 
@@ -208,6 +214,10 @@ static NSMutableDictionary *kHostCache;
 
   if (_secure && _hostNameOverride) {
     args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = _hostNameOverride;
+  }
+
+  if (_responseSizeLimitOverride) {
+    args[@GRPC_ARG_MAX_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
   return args;
 }

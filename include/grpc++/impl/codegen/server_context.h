@@ -65,8 +65,10 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+namespace internal {
 template <class W, class R>
-class ServerReaderWriter;
+class ServerReaderWriterBody;
+}
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -130,7 +132,13 @@ class ServerContext {
   grpc_compression_level compression_level() const {
     return compression_level_;
   }
-  void set_compression_level(grpc_compression_level level);
+
+  void set_compression_level(grpc_compression_level level) {
+    compression_level_set_ = true;
+    compression_level_ = level;
+  }
+
+  bool compression_level_set() const { return compression_level_set_; }
 
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
@@ -160,6 +168,10 @@ class ServerContext {
     async_notify_when_done_tag_ = tag;
   }
 
+  // Should be used for framework-level extensions only.
+  // Applications never need to call this method.
+  grpc_call* c_call() { return call_; }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::ServerInterface;
@@ -177,15 +189,15 @@ class ServerContext {
   template <class W>
   friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::ServerReaderWriter;
+  friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class BidiStreamingHandler;
+  template <class Streamer, bool WriteNeeded>
+  friend class TemplatedBidiStreamingHandler;
   friend class UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 
@@ -217,6 +229,7 @@ class ServerContext {
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
+  bool compression_level_set_;
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 };

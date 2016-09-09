@@ -46,6 +46,7 @@ go get github.com/golang/protobuf/proto
 go get golang.org/x/net/context
 go get golang.org/x/net/trace
 go get golang.org/x/oauth2
+go get golang.org/x/oauth2/google
 go get google.golang.org/cloud
 
 # Build the interop client and server

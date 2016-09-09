@@ -126,6 +126,9 @@ class ServerAsyncResponseWriter GRPC_FINAL
     meta_buf_.set_output_tag(tag);
     meta_buf_.SendInitialMetadata(ctx_->initial_metadata_,
                                   ctx_->initial_metadata_flags());
+    if (ctx_->compression_level_set()) {
+      meta_buf_.set_compression_level(ctx_->compression_level());
+    }
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_buf_);
   }
@@ -135,6 +138,9 @@ class ServerAsyncResponseWriter GRPC_FINAL
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        finish_buf_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
@@ -153,6 +159,9 @@ class ServerAsyncResponseWriter GRPC_FINAL
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        finish_buf_.set_compression_level(ctx_->compression_level());
+      }
       ctx_->sent_initial_metadata_ = true;
     }
     finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);

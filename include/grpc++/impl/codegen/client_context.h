@@ -225,6 +225,9 @@ class ClientContext {
   /// EXPERIMENTAL: Set this request to be idempotent
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
+  /// EXPERIMENTAL: Set this request to be cacheable
+  void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
+
   /// EXPERIMENTAL: Trigger fail-fast or not on this request
   void set_fail_fast(bool fail_fast) { fail_fast_ = fail_fast; }
 
@@ -271,7 +274,7 @@ class ClientContext {
 
   /// Set \a algorithm to be the compression algorithm used for the client call.
   ///
-  /// \param algorith The compression algorithm used for the client call.
+  /// \param algorithm The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   /// Return the peer uri in a string.
@@ -306,6 +309,10 @@ class ClientContext {
     virtual void Destructor(ClientContext* context) = 0;
   };
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+
+  // Should be used for framework-level extensions only.
+  // Applications never need to call this method.
+  grpc_call* c_call() { return call_; }
 
  private:
   // Disallow copy and assign.
@@ -342,7 +349,8 @@ class ClientContext {
 
   uint32_t initial_metadata_flags() const {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
-           (fail_fast_ ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY);
+           (fail_fast_ ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY) |
+           (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0);
   }
 
   grpc::string authority() { return authority_; }
@@ -350,6 +358,7 @@ class ClientContext {
   bool initial_metadata_received_;
   bool fail_fast_;
   bool idempotent_;
+  bool cacheable_;
   std::shared_ptr<Channel> channel_;
   grpc::mutex mu_;
   grpc_call* call_;

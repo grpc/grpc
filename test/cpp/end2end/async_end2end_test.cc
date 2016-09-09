@@ -897,8 +897,8 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       GetChannelCredentials(GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       CreateCustomChannel(server_address_.str(), channel_creds, args);
-  std::unique_ptr<grpc::testing::UnimplementedService::Stub> stub;
-  stub = grpc::testing::UnimplementedService::NewStub(channel);
+  std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
+  stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;
   EchoResponse recv_response;
   Status recv_status;

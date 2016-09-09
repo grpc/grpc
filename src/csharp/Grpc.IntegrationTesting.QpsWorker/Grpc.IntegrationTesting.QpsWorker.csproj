@@ -58,7 +58,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="Grpc.IntegrationTesting.QpsWorker.project.json" />
   </ItemGroup>
 </Project>

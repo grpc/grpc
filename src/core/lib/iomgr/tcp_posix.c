@@ -284,7 +284,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 /* returns true if done, false if pending; if returning true, *error is set */
-#define MAX_WRITE_IOVEC 1024
+#define MAX_WRITE_IOVEC 1000
 static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];

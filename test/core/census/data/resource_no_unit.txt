@@ -1,0 +1,2 @@
+# The minimal good resource without a unit
+name : 'resource_no_unit'

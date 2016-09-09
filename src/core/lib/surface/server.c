@@ -149,6 +149,7 @@ struct call_data {
 
   grpc_metadata_batch *recv_initial_metadata;
   bool recv_idempotent_request;
+  bool recv_cacheable_request;
   grpc_metadata_array initial_metadata;
 
   request_matcher *request_matcher;
@@ -272,7 +273,7 @@ static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
-                          int send_goaway, grpc_error *send_disconnect) {
+                          bool send_goaway, grpc_error *send_disconnect) {
   grpc_transport_op op;
   struct shutdown_cleanup_args *sc;
   grpc_channel_element *elem;
@@ -293,7 +294,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
 
 static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
                                          channel_broadcaster *cb,
-                                         int send_goaway,
+                                         bool send_goaway,
                                          grpc_error *force_disconnect) {
   size_t i;
 
@@ -497,9 +498,12 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
             &rc->data.batch.details->method_capacity, calld->path);
       rc->data.batch.details->deadline = calld->deadline;
       rc->data.batch.details->flags =
-          0 | (calld->recv_idempotent_request
-                   ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
-                   : 0);
+          (calld->recv_idempotent_request
+               ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+               : 0) |
+          (calld->recv_cacheable_request
+               ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST
+               : 0);
       break;
     case REGISTERED_CALL:
       *rc->data.registered.deadline = calld->deadline;
@@ -779,6 +783,7 @@ static void server_mutate_op(grpc_call_element *elem,
     calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
     op->recv_idempotent_request = &calld->recv_idempotent_request;
+    op->recv_cacheable_request = &calld->recv_cacheable_request;
   }
 }
 
@@ -856,8 +861,9 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
   }
 }
 
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
@@ -869,10 +875,12 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                     server_on_recv_initial_metadata, elem);
 
   server_ref(chand->server);
+  return GRPC_ERROR_NONE;
 }
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats, void *ignored) {
+                              const grpc_call_final_info *final_info,
+                              void *ignored) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 
@@ -1249,7 +1257,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
     l->destroy(&exec_ctx, server, l->arg, &l->destroy_done);
   }
 
-  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, 1, 0);
+  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, true /* send_goaway */,
+                               GRPC_ERROR_NONE);
 
 done:
   grpc_exec_ctx_finish(&exec_ctx);
@@ -1265,7 +1274,7 @@ void grpc_server_cancel_all_calls(grpc_server *server) {
   channel_broadcaster_init(server, &broadcaster);
   gpr_mu_unlock(&server->mu_global);
 
-  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, 0,
+  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, false /* send_goaway */,
                                GRPC_ERROR_CREATE("Cancelling all calls"));
   grpc_exec_ctx_finish(&exec_ctx);
 }

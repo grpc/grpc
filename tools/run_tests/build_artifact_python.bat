@@ -36,31 +36,43 @@ pip install -rrequirements.txt
 
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
+@rem Multiple builds are running simultaneously, so to avoid distutils
+@rem file collisions, we build everything in a tmp directory
+if not exist "artifacts" mkdir "artifacts"
+set ARTIFACT_DIR=%cd%\artifacts
+set BUILD_DIR=C:\Windows\Temp\pygrpc-%3\
+mkdir %BUILD_DIR%
+xcopy /s/e/q %cd%\* %BUILD_DIR%
+pushd %BUILD_DIR%
+
 
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build gRPC Python extensions
-python setup.py build_ext -c mingw32
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py build_ext -c mingw32
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
-
 
 @rem Build gRPC Python distributions
-python setup.py bdist_wheel
+python setup.py bdist_wheel || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py bdist_wheel
+python setup.py bdist_wheel || goto :error
 popd
 
 
-mkdir artifacts
-xcopy /Y /I /S dist\* artifacts\ || goto :error
-xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* artifacts\ || goto :error
+xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
+xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
+
+popd
+rmdir /s /q %BUILD_DIR%
 
 goto :EOF
 
 :error
+popd
+rmdir /s /q %BUILD_DIR%
 exit /b 1

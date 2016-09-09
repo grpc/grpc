@@ -374,7 +374,7 @@ argp.add_argument('-r', '--regex', default='.*', type=str,
 argp.add_argument('--bq_result_table', default=None, type=str,
                   help='Bigquery "dataset.table" to upload results to.')
 argp.add_argument('--category',
-                  choices=['smoketest','all','scalable'],
+                  choices=['smoketest','all','scalable','sweep'],
                   default='all',
                   help='Select a category of tests to run.')
 argp.add_argument('--netperf',

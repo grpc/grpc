@@ -47,7 +47,8 @@
 ///  if a grpc_error is passed to a grpc_closure callback function (functions
 ///    with the signature:
 ///      void (*f)(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error))
-///    then those functions do not automatically own a ref to error
+///    then those functions do not own a ref to error (but are free to manually
+///    take a reference).
 ///  if a grpc_error is passed to *ANY OTHER FUNCTION* then that function takes
 ///    ownership of the error
 /// Errors have:
@@ -171,6 +172,8 @@ grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
                                 gpr_timespec value) GRPC_MUST_USE_RESULT;
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) GRPC_MUST_USE_RESULT;
+/// Returns NULL if the specified string is not set.
+/// Caller does NOT own return value.
 const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

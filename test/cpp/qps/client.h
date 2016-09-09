@@ -169,6 +169,7 @@ class Client {
   // Must call AwaitThreadsCompletion before destructor to avoid a race
   // between destructor and invocation of virtual ThreadFunc
   void AwaitThreadsCompletion() {
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(true));
     DestroyMultithreading();
     std::unique_lock<std::mutex> g(thread_completion_mu_);
     while (threads_remaining_ != 0) {
@@ -178,8 +179,10 @@ class Client {
 
  protected:
   bool closed_loop_;
+  gpr_atm thread_pool_done_;
 
   void StartThreads(size_t num_threads) {
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
     threads_remaining_ = num_threads;
     for (size_t i = 0; i < num_threads; i++) {
       threads_.emplace_back(new Thread(this, i));
@@ -241,18 +244,9 @@ class Client {
   class Thread {
    public:
     Thread(Client* client, size_t idx)
-        : done_(false),
-          client_(client),
-          idx_(idx),
-          impl_(&Thread::ThreadFunc, this) {}
+        : client_(client), idx_(idx), impl_(&Thread::ThreadFunc, this) {}
 
-    ~Thread() {
-      {
-        std::lock_guard<std::mutex> g(mu_);
-        done_ = true;
-      }
-      impl_.join();
-    }
+    ~Thread() { impl_.join(); }
 
     void BeginSwap(Histogram* n) {
       std::lock_guard<std::mutex> g(mu_);
@@ -282,9 +276,9 @@ class Client {
         }
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-          done_ = true;
         }
-        if (done_) {
+        if (!thread_still_ok ||
+            static_cast<bool>(gpr_atm_acq_load(&client_->thread_pool_done_))) {
           client_->CompleteThread();
           return;
         }
@@ -292,7 +286,6 @@ class Client {
     }
 
     std::mutex mu_;
-    bool done_;
     Histogram histogram_;
     Client* client_;
     const size_t idx_;

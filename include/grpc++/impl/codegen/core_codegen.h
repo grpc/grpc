@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
+#define GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
+
 // This file should be compiled as part of grpc++.
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
@@ -83,3 +86,5 @@ class CoreCodegen : public CoreCodegenInterface {
 };
 
 }  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
