@@ -37,10 +37,15 @@
 #include <map>
 
 #include <grpc++/channel.h>
+#include <grpc++/completion_queue.h>
+#include <grpc++/generic/generic_stub.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
 
 namespace grpc {
+
+class ClientContext;
+
 namespace testing {
 
 class CliCall final {
@@ -48,12 +53,32 @@ class CliCall final {
   typedef std::multimap<grpc::string, grpc::string> OutgoingMetadataContainer;
   typedef std::multimap<grpc::string_ref, grpc::string_ref>
       IncomingMetadataContainer;
+
+  CliCall(std::shared_ptr<grpc::Channel> channel, const grpc::string& method,
+          const OutgoingMetadataContainer& metadata);
+
   static Status Call(std::shared_ptr<grpc::Channel> channel,
                      const grpc::string& method, const grpc::string& request,
                      grpc::string* response,
                      const OutgoingMetadataContainer& metadata,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata);
+
+  void Write(const grpc::string& request);
+
+  void WritesDone();
+
+  void Read(grpc::string* response,
+            IncomingMetadataContainer* server_initial_metadata);
+
+  Status Finish(IncomingMetadataContainer* server_trailing_metadata);
+
+ private:
+  enum CallStatus : intptr_t;
+  std::unique_ptr<grpc::GenericStub> stub_;
+  grpc::ClientContext ctx_;
+  std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
+  grpc::CompletionQueue cq_;
 };
 
 }  // namespace testing

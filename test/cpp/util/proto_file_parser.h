@@ -84,6 +84,8 @@ class ProtoFileParser {
       const grpc::string& message_type_name,
       const grpc::string& serialized_proto);
 
+  bool IsStreaming(const grpc::string& method, bool is_request);
+
   bool HasError() const { return has_error_; }
 
   void LogError(const grpc::string& error_msg);
@@ -104,6 +106,7 @@ class ProtoFileParser {
   std::unique_ptr<protobuf::DynamicMessageFactory> dynamic_factory_;
   std::unique_ptr<grpc::protobuf::Message> request_prototype_;
   std::unique_ptr<grpc::protobuf::Message> response_prototype_;
+  std::unordered_map<grpc::string, grpc::string> known_methods_;
   std::vector<const protobuf::ServiceDescriptor*> service_desc_list_;
 };
 
