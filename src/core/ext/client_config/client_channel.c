@@ -112,7 +112,8 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
     grpc_lb_policy_cancel_picks(
         exec_ctx, chand->lb_policy,
         /* mask= */ GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY,
-        /* check= */ 0);
+        /* check= */ 0,
+        GRPC_ERROR_REF(error));
   }
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,
                               reason);

@@ -118,9 +118,10 @@ void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq) {
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error *error) {
   policy->vtable->cancel_picks(exec_ctx, policy, initial_metadata_flags_mask,
-                               initial_metadata_flags_eq);
+                               initial_metadata_flags_eq, error);
 }
 
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy) {

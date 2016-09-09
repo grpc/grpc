@@ -310,7 +310,8 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
 static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                             uint32_t initial_metadata_flags_mask,
-                            uint32_t initial_metadata_flags_eq) {
+                            uint32_t initial_metadata_flags_eq,
+                            grpc_error *error) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
@@ -323,8 +324,9 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
                                                p->base.interested_parties);
       *pp->target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED,
-                          NULL);
+      grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
+                          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled",
+                                                        &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -333,6 +335,7 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&p->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {

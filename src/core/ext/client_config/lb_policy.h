@@ -68,7 +68,7 @@ struct grpc_lb_policy_vtable {
                       grpc_connected_subchannel **target, grpc_error *error);
   void (*cancel_picks)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                        uint32_t initial_metadata_flags_mask,
-                       uint32_t initial_metadata_flags_eq);
+                       uint32_t initial_metadata_flags_eq, grpc_error *error);
 
   void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                    grpc_closure *closure);
@@ -148,7 +148,8 @@ void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq);
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error *error);
 
 /** Try to enter a READY connectivity state */
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);

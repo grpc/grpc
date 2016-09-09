@@ -562,7 +562,8 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 static grpc_call *lb_client_data_get_call(struct lb_client_data *lb_client);
 static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                              uint32_t initial_metadata_flags_mask,
-                             uint32_t initial_metadata_flags_eq) {
+                             uint32_t initial_metadata_flags_eq,
+                             grpc_error *error) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
   if (glb_policy->lb_client != NULL) {
@@ -578,7 +579,8 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(
           exec_ctx, pp->pollent, glb_policy->base.interested_parties);
       grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
-                          GRPC_ERROR_CANCELLED, NULL);
+                          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled",
+                                                        &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = glb_policy->pending_picks;
@@ -587,6 +589,7 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&glb_policy->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void query_for_backends(grpc_exec_ctx *exec_ctx,

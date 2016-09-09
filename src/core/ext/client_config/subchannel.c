@@ -635,7 +635,9 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
     c->have_alarm = 1;
     grpc_connectivity_state_set(
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
         "connect_failed");
     gpr_timespec time_til_next = gpr_time_sub(c->next_attempt, now);
     const char *errmsg = grpc_error_string(error);
