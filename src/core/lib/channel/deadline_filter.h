@@ -52,10 +52,6 @@ typedef struct grpc_deadline_state {
   // The original on_complete closure, which we chain to after our own
   // closure is invoked.
   grpc_closure* next_on_complete;
-
-// FIXME: remove
-bool is_client;
-
 } grpc_deadline_state;
 
 void grpc_deadline_state_init(grpc_deadline_state* call_data,
@@ -67,7 +63,7 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 // enforce call deadlines.
 // It is the caller's responsibility to chain to the next filter if
 // necessary after this function returns.
-// REQUIRES: The first field in elem is a grpc_deadline_state struct.
+// REQUIRES: The first field in elem->call_data is a grpc_deadline_state.
 void grpc_deadline_state_client_start_transport_stream_op(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op* op);

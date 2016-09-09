@@ -49,12 +49,10 @@ static void timer_callback(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
-gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client);
   gpr_mu_lock(&deadline_state->timer_mu);
   deadline_state->timer_pending = false;
   gpr_mu_unlock(&deadline_state->timer_mu);
   if (error != GRPC_ERROR_CANCELLED) {
-gpr_log(GPR_INFO, "DEADLINE_EXCEEDED");
     gpr_slice msg = gpr_slice_from_static_string("Deadline Exceeded");
     grpc_call_element_send_cancel_with_message(exec_ctx, elem,
                                                GRPC_STATUS_DEADLINE_EXCEEDED,
@@ -69,13 +67,11 @@ static void start_timer_if_needed(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element* elem,
                                   gpr_timespec deadline) {
   grpc_deadline_state* deadline_state = elem->call_data;
-gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client);
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
   if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) != 0) {
     // Take a reference to the call stack, to be owned by the timer.
     GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
     gpr_mu_lock(&deadline_state->timer_mu);
-gpr_log(GPR_INFO, "STARTING TIMER -- is_client=%d", deadline_state->is_client);
     deadline_state->timer_pending = true;
     grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, timer_callback,
                     elem, gpr_now(GPR_CLOCK_MONOTONIC));
@@ -86,10 +82,8 @@ gpr_log(GPR_INFO, "STARTING TIMER -- is_client=%d", deadline_state->is_client);
 // Cancels the deadline timer.
 static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                    grpc_deadline_state* deadline_state) {
-gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client);
   gpr_mu_lock(&deadline_state->timer_mu);
   if (deadline_state->timer_pending) {
-gpr_log(GPR_INFO, "CANCELLING TIMER -- is_client=%d", deadline_state->is_client);
     grpc_timer_cancel(exec_ctx, &deadline_state->timer);
     deadline_state->timer_pending = false;
   }
@@ -99,7 +93,6 @@ gpr_log(GPR_INFO, "CANCELLING TIMER -- is_client=%d", deadline_state->is_client)
 // Callback run when the call is complete.
 static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_deadline_state* deadline_state = arg;
-gpr_log(GPR_INFO, "==> %s(), is_client=%d, next_on_complete->cb=%p", __func__, deadline_state->is_client, deadline_state->next_on_complete->cb);
   cancel_timer_if_needed(exec_ctx, deadline_state);
   // Invoke the next callback.
   deadline_state->next_on_complete->cb(
@@ -109,7 +102,6 @@ gpr_log(GPR_INFO, "==> %s(), is_client=%d, next_on_complete->cb=%p", __func__, d
 // Inject our own on_complete callback into op.
 static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
                                   grpc_transport_stream_op* op) {
-gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client);
   deadline_state->next_on_complete = op->on_complete;
   grpc_closure_init(&deadline_state->on_complete, on_complete, deadline_state);
   op->on_complete = &deadline_state->on_complete;
@@ -117,7 +109,6 @@ gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client)
 
 void grpc_deadline_state_init(grpc_deadline_state* deadline_state,
                               grpc_call_stack* call_stack) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   memset(deadline_state, 0, sizeof(*deadline_state));
   deadline_state->call_stack = call_stack;
   gpr_mu_init(&deadline_state->timer_mu);
@@ -125,7 +116,6 @@ gpr_log(GPR_INFO, "==> %s()", __func__);
 
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_deadline_state* deadline_state) {
-gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client);
   cancel_timer_if_needed(exec_ctx, deadline_state);
   gpr_mu_destroy(&deadline_state->timer_mu);
 }
@@ -133,7 +123,6 @@ gpr_log(GPR_INFO, "==> %s(), is_client=%d", __func__, deadline_state->is_client)
 void grpc_deadline_state_client_start_transport_stream_op(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op* op) {
-gpr_log(GPR_INFO, "==> %s(): op=%p {on_complete=%p, cancel_error=%p, close_error=%p, send_initial_metadata=%p, send_trailing_metadata=%p, send_message=%p, recv_initial_metadata_ready=%p, recv_trailing_metadata=%p}", __func__, op, op->on_complete, op->cancel_error, op->close_error, op->send_initial_metadata, op->send_trailing_metadata, op->send_message, op->recv_initial_metadata_ready, op->recv_trailing_metadata);
   grpc_deadline_state* deadline_state = elem->call_data;
   if (op->cancel_error != GRPC_ERROR_NONE ||
       op->close_error != GRPC_ERROR_NONE) {
@@ -194,14 +183,10 @@ typedef struct server_call_data {
 static grpc_error *init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   grpc_call_element_args* args) {
-gpr_log(GPR_INFO, "==> %s() -- call_data_size=%lu", __func__, (unsigned long)elem->filter->sizeof_call_data);
   base_call_data* calld = elem->call_data;
   // Note: size of call data is different between client and server.
   memset(calld, 0, elem->filter->sizeof_call_data);
   grpc_deadline_state_init(&calld->deadline_state, args->call_stack);
-
-calld->deadline_state.is_client = elem->filter->sizeof_call_data == sizeof(base_call_data);
-
   return GRPC_ERROR_NONE;
 }
 
@@ -217,7 +202,6 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 static void client_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                              grpc_call_element* elem,
                                              grpc_transport_stream_op* op) {
-gpr_log(GPR_INFO, "==> %s()", __func__);
   grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
   // Chain to next filter.
   grpc_call_next_op(exec_ctx, elem, op);
@@ -240,7 +224,6 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
 static void server_start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                              grpc_call_element* elem,
                                              grpc_transport_stream_op* op) {
-gpr_log(GPR_INFO, "==> %s(): op=%p {on_complete=%p, cancel_error=%p, close_error=%p, send_initial_metadata=%p, send_trailing_metadata=%p, send_message=%p, recv_initial_metadata_ready=%p, recv_trailing_metadata=%p}", __func__, op, op->on_complete, op->cancel_error, op->close_error, op->send_initial_metadata, op->send_trailing_metadata, op->send_message, op->recv_initial_metadata_ready, op->recv_trailing_metadata);
   server_call_data* calld = elem->call_data;
   if (op->cancel_error != GRPC_ERROR_NONE ||
       op->close_error != GRPC_ERROR_NONE) {

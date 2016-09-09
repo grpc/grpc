@@ -1241,10 +1241,6 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *child_call;
   grpc_call *next_child_call;
 
-const char* msg = grpc_error_string(error);
-gpr_log(GPR_INFO, "==> finish_batch(): is_client=%d, error=%s", call->is_client, msg);
-grpc_error_free_string(msg);
-
   GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&call->mu);
