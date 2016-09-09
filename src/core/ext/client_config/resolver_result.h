@@ -54,6 +54,8 @@ typedef struct grpc_addresses {
     \a num_addresses addresses. */
 grpc_addresses *grpc_addresses_create(size_t num_addresses);
 
+grpc_addresses *grpc_addresses_copy(grpc_addresses* addresses);
+
 void grpc_addresses_set_address(grpc_addresses *addresses, size_t index,
                                 void *address, size_t address_len,
                                 bool is_balancer);

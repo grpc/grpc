@@ -47,6 +47,13 @@ grpc_addresses *grpc_addresses_create(size_t num_addresses) {
   return addresses;
 }
 
+grpc_addresses *grpc_addresses_copy(grpc_addresses* addresses) {
+  grpc_addresses *new = grpc_addresses_create(addresses->num_addresses);
+  memcpy(new->addresses, addresses->addresses,
+         sizeof(grpc_address) * addresses->num_addresses);
+  return new;
+}
+
 void grpc_addresses_set_address(grpc_addresses *addresses, size_t index,
                                 void *address, size_t address_len,
                                 bool is_balancer) {
