@@ -189,7 +189,8 @@ static void test_corrupt() {
   ctxt1.is_sampled = true;
   msg_length = encode_trace_context(&ctxt1, buffer, sizeof(buffer));
 
-  // Corrupt some bytes.
+  /* Corrupt some bytes.  255 (0xFF) should be illegal for the first byte of the
+  proto encoded object. */
   buffer[0] = 255;
 
   bool res = validate_decode_context(&ctxt1, buffer, msg_length);

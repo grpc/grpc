@@ -69,6 +69,7 @@ bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
   if (!status) {
     gpr_log(GPR_DEBUG, "TraceContext decoding failed: %s",
             PB_GET_ERROR(&stream));
+    return false;
   }
 
   // check fields
