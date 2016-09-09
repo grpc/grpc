@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,35 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
+#ifndef GRPC_CORE_LIB_SUPPORT_MPSCQ_H
+#define GRPC_CORE_LIB_SUPPORT_MPSCQ_H
 
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/support/mpscq.h"
+#include <grpc/support/atm.h>
+#include <stddef.h>
 
-struct grpc_fd;
+// Multiple-producer single-consumer lock free queue, based upon the
+// implementation from Dmitry Vyukov here:
+// http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
 
-struct grpc_workqueue {
-  gpr_refcount refs;
-  gpr_mpscq queue;
-  // state is:
-  // lower bit - zero if orphaned
-  // other bits - number of items enqueued
-  gpr_atm state;
+// List node (include this in a data structure at the top, and add application
+// fields after it - to simulate inheritance)
+typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
 
-  grpc_wakeup_fd wakeup_fd;
-  struct grpc_fd *wakeup_read_fd;
+// Actual queue type
+typedef struct gpr_mpscq {
+  gpr_atm head;
+  // make sure head & tail don't share a cacheline
+  char padding[GPR_CACHELINE_SIZE];
+  gpr_mpscq_node *tail;
+  gpr_mpscq_node stub;
+} gpr_mpscq;
 
-  grpc_closure read_closure;
-};
+void gpr_mpscq_init(gpr_mpscq *q);
+void gpr_mpscq_destroy(gpr_mpscq *q);
+// Push a node
+void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
+// Pop a node (returns NULL if no node is ready - which doesn't indicate that
+// the queue is empty!!)
+gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
 
-/** Create a work queue. Returns an error if creation fails. If creation
-    succeeds, sets *workqueue to point to it. */
-grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_workqueue **workqueue);
-
-#endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */
