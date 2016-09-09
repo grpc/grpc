@@ -58,7 +58,7 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
+int grpc_cronet_trace = 1;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -481,7 +481,19 @@ static void on_response_trailers_received(
     s->state.rs.trailing_metadata_valid = true;
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
-  execute_from_storage(s);
+  if (!s->state.state_op_done[OP_READ_REQ_MADE]) {
+    /* Do an extra read to trigger on_succeeded() callback in case connection
+     is closed */
+    s->state.rs.received_bytes = 0;
+    s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
+    s->state.rs.length_field_received = false;
+    CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
+    cronet_bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                                     s->state.rs.remaining_bytes);
+  }
+  else {
+    execute_from_storage(s);
+  }
 }
 
 /*
@@ -635,8 +647,8 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
     else if (!stream_state->state_callback_received[OP_RECV_TRAILING_METADATA])
       result = false;
     /* we haven't received on_succeeded  yet. */
-    //else if (!stream_state->state_callback_received[OP_SUCCEEDED])
-    //  result = false;
+    else if (!stream_state->state_callback_received[OP_SUCCEEDED])
+      result = false;
   } else if (op_id == OP_SEND_TRAILING_METADATA) {
     /* already executed */
     if (stream_state->state_op_done[OP_SEND_TRAILING_METADATA]) result = false;
@@ -881,11 +893,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                           GRPC_ERROR_NONE, NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
-      /* Clear read state of the stream, so next read op (if it were to come)
-       * will work */
-      stream_state->rs.received_bytes = stream_state->rs.remaining_bytes =
-          stream_state->rs.length_field_received = 0;
-      result = ACTION_TAKEN_NO_CALLBACK;
+      /* Do an extra read to trigger on_succeeded() callback in case connection
+         is closed */
+      stream_state->rs.received_bytes = 0;
+      stream_state->rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
+      stream_state->rs.length_field_received = false;
+      CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
+      cronet_bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
+                                       stream_state->rs.remaining_bytes);
+      result = ACTION_TAKEN_WITH_CALLBACK;
     }
   } else if (stream_op->recv_trailing_metadata &&
              op_can_be_run(stream_op, stream_state, &oas->state,
