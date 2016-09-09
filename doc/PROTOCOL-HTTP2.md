@@ -98,8 +98,11 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
 * **Trailers** → Status [Status-Message] \*Custom-Metadata
 * **HTTP-Status** → ":status 200"
-* **Status** → "grpc-status" <status-code-as-ASCII-string>
-* **Status-Message** → "grpc-message" <descriptive text for status as ASCII string>
+* **Status** → "grpc-status" 1\*DIGIT ; 0-9
+* **Status-Message** → "grpc-message" Percent-Encoded
+* **Percent-Encoded** → 1\*(Percent-Byte-Unencoded / Percent-Byte-Encoded)
+* **Percent-Byte-Unencoded** → 1\*( %x20-%x24 / %x26-%x7E ) ; space and VCHAR, except %
+* **Percent-Byte-Encoded** → "%" 2HEXDIGIT ; 0-9 A-F
 
 **Response-Headers** & **Trailers-Only** are each delivered in a single HTTP2 HEADERS frame block. Most responses are expected to have both headers and trailers but **Trailers-Only** is permitted for calls that produce an immediate error. Status must be sent in **Trailers** even if the status code is OK.
 
@@ -109,6 +112,21 @@ Implementations should expect broken deployments to send non-200 HTTP status cod
 
 Clients may limit the size of **Response-Headers**, **Trailers**, and
 **Trailers-Only**, with a default of 8 KiB each suggested.
+
+The value portion of **Status** is a decimal-encoded integer as an ASCII string,
+without any leading zeros.
+
+The value portion of **Status-Message** is conceptually a Unicode string
+description of the error, physically encoded as UTF-8 followed by
+percent-encoding. Percent-encoding is specified in [RFC 3986
+§2.1](https://tools.ietf.org/html/rfc3986#section-2.1), although the form used
+here has different restricted characters. When decoding invalid values,
+implementations MUST NOT error or throw away the message. At worst, the
+implementation can abort decoding the status message altogether such that the
+user would received the raw percent-encoded form. Alternatively, the
+implementation can decode valid portions while leaving broken %-encodings as-is
+or replacing them with a replacement character (e.g., '?' or the Unicode
+replacement character).
 
 ####Example
 

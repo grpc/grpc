@@ -104,8 +104,8 @@ ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
 
 void ByteBuffer::Swap(ByteBuffer* other) {
   grpc_byte_buffer* tmp = other->buffer_;
-  other->buffer_ = this->buffer_;
-  this->buffer_ = tmp;
+  other->buffer_ = buffer_;
+  buffer_ = tmp;
 }
 
 }  // namespace grpc

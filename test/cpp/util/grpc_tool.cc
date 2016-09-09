@@ -57,7 +57,7 @@ DEFINE_bool(remotedb, true, "Use server types to parse and format messages");
 DEFINE_string(metadata, "",
               "Metadata to send to server, in the form of key1:val1:key2:val2");
 DEFINE_string(proto_path, ".", "Path to look for the proto file.");
-DEFINE_string(proto_file, "", "Name of the proto file.");
+DEFINE_string(protofiles, "", "Name of the proto file.");
 DEFINE_bool(binary_input, false, "Input in binary format");
 DEFINE_bool(binary_output, false, "Output in binary format");
 DEFINE_string(infile, "", "Input file (default is stdin)");
@@ -71,9 +71,9 @@ class GrpcTool {
   explicit GrpcTool();
   virtual ~GrpcTool() {}
 
-  bool Help(int argc, const char** argv, CliCredentials cred,
+  bool Help(int argc, const char** argv, const CliCredentials& cred,
             GrpcToolOutputCallback callback);
-  bool CallMethod(int argc, const char** argv, CliCredentials cred,
+  bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
                   GrpcToolOutputCallback callback);
   // TODO(zyc): implement the following methods
   // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
@@ -101,7 +101,7 @@ class GrpcTool {
 };
 
 template <typename T>
-std::function<bool(GrpcTool*, int, const char**, const CliCredentials,
+std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
                    GrpcToolOutputCallback)>
 BindWith5Args(T&& func) {
   return std::bind(std::forward<T>(func), std::placeholders::_1,
@@ -156,7 +156,7 @@ void PrintMetadata(const T& m, const grpc::string& message) {
 
 struct Command {
   const char* command;
-  std::function<bool(GrpcTool*, int, const char**, const CliCredentials,
+  std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
                      GrpcToolOutputCallback)>
       function;
   int min_args;
@@ -201,7 +201,7 @@ const Command* FindCommand(const grpc::string& name) {
 }
 }  // namespace
 
-int GrpcToolMainLib(int argc, const char** argv, const CliCredentials cred,
+int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback) {
   if (argc < 2) {
     Usage("No command specified");
@@ -238,7 +238,7 @@ void GrpcTool::CommandUsage(const grpc::string& usage) const {
   }
 }
 
-bool GrpcTool::Help(int argc, const char** argv, const CliCredentials cred,
+bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback) {
   CommandUsage(
       "Print help\n"
@@ -258,7 +258,7 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials cred,
 }
 
 bool GrpcTool::CallMethod(int argc, const char** argv,
-                          const CliCredentials cred,
+                          const CliCredentials& cred,
                           GrpcToolOutputCallback callback) {
   CommandUsage(
       "Call method\n"
@@ -267,10 +267,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    <service>                ; Exported service name\n"
       "    <method>                 ; Method name\n"
       "    <request>                ; Text protobuffer (overrides infile)\n"
-      "    --proto_file             ; Comma separated proto files used as a"
+      "    --protofiles             ; Comma separated proto files used as a"
       " fallback when parsing request/response\n"
       "    --proto_path             ; The search path of proto files, valid"
-      " only when --proto_file is given\n"
+      " only when --protofiles is given\n"
       "    --metadata               ; The metadata to be sent to the server\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
@@ -310,7 +310,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
     parser.reset(
         new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
-                                           FLAGS_proto_path, FLAGS_proto_file));
+                                           FLAGS_proto_path, FLAGS_protofiles));
     if (parser->HasError()) {
       return false;
     }

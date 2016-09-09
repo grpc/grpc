@@ -124,6 +124,7 @@ typedef struct grpc_transport_stream_op {
   /** Receive initial metadata from the stream, into provided metadata batch. */
   grpc_metadata_batch *recv_initial_metadata;
   bool *recv_idempotent_request;
+  bool *recv_cacheable_request;
   /** Should be enqueued when initial metadata is ready to be processed. */
   grpc_closure *recv_initial_metadata_ready;
 

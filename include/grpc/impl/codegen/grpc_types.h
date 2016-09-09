@@ -222,10 +222,14 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+/** Signal that the call is cacheable. GRPC is free to use GET verb */
+#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK       \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
+#define GRPC_INITIAL_METADATA_USED_MASK        \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
+   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
