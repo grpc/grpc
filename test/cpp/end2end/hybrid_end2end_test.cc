@@ -352,7 +352,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(s.ok());
   }
 
-  grpc::testing::UnimplementedService::Service unimplemented_service_;
+  grpc::testing::UnimplementedEchoService::Service unimplemented_service_;
   std::vector<std::unique_ptr<ServerCompletionQueue>> cqs_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
