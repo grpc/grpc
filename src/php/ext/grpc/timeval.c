@@ -80,7 +80,7 @@ zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
 
 /**
  * Constructs a new instance of the Timeval class
- * @param long $usec The number of microseconds in the interval
+ * @param long $microseconds The number of microseconds in the interval
  */
 PHP_METHOD(Timeval, __construct) {
   wrapped_grpc_timeval *timeval = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
@@ -100,7 +100,7 @@ PHP_METHOD(Timeval, __construct) {
 /**
  * Adds another Timeval to this one and returns the sum. Calculations saturate
  * at infinities.
- * @param Timeval $other The other Timeval object to add
+ * @param Timeval $other_obj The other Timeval object to add
  * @return Timeval A new Timeval object containing the sum
  */
 PHP_METHOD(Timeval, add) {
@@ -126,8 +126,8 @@ PHP_METHOD(Timeval, add) {
 /**
  * Subtracts another Timeval from this one and returns the difference.
  * Calculations saturate at infinities.
- * @param Timeval $other The other Timeval object to subtract
- * @param Timeval A new Timeval object containing the sum
+ * @param Timeval $other_obj The other Timeval object to subtract
+ * @return Timeval A new Timeval object containing the diff 
  */
 PHP_METHOD(Timeval, subtract) {
   zval *other_obj;
@@ -150,10 +150,10 @@ PHP_METHOD(Timeval, subtract) {
 }
 
 /**
- * Return negative, 0, or positive according to whether a < b, a == b, or a > b
- * respectively.
- * @param Timeval $a The first time to compare
- * @param Timeval $b The second time to compare
+ * Return negative, 0, or positive according to whether a < b, a == b,
+ * or a > b respectively.
+ * @param Timeval $a_obj The first time to compare
+ * @param Timeval $b_obj The second time to compare
  * @return long
  */
 PHP_METHOD(Timeval, compare) {
@@ -176,9 +176,9 @@ PHP_METHOD(Timeval, compare) {
 
 /**
  * Checks whether the two times are within $threshold of each other
- * @param Timeval $a The first time to compare
- * @param Timeval $b The second time to compare
- * @param Timeval $threshold The threshold to check against
+ * @param Timeval $a_obj The first time to compare
+ * @param Timeval $b_obj The second time to compare
+ * @param Timeval $thresh_obj The threshold to check against
  * @return bool True if $a and $b are within $threshold, False otherwise
  */
 PHP_METHOD(Timeval, similar) {
