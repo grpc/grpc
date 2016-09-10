@@ -301,6 +301,13 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   }
 
   if (parser->IsStreaming(method_name, true /* is_request */)) {
+    // TODO(zyc): Support BidiStream
+    if (parser->IsStreaming(method_name, false /* is_request */)) {
+      fprintf(stderr,
+              "Bidirectional-streaming method is not supported currently.");
+      return false;
+    }
+
     fprintf(stderr, "streaming request\n");
     std::istream* input_stream;
     std::ifstream input_file;
@@ -373,7 +380,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     grpc::string serialized_response_proto;
     std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
         server_trailing_metadata;
-    call.Read(&serialized_response_proto, &server_initial_metadata);
+    if (!call.Read(&serialized_response_proto, &server_trailing_metadata)) {
+      fprintf(stderr, "Failed to read response.\n");
+    }
     Status status = call.Finish(&server_trailing_metadata);
 
     PrintMetadata(server_initial_metadata,
@@ -390,7 +399,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         if (parser->HasError()) {
           return false;
         }
-        output_ss << "Response: \n " << response_text << std::endl;
+        output_ss << response_text << std::endl;
       }
     } else {
       fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
@@ -435,33 +444,39 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         server_trailing_metadata;
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
-    grpc::Status status = grpc::testing::CliCall::Call(
-        channel, formated_method_name, serialized_request_proto,
-        &serialized_response_proto, client_metadata, &server_initial_metadata,
-        &server_trailing_metadata);
-    PrintMetadata(server_initial_metadata,
-                  "Received initial metadata from server:");
-    PrintMetadata(server_trailing_metadata,
-                  "Received trailing metadata from server:");
-    if (status.ok()) {
-      fprintf(stderr, "Rpc succeeded with OK status\n");
-      if (FLAGS_binary_output) {
-        output_ss << serialized_response_proto;
-      } else {
-        grpc::string response_text = parser->GetTextFormatFromMethod(
+
+    CliCall call(channel, formated_method_name, client_metadata);
+    call.Write(serialized_request_proto);
+    call.WritesDone();
+
+    for (bool receive_initial_metadata = true; call.Read(
+             &serialized_response_proto,
+             receive_initial_metadata ? &server_initial_metadata : nullptr);
+         receive_initial_metadata = false) {
+      if (!FLAGS_binary_output) {
+        serialized_response_proto = parser->GetTextFormatFromMethod(
             method_name, serialized_response_proto, false /* is_request */);
         if (parser->HasError()) {
           return false;
         }
-        output_ss << "Response: \n " << response_text << std::endl;
       }
+      if (receive_initial_metadata) {
+        PrintMetadata(server_initial_metadata,
+                      "Received initial metadata from server:");
+      }
+      if (!callback(serialized_response_proto)) {
+        return false;
+      }
+    }
+    Status status = call.Finish(&server_trailing_metadata);
+    if (status.ok()) {
+      fprintf(stderr, "Rpc succeeded with OK status\n");
     } else {
       fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
               status.error_code(), status.error_message().c_str());
     }
   }
-
-  return callback(output_ss.str());
+  return true;
 }
 
 }  // namespace testing

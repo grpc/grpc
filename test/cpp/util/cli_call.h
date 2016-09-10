@@ -68,13 +68,12 @@ class CliCall GRPC_FINAL {
 
   void WritesDone();
 
-  void Read(grpc::string* response,
+  bool Read(grpc::string* response,
             IncomingMetadataContainer* server_initial_metadata);
 
   Status Finish(IncomingMetadataContainer* server_trailing_metadata);
 
  private:
-  enum CallStatus : intptr_t;
   std::unique_ptr<grpc::GenericStub> stub_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
