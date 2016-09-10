@@ -297,8 +297,8 @@ static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-static void pi_add_ref_dbg(polling_island *pi, char *reason, char *file,
-                           int line) {
+static void pi_add_ref_dbg(polling_island *pi, const char *reason,
+                           const char *file, int line) {
   long old_cnt = gpr_atm_acq_load(&pi->ref_count);
   pi_add_ref(pi);
   gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
@@ -306,7 +306,7 @@ static void pi_add_ref_dbg(polling_island *pi, char *reason, char *file,
 }
 
 static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
-                         char *reason, char *file, int line) {
+                         const char *reason, const char *file, int line) {
   long old_cnt = gpr_atm_acq_load(&pi->ref_count);
   pi_unref(exec_ctx, pi);
   gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
@@ -317,7 +317,7 @@ static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
                                      const char *file, int line,
                                      const char *reason) {
   if (workqueue != NULL) {
-    pi_add_ref_debug((polling_island *)workqueue, reason, file, line);
+    pi_add_ref_dbg((polling_island *)workqueue, reason, file, line);
   }
   return workqueue;
 }
@@ -325,7 +325,7 @@ static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
 static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                             const char *file, int line, const char *reason) {
   if (workqueue != NULL) {
-    pi_unref_dbg((polling_island *)workqueue, reason, file, line);
+    pi_unref_dbg(exec_ctx, (polling_island *)workqueue, reason, file, line);
   }
 }
 #else
@@ -775,16 +775,21 @@ static polling_island *polling_island_merge(polling_island *p,
 static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
                               grpc_workqueue *workqueue, grpc_closure *closure,
                               grpc_error *error) {
-  polling_island *pi = (polling_island *)workqueue;
   GPR_TIMER_BEGIN("workqueue.enqueue", 0);
+  /* take a ref to the workqueue: otherwise it can happen that whatever events
+   * this kicks off ends up destroying the workqueue before this function
+   * completes */
+  GRPC_WORKQUEUE_REF(workqueue, "enqueue");
+  polling_island *pi = (polling_island *)workqueue;
   gpr_atm last = gpr_atm_no_barrier_fetch_add(&pi->workqueue_item_count, 1);
   closure->error_data.error = error;
   gpr_mpscq_push(&pi->workqueue_items, &closure->next_data.atm_next);
   if (last == 0) {
     workqueue_maybe_wakeup(pi);
   }
-  GPR_TIMER_END("workqueue.enqueue", 0);
   workqueue_move_items_to_parent(pi);
+  GRPC_WORKQUEUE_UNREF(exec_ctx, workqueue, "enqueue");
+  GPR_TIMER_END("workqueue.enqueue", 0);
 }
 
 static grpc_error *polling_island_global_init() {
@@ -1117,8 +1122,8 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  grpc_workqueue *workqueue =
-      grpc_workqueue_ref((grpc_workqueue *)fd->polling_island);
+  grpc_workqueue *workqueue = GRPC_WORKQUEUE_REF(
+      (grpc_workqueue *)fd->polling_island, "fd_get_workqueue");
   gpr_mu_unlock(&fd->mu);
   return workqueue;
 }
