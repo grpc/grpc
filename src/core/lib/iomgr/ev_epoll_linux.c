@@ -775,16 +775,21 @@ static polling_island *polling_island_merge(polling_island *p,
 static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
                               grpc_workqueue *workqueue, grpc_closure *closure,
                               grpc_error *error) {
-  polling_island *pi = (polling_island *)workqueue;
   GPR_TIMER_BEGIN("workqueue.enqueue", 0);
+  /* take a ref to the workqueue: otherwise it can happen that whatever events
+   * this kicks off ends up destroying the workqueue before this function
+   * completes */
+  GRPC_WORKQUEUE_REF(workqueue, "enqueue");
+  polling_island *pi = (polling_island *)workqueue;
   gpr_atm last = gpr_atm_no_barrier_fetch_add(&pi->workqueue_item_count, 1);
   closure->error_data.error = error;
   gpr_mpscq_push(&pi->workqueue_items, &closure->next_data.atm_next);
   if (last == 0) {
     workqueue_maybe_wakeup(pi);
   }
-  GPR_TIMER_END("workqueue.enqueue", 0);
   workqueue_move_items_to_parent(pi);
+  GRPC_WORKQUEUE_UNREF(exec_ctx, workqueue, "enqueue");
+  GPR_TIMER_END("workqueue.enqueue", 0);
 }
 
 static grpc_error *polling_island_global_init() {
