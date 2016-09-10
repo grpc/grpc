@@ -48,8 +48,6 @@ namespace {
 void* tag(int i) { return (void*)(intptr_t)i; }
 }  // namespace
 
-enum CliCall::CallStatus : intptr_t { CREATE, PROCESS, FINISH };
-
 Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
                      const grpc::string& method, const grpc::string& request,
                      grpc::string* response,
@@ -59,7 +57,9 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
   CliCall call(channel, method, metadata);
   call.Write(request);
   call.WritesDone();
-  call.Read(response, server_initial_metadata);
+  if (!call.Read(response, server_initial_metadata)) {
+    fprintf(stderr, "Failed to read response.\n");
+  }
   return call.Finish(server_trailing_metadata);
 }
 
@@ -92,36 +92,36 @@ void CliCall::Write(const grpc::string& request) {
   GPR_ASSERT(ok);
 }
 
-void CliCall::Read(grpc::string* response,
+bool CliCall::Read(grpc::string* response,
                    IncomingMetadataContainer* server_initial_metadata) {
   void* got_tag;
   bool ok;
 
   grpc::ByteBuffer recv_buffer;
-  call_->Read(&recv_buffer, tag(4));
-  cq_.Next(&got_tag, &ok);
-  if (!ok) {
-    fprintf(stderr, "Failed to read response.");
-  } else {
-    std::vector<grpc::Slice> slices;
-    (void)recv_buffer.Dump(&slices);
+  call_->Read(&recv_buffer, tag(3));
 
-    response->clear();
-    for (size_t i = 0; i < slices.size(); i++) {
-      response->append(reinterpret_cast<const char*>(slices[i].begin()),
-                       slices[i].size());
-    }
-    if (server_initial_metadata) {
-      *server_initial_metadata = ctx_.GetServerInitialMetadata();
-    }
+  if (!cq_.Next(&got_tag, &ok) || !ok) {
+    return false;
   }
+  std::vector<grpc::Slice> slices;
+  recv_buffer.Dump(&slices);
+
+  response->clear();
+  for (size_t i = 0; i < slices.size(); i++) {
+    response->append(reinterpret_cast<const char*>(slices[i].begin()),
+                     slices[i].size());
+  }
+  if (server_initial_metadata) {
+    *server_initial_metadata = ctx_.GetServerInitialMetadata();
+  }
+  return true;
 }
 
 void CliCall::WritesDone() {
   void* got_tag;
   bool ok;
 
-  call_->WritesDone(tag(3));
+  call_->WritesDone(tag(4));
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 }

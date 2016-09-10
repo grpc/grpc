@@ -155,7 +155,6 @@ grpc::string ProtoFileParser::GetFullMethodName(const grpc::string& method) {
     const auto* service_desc = *it;
     for (int j = 0; j < service_desc->method_count(); j++) {
       const auto* method_desc = service_desc->method(j);
-      fprintf(stderr, "%s\n", method_desc->full_name().c_str());
       if (MethodNameMatch(method_desc->full_name(), method)) {
         if (method_descriptor) {
           std::ostringstream error_stream;
