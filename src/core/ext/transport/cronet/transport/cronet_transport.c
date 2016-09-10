@@ -955,7 +955,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
       cronet_bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
                                        stream_state->rs.remaining_bytes);
-      result = ACTION_TAKEN_WITH_CALLBACK;
+      result = ACTION_TAKEN_NO_CALLBACK;
     }
   } else if (stream_op->recv_trailing_metadata &&
              op_can_be_run(stream_op, stream_state, &oas->state,
