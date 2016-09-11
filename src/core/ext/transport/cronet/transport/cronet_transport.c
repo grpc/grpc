@@ -776,7 +776,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                            OP_RECV_INITIAL_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_INITIAL_METADATA", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
-      stream_state->state_callback_received[OP_FAILED]) {
+        stream_state->state_callback_received[OP_FAILED]) {
       grpc_exec_ctx_sched(exec_ctx, stream_op->recv_initial_metadata_ready,
                           GRPC_ERROR_CANCELLED, NULL);
     } else {
@@ -800,7 +800,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       gpr_slice_buffer_init(&write_slice_buffer);
       grpc_byte_stream_next(NULL, stream_op->send_message, &slice,
                             stream_op->send_message->length, NULL);
-      /* Check that compression flag is OFF. We don't support compression yet. */
+      /* Check that compression flag is OFF. We don't support compression yet.
+       */
       if (stream_op->send_message->flags != 0) {
         gpr_log(GPR_ERROR, "Compression is not supported");
         GPR_ASSERT(stream_op->send_message->flags == 0);
@@ -832,7 +833,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                            OP_RECV_MESSAGE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_MESSAGE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
-      stream_state->state_callback_received[OP_FAILED]) {
+        stream_state->state_callback_received[OP_FAILED]) {
       CRONET_LOG(GPR_DEBUG, "Stream is either cancelled or failed.");
       grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
                           GRPC_ERROR_CANCELLED, NULL);
@@ -937,7 +938,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       result = NO_ACTION_POSSIBLE;
       CRONET_LOG(GPR_DEBUG, "Stream is either cancelled or failed.");
     } else {
-      CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_write (%p, 0)", s->cbs);
+      CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_write (%p, 0)",
+                 s->cbs);
       stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
       cronet_bidirectional_stream_write(s->cbs, "", 0, true);
       result = ACTION_TAKEN_WITH_CALLBACK;
