@@ -1422,7 +1422,6 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
               GRPC_MDSTR_GRPC_MESSAGE,
               grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
     }
-    gpr_log(GPR_DEBUG, "published_metadata from fake");
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
