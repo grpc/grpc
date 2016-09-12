@@ -284,6 +284,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   grpc::string method_name(argv[1]);
   std::unique_ptr<grpc::testing::ProtoFileParser> parser;
   grpc::string serialized_request_proto;
+  bool print_mode = false;
 
   std::shared_ptr<grpc::Channel> channel =
       FLAGS_remotedb
@@ -304,21 +305,16 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     // TODO(zyc): Support BidiStream
     if (parser->IsStreaming(method_name, false /* is_request */)) {
       fprintf(stderr,
-              "Bidirectional-streaming method is not supported currently.");
+              "Bidirectional-streaming method is not supported.");
       return false;
     }
 
-    fprintf(stderr, "streaming request\n");
     std::istream* input_stream;
     std::ifstream input_file;
 
     if (argc == 3) {
       request_text = argv[2];
-      if (!FLAGS_infile.empty()) {
-        fprintf(stderr, "warning: request given in argv, ignoring --infile\n");
-      }
     }
-    // std::stringstream input_stream;
 
     std::multimap<grpc::string, grpc::string> client_metadata;
     ParseMetadataFlag(&client_metadata);
@@ -328,45 +324,53 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     if (FLAGS_infile.empty()) {
       if (isatty(STDIN_FILENO)) {
-        fprintf(stderr, "reading request message from stdin...\n");
+        print_mode = true;
+        fprintf(stderr, "reading streaming request message from stdin...\n");
       }
       input_stream = &std::cin;
-      // rdbuf = std::cin.rdbuf();
-      // input_stream.rdbuf(std::cin.rdbuf());
-      // input_stream << std::cin.rdbuf();
-
     } else {
       input_file.open(FLAGS_infile, std::ios::in | std::ios::binary);
-      // rdbuf = input_file.rdbuf();
-      // input_stream.rdbuf(input_file.rdbuf());
       input_stream = &input_file;
-      // input_file.close();
     }
-    // request_text = input_stream.str();
+
+    if (!request_text.empty()) {
+      if (FLAGS_binary_input) {
+        serialized_request_proto = request_text;
+      } else {
+        serialized_request_proto = parser->GetSerializedProtoFromMethod(
+            method_name, request_text, true /* is_request */);
+        if (parser->HasError()) {
+          fprintf(stderr, "Failed to parse request.\n");
+        }
+      }
+      call.Write(serialized_request_proto);
+      fprintf(stderr, "Request sent.\n");
+    }
 
     std::stringstream request_ss;
     grpc::string line;
     while (!input_stream->eof() && getline(*input_stream, line)) {
       if (line.length() == 0) {
-        // request_text = request_ss.str();
         if (FLAGS_binary_input) {
           serialized_request_proto = request_ss.str();
         } else {
           serialized_request_proto = parser->GetSerializedProtoFromMethod(
               method_name, request_ss.str(), true /* is_request */);
           if (parser->HasError()) {
-            return false;
+            if (print_mode) {
+              fprintf(stderr, "Failed to parse request.\n");
+            }
+            continue;
           }
         }
 
         request_ss.str(grpc::string());
         request_ss.clear();
 
-        grpc::string response_text = parser->GetTextFormatFromMethod(
-            method_name, serialized_request_proto, true /* is_request */);
         call.Write(serialized_request_proto);
-
-        fprintf(stderr, "%s", response_text.c_str());
+        if (print_mode) {
+          fprintf(stderr, "Request sent.\n");
+        }
       } else {
         request_ss << line << ' ';
       }
@@ -399,7 +403,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         if (parser->HasError()) {
           return false;
         }
-        output_ss << response_text << std::endl;
+        output_ss << response_text;
       }
     } else {
       fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
@@ -471,12 +475,14 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     Status status = call.Finish(&server_trailing_metadata);
     if (status.ok()) {
       fprintf(stderr, "Rpc succeeded with OK status\n");
+      return true;
     } else {
       fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
               status.error_code(), status.error_message().c_str());
+      return false;
     }
   }
-  return true;
+  return callback(output_ss.str());
 }
 
 }  // namespace testing
