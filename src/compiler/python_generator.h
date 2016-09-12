@@ -35,8 +35,11 @@
 #define GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
 
 #include <utility>
+#include <memory>
+#include <vector>
 
 #include "src/compiler/config.h"
+#include "src/compiler/schema_interface.h"
 
 namespace grpc_python_generator {
 
@@ -63,7 +66,7 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 };
 
 std::pair<bool, grpc::string> GetServices(
-    const grpc::protobuf::FileDescriptor* file,
+    File* file,
     const GeneratorConfiguration& config);
 
 }  // namespace grpc_python_generator

@@ -33,6 +33,10 @@
 
 // Generates a Python gRPC service interface out of Protobuf IDL.
 
+#include <vector>
+#include <memory>
+#include <sstream>
+
 #include "src/compiler/config.h"
 #include "src/compiler/python_generator.h"
 

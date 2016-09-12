@@ -2003,7 +2003,6 @@ cc_library(
   srcs = [
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
-    "src/compiler/cpp_generator_helpers.h",
     "src/compiler/csharp_generator.h",
     "src/compiler/csharp_generator_helpers.h",
     "src/compiler/generator_helpers.h",
@@ -2012,6 +2011,7 @@ cc_library(
     "src/compiler/objective_c_generator.h",
     "src/compiler/objective_c_generator_helpers.h",
     "src/compiler/python_generator.h",
+    "src/compiler/python_generator_helpers.h",
     "src/compiler/ruby_generator.h",
     "src/compiler/ruby_generator_helpers-inl.h",
     "src/compiler/ruby_generator_map-inl.h",
