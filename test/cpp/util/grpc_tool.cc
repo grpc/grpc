@@ -292,7 +292,8 @@ bool GrpcTool::ListServices(int argc, const char** argv,
     if (FLAGS_l) {
       output = DescribeServiceList(service_list, desc_pool);
     } else {
-      for (auto const& service : service_list) {
+      for (auto const& service = service_list.begin();
+           service != service_list.end(); service++) {
         output.append(service);
         output.append("\n");
       }
