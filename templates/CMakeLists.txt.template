@@ -50,7 +50,7 @@
       deps.append("${_gRPC_SSL_LIBRARIES}")
     if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    elif target_dict['name'] in ['grpc']:
+    elif target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
     for d in target_dict.get('deps', []):
       deps.append(d)
