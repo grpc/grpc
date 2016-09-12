@@ -41,6 +41,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec',              '~> 3.2'
   s.add_development_dependency 'rubocop',            '~> 0.30.0'
   s.add_development_dependency 'signet',             '~> 0.7.0'
+  s.add_development_dependency 'ruby-prof'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 

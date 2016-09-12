@@ -763,6 +763,41 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
   return result;
 }
 
+/* Wrapping the completion queue pluck call as a thin ruby function just to make
+ it easier to get an idea of amount of ruby gRPC time spent directly in ruby code vs. c-core. */
+VALUE completion_queue_pluck_as_rb_func(VALUE self, void* tag) {
+  grpc_event ev;
+  grpc_rb_call *call;
+
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+
+  ev = rb_completion_queue_pluck(call->queue, (void*)tag,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  if (!ev.success) {
+    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
+  }
+
+  return Qnil;
+}
+
+/* Wrapping the start batch call as a thin ruby function just to make
+ it easier to get an idea of amount of ruby gRPC time spent directly in ruby code vs. c-core. */
+VALUE start_batch_as_rb_func(VALUE self, run_batch_stack* st, void* tag) {
+  grpc_rb_call *call = NULL;
+  grpc_call_error err;
+
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+
+  err = grpc_call_start_batch(call->wrapped, st->ops, st->op_num, tag, NULL);
+  if (err != GRPC_CALL_OK) {
+    grpc_run_batch_stack_cleanup(st);
+    rb_raise(grpc_rb_eCallError,
+             "grpc_call_start_batch failed with %s (code=%d)",
+             grpc_call_error_detail_of(err), err);
+  }
+  return Qnil;
+}
+
 /* call-seq:
    ops = {
      GRPC::Core::CallOps::SEND_INITIAL_METADATA => <op_value>,
@@ -782,9 +817,6 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
    batch */
 static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   run_batch_stack st;
-  grpc_rb_call *call = NULL;
-  grpc_event ev;
-  grpc_call_error err;
   VALUE result = Qnil;
   VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
   unsigned write_flag = 0;
@@ -793,7 +825,6 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
     rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
     return Qnil;
   }
-  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
   if (TYPE(ops_hash) != T_HASH) {
@@ -808,19 +839,10 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
 
   /* call grpc_call_start_batch, then wait for it to complete using
    * pluck_event */
-  err = grpc_call_start_batch(call->wrapped, st.ops, st.op_num, tag, NULL);
-  if (err != GRPC_CALL_OK) {
-    grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_rb_eCallError,
-             "grpc_call_start_batch failed with %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-    return Qnil;
-  }
-  ev = rb_completion_queue_pluck(call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  if (!ev.success) {
-    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
-  }
+  rb_funcall(self, rb_intern("start_batch_as_rb_func"), 2, &st, tag);
+
+  rb_funcall(self, rb_intern("completion_queue_pluck_as_rb_func"), 1, tag);
+
   /* Build and return the BatchResult struct result,
      if there is an error, it's reflected in the status */
   result = grpc_run_batch_stack_build_result(&st);
@@ -952,6 +974,9 @@ void Init_grpc_call() {
                    1);
   rb_define_method(grpc_rb_cCall, "set_credentials!",
                    grpc_rb_call_set_credentials, 1);
+
+  rb_define_private_method(grpc_rb_cCall, "completion_queue_pluck_as_rb_func", completion_queue_pluck_as_rb_func, 1);
+  rb_define_private_method(grpc_rb_cCall, "start_batch_as_rb_func", start_batch_as_rb_func, 2);
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
