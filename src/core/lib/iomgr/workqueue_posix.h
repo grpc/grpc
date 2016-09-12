@@ -35,17 +35,14 @@
 #define GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/support/mpscq.h"
 
 struct grpc_fd;
 
 struct grpc_workqueue {
   gpr_refcount refs;
-  gpr_mpscq queue;
-  // state is:
-  // lower bit - zero if orphaned
-  // other bits - number of items enqueued
-  gpr_atm state;
+
+  gpr_mu mu;
+  grpc_closure_list closure_list;
 
   grpc_wakeup_fd wakeup_fd;
   struct grpc_fd *wakeup_read_fd;
