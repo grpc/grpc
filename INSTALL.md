@@ -9,7 +9,7 @@ refer to these documents
  * [Java](https://github.com/grpc/grpc-java)
  * [Node](src/node): `npm install grpc`
  * [Objective-C](src/objective-c)
- * [PHP](src/php): `pecl install grpc-beta`
+ * [PHP](src/php): `pecl install grpc`
  * [Python](src/python/grpcio): `pip install grpcio`
  * [Ruby](src/ruby): `gem install grpc`
 

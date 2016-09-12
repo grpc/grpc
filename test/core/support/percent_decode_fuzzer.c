@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,36 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "src/core/ext/client_config/lb_policy.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
+#include "src/core/lib/support/percent_encoding.h"
+#include "test/core/util/memory_counters.h"
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_exec_ctx *exec_ctx,
-                              grpc_client_config *client_config);
+bool squelch = true;
+bool leak_check = true;
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
-
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H */
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  struct grpc_memory_counters counters;
+  grpc_memory_counters_init();
+  gpr_slice input = gpr_slice_from_copied_buffer((const char *)data, size);
+  gpr_slice output;
+  if (gpr_strict_percent_decode_slice(
+          input, gpr_url_percent_encoding_unreserved_bytes, &output)) {
+    gpr_slice_unref(output);
+  }
+  if (gpr_strict_percent_decode_slice(
+          input, gpr_compatible_percent_encoding_unreserved_bytes, &output)) {
+    gpr_slice_unref(output);
+  }
+  gpr_slice_unref(gpr_permissive_percent_decode_slice(input));
+  gpr_slice_unref(input);
+  counters = grpc_memory_counters_snapshot();
+  grpc_memory_counters_destroy();
+  GPR_ASSERT(counters.total_size_relative == 0);
+  return 0;
+}
