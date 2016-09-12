@@ -109,7 +109,7 @@ VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
 TOOLCHAIN=${4:-$(toolchain)}
 
 ROOT=`pwd`
-export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
+export CFLAGS="-I$ROOT/include -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
@@ -133,7 +133,7 @@ fi
 # Perform build operations #
 ############################
 
-# Instnatiate the virtualenv, preferring to do so from the relevant python
+# Instantiate the virtualenv, preferring to do so from the relevant python
 # version. Even if these commands fail (e.g. on Windows due to name conflicts)
 # it's possible that the virtualenv is still usable and we trust the tester to
 # be able to 'figure it out' instead of us e.g. doing potentially expensive and
