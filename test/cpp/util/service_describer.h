@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
+#define GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
+
 #include <grpc++/support/config.h>
 #include "test/cpp/util/config_grpc_cli.h"
 
@@ -50,3 +53,5 @@ grpc::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method);
 
 }  // namespase testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
