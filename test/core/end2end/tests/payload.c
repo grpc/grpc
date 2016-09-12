@@ -99,11 +99,11 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static gpr_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char output[1024 * 1024]; /* 1 MB */
-  for (i = 0; i < 1024 * 1024 - 1; ++i) {
+  char output[1024 * 1024];
+  for (i = 0; i < GPR_ARRAY_SIZE(output) - 1; ++i) {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
-  output[1024 * 1024 - 1] = '\0';
+  output[GPR_ARRAY_SIZE(output) - 1] = '\0';
   return gpr_slice_from_copied_string(output);
 }
 

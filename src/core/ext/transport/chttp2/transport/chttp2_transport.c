@@ -564,11 +564,11 @@ static const char *write_state_name(grpc_chttp2_write_state st) {
 }
 
 static void set_write_state(grpc_chttp2_transport *t,
-                            grpc_chttp2_write_state st) {
-  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_DEBUG, "W:%p %s state %s -> %s", t,
+                            grpc_chttp2_write_state st, const char *reason) {
+  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_DEBUG, "W:%p %s state %s -> %s [%s]", t,
                                  t->is_client ? "CLIENT" : "SERVER",
                                  write_state_name(t->write_state),
-                                 write_state_name(st)));
+                                 write_state_name(st), reason));
   t->write_state = st;
 }
 
@@ -579,7 +579,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
 
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
-      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING);
+      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING, reason);
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->combiner,
                                     &t->write_action_begin_locked,
@@ -590,12 +590,14 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
           t,
           covered_by_poller
               ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER
-              : GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE);
+              : GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
+          reason);
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
       if (covered_by_poller) {
         set_write_state(
-            t, GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER);
+            t, GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER,
+            reason);
       }
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER:
@@ -620,10 +622,10 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   grpc_chttp2_transport *t = gt;
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   if (!t->closed && grpc_chttp2_begin_write(exec_ctx, t)) {
-    set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING);
+    set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING, "begin writing");
     grpc_exec_ctx_sched(exec_ctx, &t->write_action, GRPC_ERROR_NONE, NULL);
   } else {
-    set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE);
+    set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE, "begin writing nothing");
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
   }
   GPR_TIMER_END("write_action_begin_locked", 0);
@@ -661,11 +663,12 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
       GPR_UNREACHABLE_CODE(break);
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
       GPR_TIMER_MARK("state=writing", 0);
-      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE);
+      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE, "finish writing");
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
       GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
-      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING);
+      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
+                      "continue writing [!covered]");
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->combiner,
                                     &t->write_action_begin_locked,
@@ -673,7 +676,8 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE_AND_COVERED_BY_POLLER:
       GPR_TIMER_MARK("state=writing_stale_with_poller", 0);
-      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING);
+      set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
+                      "continue writing [covered]");
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       grpc_combiner_execute_finally(exec_ctx, t->combiner,
                                     &t->write_action_begin_locked,
@@ -1887,13 +1891,17 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
   max_recv_bytes += t->stream_lookahead;
   if (s->max_recv_bytes < max_recv_bytes) {
     uint32_t add_max_recv_bytes = max_recv_bytes - s->max_recv_bytes;
+    bool new_window_write_is_covered_by_poller =
+        s->max_recv_bytes < have_already;
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, max_recv_bytes,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);
-    grpc_chttp2_become_writable(exec_ctx, t, s, true, "read_incoming_stream");
+    grpc_chttp2_become_writable(exec_ctx, t, s,
+                                new_window_write_is_covered_by_poller,
+                                "read_incoming_stream");
   }
 }
 

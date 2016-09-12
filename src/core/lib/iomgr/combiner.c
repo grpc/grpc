@@ -142,11 +142,11 @@ static void push_first_on_exec_ctx(grpc_exec_ctx *exec_ctx,
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *cl, grpc_error *error,
                            bool covered_by_poller) {
-  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
-                              "C:%p grpc_combiner_execute c=%p cov=%d", lock,
-                              cl, covered_by_poller));
   GPR_TIMER_BEGIN("combiner.execute", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, 2);
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG, "C:%p grpc_combiner_execute c=%p cov=%d last=%" PRIdPTR, lock,
+      cl, covered_by_poller, last));
   GPR_ASSERT(last & 1);  // ensure lock has not been destroyed
   cl->error_data.scratch =
       pack_error_data((error_data){error, covered_by_poller});
@@ -177,6 +177,8 @@ static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   move_next(exec_ctx);
+  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p queue_offload --> %p", lock,
+                              lock->optional_workqueue));
   grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue, &lock->offload,
                          GRPC_ERROR_NONE);
 }
@@ -188,6 +190,15 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     GPR_TIMER_END("combiner.continue_exec_ctx", 0);
     return false;
   }
+
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG,
+              "C:%p grpc_combiner_continue_exec_ctx workqueue=%p "
+              "is_covered_by_poller=%d exec_ctx_ready_to_finish=%d "
+              "time_to_execute_final_list=%d",
+              lock, lock->optional_workqueue, is_covered_by_poller(lock),
+              grpc_exec_ctx_ready_to_finish(exec_ctx),
+              lock->time_to_execute_final_list));
 
   if (lock->optional_workqueue != NULL && is_covered_by_poller(lock) &&
       grpc_exec_ctx_ready_to_finish(exec_ctx)) {
@@ -289,9 +300,9 @@ static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
 void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                                    grpc_closure *closure, grpc_error *error,
                                    bool covered_by_poller) {
-  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
-                              "C:%p grpc_combiner_execute_finally c=%p; ac=%p",
-                              lock, closure, exec_ctx->active_combiner));
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG, "C:%p grpc_combiner_execute_finally c=%p; ac=%p; cov=%d", lock,
+      closure, exec_ctx->active_combiner, covered_by_poller));
   GPR_TIMER_BEGIN("combiner.execute_finally", 0);
   if (exec_ctx->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
