@@ -39,7 +39,7 @@ npm install grpc
 To run the test suite, simply run `npm test` in the install location.
 
 ## API
-This library internally uses [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js), and some structures it exports match those exported by that library
+This library internally uses [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js), and some structures it exports match those exported by that library.
 
 If you require this module, you will get an object with the following members
 
@@ -63,7 +63,7 @@ function loadObject(reflectionObject)
 Returns the same structure that `load` returns, but takes a reflection object from `ProtoBuf.js` instead of a file name.
 
 ```javascript
-function Server([serverOpions])
+function Server([serverOptions])
 ```
 
 Constructs a server to which service/implementation pairs can be added.

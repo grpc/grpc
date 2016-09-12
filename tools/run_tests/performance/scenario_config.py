@@ -29,6 +29,8 @@
 
 # performance scenario configuration for various languages
 
+import math
+
 WARMUP_SECONDS=5
 JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
@@ -64,16 +66,16 @@ BIG_GENERIC_PAYLOAD = {
   }
 }
 
-# deep is the number of RPCs outstanding on a channel in non-ping-pong tests
-# (the value used is 1 otherwise)
-DEEP=100
+# target number of RPCs outstanding on across all client channels in
+# non-ping-pong tests (since we can only specify per-channel numbers, the
+# actual target will be slightly higher)
+OUTSTANDING_REQUESTS={
+    'async': 10000,
+    'sync': 1000
+}
 
 # wide is the number of client channels in multi-channel tests (1 otherwise)
 WIDE=64
-
-# For most synchronous clients, DEEP*WIDE threads will be created.
-SYNC_DEEP=10
-SYNC_WIDE=8
 
 
 def _get_secargs(is_secure):
@@ -140,14 +142,8 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
 
   if unconstrained_client:
-    if unconstrained_client == 'async':
-      deep = DEEP
-      wide = WIDE
-    elif unconstrained_client == 'sync':
-      deep = SYNC_DEEP
-      wide = SYNC_WIDE
-    else:
-      raise Exception('Illegal value of unconstrained_client option.')
+    wide = channels if channels is not None else WIDE
+    deep = int(math.ceil(1.0 * OUTSTANDING_REQUESTS[unconstrained_client] / wide))
 
     scenario['num_clients'] = 0  # use as many client as available.
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
@@ -157,9 +153,6 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
-
-  if channels is not None:
-    scenario['client_config']['client_channels'] = channels
 
   if client_language:
     # the CLIENT_LANGUAGE field is recognized by run_performance_tests.py
@@ -254,7 +247,7 @@ class CXXLanguage:
 
         for channels in [1, 3, 10, 31, 100, 316, 1000]:
           yield _ping_pong_scenario(
-              'cpp_protobuf_async_unary_qps_unconstrained_%s_%d_channels' % (secstr, channels),
+              'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels' % (synchronicity, secstr, channels),
               rpc_type='UNARY',
               client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
               unconstrained_client=synchronicity, secure=secure,

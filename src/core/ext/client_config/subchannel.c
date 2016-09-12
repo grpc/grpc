@@ -504,14 +504,13 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset_set *interested_parties,
                                           grpc_connectivity_state *state,
                                           grpc_closure *closure) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
-  op.connectivity_state = state;
-  op.on_connectivity_state_change = closure;
-  op.bind_pollset_set = interested_parties;
+  op->connectivity_state = state;
+  op->on_connectivity_state_change = closure;
+  op->bind_pollset_set = interested_parties;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 void grpc_connected_subchannel_notify_on_state_change(
@@ -525,12 +524,11 @@ void grpc_connected_subchannel_notify_on_state_change(
 void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
                                     grpc_connected_subchannel *con,
                                     grpc_closure *closure) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
-  op.send_ping = closure;
+  op->send_ping = closure;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
