@@ -81,6 +81,7 @@ if not check_version(top_version):
   print warning % ('version', top_version)
 
 for tag, value in settings.iteritems():
+  if tag == 'core_version': continue
   if re.match(r'^[a-z]+_version$', tag):
     value = Version(value)
     if value.major != top_version.major:
@@ -94,4 +95,3 @@ for tag, value in settings.iteritems():
       print warning % (tag, value)
 
 sys.exit(errors)
-
