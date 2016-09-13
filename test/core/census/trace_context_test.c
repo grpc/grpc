@@ -227,6 +227,5 @@ int main(int argc, char **argv) {
   test_no_sample();
   test_buffer_size();
 
-  fprintf(stderr, "sizeof(void*): %lu\n", sizeof(void *));
   return 0;
 }
