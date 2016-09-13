@@ -142,6 +142,11 @@ typedef struct {
 /** How much memory to use for hpack encoding. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
+/** How big a frame are we willing to receive via HTTP2.
+    Min 16384, max 16777215.
+    Larger values give lower CPU usage for large messages, but more head of line
+    blocking for small messages. */
+#define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"

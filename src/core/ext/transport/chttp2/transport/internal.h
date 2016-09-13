@@ -223,6 +223,8 @@ typedef struct {
   uint8_t is_client;
   /** callback for when writing is done */
   grpc_closure done_cb;
+  /** maximum frame size */
+  uint32_t max_frame_size;
 } grpc_chttp2_transport_writing;
 
 struct grpc_chttp2_transport_parsing {

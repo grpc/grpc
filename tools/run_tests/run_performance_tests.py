@@ -300,7 +300,8 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
   for language in languages:
     for scenario_json in language.scenarios():
       if re.search(args.regex, scenario_json['name']):
-        if category in scenario_json.get('CATEGORIES', []) or category == 'all':
+        categories = scenario_json.get('CATEGORIES', [])
+        if category in categories or (category == 'all' and categories != ['sweep']):
           workers = workers_by_lang[str(language)]
           # 'SERVER_LANGUAGE' is an indicator for this script to pick
           # a server in different language.
@@ -374,7 +375,7 @@ argp.add_argument('-r', '--regex', default='.*', type=str,
 argp.add_argument('--bq_result_table', default=None, type=str,
                   help='Bigquery "dataset.table" to upload results to.')
 argp.add_argument('--category',
-                  choices=['smoketest','all','scalable'],
+                  choices=['smoketest','all','scalable','sweep'],
                   default='all',
                   help='Select a category of tests to run.')
 argp.add_argument('--netperf',
