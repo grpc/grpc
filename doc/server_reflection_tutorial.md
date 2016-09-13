@@ -48,7 +48,11 @@ example server with Server Reflection enabled.
 
   ```sh
   make grpc_cli
+  cd bins/opt
   ```
+
+  gRPC CLI binary `grpc_cli` can be found at `bins/opt/` folder. This tool is
+  still new and does not have a `make install` target yet.
 
 ### List services
 
@@ -57,7 +61,7 @@ example server with Server Reflection enabled.
 - List all the services exposed at a given port
 
   ```sh
-  $ bins/opt/grpc_cli ls localhost:50051
+  $ grpc_cli ls localhost:50051
   ```
 
   output:
@@ -74,7 +78,7 @@ example server with Server Reflection enabled.
   service.
 
   ```sh
-  $ bins/opt/grpc_cli ls localhost:50051 helloworld.Greeter -l
+  $ grpc_cli ls localhost:50051 helloworld.Greeter -l
   ```
 
   output:
@@ -95,7 +99,7 @@ example server with Server Reflection enabled.
   format of \<package\>.\<service\>.\<method\>).
 
   ```sh
-  $ bins/opt/grpc_cli ls localhost:50051 helloworld.Greeter.SayHello -l
+  $ grpc_cli ls localhost:50051 helloworld.Greeter.SayHello -l
   ```
 
   output:
@@ -111,7 +115,7 @@ full name of the type (in the format of \<package\>.\<type\>).
 - Get information about the request type
 
   ```sh
-  $ bins/opt/grpc_cli type localhost:50051 helloworld.HelloRequest
+  $ grpc_cli type localhost:50051 helloworld.HelloRequest
   ```
 
   output:
@@ -128,7 +132,7 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
 - Call a unary method
 
   ```sh
-  $ bins/opt/grpc_cli call localhost:50051 SayHello "name: 'gRPC CLI'"
+  $ grpc_cli call localhost:50051 SayHello "name: 'gRPC CLI'"
   ```
 
   output:
