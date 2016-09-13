@@ -1216,6 +1216,13 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     GPR_TIMER_BEGIN("validate_filtered_metadata", 0);
     validate_filtered_metadata(exec_ctx, bctl);
     GPR_TIMER_END("validate_filtered_metadata", 0);
+
+    if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
+            0 &&
+        !call->is_client) {
+      call->send_deadline = gpr_convert_clock_type(md->deadline,
+                                                   GPR_CLOCK_MONOTONIC);
+    }
   }
 
   call->has_initial_md_been_received = true;
