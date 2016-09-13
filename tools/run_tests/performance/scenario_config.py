@@ -114,8 +114,7 @@ def _ping_pong_scenario(name, rpc_type,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
-                        outstanding=None,
-                        payload_size=None):
+                        outstanding=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -257,12 +256,10 @@ class CXXLanguage:
 
         for channels in geometric_progression(1, 500, math.sqrt(10)):
           for outstanding in geometric_progression(1, 20000, math.sqrt(10)):
-            for payload in geometric_progression(1, 1024*1024, 10):
               if synchronicity == 'sync' and outstanding > 1000: continue
-              if payload * outstanding > 1024*1024*1024: continue
               if outstanding < channels: continue
               yield _ping_pong_scenario(
-                  'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding_%d_payload' % (synchronicity, secstr, channels, outstanding, payload),
+                  'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
                   rpc_type='UNARY',
                   client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
                   unconstrained_client=synchronicity, secure=secure,
