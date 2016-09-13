@@ -33,7 +33,7 @@ cd /d %~dp0\..\..\src\csharp
 
 dotnet restore . || goto :error
 
-dotnet build -f netstandard1.5 --configuration %MSBUILD_CONFIG% "**/project.json" || goto :error
+dotnet build --configuration %MSBUILD_CONFIG% "**/project.json" || goto :error
 
 endlocal
 

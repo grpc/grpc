@@ -225,7 +225,7 @@ def main():
               'name': '%s_nosec_test' % f,
               'build': 'test',
               'language': 'c',
-              'secure': 'no',
+              'secure': False,
               'src': ['test/core/end2end/fixtures/%s.c' % f],
               'run': False,
               'platforms': END2END_FIXTURES[f].platforms,
