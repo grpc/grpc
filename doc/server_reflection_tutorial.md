@@ -18,8 +18,8 @@ contain symbols used by the application. On these platforms, LD flag
 `--no-as-needed` is needed for for dynamic linking and `--whole-archive` is
 needed for for static linking.
 
-This [Makefile](examples/cpp/helloworld/Makefile#L37#L45) demonstrates enabling
-c++ server reflection on Linux and MacOS.
+This [Makefile](../examples/cpp/helloworld/Makefile#L37#L45) demonstrates
+enabling c++ server reflection on Linux and MacOS.
 
 ## Test services using Server Reflection
 
@@ -27,8 +27,7 @@ gRPC Server Reflection is supported by gRPC CLI. After enabling Server
 Reflection in a server application, you can use gRPC CLI to test its services.
 
 Instructions on how to use gRPC CLI can be found at
-[command_line_tool.md](doc/command_line_tool.md), or using `grpc_cli help`
-command.
+[command_line_tool.md](command_line_tool.md), or using `grpc_cli help` command.
 
 Here we use `examples/cpp/helloworld` as an example to show the use of gRPC
 Server Reflection and gRPC CLI. First, we need to build gRPC CLI and setup an
@@ -37,8 +36,8 @@ example server with Server Reflection enabled.
 - Setup an example server
 
   Server Reflection has already been enabled in the
-  [Makefile](examples/cpp/helloworld/Makefile) of the helloworld example. We can
-  simply make it and run the greeter_server.
+  [Makefile](../examples/cpp/helloworld/Makefile) of the helloworld example. We
+  can simply make it and run the greeter_server.
 
   ```sh
   $ make -C examples/cpp/helloworld
@@ -141,7 +140,7 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
 
 Server Reflection can be used by clients to get information about gRPC services
 at runtime. We've provided a descriptor database called
-[grpc::ProtoReflectionDescriptorDatabase](test/cpp/util/proto_reflection_descriptor_database.h)
+[grpc::ProtoReflectionDescriptorDatabase](../test/cpp/util/proto_reflection_descriptor_database.h)
 which implements the
 [google::protobuf::DescriptorDatabase](https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.descriptor_database#DescriptorDatabase)
 interface. It manages the communication between clients and reflection services
