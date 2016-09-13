@@ -61,8 +61,8 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-/* Initializes an instace of wrapped_grpc_server_credentials to be associated
- * with an object of a class specified by class_type */
+/* Initializes an instace of wrapped_grpc_server_credentials to be
+ * associated with an object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_server_credentials(
     zend_class_entry *class_type TSRMLS_DC) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server_credentials);

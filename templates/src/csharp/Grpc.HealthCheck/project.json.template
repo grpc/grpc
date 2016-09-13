@@ -25,7 +25,7 @@
     },
     "dependencies": {
       "Grpc.Core": "${settings.csharp_version}",
-      "Google.Protobuf": "3.0.0-beta3"
+      "Google.Protobuf": "3.0.0"
     },
     "frameworks": {
       "net45": {
@@ -35,9 +35,6 @@
         }
       },
       "netstandard1.5": {
-        "imports": [
-          "portable-net45"
-        ],
         "dependencies": {
           "NETStandard.Library": "1.6.0"
         }
