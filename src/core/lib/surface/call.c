@@ -769,8 +769,8 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
 }
 
 static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  grpc_transport_stream_op op;
   termination_closure *tc = tcp;
+  grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
   op.cancel_error = tc->error;
   /* reuse closure to catch completion */
@@ -780,8 +780,8 @@ static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
 }
 
 static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
-  grpc_transport_stream_op op;
   termination_closure *tc = tcp;
+  grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
   op.close_error = tc->error;
   /* reuse closure to catch completion */
