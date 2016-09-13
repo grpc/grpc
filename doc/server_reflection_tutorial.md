@@ -2,29 +2,28 @@
 
 gRPC Server Reflection provides information about publicly-accessible gRPC
 services on a server, and assists clients in runtime to construct RPC
-requests/responses without precompiled service information. It has been
-supported by gRPC CLI, which could be used to introspect server protos and
+requests and responses without precompiled service information. It has been
+supported by gRPC CLI, which can be used to introspect server protos and
 send/receive test RPCs.
 
-## Eanble Server Reflection
+## Enable Server Reflection
 
 ### Enable server reflection in C++ servers
 
-C++ Server Reflection is offered as an add-on library, `libgrpc++_reflction`.
-To enable C++ server reflection, you can simply link this library to your server
-binary.
+C++ Server Reflection is an add-on library, `libgrpc++_reflction`. To enable C++
+server reflection, you can link this library to your server binary.
 
 Some platforms (e.g. Ubuntu 11.10 onwards) only link in libraries that directly
 contain symbols used by the application. On these platforms, LD flag
 `--no-as-needed` is needed for for dynamic linking and `--whole-archive` is
 needed for for static linking.
 
-Here is an [example](examples/cpp/helloworld/Makefile#L37#L45) for enabling c++
-server reflection on Linux and MacOS.
+This [Makefile](examples/cpp/helloworld/Makefile#L37#L45) demonstrates enabling
+c++ server reflection on Linux and MacOS.
 
 ## Test services using Server Reflection
 
-gRPC Server Reflection has been supported by gRPC CLI. After enabling Server
+gRPC Server Reflection is supported by gRPC CLI. After enabling Server
 Reflection in a server application, you can use gRPC CLI to test its services.
 
 Instructions on how to use gRPC CLI can be found at
@@ -54,7 +53,7 @@ example server with Server Reflection enabled.
 
 ### List services
 
-`grpc_cli ls` command can list services and methods exposed at a given port
+`grpc_cli ls` command lists services and methods exposed at a given port
 
 - List all the services exposed at a given port
 
@@ -70,10 +69,10 @@ example server with Server Reflection enabled.
 
 - List one service with details
 
-  `grpc_cli ls` command can inspect one service given its full name (in the
-  format of \<package\>.\<service\>). It can print information with a long
-  listing format when `-l` flag is set. This flag can be used to get more
-  details about a service.
+  `grpc_cli ls` command inspects a service given its full name (in the format of
+  \<package\>.\<service\>). It can print information with a long listing format
+  when `-l` flag is set. This flag can be used to get more details about a
+  service.
 
   ```sh
   $ bins/opt/grpc_cli ls localhost:50051 helloworld.Greeter -l
@@ -93,7 +92,7 @@ example server with Server Reflection enabled.
 
 - List one method with details
 
-  `grpc_cli ls` command can also inspect one method given its full name (in the
+  `grpc_cli ls` command also inspects a method given its full name (in the
   format of \<package\>.\<service\>.\<method\>).
 
   ```sh
@@ -141,7 +140,7 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
 ## Use Server Reflection in a C++ client
 
 Server Reflection can be used by clients to get information about gRPC services
-in runtime. We've provided a descriptor database called
+at runtime. We've provided a descriptor database called
 [grpc::ProtoReflectionDescriptorDatabase](test/cpp/util/proto_reflection_descriptor_database.h)
 which implements the
 [google::protobuf::DescriptorDatabase](https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.descriptor_database#DescriptorDatabase)
