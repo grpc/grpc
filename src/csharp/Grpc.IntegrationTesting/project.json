@@ -13,8 +13,10 @@
           "includeFiles": [ "../Grpc.Core/Version.cs" ]
         },
         "copyToOutput": {
-          "include": "data/*",
           "mappings": {
+            "data/ca.pem": "../Grpc.IntegrationTesting/data/ca.pem",
+            "data/server1.key": "../Grpc.IntegrationTesting/data/server1.key",
+            "data/server1.pem": "../Grpc.IntegrationTesting/data/server1.pem",
             "grpc_csharp_ext.x64.dll": "../../../vsprojects/x64/Debug/grpc_csharp_ext.dll",
             "grpc_csharp_ext.x86.dll": "../../../vsprojects/Debug/grpc_csharp_ext.dll",
             "libgrpc_csharp_ext.x64.so": "../../../libs/dbg/libgrpc_csharp_ext.so",
@@ -33,8 +35,10 @@
           "includeFiles": [ "../Grpc.Core/Version.cs" ]
         },
         "copyToOutput": {
-          "include": "data/*",
           "mappings": {
+            "data/ca.pem": "../Grpc.IntegrationTesting/data/ca.pem",
+            "data/server1.key": "../Grpc.IntegrationTesting/data/server1.key",
+            "data/server1.pem": "../Grpc.IntegrationTesting/data/server1.pem",
             "grpc_csharp_ext.x64.dll": "../../../vsprojects/x64/Release/grpc_csharp_ext.dll",
             "grpc_csharp_ext.x86.dll": "../../../vsprojects/Release/grpc_csharp_ext.dll",
             "libgrpc_csharp_ext.x64.so": "../../../libs/opt/libgrpc_csharp_ext.so",
@@ -44,11 +48,6 @@
       }
     }
   },
-  "runtimes": {
-    "win7-x64": { },
-    "debian.8-x64": { },
-    "osx.10.11-x64": { }
-  },
 
   "dependencies": {
     "Grpc.Auth": {
@@ -57,16 +56,14 @@
     "Grpc.Core": {
       "target": "project"
     },
-    "Google.Protobuf": "3.0.0-beta3",
+    "Google.Protobuf": "3.0.0",
     "CommandLineParser.Unofficial": "2.0.275",
+    "Moq": "4.6.38-alpha",
     "NUnit": "3.2.0",
     "NUnitLite": "3.2.0-*"
   },
   "frameworks": {
     "net45": {
-      "dependencies": {
-        "Moq": "4.2.1510.2205"
-      },
       "frameworkAssemblies": {
         "System.Runtime": "",
         "System.IO": ""
@@ -74,12 +71,13 @@
     },
     "netcoreapp1.0": {
       "imports": [
-        "portable-net45",
-        "net45"
+        "portable-net45"
       ],
       "dependencies": {
-        "Microsoft.NETCore.App": "1.0.0",
-        "NETStandard.Library": "1.6.0",
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        },
         "System.Linq.Expressions": "4.1.0"
       }
     }

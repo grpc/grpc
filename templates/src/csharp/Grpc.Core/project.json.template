@@ -38,11 +38,9 @@
     "frameworks": {
       "net45": { },
       "netstandard1.5": {
-        "imports": [
-          "portable-net45"
-        ],
         "dependencies": {
           "NETStandard.Library": "1.6.0",
+          "System.Runtime.Loader": "4.0.0",
           "System.Threading.Thread": "4.0.0"
         }
       }

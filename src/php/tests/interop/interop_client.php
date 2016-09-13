@@ -108,7 +108,7 @@ function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false
     $request->setFillUsername($fillUsername);
     $request->setFillOauthScope($fillOauthScope);
 
-    $options = false;
+    $options = [];
     if ($callback) {
         $options['call_credentials_callback'] = $callback;
     }
