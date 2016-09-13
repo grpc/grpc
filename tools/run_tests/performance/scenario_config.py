@@ -257,7 +257,7 @@ class CXXLanguage:
 
         for channels in geometric_progression(1, 500, math.sqrt(10)):
           for outstanding in geometric_progression(1, 20000, math.sqrt(10)):
-              if synchronicity == 'sync' and outstanding > 1000: continue
+              if synchronicity == 'sync' and outstanding > 400: continue
               if outstanding < channels: continue
               yield _ping_pong_scenario(
                   'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
