@@ -38,7 +38,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/transport/metadata.h"
 
 /* grpc_addresses */
@@ -151,62 +150,60 @@ int32_t* grpc_method_config_get_max_response_message_bytes(
 typedef struct method_config_table_entry {
   grpc_mdstr *path;
   grpc_method_config *method_config;
-  struct method_config_table_entry *next;  // Chaining for collisions.
 } method_config_table_entry;
 
-#define METHOD_CONFIG_TABLE_SIZE 30
+#define METHOD_CONFIG_TABLE_SIZE 128
 typedef struct method_config_table {
-  method_config_table_entry *entries[METHOD_CONFIG_TABLE_SIZE];
-  uint32_t hash_seed;
+  method_config_table_entry entries[METHOD_CONFIG_TABLE_SIZE];
 } method_config_table;
 
 static void method_config_table_init(method_config_table* table) {
   memset(table, 0, sizeof(*table));
-  table->hash_seed = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
 }
 
 static void method_config_table_destroy(method_config_table* table) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(table->entries); ++i) {
-    method_config_table_entry *entry = table->entries[i];
-    while (entry != NULL) {
-      method_config_table_entry *next_entry = entry->next;
+    method_config_table_entry *entry = &table->entries[i];
+    if (entry->path != NULL) {
       GRPC_MDSTR_UNREF(entry->path);
       grpc_method_config_unref(entry->method_config);
-      gpr_free(entry);
-      entry = next_entry;
     }
   }
+}
+
+// Helper function for insert and get operations that performs quadratic
+// probing (https://en.wikipedia.org/wiki/Quadratic_probing).
+static size_t method_config_table_find_index(method_config_table* table,
+                                             grpc_mdstr *path,
+                                             bool find_empty) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(table->entries); ++i) {
+    const size_t idx = (path->hash + i * i) % GPR_ARRAY_SIZE(table->entries);
+    if (table->entries[idx].path == NULL)
+      return find_empty ? idx : GPR_ARRAY_SIZE(table->entries);
+    if (table->entries[idx].path == path)
+      return idx;
+  }
+  return GPR_ARRAY_SIZE(table->entries) + 1;  // Not found.
 }
 
 static void method_config_table_insert(method_config_table* table,
                                        grpc_mdstr *path,
                                        grpc_method_config *config) {
-  method_config_table_entry *entry = gpr_malloc(sizeof(*entry));
+  const size_t idx =
+      method_config_table_find_index(table, path, true /* find_empty */);
+  // This can happen if the table is full.
+  GPR_ASSERT(idx != GPR_ARRAY_SIZE(table->entries));
+  method_config_table_entry *entry = &table->entries[idx];
   entry->path = GRPC_MDSTR_REF(path);
   entry->method_config = grpc_method_config_ref(config);
-  entry->next = NULL;
-  const uint32_t hash = gpr_murmur_hash3(path, sizeof(path), table->hash_seed);
-  const size_t idx = hash % GPR_ARRAY_SIZE(table->entries);
-  if (table->entries[idx] == NULL) {
-    table->entries[idx] = entry;
-  } else {
-    method_config_table_entry *last_entry = table->entries[idx];
-    while (last_entry->next != NULL) {
-      last_entry = last_entry->next;
-    }
-    last_entry->next = entry;
-  }
 }
 
 static grpc_method_config *method_config_table_get(method_config_table* table,
                                                    grpc_mdstr *path) {
-  const uint32_t hash = gpr_murmur_hash3(path, sizeof(path), table->hash_seed);
-  const size_t idx = hash % GPR_ARRAY_SIZE(table->entries);
-  for (method_config_table_entry *entry = table->entries[idx];
-       entry != NULL; entry = entry->next) {
-    if (entry->path == path) return entry->method_config;
-  }
-  return NULL;  // Not found.
+  const size_t idx =
+      method_config_table_find_index(table, path, false /* find_empty */);
+  if (idx == GPR_ARRAY_SIZE(table->entries)) return NULL;  // Not found.
+  return table->entries[idx].method_config;
 }
 
 /* grpc_resolver_result */
