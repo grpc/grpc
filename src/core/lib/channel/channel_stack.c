@@ -275,7 +275,7 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
   op.cancel_error = GRPC_ERROR_CANCELLED;
-  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+  elem->filter->start_transport_stream_op(exec_ctx, elem, &op);
 }
 
 void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
@@ -286,7 +286,7 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
   memset(&op, 0, sizeof(op));
   grpc_transport_stream_op_add_cancellation_with_message(&op, status,
                                                          optional_message);
-  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+  elem->filter->start_transport_stream_op(exec_ctx, elem, &op);
 }
 
 void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
