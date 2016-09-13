@@ -722,13 +722,12 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
 
   if (pick_args->lb_token_mdelem_storage == NULL) {
-    /* TODO(dgq): should this be an assert? If storage is NULL, something has
-     * gone very wrong at the client channel filter */
-    gpr_log(GPR_ERROR,
-            "No mdelem storage for the LB token. Load reporting won't work "
-            "without it. Failing");
     *target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, on_complete, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(
+        exec_ctx, on_complete,
+        GRPC_ERROR_CREATE("No mdelem storage for the LB token. Load reporting "
+                          "won't work without it. Failing"),
+        NULL);
     return 1;
   }
 
