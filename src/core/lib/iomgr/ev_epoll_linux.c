@@ -164,7 +164,7 @@ static void fd_global_shutdown(void);
 #define PI_ADD_REF(p, r) pi_add_ref((p))
 #define PI_UNREF(exec_ctx, p, r) pi_unref((exec_ctx), (p))
 
-#endif /* !defined(GPRC_PI_REF_COUNT_DEBUG) */
+#endif /* !defined(GRPC_PI_REF_COUNT_DEBUG) */
 
 typedef struct polling_island {
   gpr_mu mu;

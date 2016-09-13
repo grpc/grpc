@@ -241,7 +241,7 @@ class ServerCompletionQueue : public CompletionQueue {
  private:
   bool is_frequently_polled_;
   friend class ServerBuilder;
-  /// \param is_frequently_polled Informs the GPRC library about whether the
+  /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
   /// frequently polled.
