@@ -47,16 +47,25 @@ struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
 };
 
-typedef struct grpc_lb_policy_address_token {
-  uint8_t *token;
-  size_t token_size;
-} grpc_lb_policy_address_token;
+/** A resolved address alongside any LB related information associated with it.
+ * \a user_data, if not \a NULL, is opaque and meant to be consumed by the gRPC
+ * LB policy. Anywhere else, refer to the functions in \a
+ * grpc_lb_policy_user_data_vtable to operate with it */
+typedef struct grpc_lb_address {
+  grpc_resolved_address *resolved_address;
+  void *user_data;
+} grpc_lb_address;
+
+/** Functions acting upon the opaque \a grpc_lb_address.user_data */
+typedef struct grpc_lb_policy_user_data_vtable {
+  void *(*copy)(void *);
+  void (*destroy)(void *);
+} grpc_lb_policy_user_data_vtable;
 
 typedef struct grpc_lb_policy_args {
-  grpc_resolved_addresses *addresses;
-  /* If not NULL, array of load balancing tokens associated with \a addresses,
-   * on a 1:1 correspondence. Some indices may be NULL for missing tokens. */
-  grpc_lb_policy_address_token *tokens;
+  grpc_lb_address *lb_addresses;
+  size_t num_addresses;
+  grpc_lb_policy_user_data_vtable user_data_vtable;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;
 

@@ -125,10 +125,18 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     grpc_resolver_result *result = grpc_resolver_result_create();
     grpc_lb_policy_args lb_policy_args;
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.addresses = r->addresses;
+    lb_policy_args.num_addresses = r->addresses->naddrs;
+    lb_policy_args.lb_addresses =
+        gpr_malloc(sizeof(grpc_lb_address) * lb_policy_args.num_addresses);
+    memset(lb_policy_args.lb_addresses, 0,
+           sizeof(grpc_lb_address) * lb_policy_args.num_addresses);
+    for (size_t i = 0; i < lb_policy_args.num_addresses; ++i) {
+      lb_policy_args.lb_addresses[i].resolved_address = &r->addresses->addrs[i];
+    }
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     grpc_lb_policy *lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
+    gpr_free(lb_policy_args.lb_addresses);
     grpc_resolver_result_set_lb_policy(result, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
     r->published = 1;

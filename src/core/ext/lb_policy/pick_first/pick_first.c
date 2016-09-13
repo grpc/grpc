@@ -200,7 +200,7 @@ static void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
 static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                    const grpc_lb_policy_pick_args *pick_args,
-                   grpc_connected_subchannel **target,
+                   grpc_connected_subchannel **target, void **user_data,
                    grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
@@ -438,23 +438,23 @@ static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
 static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
-  GPR_ASSERT(args->addresses != NULL);
+  GPR_ASSERT(args->lb_addresses != NULL);
   GPR_ASSERT(args->client_channel_factory != NULL);
 
-  if (args->addresses->naddrs == 0) return NULL;
+  if (args->num_addresses == 0) return NULL;
 
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  p->subchannels =
-      gpr_malloc(sizeof(grpc_subchannel *) * args->addresses->naddrs);
-  memset(p->subchannels, 0, sizeof(*p->subchannels) * args->addresses->naddrs);
+  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * args->num_addresses);
+  memset(p->subchannels, 0, sizeof(*p->subchannels) * args->num_addresses);
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
-  for (size_t i = 0; i < args->addresses->naddrs; i++) {
+  for (size_t i = 0; i < args->num_addresses; i++) {
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
-    sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
+    sc_args.addr =
+        (struct sockaddr *)(args->lb_addresses[i].resolved_address->addr);
+    sc_args.addr_len = (size_t)args->lb_addresses[i].resolved_address->len;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
