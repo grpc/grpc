@@ -2,9 +2,9 @@
 
 gRPC Server Reflection provides information about publicly-accessible gRPC
 services on a server, and assists clients at runtime to construct RPC
-requests and responses without precompiled service information. It has been
-supported by gRPC CLI, which can be used to introspect server protos and
-send/receive test RPCs.
+requests and responses without precompiled service information. It is used by
+gRPC CLI, which can be used to introspect server protos and send/receive test
+RPCs.
 
 ## Enable Server Reflection
 
@@ -23,8 +23,8 @@ enabling c++ server reflection on Linux and MacOS.
 
 ## Test services using Server Reflection
 
-gRPC Server Reflection is supported by gRPC CLI. After enabling Server
-Reflection in a server application, you can use gRPC CLI to test its services.
+After enabling Server Reflection in a server application, you can use gRPC CLI
+to test its services.
 
 Instructions on how to use gRPC CLI can be found at
 [command_line_tool.md](command_line_tool.md), or using `grpc_cli help` command.
