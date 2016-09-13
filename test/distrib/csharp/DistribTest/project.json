@@ -1,20 +1,15 @@
 {
   "buildOptions": {
+    "emitEntryPoint": true
   },
-
   "dependencies": {
-    "Grpc.Core": {
-      "target": "project"
-    },
-    "Google.Protobuf": "3.0.0"
+    "Grpc.Auth": "__GRPC_NUGET_VERSION__",
+    "Grpc.Core": "__GRPC_NUGET_VERSION__",
+    // Necessary for native deps to get copied correctly.
+    "Microsoft.NETCore.Platforms": "1.0.1"
   },
   "frameworks": {
-    "net45": {
-      "frameworkAssemblies": {
-        "System.Runtime": "",
-        "System.IO": ""
-      }
-    },
+    "net45": { },
     "netcoreapp1.0": {
       "dependencies": {
         "Microsoft.NETCore.App": {
