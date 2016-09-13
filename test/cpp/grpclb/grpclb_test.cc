@@ -70,6 +70,7 @@ extern "C" {
 // - Send an empty serverlist update and verify that the client request blocks
 //   until a new serverlist with actual contents is available.
 // - Send identical serverlist update
+// - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
 // - Test reception of invalid serverlist
 // - Test pinging
 // - Test against a non-LB server. That server should return UNIMPLEMENTED and

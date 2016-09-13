@@ -81,9 +81,6 @@ typedef struct pending_pick {
   /* polling entity for the pick()'s async notification */
   grpc_polling_entity *pollent;
 
-  /* the initial metadata for the pick. See grpc_lb_policy_pick() */
-  grpc_metadata_batch *initial_metadata;
-
   /* output argument where to store the pick()ed user_data. It'll be NULL if no
    * such data is present or there's an error (the definite test for errors is
    * \a target being NULL). */
@@ -133,10 +130,9 @@ struct round_robin_lb_policy {
 
   /** total number of addresses received at creation time */
   size_t num_addresses;
-  /** user data, one per incoming address */
+  /** user data, one per incoming address. This pointer is borrowed and opaque.
+   * It'll be returned as-is in successful picks. */
   void **user_data;
-  /** functions to operate over \a user_data elements */
-  grpc_lb_policy_user_data_vtable user_data_vtable;
 
   /** all our subchannels */
   size_t num_subchannels;
@@ -285,9 +281,6 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     elem = tmp;
   }
 
-  for (size_t i = 0; i < p->num_addresses; i++) {
-    p->user_data_vtable.destroy(p->user_data[i]);
-  }
   gpr_free(p->user_data);
   gpr_free(p);
 }
@@ -410,7 +403,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     /* readily available, report right away */
     gpr_mu_unlock(&p->mu);
     *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
-    *user_data = p->user_data_vtable.copy(selected->user_data);
+    *user_data = selected->user_data;
     if (grpc_lb_round_robin_trace) {
       gpr_log(GPR_DEBUG,
               "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (NODE %p)",
@@ -431,7 +424,6 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp->pollent = pick_args->pollent;
     pp->target = target;
     pp->on_complete = on_complete;
-    pp->initial_metadata = pick_args->initial_metadata;
     pp->initial_metadata_flags = pick_args->initial_metadata_flags;
     pp->user_data = user_data;
     p->pending_picks = pp;
@@ -477,7 +469,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
           *pp->target =
               grpc_subchannel_get_connected_subchannel(selected->subchannel);
-          *pp->user_data = p->user_data_vtable.copy(selected->user_data);
+          *pp->user_data = selected->user_data;
           if (grpc_lb_round_robin_trace) {
             gpr_log(GPR_DEBUG,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
@@ -623,7 +615,6 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   memset(p->subchannels, 0, sizeof(*p->subchannels) * p->num_addresses);
   p->user_data = gpr_malloc(sizeof(void *) * p->num_addresses);
   memset(p->user_data, 0, sizeof(void *) * p->num_addresses);
-  p->user_data_vtable = args->user_data_vtable;
 
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
@@ -633,7 +624,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
         (struct sockaddr *)args->lb_addresses[i].resolved_address->addr;
     sc_args.addr_len = args->lb_addresses[i].resolved_address->len;
 
-    p->user_data[i] = p->user_data_vtable.copy(args->lb_addresses[i].user_data);
+    p->user_data[i] = args->lb_addresses[i].user_data;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);

@@ -65,7 +65,6 @@ typedef struct grpc_lb_policy_user_data_vtable {
 typedef struct grpc_lb_policy_args {
   grpc_lb_address *lb_addresses;
   size_t num_addresses;
-  grpc_lb_policy_user_data_vtable user_data_vtable;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;
 
