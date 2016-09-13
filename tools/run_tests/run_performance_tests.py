@@ -300,8 +300,8 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
   for language in languages:
     for scenario_json in language.scenarios():
       if re.search(args.regex, scenario_json['name']):
-        categories = scenario_json.get('CATEGORIES', [])
-        if category in categories or (category == 'all' and categories != ['sweep']):
+        categories = scenario_json.get('CATEGORIES', ['scalable', 'smoketest'])
+        if category in categories or category == 'all':
           workers = workers_by_lang[str(language)]
           # 'SERVER_LANGUAGE' is an indicator for this script to pick
           # a server in different language.

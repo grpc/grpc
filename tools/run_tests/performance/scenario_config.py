@@ -38,6 +38,7 @@ BENCHMARK_SECONDS=30
 SMOKETEST='smoketest'
 SCALABLE='scalable'
 SWEEP='sweep'
+DEFAULT_CATEGORIES=[SCALABLE, SMOKETEST]
 
 SECURE_SECARGS = {'use_test_ca': True,
                   'server_host_override': 'foo.test.google.fr'}
@@ -111,7 +112,7 @@ def _ping_pong_scenario(name, rpc_type,
                         server_core_limit=0,
                         async_server_threads=0,
                         warmup_seconds=WARMUP_SECONDS,
-                        categories=[],
+                        categories=DEFAULT_CATEGORIES,
                         channels=None,
                         outstanding=None,
                         payload_size=None):
