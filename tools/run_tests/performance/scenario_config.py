@@ -151,8 +151,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
 
   if unconstrained_client:
+    outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
     wide = channels if channels is not None else WIDE
-    deep = int(math.ceil(1.0 * OUTSTANDING_REQUESTS[unconstrained_client] / wide))
+    deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
     scenario['num_clients'] = 0  # use as many client as available.
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
