@@ -38,8 +38,6 @@
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-#include <fcntl.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -47,6 +45,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -59,8 +58,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
   char *name;
   gpr_asprintf(&name, "fd:%d", fd);
 
-  int flags = fcntl(fd, F_GETFL, 0);
-  GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
+
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_non_blocking",
+                               grpc_set_socket_nonblocking(fd, 1)));
 
   grpc_resource_quota *resource_quota = grpc_resource_quota_from_channel_args(
       grpc_server_get_channel_args(server));
