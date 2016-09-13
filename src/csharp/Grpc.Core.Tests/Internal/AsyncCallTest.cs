@@ -180,20 +180,45 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ClientStreaming_WriteCompletionFailure()
+        public void ClientStreaming_WriteFailureThrowsRpcException()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
             var writeTask = requestStream.WriteAsync("request1");
             fakeCall.SendCompletionHandler(false);
-            // TODO: maybe IOException or waiting for RPCException is more appropriate here.
-            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
+
+            // The write will wait for call to finish to receive the status code.
+            Assert.IsFalse(writeTask.IsCompleted);
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Internal),
                 null,
                 new Metadata());
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteFailureThrowsRpcException2()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.Internal),
+                null,
+                new Metadata());
+
+            fakeCall.SendCompletionHandler(false);
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
         }
@@ -413,6 +438,49 @@ namespace Grpc.Core.Internal.Tests
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
             Assert.DoesNotThrowAsync(async () => await requestStream.CompleteAsync());
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteFailureThrowsRpcException()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(false);
+
+            // The write will wait for call to finish to receive the status code.
+            Assert.IsFalse(writeTask.IsCompleted);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.PermissionDenied));
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.PermissionDenied, ex.Status.StatusCode);
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.PermissionDenied);
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteFailureThrowsRpcException2()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.PermissionDenied));
+            fakeCall.SendCompletionHandler(false);
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.PermissionDenied, ex.Status.StatusCode);
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.PermissionDenied);
         }
 
         [Test]
