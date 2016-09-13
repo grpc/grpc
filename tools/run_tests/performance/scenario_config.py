@@ -94,6 +94,13 @@ def remove_nonproto_fields(scenario):
   return scenario
 
 
+def geometric_progression(start, stop, step):
+  n = start
+  while n < stop:
+    yield int(round(n))
+    n *= step
+
+
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
@@ -105,7 +112,9 @@ def _ping_pong_scenario(name, rpc_type,
                         async_server_threads=0,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=[],
-                        channels=None):
+                        channels=None,
+                        outstanding=None,
+                        payload_size=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -245,13 +254,18 @@ class CXXLanguage:
             secure=secure,
             categories=[SCALABLE])
 
-        for channels in [1, 3, 10, 31, 100, 316, 1000]:
-          yield _ping_pong_scenario(
-              'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels' % (synchronicity, secstr, channels),
-              rpc_type='UNARY',
-              client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-              unconstrained_client=synchronicity, secure=secure,
-              categories=[SWEEP], channels=channels)
+        for channels in geometric_progression(1, 500, math.sqrt(10)):
+          for outstanding in geometric_progression(1, 20000, math.sqrt(10)):
+            for payload in geometric_progression(1, 1024*1024, 10):
+              if synchronicity == 'sync' and outstanding > 1000: continue
+              if payload * outstanding > 1024*1024*1024: continue
+              if outstanding < channels: continue
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding_%d_payload' % (synchronicity, secstr, channels, outstanding, payload),
+                  rpc_type='UNARY',
+                  client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+                  unconstrained_client=synchronicity, secure=secure,
+                  categories=[SWEEP], channels=channels, outstanding=outstanding)
 
   def __str__(self):
     return 'c++'
