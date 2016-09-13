@@ -61,7 +61,7 @@ grpc_channel *grpc_insecure_channel_create_from_fd(
   grpc_channel_args *final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_non_blocking",
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_set_socket_nonblocking",
                                grpc_set_socket_nonblocking(fd, 1)));
 
   grpc_endpoint *client = grpc_tcp_client_create_from_fd(
