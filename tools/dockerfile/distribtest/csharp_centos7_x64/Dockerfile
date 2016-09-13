@@ -34,6 +34,6 @@ RUN yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
 
 RUN yum install -y mono
 RUN yum install -y unzip
-RUN yum install -y nuget
 
-RUN nuget update -self
+# --nogpgcheck because nuget-2.12 package is not signed.
+RUN yum install -y nuget --nogpgcheck

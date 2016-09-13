@@ -37,7 +37,6 @@
 #include <cstring>
 #include <string>
 
-extern "C" {
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -47,6 +46,7 @@ extern "C" {
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+extern "C" {
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
