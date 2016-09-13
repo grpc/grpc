@@ -1,7 +1,7 @@
 # gRPC Server Reflection Tutorial
 
 gRPC Server Reflection provides information about publicly-accessible gRPC
-services on a server, and assists clients in runtime to construct RPC
+services on a server, and assists clients at runtime to construct RPC
 requests and responses without precompiled service information. It has been
 supported by gRPC CLI, which can be used to introspect server protos and
 send/receive test RPCs.
