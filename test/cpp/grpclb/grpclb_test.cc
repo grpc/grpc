@@ -48,7 +48,6 @@
 #include <grpc/support/time.h>
 
 #include <grpc++/impl/codegen/config.h>
-
 extern "C" {
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"

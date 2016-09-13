@@ -97,7 +97,7 @@ zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials
 
 /**
  * Set default roots pem.
- * @param string pem_roots PEM encoding of the server root certificates
+ * @param string $pem_roots PEM encoding of the server root certificates
  * @return void
  */
 PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
@@ -129,11 +129,11 @@ PHP_METHOD(ChannelCredentials, createDefault) {
 
 /**
  * Create SSL credentials.
- * @param string pem_root_certs PEM encoding of the server root certificates
- * @param string pem_private_key PEM encoding of the client's private key
- *     (optional)
- * @param string pem_cert_chain PEM encoding of the client's certificate chain
- *     (optional)
+ * @param string $pem_root_certs PEM encoding of the server root certificates
+ * @param string $pem_key_cert_pair.private_key PEM encoding of the client's
+ *                                              private key (optional)
+ * @param string $pem_key_cert_pair.cert_chain PEM encoding of the client's
+ *                                             certificate chain (optional)
  * @return ChannelCredentials The new SSL credentials object
  */
 PHP_METHOD(ChannelCredentials, createSsl) {
@@ -168,8 +168,8 @@ PHP_METHOD(ChannelCredentials, createSsl) {
 
 /**
  * Create composite credentials from two existing credentials.
- * @param ChannelCredentials cred1 The first credential
- * @param CallCredentials cred2 The second credential
+ * @param ChannelCredentials $cred1_obj The first credential
+ * @param CallCredentials $cred2_obj The second credential
  * @return ChannelCredentials The new composite credentials object
  */
 PHP_METHOD(ChannelCredentials, createComposite) {

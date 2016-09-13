@@ -130,6 +130,7 @@ grpc::string GetHeaderIncludes(File *file, const Parameters &params) {
     static const char *headers_strs[] = {
         "grpc++/impl/codegen/async_stream.h",
         "grpc++/impl/codegen/async_unary_call.h",
+        "grpc++/impl/codegen/method_handler_impl.h",
         "grpc++/impl/codegen/proto_utils.h",
         "grpc++/impl/codegen/rpc_method.h",
         "grpc++/impl/codegen/service_type.h",
@@ -604,6 +605,57 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
   printer->Print(*vars, "};\n");
 }
 
+void PrintHeaderServerMethodStreamedUnary(
+    Printer *printer, const Method *method,
+    std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+  if (method->NoStreaming()) {
+    printer->Print(*vars, "template <class BaseClass>\n");
+    printer->Print(*vars,
+                   "class WithStreamedUnaryMethod_$Method$ : "
+                   "public BaseClass {\n");
+    printer->Print(
+        " private:\n"
+        "  void BaseClassMustBeDerivedFromService(const Service *service) "
+        "{}\n");
+    printer->Print(" public:\n");
+    printer->Indent();
+    printer->Print(*vars,
+                   "WithStreamedUnaryMethod_$Method$() {\n"
+                   "  ::grpc::Service::MarkMethodStreamedUnary($Idx$,\n"
+                   "    new ::grpc::StreamedUnaryHandler< $Request$, "
+                   "$Response$>(std::bind"
+                   "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
+                   "Streamed$Method$, this, std::placeholders::_1, "
+                   "std::placeholders::_2)));\n"
+                   "}\n");
+    printer->Print(*vars,
+                   "~WithStreamedUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
+                   "  BaseClassMustBeDerivedFromService(this);\n"
+                   "}\n");
+    printer->Print(
+        *vars,
+        "// disable regular version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, const $Request$* request, "
+        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+    printer->Print(*vars,
+                   "// replace default version of method with streamed unary\n"
+                   "virtual ::grpc::Status Streamed$Method$("
+                   "::grpc::ServerContext* context, "
+                   "::grpc::ServerUnaryStreamer< "
+                   "$Request$,$Response$>* server_unary_streamer)"
+                   " = 0;\n");
+    printer->Outdent();
+    printer->Print(*vars, "};\n");
+  }
+}
+
 void PrintHeaderServerMethodGeneric(
     Printer *printer, const Method *method,
     std::map<grpc::string, grpc::string> *vars) {
@@ -769,6 +821,28 @@ void PrintHeaderService(Printer *printer, const Service *service,
     (*vars)["Idx"] = as_string(i);
     PrintHeaderServerMethodGeneric(printer, service->method(i).get(), vars);
   }
+
+  // Server side - Streamed Unary
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Idx"] = as_string(i);
+    PrintHeaderServerMethodStreamedUnary(printer, service->method(i).get(),
+                                         vars);
+  }
+
+  printer->Print("typedef ");
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i).get()->name();
+    if (service->method(i)->NoStreaming()) {
+      printer->Print(*vars, "WithStreamedUnaryMethod_$method_name$<");
+    }
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    if (service->method(i)->NoStreaming()) {
+      printer->Print(" >");
+    }
+  }
+  printer->Print(" StreamedUnaryService;\n");
 
   printer->Outdent();
   printer->Print("};\n");
@@ -1080,6 +1154,9 @@ void PrintSourceService(Printer *printer, const Service *service,
     (*vars)["Idx"] = as_string(i);
     if (method->NoStreaming()) {
       (*vars)["StreamingType"] = "NORMAL_RPC";
+      // NOTE: There is no reason to consider streamed-unary as a separate
+      // category here since this part is setting up the client-side stub
+      // and this appears as a NORMAL_RPC from the client-side.
     } else if (method->ClientOnlyStreaming()) {
       (*vars)["StreamingType"] = "CLIENT_STREAMING";
     } else if (method->ServerOnlyStreaming()) {
