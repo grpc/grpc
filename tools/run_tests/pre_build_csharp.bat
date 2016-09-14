@@ -38,9 +38,10 @@ cd /d %~dp0\..\..
 set NUGET=C:\nuget\nuget.exe
 
 if exist %NUGET% (
+  @rem TODO(jtattermusch): Get rid of this hack. See #8034
   @rem Restore Grpc packages by packages since Nuget client 3.4.4 doesnt support restore
   @rem by solution
-  @rem Moving into each directory to let the restores work with both nuget 3.4 and 2.8
+  @rem Moving into each directory to let the restores work based on per-project packages.config files
   %NUGET% restore vsprojects/grpc_csharp_ext.sln || goto :error
 
   cd src/csharp
