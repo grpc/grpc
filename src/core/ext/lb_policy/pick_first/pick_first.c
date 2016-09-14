@@ -438,7 +438,7 @@ static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
 static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
-  GPR_ASSERT(args->lb_addresses != NULL);
+  GPR_ASSERT(args->addresses != NULL);
   GPR_ASSERT(args->client_channel_factory != NULL);
 
   if (args->num_addresses == 0) return NULL;
@@ -451,10 +451,13 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
   for (size_t i = 0; i < args->num_addresses; i++) {
+    /* this LB policy doesn't support \a user_data */
+    GPR_ASSERT(args->addresses[i].user_data == NULL);
+
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     sc_args.addr =
-        (struct sockaddr *)(args->lb_addresses[i].resolved_address->addr);
-    sc_args.addr_len = (size_t)args->lb_addresses[i].resolved_address->len;
+        (struct sockaddr *)(args->addresses[i].resolved_address->addr);
+    sc_args.addr_len = (size_t)args->addresses[i].resolved_address->len;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);

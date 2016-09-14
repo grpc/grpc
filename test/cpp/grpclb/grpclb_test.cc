@@ -37,6 +37,8 @@
 #include <cstring>
 #include <string>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -76,6 +78,7 @@ extern "C" {
 // - Test against a non-LB server. That server should return UNIMPLEMENTED and
 //   the call should fail.
 // - Random LB server closing the stream unexpectedly.
+// - Test using DNS-resolvable names (localhost?)
 
 namespace grpc {
 namespace {
@@ -612,27 +615,30 @@ static void fork_lb_server(void *arg) {
                   tf->lb_server_update_delay_ms);
 }
 
-static void setup_test_fixture(test_fixture *tf,
-                               int lb_server_update_delay_ms) {
-  tf->lb_server_update_delay_ms = lb_server_update_delay_ms;
+static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
+  test_fixture tf;
+  memset(&tf, 0, sizeof(tf));
+  tf.lb_server_update_delay_ms = lb_server_update_delay_ms;
 
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
 
   for (int i = 0; i < NUM_BACKENDS; ++i) {
-    setup_server("127.0.0.1", &tf->lb_backends[i]);
-    gpr_thd_new(&tf->lb_backends[i].tid, fork_backend_server,
-                &tf->lb_backends[i], &options);
+    setup_server("127.0.0.1", &tf.lb_backends[i]);
+    gpr_thd_new(&tf.lb_backends[i].tid, fork_backend_server, &tf.lb_backends[i],
+                &options);
   }
 
-  setup_server("127.0.0.1", &tf->lb_server);
-  gpr_thd_new(&tf->lb_server.tid, fork_lb_server, &tf->lb_server, &options);
+  setup_server("127.0.0.1", &tf.lb_server);
+  gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
 
   char *server_uri;
   gpr_asprintf(&server_uri, "ipv4:%s?lb_policy=grpclb&lb_enabled=1",
-               tf->lb_server.servers_hostport);
-  setup_client(server_uri, &tf->client);
+               tf.lb_server.servers_hostport);
+  setup_client(server_uri, &tf.client);
   gpr_free(server_uri);
+
+  return tf;
 }
 
 static void teardown_test_fixture(test_fixture *tf) {
@@ -643,19 +649,13 @@ static void teardown_test_fixture(test_fixture *tf) {
   teardown_server(&tf->lb_server);
 }
 
-// The LB server will send two updates: batch 1 and batch 2. Each batch
-// contains
-// two addresses, both of a valid and running backend server. Batch 1 is
-// readily
-// available and provided as soon as the client establishes the streaming
-// call.
-// Batch 2 is sent after a delay of \a lb_server_update_delay_ms
-// milliseconds.
+// The LB server will send two updates: batch 1 and batch 2. Each batch contains
+// two addresses, both of a valid and running backend server. Batch 1 is readily
+// available and provided as soon as the client establishes the streaming call.
+// Batch 2 is sent after a delay of \a lb_server_update_delay_ms milliseconds.
 static test_fixture test_update(int lb_server_update_delay_ms) {
   gpr_log(GPR_INFO, "start %s(%d)", __func__, lb_server_update_delay_ms);
-  test_fixture tf;
-  memset(&tf, 0, sizeof(tf));
-  setup_test_fixture(&tf, lb_server_update_delay_ms);
+  test_fixture tf = setup_test_fixture(lb_server_update_delay_ms);
   perform_request(
       &tf.client);  // "consumes" 1st backend server of 1st serverlist
   perform_request(
@@ -671,13 +671,7 @@ static test_fixture test_update(int lb_server_update_delay_ms) {
   return tf;
 }
 
-}  // namespace
-}  // namespace grpc
-
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_init();
-
+TEST(GrpclbTest, Updates) {
   grpc::test_fixture tf_result;
   // Clients take a bit over one second to complete a call (the last part of the
   // call sleeps for 1 second while verifying the client's completion queue is
@@ -712,7 +706,18 @@ int main(int argc, char **argv) {
   GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced > 0);
   GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced > 0);
   GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 0);
+}
 
+TEST(GrpclbTest, InvalidAddressInServerlist) {}
+
+}  // namespace
+}  // namespace grpc
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_test_init(argc, argv);
+  grpc_init();
+  const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }
