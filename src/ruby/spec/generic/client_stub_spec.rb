@@ -168,23 +168,62 @@ describe 'ClientStub' do
         expect(&blk).to raise_error(GRPC::BadStatus)
         th.join
       end
+
+      it 'should receive UNAUTHENTICATED if call credentials plugin fails' do
+        server_port = create_secure_test_server
+        th = run_request_response(@sent_msg, @resp, @pass)
+
+        certs = load_test_certs
+        secure_channel_creds = GRPC::Core::ChannelCredentials.new(
+          certs[0], nil, nil)
+        secure_stub_opts = {
+          channel_args: {
+            GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
+          }
+        }
+        stub = GRPC::ClientStub.new("localhost:#{server_port}",
+                                    secure_channel_creds, **secure_stub_opts)
+
+        error_message = 'Failing call credentials callback'
+        failing_auth = proc do
+          fail error_message
+        end
+        creds = GRPC::Core::CallCredentials.new(failing_auth)
+
+        error_occured = false
+        begin
+          get_response(stub, credentials: creds)
+        rescue GRPC::BadStatus => e
+          error_occured = true
+          expect(e.code).to eq(GRPC::Core::StatusCodes::UNAUTHENTICATED)
+          # Expecting the error message from the exception to also be included
+          expect(e.details.include?(error_message)).to be true
+        end
+        expect(error_occured).to eq(true)
+
+        # Kill the server thread so tests can complete
+        th.kill
+      end
     end
 
     describe 'without a call operation' do
-      def get_response(stub)
+      def get_response(stub, credentials: nil)
+        puts credentials.inspect
         stub.request_response(@method, @sent_msg, noop, noop,
-                              metadata: { k1: 'v1', k2: 'v2' })
+                              metadata: { k1: 'v1', k2: 'v2' },
+                              credentials: credentials)
       end
 
       it_behaves_like 'request response'
     end
 
     describe 'via a call operation' do
-      def get_response(stub)
+      def get_response(stub, credentials: nil)
         op = stub.request_response(@method, @sent_msg, noop, noop,
                                    return_op: true,
                                    metadata: { k1: 'v1', k2: 'v2' },
-                                   deadline: from_relative_time(2))
+                                   deadline: from_relative_time(2),
+                                   credentials: credentials)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         op.execute
       end
@@ -439,6 +478,15 @@ describe 'ClientStub' do
       c.remote_send(resp)
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
     end
+  end
+
+  def create_secure_test_server
+    certs = load_test_certs
+    secure_credentials = GRPC::Core::ServerCredentials.new(
+      nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
+
+    @server = GRPC::Core::Server.new(nil)
+    @server.add_http2_port('0.0.0.0:0', secure_credentials)
   end
 
   def create_test_server
