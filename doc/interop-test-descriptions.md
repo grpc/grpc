@@ -60,6 +60,27 @@ Client asserts:
 *It may be possible to use UnaryCall instead of EmptyCall, but it is harder to
 ensure that the proto serialized to zero bytes.*
 
+### cacheable_unary
+
+This test verifies that gRPC requests marked as cacheable use GET verb instead
+of POST, and that server sets appropriate cache control headers for the response
+to be cached by a proxy. This interop test requires that the server is behind
+a caching proxy. It is NOT expected to pass if client is accessing the server
+directly.
+
+Server features:
+* [CacheableUnaryCall][]
+
+Procedure:
+ 1. Client calls CacheableUnaryCall twice, and compares the two responses.
+ The server generates a unique response (timestamp) for each request.
+ If the second response was delivered from cache, then both responses will
+ be the same.
+
+Client asserts:
+* call was successful
+* responses are the same.
+
 ### large_unary
 
 This test verifies unary calls succeed in sending messages, and touches on flow
