@@ -254,34 +254,7 @@ grpc_call *grpc_call_create(
     }
   }
   send_deadline = gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
-  GRPC_CHANNEL_INTERNAL_REF(channel, "call");
-  /* initial refcount dropped by grpc_call_destroy */
-  grpc_error *error = grpc_call_stack_init(
-      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
-      server_transport_data, CALL_STACK_FROM_CALL(call));
-  if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    const char *error_str;
-    grpc_error_get_status(error, &status, &error_str);
-    close_with_status(&exec_ctx, call, status, error_str);
-    GRPC_ERROR_UNREF(error);
-  }
-  if (cq != NULL) {
-    GPR_ASSERT(
-        pollset_set_alternative == NULL &&
-        "Only one of 'cq' and 'pollset_set_alternative' should be non-NULL.");
-    GRPC_CQ_INTERNAL_REF(cq, "bind");
-    call->pollent =
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
-  }
-  if (pollset_set_alternative != NULL) {
-    call->pollent =
-        grpc_polling_entity_create_from_pollset_set(pollset_set_alternative);
-  }
-  if (!grpc_polling_entity_is_empty(&call->pollent)) {
-    grpc_call_stack_set_pollset_or_pollset_set(
-        &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
-  }
+
   if (parent_call != NULL) {
     GRPC_CALL_INTERNAL_REF(parent_call, "child");
     GPR_ASSERT(call->is_client);
@@ -323,7 +296,38 @@ grpc_call *grpc_call_create(
 
     gpr_mu_unlock(&parent_call->mu);
   }
+
   call->send_deadline = send_deadline;
+
+  GRPC_CHANNEL_INTERNAL_REF(channel, "call");
+  /* initial refcount dropped by grpc_call_destroy */
+  grpc_error *error = grpc_call_stack_init(
+      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
+      server_transport_data, send_deadline, CALL_STACK_FROM_CALL(call));
+  if (error != GRPC_ERROR_NONE) {
+    grpc_status_code status;
+    const char *error_str;
+    grpc_error_get_status(error, &status, &error_str);
+    close_with_status(&exec_ctx, call, status, error_str);
+    GRPC_ERROR_UNREF(error);
+  }
+  if (cq != NULL) {
+    GPR_ASSERT(
+        pollset_set_alternative == NULL &&
+        "Only one of 'cq' and 'pollset_set_alternative' should be non-NULL.");
+    GRPC_CQ_INTERNAL_REF(cq, "bind");
+    call->pollent =
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
+  }
+  if (pollset_set_alternative != NULL) {
+    call->pollent =
+        grpc_polling_entity_create_from_pollset_set(pollset_set_alternative);
+  }
+  if (!grpc_polling_entity_is_empty(&call->pollent)) {
+    grpc_call_stack_set_pollset_or_pollset_set(
+        &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
+  }
+
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_call_create", 0);
   return call;
@@ -1220,8 +1224,8 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
             0 &&
         !call->is_client) {
-      call->send_deadline = gpr_convert_clock_type(md->deadline,
-                                                   GPR_CLOCK_MONOTONIC);
+      call->send_deadline =
+          gpr_convert_clock_type(md->deadline, GPR_CLOCK_MONOTONIC);
     }
   }
 
@@ -1250,6 +1254,14 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&call->mu);
+
+  // If the error has an associated status code, set the call's status.
+  intptr_t status;
+  if (error != GRPC_ERROR_NONE &&
+      grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status)) {
+    set_status_from_error(call, STATUS_FROM_CORE, error);
+  }
+
   if (bctl->send_initial_metadata) {
     if (error != GRPC_ERROR_NONE) {
       set_status_from_error(call, STATUS_FROM_CORE, error);

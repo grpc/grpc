@@ -304,11 +304,6 @@ static void test_receive_initial_metadata_twice_at_client() {
   grpc_op *op;
   prepare_test(1);
   op = g_state.ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &g_state.initial_metadata_recv;
   op->flags = 0;
@@ -397,11 +392,6 @@ static void test_recv_status_on_client_twice() {
   prepare_test(1);
 
   op = g_state.ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata =
       &g_state.trailing_metadata_recv;

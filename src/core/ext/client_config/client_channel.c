@@ -385,6 +385,9 @@ typedef struct client_channel_call_data {
   // stack and each has its own mutex.  If/when we have time, find a way
   // to avoid this without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
+  gpr_timespec deadline;
+
+  grpc_error *cancel_error;
 
   /** either 0 for no call, 1 for cancelled, or a pointer to a
       grpc_subchannel_call */
@@ -482,7 +485,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     grpc_subchannel_call *subchannel_call = NULL;
     grpc_error *new_error = grpc_connected_subchannel_create_call(
-        exec_ctx, calld->connected_subchannel, calld->pollent,
+        exec_ctx, calld->connected_subchannel, calld->pollent, calld->deadline,
         &subchannel_call);
     if (new_error != GRPC_ERROR_NONE) {
       new_error = grpc_error_add_child(new_error, error);
@@ -627,8 +630,8 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_call *call = GET_CALL(calld);
   GPR_TIMER_BEGIN("cc_start_transport_stream_op", 0);
   if (call == CANCELLED_CALL) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op,
-                                                 GRPC_ERROR_CANCELLED);
+    grpc_transport_stream_op_finish_with_failure(
+        exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
     GPR_TIMER_END("cc_start_transport_stream_op", 0);
     return;
   }
@@ -644,8 +647,8 @@ retry:
   call = GET_CALL(calld);
   if (call == CANCELLED_CALL) {
     gpr_mu_unlock(&calld->mu);
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op,
-                                                 GRPC_ERROR_CANCELLED);
+    grpc_transport_stream_op_finish_with_failure(
+        exec_ctx, op, GRPC_ERROR_REF(calld->cancel_error));
     GPR_TIMER_END("cc_start_transport_stream_op", 0);
     return;
   }
@@ -661,6 +664,12 @@ retry:
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
       goto retry;
     } else {
+      // Stash a copy of cancel_error in our call data, so that we can use
+      // it for subsequent operations.  This ensures that if the call is
+      // cancelled before any ops are passed down (e.g., if the deadline
+      // is in the past when the call starts), we can return the right
+      // error to the caller when the first op does get passed down.
+      calld->cancel_error = GRPC_ERROR_REF(op->cancel_error);
       switch (calld->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
           fail_locked(exec_ctx, calld, GRPC_ERROR_REF(op->cancel_error));
@@ -697,7 +706,7 @@ retry:
       calld->connected_subchannel != NULL) {
     grpc_subchannel_call *subchannel_call = NULL;
     grpc_error *error = grpc_connected_subchannel_create_call(
-        exec_ctx, calld->connected_subchannel, calld->pollent,
+        exec_ctx, calld->connected_subchannel, calld->pollent, calld->deadline,
         &subchannel_call);
     if (error != GRPC_ERROR_NONE) {
       subchannel_call = CANCELLED_CALL;
@@ -720,7 +729,9 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  grpc_deadline_state_init(&calld->deadline_state, args->call_stack);
+  grpc_deadline_state_init(exec_ctx, elem, args);
+  calld->deadline = args->deadline;
+  calld->cancel_error = GRPC_ERROR_NONE;
   gpr_atm_rel_store(&calld->subchannel_call, 0);
   gpr_mu_init(&calld->mu);
   calld->connected_subchannel = NULL;
@@ -739,7 +750,8 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  const grpc_call_final_info *final_info,
                                  void *and_free_memory) {
   call_data *calld = elem->call_data;
-  grpc_deadline_state_destroy(exec_ctx, &calld->deadline_state);
+  grpc_deadline_state_destroy(exec_ctx, elem);
+  GRPC_ERROR_UNREF(calld->cancel_error);
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, call, "client_channel_destroy_call");
