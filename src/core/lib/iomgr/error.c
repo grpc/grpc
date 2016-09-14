@@ -356,8 +356,7 @@ static grpc_error *recursively_find_error_with_status(grpc_error *error,
 void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
                            const char **msg) {
   // Handle special errors via the static map.
-  for (size_t i = 0;
-       i < sizeof(error_status_map) / sizeof(special_error_status_map); ++i) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); ++i) {
     if (error == error_status_map[i].error) {
       *code = error_status_map[i].code;
       *msg = error_status_map[i].msg;
