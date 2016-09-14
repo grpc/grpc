@@ -52,7 +52,6 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/time.h>
 
 struct grpc_completion_queue;
 
@@ -219,7 +218,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// Performs a single polling pluck on \a tag.
   /// \warning Must not be mixed with calls to \a Next.
   void TryPluck(CompletionQueueTag* tag) {
-    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+    auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
