@@ -500,9 +500,9 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
       gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
     }
-    const grpc_lb_policy_pick_args pick_args = {
-        pp->pollent, pp->initial_metadata, pp->initial_metadata_flags,
-        pp->lb_token_mdelem_storage};
+    const grpc_lb_policy_pick_args pick_args = {pp->initial_metadata,
+                                                pp->initial_metadata_flags,
+                                                pp->lb_token_mdelem_storage};
     grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, &pick_args, pp->target,
                         (void **)&pp->wrapped_on_complete_arg.lb_token,
                         &pp->wrapped_on_complete);
@@ -806,8 +806,6 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
           GRPC_MDELEM_REF(glb_policy->wc_arg.lb_token));
     }
   } else {
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
-                                           glb_policy->base.interested_parties);
     add_pending_pick(&glb_policy->pending_picks, pick_args, target,
                      on_complete);
 

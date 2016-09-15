@@ -54,8 +54,6 @@ struct grpc_lb_policy {
 
 /** Extra arguments for an LB pick */
 typedef struct grpc_lb_policy_pick_args {
-  /** Parties interested in the pick's progress */
-  grpc_polling_entity *pollent;
   /** Initial metadata associated with the picking call. */
   grpc_metadata_batch *initial_metadata;
   /** See \a GRPC_INITIAL_METADATA_* in grpc_types.h */
