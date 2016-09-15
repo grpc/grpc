@@ -431,7 +431,7 @@ for job in qpsworker_jobs:
   workers_by_lang[str(job.language)].append(job)
 
 scenarios = create_scenarios(languages,
-                           workers_by_lang=worker_addresses,
+                           workers_by_lang=workers_by_lang,
                            remote_host=args.remote_driver_host,
                            regex=args.regex,
                            category=args.category,
