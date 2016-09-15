@@ -174,7 +174,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                                  false /* is_balancer */);
     }
     grpc_resolved_addresses_destroy(r->addresses);
-    result = grpc_resolver_result_create(addresses, r->lb_policy_name);
+    result = grpc_resolver_result_create(addresses, r->lb_policy_name, NULL);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);

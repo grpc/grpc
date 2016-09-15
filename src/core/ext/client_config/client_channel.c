@@ -179,6 +179,8 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_lb_policy_args lb_policy_args;
     lb_policy_args.addresses =
         grpc_resolver_result_get_addresses(chand->resolver_result);
+    lb_policy_args.additional_args =
+        grpc_resolver_result_get_lb_policy_args(chand->resolver_result);
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy = grpc_lb_policy_create(
         exec_ctx,

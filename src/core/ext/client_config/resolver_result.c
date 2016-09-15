@@ -36,6 +36,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+
 grpc_addresses* grpc_addresses_create(size_t num_addresses) {
   grpc_addresses* addresses = gpr_malloc(sizeof(grpc_addresses));
   addresses->num_addresses = num_addresses;
@@ -71,15 +73,18 @@ struct grpc_resolver_result {
   gpr_refcount refs;
   grpc_addresses* addresses;
   char* lb_policy_name;
+  grpc_channel_args* lb_policy_args;
 };
 
-grpc_resolver_result* grpc_resolver_result_create(grpc_addresses* addresses,
-                                                  const char* lb_policy_name) {
+grpc_resolver_result* grpc_resolver_result_create(
+    grpc_addresses* addresses, const char* lb_policy_name,
+    grpc_channel_args* lb_policy_args) {
   grpc_resolver_result* result = gpr_malloc(sizeof(*result));
   memset(result, 0, sizeof(*result));
   gpr_ref_init(&result->refs, 1);
   result->addresses = addresses;
   result->lb_policy_name = gpr_strdup(lb_policy_name);
+  result->lb_policy_args = lb_policy_args;
   return result;
 }
 
@@ -92,6 +97,7 @@ void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
   if (gpr_unref(&result->refs)) {
     grpc_addresses_destroy(result->addresses);
     gpr_free(result->lb_policy_name);
+    grpc_channel_args_destroy(result->lb_policy_args);
     gpr_free(result);
   }
 }
@@ -104,4 +110,9 @@ grpc_addresses* grpc_resolver_result_get_addresses(
 const char* grpc_resolver_result_get_lb_policy_name(
     grpc_resolver_result* result) {
   return result->lb_policy_name;
+}
+
+grpc_channel_args* grpc_resolver_result_get_lb_policy_args(
+    grpc_resolver_result* result) {
+  return result->lb_policy_args;
 }
