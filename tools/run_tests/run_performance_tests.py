@@ -67,7 +67,7 @@ class QpsWorkerJob:
     self._job = None
 
   def start(self):
-    self._job = jobset.Job(spec, newline_on_success=True, travis=True, add_env={})
+    self._job = jobset.Job(self._spec, newline_on_success=True, travis=True, add_env={})
 
   def is_running(self):
     """Polls a job and returns True if given job is still running."""
