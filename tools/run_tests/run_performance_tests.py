@@ -33,11 +33,13 @@
 from __future__ import print_function
 
 import argparse
+import collections
 import itertools
 import jobset
 import json
 import multiprocessing
 import os
+import performance.scenario_config as scenario_config
 import pipes
 import re
 import subprocess
@@ -46,7 +48,6 @@ import tempfile
 import time
 import traceback
 import uuid
-import performance.scenario_config as scenario_config
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
