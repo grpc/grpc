@@ -125,8 +125,8 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 /** Given initial metadata in \a initial_metadata, find an appropriate
     target for this rpc, and 'return' it by calling \a on_complete after setting
     \a target.
-    Picking can be asynchronous. Any IO should be done under the pollset_set
-    interested_parties. */
+    Picking can be asynchronous. Any IO should be done under the \a
+    interested_parties \a grpc_pollset_set in the \a grpc_lb_policy struct. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,

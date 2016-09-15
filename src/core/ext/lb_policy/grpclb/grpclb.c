@@ -761,7 +761,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
 
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling
-   * entities from client_channel. */
+   * entities from \a client_channel. */
   lb_client->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties, "/BalanceLoad",
