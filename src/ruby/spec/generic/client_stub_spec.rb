@@ -196,7 +196,6 @@ describe 'ClientStub' do
         rescue GRPC::BadStatus => e
           error_occured = true
           expect(e.code).to eq(GRPC::Core::StatusCodes::UNAUTHENTICATED)
-          # Expecting the error message from the exception to also be included
           expect(e.details.include?(error_message)).to be true
         end
         expect(error_occured).to eq(true)
