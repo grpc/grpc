@@ -432,6 +432,15 @@ static void on_response_headers_received(
             grpc_mdstr_from_string(headers->headers[i].value)));
   }
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
+  /* Do an extra read to trigger on_succeeded() callback in case connection
+   is closed */
+  GPR_ASSERT(s->state.rs.length_field_received == false);
+  s->state.rs.read_buffer = s->state.rs.grpc_header_bytes;
+  s->state.rs.received_bytes = 0;
+  s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
+  CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
+  cronet_bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                                   s->state.rs.remaining_bytes);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
@@ -509,20 +518,8 @@ static void on_response_trailers_received(
     s->state.rs.trailing_metadata_valid = true;
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
-  if (!s->state.state_op_done[OP_READ_REQ_MADE]) {
-    /* Do an extra read to trigger on_succeeded() callback in case connection
-     is closed */
-    s->state.rs.received_bytes = 0;
-    s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
-    s->state.rs.length_field_received = false;
-    CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
-    cronet_bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
-                                     s->state.rs.remaining_bytes);
-    gpr_mu_unlock(&s->mu);
-  } else {
-    gpr_mu_unlock(&s->mu);
-    execute_from_storage(s);
-  }
+  gpr_mu_unlock(&s->mu);
+  execute_from_storage(s);
 }
 
 /*
@@ -633,9 +630,9 @@ static bool op_can_be_run(grpc_transport_stream_op *curr_op,
   /* When call is canceled, every op can be run, except under following
   conditions
   */
-  bool is_canceled_of_failed = stream_state->state_op_done[OP_CANCEL_ERROR] ||
+  bool is_canceled_or_failed = stream_state->state_op_done[OP_CANCEL_ERROR] ||
                                stream_state->state_callback_received[OP_FAILED];
-  if (is_canceled_of_failed) {
+  if (is_canceled_or_failed) {
     if (op_id == OP_SEND_INITIAL_METADATA) result = false;
     if (op_id == OP_SEND_MESSAGE) result = false;
     if (op_id == OP_SEND_TRAILING_METADATA) result = false;
@@ -949,6 +946,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       /* Do an extra read to trigger on_succeeded() callback in case connection
          is closed */
+      stream_state->rs.read_buffer = stream_state->rs.grpc_header_bytes;
       stream_state->rs.received_bytes = 0;
       stream_state->rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
       stream_state->rs.length_field_received = false;
