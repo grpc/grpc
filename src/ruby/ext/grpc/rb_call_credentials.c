@@ -93,7 +93,7 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
           StringValueCStr(backtrace));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   rb_hash_aset(result, rb_str_new2("status"),
-               INT2NUM(GRPC_STATUS_UNAVAILABLE));
+               INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
   rb_hash_aset(result, rb_str_new2("details"),
                rb_exception_info);
   return result;
