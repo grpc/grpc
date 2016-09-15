@@ -404,7 +404,10 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     /* readily available, report right away */
     gpr_mu_unlock(&p->mu);
     *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
-    *user_data = selected->user_data;
+
+    if (user_data != NULL) {
+      *user_data = selected->user_data;
+    }
     if (grpc_lb_round_robin_trace) {
       gpr_log(GPR_DEBUG,
               "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (NODE %p)",
@@ -470,7 +473,9 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
           *pp->target =
               grpc_subchannel_get_connected_subchannel(selected->subchannel);
-          *pp->user_data = selected->user_data;
+          if (pp->user_data != NULL) {
+            *pp->user_data = selected->user_data;
+          }
           if (grpc_lb_round_robin_trace) {
             gpr_log(GPR_DEBUG,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
