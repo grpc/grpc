@@ -130,8 +130,9 @@ struct round_robin_lb_policy {
 
   /** total number of addresses received at creation time */
   size_t num_addresses;
-  /** user data, one per incoming address. This pointer is borrowed and opaque.
-   * It'll be returned as-is in successful picks. */
+  /** array holding the borrowed and opaque pointers to incoming user data, one
+   * per incoming address.  These individual pointers will be returned as-is in
+   * successful picks. */
   void **user_data_pointers;
 
   /** all our subchannels */
