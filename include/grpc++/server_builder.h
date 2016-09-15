@@ -90,7 +90,7 @@ class ServerBuilder {
     return *this;
   }
 
-  /// For backward compatibility.
+  /// \deprecated For backward compatibility.
   ServerBuilder& SetMaxMessageSize(int max_message_size) {
     return SetMaxReceiveMessageSize(max_message_size);
   }

@@ -162,10 +162,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
     (*plugin)->UpdateChannelArguments(&args);
   }
-  if (max_receive_message_size_ > 0) {
+  if (max_receive_message_size_ >= 0) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
-  if (max_send_message_size_ > 0) {
+  if (max_send_message_size_ >= 0) {
     args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
   }
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,

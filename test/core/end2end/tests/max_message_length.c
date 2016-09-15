@@ -105,7 +105,7 @@ static void test_max_message_length(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   grpc_arg channel_arg;
   grpc_channel_args channel_args;
-  grpc_call *c;
+  grpc_call *c = NULL;
   grpc_call *s = NULL;
   cq_verifier *cqv;
   grpc_op ops[6];

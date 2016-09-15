@@ -128,7 +128,7 @@ typedef struct {
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
 /** Maximum message length that the channel can receive. Int valued, bytes. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
-/** Backward compatibility. */
+/** \deprecated For backward compatibility. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 /** Maximum message length that the channel can send. Int valued, bytes. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"

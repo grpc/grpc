@@ -70,17 +70,15 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
       (*calld->recv_message)->length > chand->max_recv_size) {
     char* message_string;
     gpr_asprintf(&message_string,
-                 "Received message larger than max (%lu vs. %lu)",
-                 (unsigned long)(*calld->recv_message)->length,
-                 (unsigned long)chand->max_recv_size);
+                 "Received message larger than max (%u vs. %zu)",
+                 (*calld->recv_message)->length, chand->max_recv_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
     grpc_call_element_send_cancel_with_message(
         exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Invoke the next callback.
-  calld->next_recv_message_ready->cb(
-      exec_ctx, calld->next_recv_message_ready->cb_arg, error);
+  grpc_exec_ctx_sched(exec_ctx, calld->next_recv_message_ready, error, NULL);
 }
 
 // Start transport op.
@@ -93,9 +91,8 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
   if (op->send_message != NULL &&
       op->send_message->length > chand->max_send_size) {
     char* message_string;
-    gpr_asprintf(&message_string, "Sent message larger than max (%lu vs. %lu)",
-                 (unsigned long)op->send_message->length,
-                 (unsigned long)chand->max_send_size);
+    gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %zu)",
+                 op->send_message->length, chand->max_send_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
     grpc_call_element_send_cancel_with_message(
