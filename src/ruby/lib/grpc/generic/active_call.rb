@@ -378,10 +378,22 @@ module GRPC
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
       merge_metadata_to_send(metadata) && send_initial_metadata
-      requests.each { |r| remote_send(r) }
-      writes_done(false)
-      response = remote_read
-      finished unless response.is_a? Struct::Status
+      requests.each { |r| @call.run_batch(SEND_MESSAGE => r) }
+      batch_result = @call.run_batch(
+        SEND_CLOSE_FROM_CLIENT => nil,
+        RECV_INITIAL_METADATA => nil,
+        RECV_MESSAGE => nil,
+        RECV_STATUS_ON_CLIENT => nil
+      )
+      @call.metadata = batch_result.metadata
+      @call.status = batch_result.status
+      if batch_result.status.metadata
+        @call.trailing_metadata = batch_result.status.metadata
+      end
+      op_is_done
+      batch_result.check_status
+      @call.close
+
       response
     rescue GRPC::Core::CallError => e
       finished  # checks for Cancelled
@@ -403,9 +415,15 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
-      merge_metadata_to_send(metadata) && send_initial_metadata
-      remote_send(req)
-      writes_done(false)
+      @send_initial_md_mutex.synchronize do
+        fail 'md already sent' if @metadata_sent
+        @call.run_batch(
+          SEND_INITIAL_METADATA => metadata,
+          SEND_MESSAGE => req,
+          SEND_CLOSE_FROM_CLIENT => nil
+        )
+        @metadata_sent = true
+      end
       replies = enum_for(:each_remote_read_then_finish)
       return replies unless block_given?
       replies.each { |r| yield r }
