@@ -377,6 +377,10 @@ static void on_succeeded(cronet_bidirectional_stream *stream) {
   cronet_bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_SUCCEEDED] = true;
   s->cbs = NULL;
+  if (s->state.rs.read_buffer &&
+      s->state.rs.read_buffer != s->state.rs.grpc_header_bytes) {
+    gpr_free(s->state.rs.read_buffer);
+  }
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
@@ -909,6 +913,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);
+      gpr_free(stream_state->rs.read_buffer);
+      stream_state->rs.read_buffer = NULL;
       gpr_slice_buffer_init(&stream_state->rs.read_slice_buffer);
       gpr_slice_buffer_add(&stream_state->rs.read_slice_buffer,
                            read_data_slice);
