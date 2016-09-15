@@ -132,7 +132,7 @@ struct round_robin_lb_policy {
   size_t num_addresses;
   /** user data, one per incoming address. This pointer is borrowed and opaque.
    * It'll be returned as-is in successful picks. */
-  void **user_data;
+  void **user_data_pointers;
 
   /** all our subchannels */
   size_t num_subchannels;
@@ -281,7 +281,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     elem = tmp;
   }
 
-  gpr_free(p->user_data);
+  gpr_free(p->user_data_pointers);
   gpr_free(p);
 }
 
@@ -613,8 +613,8 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   p->num_addresses = args->num_addresses;
   p->subchannels = gpr_malloc(sizeof(subchannel_data) * p->num_addresses);
   memset(p->subchannels, 0, sizeof(*p->subchannels) * p->num_addresses);
-  p->user_data = gpr_malloc(sizeof(void *) * p->num_addresses);
-  memset(p->user_data, 0, sizeof(void *) * p->num_addresses);
+  p->user_data_pointers = gpr_malloc(sizeof(void *) * p->num_addresses);
+  memset(p->user_data_pointers, 0, sizeof(void *) * p->num_addresses);
 
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
@@ -623,7 +623,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     sc_args.addr = (struct sockaddr *)args->addresses[i].resolved_address->addr;
     sc_args.addr_len = args->addresses[i].resolved_address->len;
 
-    p->user_data[i] = args->addresses[i].user_data;
+    p->user_data_pointers[i] = args->addresses[i].user_data;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
@@ -635,7 +635,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       sd->policy = p;
       sd->index = subchannel_idx;
       sd->subchannel = subchannel;
-      sd->user_data = p->user_data[i];
+      sd->user_data = p->user_data_pointers[i];
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed, sd);

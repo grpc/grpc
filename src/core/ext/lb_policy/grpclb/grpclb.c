@@ -120,11 +120,6 @@
 
 int grpc_lb_glb_trace = 0;
 
-static void *user_data_copy(void *user_data) {
-  if (user_data == NULL) return NULL;
-  return GRPC_MDELEM_REF(user_data);
-}
-
 static void lb_addrs_destroy(grpc_lb_address *lb_addresses,
                              size_t num_addresses) {
   /* free "resolved" addresses memblock */
@@ -192,7 +187,7 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
 
   initial_metadata_add_lb_token(wc_arg->initial_metadata,
                                 wc_arg->lb_token_mdelem_storage,
-                                user_data_copy(wc_arg->lb_token));
+                                GRPC_MDELEM_REF(wc_arg->lb_token));
 
   grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, error, NULL);
   gpr_free(wc_arg->owning_pending_node);
@@ -809,7 +804,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       /* add the load reporting initial metadata */
       initial_metadata_add_lb_token(
           pick_args->initial_metadata, pick_args->lb_token_mdelem_storage,
-          user_data_copy(glb_policy->wc_arg.lb_token));
+          GRPC_MDELEM_REF(glb_policy->wc_arg.lb_token));
     }
   } else {
     grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
@@ -894,8 +889,7 @@ typedef struct lb_client_data {
   grpc_metadata_array initial_metadata_recv;  /* initial MD from LB server */
   grpc_metadata_array trailing_metadata_recv; /* trailing MD from LB server */
 
-  /* what's being sent to the LB server. Note that its value may vary if the
-   * LB
+  /* what's being sent to the LB server. Note that its value may vary if the LB
    * server indicates a redirect. */
   grpc_byte_buffer *request_payload;
 
@@ -1103,8 +1097,7 @@ static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
            * it'll just create the first RR policy instance */
           rr_handover(exec_ctx, lb_client->glb_policy, error);
         } else {
-          /* unref the RR policy, eventually leading to its substitution with
-           * a
+          /* unref the RR policy, eventually leading to its substitution with a
            * new one constructed from the received serverlist (see
            * glb_rr_connectivity_changed) */
           GRPC_LB_POLICY_UNREF(exec_ctx, lb_client->glb_policy->rr_policy,
@@ -1170,8 +1163,7 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
             lb_client->status_details_capacity);
   }
   /* TODO(dgq): deal with stream termination properly (fire up another one?
-   * fail
-   * the original call?) */
+   * fail the original call?) */
 }
 
 /* Code wiring the policy with the rest of the core */
