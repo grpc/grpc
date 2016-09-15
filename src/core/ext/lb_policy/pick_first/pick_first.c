@@ -451,8 +451,10 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
   for (size_t i = 0; i < args->num_addresses; i++) {
-    /* this LB policy doesn't support \a user_data */
-    GPR_ASSERT(args->addresses[i].user_data == NULL);
+    if (args->addresses[i].user_data != NULL) {
+      gpr_log(GPR_ERROR,
+              "This LB policy doesn't support user data. It will be ignored");
+    }
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     sc_args.addr =

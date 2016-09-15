@@ -573,8 +573,10 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
 
-  /* this LB policy doesn't support \a user_data */
-  GPR_ASSERT(args->addresses[0].user_data == NULL);
+  if (args->addresses[0].user_data != NULL) {
+    gpr_log(GPR_ERROR,
+            "This LB policy doesn't support user data. It will be ignored");
+  }
 
   /* construct a target from the addresses in args, given in the form
    * ipvX://ip1:port1,ip2:port2,...
@@ -583,8 +585,10 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   addr_strs[0] = grpc_sockaddr_to_uri(
       (const struct sockaddr *)&args->addresses[0].resolved_address->addr);
   for (size_t i = 1; i < args->num_addresses; i++) {
-    /* this LB policy doesn't support \a user_data */
-    GPR_ASSERT(args->addresses[i].user_data == NULL);
+    if (args->addresses[i].user_data != NULL) {
+      gpr_log(GPR_ERROR,
+              "This LB policy doesn't support user data. It will be ignored");
+    }
 
     GPR_ASSERT(
         grpc_sockaddr_to_string(
