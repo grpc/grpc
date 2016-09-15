@@ -239,7 +239,8 @@ GRPCAPI grpc_call_credentials *grpc_google_iam_credentials_create(
      may be set to NULL in case of an error.
    - num_creds_md is the number of items in the creds_md array.
    - status must be GRPC_STATUS_OK in case of success or another specific error
-     code otherwise.
+     code otherwise. Note that this status will not necessarily be the resulting
+     status of the call.
    - error_details contains details about the error if any. In case of success
      it should be NULL and will be otherwise ignored. */
 typedef void (*grpc_credentials_plugin_metadata_cb)(
