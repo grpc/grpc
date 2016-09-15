@@ -48,7 +48,6 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
-#include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -662,10 +661,10 @@ class Call GRPC_FINAL {
     call_hook_->PerformOpsOnCall(ops, this);
   }
 
-  grpc_call* call() { return call_; }
-  CompletionQueue* cq() { return cq_; }
+  grpc_call* call() const { return call_; }
+  CompletionQueue* cq() const { return cq_; }
 
-  int max_message_size() { return max_message_size_; }
+  int max_message_size() const { return max_message_size_; }
 
  private:
   CallHook* call_hook_;

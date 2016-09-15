@@ -45,6 +45,7 @@ extern "C" {
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
+typedef grpc_lb_v1_Server_ip_address_t grpc_grpclb_ip_address;
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
 typedef grpc_lb_v1_Server grpc_grpclb_server;

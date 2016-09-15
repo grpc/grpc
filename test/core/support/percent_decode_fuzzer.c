@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,36 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_ALLOC_H
-#define GRPC_IMPL_CODEGEN_ALLOC_H
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <stddef.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include <grpc/impl/codegen/port_platform.h>
+#include "src/core/lib/support/percent_encoding.h"
+#include "test/core/util/memory_counters.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+bool squelch = true;
+bool leak_check = true;
 
-typedef struct gpr_allocation_functions {
-  void *(*malloc_fn)(size_t size);
-  void *(*realloc_fn)(void *ptr, size_t size);
-  void (*free_fn)(void *ptr);
-} gpr_allocation_functions;
-
-/* malloc, never returns NULL */
-GPRAPI void *gpr_malloc(size_t size);
-/* free */
-GPRAPI void gpr_free(void *ptr);
-/* realloc, never returns NULL */
-GPRAPI void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPRAPI void *gpr_malloc_aligned(size_t size, size_t alignment_log);
-/* free memory allocated by gpr_malloc_aligned */
-GPRAPI void gpr_free_aligned(void *ptr);
-
-/** Request the family of allocation functions in \a functions be used. NOTE
- * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
-GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
-
-/** Return the family of allocation functions currently in effect. */
-GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
-
-#ifdef __cplusplus
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  struct grpc_memory_counters counters;
+  grpc_memory_counters_init();
+  gpr_slice input = gpr_slice_from_copied_buffer((const char *)data, size);
+  gpr_slice output;
+  if (gpr_strict_percent_decode_slice(
+          input, gpr_url_percent_encoding_unreserved_bytes, &output)) {
+    gpr_slice_unref(output);
+  }
+  if (gpr_strict_percent_decode_slice(
+          input, gpr_compatible_percent_encoding_unreserved_bytes, &output)) {
+    gpr_slice_unref(output);
+  }
+  gpr_slice_unref(gpr_permissive_percent_decode_slice(input));
+  gpr_slice_unref(input);
+  counters = grpc_memory_counters_snapshot();
+  grpc_memory_counters_destroy();
+  GPR_ASSERT(counters.total_size_relative == 0);
+  return 0;
 }
-#endif
-
-#endif /* GRPC_IMPL_CODEGEN_ALLOC_H */

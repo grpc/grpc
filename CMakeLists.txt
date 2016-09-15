@@ -192,6 +192,7 @@ add_library(gpr
   src/core/lib/support/log_posix.c
   src/core/lib/support/log_windows.c
   src/core/lib/support/murmur_hash.c
+  src/core/lib/support/percent_encoding.c
   src/core/lib/support/slice.c
   src/core/lib/support/slice_buffer.c
   src/core/lib/support/stack_lockfree.c
@@ -257,20 +258,17 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -506,27 +504,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc/grpc_security.h
   include/grpc/census.h
 )
@@ -736,27 +730,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc/grpc_cronet.h
   include/grpc/grpc_security.h
 )
@@ -963,27 +953,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -1004,39 +990,39 @@ endif()
 
   
 add_library(grpc++
+  src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/secure_auth_context.cc
   src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
+  src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/secure_server_credentials.cc
-  src/cpp/client/channel.cc
+  src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials.cc
+  src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue.cc
+  src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
-  src/cpp/util/byte_buffer.cc
-  src/cpp/util/slice.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
-  src/cpp/util/time.cc
+  src/cpp/util/time_cc.cc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1201,27 +1187,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/call.h
@@ -1325,27 +1307,23 @@ foreach(_hdr
   include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -1366,34 +1344,34 @@ endif()
 
   
 add_library(grpc++_unsecure
+  src/cpp/client/insecure_credentials.cc
   src/cpp/common/insecure_create_auth_context.cc
-  src/cpp/client/channel.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials.cc
+  src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/client/insecure_credentials.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue.cc
+  src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
-  src/cpp/util/byte_buffer.cc
-  src/cpp/util/slice.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
-  src/cpp/util/time.cc
+  src/cpp/util/time_cc.cc
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1557,27 +1535,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/call.h
@@ -1743,6 +1717,30 @@ target_include_directories(gen_legal_metadata_characters
 
 if (gRPC_INSTALL)
   install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_executable(gen_percent_encoding_tables
+  tools/codegen/core/gen_percent_encoding_tables.c
+)
+
+target_include_directories(gen_percent_encoding_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
