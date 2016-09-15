@@ -101,7 +101,7 @@ message InitialLoadBalanceResponse {
   // This interval defines how often the client should send the client stats
   // to the load balancer. Stats should only be reported when the duration is
   // positive.
-  Duration client_stats_report_interval = 3;
+  Duration client_stats_report_interval = 2;
 }
 
 message ServerList {
