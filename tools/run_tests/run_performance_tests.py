@@ -125,7 +125,7 @@ def create_scenario_jobspec(scenario_json, workers, remote_host=None,
 def create_quit_jobspec(workers, remote_host=None):
   """Runs quit using QPS driver."""
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-  cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(workers)
+  cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(w.host_and_port for w in workers)
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
@@ -447,7 +447,7 @@ for scenario in scenarios:
     for worker in scenario.workers:
       worker.start()
     jobset.run([scenario.jobspec,
-                create_quit_jobspec(scenario.workers, remote_host=remote_host)],
+                create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
                newline_on_success=True, maxjobs=1)
   finally:
     finish_qps_workers(scenario.workers)
