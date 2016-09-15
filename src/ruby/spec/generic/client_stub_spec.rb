@@ -186,9 +186,7 @@ describe 'ClientStub' do
                                    metadata: { k1: 'v1', k2: 'v2' },
                                    deadline: from_relative_time(2))
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        result = op.execute
-        op.wait # make sure op has been completed
-        result
+        op.execute
       end
 
       it_behaves_like 'request response'
@@ -248,9 +246,7 @@ describe 'ClientStub' do
         op = stub.client_streamer(@method, @sent_msgs, noop, noop,
                                   return_op: true, metadata: @metadata)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        result = op.execute
-        op.wait # make sure op has been completed
-        result
+        op.execute
       end
 
       it_behaves_like 'client streaming'
@@ -293,7 +289,6 @@ describe 'ClientStub' do
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
         th.join
       end
-
     end
 
     describe 'without a call operation' do
@@ -308,16 +303,12 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
-      after(:each) do
-        @op.wait # make sure op has been completed
-      end
-
       def get_responses(stub)
-        @op = stub.server_streamer(@method, @sent_msg, noop, noop,
+        op = stub.server_streamer(@method, @sent_msg, noop, noop,
                                   return_op: true,
                                   metadata: { k1: 'v1', k2: 'v2' })
-        expect(@op).to be_a(GRPC::ActiveCall::Operation)
-        e = @op.execute
+        expect(op).to be_a(GRPC::ActiveCall::Operation)
+        e = op.execute
         expect(e).to be_a(Enumerator)
         e
       end
@@ -372,15 +363,11 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
-      after(:each) do
-        @op.wait # make sure op has been completed
-      end
-
       def get_responses(stub)
-        @op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+        op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
                                 return_op: true)
-        expect(@op).to be_a(GRPC::ActiveCall::Operation)
-        e = @op.execute
+        expect(op).to be_a(GRPC::ActiveCall::Operation)
+        e = op.execute
         expect(e).to be_a(Enumerator)
         e
       end

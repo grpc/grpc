@@ -102,7 +102,7 @@ module GRPC
     #     been received. Should always be true for server calls
     def initialize(call, marshal, unmarshal, deadline, started: true,
                    metadata_received: false, metadata_to_send: nil)
-      #fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
+      fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       @call = call
       @deadline = deadline
       @marshal = marshal
@@ -156,41 +156,25 @@ module GRPC
       Operation.new(self)
     end
 
-    # writes_done indicates that all writes are completed.
-    #
-    # It blocks until the remote endpoint acknowledges with at status unless
-    # assert_finished is set to false.  Any calls to #remote_send after this
-    # call will fail.
-    #
-    # @param assert_finished [true, false] when true(default), waits for
-    # FINISHED.
-    def writes_done(assert_finished = true)
-      ops = {
-        SEND_CLOSE_FROM_CLIENT => nil
-      }
-      ops[RECV_STATUS_ON_CLIENT] = nil if assert_finished
-      batch_result = @call.run_batch(ops)
-      return unless assert_finished
-      unless batch_result.status.nil?
-        @call.trailing_metadata = batch_result.status.metadata
-      end
-      @call.status = batch_result.status
-      op_is_done
-      batch_result.check_status
-    end
-
     # finished waits until a client call is completed.
     #
     # It blocks until the remote endpoint acknowledges by sending a status.
     def finished
       batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
-      unless batch_result.status.nil?
-        @call.trailing_metadata = batch_result.status.metadata
+      attach_status_results_and_complete_call(batch_result)
+    end
+
+    def attach_status_results_and_complete_call(recv_status_batch_result)
+      unless recv_status_batch_result.status.nil?
+        @call.trailing_metadata = recv_status_batch_result.status.metadata
       end
-      @call.status = batch_result.status
-      op_is_done
-      batch_result.check_status
+      @call.status = recv_status_batch_result.status
       @call.close
+      op_is_done
+
+      # The RECV_STATUS in run_batch always succeeds
+      # Check the status for a bad status or failed run batch
+      recv_status_batch_result.check_status
     end
 
     # remote_send sends a request to the remote endpoint.
@@ -257,9 +241,13 @@ module GRPC
         @call.metadata = batch_result.metadata
         @metadata_received = true
       end
-      unless batch_result.nil? || batch_result.message.nil?
-        res = @unmarshal.call(batch_result.message)
-        return res
+      get_message_from_batch_result(batch_result)
+    end
+
+    def get_message_from_batch_result(recv_message_batch_result)
+      unless recv_message_batch_result.nil? ||
+             recv_message_batch_result.message.nil?
+        return @unmarshal.call(recv_message_batch_result.message)
       end
       GRPC.logger.debug('found nil; the final response has been sent')
       nil
@@ -315,7 +303,6 @@ module GRPC
       return enum_for(:each_remote_read_then_finish) unless block_given?
       loop do
         resp = remote_read
-        break if resp.is_a? Struct::Status  # is an OK status
         if resp.nil?  # the last response was received, but not finished yet
           finished
           break
@@ -345,23 +332,9 @@ module GRPC
         @metadata_sent = true
       end
 
-      response = nil
-      unless batch_result.nil? || batch_result.message.nil?
-        response = @unmarshal.call(batch_result.message)
-      end
-      unless batch_result.status.nil?
-        @call.trailing_metadata = batch_result.status.metadata
-      end
-      @call.status = batch_result.status
       @call.metadata = batch_result.metadata
-      op_is_done
-
-      # The RECV_STATUS in run_batch always succeeds
-      # Check the status for a bad status or failed run batch
-      batch_result.check_status
-      @call.close
-
-      response
+      attach_status_results_and_complete_call(batch_result)
+      get_message_from_batch_result(batch_result)
     end
 
     # client_streamer sends a stream of requests to a GRPC server, and
@@ -385,16 +358,10 @@ module GRPC
         RECV_MESSAGE => nil,
         RECV_STATUS_ON_CLIENT => nil
       )
-      @call.metadata = batch_result.metadata
-      @call.status = batch_result.status
-      if batch_result.status.metadata
-        @call.trailing_metadata = batch_result.status.metadata
-      end
-      op_is_done
-      batch_result.check_status
-      @call.close
 
-      response
+      @call.metadata = batch_result.metadata
+      attach_status_results_and_complete_call(batch_result)
+      get_message_from_batch_result(batch_result)
     rescue GRPC::Core::CallError => e
       finished  # checks for Cancelled
       raise e

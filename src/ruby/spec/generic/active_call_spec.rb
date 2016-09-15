@@ -400,7 +400,7 @@ describe GRPC::ActiveCall do
                                    @pass_through, deadline)
       msg = 'message is a string'
       client_call.remote_send(msg)
-      client_call.writes_done(false)
+      call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
       server_call = expect_server_to_receive(msg)
       server_call.remote_send('server_response')
       server_call.send_status(OK, 'OK')
@@ -458,7 +458,7 @@ describe GRPC::ActiveCall do
       msg = 'message is a string'
       reply = 'server_response'
       client_call.remote_send(msg)
-      client_call.writes_done(false)
+      call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
       server_call = expect_server_to_receive(msg)
       e = client_call.each_remote_read
       n = 3 # arbitrary value > 1
@@ -471,7 +471,7 @@ describe GRPC::ActiveCall do
     end
   end
 
-  describe '#writes_done' do
+  describe '#closing the call from the client' do
     it 'finishes ok if the server sends a status response' do
       call = make_test_call
       ActiveCall.client_invoke(call)
@@ -479,7 +479,9 @@ describe GRPC::ActiveCall do
                                    @pass_through, deadline)
       msg = 'message is a string'
       client_call.remote_send(msg)
-      expect { client_call.writes_done(false) }.to_not raise_error
+      expect do
+        call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
+      end.to_not raise_error
       server_call = expect_server_to_receive(msg)
       server_call.remote_send('server_response')
       expect(client_call.remote_read).to eq('server_response')
@@ -498,11 +500,13 @@ describe GRPC::ActiveCall do
       server_call.remote_send('server_response')
       server_call.send_status(OK, 'status code is OK')
       expect(client_call.remote_read).to eq('server_response')
-      expect { client_call.writes_done(false) }.to_not raise_error
+      expect do
+        call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
+      end.to_not raise_error
       expect { client_call.finished }.to_not raise_error
     end
 
-    it 'finishes ok if writes_done is true' do
+    it 'finishes ok if SEND_CLOSE and RECV_STATUS has been sent' do
       call = make_test_call
       ActiveCall.client_invoke(call)
       client_call = ActiveCall.new(call, @pass_through,
@@ -513,7 +517,11 @@ describe GRPC::ActiveCall do
       server_call.remote_send('server_response')
       server_call.send_status(OK, 'status code is OK')
       expect(client_call.remote_read).to eq('server_response')
-      expect { client_call.writes_done(true) }.to_not raise_error
+      expect do
+        call.run_batch(
+          CallOps::SEND_CLOSE_FROM_CLIENT => nil,
+          CallOps::RECV_STATUS_ON_CLIENT => nil)
+      end.to_not raise_error
     end
   end
 
@@ -594,127 +602,6 @@ describe GRPC::ActiveCall do
           fake_gen_each_reply_with_call_param)
         @server_call.send_status(@server_status)
       end
-    end
-  end
-
-  describe 'operation views should not hang when a call to run_batch fails', op: true do
-    def run_client
-      puts "c"
-      thread = Thread.new do
-        puts "c op"
-        expect { yield }.to raise_error(GRPC::Core::CallError)
-        puts "c op"
-      end
-      puts "c"
-      expect { @op.wait }.to raise_error(GRPC::Core::CallError)
-      puts "c"
-      thread.join
-      puts "c"
-    end
-
-    def run_server
-      @server_thd = Thread.new do
-        begin
-          rpc = @server.request_call
-          puts "1"
-          call = rpc.call
-          puts "1"
-          server_call = ActiveCall.new(call, @pass_through, @pass_through, deadline)
-          puts "1"
-          yield(server)
-          puts "1"
-          server_call.send_status
-          puts "1"
-        rescue Exception
-          puts "in exception"
-        end
-      end
-    end
-
-    before(:each) do
-      Thread.abort_on_exception = true
-      call = get_mocked_call
-      allow(call).to receive(:run_batch)
-      @client_call = ActiveCall.new(call, @pass_through, @pass_through, deadline)
-      @op = @client_call.operation
-    end
-
-    after(:each) do
-      @server_thd.join
-    end
-
-    shared_examples 'client call types' do
-      it 'with request_response' do
-        run_server do | server_call |
-          server_call.remote_read
-          server_call.remote_send('response')
-        end
-        run_client { @client_call.request_response('message') }
-      end
-
-      it 'with client_streamer' do
-        from_client = ['first', 'second']
-        run_server do |server_call|
-          from_client.each { server_call.remote_read }
-          server_call.remote_send('response')
-        end
-        run_client { @client_call.client_streamer(from_client) }
-      end
-
-      it 'with server_streamer' do
-        from_server = ['first', 'second']
-        run_server do |server_call|
-          server_call.remote_read
-          from_server.each { |response| server_call.remote_send(response) }
-        end
-        run_client { @client_call.server_streamer('message') { |response| response } }
-      end
-
-      it 'with bidi_streamer' do
-        from_client = ['client_one', 'client_two']
-        from_server = ['server_one', 'server_two']
-        run_server do |server_call|
-          from_client.each { server_call.remote_read }
-          from_server.each { |response| server_call.remote_send(response) }
-        end
-        run_client { @client_call.bidi_streamer(['first', 'second']) { |response| response} }
-      end
-    end
-
-    describe 'when run_batch_fails during initial metadata sending' do
-      def get_mocked_call
-        call = make_test_call
-        expect(call).to receive(:run_batch).with(hash_including(CallOps::SEND_INITIAL_METADATA)).and_raise(GRPC::Core::CallError)
-      end
-
-      it_behaves_like 'client call types'
-    end
-
-    describe 'when run_batch fails sending a message' do
-      def get_mocked_call
-        call = make_test_call
-        expect(call).to receive(:run_batch).with(hash_including(CallOps::SEND_MESSAGE)).and_raise(GRPC::Core::CallError)
-      end
-
-      it_behaves_like 'client call types'
-    end
-
-    describe 'when run_bath fails receiving a message' do
-       def get_mocked_call
-         call = make_test_call
-         expect(call).to receive(:run_batch).with(hash_including(CallOps::RECV_MESSAGE)).and_raise(GRPC::Core::CallError)
-       end
-
-       it_behaves_like 'client call types'
-    end
-
-    describe 'when run_batch fails receiving a status' do
-      def get_mocked_call
-        call = make_test_call
-        expect(call).to receive(:run_batch).with(hash_including(CallOps::RECV_STATUS_ON_CLIENT)).and_raise(GRPC::Core::CallError)
-      end
-
-      it_behaves_like 'client call types'
     end
   end
 
