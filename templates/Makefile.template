@@ -395,19 +395,25 @@
   SHARED_EXT_CPP = dll
   SHARED_EXT_CSHARP = dll
   SHARED_PREFIX =
-  SHARED_VERSION = -${settings.core_version.major}
+  SHARED_VERSION_CORE = -${settings.core_version.major}
+  SHARED_VERSION_CPP = -${settings.cpp_version.major}
+  SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
   SHARED_EXT_CSHARP = dylib
   SHARED_PREFIX = lib
-  SHARED_VERSION =
+  SHARED_VERSION_CORE =
+  SHARED_VERSION_CPP =
+  SHARED_VERSION_CSHARP =
   else
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
   SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
   SHARED_PREFIX = lib
-  SHARED_VERSION =
+  SHARED_VERSION_CORE =
+  SHARED_VERSION_CPP =
+  SHARED_VERSION_CSHARP =
   endif
 
   ifeq ($(wildcard .git),)
@@ -894,7 +900,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CORE)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
   % endif
   % endif
   % endfor
@@ -903,7 +909,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CPP)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)\
   % endif
   % endif
   % endfor
@@ -913,7 +919,7 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CSHARP)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
   % endif
   % endif
   % endfor
@@ -1115,8 +1121,8 @@
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CORE)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CORE)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
   % endif
   % endif
   % endif
@@ -1130,8 +1136,8 @@
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CPP)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CPP)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
   % endif
   % endif
   % endif
@@ -1144,8 +1150,8 @@
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CSHARP)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_CSHARP)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
   % endif
   % endif
   % endif
@@ -1284,14 +1290,14 @@
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
-  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]})"
+  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
   	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]})
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]})
   ifeq ($(SYSTEM),MINGW32)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
   else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif
   % endif
@@ -1403,7 +1409,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}): openssl_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): openssl_dep_error
   % endif
 
   else
@@ -1416,7 +1422,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
   % endif
 
   else
@@ -1433,7 +1439,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
   % endif
 
   else
@@ -1479,8 +1485,8 @@
     else:
       ld = '$(LD)'
 
-    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION)'
-    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION)'
+    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_${lang_to_var[lib.language]})'
+    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_${lang_to_var[lib.language]})'
 
     common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
@@ -1534,7 +1540,7 @@
   ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared ${lib.name}.def -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared ${lib.name}.def -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
   else
   ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
@@ -1542,7 +1548,7 @@
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${libs}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]})_${lang_to_var[lib.language]} ${common}${libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${libs}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.core_version.major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
