@@ -66,7 +66,6 @@ DEFINE_bool(batch, false,
             "more than a few RPCs. gRPC CLI has very different performance "
             "characteristics compared with normal RPC calls which make it "
             "unsuitable for loadtesting or significant production traffic.");
-DEFINE_double(batch_qps, 0, "QPS rate limit for batch request (no limit if 0)");
 
 namespace grpc {
 namespace testing {

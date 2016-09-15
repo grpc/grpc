@@ -35,6 +35,7 @@
 
 #include <sstream>
 
+#include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -54,6 +55,8 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
+
+DECLARE_bool(batch);
 
 namespace grpc {
 namespace testing {
@@ -226,6 +229,60 @@ TEST_F(GrpcToolTest, CallCommand) {
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(NULL !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandBatch) {
+  // Test input "grpc_cli call Echo"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(), "Echo",
+                        "message: 'Hello0'"};
+
+  // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
+  std::streambuf* orig = std::cin.rdbuf();
+  std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
+  std::cin.rdbuf(ss.rdbuf());
+
+  FLAGS_batch = true;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  FLAGS_batch = false;
+
+  // Expected output: "message: "Hello0"\n\nmessage: "Hello1"\n\nmessage:
+  // "Hello2"\n\n"
+  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
+                             "message: \"Hello0\"\n\nmessage: "
+                             "\"Hello1\"\n\nmessage: \"Hello2\"\n\n"));
+  std::cin.rdbuf(orig);
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandBatchWithBadRequest) {
+  // Test input "grpc_cli call Echo"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(), "Echo",
+                        "message: 'Hello0'"};
+
+  // Mock std::cin input "message: 1\n\n message: 'Hello2'\n\n"
+  std::streambuf* orig = std::cin.rdbuf();
+  std::istringstream ss("message: 1\n\n message: 'Hello2'\n\n");
+  std::cin.rdbuf(ss.rdbuf());
+
+  FLAGS_batch = true;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  FLAGS_batch = false;
+
+  // Expected output: "message: "Hello0"\n\nmessage: "Hello2"\n\n"
+  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
+                             "message: \"Hello0\"\n\nmessage: \"Hello2\"\n\n"));
+  std::cin.rdbuf(orig);
   ShutdownServer();
 }
 
