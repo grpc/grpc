@@ -68,8 +68,8 @@ namespace Grpc.Core.Internal
 
         protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
         protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
-        protected TaskCompletionSource<object> delayedStreamingWriteTcs;
         protected TaskCompletionSource<object> sendStatusFromServerTcs;
+        protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
         protected bool halfcloseRequested;  // True if send close have been initiated.
@@ -263,15 +263,19 @@ namespace Grpc.Core.Internal
             TaskCompletionSource<object> origTcs = null;
             lock (myLock)
             {
-                origTcs = streamingWriteTcs;
-                streamingWriteTcs = null;
+                if (!success && !finished && IsClient) {
+                    // We should be setting this only once per call, following writes will be short circuited
+                    // because they cannot start until the entire call finishes.
+                    GrpcPreconditions.CheckState(!isStreamingWriteCompletionDelayed);
 
-                if (!success && !finished && IsClient)
-                {
-                    // We should be setting this only once per call, following writes will be short circuited.
-                    GrpcPreconditions.CheckState (delayedStreamingWriteTcs == null);
-                    delayedStreamingWriteTcs = origTcs;
+                    // leave streamingWriteTcs set, it will be completed once call finished.
+                    isStreamingWriteCompletionDelayed = true;
                     delayCompletion = true;
+                }
+                else
+                {
+                    origTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;    
                 }
 
                 ReleaseResourcesIfPossible();

@@ -372,8 +372,7 @@ namespace Grpc.Core.Internal
         private Task CheckSendPreconditionsClientSide()
         {
             GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
-            // if there is a delayed streaming write, we will treat that as if the write was still in progress until the call finishes.
-            GrpcPreconditions.CheckState(streamingWriteTcs == null && (finished || delayedStreamingWriteTcs == null), "Only one write can be pending at a time.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
 
             if (cancelRequested)
             {
@@ -458,7 +457,7 @@ namespace Grpc.Core.Internal
 
             using (Profilers.ForCurrentThread().NewScope("AsyncCall.HandleUnaryResponse"))
             {
-                TaskCompletionSource<object> delayedTcs;
+                TaskCompletionSource<object> delayedStreamingWriteTcs = null;
                 TResponse msg = default(TResponse);
                 var deserializeException = TryDeserialize(receivedMessage, out msg);
 
@@ -471,16 +470,21 @@ namespace Grpc.Core.Internal
                         receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
                     }
                     finishedStatus = receivedStatus;
-                    delayedTcs = delayedStreamingWriteTcs;
+
+                    if (isStreamingWriteCompletionDelayed)
+                    {
+                        delayedStreamingWriteTcs = streamingWriteTcs;
+                        streamingWriteTcs = null;
+                    }
 
                     ReleaseResourcesIfPossible();
                 }
 
                 responseHeadersTcs.SetResult(responseHeaders);
 
-                if (delayedTcs != null)
+                if (delayedStreamingWriteTcs != null)
                 {
-                    delayedTcs.SetException(GetRpcExceptionClientOnly());
+                    delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
                 }
 
                 var status = receivedStatus.Status;
@@ -502,20 +506,24 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            TaskCompletionSource<object> delayedTcs;
+            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
 
             lock (myLock)
             {
                 finished = true;
                 finishedStatus = receivedStatus;
-                delayedTcs = delayedStreamingWriteTcs;
+                if (isStreamingWriteCompletionDelayed)
+                {
+                    delayedStreamingWriteTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;
+                }
 
                 ReleaseResourcesIfPossible();
             }
 
-            if (delayedTcs != null)
+            if (delayedStreamingWriteTcs != null)
             {
-                delayedTcs.SetException(GetRpcExceptionClientOnly());
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
