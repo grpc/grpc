@@ -100,13 +100,11 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
 }
 
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_polling_entity *pollent,
-                        grpc_metadata_batch *initial_metadata,
-                        uint32_t initial_metadata_flags,
-                        grpc_connected_subchannel **target,
+                        const grpc_lb_policy_pick_args *pick_args,
+                        grpc_connected_subchannel **target, void **user_data,
                         grpc_closure *on_complete) {
-  return policy->vtable->pick(exec_ctx, policy, pollent, initial_metadata,
-                              initial_metadata_flags, target, on_complete);
+  return policy->vtable->pick(exec_ctx, policy, pick_args, target, user_data,
+                              on_complete);
 }
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,

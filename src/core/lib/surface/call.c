@@ -109,6 +109,10 @@ typedef struct batch_control {
   uint8_t recv_message;
   uint8_t recv_final_op;
   uint8_t is_notify_tag_closure;
+
+  /* TODO(ctiller): now that this is inlined, figure out how much of the above
+                    state can be eliminated */
+  grpc_transport_stream_op op;
 } batch_control;
 
 struct grpc_call {
@@ -755,6 +759,7 @@ typedef struct termination_closure {
   grpc_call *call;
   grpc_error *error;
   enum { TC_CANCEL, TC_CLOSE } type;
+  grpc_transport_stream_op op;
 } termination_closure;
 
 static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
@@ -774,24 +779,22 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
 
 static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
   termination_closure *tc = tcp;
-  grpc_transport_stream_op op;
-  memset(&op, 0, sizeof(op));
-  op.cancel_error = tc->error;
+  memset(&tc->op, 0, sizeof(tc->op));
+  tc->op.cancel_error = tc->error;
   /* reuse closure to catch completion */
   grpc_closure_init(&tc->closure, done_termination, tc);
-  op.on_complete = &tc->closure;
-  execute_op(exec_ctx, tc->call, &op);
+  tc->op.on_complete = &tc->closure;
+  execute_op(exec_ctx, tc->call, &tc->op);
 }
 
 static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
   termination_closure *tc = tcp;
-  grpc_transport_stream_op op;
-  memset(&op, 0, sizeof(op));
-  op.close_error = tc->error;
+  memset(&tc->op, 0, sizeof(tc->op));
+  tc->op.close_error = tc->error;
   /* reuse closure to catch completion */
   grpc_closure_init(&tc->closure, done_termination, tc);
-  op.on_complete = &tc->closure;
-  execute_op(exec_ctx, tc->call, &op);
+  tc->op.on_complete = &tc->closure;
+  execute_op(exec_ctx, tc->call, &tc->op);
 }
 
 static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
@@ -1323,7 +1326,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                                         grpc_call *call, const grpc_op *ops,
                                         size_t nops, void *notify_tag,
                                         int is_notify_tag_closure) {
-  grpc_transport_stream_op stream_op;
   size_t i;
   const grpc_op *op;
   batch_control *bctl;
@@ -1337,8 +1339,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
 
-  memset(&stream_op, 0, sizeof(stream_op));
-
   /* TODO(ctiller): this feels like it could be made lock-free */
   gpr_mu_lock(&call->mu);
   bctl = allocate_batch_control(call);
@@ -1346,6 +1346,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   bctl->call = call;
   bctl->notify_tag = notify_tag;
   bctl->is_notify_tag_closure = (uint8_t)(is_notify_tag_closure != 0);
+
+  grpc_transport_stream_op *stream_op = &bctl->op;
+  memset(stream_op, 0, sizeof(*stream_op));
 
   if (nops == 0) {
     GRPC_CALL_INTERNAL_REF(call, "completion");
@@ -1424,9 +1427,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         /* TODO(ctiller): just make these the same variable? */
         call->metadata_batch[0][0].deadline = call->send_deadline;
-        stream_op.send_initial_metadata =
+        stream_op->send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
-        stream_op.send_initial_metadata_flags = op->flags;
+        stream_op->send_initial_metadata_flags = op->flags;
         break;
       case GRPC_OP_SEND_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {
@@ -1446,7 +1449,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         grpc_slice_buffer_stream_init(
             &call->sending_stream,
             &op->data.send_message->data.raw.slice_buffer, op->flags);
-        stream_op.send_message = &call->sending_stream.base;
+        stream_op->send_message = &call->sending_stream.base;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         /* Flag validation: currently allow no flags */
@@ -1464,7 +1467,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         bctl->send_final_op = 1;
         call->sent_final_op = 1;
-        stream_op.send_trailing_metadata =
+        stream_op->send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
@@ -1511,7 +1514,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
-        stream_op.send_trailing_metadata =
+        stream_op->send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
@@ -1529,9 +1532,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         grpc_closure_init(&call->receiving_initial_metadata_ready,
                           receiving_initial_metadata_ready, bctl);
         bctl->recv_initial_metadata = 1;
-        stream_op.recv_initial_metadata =
+        stream_op->recv_initial_metadata =
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
-        stream_op.recv_initial_metadata_ready =
+        stream_op->recv_initial_metadata_ready =
             &call->receiving_initial_metadata_ready;
         num_completion_callbacks_needed++;
         break;
@@ -1548,10 +1551,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->receiving_message = 1;
         bctl->recv_message = 1;
         call->receiving_buffer = op->data.recv_message;
-        stream_op.recv_message = &call->receiving_stream;
+        stream_op->recv_message = &call->receiving_stream;
         grpc_closure_init(&call->receiving_stream_ready, receiving_stream_ready,
                           bctl);
-        stream_op.recv_message_ready = &call->receiving_stream_ready;
+        stream_op->recv_message_ready = &call->receiving_stream_ready;
         num_completion_callbacks_needed++;
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -1577,9 +1580,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->final_op.client.status_details_capacity =
             op->data.recv_status_on_client.status_details_capacity;
         bctl->recv_final_op = 1;
-        stream_op.recv_trailing_metadata =
+        stream_op->recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats =
+        stream_op->collect_stats =
             &call->final_info.stats.transport_stream_stats;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
@@ -1600,9 +1603,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
         bctl->recv_final_op = 1;
-        stream_op.recv_trailing_metadata =
+        stream_op->recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats =
+        stream_op->collect_stats =
             &call->final_info.stats.transport_stream_stats;
         break;
     }
@@ -1614,12 +1617,12 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   }
   gpr_ref_init(&bctl->steps_to_complete, num_completion_callbacks_needed);
 
-  stream_op.context = call->context;
+  stream_op->context = call->context;
   grpc_closure_init(&bctl->finish_batch, finish_batch, bctl);
-  stream_op.on_complete = &bctl->finish_batch;
+  stream_op->on_complete = &bctl->finish_batch;
   gpr_mu_unlock(&call->mu);
 
-  execute_op(exec_ctx, call, &stream_op);
+  execute_op(exec_ctx, call, stream_op);
 
 done:
   GPR_TIMER_END("grpc_call_start_batch", 0);
