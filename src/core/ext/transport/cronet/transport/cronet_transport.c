@@ -610,6 +610,16 @@ static int parse_grpc_header(const uint8_t *data) {
   return length;
 }
 
+static bool header_has_authority(grpc_linked_mdelem *head) {
+  while (head != NULL) {
+    if (head->md->key == GRPC_MDSTR_AUTHORITY) {
+      return true;
+    }
+    head = head->next;
+  }
+  return false;
+}
+
 /*
   Op Execution: Decide if one of the actions contained in the stream op can be
   executed. This is the heart of the state machine.
@@ -1042,6 +1052,11 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   s->curr_gs = gs;
   memcpy(&s->curr_ct, gt, sizeof(grpc_cronet_transport));
   add_to_storage(s, op);
+  if (op->send_initial_metadata &&
+      header_has_authority(op->send_initial_metadata->list.head)) {
+    CRONET_LOG(GPR_DEBUG, ":authority header is provided but not supported; cancel operations");
+    s->state.state_op_done[OP_CANCEL_ERROR] = true;
+  }
   execute_from_storage(s);
 }
 
