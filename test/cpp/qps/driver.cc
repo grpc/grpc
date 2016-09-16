@@ -186,6 +186,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count) {
+  // Log everything from the driver
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
 
@@ -363,9 +366,34 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!clients[i].stream->Write(args)) {
       gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
     }
+  }
+
+  for (size_t i = 0; i < num_clients; i++) {
     ClientStatus init_status;
     if (!clients[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Client %zu did not yield initial status", i);
+    }
+  }
+
+  // Send an initial mark: clients can use this to know that everything is ready
+  // to start
+  gpr_log(GPR_INFO, "Initiating");
+  ServerArgs server_mark;
+  server_mark.mutable_mark()->set_reset(true);
+  ClientArgs client_mark;
+  client_mark.mutable_mark()->set_reset(true);
+  ServerStatus server_status;
+  ClientStatus client_status;
+  for (size_t i = 0; i < num_clients; i++) {
+    auto client = &clients[i];
+    if (!client->stream->Write(client_mark)) {
+      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+    }
+  }
+  for (size_t i = 0; i < num_clients; i++) {
+    auto client = &clients[i];
+    if (!client->stream->Read(&client_status)) {
+      gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
     }
   }
 
@@ -377,10 +405,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Start a run
   gpr_log(GPR_INFO, "Starting");
-  ServerArgs server_mark;
-  server_mark.mutable_mark()->set_reset(true);
-  ClientArgs client_mark;
-  client_mark.mutable_mark()->set_reset(true);
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
@@ -393,8 +417,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
     }
   }
-  ServerStatus server_status;
-  ClientStatus client_status;
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Read(&server_status)) {

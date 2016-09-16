@@ -11,12 +11,13 @@
       "net45": { },
       "netcoreapp1.0": {
         "imports": [
-          "portable-net45",
-          "net45"
+          "portable-net45"
         ],
         "dependencies": {
-          "Microsoft.NETCore.App": "1.0.0",
-          "NETStandard.Library": "1.6.0"
+          "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.0.0"
+          }
         }
       }
     }

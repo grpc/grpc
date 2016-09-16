@@ -245,11 +245,6 @@
   }
 
   if (self = [super init]) {
-    static dispatch_once_t initialization;
-    dispatch_once(&initialization, ^{
-      grpc_init();
-    });
-
     // Each completion queue consumes one thread. There's a trade to be made between creating and
     // consuming too many threads and having contention of multiple calls in a single completion
     // queue. Currently we use a singleton queue.

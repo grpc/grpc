@@ -97,6 +97,8 @@ extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
 extern void network_status_change(grpc_end2end_test_config config);
 extern void network_status_change_pre_init(void);
+extern void no_logging(grpc_end2end_test_config config);
+extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
 extern void no_op_pre_init(void);
 extern void payload(grpc_end2end_test_config config);
@@ -117,6 +119,8 @@ extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
 extern void shutdown_finishes_tags_pre_init(void);
+extern void simple_cacheable_request(grpc_end2end_test_config config);
+extern void simple_cacheable_request_pre_init(void);
 extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_delayed_request_pre_init(void);
 extern void simple_metadata(grpc_end2end_test_config config);
@@ -158,6 +162,7 @@ void grpc_end2end_tests_pre_init(void) {
   max_message_length_pre_init();
   negative_deadline_pre_init();
   network_status_change_pre_init();
+  no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
   ping_pre_init();
@@ -168,6 +173,7 @@ void grpc_end2end_tests_pre_init(void) {
   server_finishes_request_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
+  simple_cacheable_request_pre_init();
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
@@ -209,6 +215,7 @@ void grpc_end2end_tests(int argc, char **argv,
     max_message_length(config);
     negative_deadline(config);
     network_status_change(config);
+    no_logging(config);
     no_op(config);
     payload(config);
     ping(config);
@@ -219,6 +226,7 @@ void grpc_end2end_tests(int argc, char **argv,
     server_finishes_request(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
+    simple_cacheable_request(config);
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
@@ -336,6 +344,10 @@ void grpc_end2end_tests(int argc, char **argv,
       network_status_change(config);
       continue;
     }
+    if (0 == strcmp("no_logging", argv[i])) {
+      no_logging(config);
+      continue;
+    }
     if (0 == strcmp("no_op", argv[i])) {
       no_op(config);
       continue;
@@ -374,6 +386,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("shutdown_finishes_tags", argv[i])) {
       shutdown_finishes_tags(config);
+      continue;
+    }
+    if (0 == strcmp("simple_cacheable_request", argv[i])) {
+      simple_cacheable_request(config);
       continue;
     }
     if (0 == strcmp("simple_delayed_request", argv[i])) {

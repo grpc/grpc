@@ -82,6 +82,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\network_status_change.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_logging.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
@@ -110,6 +113,9 @@
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_tags.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_cacheable_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_delayed_request.c">

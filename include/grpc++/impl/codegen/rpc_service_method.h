@@ -43,7 +43,10 @@
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/rpc_method.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/byte_buffer.h>
+
+extern "C" {
+struct grpc_byte_buffer;
+}
 
 namespace grpc {
 class ServerContext;
@@ -82,6 +85,7 @@ class RpcServiceMethod : public RpcMethod {
   // if MethodHandler is nullptr, then this is an async method
   MethodHandler* handler() const { return handler_.get(); }
   void ResetHandler() { handler_.reset(); }
+  void SetHandler(MethodHandler* handler) { handler_.reset(handler); }
 
  private:
   void* server_tag_;

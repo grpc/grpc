@@ -39,7 +39,7 @@ There are two ways to generate the code needed to work with protocol buffers in 
    $ # from this directory
    $ node ./dynamic_codegen/greeter_client.js
    $ # OR
-   $ node ./dynamic_codegen/greeter_client.js
+   $ node ./static_codegen/greeter_client.js
    ```
 
 TUTORIAL
