@@ -41,6 +41,10 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
   closure->cb_arg = cb_arg;
 }
 
+void grpc_closure_list_init(grpc_closure_list *closure_list) {
+  closure_list->head = closure_list->tail = NULL;
+}
+
 void grpc_closure_list_append(grpc_closure_list *closure_list,
                               grpc_closure *closure, grpc_error *error) {
   if (closure == NULL) {
