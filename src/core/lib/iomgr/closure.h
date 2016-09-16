@@ -37,6 +37,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/support/mpscq.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -60,6 +61,14 @@ typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
+  /** Once queued, next indicates the next queued closure; before then, scratch
+   *  space */
+  union {
+    grpc_closure *next;
+    gpr_mpscq_node atm_next;
+    uintptr_t scratch;
+  } next_data;
+
   /** Bound callback. */
   grpc_iomgr_cb_func cb;
 
@@ -68,13 +77,6 @@ struct grpc_closure {
 
   /** Once queued, the result of the closure. Before then: scratch space */
   grpc_error *error;
-
-  /** Once queued, next indicates the next queued closure; before then, scratch
-   *  space */
-  union {
-    grpc_closure *next;
-    uintptr_t scratch;
-  } next_data;
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. */
@@ -86,6 +88,8 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
+
+void grpc_closure_list_init(grpc_closure_list *list);
 
 /** add \a closure to the end of \a list
     and set \a closure's result to \a error */

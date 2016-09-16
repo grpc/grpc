@@ -146,7 +146,7 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 #define grpc_lb_v1_Server_load_balance_token_tag 3
 #define grpc_lb_v1_Server_drop_request_tag       4
 #define grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate_tag 1
-#define grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval_tag 3
+#define grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval_tag 2
 #define grpc_lb_v1_LoadBalanceRequest_initial_request_tag 1
 #define grpc_lb_v1_LoadBalanceRequest_client_stats_tag 2
 #define grpc_lb_v1_ServerList_servers_tag        1

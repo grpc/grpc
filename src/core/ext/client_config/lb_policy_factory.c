@@ -81,8 +81,9 @@ void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses,
                                void (*user_data_destroy)(void*)) {
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     gpr_free(addresses->addresses[i].balancer_name);
-    if (user_data_destroy != NULL)
+    if (user_data_destroy != NULL) {
       user_data_destroy(addresses->addresses[i].user_data);
+    }
   }
   gpr_free(addresses->addresses);
   gpr_free(addresses);

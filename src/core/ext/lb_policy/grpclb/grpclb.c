@@ -354,8 +354,7 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
   return true;
 }
 
-/* populate \a addresses according to \a serverlist. Returns the number of
- * addresses successfully parsed and added to \a addresses */
+/* Returns addresses extracted from \a serverlist. */
 static grpc_lb_addresses *process_serverlist(
     const grpc_grpclb_serverlist *serverlist) {
   size_t num_valid = 0;
