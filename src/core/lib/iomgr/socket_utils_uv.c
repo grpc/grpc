@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,32 +32,19 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
-#include <stdint.h>
 
-#ifdef GRPC_WINSOCK_SOCKET
+#ifdef GRPC_UV
 
-#include "src/core/lib/iomgr/pollset_set_windows.h"
+#include <uv.h>
 
-grpc_pollset_set* grpc_pollset_set_create(void) {
-  return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
+#include "src/core/lib/iomgr/socket_utils.h"
+
+#include <grpc/support/log.h>
+
+const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
+  GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
+  uv_inet_ntop(af, src, dst, (size_t)size);
+  return dst;
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
-
-void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
-
-void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
-
-void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif /* GRPC_UV */

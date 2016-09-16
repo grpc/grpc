@@ -34,6 +34,11 @@
 #ifndef GRPC_CORE_LIB_HTTP_HTTPCLI_H
 #define GRPC_CORE_LIB_HTTP_HTTPCLI_H
 
+/* We currently need this at the top of the file if we import some iomgr
+   headers because if we are building with libuv, those headers will include
+   uv.h, which needs to be included before other system headers */
+#include "src/core/lib/iomgr/port.h"
+
 #include <stddef.h>
 
 #include <grpc/support/time.h>

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,32 +32,53 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
-#include <stdint.h>
 
-#ifdef GRPC_WINSOCK_SOCKET
+#ifdef GRPC_UV
 
-#include "src/core/lib/iomgr/pollset_set_windows.h"
+#include <grpc/support/sync.h>
 
-grpc_pollset_set* grpc_pollset_set_create(void) {
-  return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_uv.h"
+
+gpr_mu grpc_polling_mu;
+
+size_t grpc_pollset_size() {
+  return 1;
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
+void grpc_pollset_global_init(void) {
+  gpr_mu_init(&grpc_polling_mu);
+}
 
-void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
+void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
 
-void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
+  *mu = &grpc_polling_mu;
+}
 
-void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
+void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                             grpc_closure *closure) {
+  grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+}
 
-void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
+void grpc_pollset_destroy(grpc_pollset *pollset) {}
 
-#endif /* GRPC_WINSOCK_SOCKET */
+void grpc_pollset_reset(grpc_pollset *pollset) {}
+
+grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                              grpc_pollset_worker **worker_hdl,
+                              gpr_timespec now, gpr_timespec deadline) {
+  if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+    gpr_mu_unlock(&grpc_polling_mu);
+    grpc_exec_ctx_flush(exec_ctx);
+    gpr_mu_lock(&grpc_polling_mu);
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
+                              grpc_pollset_worker *specific_worker) {
+  return GRPC_ERROR_NONE;
+}
+
+#endif /* GRPC_UV */

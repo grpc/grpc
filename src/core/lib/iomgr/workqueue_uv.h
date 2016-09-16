@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,7 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-#include <stdint.h>
+#ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_UV_H
+#define GRPC_CORE_LIB_IOMGR_WORKQUEUE_UV_H
 
-#ifdef GRPC_WINSOCK_SOCKET
-
-#include "src/core/lib/iomgr/pollset_set_windows.h"
-
-grpc_pollset_set* grpc_pollset_set_create(void) {
-  return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
-}
-
-void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
-
-void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
-
-void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
-
-void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_UV_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,27 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-#include <stdint.h>
+#ifndef GRPC_CORE_LIB_IOMGR_TCP_UV_H
+#define GRPC_CORE_LIB_IOMGR_TCP_UV_H
+/*
+   Low level TCP "bottom half" implementation, for use by transports built on
+   top of a TCP connection.
 
-#ifdef GRPC_WINSOCK_SOCKET
+   Note that this file does not (yet) include APIs for creating the socket in
+   the first place.
 
-#include "src/core/lib/iomgr/pollset_set_windows.h"
+   All calls passing slice transfer ownership of a slice refcount unless
+   otherwise specified.
+*/
 
-grpc_pollset_set* grpc_pollset_set_create(void) {
-  return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
-}
+#include "src/core/lib/iomgr/endpoint.h"
 
-void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
+#include <uv.h>
 
-void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
+extern int grpc_tcp_trace;
 
-void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
+#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 
-void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
+grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle, char *peer_string);
 
-void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif /* GRPC_CORE_LIB_IOMGR_TCP_UV_H */

@@ -343,10 +343,19 @@ class NodeLanguage:
     #    'node_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
+
+    # 50 | 90 | 95 | 99 | 99.9
+    # 323834.797877769 | 432510.52549709007 | 458703.85481928807 | 507691.6539182514 | 3826148.8700816636
+    # 272716.21113941644 | 307298.29139655043 | 329730.74530904385 | 413965.4319992619 | 2518204.1519497186
     yield _ping_pong_scenario(
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'cpp_to_node_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='async_server',
+        client_language='c++')
 
     yield _ping_pong_scenario(
         'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
@@ -548,7 +557,7 @@ class JavaLanguage:
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 
-      # TODO(jtattermusch): add scenarios java vs C++ 
+      # TODO(jtattermusch): add scenarios java vs C++
 
   def __str__(self):
     return 'java'
@@ -572,7 +581,7 @@ class GoLanguage:
       smoketest_categories = [SMOKETEST] if secure else []
 
       # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
-      # but that's mostly because of lack of better name of the enum value. 
+      # but that's mostly because of lack of better name of the enum value.
       yield _ping_pong_scenario(
           'go_generic_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
@@ -619,7 +628,7 @@ class GoLanguage:
           secure=secure,
           categories=[SCALABLE])
 
-      # TODO(jtattermusch): add scenarios go vs C++ 
+      # TODO(jtattermusch): add scenarios go vs C++
 
   def __str__(self):
     return 'go'

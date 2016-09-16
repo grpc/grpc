@@ -31,6 +31,11 @@
  *
  */
 
+/* We currently need this at the top of the file if we import some iomgr
+   headers because if we are building with libuv, those headers will include
+   uv.h, which needs to be included before other system headers */
+#include "src/core/lib/iomgr/port.h"
+
 #include <limits.h>
 #include <stdbool.h>
 #include <string.h>

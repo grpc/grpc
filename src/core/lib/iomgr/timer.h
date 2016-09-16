@@ -34,19 +34,20 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_H
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+#include "src/core/lib/iomgr/timer_uv.h"
+#else
+#include "src/core/lib/iomgr/timer_generic.h"
+#endif /* GRPC_UV */
+
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-typedef struct grpc_timer {
-  gpr_timespec deadline;
-  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
-  int triggered;
-  struct grpc_timer *next;
-  struct grpc_timer *prev;
-  grpc_closure closure;
-} grpc_timer;
+typedef struct grpc_timer grpc_timer;
 
 /* Initialize *timer. When expired or canceled, timer_cb will be called with
    *timer_cb_arg and status to indicate if it expired (SUCCESS) or was

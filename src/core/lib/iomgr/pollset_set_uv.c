@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,11 +32,10 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
-#include <stdint.h>
 
-#ifdef GRPC_WINSOCK_SOCKET
+#ifdef GRPC_UV
 
-#include "src/core/lib/iomgr/pollset_set_windows.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 grpc_pollset_set* grpc_pollset_set_create(void) {
   return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
@@ -60,4 +59,4 @@ void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
                                       grpc_pollset_set* bag,
                                       grpc_pollset_set* item) {}
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif /* GRPC_UV */

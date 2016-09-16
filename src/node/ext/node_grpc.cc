@@ -50,6 +50,7 @@
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
 #include "timeval.h"
+#include "completion_queue.h"
 
 using v8::FunctionTemplate;
 using v8::Local;
@@ -261,8 +262,8 @@ void InitLogConstants(Local<Object> exports) {
   Nan::HandleScope scope;
   Local<Object> log_verbosity = Nan::New<Object>();
   Nan::Set(exports, Nan::New("logVerbosity").ToLocalChecked(), log_verbosity);
-  Local<Value> DEBUG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
-  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG);
+  Local<Value> DEBUG_LOG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
+  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG_LOG);
   Local<Value> INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
   Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), INFO);
   Local<Value> LOG_ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
@@ -414,6 +415,12 @@ NAN_METHOD(SetLogVerbosity) {
   gpr_set_log_verbosity(severity);
 }
 
+uv_signal_t signal_handle;
+
+void signal_callback(uv_signal_t *handle, int signum) {
+  uv_print_all_handles(uv_default_loop(), stderr);
+}
+
 void init(Local<Object> exports) {
   Nan::HandleScope scope;
   grpc_init();
@@ -428,13 +435,19 @@ void init(Local<Object> exports) {
   InitWriteFlags(exports);
   InitLogConstants(exports);
 
+  uv_signal_init(uv_default_loop(), &signal_handle);
+  uv_signal_start(&signal_handle, signal_callback, SIGUSR2);
+  uv_unref((uv_handle_t *)&signal_handle);
+
+
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);
   grpc::node::Channel::Init(exports);
   grpc::node::ChannelCredentials::Init(exports);
   grpc::node::Server::Init(exports);
-  grpc::node::CompletionQueueAsyncWorker::Init(exports);
   grpc::node::ServerCredentials::Init(exports);
+
+  grpc::node::CompletionQueueInit(exports);
 
   // Attach a few utility functions directly to the module
   Nan::Set(exports, Nan::New("metadataKeyIsLegal").ToLocalChecked(),

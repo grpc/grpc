@@ -110,29 +110,38 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
+    src/core/lib/iomgr/pollset_set_uv.c \
     src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_uv.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_uv.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_uv.c \
     src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_uv.c \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_uv.c \
     src/core/lib/iomgr/tcp_windows.c \
     src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
+    src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
@@ -141,6 +150,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
     src/core/lib/iomgr/workqueue_posix.c \
+    src/core/lib/iomgr/workqueue_uv.c \
     src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \

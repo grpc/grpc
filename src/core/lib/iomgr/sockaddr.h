@@ -36,6 +36,10 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_UV
+#include <uv.h>
+#endif
+
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #endif

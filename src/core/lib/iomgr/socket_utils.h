@@ -36,10 +36,12 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
+#if defined(GRPC_WINSOCK_SOCKET)
 #include "src/core/lib/iomgr/sockaddr_windows.h"
-#else
+#elif defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/sockaddr_posix.h"
+#elif defined(GRPC_UV)
+#include <uv.h>
 #endif
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */

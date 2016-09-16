@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,32 +32,31 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
-#include <stdint.h>
 
-#ifdef GRPC_WINSOCK_SOCKET
+#ifdef GRPC_UV
 
-#include "src/core/lib/iomgr/pollset_set_windows.h"
+#include "src/core/lib/iomgr/workqueue.h"
 
-grpc_pollset_set* grpc_pollset_set_create(void) {
-  return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
+// Minimal implementation of grpc_workqueue for libuv
+// Works by directly enqueuing workqueue items onto the current execution
+// context, which is at least correct, if not performant or in the spirit of
+// workqueues.
+
+void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
+                        const char *reason) {}
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                          const char *file, int line, const char *reason) {}
+#else
+void grpc_workqueue_ref(grpc_workqueue *workqueue) {}
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
+#endif
+
+void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            grpc_closure *closure, grpc_error *error) {
+  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
-
-void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
-
-void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {}
-
-void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {}
-
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif /* GPR_UV */
