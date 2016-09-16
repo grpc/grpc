@@ -40,13 +40,13 @@
 
 struct grpc_resolver_result {
   gpr_refcount refs;
-  grpc_addresses* addresses;
+  grpc_lb_addresses* addresses;
   char* lb_policy_name;
   grpc_channel_args* lb_policy_args;
 };
 
 grpc_resolver_result* grpc_resolver_result_create(
-    grpc_addresses* addresses, const char* lb_policy_name,
+    grpc_lb_addresses* addresses, const char* lb_policy_name,
     grpc_channel_args* lb_policy_args) {
   grpc_resolver_result* result = gpr_malloc(sizeof(*result));
   memset(result, 0, sizeof(*result));
@@ -64,14 +64,14 @@ void grpc_resolver_result_ref(grpc_resolver_result* result) {
 void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
                                 grpc_resolver_result* result) {
   if (gpr_unref(&result->refs)) {
-    grpc_addresses_destroy(result->addresses);
+    grpc_lb_addresses_destroy(result->addresses, NULL /* user_data_destroy */);
     gpr_free(result->lb_policy_name);
     grpc_channel_args_destroy(result->lb_policy_args);
     gpr_free(result);
   }
 }
 
-grpc_addresses* grpc_resolver_result_get_addresses(
+grpc_lb_addresses* grpc_resolver_result_get_addresses(
     grpc_resolver_result* result) {
   return result->addresses;
 }

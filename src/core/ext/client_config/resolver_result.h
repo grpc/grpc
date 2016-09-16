@@ -57,7 +57,7 @@ void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
                                 grpc_resolver_result* result);
 
 /// Caller does NOT take ownership of result.
-grpc_addresses* grpc_resolver_result_get_addresses(
+grpc_lb_addresses* grpc_resolver_result_get_addresses(
     grpc_resolver_result* result);
 
 /// Caller does NOT take ownership of result.

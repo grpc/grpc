@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_config/lb_policy_factory.h"
 
@@ -50,10 +51,12 @@ grpc_lb_addresses* grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
                                           void* (*user_data_copy)(void*)) {
   grpc_lb_addresses* new = grpc_lb_addresses_create(addresses->num_addresses);
   memcpy(new->addresses, addresses->addresses,
-         sizeof(grpc_address) * addresses->num_addresses);
+         sizeof(grpc_lb_address) * addresses->num_addresses);
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
-    new->addresses[i].balancer_name =
-        gpr_strdup(new->addresses[i].balancer_name);
+    if (new->addresses[i].balancer_name != NULL) {
+      new->addresses[i].balancer_name =
+          gpr_strdup(new->addresses[i].balancer_name);
+    }
     if (user_data_copy != NULL) {
       new->addresses[i].user_data = user_data_copy(new->addresses[i].user_data);
     }

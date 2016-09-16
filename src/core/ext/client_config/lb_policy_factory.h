@@ -36,9 +36,9 @@
 
 #include "src/core/ext/client_config/client_channel_factory.h"
 #include "src/core/ext/client_config/lb_policy.h"
-#include "src/core/ext/client_config/resolver_result.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
