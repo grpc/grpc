@@ -208,7 +208,7 @@ namespace Grpc.Core.Internal
         {
             GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
             GrpcPreconditions.CheckState(!finished, "Already finished.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null && delayedStreamingWriteTcs == null, "Only one write can be pending at a time");
             GrpcPreconditions.CheckState(!disposed);
 
             return null;

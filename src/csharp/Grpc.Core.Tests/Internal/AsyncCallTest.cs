@@ -224,6 +224,34 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ClientStreaming_WriteFailureThrowsRpcException3()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(false);
+
+            // Until the delayed write completion has been triggered,
+            // we still act as if there was an active write.
+            Assert.Throws(typeof(InvalidOperationException), () => requestStream.WriteAsync("request2"));
+
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.Internal),
+                null,
+                new Metadata());
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+
+            // Following attempts to write keep delivering the same status
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await requestStream.WriteAsync("after call has finished"));
+            Assert.AreEqual(StatusCode.Internal, ex2.Status.StatusCode);
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
         public void ClientStreaming_WriteAfterReceivingStatusThrowsRpcException()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();

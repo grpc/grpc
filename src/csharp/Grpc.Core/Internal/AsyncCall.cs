@@ -372,7 +372,8 @@ namespace Grpc.Core.Internal
         private Task CheckSendPreconditionsClientSide()
         {
             GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+            // if there is a delayed streaming write, we will treat that as if the write was still in progress until the call finishes.
+            GrpcPreconditions.CheckState(streamingWriteTcs == null && (finished || delayedStreamingWriteTcs == null), "Only one write can be pending at a time.");
 
             if (cancelRequested)
             {
