@@ -5840,38 +5840,32 @@
   {
     "deps": [], 
     "headers": [
-      "include/grpc/impl/codegen/alloc.h", 
       "include/grpc/impl/codegen/atm.h", 
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
-      "include/grpc/impl/codegen/log.h", 
+      "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/slice.h", 
-      "include/grpc/impl/codegen/slice_buffer.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
-      "include/grpc/impl/codegen/sync_windows.h", 
-      "include/grpc/impl/codegen/time.h"
+      "include/grpc/impl/codegen/sync_windows.h"
     ], 
     "language": "c", 
     "name": "gpr_codegen", 
     "src": [
-      "include/grpc/impl/codegen/alloc.h", 
       "include/grpc/impl/codegen/atm.h", 
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
-      "include/grpc/impl/codegen/log.h", 
+      "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/slice.h", 
-      "include/grpc/impl/codegen/slice_buffer.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
-      "include/grpc/impl/codegen/sync_windows.h", 
-      "include/grpc/impl/codegen/time.h"
+      "include/grpc/impl/codegen/sync_windows.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6223,7 +6217,6 @@
       "gpr_codegen"
     ], 
     "headers": [
-      "include/grpc/impl/codegen/byte_buffer.h", 
       "include/grpc/impl/codegen/byte_buffer_reader.h", 
       "include/grpc/impl/codegen/compression_types.h", 
       "include/grpc/impl/codegen/connectivity_state.h", 
@@ -6234,7 +6227,6 @@
     "language": "c", 
     "name": "grpc_codegen", 
     "src": [
-      "include/grpc/impl/codegen/byte_buffer.h", 
       "include/grpc/impl/codegen/byte_buffer_reader.h", 
       "include/grpc/impl/codegen/compression_types.h", 
       "include/grpc/impl/codegen/connectivity_state.h", 
@@ -6871,6 +6863,7 @@
       "include/grpc++/impl/codegen/service_type.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
+      "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync.h", 
@@ -6905,6 +6898,7 @@
       "include/grpc++/impl/codegen/service_type.h", 
       "include/grpc++/impl/codegen/status.h", 
       "include/grpc++/impl/codegen/status_code_enum.h", 
+      "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync.h", 

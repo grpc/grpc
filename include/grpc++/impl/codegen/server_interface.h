@@ -52,6 +52,8 @@ class ServerCredentials;
 class Service;
 class ThreadPoolInterface;
 
+extern CoreCodegenInterface* g_core_codegen_interface;
+
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
@@ -78,7 +80,10 @@ class ServerInterface : public CallHook {
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
-  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
+  void Shutdown() {
+    ShutdownInternal(
+        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  }
 
   /// Block waiting for all work to complete.
   ///
