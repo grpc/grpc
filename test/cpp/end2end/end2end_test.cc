@@ -1350,6 +1350,23 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
 
+TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
+              "With binary \n data", false, true))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   ResetStub();
   EchoRequest request;
