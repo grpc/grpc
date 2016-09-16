@@ -37,41 +37,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/transport/metadata.h"
-
-//
-// grpc_addresses
-//
-
-grpc_addresses* grpc_addresses_create(size_t num_addresses) {
-  grpc_addresses* addresses = gpr_malloc(sizeof(grpc_addresses));
-  addresses->num_addresses = num_addresses;
-  const size_t addresses_size = sizeof(grpc_address) * num_addresses;
-  addresses->addresses = gpr_malloc(addresses_size);
-  memset(addresses->addresses, 0, addresses_size);
-  return addresses;
-}
-
-grpc_addresses* grpc_addresses_copy(grpc_addresses* addresses) {
-  grpc_addresses* new = grpc_addresses_create(addresses->num_addresses);
-  memcpy(new->addresses, addresses->addresses,
-         sizeof(grpc_address) * addresses->num_addresses);
-  return new;
-}
-
-void grpc_addresses_set_address(grpc_addresses* addresses, size_t index,
-                                void* address, size_t address_len,
-                                bool is_balancer) {
-  GPR_ASSERT(index < addresses->num_addresses);
-  grpc_address* target = &addresses->addresses[index];
-  memcpy(target->address.addr, address, address_len);
-  target->address.len = address_len;
-  target->is_balancer = is_balancer;
-}
-
-void grpc_addresses_destroy(grpc_addresses* addresses) {
-  gpr_free(addresses->addresses);
-  gpr_free(addresses);
-}
+#include "src/core/lib/channel/channel_args.h"
 
 //
 // grpc_method_config
@@ -214,18 +180,21 @@ static grpc_method_config* method_config_table_get(method_config_table* table,
 
 struct grpc_resolver_result {
   gpr_refcount refs;
-  grpc_addresses* addresses;
+  grpc_lb_addresses* addresses;
   char* lb_policy_name;
+  grpc_channel_args* lb_policy_args;
   method_config_table method_configs;
 };
 
-grpc_resolver_result* grpc_resolver_result_create(grpc_addresses* addresses,
-                                                  const char* lb_policy_name) {
+grpc_resolver_result* grpc_resolver_result_create(
+    grpc_lb_addresses* addresses, const char* lb_policy_name,
+    grpc_channel_args* lb_policy_args) {
   grpc_resolver_result* result = gpr_malloc(sizeof(*result));
   memset(result, 0, sizeof(*result));
   gpr_ref_init(&result->refs, 1);
   result->addresses = addresses;
   result->lb_policy_name = gpr_strdup(lb_policy_name);
+  result->lb_policy_args = lb_policy_args;
   method_config_table_init(&result->method_configs);
   return result;
 }
@@ -237,14 +206,15 @@ void grpc_resolver_result_ref(grpc_resolver_result* result) {
 void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
                                 grpc_resolver_result* result) {
   if (gpr_unref(&result->refs)) {
-    grpc_addresses_destroy(result->addresses);
+    grpc_lb_addresses_destroy(result->addresses, NULL /* user_data_destroy */);
     gpr_free(result->lb_policy_name);
+    grpc_channel_args_destroy(result->lb_policy_args);
     method_config_table_destroy(&result->method_configs);
     gpr_free(result);
   }
 }
 
-grpc_addresses* grpc_resolver_result_get_addresses(
+grpc_lb_addresses* grpc_resolver_result_get_addresses(
     grpc_resolver_result* result) {
   return result->addresses;
 }
@@ -252,6 +222,11 @@ grpc_addresses* grpc_resolver_result_get_addresses(
 const char* grpc_resolver_result_get_lb_policy_name(
     grpc_resolver_result* result) {
   return result->lb_policy_name;
+}
+
+grpc_channel_args* grpc_resolver_result_get_lb_policy_args(
+    grpc_resolver_result* result) {
+  return result->lb_policy_args;
 }
 
 void grpc_resolver_result_add_method_config(grpc_resolver_result* result,

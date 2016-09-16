@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,53 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_ALLOC_H
-#define GRPC_IMPL_CODEGEN_ALLOC_H
+#include "src/core/lib/support/mpscq.h"
 
-#include <stddef.h>
+#include <grpc/support/log.h>
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct gpr_allocation_functions {
-  void *(*malloc_fn)(size_t size);
-  void *(*realloc_fn)(void *ptr, size_t size);
-  void (*free_fn)(void *ptr);
-} gpr_allocation_functions;
-
-/* malloc, never returns NULL */
-GPRAPI void *gpr_malloc(size_t size);
-/* free */
-GPRAPI void gpr_free(void *ptr);
-/* realloc, never returns NULL */
-GPRAPI void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPRAPI void *gpr_malloc_aligned(size_t size, size_t alignment_log);
-/* free memory allocated by gpr_malloc_aligned */
-GPRAPI void gpr_free_aligned(void *ptr);
-
-/** Request the family of allocation functions in \a functions be used. NOTE
- * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
-GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
-
-/** Return the family of allocation functions currently in effect. */
-GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
-
-#ifdef __cplusplus
+void gpr_mpscq_init(gpr_mpscq *q) {
+  gpr_atm_no_barrier_store(&q->head, (gpr_atm)&q->stub);
+  q->tail = &q->stub;
+  gpr_atm_no_barrier_store(&q->stub.next, (gpr_atm)NULL);
 }
-#endif
 
-#endif /* GRPC_IMPL_CODEGEN_ALLOC_H */
+void gpr_mpscq_destroy(gpr_mpscq *q) {
+  GPR_ASSERT(gpr_atm_no_barrier_load(&q->head) == (gpr_atm)&q->stub);
+  GPR_ASSERT(q->tail == &q->stub);
+}
+
+void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
+  gpr_atm_no_barrier_store(&n->next, (gpr_atm)NULL);
+  gpr_mpscq_node *prev =
+      (gpr_mpscq_node *)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
+  gpr_atm_rel_store(&prev->next, (gpr_atm)n);
+}
+
+gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
+  gpr_mpscq_node *tail = q->tail;
+  gpr_mpscq_node *next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
+  if (tail == &q->stub) {
+    // indicates the list is actually (ephemerally) empty
+    if (next == NULL) return NULL;
+    q->tail = next;
+    tail = next;
+    next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
+  }
+  if (next != NULL) {
+    q->tail = next;
+    return tail;
+  }
+  gpr_mpscq_node *head = (gpr_mpscq_node *)gpr_atm_acq_load(&q->head);
+  if (tail != head) {
+    // indicates a retry is in order: we're still adding
+    return NULL;
+  }
+  gpr_mpscq_push(q, &q->stub);
+  next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
+  if (next != NULL) {
+    q->tail = next;
+    return tail;
+  }
+  // indicates a retry is in order: we're still adding
+  return NULL;
+}

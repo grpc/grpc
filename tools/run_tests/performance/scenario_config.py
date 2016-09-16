@@ -38,6 +38,7 @@ BENCHMARK_SECONDS=30
 SMOKETEST='smoketest'
 SCALABLE='scalable'
 SWEEP='sweep'
+DEFAULT_CATEGORIES=[SCALABLE, SMOKETEST]
 
 SECURE_SECARGS = {'use_test_ca': True,
                   'server_host_override': 'foo.test.google.fr'}
@@ -70,7 +71,7 @@ BIG_GENERIC_PAYLOAD = {
 # non-ping-pong tests (since we can only specify per-channel numbers, the
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
-    'async': 10000,
+    'async': 6400,
     'sync': 1000
 }
 
@@ -94,6 +95,13 @@ def remove_nonproto_fields(scenario):
   return scenario
 
 
+def geometric_progression(start, stop, step):
+  n = start
+  while n < stop:
+    yield int(round(n))
+    n *= step
+
+
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
@@ -104,8 +112,9 @@ def _ping_pong_scenario(name, rpc_type,
                         server_core_limit=0,
                         async_server_threads=0,
                         warmup_seconds=WARMUP_SECONDS,
-                        categories=[],
-                        channels=None):
+                        categories=DEFAULT_CATEGORIES,
+                        channels=None,
+                        outstanding=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -142,8 +151,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
 
   if unconstrained_client:
+    outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
     wide = channels if channels is not None else WIDE
-    deep = int(math.ceil(1.0 * OUTSTANDING_REQUESTS[unconstrained_client] / wide))
+    deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
     scenario['num_clients'] = 0  # use as many client as available.
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
@@ -245,13 +255,17 @@ class CXXLanguage:
             secure=secure,
             categories=[SCALABLE])
 
-        for channels in [1, 3, 10, 31, 100, 316, 1000]:
-          yield _ping_pong_scenario(
-              'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels' % (synchronicity, secstr, channels),
-              rpc_type='UNARY',
-              client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-              unconstrained_client=synchronicity, secure=secure,
-              categories=[SWEEP], channels=channels)
+        for channels in geometric_progression(1, 500, math.sqrt(10)):
+          for outstanding in geometric_progression(1, 20000, math.sqrt(10)):
+              if synchronicity == 'sync' and outstanding > 1200: continue
+              if outstanding < channels: continue
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
+                  rpc_type='UNARY',
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  unconstrained_client=synchronicity, secure=secure,
+                  categories=[SWEEP], channels=channels, outstanding=outstanding)
 
   def __str__(self):
     return 'c++'
