@@ -81,8 +81,9 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
 ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
                                  const grpc::string& proto_path,
                                  const grpc::string& protofiles)
-    : has_error_(false) {
-  std::vector<grpc::string> service_list;
+    : has_error_(false),
+      dynamic_factory_(new protobuf::DynamicMessageFactory()) {
+  std::vector<std::string> service_list;
   if (channel) {
     reflection_db_.reset(new grpc::ProtoReflectionDescriptorDatabase(channel));
     reflection_db_->GetServices(&service_list);
@@ -127,7 +128,6 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
   }
 
   desc_pool_.reset(new protobuf::DescriptorPool(desc_db_.get()));
-  dynamic_factory_.reset(new protobuf::DynamicMessageFactory(desc_pool_.get()));
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     if (known_services.find(*it) == known_services.end()) {
