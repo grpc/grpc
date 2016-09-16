@@ -191,6 +191,7 @@ add_library(gpr
   src/core/lib/support/log_linux.c
   src/core/lib/support/log_posix.c
   src/core/lib/support/log_windows.c
+  src/core/lib/support/mpscq.c
   src/core/lib/support/murmur_hash.c
   src/core/lib/support/percent_encoding.c
   src/core/lib/support/slice.c
@@ -304,6 +305,7 @@ add_library(grpc
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -559,6 +561,7 @@ add_library(grpc_cronet
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -787,6 +790,7 @@ add_library(grpc_unsecure
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -1041,6 +1045,7 @@ add_library(grpc++
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -1392,6 +1397,7 @@ add_library(grpc++_unsecure
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c

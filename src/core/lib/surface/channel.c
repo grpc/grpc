@@ -334,14 +334,13 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
-  memset(&op, 0, sizeof(op));
-  op.disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
+  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
-  elem->filter->start_transport_op(&exec_ctx, elem, &op);
+  elem->filter->start_transport_op(&exec_ctx, elem, op);
 
   GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "channel");
 
