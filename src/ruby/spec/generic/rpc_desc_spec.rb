@@ -48,7 +48,7 @@ describe GRPC::RpcDesc do
     @bidi_streamer = RpcDesc.new('ss', Stream.new(Object.new),
                                  Stream.new(Object.new), 'encode', 'decode')
     @bs_code = INTERNAL
-    @no_reason = 'no reason given'
+    @no_reason = 'unkown error handling call on server'
     @ok_response = Object.new
   end
 

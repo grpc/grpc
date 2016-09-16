@@ -43,7 +43,8 @@ class Struct
         GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
-        fail GRPC::BadStatus.new(status.code, status.details, md)
+        fail GRPC::BadStatus.new(status.code, status.details, md),
+             "status code: #{status.code}, details: #{status.details}"
       end
       status
     end
@@ -356,7 +357,7 @@ module GRPC
       # Metadata might have already been sent if this is an operation view
       merge_metadata_and_send_if_not_already_sent(metadata)
 
-      requests.each { |r| @call.run_batch(SEND_MESSAGE => r) }
+      requests.each { |r| @call.run_batch(SEND_MESSAGE => @marshal.call(r)) }
       batch_result = @call.run_batch(
         SEND_CLOSE_FROM_CLIENT => nil,
         RECV_INITIAL_METADATA => nil,
@@ -388,7 +389,7 @@ module GRPC
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
       ops = {
-        SEND_MESSAGE => req,
+        SEND_MESSAGE => @marshal.call(req),
         SEND_CLOSE_FROM_CLIENT => nil
       }
       @send_initial_md_mutex.synchronize do

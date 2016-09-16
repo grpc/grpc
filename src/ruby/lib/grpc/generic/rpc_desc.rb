@@ -119,7 +119,7 @@ module GRPC
       # Send back a UNKNOWN status to the client
       GRPC.logger.warn("failed handler: #{active_call}; sending status:UNKNOWN")
       GRPC.logger.warn(e)
-      send_status(active_call, UNKNOWN, 'no reason given')
+      send_status(active_call, UNKNOWN, 'unkown error handling call on server')
     end
 
     def assert_arity_matches(mth)
