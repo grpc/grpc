@@ -212,19 +212,19 @@ module GRPC
 
     def server_unary_response(req, trailing_metadata: {},
                               code: Core::StatusCodes::OK, details: 'OK')
+      ops = {}
       @send_initial_md_mutex.synchronize do
-        ops = {}
         ops[SEND_INITIAL_METADATA] = @metadata_to_send unless @metadata_sent
         @metadata_sent = true
-
-        payload = @marshal.call(req)
-        ops[SEND_MESSAGE] = payload
-        ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
-          code, details, trailing_metadata)
-        ops[RECV_CLOSE_ON_SERVER] = nil
-
-        @call.run_batch(ops)
       end
+
+      payload = @marshal.call(req)
+      ops[SEND_MESSAGE] = payload
+      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
+        code, details, trailing_metadata)
+      ops[RECV_CLOSE_ON_SERVER] = nil
+
+      @call.run_batch(ops)
     end
 
     # remote_read reads a response from the remote endpoint.
@@ -319,22 +319,21 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
-      batch_result = nil
+      ops = {
+        SEND_MESSAGE => @marshal.call(req),
+        SEND_CLOSE_FROM_CLIENT => nil,
+        RECV_INITIAL_METADATA => nil,
+        RECV_MESSAGE => nil,
+        RECV_STATUS_ON_CLIENT => nil
+      }
       @send_initial_md_mutex.synchronize do
-        ops = {
-          SEND_MESSAGE => @marshal.call(req),
-          SEND_CLOSE_FROM_CLIENT => nil,
-          RECV_INITIAL_METADATA => nil,
-          RECV_MESSAGE => nil,
-          RECV_STATUS_ON_CLIENT => nil
-        }
         # Metadata might have already been sent if this is an operation view
         unless @metadata_sent
           ops[SEND_INITIAL_METADATA] = @metadata_to_send.merge!(metadata)
         end
-        batch_result = @call.run_batch(ops)
         @metadata_sent = true
       end
+      batch_result = @call.run_batch(ops)
 
       @call.metadata = batch_result.metadata
       attach_status_results_and_complete_call(batch_result)
@@ -388,18 +387,18 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
+      ops = {
+        SEND_MESSAGE => req,
+        SEND_CLOSE_FROM_CLIENT => nil
+      }
       @send_initial_md_mutex.synchronize do
-        ops = {
-          SEND_MESSAGE => req,
-          SEND_CLOSE_FROM_CLIENT => nil
-        }
         # Metadata might have already been sent if this is an operation view
         unless @metadata_sent
           ops[SEND_INITIAL_METADATA] = @metadata_to_send.merge!(metadata)
         end
-        @call.run_batch(ops)
         @metadata_sent = true
       end
+      @call.run_batch(ops)
       replies = enum_for(:each_remote_read_then_finish)
       return replies unless block_given?
       replies.each { |r| yield r }
