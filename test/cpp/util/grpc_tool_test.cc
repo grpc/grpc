@@ -109,7 +109,7 @@ class GrpcToolTest : public ::testing::Test {
 
   void ShutdownServer() { server_->Shutdown(); }
 
-  void ExitWhenError(int argc, const char** argv, const CliCredentials cred,
+  void ExitWhenError(int argc, const char** argv, const CliCredentials& cred,
                      GrpcToolOutputCallback callback) {
     int result = GrpcToolMainLib(argc, argv, cred, callback);
     if (result) {
