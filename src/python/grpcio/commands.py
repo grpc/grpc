@@ -53,6 +53,7 @@ PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
 PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
 PROTO_GEN_STEM = os.path.join(GRPC_STEM, 'src', 'python', 'gens')
+CYTHON_STEM = os.path.join(PYTHON_STEM, 'grpc', '_cython')
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
@@ -244,7 +245,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     extensions,
     include_path=[
       include_dir for extension in extensions for include_dir in extension.include_dirs
-    ],
+    ] + [CYTHON_STEM],
     compiler_directives=cython_compiler_directives
   )
 

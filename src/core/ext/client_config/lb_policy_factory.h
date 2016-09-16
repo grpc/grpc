@@ -47,8 +47,43 @@ struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
 };
 
+/** A resolved address alongside any LB related information associated with it.
+ * \a user_data, if not NULL, contains opaque data meant to be consumed by the
+ * gRPC LB policy. Note that no all LB policies support \a user_data as input.
+ * Those who don't will simply ignore it and will correspondingly return NULL in
+ * their namesake pick() output argument. */
+typedef struct grpc_lb_address {
+  grpc_resolved_address address;
+  bool is_balancer;
+  char *balancer_name;  /* For secure naming. */
+  void *user_data;
+} grpc_lb_address;
+
+typedef struct grpc_lb_addresses {
+  size_t num_addresses;
+  grpc_lb_address *addresses;
+} grpc_lb_addresses;
+
+/** Returns a grpc_addresses struct with enough space for
+ * \a num_addresses addresses. */
+grpc_lb_addresses* grpc_lb_addresses_create(size_t num_addresses);
+
+/** Sets the value of the address at index \a index of \a addresses.
+ * \a address is a socket address of length \a address_len.
+ * Takes ownership of \a balancer_name. */
+void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
+                                   void *address, size_t address_len,
+                                   bool is_balancer, char* balancer_name,
+                                   void *user_data);
+
+/** Destroys \a addresses.  If \a user_data_destroy is not NULL, it will
+ * be invoked to destroy the \a user_data field of each address. */
+void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses,
+                               void (*user_data_destroy)(void*));
+
+/** Arguments passed to LB policies. */
 typedef struct grpc_lb_policy_args {
-  grpc_addresses *addresses;
+  grpc_lb_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;
 

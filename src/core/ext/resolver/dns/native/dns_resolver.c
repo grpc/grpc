@@ -173,17 +173,19 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   if (r->addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.addresses = grpc_addresses_create(r->addresses->naddrs);
+    lb_policy_args.addresses = grpc_lb_addresses_create(r->addresses->naddrs);
     for (size_t i = 0; i < r->addresses->naddrs; ++i) {
-      grpc_addresses_set_address(
+      grpc_lb_addresses_set_address(
           lb_policy_args.addresses, i, &r->addresses->addrs[i].addr,
-          r->addresses->addrs[i].len, false /* is_balancer */);
+          r->addresses->addrs[i].len, false /* is_balancer */,
+          NULL /* balancer_name */, NULL /* user_data */);
     }
     grpc_resolved_addresses_destroy(r->addresses);
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
-    grpc_addresses_destroy(lb_policy_args.addresses);
+    grpc_lb_addresses_destroy(lb_policy_args.addresses,
+                              NULL /* user_data_destroy */);
     result = grpc_resolver_result_create();
     if (lb_policy != NULL) {
       grpc_resolver_result_set_lb_policy(result, lb_policy);

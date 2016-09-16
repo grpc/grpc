@@ -70,7 +70,7 @@ BIG_GENERIC_PAYLOAD = {
 # non-ping-pong tests (since we can only specify per-channel numbers, the
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
-    'async': 10000,
+    'async': 6400,
     'sync': 1000
 }
 
