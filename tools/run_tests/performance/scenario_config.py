@@ -343,10 +343,6 @@ class NodeLanguage:
     #    'node_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
-
-    # 50 | 90 | 95 | 99 | 99.9
-    # 323834.797877769 | 432510.52549709007 | 458703.85481928807 | 507691.6539182514 | 3826148.8700816636
-    # 272716.21113941644 | 307298.29139655043 | 329730.74530904385 | 413965.4319992619 | 2518204.1519497186
     yield _ping_pong_scenario(
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
