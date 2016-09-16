@@ -270,12 +270,12 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 static void test_no_error_logging_in_entire_process(
     grpc_end2end_test_config config) {
   int i;
-  gpr_atm_no_barrier_store(&g_log_func, test_no_error_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_error_log);
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
   }
   test_invoke_10_simple_requests(config);
-  gpr_atm_no_barrier_store(&g_log_func, gpr_default_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
 }
 
 static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
@@ -285,9 +285,9 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
   for (i = 0; i < 10; i++) {
     simple_request_body(f);
   }
-  gpr_atm_no_barrier_store(&g_log_func, test_no_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_log);
   simple_request_body(f);
-  gpr_atm_no_barrier_store(&g_log_func, gpr_default_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
   end_test(&f);
   config.tear_down_data(&f);
 }
