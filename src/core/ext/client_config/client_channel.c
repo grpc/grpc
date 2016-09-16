@@ -406,6 +406,8 @@ typedef struct client_channel_call_data {
   grpc_closure next_step;
 
   grpc_call_stack *owning_call;
+
+  grpc_linked_mdelem lb_token_mdelem;
 } call_data;
 
 static void add_waiting_locked(call_data *calld, grpc_transport_stream_op *op) {
@@ -578,9 +580,11 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     int r;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel");
     gpr_mu_unlock(&chand->mu);
-    r = grpc_lb_policy_pick(exec_ctx, lb_policy, calld->pollent,
-                            initial_metadata, initial_metadata_flags,
-                            connected_subchannel, on_ready);
+    const grpc_lb_policy_pick_args inputs = {calld->pollent, initial_metadata,
+                                             initial_metadata_flags,
+                                             &calld->lb_token_mdelem};
+    r = grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs, connected_subchannel,
+                            NULL, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
     GPR_TIMER_END("pick_subchannel", 0);
     return r;

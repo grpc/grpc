@@ -38,7 +38,8 @@
 
 #include <grpc++/security/credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

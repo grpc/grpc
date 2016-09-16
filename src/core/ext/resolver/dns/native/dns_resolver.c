@@ -167,11 +167,13 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(r->resolving);
   r->resolving = 0;
   if (r->addresses != NULL) {
-    grpc_addresses *addresses = grpc_addresses_create(r->addresses->naddrs);
+    grpc_lb_addresses *addresses =
+        grpc_lb_addresses_create(r->addresses->naddrs);
     for (size_t i = 0; i < r->addresses->naddrs; ++i) {
-      grpc_addresses_set_address(addresses, i, &r->addresses->addrs[i].addr,
-                                 r->addresses->addrs[i].len,
-                                 false /* is_balancer */);
+      grpc_lb_addresses_set_address(
+          addresses, i, &r->addresses->addrs[i].addr,
+          r->addresses->addrs[i].len, false /* is_balancer */,
+          NULL /* balancer_name */, NULL /* user_data */);
     }
     grpc_resolved_addresses_destroy(r->addresses);
     result = grpc_resolver_result_create(addresses, r->lb_policy_name, NULL);
