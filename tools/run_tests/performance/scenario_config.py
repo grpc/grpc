@@ -256,12 +256,19 @@ class CXXLanguage:
             categories=[SCALABLE])
 
         for channels in geometric_progression(1, 500, math.sqrt(10)):
-          for outstanding in geometric_progression(1, 20000, math.sqrt(10)):
+          for outstanding in geometric_progression(1, 200000, math.sqrt(10)):
               if synchronicity == 'sync' and outstanding > 1200: continue
               if outstanding < channels: continue
               yield _ping_pong_scenario(
                   'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
                   rpc_type='UNARY',
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  unconstrained_client=synchronicity, secure=secure,
+                  categories=[SWEEP], channels=channels, outstanding=outstanding)
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_streaming_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
+                  rpc_type='STREAMING',
                   client_type='%s_CLIENT' % synchronicity.upper(),
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity, secure=secure,
