@@ -85,7 +85,7 @@ static bool SimplePrint(const grpc::string& outfile,
   if (outfile.empty()) {
     std::cout << output << std::endl;
   } else {
-    std::ofstream output_file(outfile, std::ios::trunc | std::ios::binary);
+    std::ofstream output_file(outfile, std::ios::app | std::ios::binary);
     output_file << output << std::endl;
     output_file.close();
   }
