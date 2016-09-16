@@ -303,6 +303,27 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 30, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "combiner_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
@@ -690,6 +711,27 @@
     "gtest": false, 
     "language": "c", 
     "name": "gpr_log_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 30, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "gpr_mpscq_test", 
     "platforms": [
       "linux", 
       "mac", 
