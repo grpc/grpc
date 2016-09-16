@@ -70,7 +70,7 @@ grpc_lb_addresses *grpc_lb_addresses_create(size_t num_addresses);
 
 /** Creates a copy of \a addresses.  If \a user_data_copy is not NULL,
  * it will be invoked to copy the \a user_data field of each address. */
-grpc_lb_addresses *grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
+grpc_lb_addresses *grpc_lb_addresses_copy(grpc_lb_addresses *addresses,
                                           void *(*user_data_copy)(void *));
 
 /** Sets the value of the address at index \a index of \a addresses.

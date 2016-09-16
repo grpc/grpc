@@ -46,8 +46,8 @@ grpc_lb_addresses* grpc_lb_addresses_create(size_t num_addresses) {
   return addresses;
 }
 
-grpc_lb_addresses *grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
-                                          void *(*user_data_copy)(void *)) {
+grpc_lb_addresses* grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
+                                          void* (*user_data_copy)(void*)) {
   grpc_lb_addresses* new = grpc_lb_addresses_create(addresses->num_addresses);
   memcpy(new->addresses, addresses->addresses,
          sizeof(grpc_address) * addresses->num_addresses);
@@ -55,8 +55,7 @@ grpc_lb_addresses *grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
     new->addresses[i].balancer_name =
         gpr_strdup(new->addresses[i].balancer_name);
     if (user_data_copy != NULL) {
-      new->addresses[i].user_data =
-          user_data_copy(new->addresses[i].user_data);
+      new->addresses[i].user_data = user_data_copy(new->addresses[i].user_data);
     }
   }
   return new;
