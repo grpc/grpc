@@ -379,10 +379,19 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
   }
 
   if (!tcp_flush(tcp, &error)) {
+    if (grpc_tcp_trace) {
+      gpr_log(GPR_DEBUG, "write: delayed");
+    }
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
+    if (grpc_tcp_trace) {
+      const char *str = grpc_error_string(error);
+      gpr_log(GPR_DEBUG, "write: %s", str);
+      grpc_error_free_string(str);
+    }
+
     GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
     cb->cb(exec_ctx, cb->cb_arg, error);
     GPR_TIMER_END("tcp_handle_write.cb", 0);
@@ -425,8 +434,16 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
+    if (grpc_tcp_trace) {
+      gpr_log(GPR_DEBUG, "write: delayed");
+    }
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
+    if (grpc_tcp_trace) {
+      const char *str = grpc_error_string(error);
+      gpr_log(GPR_DEBUG, "write: %s", str);
+      grpc_error_free_string(str);
+    }
     grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
   }
 

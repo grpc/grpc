@@ -37,9 +37,10 @@ root=`pwd`
 
 if [ -x "$(command -v nuget)" ]
 then
+  # TODO(jtattermusch): Get rid of this hack. See #8034
   # Restoring Nuget packages by packages rather than by solution because of
   # inability to restore by solution with Nuget client 3.4.4
-  # Moving into each directory to let the restores work with nuget 3.4 and 2.8
+  # Moving into each directory to let the restores work based on per-project packages.config files
   cd Grpc.Auth
   nuget restore -PackagesDirectory ../packages
   cd ..

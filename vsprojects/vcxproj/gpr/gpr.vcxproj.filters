@@ -61,7 +61,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\percent_encoding.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice.c">
@@ -222,9 +228,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -237,16 +240,13 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -259,9 +259,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
   </ItemGroup>
@@ -278,7 +275,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\percent_encoding.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h">

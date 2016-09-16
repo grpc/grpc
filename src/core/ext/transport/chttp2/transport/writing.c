@@ -51,14 +51,9 @@ int grpc_chttp2_unlocking_check_writes(
 
   GPR_TIMER_BEGIN("grpc_chttp2_unlocking_check_writes", 0);
 
-  /* simple writes are queued to qbuf, and flushed here */
-  gpr_slice_buffer_swap(&transport_global->qbuf, &transport_writing->outbuf);
-  GPR_ASSERT(transport_global->qbuf.count == 0);
-
-  grpc_chttp2_hpack_compressor_set_max_table_size(
-      &transport_writing->hpack_compressor,
-      transport_global->settings[GRPC_PEER_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
+  transport_writing->max_frame_size =
+      transport_global->settings[GRPC_ACKED_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   if (transport_global->dirtied_local_settings &&
       !transport_global->sent_local_settings) {
@@ -72,6 +67,16 @@ int grpc_chttp2_unlocking_check_writes(
     transport_global->dirtied_local_settings = 0;
     transport_global->sent_local_settings = 1;
   }
+
+  /* simple writes are queued to qbuf, and flushed here */
+  gpr_slice_buffer_move_into(&transport_global->qbuf,
+                             &transport_writing->outbuf);
+  GPR_ASSERT(transport_global->qbuf.count == 0);
+
+  grpc_chttp2_hpack_compressor_set_max_table_size(
+      &transport_writing->hpack_compressor,
+      transport_global->settings[GRPC_PEER_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
 
   GRPC_CHTTP2_FLOW_MOVE_TRANSPORT("write", transport_writing, outgoing_window,
                                   transport_global, outgoing_window);
@@ -206,14 +211,15 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
     uint32_t max_outgoing =
-        (uint32_t)GPR_MIN(GRPC_CHTTP2_MAX_PAYLOAD_LENGTH,
+        (uint32_t)GPR_MIN(transport_writing->max_frame_size,
                           GPR_MIN(stream_writing->outgoing_window,
                                   transport_writing->outgoing_window));
     /* send initial metadata if it's available */
     if (stream_writing->send_initial_metadata != NULL) {
       grpc_chttp2_encode_header(
           &transport_writing->hpack_compressor, stream_writing->id,
-          stream_writing->send_initial_metadata, 0, &stream_writing->stats,
+          stream_writing->send_initial_metadata, 0,
+          transport_writing->max_frame_size, &stream_writing->stats,
           &transport_writing->outbuf);
       stream_writing->send_initial_metadata = NULL;
       stream_writing->sent_initial_metadata = 1;
@@ -303,7 +309,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_chttp2_encode_header(
             &transport_writing->hpack_compressor, stream_writing->id,
-            stream_writing->send_trailing_metadata, 1, &stream_writing->stats,
+            stream_writing->send_trailing_metadata, 1,
+            transport_writing->max_frame_size, &stream_writing->stats,
             &transport_writing->outbuf);
       }
       if (!transport_writing->is_client && !stream_writing->read_closed) {
@@ -338,6 +345,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_cleanup_writing(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing) {
+  GPR_TIMER_BEGIN("grpc_chttp2_cleanup_writing", 0);
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
 
@@ -376,4 +384,5 @@ void grpc_chttp2_cleanup_writing(
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
   }
   gpr_slice_buffer_reset_and_unref(&transport_writing->outbuf);
+  GPR_TIMER_END("grpc_chttp2_cleanup_writing", 0);
 }

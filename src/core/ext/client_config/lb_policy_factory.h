@@ -43,14 +43,23 @@
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
-/** grpc_lb_policy provides grpc_client_config objects to grpc_channel
-    objects */
 struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
 };
 
+/** A resolved address alongside any LB related information associated with it.
+ * \a user_data, if not NULL, contains opaque data meant to be consumed by the
+ * gRPC LB policy. Note that no all LB policies support \a user_data as input.
+ * Those who don't will simply ignore it and will correspondingly return NULL in
+ * their namesake pick() output argument. */
+typedef struct grpc_lb_address {
+  grpc_resolved_address *resolved_address;
+  void *user_data;
+} grpc_lb_address;
+
 typedef struct grpc_lb_policy_args {
-  grpc_resolved_addresses *addresses;
+  grpc_lb_address *addresses;
+  size_t num_addresses;
   grpc_client_channel_factory *client_channel_factory;
 } grpc_lb_policy_args;
 

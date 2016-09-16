@@ -104,6 +104,9 @@ void grpc_client_security_context_destroy(void *ctx) {
   grpc_client_security_context *c = (grpc_client_security_context *)ctx;
   grpc_call_credentials_unref(c->creds);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
+  if (c->extension.instance != NULL && c->extension.destroy != NULL) {
+    c->extension.destroy(c->extension.instance);
+  }
   gpr_free(ctx);
 }
 
@@ -119,6 +122,9 @@ grpc_server_security_context *grpc_server_security_context_create(void) {
 void grpc_server_security_context_destroy(void *ctx) {
   grpc_server_security_context *c = (grpc_server_security_context *)ctx;
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "server_security_context");
+  if (c->extension.instance != NULL && c->extension.destroy != NULL) {
+    c->extension.destroy(c->extension.instance);
+  }
   gpr_free(ctx);
 }
 

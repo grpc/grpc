@@ -46,12 +46,12 @@ PACKAGE_DIRECTORIES = {
 }
 
 SETUP_REQUIRES = (
-    'grpcio-tools>=0.15.0',
+    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 )
 
 INSTALL_REQUIRES = (
     'protobuf>=3.0.0',
-    'grpcio>=0.15.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
 
 COMMAND_CLASS = {
