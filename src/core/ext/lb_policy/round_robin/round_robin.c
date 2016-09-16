@@ -130,10 +130,6 @@ struct round_robin_lb_policy {
 
   /** total number of addresses received at creation time */
   size_t num_addresses;
-  /** array holding the borrowed and opaque pointers to incoming user data, one
-   * per incoming address.  These individual pointers will be returned as-is in
-   * successful picks. */
-  void **user_data_pointers;
 
   /** all our subchannels */
   size_t num_subchannels;
@@ -282,7 +278,6 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     elem = tmp;
   }
 
-  gpr_free(p->user_data_pointers);
   gpr_free(p);
 }
 
@@ -626,8 +621,6 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   p->num_addresses = num_addrs;
   p->subchannels = gpr_malloc(sizeof(*p->subchannels) * num_addrs);
   memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
-  p->user_data_pointers = gpr_malloc(sizeof(void *) * num_addrs);
-  memset(p->user_data_pointers, 0, sizeof(void *) * num_addrs);
 
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
@@ -650,9 +643,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       sd->policy = p;
       sd->index = subchannel_idx;
       sd->subchannel = subchannel;
-      sd->user_data = p->user_data_pointers[i];
-      p->user_data_pointers[subchannel_idx] =
-          args->addresses->addresses[i].user_data;
+      sd->user_data = args->addresses->addresses[i].user_data;
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed, sd);
@@ -661,7 +652,6 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   if (subchannel_idx == 0) {
     /* couldn't create any subchannel. Bail out */
     gpr_free(p->subchannels);
-    gpr_free(p->user_data_pointers);
     gpr_free(p);
     return NULL;
   }

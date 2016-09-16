@@ -300,6 +300,9 @@ typedef struct glb_lb_policy {
    * response has arrived. */
   grpc_grpclb_serverlist *serverlist;
 
+  /** addresses from \a serverlist */
+  grpc_lb_addresses *addresses;
+
   /** list of picks that are waiting on RR's policy connectivity */
   pending_pick *pending_picks;
 
@@ -424,6 +427,7 @@ static grpc_lb_addresses *process_serverlist(
   return lb_addresses;
 }
 
+/* A plugin for grpc_lb_addresses_destroy that unrefs the LB token metadata. */
 static void lb_token_destroy(void *token) {
   if (token != NULL) GRPC_MDELEM_UNREF(token);
 }
@@ -440,7 +444,12 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
 
   grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
 
-  grpc_lb_addresses_destroy(args.addresses, lb_token_destroy);
+  if (glb_policy->addresses != NULL) {
+    /* dispose of the previous version */
+    grpc_lb_addresses_destroy(glb_policy->addresses, lb_token_destroy);
+  }
+  glb_policy->addresses = args.addresses;
+
   return rr;
 }
 
@@ -628,6 +637,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
   }
   gpr_mu_destroy(&glb_policy->mu);
+  grpc_lb_addresses_destroy(glb_policy->addresses, lb_token_destroy);
   gpr_free(glb_policy);
 }
 

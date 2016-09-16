@@ -129,7 +129,6 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     grpc_lb_policy *lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
-    gpr_free(lb_policy_args.addresses);
     grpc_resolver_result_set_lb_policy(result, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
     r->published = true;
