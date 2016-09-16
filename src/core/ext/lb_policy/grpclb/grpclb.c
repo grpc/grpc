@@ -171,14 +171,20 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
               (intptr_t)wc_arg->rr_policy);
     }
     GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "wrapped_rr_closure");
+
+    /* if target is NULL, no pick has been made by the RR policy (eg, all
+     * addresses failed to connect). There won't be any user_data/token
+     * available */
+    if (wc_arg->target != NULL) {
+      initial_metadata_add_lb_token(wc_arg->initial_metadata,
+                                    wc_arg->lb_token_mdelem_storage,
+                                    GRPC_MDELEM_REF(wc_arg->lb_token));
+    }
   }
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
 
-  initial_metadata_add_lb_token(wc_arg->initial_metadata,
-                                wc_arg->lb_token_mdelem_storage,
-                                GRPC_MDELEM_REF(wc_arg->lb_token));
-
-  grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error),
+                      NULL);
   gpr_free(wc_arg->owning_pending_node);
 }
 
@@ -232,6 +238,7 @@ static void add_pending_pick(pending_pick **root,
   pp->initial_metadata_flags = pick_args->initial_metadata_flags;
   pp->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
   pp->wrapped_on_complete_arg.wrapped_closure = on_complete;
+  pp->wrapped_on_complete_arg.target = target;
   pp->wrapped_on_complete_arg.initial_metadata = pick_args->initial_metadata;
   pp->wrapped_on_complete_arg.lb_token_mdelem_storage =
       pick_args->lb_token_mdelem_storage;
@@ -762,6 +769,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
     memset(&glb_policy->wc_arg, 0, sizeof(wrapped_rr_closure_arg));
     glb_policy->wc_arg.rr_policy = glb_policy->rr_policy;
+    glb_policy->wc_arg.target = target;
     glb_policy->wc_arg.wrapped_closure = on_complete;
     glb_policy->wc_arg.lb_token_mdelem_storage =
         pick_args->lb_token_mdelem_storage;
