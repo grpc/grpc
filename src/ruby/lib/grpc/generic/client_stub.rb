@@ -109,6 +109,7 @@ module GRPC
                    timeout: nil,
                    propagate_mask: nil,
                    channel_args: {})
+      @using_insecure_channel = creds.eql?(:this_channel_is_insecure)
       @ch = ClientStub.setup_channel(channel_override, host, creds,
                                      channel_args)
       alt_host = channel_args[Core::Channel::SSL_TARGET]
@@ -445,7 +446,9 @@ module GRPC
                         deadline: nil,
                         parent: nil,
                         credentials: nil)
-
+      if credentials && @using_insecure_channel
+        fail ArgumentError, "can't use credentials on an insecure channel"
+      end
       deadline = from_relative_time(@timeout) if deadline.nil?
       # Provide each new client call with its own completion queue
       call = @ch.create_call(parent, # parent call
