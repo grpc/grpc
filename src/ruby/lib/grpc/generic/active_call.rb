@@ -210,14 +210,14 @@ module GRPC
       nil
     end
 
-    def server_unary_response(req, marshalled: false, trailing_metadata: {},
+    def server_unary_response(req, trailing_metadata: {},
                               code: Core::StatusCodes::OK, details: 'OK')
       @send_initial_md_mutex.synchronize do
         ops = {}
         ops[SEND_INITIAL_METADATA] = @metadata_to_send unless @metadata_sent
-        @metadata_sent = true unless @metadata_sent
+        @metadata_sent = true
 
-        payload = marshalled ? req : @marshal.call(req)
+        payload = @marshal.call(req)
         ops[SEND_MESSAGE] = payload
         ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
           code, details, trailing_metadata)
