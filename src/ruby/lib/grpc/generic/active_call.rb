@@ -321,14 +321,18 @@ module GRPC
     def request_response(req, metadata: {})
       batch_result = nil
       @send_initial_md_mutex.synchronize do
-        fail 'md already sent' if @metadata_sent
-        batch_result = @call.run_batch(
-          SEND_INITIAL_METADATA => metadata,
+        ops = {
           SEND_MESSAGE => @marshal.call(req),
           SEND_CLOSE_FROM_CLIENT => nil,
           RECV_INITIAL_METADATA => nil,
           RECV_MESSAGE => nil,
-          RECV_STATUS_ON_CLIENT => nil)
+          RECV_STATUS_ON_CLIENT => nil
+        }
+        # Metadata might have already been sent if this is an operation view
+        unless @metadata_sent
+          ops[SEND_INITIAL_METADATA] = @metadata_to_send.merge!(metadata)
+        end
+        batch_result = @call.run_batch(ops)
         @metadata_sent = true
       end
 
@@ -350,7 +354,9 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
-      merge_metadata_to_send(metadata) && send_initial_metadata
+      # Metadata might have already been sent if this is an operation view
+      merge_metadata_and_send_if_not_already_sent(metadata)
+
       requests.each { |r| @call.run_batch(SEND_MESSAGE => r) }
       batch_result = @call.run_batch(
         SEND_CLOSE_FROM_CLIENT => nil,
@@ -383,12 +389,15 @@ module GRPC
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
       @send_initial_md_mutex.synchronize do
-        fail 'md already sent' if @metadata_sent
-        @call.run_batch(
-          SEND_INITIAL_METADATA => metadata,
+        ops = {
           SEND_MESSAGE => req,
           SEND_CLOSE_FROM_CLIENT => nil
-        )
+        }
+        # Metadata might have already been sent if this is an operation view
+        unless @metadata_sent
+          ops[SEND_INITIAL_METADATA] = @metadata_to_send.merge!(metadata)
+        end
+        @call.run_batch(ops)
         @metadata_sent = true
       end
       replies = enum_for(:each_remote_read_then_finish)
@@ -427,7 +436,8 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
-      merge_metadata_to_send(metadata) && send_initial_metadata
+      # Metadata might have already been sent if this is an operation view
+      merge_metadata_and_send_if_not_already_sent(metadata)
       bd = BidiCall.new(@call,
                         @marshal,
                         @unmarshal,
@@ -477,6 +487,15 @@ module GRPC
       @send_initial_md_mutex.synchronize do
         fail('cant change metadata after already sent') if @metadata_sent
         @metadata_to_send.merge!(new_metadata)
+      end
+    end
+
+    def merge_metadata_and_send_if_not_already_sent(new_metadata = {})
+      @send_initial_md_mutex.synchronize do
+        return if @metadata_sent
+        @metadata_to_send.merge!(new_metadata)
+        @call.run_batch(SEND_INITIAL_METADATA => @metadata_to_send)
+        @metadata_sent = true
       end
     end
 
