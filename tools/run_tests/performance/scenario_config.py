@@ -262,7 +262,8 @@ class CXXLanguage:
               yield _ping_pong_scenario(
                   'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
                   rpc_type='UNARY',
-                  client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity, secure=secure,
                   categories=[SWEEP], channels=channels, outstanding=outstanding)
 
