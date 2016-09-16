@@ -78,7 +78,7 @@ class GrpcTool {
             GrpcToolOutputCallback callback);
   bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
                   GrpcToolOutputCallback callback);
-  bool ListServices(int argc, const char** argv, CliCredentials cred,
+  bool ListServices(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback);
   // TODO(zyc): implement the following methods
   // bool PrintType(int argc, const char** argv, GrpcToolOutputCallback
@@ -261,7 +261,7 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
 }
 
 bool GrpcTool::ListServices(int argc, const char** argv,
-                            const CliCredentials cred,
+                            const CliCredentials& cred,
                             GrpcToolOutputCallback callback) {
   CommandUsage(
       "List services\n"
