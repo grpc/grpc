@@ -991,11 +991,17 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
   } else if (stream_op->on_complete &&
              op_can_be_run(stream_op, stream_state, &oas->state,
                            OP_ON_COMPLETE)) {
-    /* All actions in this stream_op are complete. Call the on_complete callback
-     */
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
-    grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
-                        NULL);
+    if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
+        stream_state->state_callback_received[OP_FAILED]) {
+      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_CANCELLED,
+                          NULL);
+    } else {
+      /* All actions in this stream_op are complete. Call the on_complete callback
+       */
+      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
+                          NULL);
+    }
     oas->state.state_op_done[OP_ON_COMPLETE] = true;
     oas->done = true;
     /* reset any send message state, only if this ON_COMPLETE is about a send.
