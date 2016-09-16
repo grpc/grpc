@@ -172,10 +172,14 @@ cdef extern from "grpc/grpc.h":
     GRPC_ARG_INTEGER
     GRPC_ARG_POINTER
 
-  ctypedef struct grpc_arg_value_pointer:
-    void *address "p"
+  ctypedef struct grpc_arg_pointer_vtable:
     void *(*copy)(void *)
     void (*destroy)(void *)
+    int (*cmp)(void *, void *)
+
+  ctypedef struct grpc_arg_value_pointer:
+    void *address "p"
+    grpc_arg_pointer_vtable *vtable
 
   union grpc_arg_value:
     char *string
