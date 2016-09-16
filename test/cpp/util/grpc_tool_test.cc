@@ -142,7 +142,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) GRPC_OVERRIDE {
+                       EchoResponse* response) override {
     EchoRequest request;
     response->set_message("");
     if (!context->client_metadata().empty()) {
@@ -162,7 +162,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
+                        ServerWriter<EchoResponse>* writer) override {
     if (!context->client_metadata().empty()) {
       for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
                iter = context->client_metadata().begin();
@@ -177,6 +177,29 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
       response.set_message(request->message() + grpc::to_string(i));
       writer->Write(response);
+    }
+
+    return Status::OK;
+  }
+
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+    EchoRequest request;
+    EchoResponse response;
+    if (!context->client_metadata().empty()) {
+      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+               iter = context->client_metadata().begin();
+           iter != context->client_metadata().end(); ++iter) {
+        context->AddInitialMetadata(ToString(iter->first),
+                                    ToString(iter->second));
+      }
+    }
+    context->AddTrailingMetadata("trailing_key", "trailing_value");
+
+    while (stream->Read(&request)) {
+      response.set_message(request.message());
+      stream->Write(response);
     }
 
     return Status::OK;
@@ -391,6 +414,132 @@ TEST_F(GrpcToolTest, CallCommand) {
   ShutdownServer();
 }
 
+TEST_F(GrpcToolTest, CallCommandRequestStream) {
+  // Test input: grpc_cli call localhost:<port> RequestStream "message:
+  // 'Hello0'"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "RequestStream", "message: 'Hello0'"};
+
+  // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
+  std::streambuf* orig = std::cin.rdbuf();
+  std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
+  std::cin.rdbuf(ss.rdbuf());
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+
+  // Expected output: "message: \"Hello0Hello1Hello2\""
+  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
+                             "message: \"Hello0Hello1Hello2\""));
+  std::cin.rdbuf(orig);
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequest) {
+  // Test input: grpc_cli call localhost:<port> RequestStream "message:
+  // 'Hello0'"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "RequestStream", "message: 'Hello0'"};
+
+  // Mock std::cin input "bad_field: 'Hello1'\n\n message: 'Hello2'\n\n"
+  std::streambuf* orig = std::cin.rdbuf();
+  std::istringstream ss("bad_field: 'Hello1'\n\n message: 'Hello2'\n\n");
+  std::cin.rdbuf(ss.rdbuf());
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+
+  // Expected output: "message: \"Hello0Hello2\""
+  EXPECT_TRUE(NULL !=
+              strstr(output_stream.str().c_str(), "message: \"Hello0Hello2\""));
+  std::cin.rdbuf(orig);
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandResponseStream) {
+  // Test input: grpc_cli call localhost:<port> ResponseStream "message:
+  // 'Hello'"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "ResponseStream", "message: 'Hello'"};
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+
+  // Expected output: "message: \"Hello{n}\""
+  for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+    grpc::string expected_response_text =
+        "message: \"Hello" + grpc::to_string(i) + "\"\n";
+    EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
+                               expected_response_text.c_str()));
+  }
+
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandBidiStream) {
+  // Test input: grpc_cli call localhost:<port> BidiStream "message: 'Hello0'"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "BidiStream", "message: 'Hello0'"};
+
+  // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
+  std::streambuf* orig = std::cin.rdbuf();
+  std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
+  std::cin.rdbuf(ss.rdbuf());
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+
+  // Expected output: "message: \"Hello0\"\nmessage: \"Hello1\"\nmessage:
+  // \"Hello2\"\n\n"
+  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
+                             "message: \"Hello0\"\nmessage: "
+                             "\"Hello1\"\nmessage: \"Hello2\"\n"));
+  std::cin.rdbuf(orig);
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandBidiStreamWithBadRequest) {
+  // Test input: grpc_cli call localhost:<port> BidiStream "message: 'Hello0'"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "BidiStream", "message: 'Hello0'"};
+
+  // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
+  std::streambuf* orig = std::cin.rdbuf();
+  std::istringstream ss("message: 1.0\n\n message: 'Hello2'\n\n");
+  std::cin.rdbuf(ss.rdbuf());
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+
+  // Expected output: "message: \"Hello0\"\nmessage: \"Hello1\"\nmessage:
+  // \"Hello2\"\n\n"
+  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
+                             "message: \"Hello0\"\nmessage: \"Hello2\"\n"));
+  std::cin.rdbuf(orig);
+
+  ShutdownServer();
+}
+
 TEST_F(GrpcToolTest, ParseCommand) {
   // Test input "grpc_cli parse localhost:<port> grpc.testing.EchoResponse
   // ECHO_RESPONSE_MESSAGE"
@@ -428,57 +577,6 @@ TEST_F(GrpcToolTest, ParseCommand) {
 
   // Expected output: ECHO_RESPONSE_MESSAGE
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), ECHO_RESPONSE_MESSAGE));
-
-  ShutdownServer();
-}
-
-TEST_F(GrpcToolTest, CallCommandRequestStream) {
-  // Test input: grpc_cli call localhost:<port> RequestStream "message:
-  // 'Hello0'"
-  std::stringstream output_stream;
-
-  const grpc::string server_address = SetUpServer();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
-                        "RequestStream", "message: 'Hello0'"};
-
-  // Mock std::cin input "message: 'Hello1'\n\n message: 'Hello2'\n\n"
-  std::streambuf* orig = std::cin.rdbuf();
-  std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
-  std::cin.rdbuf(ss.rdbuf());
-
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-
-  // Expected output: "message: \"Hello0Hello1Hello2\""
-  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                             "message: \"Hello0Hello1Hello2\""));
-  std::cin.rdbuf(orig);
-  ShutdownServer();
-}
-
-TEST_F(GrpcToolTest, CallCommandResponseStream) {
-  // Test input: grpc_cli call localhost:<port> ResponseStream "message:
-  // 'Hello'"
-  std::stringstream output_stream;
-
-  const grpc::string server_address = SetUpServer();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
-                        "ResponseStream", "message: 'Hello'"};
-
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
-
-  fprintf(stderr, "%s\n", output_stream.str().c_str());
-  // Expected output: "message: \"Hello{n}\""
-
-  for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
-    grpc::string expected_response_text =
-        "message: \"Hello" + grpc::to_string(i) + "\"\n\n";
-    EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                               expected_response_text.c_str()));
-  }
 
   ShutdownServer();
 }

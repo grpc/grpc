@@ -39,6 +39,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
@@ -156,6 +157,36 @@ void PrintMetadata(const T& m, const grpc::string& message) {
     pair.append(" : ");
     pair.append(iter->second.data(), iter->second.size());
     fprintf(stderr, "%s\n", pair.c_str());
+  }
+}
+
+void ReadResponse(CliCall* call, const grpc::string& method_name,
+                  GrpcToolOutputCallback callback, ProtoFileParser* parser,
+                  gpr_mu* parser_mu, bool print_mode) {
+  grpc::string serialized_response_proto;
+  std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata;
+
+  for (bool receive_initial_metadata = true; call->ReadAndMaybeNotifyWrite(
+           &serialized_response_proto,
+           receive_initial_metadata ? &server_initial_metadata : nullptr);
+       receive_initial_metadata = false) {
+    fprintf(stderr, "got response.\n");
+    if (!FLAGS_binary_output) {
+      gpr_mu_lock(parser_mu);
+      serialized_response_proto = parser->GetTextFormatFromMethod(
+          method_name, serialized_response_proto, false /* is_request */);
+      if (parser->HasError() && print_mode) {
+        fprintf(stderr, "Failed to parse response.\n");
+      }
+      gpr_mu_unlock(parser_mu);
+    }
+    if (receive_initial_metadata) {
+      PrintMetadata(server_initial_metadata,
+                    "Received initial metadata from server:");
+    }
+    if (!callback(serialized_response_proto) && print_mode) {
+      fprintf(stderr, "Failed to output response.\n");
+    }
   }
 }
 
@@ -416,7 +447,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   grpc::string server_address(argv[0]);
   grpc::string method_name(argv[1]);
   grpc::string formatted_method_name;
-  std::unique_ptr<grpc::testing::ProtoFileParser> parser;
+  std::unique_ptr<ProtoFileParser> parser;
   grpc::string serialized_request_proto;
   bool print_mode = false;
 
@@ -428,21 +459,17 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   parser.reset(new grpc::testing::ProtoFileParser(channel, FLAGS_proto_path,
                                                   FLAGS_protofiles));
 
-  grpc::string formated_method_name =
-      parser->GetFormatedMethodName(method_name);
+  if (FLAGS_binary_input) {
+    formatted_method_name = method_name;
+  } else {
+    formatted_method_name = parser->GetFormattedMethodName(method_name);
+  }
 
   if (parser->HasError()) {
     return false;
   }
 
   if (parser->IsStreaming(method_name, true /* is_request */)) {
-    // TODO(zyc): Support BidiStream
-    if (parser->IsStreaming(method_name, false /* is_request */)) {
-      fprintf(stderr,
-              "Bidirectional-streaming method is not supported.");
-      return false;
-    }
-
     std::istream* input_stream;
     std::ifstream input_file;
 
@@ -454,7 +481,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formated_method_name, client_metadata);
+    CliCall call(channel, formatted_method_name, client_metadata);
 
     if (FLAGS_infile.empty()) {
       if (isatty(STDIN_FILENO)) {
@@ -467,6 +494,11 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       input_stream = &input_file;
     }
 
+    gpr_mu parser_mu;
+    gpr_mu_init(&parser_mu);
+    std::thread read_thread(ReadResponse, &call, method_name, callback,
+                            parser.get(), &parser_mu, print_mode);
+
     std::stringstream request_ss;
     grpc::string line;
     while (!request_text.empty() ||
@@ -476,6 +508,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           serialized_request_proto = request_text;
           request_text.clear();
         } else {
+          gpr_mu_lock(&parser_mu);
           serialized_request_proto = parser->GetSerializedProtoFromMethod(
               method_name, request_text, true /* is_request */);
           request_text.clear();
@@ -483,11 +516,13 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             if (print_mode) {
               fprintf(stderr, "Failed to parse request.\n");
             }
+            gpr_mu_unlock(&parser_mu);
             continue;
           }
+          gpr_mu_unlock(&parser_mu);
         }
 
-        call.Write(serialized_request_proto);
+        call.WriteAndWait(serialized_request_proto);
         if (print_mode) {
           fprintf(stderr, "Request sent.\n");
         }
@@ -505,35 +540,21 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       input_file.close();
     }
 
-    call.WritesDone();
+    call.WritesDoneAndWait();
+    read_thread.join();
 
-    grpc::string serialized_response_proto;
-    std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
-        server_trailing_metadata;
-    if (!call.Read(&serialized_response_proto, &server_trailing_metadata)) {
-      fprintf(stderr, "Failed to read response.\n");
-    }
+    std::multimap<grpc::string_ref, grpc::string_ref> server_trailing_metadata;
     Status status = call.Finish(&server_trailing_metadata);
-
-    PrintMetadata(server_initial_metadata,
-                  "Received initial metadata from server:");
     PrintMetadata(server_trailing_metadata,
                   "Received trailing metadata from server:");
+
     if (status.ok()) {
       fprintf(stderr, "Stream RPC succeeded with OK status\n");
-      if (FLAGS_binary_output) {
-        output_ss << serialized_response_proto;
-      } else {
-        grpc::string response_text = parser->GetTextFormatFromMethod(
-            method_name, serialized_response_proto, false /* is_request */);
-        if (parser->HasError()) {
-          return false;
-        }
-        output_ss << response_text;
-      }
+      return true;
     } else {
       fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
               status.error_code(), status.error_message().c_str());
+      return false;
     }
 
   } else {  // parser->IsStreaming(method_name, true /* is_request */)
@@ -559,7 +580,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     if (FLAGS_binary_input) {
       serialized_request_proto = request_text;
+      // formatted_method_name = method_name;
     } else {
+      // formatted_method_name = parser->GetFormattedMethodName(method_name);
       serialized_request_proto = parser->GetSerializedProtoFromMethod(
           method_name, request_text, true /* is_request */);
       if (parser->HasError()) {
@@ -575,7 +598,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formated_method_name, client_metadata);
+    CliCall call(channel, formatted_method_name, client_metadata);
     call.Write(serialized_request_proto);
     call.WritesDone();
 
@@ -608,7 +631,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       return false;
     }
   }
-  return callback(output_ss.str());
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 bool GrpcTool::ParseMessage(int argc, const char** argv,
