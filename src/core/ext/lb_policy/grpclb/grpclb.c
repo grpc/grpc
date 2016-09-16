@@ -353,7 +353,7 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
 
 /* populate \a addresses according to \a serverlist. Returns the number of
  * addresses successfully parsed and added to \a addresses */
-static grpc_lb_addresses* process_serverlist(
+static grpc_lb_addresses *process_serverlist(
     const grpc_grpclb_serverlist *serverlist) {
   size_t num_valid = 0;
   /* first pass: count how many are valid in order to allocate the necessary
@@ -398,7 +398,7 @@ static grpc_lb_addresses* process_serverlist(
     }
 
     /* lb token processing */
-    void* user_data;
+    void *user_data;
     if (server->has_load_balance_token) {
       const size_t lb_token_size =
           GPR_ARRAY_SIZE(server->load_balance_token) - 1;
@@ -414,8 +414,8 @@ static grpc_lb_addresses* process_serverlist(
       user_data = GRPC_MDELEM_LOAD_REPORTING_INITIAL_EMPTY;
     }
 
-    grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr,
-                                  addr.len, false /* is_balancer */,
+    grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr, addr.len,
+                                  false /* is_balancer */,
                                   NULL /* balancer_name */, user_data);
     ++addr_idx;
   }
@@ -424,7 +424,7 @@ static grpc_lb_addresses* process_serverlist(
   return lb_addresses;
 }
 
-static void lb_token_destroy(void* token) {
+static void lb_token_destroy(void *token) {
   if (token != NULL) GRPC_MDELEM_UNREF(token);
 }
 
