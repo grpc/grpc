@@ -190,6 +190,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
     gpr_free(lb_policy_args.addresses);
+    result = grpc_resolver_result_create();
     if (lb_policy != NULL) {
       grpc_resolver_result_set_lb_policy(result, lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");

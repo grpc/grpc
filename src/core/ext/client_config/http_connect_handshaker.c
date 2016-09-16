@@ -35,9 +35,9 @@
 
 #include <string.h>
 
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/log.h>
-#include <grpc/impl/codegen/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_config/uri_parser.h"
