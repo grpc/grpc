@@ -40,7 +40,6 @@
 #include <grpc++/impl/codegen/server_context.h>
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/log.h>
 
 namespace grpc {
 

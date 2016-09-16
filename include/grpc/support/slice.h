@@ -35,5 +35,94 @@
 #define GRPC_SUPPORT_SLICE_H
 
 #include <grpc/impl/codegen/slice.h>
+#include <grpc/support/sync.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Increment the refcount of s. Requires slice is initialized.
+   Returns s. */
+GPRAPI gpr_slice gpr_slice_ref(gpr_slice s);
+
+/* Decrement the ref count of s.  If the ref count of s reaches zero, all
+   slices sharing the ref count are destroyed, and considered no longer
+   initialized.  If s is ultimately derived from a call to gpr_slice_new(start,
+   len, dest) where dest!=NULL , then (*dest)(start) is called, else if s is
+   ultimately derived from a call to gpr_slice_new_with_len(start, len, dest)
+   where dest!=NULL , then (*dest)(start, len).  Requires s initialized.  */
+GPRAPI void gpr_slice_unref(gpr_slice s);
+
+/* Create a slice pointing at some data. Calls malloc to allocate a refcount
+   for the object, and arranges that destroy will be called with the pointer
+   passed in at destruction. */
+GPRAPI gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *));
+
+/* Equivalent to gpr_slice_new, but with a separate pointer that is
+   passed to the destroy function.  This function can be useful when
+   the data is part of a larger structure that must be destroyed when
+   the data is no longer needed. */
+GPRAPI gpr_slice gpr_slice_new_with_user_data(void *p, size_t len,
+                                              void (*destroy)(void *),
+                                              void *user_data);
+
+/* Equivalent to gpr_slice_new, but with a two argument destroy function that
+   also takes the slice length. */
+GPRAPI gpr_slice gpr_slice_new_with_len(void *p, size_t len,
+                                        void (*destroy)(void *, size_t));
+
+/* Equivalent to gpr_slice_new(malloc(len), len, free), but saves one malloc()
+   call.
+   Aborts if malloc() fails. */
+GPRAPI gpr_slice gpr_slice_malloc(size_t length);
+
+/* Create a slice by copying a string.
+   Does not preserve null terminators.
+   Equivalent to:
+     size_t len = strlen(source);
+     gpr_slice slice = gpr_slice_malloc(len);
+     memcpy(slice->data, source, len); */
+GPRAPI gpr_slice gpr_slice_from_copied_string(const char *source);
+
+/* Create a slice by copying a buffer.
+   Equivalent to:
+     gpr_slice slice = gpr_slice_malloc(len);
+     memcpy(slice->data, source, len); */
+GPRAPI gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len);
+
+/* Create a slice pointing to constant memory */
+GPRAPI gpr_slice gpr_slice_from_static_string(const char *source);
+
+/* Return a result slice derived from s, which shares a ref count with s, where
+   result.data==s.data+begin, and result.length==end-begin.
+   The ref count of s is increased by one.
+   Requires s initialized, begin <= end, begin <= s.length, and
+   end <= source->length. */
+GPRAPI gpr_slice gpr_slice_sub(gpr_slice s, size_t begin, size_t end);
+
+/* The same as gpr_slice_sub, but without altering the ref count */
+GPRAPI gpr_slice gpr_slice_sub_no_ref(gpr_slice s, size_t begin, size_t end);
+
+/* Splits s into two: modifies s to be s[0:split], and returns a new slice,
+   sharing a refcount with s, that contains s[split:s.length].
+   Requires s intialized, split <= s.length */
+GPRAPI gpr_slice gpr_slice_split_tail(gpr_slice *s, size_t split);
+
+/* Splits s into two: modifies s to be s[split:s.length], and returns a new
+   slice, sharing a refcount with s, that contains s[0:split].
+   Requires s intialized, split <= s.length */
+GPRAPI gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split);
+
+GPRAPI gpr_slice gpr_empty_slice(void);
+
+/* Returns <0 if a < b, ==0 if a == b, >0 if a > b
+   The order is arbitrary, and is not guaranteed to be stable across different
+   versions of the API. */
+GPRAPI int gpr_slice_cmp(gpr_slice a, gpr_slice b);
+GPRAPI int gpr_slice_str_cmp(gpr_slice a, const char *b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SUPPORT_SLICE_H */

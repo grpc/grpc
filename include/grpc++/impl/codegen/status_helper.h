@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,17 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_ALLOC_H
-#define GRPC_IMPL_CODEGEN_ALLOC_H
+#ifndef GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
+#define GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
 
-#include <stddef.h>
+#include <grpc++/impl/codegen/status.h>
 
-#include <grpc/impl/codegen/port_platform.h>
+namespace grpc {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct gpr_allocation_functions {
-  void *(*malloc_fn)(size_t size);
-  void *(*realloc_fn)(void *ptr, size_t size);
-  void (*free_fn)(void *ptr);
-} gpr_allocation_functions;
-
-/* malloc, never returns NULL */
-GPRAPI void *gpr_malloc(size_t size);
-/* free */
-GPRAPI void gpr_free(void *ptr);
-/* realloc, never returns NULL */
-GPRAPI void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPRAPI void *gpr_malloc_aligned(size_t size, size_t alignment_log);
-/* free memory allocated by gpr_malloc_aligned */
-GPRAPI void gpr_free_aligned(void *ptr);
-
-/** Request the family of allocation functions in \a functions be used. NOTE
- * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
-GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
-
-/** Return the family of allocation functions currently in effect. */
-GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
-
-#ifdef __cplusplus
+inline StatusCode GetCanonicalCode(const Status& status) {
+  return status.error_code();
 }
-#endif
 
-#endif /* GRPC_IMPL_CODEGEN_ALLOC_H */
+}  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
