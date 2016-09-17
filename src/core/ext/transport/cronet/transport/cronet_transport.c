@@ -1060,10 +1060,26 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   add_to_storage(s, op);
   if (op->send_initial_metadata &&
       header_has_authority(op->send_initial_metadata->list.head)) {
-    CRONET_LOG(GPR_DEBUG, ":authority header is provided but not supported; cancel operations");
+    cronet_bidirectional_stream_header_array header_array;
+    cronet_bidirectional_stream_header *header;
+    cronet_bidirectional_stream cbs;
+    CRONET_LOG(GPR_DEBUG, ":authority header is provided but not supported;"
+               " cancel operations");
+    /* Notify application that operation is cancelled by forging trailers */
+    header_array.count = 1;
+    header_array.capacity = 1;
+    header_array.headers =
+        gpr_malloc(sizeof(cronet_bidirectional_stream_header));
+    header = (cronet_bidirectional_stream_header*) header_array.headers;
+    header->key = "grpc-status";
+    header->value = "12";
+    cbs.annotation = (void*)s;
     s->state.state_op_done[OP_CANCEL_ERROR] = true;
+    on_response_trailers_received(&cbs, &header_array);
+    gpr_free(header_array.headers);
+  } else {
+    execute_from_storage(s);
   }
-  execute_from_storage(s);
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
