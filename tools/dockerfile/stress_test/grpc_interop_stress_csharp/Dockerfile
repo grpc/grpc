@@ -97,7 +97,5 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     nuget \
     && apt-get clean
 
-RUN nuget update -self
-
 # Define the default command.
 CMD ["bash"]
