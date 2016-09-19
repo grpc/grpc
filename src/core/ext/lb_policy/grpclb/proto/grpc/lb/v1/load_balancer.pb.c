@@ -74,7 +74,7 @@ const pb_field_t grpc_lb_v1_LoadBalanceResponse_fields[3] = {
 
 const pb_field_t grpc_lb_v1_InitialLoadBalanceResponse_fields[3] = {
     PB_FIELD(  1, STRING  , OPTIONAL, STATIC  , FIRST, grpc_lb_v1_InitialLoadBalanceResponse, load_balancer_delegate, load_balancer_delegate, 0),
-    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, grpc_lb_v1_InitialLoadBalanceResponse, client_stats_report_interval, load_balancer_delegate, &grpc_lb_v1_Duration_fields),
+    PB_FIELD(  2, MESSAGE , OPTIONAL, STATIC  , OTHER, grpc_lb_v1_InitialLoadBalanceResponse, client_stats_report_interval, load_balancer_delegate, &grpc_lb_v1_Duration_fields),
     PB_LAST_FIELD
 };
 

@@ -64,7 +64,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   }
 
   static Status Deserialize(grpc_byte_buffer* buffer, T* msg,
-                            int max_message_size) {
+                            int max_receive_message_size) {
     if (!buffer) {
       return Status(StatusCode::INTERNAL, "No payload");
     }
