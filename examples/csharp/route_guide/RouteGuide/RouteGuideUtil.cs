@@ -43,7 +43,7 @@ namespace Routeguide
     /// </summary>
     public static class RouteGuideUtil
     {
-        public const string DefaultFeaturesFile = "route_guide_db.json";
+        public const string DefaultFeaturesFile = "..\\..\\..\\json\\json/route_guide_db.json";
 
         private const double CoordFactor = 1e7;
 
