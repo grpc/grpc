@@ -130,10 +130,6 @@ struct round_robin_lb_policy {
 
   /** total number of addresses received at creation time */
   size_t num_addresses;
-  /** array holding the borrowed and opaque pointers to incoming user data, one
-   * per incoming address.  These individual pointers will be returned as-is in
-   * successful picks. */
-  void **user_data_pointers;
 
   /** all our subchannels */
   size_t num_subchannels;
@@ -282,7 +278,6 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     elem = tmp;
   }
 
-  gpr_free(p->user_data_pointers);
   gpr_free(p);
 }
 
@@ -611,26 +606,33 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->addresses != NULL);
   GPR_ASSERT(args->client_channel_factory != NULL);
-  if (args->num_addresses == 0) return NULL;
+
+  /* Find the number of backend addresses. We ignore balancer
+   * addresses, since we don't know how to handle them. */
+  size_t num_addrs = 0;
+  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+    if (!args->addresses->addresses[i].is_balancer) ++num_addrs;
+  }
+  if (num_addrs == 0) return NULL;
 
   round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  p->num_addresses = args->num_addresses;
-  p->subchannels = gpr_malloc(sizeof(subchannel_data) * p->num_addresses);
-  memset(p->subchannels, 0, sizeof(*p->subchannels) * p->num_addresses);
-  p->user_data_pointers = gpr_malloc(sizeof(void *) * p->num_addresses);
-  memset(p->user_data_pointers, 0, sizeof(void *) * p->num_addresses);
+  p->num_addresses = num_addrs;
+  p->subchannels = gpr_malloc(sizeof(*p->subchannels) * num_addrs);
+  memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
 
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
-  for (size_t i = 0; i < p->num_addresses; i++) {
+  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+    /* Skip balancer addresses, since we only know how to handle backends. */
+    if (args->addresses->addresses[i].is_balancer) continue;
+
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     sc_args.server_name = args->server_name;
-    sc_args.addr = (struct sockaddr *)args->addresses[i].resolved_address->addr;
-    sc_args.addr_len = args->addresses[i].resolved_address->len;
-
-    p->user_data_pointers[i] = args->addresses[i].user_data;
+    sc_args.addr =
+        (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
+    sc_args.addr_len = args->addresses->addresses[i].address.len;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
@@ -642,7 +644,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       sd->policy = p;
       sd->index = subchannel_idx;
       sd->subchannel = subchannel;
-      sd->user_data = p->user_data_pointers[i];
+      sd->user_data = args->addresses->addresses[i].user_data;
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed, sd);
