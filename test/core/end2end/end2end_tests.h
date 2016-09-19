@@ -43,8 +43,12 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 8
+#define FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER 16
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
+
+#define validate_host_override_string(str, config) \
+    ((config).feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER ? (str) : NULL)
 
 struct grpc_end2end_test_fixture {
   grpc_completion_queue *cq;

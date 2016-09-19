@@ -45,6 +45,8 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -105,7 +107,7 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
   grpc_op *op = NULL;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   error = grpc_call_start_batch(c, op, 0, tag(1), NULL);
@@ -128,6 +130,7 @@ static void test_invoke_empty_body(grpc_end2end_test_config config) {
 }
 
 void empty_batch(grpc_end2end_test_config config) {
+  authority = validate_host_override_string("foo.test.google.fr", config);
   test_invoke_empty_body(config);
 }
 

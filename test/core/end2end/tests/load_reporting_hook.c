@@ -48,6 +48,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+static char *authority;
+
 enum { TIMEOUT = 200000 };
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -152,7 +154,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               method_name, "foo.test.google.fr", deadline,
+                               method_name, authority, deadline,
                                NULL);
   GPR_ASSERT(c);
 
@@ -315,6 +317,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
 }
 
 void load_reporting_hook(grpc_end2end_test_config config) {
+  authority = validate_host_override_string("foo.test.google.fr", config);
   test_load_reporting_hook(config);
 }
 

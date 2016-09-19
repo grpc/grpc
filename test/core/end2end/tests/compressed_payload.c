@@ -50,6 +50,8 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -147,7 +149,7 @@ static void request_for_disabled_algorithm(
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -242,7 +244,9 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(0 == strcmp(details, expected_details));
   gpr_free(expected_details);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  if (authority) {
+    GPR_ASSERT(0 == strcmp(call_details.host, authority));
+  }
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -319,7 +323,7 @@ static void request_with_payload_template(
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -491,7 +495,9 @@ static void request_with_payload_template(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  if (authority) {
+    GPR_ASSERT(0 == strcmp(call_details.host, authority));
+  }
   GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);
@@ -594,6 +600,7 @@ static void test_invoke_request_with_disabled_algorithm(
 }
 
 void compressed_payload(grpc_end2end_test_config config) {
+  authority = validate_host_override_string("foo.test.google.fr", config);
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);

@@ -46,6 +46,8 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static bool g_enable_filter = false;
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -124,7 +126,7 @@ static void test_request(grpc_end2end_test_config config) {
   size_t details_capacity = 0;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -282,6 +284,7 @@ static void init_plugin(void) {
 static void destroy_plugin(void) {}
 
 void filter_causes_close(grpc_end2end_test_config config) {
+  authority = validate_host_override_string("foo.test.google.fr", config);
   g_enable_filter = true;
   test_request(config);
   g_enable_filter = false;

@@ -43,6 +43,8 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -126,7 +128,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -245,7 +247,9 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   GPR_ASSERT(status == GRPC_STATUS_FAILED_PRECONDITION);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  if (authority) {
+    GPR_ASSERT(0 == strcmp(call_details.host, authority));
+  }
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
@@ -269,6 +273,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
 }
 
 void streaming_error_response(grpc_end2end_test_config config) {
+  authority = validate_host_override_string("foo.test.google.fr", config);
   test(config, false);
   test(config, true);
 }
