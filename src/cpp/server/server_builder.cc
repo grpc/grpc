@@ -52,7 +52,9 @@ static void do_plugin_list_init(void) {
 }
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr) {
+    : max_receive_message_size_(-1),
+      max_send_message_size_(-1),
+      generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
        it != g_plugin_factory_list->end(); it++) {
@@ -160,8 +162,11 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
     (*plugin)->UpdateChannelArguments(&args);
   }
-  if (max_message_size_ > 0) {
-    args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
+  if (max_receive_message_size_ >= 0) {
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
+  }
+  if (max_send_message_size_ >= 0) {
+    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
   }
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               enabled_compression_algorithms_bitset_);
@@ -173,8 +178,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
   }
-  std::unique_ptr<Server> server(
-      new Server(thread_pool.release(), true, max_message_size_, &args));
+  std::unique_ptr<Server> server(new Server(thread_pool.release(), true,
+                                            max_receive_message_size_, &args));
   ServerInitializer* initializer = server->initializer();
 
   // If the server has atleast one sync methods, we know that this is a Sync
