@@ -80,11 +80,14 @@ const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 
 class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
  public:
-  static const char kMetadataKey[];
+  static const char kGoodMetadataKey[];
+  static const char kBadMetadataKey[];
 
-  TestMetadataCredentialsPlugin(grpc::string_ref metadata_value,
+  TestMetadataCredentialsPlugin(grpc::string_ref metadata_key,
+                                grpc::string_ref metadata_value,
                                 bool is_blocking, bool is_successful)
-      : metadata_value_(metadata_value.data(), metadata_value.length()),
+      : metadata_key_(metadata_key.data(), metadata_key.length()),
+        metadata_value_(metadata_value.data(), metadata_value.length()),
         is_blocking_(is_blocking),
         is_successful_(is_successful) {}
 
@@ -99,7 +102,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
     EXPECT_TRUE(metadata != nullptr);
     if (is_successful_) {
-      metadata->insert(std::make_pair(kMetadataKey, metadata_value_));
+      metadata->insert(std::make_pair(metadata_key_, metadata_value_));
       return Status::OK;
     } else {
       return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
@@ -107,12 +110,16 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
   }
 
  private:
+  grpc::string metadata_key_;
   grpc::string metadata_value_;
   bool is_blocking_;
   bool is_successful_;
 };
 
-const char TestMetadataCredentialsPlugin::kMetadataKey[] = "TestPluginMetadata";
+const char TestMetadataCredentialsPlugin::kBadMetadataKey[] =
+    "TestPluginMetadata";
+const char TestMetadataCredentialsPlugin::kGoodMetadataKey[] =
+    "test-plugin-metadata";
 
 class TestAuthMetadataProcessor : public AuthMetadataProcessor {
  public:
@@ -123,13 +130,17 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   std::shared_ptr<CallCredentials> GetCompatibleClientCreds() {
     return MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
-            new TestMetadataCredentialsPlugin(kGoodGuy, is_blocking_, true)));
+            new TestMetadataCredentialsPlugin(
+                TestMetadataCredentialsPlugin::kGoodMetadataKey, kGoodGuy,
+                is_blocking_, true)));
   }
 
   std::shared_ptr<CallCredentials> GetIncompatibleClientCreds() {
     return MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
-            new TestMetadataCredentialsPlugin("Mr Hyde", is_blocking_, true)));
+            new TestMetadataCredentialsPlugin(
+                TestMetadataCredentialsPlugin::kGoodMetadataKey, "Mr Hyde",
+                is_blocking_, true)));
   }
 
   // Interface implementation
@@ -142,7 +153,7 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
     auto auth_md =
-        auth_metadata.find(TestMetadataCredentialsPlugin::kMetadataKey);
+        auth_metadata.find(TestMetadataCredentialsPlugin::kGoodMetadataKey);
     EXPECT_NE(auth_md, auth_metadata.end());
     string_ref auth_md_value = auth_md->second;
     if (auth_md_value == kGoodGuy) {
@@ -1322,6 +1333,40 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kBadMetadataKey,
+              "Does not matter, will fail the key is invalid.", false, true))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
+              "With illegal \n value.", false, true))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   ResetStub();
   EchoRequest request;
@@ -1330,6 +1375,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   context.set_credentials(
       MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "Does not matter, will fail anyway (see 3rd param)", false,
               false))));
   request.set_message("Hello");
@@ -1388,6 +1434,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   context.set_credentials(
       MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "Does not matter, will fail anyway (see 3rd param)", true,
               false))));
   request.set_message("Hello");
