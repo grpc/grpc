@@ -32,6 +32,7 @@
 
 import argparse
 import jobset
+import multiprocessing
 import os
 import report_utils
 import sys
@@ -40,7 +41,11 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 # TODO(jtattermusch): this is not going to be enough for sanitizers.
+# TODO(jtattermusch): this is not going to be enough for rebuilding clang docker.
 _RUNTESTS_TIMEOUT = 30*60
+
+# Number of jobs assigned to each run_tests.py instance
+_INNER_JOBS = 2
 
 
 def _docker_jobspec(name, runtests_args=[]):
@@ -50,7 +55,7 @@ def _docker_jobspec(name, runtests_args=[]):
           cmdline=['python', 'tools/run_tests/run_tests.py',
                    '--use_docker',
                    '-t',
-                   '-j', '3',
+                   '-j', str(_INNER_JOBS),
                    '-x', 'report_%s.xml' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
@@ -59,11 +64,13 @@ def _docker_jobspec(name, runtests_args=[]):
 
 def _workspace_jobspec(name, runtests_args=[], workspace_name=None):
   """Run a single instance of run_tests.py in a separate workspace"""
+  if not workspace_name:
+    workspace_name = 'workspace_%s' % name
   env = {'WORKSPACE_NAME': workspace_name}
   test_job = jobset.JobSpec(
           cmdline=['tools/run_tests/run_tests_in_workspace.sh',
                    '-t',
-                   '-j', '3',
+                   '-j', str(_INNER_JOBS),
                    '-x', '../report_%s.xml' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
@@ -196,6 +203,10 @@ for job in all_jobs:
     all_labels.add(label)
 
 argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
+argp.add_argument('-j', '--jobs',
+                  default=multiprocessing.cpu_count()/_INNER_JOBS,
+                  type=int,
+                  help='Number of concurrent run_tests.py instances.')
 argp.add_argument('-f', '--filter',
                   choices=sorted(all_labels),
                   nargs='+',
@@ -227,7 +238,7 @@ jobset.message('START', 'Running test matrix.', do_newline=True)
 num_failures, resultset = jobset.run(jobs,
                                      newline_on_success=True,
                                      travis=True,
-                                     maxjobs=2)
+                                     maxjobs=args.jobs)
 report_utils.render_junit_xml_report(resultset, 'report.xml')
 
 if num_failures == 0:
