@@ -447,25 +447,34 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->addresses != NULL);
   GPR_ASSERT(args->client_channel_factory != NULL);
 
-  if (args->num_addresses == 0) return NULL;
+  /* Find the number of backend addresses. We ignore balancer
+   * addresses, since we don't know how to handle them. */
+  size_t num_addrs = 0;
+  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+    if (!args->addresses->addresses[i].is_balancer) ++num_addrs;
+  }
+  if (num_addrs == 0) return NULL;
 
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * args->num_addresses);
-  memset(p->subchannels, 0, sizeof(*p->subchannels) * args->num_addresses);
+  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * num_addrs);
+  memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
-  for (size_t i = 0; i < args->num_addresses; i++) {
-    if (args->addresses[i].user_data != NULL) {
+  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+    /* Skip balancer addresses, since we only know how to handle backends. */
+    if (args->addresses->addresses[i].is_balancer) continue;
+
+    if (args->addresses->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,
               "This LB policy doesn't support user data. It will be ignored");
     }
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     sc_args.addr =
-        (struct sockaddr *)(args->addresses[i].resolved_address->addr);
-    sc_args.addr_len = (size_t)args->addresses[i].resolved_address->len;
+        (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
+    sc_args.addr_len = args->addresses->addresses[i].address.len;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
