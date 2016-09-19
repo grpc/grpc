@@ -37,6 +37,8 @@ set -ex
 cd $(dirname $0)/../..
 
 rm -rf "${WORKSPACE_NAME}"
+# TODO(jtattermusch): clone --recursive fetches the submodules from github.
+# Try avoiding that to save time and network capacity.
 git clone --recursive . "${WORKSPACE_NAME}"
 
 echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
