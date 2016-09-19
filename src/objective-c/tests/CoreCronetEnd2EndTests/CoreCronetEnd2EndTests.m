@@ -125,12 +125,6 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void cronet_init_client_simple_ssl_secure_fullstack(
             grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_arg ssl_name_override = {GRPC_ARG_STRING,
-    GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-    {"foo.test.google.fr"}};
-  
-  grpc_channel_args *new_client_args =
-  grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   static bool done = false;
   // TODO (makdharma): DO NOT CHECK IN THIS HACK!!!
   if (!done) {
@@ -144,6 +138,7 @@ static void cronet_init_client_simple_ssl_secure_fullstack(
   }
   cronet_engine *cronetEngine = [Cronet getGlobalEngine];
   
+  grpc_channel_args *new_client_args = grpc_channel_args_copy(client_args);
   cronet_init_client_secure_fullstack(f, new_client_args, cronetEngine);
   grpc_channel_args_destroy(new_client_args);
 }
