@@ -728,12 +728,11 @@ def _start(state):
         cleanup_server, target=_serve, args=(state,))
     thread.start()
 
-
 class Server(grpc.Server):
 
-  def __init__(self, thread_pool, generic_handlers):
+  def __init__(self, thread_pool, generic_handlers, options):
     completion_queue = cygrpc.CompletionQueue()
-    server = cygrpc.Server()
+    server = cygrpc.Server(_common.channel_args(options))
     server.register_completion_queue(completion_queue)
     self._state = _ServerState(
         completion_queue, server, generic_handlers, thread_pool)
