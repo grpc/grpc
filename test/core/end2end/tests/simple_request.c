@@ -45,6 +45,8 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -116,8 +118,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   char *peer;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -202,7 +203,9 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  if (authority) {
+    GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  }
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
 
@@ -241,6 +244,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 
 void simple_request(grpc_end2end_test_config config) {
   int i;
+  authority = validate_host_override_string("foo.test.google.fr:1234", config);
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
   }

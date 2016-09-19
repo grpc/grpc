@@ -44,6 +44,8 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -121,7 +123,7 @@ static void test_invoke_request_with_flags(
   grpc_call_error expectation;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -186,6 +188,7 @@ static void test_invoke_request_with_flags(
 
 void request_with_flags(grpc_end2end_test_config config) {
   size_t i;
+  authority = validate_host_override_string("foo.test.google.fr", config);
   uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
   {

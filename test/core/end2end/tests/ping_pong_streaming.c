@@ -43,6 +43,8 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
+static char *authority;
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -124,7 +126,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
+                               "/foo", authority, deadline,
                                NULL);
   GPR_ASSERT(c);
 
@@ -276,6 +278,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 void ping_pong_streaming(grpc_end2end_test_config config) {
   int i;
 
+  authority = validate_host_override_string("foo.test.google.fr:1234", config);
   for (i = 1; i < 10; i++) {
     test_pingpong_streaming(config, i);
   }
