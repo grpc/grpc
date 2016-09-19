@@ -33,6 +33,7 @@
 
 #include "src/core/ext/client_config/subchannel.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -347,21 +348,16 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
       }
       if (0 ==
           strcmp(c->args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
-        if (c->args->args[i].type == GRPC_ARG_INTEGER) {
-          if (c->args->args[i].value.integer >= 0) {
-            gpr_backoff_init(
-                &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
-                GRPC_SUBCHANNEL_RECONNECT_JITTER,
-                GPR_MIN(c->args->args[i].value.integer,
-                        GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000),
-                c->args->args[i].value.integer);
-          } else {
-            gpr_log(GPR_ERROR, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS
-                    " : must be non-negative");
-          }
-        } else {
-          gpr_log(GPR_ERROR,
-                  GRPC_ARG_MAX_RECONNECT_BACKOFF_MS " : must be an integer");
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&c->args->args[i], options);
+        if (value >= 0) {
+          gpr_backoff_init(
+              &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
+              GRPC_SUBCHANNEL_RECONNECT_JITTER,
+              GPR_MIN(value,
+                      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000),
+              value);
         }
       }
     }

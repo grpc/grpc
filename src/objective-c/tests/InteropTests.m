@@ -180,7 +180,7 @@
     // - If you're developing the server, consider using response streaming, or let clients filter
     //   responses by setting a google.protobuf.FieldMask in the request:
     //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
-    XCTAssertEqualObjects(error.localizedDescription, @"Max message size exceeded");
+    XCTAssertEqualObjects(error.localizedDescription, @"Received message larger than max (4194305 vs. 4194304)");
     [expectation fulfill];
   }];
 
