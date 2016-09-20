@@ -35,8 +35,6 @@
 
 #include <grpc/census.h>
 
-
-
 /* TODO(aveitch): These are all placeholder implementations. */
 
 // int census_trace_mask(const census_context *context) {
