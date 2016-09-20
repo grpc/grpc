@@ -130,8 +130,8 @@ static grpc_error *blocking_resolve_address_impl(
       gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    (*addresses)->addrs[i].len = resp->ai_addrlen;
+    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, (size_t)resp->ai_addrlen);
+    (*addresses)->addrs[i].len = (size_t)resp->ai_addrlen;
     i++;
   }
   err = GRPC_ERROR_NONE;

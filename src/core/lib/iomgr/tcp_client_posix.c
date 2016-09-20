@@ -265,7 +265,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   do {
-    GPR_ASSERT(addr_len < ~(socklen_t)0);
+    GPR_ASSERT(addr_len < ~(uint32_t)0);
     err = connect(fd, addr, (socklen_t)addr_len);
   } while (err < 0 && errno == EINTR);
 

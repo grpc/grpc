@@ -328,7 +328,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  GPR_ASSERT(addr_len < ~(socklen_t)0);
+  GPR_ASSERT(addr_len < ~(uint32_t)0);
   if (bind(fd, addr, (socklen_t)addr_len) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     goto error;
