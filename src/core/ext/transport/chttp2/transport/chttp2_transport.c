@@ -319,12 +319,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           const char *channel_arg_name;
           grpc_chttp2_setting_id setting_id;
           grpc_integer_options integer_options;
-          bool availability[2] /* client, server */;
+          bool availability[2] /* server, client */;
         } settings_map[] = {
             {GRPC_ARG_MAX_CONCURRENT_STREAMS,
              GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
              {-1, 0, INT_MAX},
-             {false, true}},
+             {true, false}},
             {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
              GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
              {-1, 0, INT_MAX},
@@ -338,7 +338,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
              {-1, 16384, 16777215},
              {true, true}},
         };
-        for (size_t j = 0; j < GPR_ARRAY_SIZE(settings_map); j++) {
+        for (j = 0; j < (int)GPR_ARRAY_SIZE(settings_map); j++) {
           if (0 == strcmp(channel_args->args[i].key,
                           settings_map[j].channel_arg_name)) {
             if (!settings_map[j].availability[is_client]) {
@@ -349,7 +349,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
               int value = grpc_channel_arg_get_integer(
                   &channel_args->args[i], settings_map[j].integer_options);
               if (value >= 0) {
-                push_setting(exec_ctx, t, settings_map[j].setting_id, value);
+                push_setting(exec_ctx, t, settings_map[j].setting_id,
+                             (uint32_t)value);
               }
             }
             break;
