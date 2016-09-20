@@ -33,6 +33,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
@@ -281,91 +283,77 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
-        if (is_client) {
-          gpr_log(GPR_ERROR, "%s: is ignored on the client",
-                  GRPC_ARG_MAX_CONCURRENT_STREAMS);
-        } else if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_MAX_CONCURRENT_STREAMS);
-        } else {
-          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-                       (uint32_t)channel_args->args[i].value.integer);
-        }
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER);
-        } else if ((t->next_stream_id & 1) !=
-                   (channel_args->args[i].value.integer & 1)) {
-          gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
-                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
-                  is_client ? "client" : "server");
-        } else {
-          t->next_stream_id = (uint32_t)channel_args->args[i].value.integer;
+      if (0 == strcmp(channel_args->args[i].key,
+                      GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
+          if ((t->next_stream_id & 1) != (value & 1)) {
+            gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
+                    GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
+                    t->next_stream_id & 1, is_client ? "client" : "server");
+          } else {
+            t->next_stream_id = (uint32_t)value;
+          }
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
-        } else if (channel_args->args[i].value.integer <= 5) {
-          gpr_log(GPR_ERROR, "%s: must be at least 5",
-                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
-        } else {
-          t->stream_lookahead = (uint32_t)channel_args->args[i].value.integer;
-        }
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
-        } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s: must be non-negative",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
-        } else {
-          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
-                       (uint32_t)channel_args->args[i].value.integer);
+        const grpc_integer_options options = {-1, 5, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
+          t->stream_lookahead = (uint32_t)value;
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
-        } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s: must be non-negative",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
-        } else {
-          grpc_chttp2_hpack_compressor_set_max_usable_size(
-              &t->hpack_compressor,
-              (uint32_t)channel_args->args[i].value.integer);
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
+          grpc_chttp2_hpack_compressor_set_max_usable_size(&t->hpack_compressor,
+                                                           (uint32_t)value);
         }
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_MAX_METADATA_SIZE)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_MAX_METADATA_SIZE);
-        } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s: must be non-negative",
-                  GRPC_ARG_MAX_METADATA_SIZE);
-        } else {
-          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                       (uint32_t)channel_args->args[i].value.integer);
-        }
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_HTTP2_MAX_FRAME_SIZE)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_MAX_FRAME_SIZE);
-        } else if (channel_args->args[i].value.integer < 16384 ||
-                   channel_args->args[i].value.integer > 16777215) {
-          gpr_log(GPR_ERROR, "%s: must be between 16384 and 16777215",
-                  GRPC_ARG_HTTP2_MAX_FRAME_SIZE);
-        } else {
-          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
-                       (uint32_t)channel_args->args[i].value.integer);
+      } else {
+        static const struct {
+          const char *channel_arg_name;
+          grpc_chttp2_setting_id setting_id;
+          grpc_integer_options integer_options;
+          bool availability[2] /* client, server */;
+        } settings_map[] = {
+            {GRPC_ARG_MAX_CONCURRENT_STREAMS,
+             GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+             {-1, 0, INT_MAX},
+             {false, true}},
+            {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
+             GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+             {-1, 0, INT_MAX},
+             {true, true}},
+            {GRPC_ARG_MAX_METADATA_SIZE,
+             GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+             {-1, 0, INT_MAX},
+             {true, true}},
+            {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
+             GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+             {-1, 16384, 16777215},
+             {true, true}},
+        };
+        for (size_t j = 0; j < GPR_ARRAY_SIZE(settings_map); j++) {
+          if (0 == strcmp(channel_args->args[i].key,
+                          settings_map[j].channel_arg_name)) {
+            if (!settings_map[j].availability[is_client]) {
+              gpr_log(GPR_DEBUG, "%s is not available on %s",
+                      settings_map[j].channel_arg_name,
+                      is_client ? "clients" : "servers");
+            } else {
+              int value = grpc_channel_arg_get_integer(
+                  &channel_args->args[i], settings_map[j].integer_options);
+              if (value >= 0) {
+                push_setting(exec_ctx, t, settings_map[j].setting_id, value);
+              }
+            }
+            break;
+          }
         }
       }
     }

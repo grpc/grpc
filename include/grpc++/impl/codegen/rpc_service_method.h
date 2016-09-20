@@ -62,12 +62,12 @@ class MethodHandler {
         : call(c),
           server_context(context),
           request(req),
-          max_message_size(max_size) {}
+          max_receive_message_size(max_size) {}
     Call* call;
     ServerContext* server_context;
     // Handler required to grpc_byte_buffer_destroy this
     grpc_byte_buffer* request;
-    int max_message_size;
+    int max_receive_message_size;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 };

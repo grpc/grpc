@@ -842,18 +842,8 @@ def _unsubscribe(state, callback):
 
 
 def _options(options):
-  if options is None:
-    pairs = ((cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT),)
-  else:
-    pairs = list(options) + [
-        (cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT)]
-  encoded_pairs = [
-      (_common.encode(arg_name), arg_value) if isinstance(arg_value, int)
-      else (_common.encode(arg_name), _common.encode(arg_value))
-      for arg_name, arg_value in pairs]
-  return cygrpc.ChannelArgs([
-      cygrpc.ChannelArg(arg_name, arg_value)
-      for arg_name, arg_value in encoded_pairs])
+  return list(options) + [
+      (cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT)]
 
 
 class Channel(grpc.Channel):
@@ -867,7 +857,8 @@ class Channel(grpc.Channel):
       credentials: A cygrpc.ChannelCredentials or None.
     """
     self._channel = cygrpc.Channel(
-        _common.encode(target), _options(options), credentials)
+        _common.encode(target), _common.channel_args(_options(options)),
+        credentials)
     self._call_state = _ChannelCallState(self._channel)
     self._connectivity_state = _ChannelConnectivityState(self._channel)
 
