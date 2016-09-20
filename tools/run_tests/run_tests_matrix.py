@@ -40,9 +40,9 @@ import sys
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
-# TODO(jtattermusch): this is not going to be enough for sanitizers.
-# TODO(jtattermusch): this is not going to be enough for rebuilding clang docker.
-_RUNTESTS_TIMEOUT = 30*60
+# Set the timeout high to allow enough time for sanitizers and pre-building
+# clang docker.
+_RUNTESTS_TIMEOUT = 2*60*60
 
 # Number of jobs assigned to each run_tests.py instance
 _INNER_JOBS = 2
@@ -50,7 +50,6 @@ _INNER_JOBS = 2
 
 def _docker_jobspec(name, runtests_args=[]):
   """Run a single instance of run_tests.py in a docker container"""
-  # TODO: fix copying report files from inside docker....
   test_job = jobset.JobSpec(
           cmdline=['python', 'tools/run_tests/run_tests.py',
                    '--use_docker',
@@ -203,6 +202,8 @@ for job in all_jobs:
     all_labels.add(label)
 
 argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
+# TODO(jtattermusch): allow running tests with --build_only flag
+# TODO(jtattermusch): allow running tests with --force_default_poller flag.
 argp.add_argument('-j', '--jobs',
                   default=multiprocessing.cpu_count()/_INNER_JOBS,
                   type=int,
