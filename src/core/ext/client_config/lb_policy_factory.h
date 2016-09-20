@@ -92,6 +92,7 @@ void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses,
 typedef struct grpc_lb_policy_args {
   grpc_lb_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
+  /* Can be used to pass implementation-specific parameters to the LB policy. */
   grpc_channel_args *additional_args;
 } grpc_lb_policy_args;
 
