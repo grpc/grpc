@@ -779,7 +779,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
     "client-channel",
 };
 
-void grpc_client_channel_set_resolver_and_client_channel_factory(
+void grpc_client_channel_finish_initialization(
     grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
     grpc_resolver *resolver,
     grpc_client_channel_factory *client_channel_factory) {

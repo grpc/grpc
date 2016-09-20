@@ -273,7 +273,7 @@ static grpc_channel *client_channel_factory_create_channel(
 
   grpc_resolver *resolver = grpc_resolver_create(target);
   if (resolver != NULL) {
-    grpc_client_channel_set_resolver_and_client_channel_factory(
+    grpc_client_channel_finish_initialization(
         exec_ctx, grpc_channel_get_channel_stack(channel), resolver, &f->base);
     GRPC_RESOLVER_UNREF(exec_ctx, resolver, "create");
   } else {
