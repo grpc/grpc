@@ -341,6 +341,11 @@ namespace Grpc.Core.Internal
             get { return true; }
         }
 
+        protected override Exception GetRpcExceptionClientOnly()
+        {
+            return new RpcException(finishedStatus.Value.Status);
+        }
+
         protected override Task CheckSendAllowedOrEarlyResult()
         {
             var earlyResult = CheckSendPreconditionsClientSide();
@@ -452,6 +457,7 @@ namespace Grpc.Core.Internal
 
             using (Profilers.ForCurrentThread().NewScope("AsyncCall.HandleUnaryResponse"))
             {
+                TaskCompletionSource<object> delayedStreamingWriteTcs = null;
                 TResponse msg = default(TResponse);
                 var deserializeException = TryDeserialize(receivedMessage, out msg);
 
@@ -465,13 +471,23 @@ namespace Grpc.Core.Internal
                     }
                     finishedStatus = receivedStatus;
 
+                    if (isStreamingWriteCompletionDelayed)
+                    {
+                        delayedStreamingWriteTcs = streamingWriteTcs;
+                        streamingWriteTcs = null;
+                    }
+
                     ReleaseResourcesIfPossible();
                 }
 
                 responseHeadersTcs.SetResult(responseHeaders);
 
-                var status = receivedStatus.Status;
+                if (delayedStreamingWriteTcs != null)
+                {
+                    delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+                }
 
+                var status = receivedStatus.Status;
                 if (status.StatusCode != StatusCode.OK)
                 {
                     unaryResponseTcs.SetException(new RpcException(status));
@@ -490,16 +506,27 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
+            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+
             lock (myLock)
             {
                 finished = true;
                 finishedStatus = receivedStatus;
+                if (isStreamingWriteCompletionDelayed)
+                {
+                    delayedStreamingWriteTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;
+                }
 
                 ReleaseResourcesIfPossible();
             }
 
-            var status = receivedStatus.Status;
+            if (delayedStreamingWriteTcs != null)
+            {
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+            }
 
+            var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
                 streamingCallFinishedTcs.SetException(new RpcException(status));
