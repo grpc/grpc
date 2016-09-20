@@ -49,16 +49,7 @@ class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
     sr.new(payload: pl.new(body: nulls(req.response_size)))
   end
   def streaming_call(reqs)
-    q = EnumeratorQueue.new(self)
-    Thread.new {
-      sr = Grpc::Testing::SimpleResponse
-      pl = Grpc::Testing::Payload
-      reqs.each do |req|
-        q.push(sr.new(payload: pl.new(body: nulls(req.response_size))))
-      end
-      q.push(self)
-    }
-    q.each_item
+    PingPongEnumerator.new(reqs).each_item
   end
 end
 
