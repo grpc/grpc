@@ -138,6 +138,11 @@ ProtoFileParser::~ProtoFileParser() {}
 
 grpc::string ProtoFileParser::GetFullMethodName(const grpc::string& method) {
   has_error_ = false;
+
+  if (known_methods_.find(method) != known_methods_.end()) {
+    return known_methods_[method];
+  }
+
   const protobuf::MethodDescriptor* method_descriptor = nullptr;
   for (auto it = service_desc_list_.begin(); it != service_desc_list_.end();
        it++) {
@@ -161,6 +166,8 @@ grpc::string ProtoFileParser::GetFullMethodName(const grpc::string& method) {
   if (has_error_) {
     return "";
   }
+
+  known_methods_[method] = method_descriptor->full_name();
 
   return method_descriptor->full_name();
 }
@@ -196,6 +203,25 @@ grpc::string ProtoFileParser::GetMessageTypeFromMethod(
 
   return is_request ? method_desc->input_type()->full_name()
                     : method_desc->output_type()->full_name();
+}
+
+bool ProtoFileParser::IsStreaming(const grpc::string& method, bool is_request) {
+  has_error_ = false;
+
+  grpc::string full_method_name = GetFullMethodName(method);
+  if (has_error_) {
+    return false;
+  }
+
+  const protobuf::MethodDescriptor* method_desc =
+      desc_pool_->FindMethodByName(full_method_name);
+  if (!method_desc) {
+    LogError("Method not found");
+    return false;
+  }
+
+  return is_request ? method_desc->client_streaming()
+                    : method_desc->server_streaming();
 }
 
 grpc::string ProtoFileParser::GetSerializedProtoFromMethod(
