@@ -34,40 +34,61 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_args.h"
 
 struct grpc_resolver_result {
   gpr_refcount refs;
-  grpc_lb_policy* lb_policy;
+  char* server_name;
+  grpc_lb_addresses* addresses;
+  char* lb_policy_name;
+  grpc_channel_args* lb_policy_args;
 };
 
-grpc_resolver_result* grpc_resolver_result_create() {
-  grpc_resolver_result* c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
-  gpr_ref_init(&c->refs, 1);
-  return c;
+grpc_resolver_result* grpc_resolver_result_create(
+    const char* server_name, grpc_lb_addresses* addresses,
+    const char* lb_policy_name, grpc_channel_args* lb_policy_args) {
+  grpc_resolver_result* result = gpr_malloc(sizeof(*result));
+  memset(result, 0, sizeof(*result));
+  gpr_ref_init(&result->refs, 1);
+  result->server_name = gpr_strdup(server_name);
+  result->addresses = addresses;
+  result->lb_policy_name = gpr_strdup(lb_policy_name);
+  result->lb_policy_args = lb_policy_args;
+  return result;
 }
 
-void grpc_resolver_result_ref(grpc_resolver_result* c) { gpr_ref(&c->refs); }
+void grpc_resolver_result_ref(grpc_resolver_result* result) {
+  gpr_ref(&result->refs);
+}
 
 void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
-                                grpc_resolver_result* c) {
-  if (gpr_unref(&c->refs)) {
-    if (c->lb_policy != NULL) {
-      GRPC_LB_POLICY_UNREF(exec_ctx, c->lb_policy, "resolver_result");
-    }
-    gpr_free(c);
+                                grpc_resolver_result* result) {
+  if (gpr_unref(&result->refs)) {
+    gpr_free(result->server_name);
+    grpc_lb_addresses_destroy(result->addresses, NULL /* user_data_destroy */);
+    gpr_free(result->lb_policy_name);
+    grpc_channel_args_destroy(result->lb_policy_args);
+    gpr_free(result);
   }
 }
 
-void grpc_resolver_result_set_lb_policy(grpc_resolver_result* c,
-                                        grpc_lb_policy* lb_policy) {
-  GPR_ASSERT(c->lb_policy == NULL);
-  if (lb_policy) {
-    GRPC_LB_POLICY_REF(lb_policy, "resolver_result");
-  }
-  c->lb_policy = lb_policy;
+const char* grpc_resolver_result_get_server_name(grpc_resolver_result* result) {
+  return result->server_name;
 }
 
-grpc_lb_policy* grpc_resolver_result_get_lb_policy(grpc_resolver_result* c) {
-  return c->lb_policy;
+grpc_lb_addresses* grpc_resolver_result_get_addresses(
+    grpc_resolver_result* result) {
+  return result->addresses;
+}
+
+const char* grpc_resolver_result_get_lb_policy_name(
+    grpc_resolver_result* result) {
+  return result->lb_policy_name;
+}
+
+grpc_channel_args* grpc_resolver_result_get_lb_policy_args(
+    grpc_resolver_result* result) {
+  return result->lb_policy_args;
 }

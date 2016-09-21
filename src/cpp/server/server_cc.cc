@@ -220,7 +220,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_, server->max_message_size_),
+          call_(mrd->call_, server, &cq_, server->max_receive_message_size_),
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
                mrd->request_metadata_.count),
           has_request_payload_(mrd->has_request_payload_),
@@ -243,7 +243,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
       method_->handler()->RunHandler(MethodHandler::HandlerParameter(
-          &call_, &ctx_, request_payload_, call_.max_message_size()));
+          &call_, &ctx_, request_payload_, call_.max_receive_message_size()));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
@@ -277,8 +277,8 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size, ChannelArguments* args)
-    : max_message_size_(max_message_size),
+               int max_receive_message_size, ChannelArguments* args)
+    : max_receive_message_size_(max_receive_message_size),
       started_(false),
       shutdown_(false),
       shutdown_notified_(false),
@@ -514,7 +514,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->set_call(call_);
   context_->cq_ = call_cq_;
-  Call call(call_, server_, call_cq_, server_->max_message_size());
+  Call call(call_, server_, call_cq_, server_->max_receive_message_size());
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }

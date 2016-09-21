@@ -283,7 +283,7 @@ typedef struct glb_lb_policy {
   /** mutex protecting remaining members */
   gpr_mu mu;
 
-  char *server_name;  // Does not own.
+  const char *server_name;  // Does not own.
   grpc_client_channel_factory *cc_factory;
 
   /** for communicating with the LB server */

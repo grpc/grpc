@@ -38,29 +38,6 @@
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
-static void client_channel_factory_ref(grpc_client_channel_factory *scv) {}
-static void client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                         grpc_client_channel_factory *scv) {}
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
-    grpc_subchannel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
-}
-
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_client_channel_type type,
-    grpc_channel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
-}
-
-static const grpc_client_channel_factory_vtable sc_vtable = {
-    client_channel_factory_ref, client_channel_factory_unref,
-    client_channel_factory_create_subchannel,
-    client_channel_factory_create_channel};
-
-static grpc_client_channel_factory cc_factory = {&sc_vtable};
-
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_uri *uri = grpc_uri_parse(string, 0);
@@ -71,7 +48,6 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  args.client_channel_factory = &cc_factory;
   resolver = grpc_resolver_factory_create_resolver(factory, &args);
   GPR_ASSERT(resolver != NULL);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_succeeds");

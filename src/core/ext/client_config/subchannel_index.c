@@ -132,7 +132,7 @@ void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
   grpc_connector_unref(exec_ctx, k->connector);
   gpr_free((grpc_channel_args *)k->args.filters);
   grpc_channel_args_destroy((grpc_channel_args *)k->args.args);
-  gpr_free(k->args.server_name);
+  gpr_free((void *)k->args.server_name);
   gpr_free(k->args.addr);
   gpr_free(k);
 }

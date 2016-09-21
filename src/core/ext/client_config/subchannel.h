@@ -163,7 +163,7 @@ struct grpc_subchannel_args {
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
   /** Server name */
-  char *server_name;
+  const char *server_name;
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;

@@ -40,7 +40,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -52,8 +51,6 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
-  /** subchannel factory */
-  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -122,18 +119,10 @@ static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                               sockaddr_resolver *r) {
   if (r->next_completion != NULL && !r->published) {
-    grpc_resolver_result *result = grpc_resolver_result_create();
-    grpc_lb_policy_args lb_policy_args;
-    memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.server_name = "";
-    lb_policy_args.addresses = r->addresses;
-    lb_policy_args.client_channel_factory = r->client_channel_factory;
-    grpc_lb_policy *lb_policy =
-        grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
-    grpc_resolver_result_set_lb_policy(result, lb_policy);
-    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
     r->published = true;
-    *r->target_result = result;
+    *r->target_result = grpc_resolver_result_create(
+        "", grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
+        r->lb_policy_name, NULL);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -142,7 +131,6 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -244,8 +232,6 @@ static grpc_resolver *sockaddr_create(
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
-  r->client_channel_factory = args->client_channel_factory;
-  grpc_client_channel_factory_ref(r->client_channel_factory);
 
   return &r->base;
 }

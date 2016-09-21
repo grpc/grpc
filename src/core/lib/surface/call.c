@@ -1163,17 +1163,6 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
     if (gpr_unref(&bctl->steps_to_complete)) {
       post_batch_completion(exec_ctx, bctl);
     }
-  } else if (call->receiving_stream->length >
-             grpc_channel_get_max_message_length(call->channel)) {
-    cancel_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL,
-                       "Max message size exceeded");
-    grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
-    call->receiving_stream = NULL;
-    *call->receiving_buffer = NULL;
-    call->receiving_message = 0;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&

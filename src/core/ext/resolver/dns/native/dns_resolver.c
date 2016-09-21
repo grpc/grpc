@@ -61,8 +61,6 @@ typedef struct {
   char *name_to_resolve;
   /** default port to use */
   char *default_port;
-  /** subchannel factory */
-  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -169,32 +167,21 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
   dns_resolver *r = arg;
   grpc_resolver_result *result = NULL;
-  grpc_lb_policy *lb_policy;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
   r->resolving = false;
   if (r->addresses != NULL) {
-    grpc_lb_policy_args lb_policy_args;
-    memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.server_name = r->target_name;
-    lb_policy_args.addresses = grpc_lb_addresses_create(r->addresses->naddrs);
+    grpc_lb_addresses *addresses =
+        grpc_lb_addresses_create(r->addresses->naddrs);
     for (size_t i = 0; i < r->addresses->naddrs; ++i) {
       grpc_lb_addresses_set_address(
-          lb_policy_args.addresses, i, &r->addresses->addrs[i].addr,
+          addresses, i, &r->addresses->addrs[i].addr,
           r->addresses->addrs[i].len, false /* is_balancer */,
           NULL /* balancer_name */, NULL /* user_data */);
     }
     grpc_resolved_addresses_destroy(r->addresses);
-    lb_policy_args.client_channel_factory = r->client_channel_factory;
-    lb_policy =
-        grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
-    grpc_lb_addresses_destroy(lb_policy_args.addresses,
-                              NULL /* user_data_destroy */);
-    result = grpc_resolver_result_create();
-    if (lb_policy != NULL) {
-      grpc_resolver_result_set_lb_policy(result, lb_policy);
-      GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
-    }
+    result = grpc_resolver_result_create(r->target_name, addresses,
+                                         r->lb_policy_name, NULL);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -255,7 +242,6 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_result) {
     grpc_resolver_result_unref(exec_ctx, r->resolved_result);
   }
-  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   gpr_free(r->target_name);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
@@ -284,10 +270,8 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   r->target_name = gpr_strdup(path);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
-  r->client_channel_factory = args->client_channel_factory;
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
-  grpc_client_channel_factory_ref(r->client_channel_factory);
   r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }

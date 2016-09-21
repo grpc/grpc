@@ -33,6 +33,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
@@ -333,76 +335,65 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         if (is_client) {
           gpr_log(GPR_ERROR, "%s: is ignored on the client",
                   GRPC_ARG_MAX_CONCURRENT_STREAMS);
-        } else if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_MAX_CONCURRENT_STREAMS);
         } else {
-          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-                       (uint32_t)channel_args->args[i].value.integer);
+          const grpc_integer_options options = {-1, 0, INT_MAX};
+          const int value =
+              grpc_channel_arg_get_integer(&channel_args->args[i], options);
+          if (value >= 0) {
+            push_setting(exec_ctx, t,
+                         GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+                         (uint32_t)value);
+          }
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER);
-        } else if ((t->global.next_stream_id & 1) !=
-                   (channel_args->args[i].value.integer & 1)) {
-          gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
-                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
-                  t->global.next_stream_id & 1,
-                  is_client ? "client" : "server");
-        } else {
-          t->global.next_stream_id =
-              (uint32_t)channel_args->args[i].value.integer;
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
+          if ((t->global.next_stream_id & 1) != (value & 1)) {
+            gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
+                    GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
+                    t->global.next_stream_id & 1,
+                    is_client ? "client" : "server");
+          } else {
+            t->global.next_stream_id = (uint32_t)value;
+          }
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
-        } else if (channel_args->args[i].value.integer <= 5) {
-          gpr_log(GPR_ERROR, "%s: must be at least 5",
-                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
-        } else {
-          t->global.stream_lookahead =
-              (uint32_t)channel_args->args[i].value.integer;
+        const grpc_integer_options options = {-1, 5, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
+          t->global.stream_lookahead = (uint32_t)value;
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
-        } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s: must be non-negative",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
-        } else {
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
           push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
-                       (uint32_t)channel_args->args[i].value.integer);
+                       (uint32_t)value);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
-        } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s: must be non-negative",
-                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
-        } else {
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
           grpc_chttp2_hpack_compressor_set_max_usable_size(
-              &t->writing.hpack_compressor,
-              (uint32_t)channel_args->args[i].value.integer);
+              &t->writing.hpack_compressor, (uint32_t)value);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_MAX_METADATA_SIZE)) {
-        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_MAX_METADATA_SIZE);
-        } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s: must be non-negative",
-                  GRPC_ARG_MAX_METADATA_SIZE);
-        } else {
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
+        if (value >= 0) {
           push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                       (uint32_t)channel_args->args[i].value.integer);
+                       (uint32_t)value);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_MAX_FRAME_SIZE)) {
