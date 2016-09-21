@@ -44,7 +44,8 @@ namespace testing {
 grpc::string DescribeServiceList(std::vector<grpc::string> service_list,
                                  grpc::protobuf::DescriptorPool& desc_pool) {
   std::stringstream result;
-  for (auto const& service : service_list) {
+  for (auto it = service_list.begin(); it != service_list.end(); it++) {
+    auto const& service = *it;
     const grpc::protobuf::ServiceDescriptor* service_desc =
         desc_pool.FindServiceByName(service);
     if (service_desc != nullptr) {
