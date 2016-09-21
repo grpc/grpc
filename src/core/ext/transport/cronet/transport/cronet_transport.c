@@ -432,15 +432,18 @@ static void on_response_headers_received(
             grpc_mdstr_from_string(headers->headers[i].value)));
   }
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
-  /* Do an extra read to trigger on_succeeded() callback in case connection
-   is closed */
-  GPR_ASSERT(s->state.rs.length_field_received == false);
-  s->state.rs.read_buffer = s->state.rs.grpc_header_bytes;
-  s->state.rs.received_bytes = 0;
-  s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
-  CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
-  cronet_bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
-                                   s->state.rs.remaining_bytes);
+  if (!(s->state.state_op_done[OP_CANCEL_ERROR] ||
+        s->state.state_callback_received[OP_FAILED])) {
+    /* Do an extra read to trigger on_succeeded() callback in case connection
+     is closed */
+    GPR_ASSERT(s->state.rs.length_field_received == false);
+    s->state.rs.read_buffer = s->state.rs.grpc_header_bytes;
+    s->state.rs.received_bytes = 0;
+    s->state.rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
+    CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
+    cronet_bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
+                                     s->state.rs.remaining_bytes);
+  }
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
