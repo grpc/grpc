@@ -278,7 +278,7 @@ static void ref_md_locked(mdtab_shard *shard,
                           internal_metadata *md DEBUG_ARGS) {
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
+          "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           gpr_atm_no_barrier_load(&md->refcnt) + 1,
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
@@ -566,7 +566,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *mkey,
   shard->elems[idx] = md;
   gpr_mu_init(&md->mu_user_data);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(GPR_DEBUG, "ELM   NEW:%p:%d: '%s' = '%s'", md,
+  gpr_log(GPR_DEBUG, "ELM   NEW:%p:%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
@@ -639,7 +639,7 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
   if (is_mdelem_static(gmd)) return gmd;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
+          "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           gpr_atm_no_barrier_load(&md->refcnt) + 1,
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
@@ -649,7 +649,7 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
      this function - meaning that no adjustment to mdtab_free is necessary,
      simplifying the logic here to be just an atomic increment */
   /* use C assert to have this removed in opt builds */
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
+  GPR_ASSERT(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
   gpr_atm_no_barrier_fetch_add(&md->refcnt, 1);
   return gmd;
 }
@@ -660,14 +660,16 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
   if (is_mdelem_static(gmd)) return;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
+          "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           gpr_atm_no_barrier_load(&md->refcnt) - 1,
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
 #endif
   uint32_t hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
-  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
+  const gpr_atm prev_refcount = gpr_atm_full_fetch_add(&md->refcnt, -1);
+  GPR_ASSERT(prev_refcount >= 1);
+  if (1 == prev_refcount) {
     /* once the refcount hits zero, some other thread can come along and
        free md at any time: it's unsafe from this point on to access it */
     mdtab_shard *shard =
@@ -676,9 +678,11 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
   }
 }
 
-const char *grpc_mdstr_as_c_string(grpc_mdstr *s) {
+const char *grpc_mdstr_as_c_string(const grpc_mdstr *s) {
   return (const char *)GPR_SLICE_START_PTR(s->slice);
 }
+
+size_t grpc_mdstr_length(const grpc_mdstr *s) { return GRPC_MDSTR_LENGTH(s); }
 
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;

@@ -80,8 +80,10 @@ class GrpcTool {
                   GrpcToolOutputCallback callback);
   bool ListServices(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback);
+  bool PrintType(int argc, const char** argv, const CliCredentials& cred,
+                 GrpcToolOutputCallback callback);
   // TODO(zyc): implement the following methods
-  // bool PrintType(int argc, const char** argv, GrpcToolOutputCallback
+  // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
   // callback);
   // bool PrintTypeId(int argc, const char** argv, GrpcToolOutputCallback
   // callback);
@@ -171,7 +173,7 @@ const Command ops[] = {
     {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
     {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
     {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
-    // {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
+    {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
     // {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
     // {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
     // {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
@@ -183,7 +185,7 @@ void Usage(const grpc::string& msg) {
       "%s\n"
       "  grpc_cli ls ...         ; List services\n"
       "  grpc_cli call ...       ; Call method\n"
-      // "  grpc_cli type ...       ; Print type\n"
+      "  grpc_cli type ...       ; Print type\n"
       // "  grpc_cli parse ...      ; Parse message\n"
       // "  grpc_cli totext ...     ; Convert binary message to text\n"
       // "  grpc_cli tobinary ...   ; Convert text message to binary\n"
@@ -359,6 +361,35 @@ bool GrpcTool::ListServices(int argc, const char** argv,
   }
   return callback(output);
 }
+
+bool GrpcTool::PrintType(int argc, const char** argv,
+                         const CliCredentials& cred,
+                         GrpcToolOutputCallback callback) {
+  CommandUsage(
+      "Print type\n"
+      "  grpc_cli type <address> <type>\n"
+      "    <address>                ; host:port\n"
+      "    <type>                   ; Protocol buffer type name\n" +
+      cred.GetCredentialUsage());
+
+  grpc::string server_address(argv[0]);
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateChannel(server_address, cred.GetCredentials());
+  grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
+  grpc::protobuf::DescriptorPool desc_pool(&desc_db);
+
+  grpc::string output;
+  const grpc::protobuf::Descriptor* descriptor =
+      desc_pool.FindMessageTypeByName(argv[1]);
+  if (descriptor != nullptr) {
+    output = descriptor->DebugString();
+  } else {
+    fprintf(stderr, "Type %s not found.\n", argv[1]);
+    return false;
+  }
+  return callback(output);
+}
+
 
 bool GrpcTool::CallMethod(int argc, const char** argv,
                           const CliCredentials& cred,

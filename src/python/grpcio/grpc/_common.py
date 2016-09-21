@@ -94,6 +94,16 @@ def decode(b):
       return b.decode('latin1')
 
 
+def channel_args(options):
+  channel_args = []
+  for key, value in options:
+    if isinstance(value, six.string_types):
+      channel_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
+    else:
+      channel_args.append(cygrpc.ChannelArg(encode(key), value))
+  return cygrpc.ChannelArgs(channel_args)
+
+
 def cygrpc_metadata(application_metadata):
   return _EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
       cygrpc.Metadatum(encode(key), encode(value))
