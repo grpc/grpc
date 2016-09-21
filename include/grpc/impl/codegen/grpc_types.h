@@ -34,14 +34,36 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/gpr_types.h>
+
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+  GRPC_BB_RAW
+  /* Future types may include GRPC_BB_PROTOBUF, etc. */
+} grpc_byte_buffer_type;
+
+typedef struct grpc_byte_buffer {
+  void *reserved;
+  grpc_byte_buffer_type type;
+  union {
+    struct {
+      void *reserved[8];
+    } reserved;
+    struct {
+      grpc_compression_algorithm compression;
+      gpr_slice_buffer slice_buffer;
+    } raw;
+  } data;
+} grpc_byte_buffer;
 
 /** Completion Queues enable notification of the completion of asynchronous
     actions. */
@@ -127,7 +149,11 @@ typedef struct {
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
 /** Maximum message length that the channel can receive. Int valued, bytes. */
-#define GRPC_ARG_MAX_MESSAGE_LENGTH "grpc.max_message_length"
+#define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
+/** \deprecated For backward compatibility. */
+#define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+/** Maximum message length that the channel can send. Int valued, bytes. */
+#define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -142,6 +168,11 @@ typedef struct {
 /** How much memory to use for hpack encoding. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
+/** How big a frame are we willing to receive via HTTP2.
+    Min 16384, max 16777215.
+    Larger values give lower CPU usage for large messages, but more head of line
+    blocking for small messages. */
+#define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -222,10 +253,14 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+/** Signal that the call is cacheable. GRPC is free to use GET verb */
+#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK       \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
+#define GRPC_INITIAL_METADATA_USED_MASK        \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
+   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
@@ -327,6 +362,8 @@ typedef enum {
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
+struct grpc_byte_buffer;
+
 /** Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT
    which has no arguments) */
 typedef struct grpc_op {
@@ -351,7 +388,7 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    grpc_byte_buffer *send_message;
+    struct grpc_byte_buffer *send_message;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
@@ -367,7 +404,7 @@ typedef struct grpc_op {
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    grpc_byte_buffer **recv_message;
+    struct grpc_byte_buffer **recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

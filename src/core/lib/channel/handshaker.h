@@ -35,8 +35,6 @@
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/time.h>
-#include <grpc/support/slice_buffer.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"

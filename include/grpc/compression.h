@@ -36,8 +36,9 @@
 
 #include <stdlib.h>
 
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/port_platform.h>
+
+#include <grpc/impl/codegen/compression_types.h>
 
 #ifdef __cplusplus
 extern "C" {

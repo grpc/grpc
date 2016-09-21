@@ -183,13 +183,15 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
 
   void ShutdownInternal(gpr_timespec deadline) GRPC_OVERRIDE;
 
-  int max_message_size() const GRPC_OVERRIDE { return max_message_size_; };
+  int max_receive_message_size() const GRPC_OVERRIDE {
+    return max_receive_message_size_;
+  };
 
   grpc_server* server() GRPC_OVERRIDE { return server_; };
 
   ServerInitializer* initializer();
 
-  const int max_message_size_;
+  const int max_receive_message_size_;
 
   /// The following completion queues are ONLY used in case of Sync API i.e if
   /// the server has any services with sync methods. The server uses these

@@ -37,8 +37,8 @@
 #include <grpc++/server.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
-#include "include/grpc/support/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
@@ -53,7 +53,9 @@ static void do_plugin_list_init(void) {
 }
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr) {
+    : max_receive_message_size_(-1),
+      max_send_message_size_(-1),
+      generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
        it != g_plugin_factory_list->end(); it++) {
@@ -189,9 +191,18 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*option)->UpdatePlugins(&plugins_);
   }
 
-  if (max_message_size_ > 0) {
-    args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin)->UpdateChannelArguments(&args);
   }
+
+  if (max_receive_message_size_ >= 0) {
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
+  }
+
+  if (max_send_message_size_ >= 0) {
+    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
+  }
+
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               enabled_compression_algorithms_bitset_);
   if (maybe_default_compression_level_.is_set) {
@@ -204,9 +215,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   // TODO (sreek) Make the number of pollers configurable
-  std::unique_ptr<Server> server(new Server(sync_server_cqs, max_message_size_,
-                                            &args, kDefaultMinPollers,
-                                            kDefaultMaxPollers));
+  std::unique_ptr<Server> server(
+      new Server(sync_server_cqs, max_receive_message_size_, &args,
+                 kDefaultMinPollers, kDefaultMaxPollers));
 
   ServerInitializer* initializer = server->initializer();
 

@@ -43,7 +43,10 @@
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/rpc_method.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/byte_buffer.h>
+
+extern "C" {
+struct grpc_byte_buffer;
+}
 
 namespace grpc {
 class ServerContext;
@@ -59,12 +62,12 @@ class MethodHandler {
         : call(c),
           server_context(context),
           request(req),
-          max_message_size(max_size) {}
+          max_receive_message_size(max_size) {}
     Call* call;
     ServerContext* server_context;
     // Handler required to grpc_byte_buffer_destroy this
     grpc_byte_buffer* request;
-    int max_message_size;
+    int max_receive_message_size;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 };
@@ -82,6 +85,7 @@ class RpcServiceMethod : public RpcMethod {
   // if MethodHandler is nullptr, then this is an async method
   MethodHandler* handler() const { return handler_.get(); }
   void ResetHandler() { handler_.reset(); }
+  void SetHandler(MethodHandler* handler) { handler_.reset(handler); }
 
  private:
   void* server_tag_;

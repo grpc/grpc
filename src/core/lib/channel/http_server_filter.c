@@ -49,17 +49,32 @@ typedef struct call_data {
   uint8_t seen_scheme;
   uint8_t seen_te_trailers;
   uint8_t seen_authority;
+  uint8_t seen_payload_bin;
   grpc_linked_mdelem status;
   grpc_linked_mdelem content_type;
 
+  /* flag to ensure payload_bin is delivered only once */
+  uint8_t payload_bin_delivered;
+
   grpc_metadata_batch *recv_initial_metadata;
   bool *recv_idempotent_request;
+  bool *recv_cacheable_request;
   /** Closure to call when finished with the hs_on_recv hook */
   grpc_closure *on_done_recv;
+  /** Closure to call when we retrieve read message from the payload-bin header
+   */
+  grpc_closure *recv_message_ready;
+  grpc_closure *on_complete;
+  grpc_byte_stream **pp_recv_message;
+  gpr_slice_buffer read_slice_buffer;
+  grpc_slice_buffer_stream read_stream;
+
   /** Receive closures are chained: we inject this closure as the on_done_recv
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
   grpc_closure hs_on_recv;
+  grpc_closure hs_on_complete;
+  grpc_closure hs_recv_message_ready;
 } call_data;
 
 typedef struct channel_data { uint8_t unused; } channel_data;
@@ -76,16 +91,20 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
 
   /* Check if it is one of the headers we care about. */
   if (md == GRPC_MDELEM_TE_TRAILERS || md == GRPC_MDELEM_METHOD_POST ||
-      md == GRPC_MDELEM_METHOD_PUT || md == GRPC_MDELEM_SCHEME_HTTP ||
-      md == GRPC_MDELEM_SCHEME_HTTPS ||
+      md == GRPC_MDELEM_METHOD_PUT || md == GRPC_MDELEM_METHOD_GET ||
+      md == GRPC_MDELEM_SCHEME_HTTP || md == GRPC_MDELEM_SCHEME_HTTPS ||
       md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     /* swallow it */
     if (md == GRPC_MDELEM_METHOD_POST) {
       calld->seen_method = 1;
       *calld->recv_idempotent_request = false;
+      *calld->recv_cacheable_request = false;
     } else if (md == GRPC_MDELEM_METHOD_PUT) {
       calld->seen_method = 1;
       *calld->recv_idempotent_request = true;
+    } else if (md == GRPC_MDELEM_METHOD_GET) {
+      calld->seen_method = 1;
+      *calld->recv_cacheable_request = true;
     } else if (md->key == GRPC_MDSTR_SCHEME) {
       calld->seen_scheme = 1;
     } else if (md == GRPC_MDELEM_TE_TRAILERS) {
@@ -137,6 +156,16 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
         GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
     calld->seen_authority = 1;
     return authority;
+  } else if (md->key == GRPC_MDSTR_GRPC_PAYLOAD_BIN) {
+    /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
+       header field */
+    calld->seen_payload_bin = 1;
+    gpr_slice_buffer_init(&calld->read_slice_buffer);
+    gpr_slice_buffer_add(&calld->read_slice_buffer,
+                         gpr_slice_ref(md->value->slice));
+    grpc_slice_buffer_stream_init(&calld->read_stream,
+                                  &calld->read_slice_buffer, 0);
+    return NULL;
   } else {
     return md;
   }
@@ -189,6 +218,36 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_ERROR_UNREF(err);
 }
 
+static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
+                           grpc_error *err) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  /* Call recv_message_ready if we got the payload via the header field */
+  if (calld->seen_payload_bin && calld->recv_message_ready != NULL) {
+    *calld->pp_recv_message = calld->payload_bin_delivered
+                                  ? NULL
+                                  : (grpc_byte_stream *)&calld->read_stream;
+    calld->recv_message_ready->cb(exec_ctx, calld->recv_message_ready->cb_arg,
+                                  err);
+    calld->recv_message_ready = NULL;
+    calld->payload_bin_delivered = true;
+  }
+  calld->on_complete->cb(exec_ctx, calld->on_complete->cb_arg, err);
+}
+
+static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_error *err) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  if (calld->seen_payload_bin) {
+    /* do nothing. This is probably a GET request, and payload will be returned
+    in hs_on_complete callback. */
+  } else {
+    calld->recv_message_ready->cb(exec_ctx, calld->recv_message_ready->cb_arg,
+                                  err);
+  }
+}
+
 static void hs_mutate_op(grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
@@ -206,10 +265,24 @@ static void hs_mutate_op(grpc_call_element *elem,
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     GPR_ASSERT(op->recv_idempotent_request != NULL);
+    GPR_ASSERT(op->recv_cacheable_request != NULL);
     calld->recv_initial_metadata = op->recv_initial_metadata;
     calld->recv_idempotent_request = op->recv_idempotent_request;
+    calld->recv_cacheable_request = op->recv_cacheable_request;
     calld->on_done_recv = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->hs_on_recv;
+  }
+
+  if (op->recv_message) {
+    calld->recv_message_ready = op->recv_message_ready;
+    calld->pp_recv_message = op->recv_message;
+    if (op->recv_message_ready) {
+      op->recv_message_ready = &calld->hs_recv_message_ready;
+    }
+    if (op->on_complete) {
+      calld->on_complete = op->on_complete;
+      op->on_complete = &calld->hs_on_complete;
+    }
   }
 }
 
@@ -232,6 +305,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
+  grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem);
+  grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem);
   return GRPC_ERROR_NONE;
 }
 
