@@ -2404,7 +2404,6 @@ LIBGPR_SRC = \
     src/core/lib/support/log.c \
     src/core/lib/support/log_android.c \
     src/core/lib/support/log_linux.c \
-    #src/core/lib/support/log_posix.c \
     src/core/lib/support/log_windows.c \
     src/core/lib/support/murmur_hash.c \
     src/core/lib/support/slice.c \
@@ -2431,6 +2430,10 @@ LIBGPR_SRC = \
     src/core/lib/support/tmpfile_posix.c \
     src/core/lib/support/tmpfile_windows.c \
     src/core/lib/support/wrap_memcpy.c \
+
+ifneq ($(SYSTEM),Android)
+	LIBGPR_SRC += src/core/lib/support/log_posix.c
+endif
 
 PUBLIC_HEADERS_C += \
     include/grpc/support/alloc.h \
