@@ -561,8 +561,9 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   if (s == NULL) {
     if (is_continuation) {
-      gpr_log(GPR_ERROR,
-              "grpc_chttp2_stream disbanded before CONTINUATION received");
+      GRPC_CHTTP2_IF_TRACING(
+          gpr_log(GPR_ERROR,
+                  "grpc_chttp2_stream disbanded before CONTINUATION received"));
       return init_skip_frame_parser(exec_ctx, t, 1);
     }
     if (t->is_client) {
@@ -570,28 +571,31 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           t->incoming_stream_id < t->next_stream_id) {
         /* this is an old (probably cancelled) grpc_chttp2_stream */
       } else {
-        gpr_log(GPR_ERROR,
-                "ignoring new grpc_chttp2_stream creation on client");
+        GRPC_CHTTP2_IF_TRACING(gpr_log(
+            GPR_ERROR, "ignoring new grpc_chttp2_stream creation on client"));
       }
       return init_skip_frame_parser(exec_ctx, t, 1);
     } else if (t->last_new_stream_id >= t->incoming_stream_id) {
-      gpr_log(GPR_ERROR,
-              "ignoring out of order new grpc_chttp2_stream request on server; "
-              "last grpc_chttp2_stream "
-              "id=%d, new grpc_chttp2_stream id=%d",
-              t->last_new_stream_id, t->incoming_stream_id);
+      GRPC_CHTTP2_IF_TRACING(gpr_log(
+          GPR_ERROR,
+          "ignoring out of order new grpc_chttp2_stream request on server; "
+          "last grpc_chttp2_stream "
+          "id=%d, new grpc_chttp2_stream id=%d",
+          t->last_new_stream_id, t->incoming_stream_id));
       return init_skip_frame_parser(exec_ctx, t, 1);
     } else if ((t->incoming_stream_id & 1) == 0) {
-      gpr_log(GPR_ERROR,
-              "ignoring grpc_chttp2_stream with non-client generated index %d",
-              t->incoming_stream_id);
+      GRPC_CHTTP2_IF_TRACING(gpr_log(
+          GPR_ERROR,
+          "ignoring grpc_chttp2_stream with non-client generated index %d",
+          t->incoming_stream_id));
       return init_skip_frame_parser(exec_ctx, t, 1);
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(exec_ctx, t, t->incoming_stream_id);
     if (s == NULL) {
-      gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted");
+      GRPC_CHTTP2_IF_TRACING(
+          gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_skip_frame_parser(exec_ctx, t, 1);
     }
   } else {
@@ -600,7 +604,8 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(s != NULL);
   s->stats.incoming.framing_bytes += 9;
   if (s->read_closed) {
-    gpr_log(GPR_ERROR, "skipping already closed grpc_chttp2_stream header");
+    GRPC_CHTTP2_IF_TRACING(gpr_log(
+        GPR_ERROR, "skipping already closed grpc_chttp2_stream header"));
     t->incoming_stream = NULL;
     return init_skip_frame_parser(exec_ctx, t, 1);
   }
