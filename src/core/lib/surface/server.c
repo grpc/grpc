@@ -71,6 +71,8 @@ typedef struct registered_method registered_method;
 
 typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
 
+int grpc_server_channel_trace = 0;
+
 typedef struct requested_call {
   requested_call_type type;
   size_t cq_idx;
@@ -440,7 +442,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
 
-  if (error != GRPC_ERROR_NONE) {
+  if (grpc_server_channel_trace && error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Disconnected client: %s", msg);
     grpc_error_free_string(msg);

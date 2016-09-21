@@ -48,6 +48,7 @@ some configuration as environment variables that can be set.
   - glb - traces the grpclb load balancer
   - queue_pluck
   - queue_timeout
+  - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - transport_security - traces metadata about secure channel establishment
   - tcp - traces bytes in and out of a channel
@@ -61,4 +62,3 @@ some configuration as environment variables that can be set.
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
   - ERROR - log only errors
-
