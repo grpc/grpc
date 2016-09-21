@@ -166,9 +166,18 @@ pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
 # TODO(atash) figure out namespace packages and grpcio-tools and auditwheel
 # etc...
 pip_install_dir $ROOT
+
+# Build/install health checking
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_health_checking
+
+# Build/install reflection
+$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py preprocess
+$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py build_package_protos
+pip_install_dir $ROOT/src/python/grpcio_reflection
+
+# Build/install tests
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py preprocess
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_tests
