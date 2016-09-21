@@ -1102,7 +1102,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   if (grpc_http_trace) {
     char *str = grpc_transport_stream_op_string(op);
-    gpr_log(GPR_DEBUG, "perform_stream_op: %s", str);
+    gpr_log(GPR_DEBUG, "perform_stream_op[s=%p/%d]: %s", s, s->id, str);
     gpr_free(str);
   }
 
@@ -1171,7 +1171,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   if (op->send_goaway) {
     t->sent_goaway = 1;
     grpc_chttp2_goaway_append(
-        t->last_incoming_stream_id,
+        t->last_new_stream_id,
         (uint32_t)grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
         gpr_slice_ref(*op->goaway_message), &t->qbuf);
     close_transport = grpc_chttp2_stream_map_size(&t->stream_map) == 0

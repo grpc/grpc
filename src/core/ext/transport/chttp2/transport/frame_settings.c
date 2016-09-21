@@ -224,7 +224,7 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
                 grpc_chttp2_goaway_append(
-                    t->last_incoming_stream_id, sp->error_value,
+                    t->last_new_stream_id, sp->error_value,
                     gpr_slice_from_static_string("HTTP2 settings error"),
                     &t->qbuf);
                 gpr_asprintf(&msg, "invalid value %u passed for %s",

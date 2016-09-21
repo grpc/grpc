@@ -267,8 +267,8 @@ struct grpc_chttp2_transport {
   /** how far to lookahead in a stream? */
   uint32_t stream_lookahead;
 
-  /** last received stream id */
-  uint32_t last_incoming_stream_id;
+  /** last new stream id */
+  uint32_t last_new_stream_id;
 
   /** pings awaiting responses */
   grpc_chttp2_outstanding_ping pings;

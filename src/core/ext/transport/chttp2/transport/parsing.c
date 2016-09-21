@@ -199,10 +199,6 @@ grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       if (err != GRPC_ERROR_NONE) {
         return err;
       }
-      if (t->incoming_stream_id != 0 &&
-          t->incoming_stream_id > t->last_incoming_stream_id) {
-        t->last_incoming_stream_id = t->incoming_stream_id;
-      }
       if (t->incoming_frame_size == 0) {
         err = parse_frame_slice(exec_ctx, t, gpr_empty_slice(), 1);
         if (err != GRPC_ERROR_NONE) {
@@ -578,12 +574,12 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
                 "ignoring new grpc_chttp2_stream creation on client");
       }
       return init_skip_frame_parser(exec_ctx, t, 1);
-    } else if (t->last_incoming_stream_id > t->incoming_stream_id) {
+    } else if (t->last_new_stream_id >= t->incoming_stream_id) {
       gpr_log(GPR_ERROR,
               "ignoring out of order new grpc_chttp2_stream request on server; "
               "last grpc_chttp2_stream "
               "id=%d, new grpc_chttp2_stream id=%d",
-              t->last_incoming_stream_id, t->incoming_stream_id);
+              t->last_new_stream_id, t->incoming_stream_id);
       return init_skip_frame_parser(exec_ctx, t, 1);
     } else if ((t->incoming_stream_id & 1) == 0) {
       gpr_log(GPR_ERROR,
@@ -591,6 +587,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
               t->incoming_stream_id);
       return init_skip_frame_parser(exec_ctx, t, 1);
     }
+    t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(exec_ctx, t, t->incoming_stream_id);
     if (s == NULL) {

@@ -97,40 +97,6 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
   map->count = count + 1;
 }
 
-void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
-                                      grpc_chttp2_stream_map *dst) {
-  /* if src is empty we dont need to do anything */
-  if (src->count == src->free) {
-    return;
-  }
-  /* if dst is empty we simply need to swap */
-  if (dst->count == dst->free) {
-    GPR_SWAP(grpc_chttp2_stream_map, *src, *dst);
-    return;
-  }
-  /* the first element of src must be greater than the last of dst...
-   * however the maps may need compacting for this property to hold */
-  if (src->keys[0] <= dst->keys[dst->count - 1]) {
-    src->count = compact(src->keys, src->values, src->count);
-    src->free = 0;
-    dst->count = compact(dst->keys, dst->values, dst->count);
-    dst->free = 0;
-  }
-  GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);
-  /* if dst doesn't have capacity, resize */
-  if (dst->count + src->count > dst->capacity) {
-    dst->capacity = GPR_MAX(dst->capacity * 3 / 2, dst->count + src->count);
-    dst->keys = gpr_realloc(dst->keys, dst->capacity * sizeof(uint32_t));
-    dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(void *));
-  }
-  memcpy(dst->keys + dst->count, src->keys, src->count * sizeof(uint32_t));
-  memcpy(dst->values + dst->count, src->values, src->count * sizeof(void *));
-  dst->count += src->count;
-  dst->free += src->free;
-  src->count = 0;
-  src->free = 0;
-}
-
 static void **find(grpc_chttp2_stream_map *map, uint32_t key) {
   size_t min_idx = 0;
   size_t max_idx = map->count;
