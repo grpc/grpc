@@ -238,8 +238,8 @@ grpc_error *grpc_call_create(const grpc_call_create_args *args,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call *call;
   GPR_TIMER_BEGIN("grpc_call_create", 0);
-  *out_call = call =
-      gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
+  call = gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
+  *out_call = call;
   memset(call, 0, sizeof(grpc_call));
   gpr_mu_init(&call->mu);
   call->channel = args->channel;
