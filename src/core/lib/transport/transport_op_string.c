@@ -73,14 +73,14 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   char *tmp;
   char *out;
-  int first = 1;
+  bool first = true;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
 
   if (op->send_initial_metadata != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA{"));
     put_metadata_list(&b, *op->send_initial_metadata);
     gpr_strvec_add(&b, gpr_strdup("}"));
@@ -88,7 +88,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
 
   if (op->send_message != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_asprintf(&tmp, "SEND_MESSAGE:flags=0x%08x:len=%d",
                  op->send_message->flags, op->send_message->length);
     gpr_strvec_add(&b, tmp);
@@ -96,7 +96,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
 
   if (op->send_trailing_metadata != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("SEND_TRAILING_METADATA{"));
     put_metadata_list(&b, *op->send_trailing_metadata);
     gpr_strvec_add(&b, gpr_strdup("}"));
@@ -104,25 +104,25 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
 
   if (op->recv_initial_metadata != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA"));
   }
 
   if (op->recv_message != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
   }
 
   if (op->recv_trailing_metadata != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
   if (op->cancel_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     const char *msg = grpc_error_string(op->cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
     grpc_error_free_string(msg);
@@ -131,7 +131,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
 
   if (op->close_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     const char *msg = grpc_error_string(op->close_error);
     gpr_asprintf(&tmp, "CLOSE:%s", msg);
     grpc_error_free_string(msg);
@@ -147,14 +147,14 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
 char *grpc_transport_op_string(grpc_transport_op *op) {
   char *tmp;
   char *out;
-  int first = 1;
+  bool first = true;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
 
   if (op->on_connectivity_state_change != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     if (op->connectivity_state != NULL) {
       gpr_asprintf(&tmp, "ON_CONNECTIVITY_STATE_CHANGE:p=%p:from=%s",
                    op->on_connectivity_state_change,
@@ -169,7 +169,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     const char *err = grpc_error_string(op->disconnect_with_error);
     gpr_asprintf(&tmp, "DISCONNECT:%s", err);
     gpr_strvec_add(&b, tmp);
@@ -178,7 +178,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 
   if (op->send_goaway) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     char *msg = op->goaway_message == NULL
                     ? "null"
                     : gpr_dump_slice(*op->goaway_message,
@@ -190,7 +190,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 
   if (op->set_accept_stream) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_asprintf(&tmp, "SET_ACCEPT_STREAM:%p(%p,...)", op->set_accept_stream_fn,
                  op->set_accept_stream_user_data);
     gpr_strvec_add(&b, tmp);
@@ -198,19 +198,19 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 
   if (op->bind_pollset != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("BIND_POLLSET"));
   }
 
   if (op->bind_pollset_set != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("BIND_POLLSET_SET"));
   }
 
   if (op->send_ping != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
+    first = false;
     gpr_strvec_add(&b, gpr_strdup("SEND_PING"));
   }
 
