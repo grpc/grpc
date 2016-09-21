@@ -268,6 +268,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/census/operation.c',
   'src/core/ext/census/placeholders.c',
   'src/core/ext/census/resource.c',
+  'src/core/ext/census/trace_context.c',
   'src/core/ext/census/tracing.c',
   'src/core/plugin_registry/grpc_plugin_registry.c',
   'src/boringssl/err_data.c',

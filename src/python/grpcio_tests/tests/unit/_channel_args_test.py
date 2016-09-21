@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,8 +27,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
-cd $(dirname $0)
-php -d extension=grpc.so -d max_execution_time=300 \
-  route_guide_client.php \
-  ../../node/static_codegen/route_guide/route_guide_db.json
+"""Tests of Channel Args on client/server side."""
+
+import unittest
+
+import grpc
+
+TEST_CHANNEL_ARGS = (
+    ('arg1', b'bytes_val'),
+    ('arg2', 'str_val'),
+    ('arg3', 1),
+    (b'arg4', 'str_val'),
+)
+
+
+class ChannelArgsTest(unittest.TestCase):
+
+  def test_client(self):
+    grpc.insecure_channel('localhost:8080', options=TEST_CHANNEL_ARGS)
+
+  def test_server(self):
+    grpc.server(None, options=TEST_CHANNEL_ARGS)
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

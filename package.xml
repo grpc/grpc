@@ -338,6 +338,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
@@ -529,6 +530,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />

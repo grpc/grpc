@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,56 @@
  *
  */
 
-//#include "src/core/ext/census/tracing.h"
+#include "src/core/ext/census/trace_context.h"
 
 #include <grpc/census.h>
+#include <grpc/support/log.h>
+#include <stdbool.h>
 
-/* TODO(aveitch): These are all placeholder implementations. */
+#include "third_party/nanopb/pb_decode.h"
+#include "third_party/nanopb/pb_encode.h"
 
-// int census_trace_mask(const census_context *context) {
-//   return CENSUS_TRACE_MASK_NONE;
-// }
+// This function assumes the TraceContext is valid.
+size_t encode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                            const size_t buf_size) {
+  // Create a stream that will write to our buffer.
+  pb_ostream_t stream = pb_ostream_from_buffer(buffer, buf_size);
 
-// void census_set_trace_mask(int trace_mask) {}
+  // encode message
+  bool status = pb_encode(&stream, google_trace_TraceContext_fields, ctxt);
 
-// void census_trace_print(census_context *context, uint32_t type,
-//                         const char *buffer, size_t n) {}
+  if (!status) {
+    gpr_log(GPR_DEBUG, "TraceContext encoding failed: %s",
+            PB_GET_ERROR(&stream));
+    return 0;
+  }
 
-// void SetTracerParams(const Params& params);
+  return stream.bytes_written;
+}
+
+bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
+                          const size_t nbytes) {
+  // Create a stream that reads nbytes from the buffer.
+  pb_istream_t stream = pb_istream_from_buffer(buffer, nbytes);
+
+  // decode message
+  bool status = pb_decode(&stream, google_trace_TraceContext_fields, ctxt);
+
+  if (!status) {
+    gpr_log(GPR_DEBUG, "TraceContext decoding failed: %s",
+            PB_GET_ERROR(&stream));
+    return false;
+  }
+
+  // check fields
+  if (!ctxt->has_trace_id) {
+    gpr_log(GPR_DEBUG, "Invalid TraceContext: missing trace_id");
+    return false;
+  }
+  if (!ctxt->has_span_id) {
+    gpr_log(GPR_DEBUG, "Invalid TraceContext: missing span_id");
+    return false;
+  }
+
+  return true;
+}

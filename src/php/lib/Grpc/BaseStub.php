@@ -182,6 +182,7 @@ class BaseStub
         } else {
             $hostname = $this->hostname;
         }
+
         return 'https://'.$hostname.$service_name;
     }
 
