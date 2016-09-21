@@ -93,7 +93,7 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple AsyncGenericService is unsupported for now. "
             "Dropping the service %p",
-            (void *) service);
+            (void*)service);
   } else {
     generic_service_ = service;
   }
@@ -163,8 +163,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // This is different from the completion queues added to the server via
   // ServerBuilder's AddCompletionQueue() method (those completion queues
   // are in 'cqs_' member variable of ServerBuilder object)
-  std::shared_ptr<std::vector<ServerCompletionQueue>> sync_server_cqs(
-      new std::vector<ServerCompletionQueue>());
+  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+      sync_server_cqs(
+          new std::vector<std::unique_ptr<ServerCompletionQueue>>());
 
   if (has_sync_methods) {
     // If the server has synchronous methods, it will need completion queues to
@@ -177,11 +178,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     num_cqs = GPR_MAX(num_cqs, 4);
 
     for (int i = 0; i < num_cqs; i++) {
-      // emplace_back() would have been ideal here but doesn't work since the
-      // ServerCompletionQueue's constructor is private. With emplace_back, the
-      // constructor is called from somewhere within the library; so making
-      // ServerBuilder class a friend to ServerCompletion queue won't help.
-      sync_server_cqs->push_back(ServerCompletionQueue());
+      sync_server_cqs->emplace_back(new ServerCompletionQueue());
     }
   }
 
@@ -222,7 +219,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   int num_frequently_polled_cqs = sync_server_cqs->size();
 
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
-    grpc_server_register_completion_queue(server->server_, it->cq(), nullptr);
+    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+                                          nullptr);
   }
 
   // cqs_ contains the completion queue added by calling the ServerBuilder's

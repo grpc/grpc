@@ -135,7 +135,8 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   /// \param max_pollers The maximum number of polling threads per server
   /// completion queue (in param sync_server_cqs) to use for listening to
   /// incoming requests (used only in case of sync server)
-  Server(std::shared_ptr<std::vector<ServerCompletionQueue>> sync_server_cqs,
+  Server(std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+             sync_server_cqs,
          int max_message_size, ChannelArguments* args, int min_pollers,
          int max_pollers);
 
@@ -193,7 +194,8 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   /// The following completion queues are ONLY used in case of Sync API i.e if
   /// the server has any services with sync methods. The server uses these
   /// completion queues to poll for new RPCs
-  std::shared_ptr<std::vector<ServerCompletionQueue>> sync_server_cqs_;
+  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+      sync_server_cqs_;
 
   /// List of GrpcRpcManager instances (one for each cq in the sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestManager>> sync_req_mgrs_;
