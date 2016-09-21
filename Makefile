@@ -2490,10 +2490,6 @@ $(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP)  $(LIBGPR_OBJS)
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgpr.a
 endif
-#ifeq ($(SYSTEM),Android)
-#	$(E) "[RANLIB]	Running on $@"
-#	$(Q) $(RANLIB) $(LIBDIR)/$(CONFIG)/libgpr.a
-#endif
 
 
 
@@ -2792,10 +2788,6 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)  $(LIB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
-#ifeq ($(SYSTEM),Android)
-#	$(E) "[RANLIB]	Running on $@"
-#	$(Q) $(RANLIB) $(LIBDIR)/$(CONFIG)/libgpr.a
-#endif
 
 
 
