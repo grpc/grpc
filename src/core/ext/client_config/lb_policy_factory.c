@@ -49,19 +49,21 @@ grpc_lb_addresses* grpc_lb_addresses_create(size_t num_addresses) {
 
 grpc_lb_addresses* grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
                                           void* (*user_data_copy)(void*)) {
-  grpc_lb_addresses* new = grpc_lb_addresses_create(addresses->num_addresses);
-  memcpy(new->addresses, addresses->addresses,
+  grpc_lb_addresses* new_addresses =
+      grpc_lb_addresses_create(addresses->num_addresses);
+  memcpy(new_addresses->addresses, addresses->addresses,
          sizeof(grpc_lb_address) * addresses->num_addresses);
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
-    if (new->addresses[i].balancer_name != NULL) {
-      new->addresses[i].balancer_name =
-          gpr_strdup(new->addresses[i].balancer_name);
+    if (new_addresses->addresses[i].balancer_name != NULL) {
+      new_addresses->addresses[i].balancer_name =
+          gpr_strdup(new_addresses->addresses[i].balancer_name);
     }
     if (user_data_copy != NULL) {
-      new->addresses[i].user_data = user_data_copy(new->addresses[i].user_data);
+      new_addresses->addresses[i].user_data =
+          user_data_copy(new_addresses->addresses[i].user_data);
     }
   }
-  return new;
+  return new_addresses;
 }
 
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,

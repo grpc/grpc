@@ -258,6 +258,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker.h',
                       'src/core/lib/channel/http_client_filter.h',
                       'src/core/lib/channel/http_server_filter.h',
+                      'src/core/lib/channel/message_size_filter.h',
                       'src/core/lib/compression/algorithm_metadata.h',
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/debug/trace.h',
@@ -409,6 +410,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/mlog.h',
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
+                      'src/core/ext/census/trace_context.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -418,6 +420,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker.c',
                       'src/core/lib/channel/http_client_filter.c',
                       'src/core/lib/channel/http_server_filter.c',
+                      'src/core/lib/channel/message_size_filter.c',
                       'src/core/lib/compression/compression.c',
                       'src/core/lib/compression/message_compress.c',
                       'src/core/lib/debug/trace.c',
@@ -598,6 +601,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/operation.c',
                       'src/core/ext/census/placeholders.c',
                       'src/core/ext/census/resource.c',
+                      'src/core/ext/census/trace_context.c',
                       'src/core/ext/census/tracing.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
@@ -623,6 +627,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/handshaker.h',
                               'src/core/lib/channel/http_client_filter.h',
                               'src/core/lib/channel/http_server_filter.h',
+                              'src/core/lib/channel/message_size_filter.h',
                               'src/core/lib/compression/algorithm_metadata.h',
                               'src/core/lib/compression/message_compress.h',
                               'src/core/lib/debug/trace.h',
@@ -773,7 +778,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/grpc_filter.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
-                              'src/core/ext/census/rpc_metric_id.h'
+                              'src/core/ext/census/rpc_metric_id.h',
+                              'src/core/ext/census/trace_context.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|

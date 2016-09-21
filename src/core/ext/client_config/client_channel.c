@@ -818,6 +818,7 @@ void grpc_client_channel_finish_initialization(
     grpc_resolver *resolver,
     grpc_client_channel_factory *client_channel_factory) {
   /* post construction initialization: set the transport setup pointer */
+  GPR_ASSERT(client_channel_factory != NULL);
   grpc_channel_element *elem = grpc_channel_stack_last_element(channel_stack);
   channel_data *chand = elem->channel_data;
   gpr_mu_lock(&chand->mu);

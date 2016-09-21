@@ -63,6 +63,8 @@ _URL_BASE = 'https://grpc-testing.appspot.com/job'
 _KNOWN_ERRORS = [
     'Failed to build workspace Tests with scheme AllTests',
     'Build timed out',
+    'TIMEOUT: tools/run_tests/pre_build_node.sh',
+    'TIMEOUT: tools/run_tests/pre_build_ruby.sh',
     'FATAL: Unable to produce a script file',
     'FAILED: build_docker_c\+\+',
     'cannot find package \"cloud.google.com/go/compute/metadata\"',

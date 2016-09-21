@@ -217,7 +217,7 @@ static NSMutableDictionary *kHostCache;
   }
 
   if (_responseSizeLimitOverride) {
-    args[@GRPC_ARG_MAX_MESSAGE_LENGTH] = _responseSizeLimitOverride;
+    args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
   return args;
 }
