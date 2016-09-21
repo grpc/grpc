@@ -34,8 +34,6 @@
 #ifndef GRPC_CORE_LIB_PROFILING_TIMERS_H
 #define GRPC_CORE_LIB_PROFILING_TIMERS_H
 
-#include <stdio.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,17 +56,14 @@ void gpr_timer_set_enabled(int enabled);
 /* No profiling. No-op all the things. */
 #define GPR_TIMER_MARK(tag, important) \
   do {                                 \
-    /*printf("- %s\n", tag);*/         \
   } while (0)
 
 #define GPR_TIMER_BEGIN(tag, important) \
   do {                                  \
-    /*printf("%s {\n", tag);*/          \
   } while (0)
 
 #define GPR_TIMER_END(tag, important) \
   do {                                \
-    /*printf("} // %s\n", tag);*/     \
   } while (0)
 
 #else /* at least one profiler requested... */
