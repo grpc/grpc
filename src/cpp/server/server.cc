@@ -306,7 +306,14 @@ class Server::SyncRequestManager : public GrpcRpcManager {
 
   void DoWork(void* tag, bool ok) GRPC_OVERRIDE {
     SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
-    if (ok && sync_req) {
+
+    if (!sync_req) {
+      // No tag. Nothing to work on
+      // TODO (sreek) - Log a warning here since this is an unlikely case
+      return;
+    }
+
+    if (ok) {
       SyncRequest::CallData cd(server_, sync_req);
       {
         sync_req->SetupRequest();
@@ -318,9 +325,13 @@ class Server::SyncRequestManager : public GrpcRpcManager {
       }
       GPR_TIMER_SCOPE("cd.Run()", 0);
       cd.Run(global_callbacks_);
+    } else {
+      // ok is false. For some reason, the tag was returned but event was not
+      // successful. In this case, request again unless we are shutting down
+      if (!IsShutdown()) {
+        sync_req->Request(server_->c_server(), server_cq_->cq());
+      }
     }
-
-    // TODO (sreek): If ok == false, log an error
   }
 
   void AddSyncMethod(RpcServiceMethod* method, void* tag) {
@@ -395,7 +406,15 @@ Server::~Server() {
       lock.unlock();
       Shutdown();
     } else if (!started_) {
-      // TODO (sreek): Shutdown all cqs
+      // TODO (sreek): Check if we can just do this once in ~Server() (i.e
+      // Do not 'shutdown' queues in Shutdown() function and do it here in the
+      // destructor
+      for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
+           it++) {
+        (*it).Shutdown();
+      }
+
+      // TODO (sreek) Delete this
       /*
       cq_.Shutdown();
       */
@@ -511,7 +530,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     (*it)->Start();
   }
 
-  /* TODO (Sreek) - Do this for all cqs */
+  /* TODO (Sreek) - No longer needed (being done in (*it)->Start above) */
   /*
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
@@ -527,7 +546,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   return true;
 }
 
-// TODO (sreek) - Reimplement this
+/* TODO (sreek) check if started_ and shutdown_ are needed anymore */
 void Server::ShutdownInternal(gpr_timespec deadline) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
@@ -564,7 +583,8 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     }
 
     // Shutdown the completion queues
-    // TODO (sreek) Move this into SyncRequestManager
+    // TODO (sreek) Move this into SyncRequestManager (or move it to Server
+    // destructor)
     for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
          it++) {
       (*it).Shutdown();

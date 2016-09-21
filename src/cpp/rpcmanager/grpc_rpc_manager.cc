@@ -34,6 +34,7 @@
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
 #include <grpc/support/log.h>
+#include <climits>
 
 #include "src/cpp/rpcmanager/grpc_rpc_manager.h"
 
@@ -58,7 +59,7 @@ GrpcRpcManager::GrpcRpcManager(int min_pollers, int max_pollers)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),
-      max_pollers_(max_pollers),
+      max_pollers_(max_pollers == -1 ? INT_MAX: max_pollers),
       num_threads_(0) {}
 
 GrpcRpcManager::~GrpcRpcManager() {
@@ -111,6 +112,7 @@ void GrpcRpcManager::Initialize() {
 // below the maximum threshold, we can let the current thread continue as poller
 bool GrpcRpcManager::MaybeContinueAsPoller() {
   std::unique_lock<grpc::mutex> lock(mu_);
+
   if (shutdown_ || num_pollers_ > max_pollers_) {
     return false;
   }
@@ -169,8 +171,8 @@ void GrpcRpcManager::MainWorkLoop() {
     }
   } while (MaybeContinueAsPoller());
 
-  // If we are here, it means that the GrpcRpcManager already has enough threads
-  // and that the current thread can be terminated
+  // If we are here, either GrpcRpcManager is shutting down or it already has
+  // enough threads. In both cases, current thread can be terminated
   {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_threads_--;
