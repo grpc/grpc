@@ -390,7 +390,6 @@ bool GrpcTool::PrintType(int argc, const char** argv,
   return callback(output);
 }
 
-
 bool GrpcTool::CallMethod(int argc, const char** argv,
                           const CliCredentials& cred,
                           GrpcToolOutputCallback callback) {
