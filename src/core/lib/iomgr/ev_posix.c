@@ -258,4 +258,27 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 
 grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
 
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
+  return g_event_engine->workqueue_ref(workqueue, file, line, reason);
+}
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                          const char *file, int line, const char *reason) {
+  g_event_engine->workqueue_unref(exec_ctx, workqueue, file, line, reason);
+}
+#else
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  return g_event_engine->workqueue_ref(workqueue);
+}
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
+  g_event_engine->workqueue_unref(exec_ctx, workqueue);
+}
+#endif
+
+void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            grpc_closure *closure, grpc_error *error) {
+  g_event_engine->workqueue_enqueue(exec_ctx, workqueue, closure, error);
+}
+
 #endif  // GPR_POSIX_SOCKET

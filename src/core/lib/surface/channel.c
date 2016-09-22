@@ -193,9 +193,21 @@ static grpc_call *grpc_channel_create_call_internal(
     send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
-  return grpc_call_create(channel, parent_call, propagation_mask, cq,
-                          pollset_set_alternative, NULL, send_metadata,
-                          num_metadata, deadline);
+  grpc_call_create_args args;
+  memset(&args, 0, sizeof(args));
+  args.channel = channel;
+  args.parent_call = parent_call;
+  args.propagation_mask = propagation_mask;
+  args.cq = cq;
+  args.pollset_set_alternative = pollset_set_alternative;
+  args.server_transport_data = NULL;
+  args.add_initial_metadata = send_metadata;
+  args.add_initial_metadata_count = num_metadata;
+  args.send_deadline = deadline;
+
+  grpc_call *call;
+  GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
+  return call;
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
