@@ -79,7 +79,7 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None):
 
 def _generate_jobs(languages, configs, platforms,
                   arch=None, compiler=None,
-                  labels=[]):
+                  labels=[], extra_args=[]):
   result = []
   for language in languages:
     for platform in platforms:
@@ -92,6 +92,7 @@ def _generate_jobs(languages, configs, platforms,
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
 
+        runtests_args += extra_args
         if platform == 'linux':
           job = _docker_jobspec(name=name, runtests_args=runtests_args)
         else:
@@ -102,45 +103,51 @@ def _generate_jobs(languages, configs, platforms,
   return result
 
 
-def _create_test_jobs():
+def _create_test_jobs(extra_args=[]):
   test_jobs = []
   # supported on linux only
   test_jobs += _generate_jobs(languages=['sanity', 'php7'],
                              configs=['dbg', 'opt'],
                              platforms=['linux'],
-                             labels=['basictests'])
+                             labels=['basictests'],
+                             extra_args=extra_args)
   
   # supported on all platforms.
   test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
-                            configs=['dbg', 'opt'],
-                            platforms=['linux', 'macos', 'windows'],
-                            labels=['basictests'])
+                             configs=['dbg', 'opt'],
+                             platforms=['linux', 'macos', 'windows'],
+                             labels=['basictests'],
+                             extra_args=extra_args)
   
   # supported on linux and mac.
   test_jobs += _generate_jobs(languages=['c++', 'ruby', 'php'],
-                             configs=['dbg', 'opt'],
-                             platforms=['linux', 'macos'],
-                             labels=['basictests'])
+                              configs=['dbg', 'opt'],
+                              platforms=['linux', 'macos'],
+                              labels=['basictests'],
+                              extra_args=extra_args)
   
   # supported on mac only.
   test_jobs += _generate_jobs(languages=['objc'],
                               configs=['dbg', 'opt'],
                               platforms=['macos'],
-                              labels=['basictests'])
+                              labels=['basictests'],
+                              extra_args=extra_args)
   
   # sanitizers
   test_jobs += _generate_jobs(languages=['c'],
                               configs=['msan', 'asan', 'tsan'],
                               platforms=['linux'],
-                              labels=['sanitizers'])
+                              labels=['sanitizers'],
+                              extra_args=extra_args)
   test_jobs += _generate_jobs(languages=['c++'],
                               configs=['asan', 'tsan'],
                               platforms=['linux'],
-                              labels=['sanitizers'])
+                              labels=['sanitizers'],
+                              extra_args=extra_args)
   return test_jobs
 
   
-def _create_portability_test_jobs():
+def _create_portability_test_jobs(extra_args=[]):
   test_jobs = []
   # portability C x86
   test_jobs += _generate_jobs(languages=['c'],
@@ -148,7 +155,8 @@ def _create_portability_test_jobs():
                               platforms=['linux'],
                               arch='x86',
                               compiler='default',
-                              labels=['portability'])
+                              labels=['portability'],
+                              extra_args=extra_args)
   
   # portability C and C++ on x64
   for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3',
@@ -158,7 +166,8 @@ def _create_portability_test_jobs():
                                 platforms=['linux'],
                                 arch='x64',
                                 compiler=compiler,
-                                labels=['portability'])
+                                labels=['portability'],
+                                extra_args=extra_args)
   
   # portability C on Windows
   for arch in ['x86', 'x64']:
@@ -168,52 +177,71 @@ def _create_portability_test_jobs():
                                   platforms=['windows'],
                                   arch=arch,
                                   compiler=compiler,
-                                  labels=['portability'])
+                                  labels=['portability'],
+                                  extra_args=extra_args)
   
   test_jobs += _generate_jobs(languages=['python'],
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
                               compiler='python3.4',
-                              labels=['portability'])
+                              labels=['portability'],
+                              extra_args=extra_args)
   
   test_jobs += _generate_jobs(languages=['csharp'],
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
                               compiler='coreclr',
-                              labels=['portability'])
+                              labels=['portability'],
+                              extra_args=extra_args)
   
   for compiler in ['node5', 'node6', 'node0.12']:
     test_jobs += _generate_jobs(languages=['node'],
-                               configs=['dbg'],
-                               platforms=['linux'],
-                               arch='default',
-                               compiler=compiler,
-                               labels=['portability'])
+                                configs=['dbg'],
+                                platforms=['linux'],
+                                arch='default',
+                                compiler=compiler,
+                                labels=['portability'],
+                                extra_args=extra_args)
   return test_jobs  
 
 
-all_jobs = _create_test_jobs() + _create_portability_test_jobs()
+def _allowed_labels():
+  """Returns a list of existing job labels."""
+  all_labels = set()
+  for job in _create_test_jobs() + _create_portability_test_jobs():
+    for label in job.labels:
+      all_labels.add(label)
+  return sorted(all_labels)
 
-all_labels = set()
-for job in all_jobs:
-  for label in job.labels:
-    all_labels.add(label)
 
 argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
-# TODO(jtattermusch): allow running tests with --build_only flag
-# TODO(jtattermusch): allow running tests with --force_default_poller flag.
 argp.add_argument('-j', '--jobs',
                   default=multiprocessing.cpu_count()/_INNER_JOBS,
                   type=int,
                   help='Number of concurrent run_tests.py instances.')
 argp.add_argument('-f', '--filter',
-                  choices=sorted(all_labels),
+                  choices=_allowed_labels(),
                   nargs='+',
                   default=[],
                   help='Filter targets to run by label with AND semantics.')
+argp.add_argument('--build_only',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Pass --build_only flag to run_tests.py instances.')
+argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
+                  help='Pass --force_default_poller to run_tests.py instances.')
 args = argp.parse_args()
+
+extra_args = []
+if args.build_only:
+  extra_args.append('--build_only')
+if args.force_default_poller:
+  extra_args.append('--force_default_poller')
+
+all_jobs = _create_test_jobs(extra_args=extra_args) + _create_portability_test_jobs(extra_args=extra_args)
 
 jobs = []
 for job in all_jobs:
