@@ -74,6 +74,7 @@ static void test_buffer_user_no_op(void) {
 static void test_instant_alloc_then_free(void) {
   gpr_log(GPR_INFO, "** test_instant_alloc_then_free **");
   grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_user usr;
   grpc_buffer_user_init(&usr, p);
   {
@@ -93,6 +94,7 @@ static void test_instant_alloc_then_free(void) {
 static void test_instant_alloc_free_pair(void) {
   gpr_log(GPR_INFO, "** test_instant_alloc_free_pair **");
   grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_user usr;
   grpc_buffer_user_init(&usr, p);
   {

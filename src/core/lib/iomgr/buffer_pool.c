@@ -281,6 +281,7 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
                       GRPC_ERROR_CANCELLED, NULL);
   grpc_exec_ctx_sched(exec_ctx, buffer_user->on_done_destroy, GRPC_ERROR_NONE,
                       NULL);
+  grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
 }
 
 typedef struct {
@@ -351,7 +352,7 @@ void grpc_buffer_pool_resize(grpc_buffer_pool *buffer_pool, size_t size) {
   a->size = (int64_t)size;
   grpc_closure_init(&a->closure, bp_resize, a);
   grpc_combiner_execute(&exec_ctx, buffer_pool->combiner, &a->closure,
-                        GRPC_ERROR_NONE);
+                        GRPC_ERROR_NONE, false);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -376,6 +377,8 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
   grpc_closure_list_init(&buffer_user->on_allocated);
   buffer_user->allocating = false;
   buffer_user->added_to_free_pool = false;
+  buffer_user->reclaimers[0] = NULL;
+  buffer_user->reclaimers[1] = NULL;
   for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
     buffer_user->links[i].next = buffer_user->links[i].prev = NULL;
   }
@@ -386,7 +389,7 @@ void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_closure *on_done) {
   buffer_user->on_done_destroy = on_done;
   grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
-                        &buffer_user->destroy_closure, GRPC_ERROR_NONE);
+                        &buffer_user->destroy_closure, GRPC_ERROR_NONE, false);
 }
 
 void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
@@ -401,7 +404,8 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
     if (!buffer_user->allocating) {
       buffer_user->allocating = true;
       grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
-                            &buffer_user->allocate_closure, GRPC_ERROR_NONE);
+                            &buffer_user->allocate_closure, GRPC_ERROR_NONE,
+                            false);
     }
   } else {
     grpc_exec_ctx_sched(exec_ctx, optional_on_done, GRPC_ERROR_NONE, NULL);
@@ -422,7 +426,7 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
     buffer_user->added_to_free_pool = true;
     grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                           &buffer_user->add_to_free_pool_closure,
-                          GRPC_ERROR_NONE);
+                          GRPC_ERROR_NONE, false);
   }
   gpr_mu_unlock(&buffer_user->mu);
 }
@@ -434,5 +438,5 @@ void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
   buffer_user->reclaimers[destructive] = closure;
   grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                         &buffer_user->post_reclaimer_closure[destructive],
-                        GRPC_ERROR_NONE);
+                        GRPC_ERROR_NONE, false);
 }
