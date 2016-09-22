@@ -2340,6 +2340,19 @@
     ], 
     "headers": [], 
     "language": "c++", 
+    "name": "grpc_php_plugin", 
+    "src": [
+      "src/compiler/php_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc_plugin_support"
+    ], 
+    "headers": [], 
+    "language": "c++", 
     "name": "grpc_python_plugin", 
     "src": [
       "src/compiler/python_plugin.cc"
@@ -4703,6 +4716,8 @@
       "src/compiler/node_generator_helpers.h", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
+      "src/compiler/php_generator.h", 
+      "src/compiler/php_generator_helpers.h", 
       "src/compiler/python_generator.h", 
       "src/compiler/ruby_generator.h", 
       "src/compiler/ruby_generator_helpers-inl.h", 
@@ -4726,6 +4741,9 @@
       "src/compiler/objective_c_generator.cc", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
+      "src/compiler/php_generator.cc", 
+      "src/compiler/php_generator.h", 
+      "src/compiler/php_generator_helpers.h", 
       "src/compiler/python_generator.cc", 
       "src/compiler/python_generator.h", 
       "src/compiler/ruby_generator.cc", 
