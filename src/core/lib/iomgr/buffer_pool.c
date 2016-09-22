@@ -193,7 +193,7 @@ static bool bpscavenge(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool) {
   while ((buffer_user =
               bulist_pop(buffer_pool, GRPC_BULIST_NON_EMPTY_FREE_POOL))) {
     gpr_mu_lock(&buffer_user->mu);
-    if (buffer_pool->free_pool > 0) {
+    if (buffer_user->free_pool > 0) {
       buffer_pool->free_pool += buffer_user->free_pool;
       buffer_user->free_pool = 0;
       gpr_mu_unlock(&buffer_user->mu);
@@ -240,7 +240,7 @@ static void bu_add_to_free_pool(grpc_exec_ctx *exec_ctx, void *bu,
       bulist_empty(buffer_user->buffer_pool, GRPC_BULIST_NON_EMPTY_FREE_POOL)) {
     bpstep_sched(exec_ctx, buffer_user->buffer_pool);
   }
-  bulist_add_tail(buffer_user, GRPC_BULIST_AWAITING_ALLOCATION);
+  bulist_add_tail(buffer_user, GRPC_BULIST_NON_EMPTY_FREE_POOL);
 }
 
 static void bu_post_benign_reclaimer(grpc_exec_ctx *exec_ctx, void *bu,
