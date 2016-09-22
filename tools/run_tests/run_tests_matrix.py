@@ -233,6 +233,11 @@ argp.add_argument('--build_only',
                   help='Pass --build_only flag to run_tests.py instances.')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Pass --force_default_poller to run_tests.py instances.')
+argp.add_argument('--dry_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Only print what would be run.')
 args = argp.parse_args()
 
 extra_args = []
@@ -262,6 +267,10 @@ print 'Will run these tests:'
 for job in jobs:
   print '  %s' % job.shortname
 print
+
+if args.dry_run:
+  print '--dry_run was used, exiting'
+  sys.exit(1)
 
 jobset.message('START', 'Running test matrix.', do_newline=True)
 num_failures, resultset = jobset.run(jobs,
