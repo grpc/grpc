@@ -4668,7 +4668,8 @@
       "test/cpp/util/config_grpc_cli.h", 
       "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.h", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
+      "test/cpp/util/proto_reflection_descriptor_database.h", 
+      "test/cpp/util/service_describer.h"
     ], 
     "language": "c++", 
     "name": "grpc_cli_libs", 
@@ -4683,7 +4684,9 @@
       "test/cpp/util/proto_file_parser.cc", 
       "test/cpp/util/proto_file_parser.h", 
       "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
+      "test/cpp/util/proto_reflection_descriptor_database.h", 
+      "test/cpp/util/service_describer.cc", 
+      "test/cpp/util/service_describer.h"
     ], 
     "third_party": false, 
     "type": "lib"
