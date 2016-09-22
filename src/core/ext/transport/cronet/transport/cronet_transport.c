@@ -521,8 +521,18 @@ static void on_response_trailers_received(
     s->state.rs.trailing_metadata_valid = true;
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
-  gpr_mu_unlock(&s->mu);
-  execute_from_storage(s);
+  /* Send a EOS when server terminates the stream to trigger on_succeeded */
+  if (!s->state.state_op_done[OP_SEND_TRAILING_METADATA]) {
+    CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_write (%p, 0)", s->cbs);
+    s->state.state_callback_received[OP_SEND_MESSAGE] = false;
+    cronet_bidirectional_stream_write(s->cbs, "", 0, true);
+    s->state.state_op_done[OP_SEND_TRAILING_METADATA] = true;
+
+    gpr_mu_unlock(&s->mu);
+  } else {
+    gpr_mu_unlock(&s->mu);
+    execute_from_storage(s);
+  }
 }
 
 /*
