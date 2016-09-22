@@ -50,8 +50,10 @@
 #include "src/core/lib/surface/server.h"
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
-                                              grpc_completion_queue *cq,
+                                              void *reserved,
                                               int fd) {
+  GPR_ASSERT(reserved == NULL);
+
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   char *name;
@@ -74,7 +76,6 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
     grpc_endpoint_add_to_pollset(&exec_ctx, server_endpoint, pollsets[i]);
   }
 
-  grpc_endpoint_add_to_pollset(&exec_ctx, server_endpoint, grpc_cq_pollset(cq));
   grpc_server_setup_transport(&exec_ctx, server, transport, NULL, server_args);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -83,7 +84,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
-                                              grpc_completion_queue *cq,
+                                              void *cq,
                                               int fd) {
   GPR_ASSERT(0);
 }
