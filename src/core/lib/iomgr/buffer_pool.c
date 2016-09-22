@@ -57,7 +57,7 @@ struct grpc_buffer_pool {
   bool reclaiming;
   grpc_closure bpstep_closure;
 
-  grpc_buffer_user_list lists[GRPC_BULIST_COUNT];
+  grpc_buffer_user *roots[GRPC_BULIST_COUNT];
 };
 
 /*******************************************************************************
@@ -66,46 +66,69 @@ struct grpc_buffer_pool {
 
 static void bulist_add_tail(grpc_buffer_user *buffer_user, grpc_bulist list) {
   grpc_buffer_pool *buffer_pool = buffer_user->buffer_pool;
-  grpc_buffer_user_list *lst = &buffer_pool->lists[list];
-  if (lst->head == NULL) {
-    lst->head = lst->tail = buffer_user;
+  grpc_buffer_user **root = &buffer_pool->roots[list];
+  if (*root == NULL) {
+    *root = buffer_user;
+    buffer_user->links[list].next = buffer_user->links[list].prev = buffer_user;
   } else {
-    lst->tail->next[list] = buffer_user;
-    lst->tail = buffer_user;
+    buffer_user->links[list].next = *root;
+    buffer_user->links[list].prev = (*root)->links[list].prev;
+    buffer_user->links[list].next->links[list].prev =
+        buffer_user->links[list].prev->links[list].next = buffer_user;
   }
-  buffer_user->next[list] = NULL;
 }
 
 static void bulist_add_head(grpc_buffer_user *buffer_user, grpc_bulist list) {
   grpc_buffer_pool *buffer_pool = buffer_user->buffer_pool;
-  grpc_buffer_user_list *lst = &buffer_pool->lists[list];
-  if (lst->head == NULL) {
-    lst->head = lst->tail = buffer_user;
-    buffer_user->next[list] = NULL;
+  grpc_buffer_user **root = &buffer_pool->roots[list];
+  if (*root == NULL) {
+    *root = buffer_user;
+    buffer_user->links[list].next = buffer_user->links[list].prev = buffer_user;
   } else {
-    buffer_user->next[list] = lst->head;
-    lst->head = buffer_user;
+    buffer_user->links[list].next = (*root)->links[list].next;
+    buffer_user->links[list].prev = *root;
+    buffer_user->links[list].next->links[list].prev =
+        buffer_user->links[list].prev->links[list].next = buffer_user;
+    *root = buffer_user;
   }
 }
 
 static bool bulist_empty(grpc_buffer_pool *buffer_pool, grpc_bulist list) {
-  return buffer_pool->lists[list].head == NULL;
+  return buffer_pool->roots[list] == NULL;
 }
 
 static grpc_buffer_user *bulist_pop(grpc_buffer_pool *buffer_pool,
                                     grpc_bulist list) {
-  grpc_buffer_user_list *lst = &buffer_pool->lists[list];
-  grpc_buffer_user *buffer_user = lst->head;
+  grpc_buffer_user **root = &buffer_pool->roots[list];
+  grpc_buffer_user *buffer_user = *root;
   if (buffer_user == NULL) {
     return NULL;
   }
-  if (buffer_user == lst->tail) {
-    lst->head = lst->tail = NULL;
+  if (buffer_user->links[list].next == buffer_user) {
+    *root = NULL;
   } else {
-    lst->head = buffer_user->next[list];
+    buffer_user->links[list].next->links[list].prev =
+        buffer_user->links[list].prev;
+    buffer_user->links[list].prev->links[list].next =
+        buffer_user->links[list].next;
   }
-  buffer_user->next[list] = NULL;
+  buffer_user->links[list].next = buffer_user->links[list].prev = NULL;
   return buffer_user;
+}
+
+static void bulist_remove(grpc_buffer_user *buffer_user, grpc_bulist list) {
+  if (buffer_user->links[list].next == NULL) return;
+  grpc_buffer_pool *buffer_pool = buffer_user->buffer_pool;
+  if (buffer_pool->roots[list] == buffer_user) {
+    buffer_pool->roots[list] = buffer_user->links[list].next;
+    if (buffer_pool->roots[list] == buffer_user) {
+      buffer_pool->roots[list] = NULL;
+    }
+  }
+  buffer_user->links[list].next->links[list].prev =
+      buffer_user->links[list].prev;
+  buffer_user->links[list].prev->links[list].next =
+      buffer_user->links[list].next;
 }
 
 /*******************************************************************************
@@ -246,6 +269,20 @@ static void bu_post_destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *bu,
   bulist_add_tail(buffer_user, GRPC_BULIST_RECLAIMER_DESTRUCTIVE);
 }
 
+static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
+  grpc_buffer_user *buffer_user = bu;
+  GPR_ASSERT(buffer_user->allocated == 0);
+  for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
+    bulist_remove(buffer_user, (grpc_bulist)i);
+  }
+  grpc_exec_ctx_sched(exec_ctx, buffer_user->reclaimers[0],
+                      GRPC_ERROR_CANCELLED, NULL);
+  grpc_exec_ctx_sched(exec_ctx, buffer_user->reclaimers[1],
+                      GRPC_ERROR_CANCELLED, NULL);
+  grpc_exec_ctx_sched(exec_ctx, buffer_user->on_done_destroy, GRPC_ERROR_NONE,
+                      NULL);
+}
+
 typedef struct {
   int64_t size;
   grpc_buffer_pool *buffer_pool;
@@ -278,6 +315,9 @@ grpc_buffer_pool *grpc_buffer_pool_create(void) {
   buffer_pool->free_pool = INT64_MAX;
   buffer_pool->size = INT64_MAX;
   grpc_closure_init(&buffer_pool->bpstep_closure, bpstep, buffer_pool);
+  for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
+    buffer_pool->roots[i] = NULL;
+  }
   return buffer_pool;
 }
 
@@ -329,12 +369,24 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
                     &bu_post_benign_reclaimer, buffer_user);
   grpc_closure_init(&buffer_user->post_reclaimer_closure[1],
                     &bu_post_destructive_reclaimer, buffer_user);
+  grpc_closure_init(&buffer_user->destroy_closure, &bu_destroy, buffer_user);
   gpr_mu_init(&buffer_user->mu);
   buffer_user->allocated = 0;
   buffer_user->free_pool = 0;
   grpc_closure_list_init(&buffer_user->on_allocated);
   buffer_user->allocating = false;
   buffer_user->added_to_free_pool = false;
+  for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
+    buffer_user->links[i].next = buffer_user->links[i].prev = NULL;
+  }
+}
+
+void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_buffer_user *buffer_user,
+                              grpc_closure *on_done) {
+  buffer_user->on_done_destroy = on_done;
+  grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
+                        &buffer_user->destroy_closure, GRPC_ERROR_NONE);
 }
 
 void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,

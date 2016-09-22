@@ -37,16 +37,38 @@
 
 #include "test/core/util/test_config.h"
 
+static void set_bool_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
+  *(bool *)a = true;
+}
+grpc_closure *set_bool(bool *p) { return grpc_closure_create(set_bool_cb, p); }
+
+static void destroy_user(grpc_buffer_user *usr) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  bool done = false;
+  grpc_buffer_user_destroy(&exec_ctx, usr, set_bool(&done));
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_ASSERT(done);
+}
+
 static void test_no_op(void) {
-  gpr_log(GPR_DEBUG, "** test_no_op **");
+  gpr_log(GPR_INFO, "** test_no_op **");
   grpc_buffer_pool_unref(grpc_buffer_pool_create());
 }
 
 static void test_resize_then_destroy(void) {
-  gpr_log(GPR_DEBUG, "** test_resize_then_destroy **");
+  gpr_log(GPR_INFO, "** test_resize_then_destroy **");
   grpc_buffer_pool *p = grpc_buffer_pool_create();
   grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_pool_unref(p);
+}
+
+static void test_buffer_user_no_op(void) {
+  gpr_log(GPR_INFO, "** test_buffer_user_no_op **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
 }
 
 int main(int argc, char **argv) {
@@ -54,6 +76,7 @@ int main(int argc, char **argv) {
   grpc_init();
   test_no_op();
   test_resize_then_destroy();
+  test_buffer_user_no_op();
   grpc_shutdown();
   return 0;
 }

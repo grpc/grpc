@@ -52,6 +52,11 @@ typedef enum {
 
 typedef struct grpc_buffer_user grpc_buffer_user;
 
+typedef struct {
+  grpc_buffer_user *next;
+  grpc_buffer_user *prev;
+} grpc_buffer_user_link;
+
 struct grpc_buffer_user {
   grpc_buffer_pool *buffer_pool;
 
@@ -68,7 +73,10 @@ struct grpc_buffer_user {
   grpc_closure *reclaimers[2];
   grpc_closure post_reclaimer_closure[2];
 
-  grpc_buffer_user *next[GRPC_BULIST_COUNT];
+  grpc_closure destroy_closure;
+  grpc_closure *on_done_destroy;
+
+  grpc_buffer_user_link links[GRPC_BULIST_COUNT];
 };
 
 void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
