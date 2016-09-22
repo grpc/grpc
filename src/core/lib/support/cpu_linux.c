@@ -37,7 +37,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined (GPR_CPU_LINUX) && !defined (GPR_ANDROID)
+#ifdef GPR_CPU_LINUX
 
 #include <errno.h>
 #include <sched.h>

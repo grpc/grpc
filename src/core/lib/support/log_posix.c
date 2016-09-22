@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined (GPR_POSIX_LOG) && !defined (GPR_ANDROID)
+#ifdef GPR_POSIX_LOG
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
