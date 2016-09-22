@@ -196,7 +196,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               labels=['portability'],
                               extra_args=extra_args)
   
-  for compiler in ['node5', 'node6', 'node0.12']:
+  for compiler in ['node5', 'node0.12']:
     test_jobs += _generate_jobs(languages=['node'],
                                 configs=['dbg'],
                                 platforms=['linux'],
