@@ -196,6 +196,9 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** If non-zero, a pointer to a buffer pool (use grpc_buffer_pool_arg_vtable to
+    fetch an appropriate pointer arg vtable */
+#define GRPC_ARG_BUFFER_POOL "grpc.buffer_pool"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -444,6 +447,8 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+typedef struct grpc_buffer_pool grpc_buffer_pool;
 
 #ifdef __cplusplus
 }

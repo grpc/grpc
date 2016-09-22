@@ -401,6 +401,22 @@ GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
 
+/** Create a buffer pool */
+GRPCAPI grpc_buffer_pool *grpc_buffer_pool_create(void);
+
+/** Add a reference to a buffer pool */
+GRPCAPI void grpc_buffer_pool_ref(grpc_buffer_pool *buffer_pool);
+
+/** Drop a reference to a buffer pool */
+GRPCAPI void grpc_buffer_pool_unref(grpc_buffer_pool *buffer_pool);
+
+/** Update the size of a buffer pool */
+GRPCAPI void grpc_buffer_pool_resize(grpc_buffer_pool *buffer_pool,
+                                     size_t new_size);
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_buffer_pool */
+GRPCAPI grpc_arg_pointer_vtable *grpc_buffer_pool_arg_vtable(void);
+
 #ifdef __cplusplus
 }
 #endif
