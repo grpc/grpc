@@ -32,7 +32,8 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
-require_once dirname(__FILE__).'/math.php';
+require_once dirname(__FILE__).'/math.pb.php';
+require_once dirname(__FILE__).'/math_grpc_pb.php';
 
 abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
 {

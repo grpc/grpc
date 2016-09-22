@@ -32,9 +32,8 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
-require 'empty.php';
-require 'messages.php';
-require 'test.php';
+require 'src/proto/grpc/testing/test.pb.php';
+require 'src/proto/grpc/testing/test_grpc_pb.php';
 use Google\Auth\CredentialsLoader;
 use Google\Auth\ApplicationDefaultCredentials;
 use GuzzleHttp\ClientInterface;
@@ -282,7 +281,7 @@ function serverStreaming($stub)
     foreach ($sizes as $size) {
         $response_parameters = new grpc\testing\ResponseParameters();
         $response_parameters->setSize($size);
-        $request->addResponseParameters($response_parameters);
+        $request->getResponseParameters()[] = $response_parameters;
     }
 
     $call = $stub->StreamingOutputCall($request);
@@ -316,7 +315,7 @@ function pingPong($stub)
         $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
         $response_parameters = new grpc\testing\ResponseParameters();
         $response_parameters->setSize($response_lengths[$i]);
-        $request->addResponseParameters($response_parameters);
+        $request->getResponseParameters()[] = $response_parameters;
         $payload = new grpc\testing\Payload();
         $payload->setBody(str_repeat("\0", $request_lengths[$i]));
         $request->setPayload($payload);
@@ -376,7 +375,7 @@ function cancelAfterFirstResponse($stub)
     $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
     $response_parameters = new grpc\testing\ResponseParameters();
     $response_parameters->setSize(31415);
-    $request->addResponseParameters($response_parameters);
+    $request->getResponseParameters()[] = $response_parameters;
     $payload = new grpc\testing\Payload();
     $payload->setBody(str_repeat("\0", 27182));
     $request->setPayload($payload);
@@ -396,7 +395,7 @@ function timeoutOnSleepingServer($stub)
     $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
     $response_parameters = new grpc\testing\ResponseParameters();
     $response_parameters->setSize(8);
-    $request->addResponseParameters($response_parameters);
+    $request->getResponseParameters()[] = $response_parameters;
     $payload = new grpc\testing\Payload();
     $payload->setBody(str_repeat("\0", 9));
     $request->setPayload($payload);
