@@ -33,11 +33,19 @@
 
 #include "src/core/lib/iomgr/buffer_pool.h"
 
+#include <grpc/support/log.h>
+
 #include "test/core/util/test_config.h"
+
+static void test_no_op(void) {
+  gpr_log(GPR_DEBUG, "** test_no_op **");
+  grpc_buffer_pool_unref(grpc_buffer_pool_create());
+}
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  test_no_op();
   grpc_shutdown();
   return 0;
 }

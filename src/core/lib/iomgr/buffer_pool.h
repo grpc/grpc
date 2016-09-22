@@ -43,9 +43,12 @@ typedef enum {
   GRPC_BULIST_NON_EMPTY_FREE_POOL,
   GRPC_BULIST_RECLAIMER_BENIGN,
   GRPC_BULIST_RECLAIMER_DESTRUCTIVE,
+  GRPC_BULIST_COUNT
 } grpc_bulist;
 
-typedef struct grpc_buffer_user {
+typedef struct grpc_buffer_user grpc_buffer_user;
+
+struct grpc_buffer_user {
   grpc_buffer_pool *buffer_pool;
 
   grpc_closure allocate_closure;
@@ -60,7 +63,9 @@ typedef struct grpc_buffer_user {
 
   grpc_closure *reclaimers[2];
   grpc_closure post_reclaimer_closure[2];
-} grpc_buffer_user;
+
+  grpc_buffer_user *next[GRPC_BULIST_COUNT];
+};
 
 void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
                            grpc_buffer_pool *buffer_pool);
