@@ -265,7 +265,10 @@ print('copied to the docker environment or into subworkspaces.')
 print 
 print 'Will run these tests:'
 for job in jobs:
-  print '  %s' % job.shortname
+  if args.dry_run:
+    print '  %s: "%s"' % (job.shortname, ' '.join(job.cmdline))
+  else:
+    print '  %s' % job.shortname
 print
 
 if args.dry_run:
