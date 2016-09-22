@@ -44,10 +44,9 @@ namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Represents a dynamically loaded unmanaged library in a (partially) platform independent manner.
-    /// An important difference in library loading semantics is that on Windows, once we load a dynamic library using LoadLibrary,
-    /// that library becomes instantly available for <c>DllImport</c> P/Invoke calls referring to the same library name.
-    /// On Unix systems, dlopen has somewhat different semantics, so we need to use dlsym and <c>Marshal.GetDelegateForFunctionPointer</c>
-    /// to obtain delegates to native methods.
+    /// First, the native library is loaded using dlopen (on Unix systems) or using LoadLibrary (on Windows).
+    /// dlsym or GetProcAddress are then used to obtain symbol addresses. <c>Marshal.GetDelegateForFunctionPointer</c>
+    /// transforms the addresses into delegates to native methods.
     /// See http://stackoverflow.com/questions/13461989/p-invoke-to-dynamically-loaded-library-on-mono.
     /// </summary>
     internal class UnmanagedLibrary
