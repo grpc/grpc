@@ -204,7 +204,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
 
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
-                            int max_message_size) {
+                            int max_receive_message_size) {
     if (buffer == nullptr) {
       return Status(StatusCode::INTERNAL, "No payload");
     }
@@ -215,8 +215,9 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
         return reader.status();
       }
       ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-      if (max_message_size > 0) {
-        decoder.SetTotalBytesLimit(max_message_size, max_message_size);
+      if (max_receive_message_size > 0) {
+        decoder.SetTotalBytesLimit(max_receive_message_size,
+                                   max_receive_message_size);
       }
       if (!msg->ParseFromCodedStream(&decoder)) {
         result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());

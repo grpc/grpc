@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/backoff.h',
                       'src/core/lib/support/block_annotate.h',
                       'src/core/lib/support/env.h',
+                      'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/percent_encoding.h',
                       'src/core/lib/support/stack_lockfree.h',
@@ -221,6 +222,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_linux.c',
                       'src/core/lib/support/log_posix.c',
                       'src/core/lib/support/log_windows.c',
+                      'src/core/lib/support/mpscq.c',
                       'src/core/lib/support/murmur_hash.c',
                       'src/core/lib/support/percent_encoding.c',
                       'src/core/lib/support/slice.c',
@@ -256,6 +258,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker.h',
                       'src/core/lib/channel/http_client_filter.h',
                       'src/core/lib/channel/http_server_filter.h',
+                      'src/core/lib/channel/message_size_filter.h',
                       'src/core/lib/compression/algorithm_metadata.h',
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/debug/trace.h',
@@ -263,6 +266,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
                       'src/core/lib/iomgr/closure.h',
+                      'src/core/lib/iomgr/combiner.h',
                       'src/core/lib/iomgr/endpoint.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/error.h',
@@ -406,6 +410,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/mlog.h',
                       'src/core/ext/census/resource.h',
                       'src/core/ext/census/rpc_metric_id.h',
+                      'src/core/ext/census/trace_context.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -415,6 +420,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker.c',
                       'src/core/lib/channel/http_client_filter.c',
                       'src/core/lib/channel/http_server_filter.c',
+                      'src/core/lib/channel/message_size_filter.c',
                       'src/core/lib/compression/compression.c',
                       'src/core/lib/compression/message_compress.c',
                       'src/core/lib/debug/trace.c',
@@ -422,6 +428,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/httpcli.c',
                       'src/core/lib/http/parser.c',
                       'src/core/lib/iomgr/closure.c',
+                      'src/core/lib/iomgr/combiner.c',
                       'src/core/lib/iomgr/endpoint.c',
                       'src/core/lib/iomgr/endpoint_pair_posix.c',
                       'src/core/lib/iomgr/endpoint_pair_windows.c',
@@ -594,6 +601,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/operation.c',
                       'src/core/ext/census/placeholders.c',
                       'src/core/ext/census/resource.c',
+                      'src/core/ext/census/trace_context.c',
                       'src/core/ext/census/tracing.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
@@ -601,6 +609,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/backoff.h',
                               'src/core/lib/support/block_annotate.h',
                               'src/core/lib/support/env.h',
+                              'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/percent_encoding.h',
                               'src/core/lib/support/stack_lockfree.h',
@@ -618,6 +627,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/handshaker.h',
                               'src/core/lib/channel/http_client_filter.h',
                               'src/core/lib/channel/http_server_filter.h',
+                              'src/core/lib/channel/message_size_filter.h',
                               'src/core/lib/compression/algorithm_metadata.h',
                               'src/core/lib/compression/message_compress.h',
                               'src/core/lib/debug/trace.h',
@@ -625,6 +635,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
                               'src/core/lib/iomgr/closure.h',
+                              'src/core/lib/iomgr/combiner.h',
                               'src/core/lib/iomgr/endpoint.h',
                               'src/core/lib/iomgr/endpoint_pair.h',
                               'src/core/lib/iomgr/error.h',
@@ -767,7 +778,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/grpc_filter.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/resource.h',
-                              'src/core/ext/census/rpc_metric_id.h'
+                              'src/core/ext/census/rpc_metric_id.h',
+                              'src/core/ext/census/trace_context.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|

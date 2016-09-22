@@ -109,13 +109,21 @@ class GrpcToolTest : public ::testing::Test {
 
   void ShutdownServer() { server_->Shutdown(); }
 
+  void ExitWhenError(int argc, const char** argv, const CliCredentials& cred,
+                     GrpcToolOutputCallback callback) {
+    int result = GrpcToolMainLib(argc, argv, cred, callback);
+    if (result) {
+      exit(result);
+    }
+  }
+
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
   reflection::ProtoServerReflectionPlugin plugin_;
 };
 
 static bool PrintStream(std::stringstream* ss, const grpc::string& output) {
-  (*ss) << output << std::endl;
+  (*ss) << output;
   return true;
 }
 
@@ -166,6 +174,43 @@ TEST_F(GrpcToolTest, HelpCommand) {
               ::testing::ExitedWithCode(1), USAGE_REGEX);
   // No output
   EXPECT_TRUE(0 == output_stream.tellp());
+}
+
+TEST_F(GrpcToolTest, TypeCommand) {
+  // Test input "grpc_cli type localhost:<port> grpc.testing.EchoRequest"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
+                        "grpc.testing.EchoRequest"};
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  const grpc::protobuf::Descriptor* desc =
+      grpc::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(
+          "grpc.testing.EchoRequest");
+  // Expected output: the DebugString of grpc.testing.EchoRequest
+  EXPECT_TRUE(0 ==
+              strcmp(output_stream.str().c_str(), desc->DebugString().c_str()));
+
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, TypeNotFound) {
+  // Test input "grpc_cli type localhost:<port> grpc.testing.DummyRequest"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
+                        "grpc.testing.DummyRequest"};
+
+  EXPECT_DEATH(ExitWhenError(ArraySize(argv), argv, TestCliCredentials(),
+                             std::bind(PrintStream, &output_stream,
+                                       std::placeholders::_1)),
+               ".*Type grpc.testing.DummyRequest not found.*");
+
+  ShutdownServer();
 }
 
 TEST_F(GrpcToolTest, CallCommand) {

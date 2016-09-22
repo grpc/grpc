@@ -128,15 +128,13 @@ static grpc_resolver_factory *resolve_factory(const char *target,
   return factory;
 }
 
-grpc_resolver *grpc_resolver_create(
-    const char *target, grpc_client_channel_factory *client_channel_factory) {
+grpc_resolver *grpc_resolver_create(const char *target) {
   grpc_uri *uri = NULL;
   grpc_resolver_factory *factory = resolve_factory(target, &uri);
   grpc_resolver *resolver;
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  args.client_channel_factory = client_channel_factory;
   resolver = grpc_resolver_factory_create_resolver(factory, &args);
   grpc_uri_destroy(uri);
   return resolver;

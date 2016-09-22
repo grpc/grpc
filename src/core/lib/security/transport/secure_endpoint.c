@@ -38,6 +38,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
@@ -248,6 +249,8 @@ static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
 
 static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
                            gpr_slice_buffer *slices, grpc_closure *cb) {
+  GPR_TIMER_BEGIN("secure_endpoint.endpoint_write", 0);
+
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -323,10 +326,12 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
         exec_ctx, cb,
         grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
         NULL);
+    GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
     return;
   }
 
   grpc_endpoint_write(exec_ctx, ep->wrapped_ep, &ep->output_buffer, cb);
+  GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
 }
 
 static void endpoint_shutdown(grpc_exec_ctx *exec_ctx,
