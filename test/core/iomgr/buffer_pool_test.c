@@ -129,6 +129,30 @@ static void test_simple_async_alloc(void) {
   destroy_user(&usr);
 }
 
+static void test_async_alloc_blocked_by_size(void) {
+  gpr_log(GPR_INFO, "** test_async_alloc_blocked_by_size **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1);
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  bool done = false;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(!done);
+  }
+  grpc_buffer_pool_resize(p, 1024);
+  GPR_ASSERT(done);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, &usr, 1024);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -138,6 +162,7 @@ int main(int argc, char **argv) {
   test_instant_alloc_then_free();
   test_instant_alloc_free_pair();
   test_simple_async_alloc();
+  test_async_alloc_blocked_by_size();
   grpc_shutdown();
   return 0;
 }

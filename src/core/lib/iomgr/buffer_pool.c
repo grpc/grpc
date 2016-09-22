@@ -170,7 +170,7 @@ static bool bpalloc(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool) {
               bulist_pop(buffer_pool, GRPC_BULIST_AWAITING_ALLOCATION))) {
     gpr_mu_lock(&buffer_user->mu);
     if (buffer_user->free_pool < 0 &&
-        -buffer_user->free_pool < buffer_pool->free_pool) {
+        -buffer_user->free_pool <= buffer_pool->free_pool) {
       buffer_pool->free_pool += buffer_user->free_pool;
       buffer_user->free_pool = 0;
     }
