@@ -45,13 +45,16 @@ using grpc::testing::GrpcRpcManagerTest;
 
 // TODO: sreek - Rewrite this test. Find a better test case
 
-void GrpcRpcManagerTest::PollForWork(bool& is_work_found, void **tag) {
+grpc::GrpcRpcManager::WorkStatus GrpcRpcManagerTest::PollForWork(void **tag,
+                                                                 bool *ok) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     std::cout << "Poll: " << std::this_thread::get_id() << std::endl;
   }
-  is_work_found = true;
-  *tag = NULL;
+
+  WorkStatus work_status = WORK_FOUND;
+  *tag = nullptr;
+  *ok = true;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -60,13 +63,15 @@ void GrpcRpcManagerTest::PollForWork(bool& is_work_found, void **tag) {
     num_calls_++;
     if (num_calls_ > 50) {
       std::cout << "poll: False" << std::endl;
-      is_work_found = false;
+      work_status = SHUTDOWN;
       ShutdownRpcManager();
     }
   }
+
+  return work_status;
 }
 
-void GrpcRpcManagerTest::DoWork(void *tag) {
+void GrpcRpcManagerTest::DoWork(void *tag, bool ok) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     std::cout << "Work: " << std::this_thread::get_id() << std::endl;
@@ -74,7 +79,7 @@ void GrpcRpcManagerTest::DoWork(void *tag) {
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   GrpcRpcManagerTest test_rpc_manager(3, 15, 20);
   test_rpc_manager.Initialize();

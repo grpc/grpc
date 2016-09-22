@@ -41,10 +41,11 @@ namespace testing {
 class GrpcRpcManagerTest GRPC_FINAL : public GrpcRpcManager {
  public:
   GrpcRpcManagerTest(int min_pollers, int max_pollers, int max_threads)
-      : GrpcRpcManager(min_pollers, max_pollers, max_threads), num_calls_(0){};
+      : GrpcRpcManager(min_pollers, max_pollers), num_calls_(0){};
 
-  void PollForWork(bool &is_work_found, void **tag) GRPC_OVERRIDE;
-  void DoWork(void *tag) GRPC_OVERRIDE;
+  grpc::GrpcRpcManager::WorkStatus PollForWork(void **tag,
+                                               bool *ok) GRPC_OVERRIDE;
+  void DoWork(void *tag, bool ok) GRPC_OVERRIDE;
 
  private:
   grpc::mutex mu_;
