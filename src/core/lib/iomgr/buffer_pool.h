@@ -38,6 +38,10 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+grpc_buffer_pool *grpc_buffer_pool_internal_ref(grpc_buffer_pool *buffer_pool);
+void grpc_buffer_pool_internal_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_buffer_pool *buffer_pool);
+
 typedef enum {
   GRPC_BULIST_AWAITING_ALLOCATION,
   GRPC_BULIST_NON_EMPTY_FREE_POOL,

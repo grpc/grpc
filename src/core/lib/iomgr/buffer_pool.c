@@ -263,6 +263,8 @@ static void bp_resize(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
              !bulist_empty(a->buffer_pool, GRPC_BULIST_AWAITING_ALLOCATION)) {
     bpstep_sched(exec_ctx, a->buffer_pool);
   }
+  grpc_buffer_pool_internal_unref(exec_ctx, a->buffer_pool);
+  gpr_free(a);
 }
 
 /*******************************************************************************
