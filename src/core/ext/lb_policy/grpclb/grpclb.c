@@ -932,9 +932,8 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
    * entities passed to glb_pick(). */
   lb_client->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
-      glb_policy->base.interested_parties, "/BalanceLoad",
-      NULL, /* FIXME(dgq): which "host" value to use? */
-      lb_client->deadline, NULL);
+      glb_policy->base.interested_parties,
+      "/grpc.lb.v1.LoadBalancer/BalanceLoad", NULL, lb_client->deadline, NULL);
 
   grpc_metadata_array_init(&lb_client->initial_metadata_recv);
   grpc_metadata_array_init(&lb_client->trailing_metadata_recv);
