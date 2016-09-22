@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_CPU_POSIX
+#if defined (GPR_CPU_POSIX) || defined (GPR_ANDROID)
 
 #include <errno.h>
 #include <string.h>
