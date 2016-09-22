@@ -1,0 +1,67 @@
+From 923354b39bea315a53393387b4c373d448c30a3f Mon Sep 17 00:00:00 2001
+From: Perumaal S <perumaal@chromium.org>
+Date: Thu, 22 Sep 2016 11:35:22 -0700
+Subject: [PATCH] Fix Android+CPP build
+
+---
+ src/core/lib/support/cpu_linux.c | 2 +-
+ src/core/lib/support/cpu_posix.c | 2 +-
+ src/core/lib/support/log_linux.c | 2 +-
+ src/core/lib/support/log_posix.c | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/core/lib/support/cpu_linux.c b/src/core/lib/support/cpu_linux.c
+index d6f7e7d..db6c5a2 100644
+--- a/src/core/lib/support/cpu_linux.c
++++ b/src/core/lib/support/cpu_linux.c
+@@ -37,7 +37,7 @@
+ 
+ #include <grpc/support/port_platform.h>
+ 
+-#ifdef GPR_CPU_LINUX
++#if defined (GPR_CPU_LINUX) && !defined (GPR_ANDROID)
+ 
+ #include <errno.h>
+ #include <sched.h>
+diff --git a/src/core/lib/support/cpu_posix.c b/src/core/lib/support/cpu_posix.c
+index 667bde7..1340c4f 100644
+--- a/src/core/lib/support/cpu_posix.c
++++ b/src/core/lib/support/cpu_posix.c
+@@ -33,7 +33,7 @@
+ 
+ #include <grpc/support/port_platform.h>
+ 
+-#ifdef GPR_CPU_POSIX
++#if defined (GPR_CPU_POSIX) || defined (GPR_ANDROID)
+ 
+ #include <errno.h>
+ #include <string.h>
+diff --git a/src/core/lib/support/log_linux.c b/src/core/lib/support/log_linux.c
+index 299b377..f3fead1 100644
+--- a/src/core/lib/support/log_linux.c
++++ b/src/core/lib/support/log_linux.c
+@@ -41,7 +41,7 @@
+ 
+ #include <grpc/support/port_platform.h>
+ 
+-#ifdef GPR_LINUX_LOG
++#if defined(GPR_LINUX_LOG) && !defined(GPR_ANDROID)
+ 
+ #include <grpc/support/alloc.h>
+ #include <grpc/support/log.h>
+diff --git a/src/core/lib/support/log_posix.c b/src/core/lib/support/log_posix.c
+index 6ae6320..868d565 100644
+--- a/src/core/lib/support/log_posix.c
++++ b/src/core/lib/support/log_posix.c
+@@ -33,7 +33,7 @@
+ 
+ #include <grpc/support/port_platform.h>
+ 
+-#if defined(GPR_POSIX_LOG)
++#if defined (GPR_POSIX_LOG) && !defined (GPR_ANDROID)
+ 
+ #include <grpc/support/alloc.h>
+ #include <grpc/support/log.h>
+-- 
+2.8.0.rc3.226.g39d4020
+
