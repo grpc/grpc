@@ -253,7 +253,7 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
 void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
                            grpc_buffer_user *buffer_user, size_t size) {
   gpr_mu_lock(&buffer_user->mu);
-  GPR_ASSERT(buffer_user->allocated >= size);
+  GPR_ASSERT(buffer_user->allocated >= (int64_t)size);
   bool was_zero_or_negative = buffer_user->free_pool <= 0;
   buffer_user->free_pool += size;
   buffer_user->allocated -= size;
