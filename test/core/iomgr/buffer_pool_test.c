@@ -42,10 +42,18 @@ static void test_no_op(void) {
   grpc_buffer_pool_unref(grpc_buffer_pool_create());
 }
 
+static void test_resize_then_destroy(void) {
+  gpr_log(GPR_DEBUG, "** test_resize_then_destroy **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024 * 1024);
+  grpc_buffer_pool_unref(p);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();
+  test_resize_then_destroy();
   grpc_shutdown();
   return 0;
 }
