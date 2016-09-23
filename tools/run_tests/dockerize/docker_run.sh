@@ -36,7 +36,11 @@ set -ex
 if [ "$RELATIVE_COPY_PATH" == "" ]
 then
   mkdir -p /var/local/git
-  git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+  git clone "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+  # clone gRPC submodules
+  (cd var/local/git/grpc && exec git submodule | awk -v \
+  EXTERNAL_GIT_ROOT=$EXTERNAL_GIT_ROOT '{ system("git submodule update --init \
+  --reference " EXTERNAL_GIT_ROOT$2 " " $2) }')
 else
   mkdir -p "/var/local/git/grpc/$RELATIVE_COPY_PATH"
   cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
