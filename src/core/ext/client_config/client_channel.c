@@ -182,6 +182,8 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (chand->incoming_resolver_result != NULL) {
     grpc_lb_policy_args lb_policy_args;
+    lb_policy_args.server_name =
+        grpc_resolver_result_get_server_name(chand->resolver_result);
     lb_policy_args.addresses =
         grpc_resolver_result_get_addresses(chand->incoming_resolver_result);
     lb_policy_args.additional_args = grpc_resolver_result_get_lb_policy_args(

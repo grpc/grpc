@@ -62,7 +62,8 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
 
   for (i = 0; i < num_slices; i++) {
-    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i]) == GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i], NULL) ==
+               GRPC_ERROR_NONE);
     gpr_slice_unref(slices[i]);
   }
   GPR_ASSERT(grpc_http_parser_eof(&parser) == GRPC_ERROR_NONE);
@@ -118,7 +119,8 @@ static void test_succeeds(grpc_slice_split_mode split_mode, char *response_text,
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   for (i = 0; i < num_slices; i++) {
-    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i]) == GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i], NULL) ==
+               GRPC_ERROR_NONE);
     gpr_slice_unref(slices[i]);
   }
   GPR_ASSERT(grpc_http_parser_eof(&parser) == GRPC_ERROR_NONE);
@@ -171,7 +173,7 @@ static void test_fails(grpc_slice_split_mode split_mode, char *response_text) {
 
   for (i = 0; i < num_slices; i++) {
     if (GRPC_ERROR_NONE == error) {
-      error = grpc_http_parser_parse(&parser, slices[i]);
+      error = grpc_http_parser_parse(&parser, slices[i], NULL);
     }
     gpr_slice_unref(slices[i]);
   }
@@ -204,7 +206,7 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
 
   for (i = 0; i < num_slices; i++) {
     if (error == GRPC_ERROR_NONE) {
-      error = grpc_http_parser_parse(&parser, slices[i]);
+      error = grpc_http_parser_parse(&parser, slices[i], NULL);
     }
     gpr_slice_unref(slices[i]);
   }
