@@ -248,5 +248,22 @@ void grpc_resolver_result_add_method_config(grpc_resolver_result* result,
 
 grpc_method_config* grpc_resolver_result_get_method_config(
     grpc_resolver_result* result, grpc_mdstr* path) {
-  return method_config_table_get(&result->method_configs, path);
+  grpc_method_config* method_config =
+      method_config_table_get(&result->method_configs, path);
+  // If we didn't find a match for the path, try looking for a wildcard
+  // entry (i.e., change "/service/method" to "/service/*").
+  if (method_config == NULL) {
+    const char* path_str = grpc_mdstr_as_c_string(path);
+    const char* sep = strrchr(path_str, '/') + 1;
+    const size_t len = (size_t)(sep - path_str);
+    char buf[len + 2];  // '*' and NUL
+    memcpy(buf, path_str, len);
+    buf[len] = '*';
+    buf[len + 1] = '\0';
+    grpc_mdstr* wildcard_path = grpc_mdstr_from_string(buf);
+    method_config =
+        method_config_table_get(&result->method_configs, wildcard_path);
+    GRPC_MDSTR_UNREF(wildcard_path);
+  }
+  return method_config;
 }
