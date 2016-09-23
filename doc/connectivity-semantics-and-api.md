@@ -81,7 +81,7 @@ corresponding reasons. Empty cells denote disallowed transitions.
     <td>Incremental successful communication on established channel.</td>
     <td>Any failure encountered while expecting successful communication on
         established channel.</td>
-    <td>No RPC activity on channel for IDLE_TIMEOUT <br>OR<br>upon receiving a GOAWAY while there are no pending RPCs.</td>
+    <td>No RPC activity on channel for IDLE_TIMEOUT <br>OR<br>upon receiving a GOAWAY while there are no pending RPCs. Note that the channel can still switch to IDLE before the IDLE_TIMEOUT though, if determined efficient to do so.</td>
     <td>Shutdown triggered by application.</td>
   </tr>
   <tr>
