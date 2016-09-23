@@ -1110,6 +1110,8 @@ libs:
   - src/compiler/node_generator_helpers.h
   - src/compiler/objective_c_generator.h
   - src/compiler/objective_c_generator_helpers.h
+  - src/compiler/php_generator.h
+  - src/compiler/php_generator_helpers.h
   - src/compiler/python_generator.h
   - src/compiler/ruby_generator.h
   - src/compiler/ruby_generator_helpers-inl.h
@@ -1120,6 +1122,7 @@ libs:
   - src/compiler/csharp_generator.cc
   - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
+  - src/compiler/php_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   filegroups:
@@ -2859,6 +2862,15 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
+- name: grpc_php_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/php_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
 - name: grpc_python_plugin
   build: protoc
   language: c++
