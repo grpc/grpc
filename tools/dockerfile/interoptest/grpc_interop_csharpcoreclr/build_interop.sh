@@ -41,7 +41,7 @@ cd /var/local/git/grpc
 
 # clone gRPC submodules
 git submodule | awk '{ system("git submodule update --init --reference \
-./../../jenkins/grpc" $2 " " $2) }'
+./../../jenkins/grpc/" $2 " " $2) }'
 
 # build C# interop client & server
 tools/run_tests/run_tests.py -l csharp -c dbg --compiler coreclr --build_only
