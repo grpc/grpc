@@ -56,6 +56,7 @@ struct grpc_buffer_pool {
   bool step_scheduled;
   bool reclaiming;
   grpc_closure bpstep_closure;
+  grpc_closure bpreclaimation_done_closure;
 
   grpc_buffer_user *roots[GRPC_BULIST_COUNT];
 };
@@ -305,6 +306,11 @@ static void bp_resize(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
   gpr_free(a);
 }
 
+static void bpreclaimation_done_closure(grpc_exec_ctx *exec_ctx, void *bp,
+                                        grpc_error *error) {
+  bpstep_sched(exec_ctx, bp);
+}
+
 /*******************************************************************************
  * grpc_buffer_pool api
  */
@@ -316,6 +322,8 @@ grpc_buffer_pool *grpc_buffer_pool_create(void) {
   buffer_pool->free_pool = INT64_MAX;
   buffer_pool->size = INT64_MAX;
   grpc_closure_init(&buffer_pool->bpstep_closure, bpstep, buffer_pool);
+  grpc_closure_init(&buffer_pool->bpreclaimation_done_closure,
+                    bpreclaimation_done_closure, buffer_pool);
   for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
     buffer_pool->roots[i] = NULL;
   }
@@ -438,5 +446,12 @@ void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
   buffer_user->reclaimers[destructive] = closure;
   grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                         &buffer_user->post_reclaimer_closure[destructive],
+                        GRPC_ERROR_NONE, false);
+}
+
+void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
+                                          grpc_buffer_user *buffer_user) {
+  grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
+                        &buffer_user->buffer_pool->bpreclaimation_done_closure,
                         GRPC_ERROR_NONE, false);
 }

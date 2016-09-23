@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/buffer_pool.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
@@ -41,6 +42,28 @@ static void set_bool_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
   *(bool *)a = true;
 }
 grpc_closure *set_bool(bool *p) { return grpc_closure_create(set_bool_cb, p); }
+
+typedef struct {
+  size_t size;
+  grpc_buffer_user *buffer_user;
+  grpc_closure *then;
+} reclaimer_args;
+static void reclaimer_cb(grpc_exec_ctx *exec_ctx, void *args,
+                         grpc_error *error) {
+  reclaimer_args *a = args;
+  grpc_buffer_user_free(exec_ctx, a->buffer_user, a->size);
+  grpc_buffer_user_finish_reclaimation(exec_ctx, a->buffer_user);
+  grpc_closure_run(exec_ctx, a->then, GRPC_ERROR_NONE);
+  gpr_free(a);
+}
+grpc_closure *make_reclaimer(grpc_buffer_user *buffer_user, size_t size,
+                             grpc_closure *then) {
+  reclaimer_args *a = gpr_malloc(sizeof(*a));
+  a->size = size;
+  a->buffer_user = buffer_user;
+  a->then = then;
+  return grpc_closure_create(reclaimer_cb, a);
+}
 
 static void destroy_user(grpc_buffer_user *usr) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -229,6 +252,44 @@ static void test_scavenge_blocked(void) {
   destroy_user(&usr2);
 }
 
+static void test_blocked_until_scheduled_reclaim(void) {
+  gpr_log(GPR_INFO, "** test_blocked_until_scheduled_reclaim **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(done);
+  }
+  bool reclaim_done = false;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, false,
+        make_reclaimer(&usr, 1024, set_bool(&reclaim_done)));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(reclaim_done);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, &usr, 1024);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -241,6 +302,7 @@ int main(int argc, char **argv) {
   test_async_alloc_blocked_by_size();
   test_scavenge();
   test_scavenge_blocked();
+  test_blocked_until_scheduled_reclaim();
   grpc_shutdown();
   return 0;
 }
