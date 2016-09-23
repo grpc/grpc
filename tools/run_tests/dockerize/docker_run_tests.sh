@@ -42,7 +42,11 @@ export PATH=$PATH:/usr/bin/llvm-symbolizer
 chown $(whoami) $XDG_CACHE_HOME
 
 mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+git clone /var/local/jenkins/grpc /var/local/git/grpc
+
+# clone gRPC submodules
+(cd /var/local/git/grpc/ && exec git submodule | awk '{ system("git submodule \
+update --init --reference ./../../jenkins/grpc" $2 " " $2) }')
 
 mkdir -p reports
 
