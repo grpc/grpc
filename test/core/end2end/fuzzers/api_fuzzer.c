@@ -173,6 +173,7 @@ static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
 static gpr_timespec g_now;
 static grpc_server *g_server;
 static grpc_channel *g_channel;
+static grpc_buffer_pool *g_buffer_pool;
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -252,7 +253,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
-    grpc_passthru_endpoint_create(&client, &server);
+    grpc_passthru_endpoint_create(&client, &server, g_buffer_pool);
     *fc->ep = client;
 
     grpc_transport *transport =
@@ -520,6 +521,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int pending_pings = 0;
 
   g_active_call = new_call(NULL, ROOT);
+  g_buffer_pool = grpc_buffer_pool_create();
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
@@ -939,6 +941,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         break;
       }
+      // resize the buffer pool
+      case 21: {
+        grpc_buffer_pool_resize(g_buffer_pool, read_uint22(&inp));
+        break;
+      }
     }
   }
 
@@ -953,6 +960,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL)
           .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
+
+  grpc_buffer_pool_unref(g_buffer_pool);
 
   grpc_shutdown();
   return 0;

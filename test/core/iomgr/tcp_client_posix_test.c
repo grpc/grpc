@@ -111,7 +111,7 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
   grpc_closure_init(&done, must_succeed, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -160,7 +160,7 @@ void test_fails(void) {
 
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
