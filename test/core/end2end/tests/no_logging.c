@@ -68,6 +68,13 @@ static void test_no_error_log(gpr_log_func_args *args) {
   }
 }
 
+static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
+
+static void log_dispatcher_func(gpr_log_func_args *args) {
+  gpr_log_func log_func = (gpr_log_func)gpr_atm_no_barrier_load(&g_log_func);
+  log_func(args);
+}
+
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
@@ -263,12 +270,12 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 static void test_no_error_logging_in_entire_process(
     grpc_end2end_test_config config) {
   int i;
-  gpr_set_log_function(test_no_error_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_error_log);
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
   }
   test_invoke_10_simple_requests(config);
-  gpr_set_log_function(gpr_default_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
 }
 
 static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
@@ -278,9 +285,9 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
   for (i = 0; i < 10; i++) {
     simple_request_body(f);
   }
-  gpr_set_log_function(test_no_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)test_no_log);
   simple_request_body(f);
-  gpr_set_log_function(gpr_default_log);
+  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)gpr_default_log);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -288,8 +295,10 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
 void no_logging(grpc_end2end_test_config config) {
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 0);
+  gpr_set_log_function(log_dispatcher_func);
   test_no_logging_in_one_request(config);
   test_no_error_logging_in_entire_process(config);
+  gpr_set_log_function(gpr_default_log);
 }
 
 void no_logging_pre_init(void) {}

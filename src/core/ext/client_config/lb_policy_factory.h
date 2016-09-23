@@ -90,6 +90,7 @@ void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses,
 /* TODO(roth, ctiller): Consider replacing this struct with
    grpc_channel_args.  See comment in resolver_result.h for details. */
 typedef struct grpc_lb_policy_args {
+  const char *server_name;
   grpc_lb_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
   /* Can be used to pass implementation-specific parameters to the LB policy. */

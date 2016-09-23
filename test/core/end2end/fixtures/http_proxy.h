@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,11 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+typedef struct grpc_end2end_http_proxy grpc_end2end_http_proxy;
 
-#include <grpc/support/alloc.h>
+grpc_end2end_http_proxy* grpc_end2end_http_proxy_create();
 
-#include "src/core/lib/http/parser.h"
+void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 
-bool squelch = true;
-bool leak_check = true;
-
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_http_parser parser;
-  grpc_http_response response;
-  memset(&response, 0, sizeof(response));
-  grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
-  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  GRPC_ERROR_UNREF(grpc_http_parser_parse(&parser, slice, NULL));
-  GRPC_ERROR_UNREF(grpc_http_parser_eof(&parser));
-  gpr_slice_unref(slice);
-  grpc_http_parser_destroy(&parser);
-  grpc_http_response_destroy(&response);
-  return 0;
-}
+const char* grpc_end2end_http_proxy_get_proxy_name(
+    grpc_end2end_http_proxy* proxy);
