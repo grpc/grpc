@@ -415,7 +415,7 @@ GRPCAPI void grpc_buffer_pool_resize(grpc_buffer_pool *buffer_pool,
                                      size_t new_size);
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_buffer_pool */
-GRPCAPI grpc_arg_pointer_vtable *grpc_buffer_pool_arg_vtable(void);
+GRPCAPI const grpc_arg_pointer_vtable *grpc_buffer_pool_arg_vtable(void);
 
 #ifdef __cplusplus
 }

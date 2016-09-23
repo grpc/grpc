@@ -36,7 +36,8 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
-grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice));
+grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
+                                         grpc_buffer_pool *buffer_pool);
 void grpc_mock_endpoint_put_read(grpc_exec_ctx *exec_ctx,
                                  grpc_endpoint *mock_endpoint, gpr_slice slice);
 

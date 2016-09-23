@@ -99,9 +99,11 @@ void grpc_free_port_using_server(char *server, int port) {
   req.http.path = path;
 
   grpc_httpcli_context_init(&context);
-  grpc_httpcli_get(&exec_ctx, &context, &pr.pops, &req,
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_httpcli_get(&exec_ctx, &context, &pr.pops, buffer_pool, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                    grpc_closure_create(freed_port_from_server, &pr), &rsp);
+  grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);
   gpr_mu_lock(pr.mu);
   while (!pr.done) {
     grpc_pollset_worker *worker = NULL;
@@ -167,10 +169,12 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
     req.http.path = "/get";
     grpc_http_response_destroy(&pr->response);
     memset(&pr->response, 0, sizeof(pr->response));
-    grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pops, &req,
+    grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+    grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pops, buffer_pool, &req,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                      grpc_closure_create(got_port_from_server, pr),
                      &pr->response);
+    grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
     return;
   }
   GPR_ASSERT(response);
@@ -211,9 +215,12 @@ int grpc_pick_port_using_server(char *server) {
   req.http.path = "/get";
 
   grpc_httpcli_context_init(&context);
-  grpc_httpcli_get(
-      &exec_ctx, &context, &pr.pops, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
-      grpc_closure_create(got_port_from_server, &pr), &pr.response);
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_httpcli_get(&exec_ctx, &context, &pr.pops, buffer_pool, &req,
+                   GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
+                   grpc_closure_create(got_port_from_server, &pr),
+                   &pr.response);
+  grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {

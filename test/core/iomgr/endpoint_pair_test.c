@@ -49,7 +49,10 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
     size_t slice_size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_test_fixture f;
-  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", slice_size);
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_endpoint_pair p =
+      grpc_iomgr_create_endpoint_pair("test", buffer_pool, slice_size);
+  grpc_buffer_pool_unref(buffer_pool);
 
   f.client_ep = p.client;
   f.server_ep = p.server;

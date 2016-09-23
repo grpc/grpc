@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/combiner.h"
 
@@ -366,6 +367,10 @@ void grpc_buffer_pool_resize(grpc_buffer_pool *buffer_pool, size_t size) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+/*******************************************************************************
+ * grpc_buffer_user channel args api
+ */
+
 grpc_buffer_pool *grpc_buffer_pool_from_channel_args(
     grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; i++) {
@@ -379,6 +384,20 @@ grpc_buffer_pool *grpc_buffer_pool_from_channel_args(
     }
   }
   return grpc_buffer_pool_create();
+}
+
+static void *bp_copy(void *bp) {
+  grpc_buffer_pool_ref(bp);
+  return bp;
+}
+
+static void bp_destroy(void *bp) { grpc_buffer_pool_unref(bp); }
+
+static int bp_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+
+const grpc_arg_pointer_vtable *grpc_buffer_pool_arg_vtable(void) {
+  static const grpc_arg_pointer_vtable vtable = {bp_copy, bp_destroy, bp_cmp};
+  return &vtable;
 }
 
 /*******************************************************************************

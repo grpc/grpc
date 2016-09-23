@@ -44,6 +44,7 @@ typedef struct {
   gpr_slice_buffer read_buffer;
   gpr_slice_buffer *on_read_out;
   grpc_closure *on_read;
+  grpc_buffer_user buffer_user;
 } half;
 
 struct passthru_endpoint {
@@ -122,7 +123,8 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   gpr_mu_unlock(&m->parent->mu);
 }
 
-static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
+                              grpc_error *error) {
   passthru_endpoint *p = ((half *)ep)->parent;
   gpr_mu_lock(&p->mu);
   if (0 == --p->halves) {
@@ -136,11 +138,22 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   }
 }
 
+static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+  half *m = (half *)ep;
+  grpc_buffer_user_destroy(exec_ctx, &m->buffer_user,
+                           grpc_closure_create(me_really_destroy, m));
+}
+
 static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
 
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
+
+static grpc_buffer_user *me_get_buffer_user(grpc_endpoint *ep) {
+  half *m = (half *)ep;
+  return &m->buffer_user;
+}
 
 static const grpc_endpoint_vtable vtable = {
     me_read,
@@ -150,23 +163,27 @@ static const grpc_endpoint_vtable vtable = {
     me_add_to_pollset_set,
     me_shutdown,
     me_destroy,
+    me_get_buffer_user,
     me_get_peer,
 };
 
-static void half_init(half *m, passthru_endpoint *parent) {
+static void half_init(half *m, passthru_endpoint *parent,
+                      grpc_buffer_pool *buffer_pool) {
   m->base.vtable = &vtable;
   m->parent = parent;
   gpr_slice_buffer_init(&m->read_buffer);
   m->on_read = NULL;
+  grpc_buffer_user_init(&m->buffer_user, buffer_pool);
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
-                                   grpc_endpoint **server) {
+                                   grpc_endpoint **server,
+                                   grpc_buffer_pool *buffer_pool) {
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
-  half_init(&m->client, m);
-  half_init(&m->server, m);
+  half_init(&m->client, m, buffer_pool);
+  half_init(&m->server, m, buffer_pool);
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;
