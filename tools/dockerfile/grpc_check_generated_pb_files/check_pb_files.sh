@@ -37,7 +37,7 @@ cd /var/local/git/grpc
 
 # clone gRPC submodules
 git submodule | awk '{ system("git submodule update --init --reference \
-./../../jenkins/grpc" $2 " " $2) }'
+./../../jenkins/grpc/" $2 " " $2) }'
 
 # build grpc cpp plugin for generating grpc pb files
 make grpc_cpp_plugin
