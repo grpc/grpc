@@ -69,6 +69,7 @@ typedef struct {
   char *addr_str;
   grpc_endpoint **ep;
   grpc_closure *closure;
+  grpc_buffer_pool *buffer_pool;
 } async_connect;
 
 static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
@@ -114,6 +115,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
+    grpc_buffer_pool_internal_unref(exec_ctx, ac->buffer_pool);
     gpr_free(ac);
   }
 }
@@ -190,7 +192,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
       }
     } else {
       grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
-      *ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
+      *ep = grpc_tcp_create(fd, ac->buffer_pool,
+                            GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
       fd = NULL;
       goto finish;
     }
@@ -227,6 +230,7 @@ finish:
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *closure, grpc_endpoint **ep,
                                     grpc_pollset_set *interested_parties,
+                                    grpc_buffer_pool *buffer_pool,
                                     const struct sockaddr *addr,
                                     size_t addr_len, gpr_timespec deadline) {
   int fd;
@@ -275,7 +279,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
+    *ep = grpc_tcp_create(fdobj, buffer_pool, GRPC_TCP_DEFAULT_READ_SLICE_SIZE,
+                          addr_str);
     grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
     goto done;
   }
@@ -300,6 +305,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   ac->refs = 2;
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
+  ac->buffer_pool = grpc_buffer_pool_internal_ref(buffer_pool);
 
   if (grpc_tcp_trace) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
@@ -321,16 +327,18 @@ done:
 // overridden by api_fuzzer.c
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
-    size_t addr_len, gpr_timespec deadline) = tcp_client_connect_impl;
+    grpc_pollset_set *interested_parties, grpc_buffer_pool *buffer_pool,
+    const struct sockaddr *addr, size_t addr_len,
+    gpr_timespec deadline) = tcp_client_connect_impl;
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
+                             grpc_buffer_pool *buffer_pool,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline) {
-  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties, addr,
-                               addr_len, deadline);
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
+                               buffer_pool, addr, addr_len, deadline);
 }
 
 #endif

@@ -37,6 +37,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/iomgr/buffer_pool.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -58,6 +59,7 @@ struct grpc_endpoint_vtable {
                              grpc_pollset_set *pollset);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+  grpc_buffer_user *(*get_buffer_user)(grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
 };
 
@@ -98,6 +100,8 @@ void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
                                       grpc_endpoint *ep,
                                       grpc_pollset_set *pollset_set);
+
+grpc_buffer_user *grpc_endpoint_get_buffer_user(grpc_endpoint *endpoint);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;

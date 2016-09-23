@@ -137,6 +137,8 @@ struct grpc_tcp_server {
 
   /* next pollset to assign a channel to */
   gpr_atm next_pollset_to_assign;
+
+  grpc_buffer_pool *buffer_pool;
 };
 
 static gpr_once check_init = GPR_ONCE_INIT;
@@ -153,22 +155,36 @@ static void init(void) {
 #endif
 }
 
-grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
+                                   grpc_closure *shutdown_complete,
                                    const grpc_channel_args *args,
                                    grpc_tcp_server **server) {
   gpr_once_init(&check_init, init);
 
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
+  s->buffer_pool = grpc_buffer_pool_create();
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->so_reuseport =
             has_so_reuseport && (args->args[i].value.integer != 0);
       } else {
+        grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
                                  " must be an integer");
+      }
+    } else if (0 == strcmp(GRPC_ARG_BUFFER_POOL, args->args[i].key)) {
+      if (args->args[i].type == GRPC_ARG_POINTER) {
+        grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
+        s->buffer_pool =
+            grpc_buffer_pool_internal_ref(args->args[i].value.pointer.p);
+      } else {
+        grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
+        gpr_free(s);
+        return GRPC_ERROR_CREATE(GRPC_ARG_BUFFER_POOL
+                                 " must be a pointer to a buffer pool");
       }
     }
   }
@@ -202,6 +218,8 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     s->head = sp->next;
     gpr_free(sp);
   }
+
+  grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
 
   gpr_free(s);
 }
@@ -419,7 +437,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
+        grpc_tcp_create(fdobj, sp->server->buffer_pool,
+                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
         read_notifier_pollset, &acceptor);
 
     gpr_free(name);

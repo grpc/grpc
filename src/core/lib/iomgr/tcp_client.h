@@ -47,6 +47,7 @@
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
+                             grpc_buffer_pool *buffer_pool,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline);
 

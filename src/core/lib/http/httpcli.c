@@ -71,6 +71,7 @@ typedef struct {
   grpc_closure done_write;
   grpc_closure connected;
   grpc_error *overall_error;
+  grpc_buffer_pool *buffer_pool;
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
@@ -118,6 +119,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   gpr_slice_buffer_destroy(&req->incoming);
   gpr_slice_buffer_destroy(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
+  grpc_buffer_pool_internal_unref(exec_ctx, req->buffer_pool);
   gpr_free(req);
 }
 
@@ -224,9 +226,10 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   }
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
-  grpc_tcp_client_connect(
-      exec_ctx, &req->connected, &req->ep, req->context->pollset_set,
-      (struct sockaddr *)&addr->addr, addr->len, req->deadline);
+  grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
+                          req->context->pollset_set, req->buffer_pool,
+                          (struct sockaddr *)&addr->addr, addr->len,
+                          req->deadline);
 }
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -242,6 +245,7 @@ static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void internal_request_begin(grpc_exec_ctx *exec_ctx,
                                    grpc_httpcli_context *context,
                                    grpc_polling_entity *pollent,
+                                   grpc_buffer_pool *buffer_pool,
                                    const grpc_httpcli_request *request,
                                    gpr_timespec deadline, grpc_closure *on_done,
                                    grpc_httpcli_response *response,
@@ -257,6 +261,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
+  req->buffer_pool = grpc_buffer_pool_internal_ref(buffer_pool);
   grpc_closure_init(&req->on_read, on_read, req);
   grpc_closure_init(&req->done_write, done_write, req);
   gpr_slice_buffer_init(&req->incoming);
@@ -274,6 +279,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
 
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       grpc_polling_entity *pollent,
+                      grpc_buffer_pool *buffer_pool,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline, grpc_closure *on_done,
                       grpc_httpcli_response *response) {
@@ -283,14 +289,15 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
     return;
   }
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(exec_ctx, context, pollent, request, deadline, on_done,
-                         response, name,
+  internal_request_begin(exec_ctx, context, pollent, buffer_pool, request,
+                         deadline, on_done, response, name,
                          grpc_httpcli_format_get_request(request));
   gpr_free(name);
 }
 
 void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                        grpc_polling_entity *pollent,
+                       grpc_buffer_pool *buffer_pool,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline, grpc_closure *on_done,
@@ -303,7 +310,8 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
   }
   gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      exec_ctx, context, pollent, request, deadline, on_done, response, name,
+      exec_ctx, context, pollent, buffer_pool, request, deadline, on_done,
+      response, name,
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
   gpr_free(name);
 }

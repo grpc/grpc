@@ -100,6 +100,8 @@ typedef struct {
   grpc_closure write_closure;
 
   char *peer_string;
+
+  grpc_buffer_user buffer_user;
 } grpc_tcp;
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -469,6 +471,11 @@ static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
   return grpc_fd_get_workqueue(tcp->em_fd);
 }
 
+static grpc_buffer_user *tcp_get_buffer_user(grpc_endpoint *ep) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  return &tcp->buffer_user;
+}
+
 static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_write,
                                             tcp_get_workqueue,
@@ -476,10 +483,11 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_add_to_pollset_set,
                                             tcp_shutdown,
                                             tcp_destroy,
+                                            tcp_get_buffer_user,
                                             tcp_get_peer};
 
-grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
-                               const char *peer_string) {
+grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
+                               size_t slice_size, const char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
   tcp->peer_string = gpr_strdup(peer_string);
@@ -500,6 +508,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
+  grpc_buffer_user_init(&tcp->buffer_user, buffer_pool);
   /* Tell network status tracker about new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
 
