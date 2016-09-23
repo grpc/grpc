@@ -1928,7 +1928,8 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
 
   grpc_error *parse_error = GRPC_ERROR_NONE;
   for (; i < t->read_buffer.count && parse_error == GRPC_ERROR_NONE; i++) {
-    parse_error = grpc_http_parser_parse(&parser, t->read_buffer.slices[i]);
+    parse_error =
+        grpc_http_parser_parse(&parser, t->read_buffer.slices[i], NULL);
   }
   if (parse_error == GRPC_ERROR_NONE &&
       (parse_error = grpc_http_parser_eof(&parser)) == GRPC_ERROR_NONE) {

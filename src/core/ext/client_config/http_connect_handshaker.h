@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,17 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H
 
-#include <grpc/support/alloc.h>
+#include "src/core/lib/channel/handshaker.h"
 
-#include "src/core/lib/http/parser.h"
+/// Does NOT take ownership of \a proxy_server or \a server_name.
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
+                                                     const char* server_name);
 
-bool squelch = true;
-bool leak_check = true;
+/// Returns the name of the proxy to use, or NULL if no proxy is configured.
+/// Caller takes ownership of result.
+char* grpc_get_http_proxy_server();
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_http_parser parser;
-  grpc_http_response response;
-  memset(&response, 0, sizeof(response));
-  grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
-  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  GRPC_ERROR_UNREF(grpc_http_parser_parse(&parser, slice, NULL));
-  GRPC_ERROR_UNREF(grpc_http_parser_eof(&parser));
-  gpr_slice_unref(slice);
-  grpc_http_parser_destroy(&parser);
-  grpc_http_response_destroy(&response);
-  return 0;
-}
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H */
