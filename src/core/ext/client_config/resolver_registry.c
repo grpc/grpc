@@ -40,22 +40,20 @@
 #include <grpc/support/string_util.h>
 
 #define MAX_RESOLVERS 10
+#define DEFAULT_RESOLVER_PREFIX_MAX_LENGTH 32
 
 static grpc_resolver_factory *g_all_of_the_resolvers[MAX_RESOLVERS];
 static int g_number_of_resolvers = 0;
 
-static char *g_default_resolver_prefix;
+static char g_default_resolver_prefix[DEFAULT_RESOLVER_PREFIX_MAX_LENGTH] =
+    "dns:///";
 
-void grpc_resolver_registry_init(const char *default_resolver_prefix) {
-  g_default_resolver_prefix = gpr_strdup(default_resolver_prefix);
-}
+void grpc_resolver_registry_init() {}
 
 void grpc_resolver_registry_shutdown(void) {
-  int i;
-  for (i = 0; i < g_number_of_resolvers; i++) {
+  for (int i = 0; i < g_number_of_resolvers; i++) {
     grpc_resolver_factory_unref(g_all_of_the_resolvers[i]);
   }
-  gpr_free(g_default_resolver_prefix);
   // FIXME(ctiller): this should live in grpc_resolver_registry_init,
   // however that would have the client_config plugin call this AFTER we start
   // registering resolvers from third party plugins, and so they'd never show
@@ -63,6 +61,14 @@ void grpc_resolver_registry_shutdown(void) {
   // We likely need some kind of dependency system for plugins.... what form
   // that takes is TBD.
   g_number_of_resolvers = 0;
+}
+
+void grpc_resolver_registry_set_default_prefix(
+    const char *default_resolver_prefix) {
+  GPR_ASSERT(strlen(default_resolver_prefix) <
+             DEFAULT_RESOLVER_PREFIX_MAX_LENGTH);
+  memcpy(g_default_resolver_prefix, default_resolver_prefix,
+         DEFAULT_RESOLVER_PREFIX_MAX_LENGTH);
 }
 
 void grpc_register_resolver_type(grpc_resolver_factory *factory) {
@@ -108,7 +114,7 @@ static grpc_resolver_factory *resolve_factory(const char *target,
   *uri = grpc_uri_parse(target, 1);
   factory = lookup_factory_by_uri(*uri);
   if (factory == NULL) {
-    if (g_default_resolver_prefix != NULL) {
+    if (g_default_resolver_prefix[0] != '\0') {
       grpc_uri_destroy(*uri);
       gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
       *uri = grpc_uri_parse(tmp, 1);
