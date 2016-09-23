@@ -148,6 +148,8 @@ struct write_state {
 struct op_state {
   bool state_op_done[OP_NUM_OPS];
   bool state_callback_received[OP_NUM_OPS];
+  bool fail_state;
+  bool flush_read;
   /* data structure for storing data coming from server */
   struct read_state rs;
   /* data structure for storing data going to the server */
@@ -475,7 +477,11 @@ static void on_read_completed(cronet_bidirectional_stream *stream, char *data,
              count);
   gpr_mu_lock(&s->mu);
   s->state.state_callback_received[OP_RECV_MESSAGE] = true;
-  if (count > 0) {
+  if (count > 0 && s->state.flush_read) {
+    CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
+    cronet_bidirectional_stream_read(s->cbs, s->state.rs.read_buffer, 4096);
+    gpr_mu_unlock(&s->mu);
+  } else if (count > 0) {
     s->state.rs.received_bytes += count;
     s->state.rs.remaining_bytes -= count;
     if (s->state.rs.remaining_bytes > 0) {
@@ -490,6 +496,10 @@ static void on_read_completed(cronet_bidirectional_stream *stream, char *data,
       execute_from_storage(s);
     }
   } else {
+    if (s->state.flush_read) {
+      gpr_free(s->state.rs.read_buffer);
+      s->state.rs.read_buffer = NULL;
+    }
     s->state.rs.read_stream_closed = true;
     gpr_mu_unlock(&s->mu);
     execute_from_storage(s);
@@ -519,6 +529,10 @@ static void on_response_trailers_received(
             grpc_mdstr_from_string(trailers->headers[i].key),
             grpc_mdstr_from_string(trailers->headers[i].value)));
     s->state.rs.trailing_metadata_valid = true;
+    if (0 == strcmp(trailers->headers[i].key, "grpc-status") &&
+        0 != strcmp(trailers->headers[i].value, "0")) {
+      s->state.fail_state = true;
+    }
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
   /* Send a EOS when server terminates the stream to trigger on_succeeded */
@@ -790,6 +804,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                     OP_SEND_INITIAL_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p OP_SEND_INITIAL_METADATA", oas);
     /* This OP is the beginning. Reset various states */
+    stream_state->fail_state = stream_state->flush_read = false;
     memset(&s->header_array, 0, sizeof(s->header_array));
     memset(&stream_state->rs, 0, sizeof(stream_state->rs));
     memset(&stream_state->ws, 0, sizeof(stream_state->ws));
@@ -1026,6 +1041,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       make a note */
     if (stream_op->recv_message)
       stream_state->state_op_done[OP_RECV_MESSAGE_AND_ON_COMPLETE] = true;
+  } else if (stream_state->fail_state && !stream_state->flush_read) {
+    CRONET_LOG(GPR_DEBUG, "running: %p  flush read", oas);
+    if (stream_state->rs.read_buffer &&
+        stream_state->rs.read_buffer != stream_state->rs.grpc_header_bytes) {
+      gpr_free(stream_state->rs.read_buffer);
+      stream_state->rs.read_buffer = NULL;
+    }
+    stream_state->rs.read_buffer = gpr_malloc(4096);
+    stream_state->flush_read = true;
   } else {
     result = NO_ACTION_POSSIBLE;
   }
