@@ -232,8 +232,8 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
 // defined in tcp_client_posix.c
 extern void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
-    size_t addr_len, gpr_timespec deadline);
+    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
+    const struct sockaddr *addr, size_t addr_len, gpr_timespec deadline);
 
 static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline);
@@ -290,6 +290,7 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *closure, grpc_endpoint **ep,
                                   grpc_pollset_set *interested_parties,
+                                  const grpc_channel_args *channel_args,
                                   const struct sockaddr *addr, size_t addr_len,
                                   gpr_timespec deadline) {
   sched_connect(exec_ctx, closure, ep, deadline);

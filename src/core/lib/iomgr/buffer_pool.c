@@ -372,7 +372,7 @@ void grpc_buffer_pool_resize(grpc_buffer_pool *buffer_pool, size_t size) {
  */
 
 grpc_buffer_pool *grpc_buffer_pool_from_channel_args(
-    grpc_channel_args *channel_args) {
+    const grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; i++) {
     if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_BUFFER_POOL)) {
       if (channel_args->args[i].type == GRPC_ARG_POINTER) {
