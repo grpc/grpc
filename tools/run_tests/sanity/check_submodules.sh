@@ -45,7 +45,7 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
  c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
  f8ac463766281625ad710900479130c7fcb4d63b third_party/nanopb (nanopb-0.3.4-29-gf8ac463)
- e8ae137c96444ea313485ed1118c5e43b2099cf1 third_party/protobuf (v3.0.0-beta-4-74-ge8ae137)
+ 1a586735085e817b1f52e53feec92ce418049f69 third_party/protobuf (v3.0.2)
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
 EOF
 
