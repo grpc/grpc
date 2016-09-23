@@ -396,6 +396,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\method_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_factory.h" />
@@ -685,6 +686,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\method_config.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.c">
     </ClCompile>

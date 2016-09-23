@@ -511,8 +511,13 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     /* Get method config. */
 // FIXME: need to actually use the config data!
-    calld->method_config = grpc_resolver_result_get_method_config(
-        chand->current_resolver_result, calld->path);
+// FIXME: think about refcounting vs. atomicity here
+    grpc_method_config_table* table = grpc_resolver_result_get_method_configs(
+        chand->current_resolver_result);
+    if (table != NULL) {
+      calld->method_config = grpc_method_config_table_get_method_config(
+          table, calld->path);
+    }
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
     grpc_error *new_error = grpc_connected_subchannel_create_call(

@@ -122,7 +122,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     r->published = true;
     *r->target_result = grpc_resolver_result_create(
         "", grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        r->lb_policy_name, NULL);
+        r->lb_policy_name, NULL, NULL);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }

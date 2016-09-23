@@ -719,6 +719,7 @@
         'src/core/ext/client_config/lb_policy.c',
         'src/core/ext/client_config/lb_policy_factory.c',
         'src/core/ext/client_config/lb_policy_registry.c',
+        'src/core/ext/client_config/method_config.c',
         'src/core/ext/client_config/parse_address.c',
         'src/core/ext/client_config/resolver.c',
         'src/core/ext/client_config/resolver_factory.c',
