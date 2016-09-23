@@ -38,7 +38,11 @@ git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
 
 # Clone the 'grpc' repo. We just need this for the wrapper scripts under
 # grpc/tools/gcp/stress_tests
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+git clone /var/local/jenkins/grpc /var/local/git/grpc
+
+# clone gRPC submodules
+(cd /var/local/git/grpc/ && exec git submodule | awk '{ system("git submodule \
+update --init --reference ./../../jenkins/grpc" $2 " " $2) }')
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
