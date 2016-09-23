@@ -70,9 +70,9 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
   if (*calld->recv_message != NULL && chand->max_recv_size >= 0 &&
       (*calld->recv_message)->length > (size_t)chand->max_recv_size) {
     char* message_string;
-    gpr_asprintf(
-        &message_string, "Received message larger than max (%u vs. %d)",
-        (*calld->recv_message)->length, chand->max_recv_size);
+    gpr_asprintf(&message_string,
+                 "Received message larger than max (%u vs. %d)",
+                 (*calld->recv_message)->length, chand->max_recv_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
     grpc_call_element_send_cancel_with_message(
@@ -138,15 +138,15 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
       const grpc_integer_options options = {DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0,
                                             INT_MAX};
-      chand->max_send_size = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i], options);
+      chand->max_send_size =
+          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
       const grpc_integer_options options = {DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0,
                                             INT_MAX};
-      chand->max_recv_size = grpc_channel_arg_get_integer(
-          &args->channel_args->args[i], options);
+      chand->max_recv_size =
+          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
   }
 }
