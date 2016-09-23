@@ -1,0 +1,217 @@
+nanopb-0.3.4 (2015-09-26)
+ Fix handling of unsigned 8- and 16-bit enums (issue 164)
+ Fix generator on systems where python = python3. (issue 155)
+ Fix compiler warning on GCC 5.x (issue 171)
+ Make the generator better handle imported .protos (issue 165)
+ Add packed_enum option to generator.
+ Add syntax= line to .proto files (issue 167)
+ Add PlatformIO registry manifest file. (pr 156)
+
+nanopb-0.3.3 (2015-04-10)
+ Fix missing files in Linux binary package (issue 146)
+ Fix generator bug when oneof is first field in a message. (issue 142)
+ Fix generator error when long_names:false is combined with Oneofs. (issue 147)
+ Fix oneof submessage initialization bug. (issue 149)
+ Fix problem with plugin options on Python 2.7.2 and older. (issue 153)
+ Fix crash when callback is inside oneof field. (issue 148)
+ Switch to .tar.gz format for Mac OS X packages. (issue 154)
+ Always define enum long names so that cross-file references work. (issue 118)
+ Add msgid generator option. (issue 151)
+ Improve comment support in .options files. (issue 145)
+ Updates for the CMake rule file, add cmake example.
+ Better error messages for syntax errors in .options file
+
+nanopb-0.3.2 (2015-01-24)
+ Fix memory leaks with PB_ENABLE_MALLOC with some submessage hierarchies (issue 138)
+ Implement support for oneofs (C unions). (issues 131, 141)
+ Add int_size option for generator (issue 139)
+ Add compilation option to disable struct packing. (issue 136)
+ Change PB_RETURN_ERROR() macro to avoid compiler warnings (issue 140)
+ Fix build problems with protoc 3.0.0
+ Add support for POINTER type in extensions
+ Initialize also extension fields to defaults in pb_decode().
+ Detect too large varint values when decoding.
+
+nanopb-0.3.1 (2014-09-11)
+ Fix security issue due to size_t overflows. (issue 132)
+ Fix memory leak with duplicated fields and PB_ENABLE_MALLOC
+ Fix crash if pb_release() is called twice.
+ Fix cyclic message support (issue 130)
+ Fix error in generated initializers for repeated pointer fields.
+ Improve tests (issues 113, 126)
+
+nanopb-0.3.0 (2014-08-26)
+ NOTE: See docs/migration.html or online at
+ http://koti.kapsi.fi/~jpa/nanopb/docs/migration.html
+ for changes in this version. Most importantly, you need to add
+ pb_common.c to the list of files to compile.
+
+ Separated field iterator logic to pb_common.c (issue 128)
+ Change the _count fields to use pb_size_t datatype (issue 82)
+ Added PB_ prefix to macro names (issue 106)
+ Added #if version guard to generated files (issue 129)
+ Added migration document
+
+nanopb-0.2.9 (2014-08-09)
+ NOTE: If you are using the -e option with the generator, you have
+ to prepend . to the argument to get the same behaviour as before.
+
+ Do not automatically add a dot with generator -e option. (issue 122)
+ Fix problem with .options file and extension fields. (issue 125)
+ Don't use SIZE_MAX macro, as it is not in C89. (issue 120)
+ Generate #defines for initializing message structures. (issue 79)
+ Add skip_message option to generator. (issue 121)
+ Add PB_PACKED_STRUCT support for Keil MDK-ARM toolchain (issue 119)
+ Give better messages about the .options file path. (issue 124)
+ Improved tests
+
+nanopb-0.2.8 (2014-05-20)
+ Fix security issue with PB_ENABLE_MALLOC. (issue 117)
+ Add option to not add timestamps to .pb.h and .pb.c preambles. (issue 115)
+ Documentation updates
+ Improved tests
+
+nanopb-0.2.7 (2014-04-07)
+ Fix bug with default values for extension fields (issue 111)
+ Fix some MISRA-C warnings (issue 91)
+ Implemented optional malloc() support (issue 80)
+ Changed pointer-type bytes field datatype
+ Add a "found" field to pb_extension_t (issue 112)
+ Add convenience function pb_get_encoded_size() (issue 16)
+
+nanopb-0.2.6 (2014-02-15)
+ Fix generator error with bytes callback fields (issue 99)
+ Fix warnings about large integer constants (issue 102)
+ Add comments to where STATIC_ASSERT is used (issue 96)
+ Add warning about unknown field names on .options (issue 105)
+ Move descriptor.proto to google/protobuf subdirectory (issue 104)
+ Improved tests
+
+nanopb-0.2.5 (2014-01-01)
+ Fix a bug with encoding negative values in int32 fields (issue 97)
+ Create binary packages of the generator + dependencies (issue 47)
+ Add support for pointer-type fields to the encoder (part of issue 80)
+ Fixed path in FindNanopb.cmake (issue 94)
+ Improved tests
+
+nanopb-0.2.4 (2013-11-07)
+ Remove the deprecated NANOPB_INTERNALS functions from public API.
+ Document the security model.
+ Check array and bytes max sizes when encoding (issue 90)
+ Add #defines for maximum encoded message size (issue 89)
+ Add #define tags for extension fields (issue 93)
+ Fix MISRA C violations (issue 91)
+ Clean up pb_field_t definition with typedefs.
+
+nanopb-0.2.3 (2013-09-18)
+ Improve compatibility by removing ternary operator from initializations (issue 88)
+ Fix build error on Visual C++ (issue 84, patch by Markus Schwarzenberg)
+ Don't stop on unsupported extension fields (issue 83)
+ Add an example pb_syshdr.h file for non-C99 compilers
+ Reorganize tests and examples into subfolders (issue 63)
+ Switch from Makefiles to scons for building the tests
+ Make the tests buildable on Windows
+
+nanopb-0.2.2 (2013-08-18)
+ Add support for extension fields (issue 17)
+ Fix unknown fields in empty message (issue 78)
+ Include the field tags in the generated .pb.h file.
+ Add pb_decode_delimited and pb_encode_delimited wrapper functions (issue 74)
+ Add a section in top of pb.h for changing compilation settings (issue 76)
+ Documentation improvements (issues 12, 77 and others)
+ Improved tests
+
+nanopb-0.2.1 (2013-04-14)
+ NOTE: The default callback function signature has changed.
+       If you don't want to update your code, define PB_OLD_CALLBACK_STYLE.
+ 
+ Change the callback function to use void** (issue 69)
+ Add support for defining the nanopb options in a separate file (issue 12)
+ Add support for packed structs in IAR and MSVC (in addition to GCC) (issue 66)
+ Implement error message support for the encoder side (issue 7)
+ Handle unterminated strings when encoding (issue 68)
+ Fix bug with empty strings in repeated string callbacks (issue 73)
+ Fix regression in 0.2.0 with optional callback fields (issue 70)
+ Fix bugs with empty message types (issues 64, 65)
+ Fix some compiler warnings on clang (issue 67)
+ Some portability improvements (issues 60, 62)
+ Various new generator options
+ Improved tests
+
+nanopb-0.2.0 (2013-03-02)
+ NOTE: This release requires you to regenerate all .pb.c
+       files. Files generated by older versions will not
+       compile anymore.
+
+ Reformat generated .pb.c files using macros (issue 58)
+ Rename PB_HTYPE_ARRAY -> PB_HTYPE_REPEATED
+ Separate PB_HTYPE to PB_ATYPE and PB_HTYPE
+ Move STATIC_ASSERTs to .pb.c file
+ Added CMake file (by Pavel Ilin)
+ Add option to give file extension to generator (by Michael Haberler)
+ Documentation updates
+
+nanopb-0.1.9 (2013-02-13)
+ Fixed error message bugs (issues 52, 56)
+ Sanitize #ifndef filename (issue 50)
+ Performance improvements
+ Add compile-time option PB_BUFFER_ONLY
+ Add Java package name to nanopb.proto
+ Check for sizeof(double) == 8 (issue 54)
+ Added generator option to ignore some fields. (issue 51)
+ Added generator option to make message structs packed. (issue 49)
+ Add more test cases.
+
+nanopb-0.1.8 (2012-12-13)
+ Fix bugs in the enum short names introduced in 0.1.7 (issues 42, 43)
+ Fix STATIC_ASSERT macro when using multiple .proto files. (issue 41)
+ Fix missing initialization of istream.errmsg
+ Make tests/Makefile work for non-gcc compilers (issue 40)
+
+nanopb-0.1.7 (2012-11-11)
+ Remove "skip" mode from pb_istream_t callbacks. Example implementation had a bug. (issue 37)
+ Add option to use shorter names for enum values (issue 38)
+ Improve options support in generator (issues 12, 30)
+ Add nanopb version number to generated files (issue 36)
+ Add extern "C" to generated headers (issue 35)
+ Add names for structs to allow forward declaration (issue 39)
+ Add buffer size check in example (issue 34)
+ Fix build warnings on MS compilers (issue 33)
+
+nanopb-0.1.6 (2012-09-02)
+ Reorganize the field decoder interface (issue 2)
+ Improve performance in submessage decoding (issue 28)
+ Implement error messages in the decoder side (issue 7)
+ Extended testcases (alltypes test is now complete).
+ Fix some compiler warnings (issues 25, 26, 27, 32).
+
+nanopb-0.1.5 (2012-08-04)
+ Fix bug in decoder with packed arrays (issue 23).
+ Extended testcases.
+ Fix some compiler warnings.
+
+nanopb-0.1.4 (2012-07-05)
+ Add compile-time options for easy-to-use >255 field support.
+ Improve the detection of missing required fields.
+ Added example on how to handle union messages.
+ Fix generator error with .proto without messages.
+ Fix problems that stopped the code from compiling with some compilers.
+ Fix some compiler warnings.
+
+nanopb-0.1.3 (2012-06-12)
+ Refactor the field encoder interface.
+ Improve generator error messages (issue 5)
+ Add descriptor.proto into the #include exclusion list
+ Fix some compiler warnings.
+
+nanopb-0.1.2 (2012-02-15)
+ Make the generator to generate include for other .proto files (issue 4).
+ Fixed generator not working on Windows (issue 3)
+
+nanopb-0.1.1 (2012-01-14)
+ Fixed bug in encoder with 'bytes' fields (issue 1).
+ Fixed a bug in the generator that caused a compiler error on sfixed32 and sfixed64 fields.
+ Extended testcases.
+
+nanopb-0.1.0 (2012-01-06)
+ First stable release.
