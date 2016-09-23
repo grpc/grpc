@@ -226,10 +226,15 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   }
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
-  grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
-                          req->context->pollset_set, req->buffer_pool,
-                          (struct sockaddr *)&addr->addr, addr->len,
-                          req->deadline);
+  grpc_arg arg;
+  arg.key = GRPC_ARG_BUFFER_POOL;
+  arg.type = GRPC_ARG_POINTER;
+  arg.value.pointer.p = req->buffer_pool;
+  arg.value.pointer.vtable = grpc_buffer_pool_arg_vtable();
+  grpc_channel_args args = {1, &arg};
+  grpc_tcp_client_connect(
+      exec_ctx, &req->connected, &req->ep, req->context->pollset_set, &args,
+      (struct sockaddr *)&addr->addr, addr->len, req->deadline);
 }
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

@@ -31,26 +31,15 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H
 
-#include <grpc/support/time.h>
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 
-#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+grpc_endpoint *grpc_tcp_client_create_from_fd(
+    grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
+    const char *addr_str);
 
-/* Asynchronously connect to an address (specified as (addr, len)), and call
-   cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure).
-   interested_parties points to a set of pollsets that would be interested
-   in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
-                             grpc_endpoint **endpoint,
-                             grpc_pollset_set *interested_parties,
-                             const grpc_channel_args *channel_args,
-                             const struct sockaddr *addr, size_t addr_len,
-                             gpr_timespec deadline);
-
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */
+#endif

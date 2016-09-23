@@ -33,6 +33,8 @@
 
 #include "src/core/lib/iomgr/buffer_pool.h"
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -362,6 +364,21 @@ void grpc_buffer_pool_resize(grpc_buffer_pool *buffer_pool, size_t size) {
   grpc_combiner_execute(&exec_ctx, buffer_pool->combiner, &a->closure,
                         GRPC_ERROR_NONE, false);
   grpc_exec_ctx_finish(&exec_ctx);
+}
+
+grpc_buffer_pool *grpc_buffer_pool_from_channel_args(
+    grpc_channel_args *channel_args) {
+  for (size_t i = 0; i < channel_args->num_args; i++) {
+    if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_BUFFER_POOL)) {
+      if (channel_args->args[i].type == GRPC_ARG_POINTER) {
+        return grpc_buffer_pool_internal_ref(
+            channel_args->args[i].value.pointer.p);
+      } else {
+        gpr_log(GPR_DEBUG, GRPC_ARG_BUFFER_POOL " should be a pointer");
+      }
+    }
+  }
+  return grpc_buffer_pool_create();
 }
 
 /*******************************************************************************

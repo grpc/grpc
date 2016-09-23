@@ -216,6 +216,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/socket_utils_posix.h )
   s.files += %w( src/core/lib/iomgr/socket_windows.h )
   s.files += %w( src/core/lib/iomgr/tcp_client.h )
+  s.files += %w( src/core/lib/iomgr/tcp_client_posix.h )
   s.files += %w( src/core/lib/iomgr/tcp_posix.h )
   s.files += %w( src/core/lib/iomgr/tcp_server.h )
   s.files += %w( src/core/lib/iomgr/tcp_windows.h )
