@@ -298,6 +298,7 @@ add_library(grpc
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -448,6 +449,7 @@ add_library(grpc
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -488,6 +490,7 @@ add_library(grpc
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
   src/core/ext/census/resource.c
+  src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
@@ -563,6 +566,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -688,6 +692,7 @@ add_library(grpc_cronet
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -801,6 +806,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -926,6 +932,7 @@ add_library(grpc_unsecure
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -962,6 +969,7 @@ add_library(grpc_unsecure
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
   src/core/ext/census/resource.c
+  src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
@@ -1066,6 +1074,7 @@ add_library(grpc++
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1429,6 +1438,7 @@ add_library(grpc++_unsecure
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c

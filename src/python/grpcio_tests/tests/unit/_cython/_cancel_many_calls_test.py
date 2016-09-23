@@ -157,11 +157,12 @@ class CancelManyCallsTest(unittest.TestCase):
     server_thread_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
     server_completion_queue = cygrpc.CompletionQueue()
-    server = cygrpc.Server()
+    server = cygrpc.Server(cygrpc.ChannelArgs([]))
     server.register_completion_queue(server_completion_queue)
     port = server.add_http2_port(b'[::]:0')
     server.start()
-    channel = cygrpc.Channel('localhost:{}'.format(port).encode())
+    channel = cygrpc.Channel('localhost:{}'.format(port).encode(),
+                             cygrpc.ChannelArgs([]))
 
     state = _State()
 

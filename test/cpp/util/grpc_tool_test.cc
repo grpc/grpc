@@ -35,6 +35,7 @@
 
 #include <sstream>
 
+#include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -55,8 +56,41 @@
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
+#define USAGE_REGEX "(  grpc_cli .+\n){2,10}"
+
+#define ECHO_TEST_SERVICE_SUMMARY \
+  "Echo\n"                        \
+  "RequestStream\n"               \
+  "ResponseStream\n"              \
+  "BidiStream\n"                  \
+  "Unimplemented\n"
+
+#define ECHO_TEST_SERVICE_DESCRIPTION                                         \
+  "filename: src/proto/grpc/testing/echo.proto\n"                             \
+  "package: grpc.testing;\n"                                                  \
+  "service EchoTestService {\n"                                               \
+  "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
+  "{}\n"                                                                      \
+  "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "             \
+  "(grpc.testing.EchoResponse) {}\n"                                          \
+  "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "           \
+  "grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc BidiStream(stream grpc.testing.EchoRequest) returns (stream "        \
+  "grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                    \
+  "(grpc.testing.EchoResponse) {}\n"                                          \
+  "}\n"                                                                       \
+  "\n"
+
+#define ECHO_METHOD_DESCRIPTION                                               \
+  "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
+  "{}\n"
+
 namespace grpc {
 namespace testing {
+
+DECLARE_bool(l);
+
 namespace {
 
 class TestCliCredentials GRPC_FINAL : public grpc::testing::CliCredentials {
@@ -67,6 +101,17 @@ class TestCliCredentials GRPC_FINAL : public grpc::testing::CliCredentials {
   }
   const grpc::string GetCredentialUsage() const GRPC_OVERRIDE { return ""; }
 };
+
+bool PrintStream(std::stringstream* ss, const grpc::string& output) {
+  (*ss) << output;
+  return true;
+}
+
+template <typename T>
+size_t ArraySize(T& a) {
+  return ((sizeof(a) / sizeof(*(a))) /
+          static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
+}
 
 }  // namespame
 
@@ -109,23 +154,18 @@ class GrpcToolTest : public ::testing::Test {
 
   void ShutdownServer() { server_->Shutdown(); }
 
+  void ExitWhenError(int argc, const char** argv, const CliCredentials& cred,
+                     GrpcToolOutputCallback callback) {
+    int result = GrpcToolMainLib(argc, argv, cred, callback);
+    if (result) {
+      exit(result);
+    }
+  }
+
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
   reflection::ProtoServerReflectionPlugin plugin_;
 };
-
-static bool PrintStream(std::stringstream* ss, const grpc::string& output) {
-  (*ss) << output << std::endl;
-  return true;
-}
-
-template <typename T>
-static size_t ArraySize(T& a) {
-  return ((sizeof(a) / sizeof(*(a))) /
-          static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
-}
-
-#define USAGE_REGEX "(  grpc_cli .+\n){2,10}"
 
 TEST_F(GrpcToolTest, NoCommand) {
   // Test input "grpc_cli"
@@ -168,8 +208,122 @@ TEST_F(GrpcToolTest, HelpCommand) {
   EXPECT_TRUE(0 == output_stream.tellp());
 }
 
+TEST_F(GrpcToolTest, ListCommand) {
+  // Test input "grpc_cli list localhost:<port>"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
+
+  FLAGS_l = false;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
+                          "grpc.testing.EchoTestService\n"
+                          "grpc.reflection.v1alpha.ServerReflection\n"));
+
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, ListOneService) {
+  // Test input "grpc_cli list localhost:<port> grpc.testing.EchoTestService"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "ls", server_address.c_str(),
+                        "grpc.testing.EchoTestService"};
+  // without -l flag
+  FLAGS_l = false;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: ECHO_TEST_SERVICE_SUMMARY
+  EXPECT_TRUE(0 ==
+              strcmp(output_stream.str().c_str(), ECHO_TEST_SERVICE_SUMMARY));
+
+  // with -l flag
+  output_stream.str(grpc::string());
+  output_stream.clear();
+  FLAGS_l = true;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: ECHO_TEST_SERVICE_DESCRIPTION
+  EXPECT_TRUE(
+      0 == strcmp(output_stream.str().c_str(), ECHO_TEST_SERVICE_DESCRIPTION));
+
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, TypeCommand) {
+  // Test input "grpc_cli type localhost:<port> grpc.testing.EchoRequest"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
+                        "grpc.testing.EchoRequest"};
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  const grpc::protobuf::Descriptor* desc =
+      grpc::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(
+          "grpc.testing.EchoRequest");
+  // Expected output: the DebugString of grpc.testing.EchoRequest
+  EXPECT_TRUE(0 ==
+              strcmp(output_stream.str().c_str(), desc->DebugString().c_str()));
+
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, ListOneMethod) {
+  // Test input "grpc_cli list localhost:<port> grpc.testing.EchoTestService"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "ls", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo"};
+  // without -l flag
+  FLAGS_l = false;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "Echo"
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(), "Echo\n"));
+
+  // with -l flag
+  output_stream.str(grpc::string());
+  output_stream.clear();
+  FLAGS_l = true;
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: ECHO_METHOD_DESCRIPTION
+  EXPECT_TRUE(0 ==
+              strcmp(output_stream.str().c_str(), ECHO_METHOD_DESCRIPTION));
+
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, TypeNotFound) {
+  // Test input "grpc_cli type localhost:<port> grpc.testing.DummyRequest"
+  std::stringstream output_stream;
+
+  const grpc::string server_address = SetUpServer();
+  const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
+                        "grpc.testing.DummyRequest"};
+
+  EXPECT_DEATH(ExitWhenError(ArraySize(argv), argv, TestCliCredentials(),
+                             std::bind(PrintStream, &output_stream,
+                                       std::placeholders::_1)),
+               ".*Type grpc.testing.DummyRequest not found.*");
+
+  ShutdownServer();
+}
+
 TEST_F(GrpcToolTest, CallCommand) {
-  // Test input "grpc_cli call Echo"
+  // Test input "grpc_cli call localhost:<port> Echo "message: 'Hello'"
   std::stringstream output_stream;
 
   const grpc::string server_address = SetUpServer();
@@ -186,7 +340,7 @@ TEST_F(GrpcToolTest, CallCommand) {
 }
 
 TEST_F(GrpcToolTest, TooFewArguments) {
-  // Test input "grpc_cli call localhost:<port> Echo "message: 'Hello'"
+  // Test input "grpc_cli call Echo"
   std::stringstream output_stream;
   const char* argv[] = {"grpc_cli", "call", "Echo"};
 

@@ -33,6 +33,7 @@
 
 #include "src/core/lib/http/parser.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -200,7 +201,8 @@ done:
   return error;
 }
 
-static grpc_error *finish_line(grpc_http_parser *parser) {
+static grpc_error *finish_line(grpc_http_parser *parser,
+                               bool *found_body_start) {
   grpc_error *err;
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
@@ -211,6 +213,7 @@ static grpc_error *finish_line(grpc_http_parser *parser) {
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length == parser->cur_line_end_length) {
         parser->state = GRPC_HTTP_BODY;
+        *found_body_start = true;
         break;
       }
       err = add_header(parser);
@@ -274,7 +277,8 @@ static bool check_line(grpc_http_parser *parser) {
   return false;
 }
 
-static grpc_error *addbyte(grpc_http_parser *parser, uint8_t byte) {
+static grpc_error *addbyte(grpc_http_parser *parser, uint8_t byte,
+                           bool *found_body_start) {
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
@@ -282,20 +286,18 @@ static grpc_error *addbyte(grpc_http_parser *parser, uint8_t byte) {
         if (grpc_http1_trace)
           gpr_log(GPR_ERROR, "HTTP client max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
-        return 0;
+        return GRPC_ERROR_NONE;
       }
       parser->cur_line[parser->cur_line_length] = byte;
       parser->cur_line_length++;
       if (check_line(parser)) {
-        return finish_line(parser);
-      } else {
-        return GRPC_ERROR_NONE;
+        return finish_line(parser, found_body_start);
       }
-      GPR_UNREACHABLE_CODE(return 0);
+      return GRPC_ERROR_NONE;
     case GRPC_HTTP_BODY:
       return addbyte_body(parser, byte);
   }
-  GPR_UNREACHABLE_CODE(return 0);
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_NONE);
 }
 
 void grpc_http_parser_init(grpc_http_parser *parser, grpc_http_type type,
@@ -331,14 +333,15 @@ void grpc_http_response_destroy(grpc_http_response *response) {
   gpr_free(response->hdrs);
 }
 
-grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice) {
-  size_t i;
-
-  for (i = 0; i < GPR_SLICE_LENGTH(slice); i++) {
-    grpc_error *err = addbyte(parser, GPR_SLICE_START_PTR(slice)[i]);
+grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice,
+                                   size_t *start_of_body) {
+  for (size_t i = 0; i < GPR_SLICE_LENGTH(slice); i++) {
+    bool found_body_start = false;
+    grpc_error *err =
+        addbyte(parser, GPR_SLICE_START_PTR(slice)[i], &found_body_start);
     if (err != GRPC_ERROR_NONE) return err;
+    if (found_body_start && start_of_body != NULL) *start_of_body = i + 1;
   }
-
   return GRPC_ERROR_NONE;
 }
 

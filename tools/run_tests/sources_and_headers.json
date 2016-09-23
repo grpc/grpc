@@ -165,6 +165,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "census_trace_context_test", 
+    "src": [
+      "test/core/census/trace_context_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.c"
@@ -3746,6 +3762,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_http_proxy_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_http_proxy.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_load_reporting_test", 
     "src": [
       "test/core/end2end/fixtures/h2_load_reporting.c"
@@ -4004,6 +4037,23 @@
     "name": "h2_full+trace_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+trace.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_http_proxy_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_http_proxy.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4652,7 +4702,8 @@
       "test/cpp/util/config_grpc_cli.h", 
       "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.h", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
+      "test/cpp/util/proto_reflection_descriptor_database.h", 
+      "test/cpp/util/service_describer.h"
     ], 
     "language": "c++", 
     "name": "grpc_cli_libs", 
@@ -4667,7 +4718,9 @@
       "test/cpp/util/proto_file_parser.cc", 
       "test/cpp/util/proto_file_parser.h", 
       "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
+      "test/cpp/util/proto_reflection_descriptor_database.h", 
+      "test/cpp/util/service_describer.cc", 
+      "test/cpp/util/service_describer.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -5695,7 +5748,8 @@
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/resource.h", 
-      "src/core/ext/census/rpc_metric_id.h"
+      "src/core/ext/census/rpc_metric_id.h", 
+      "src/core/ext/census/trace_context.h"
     ], 
     "language": "c", 
     "name": "census", 
@@ -5723,6 +5777,8 @@
       "src/core/ext/census/resource.c", 
       "src/core/ext/census/resource.h", 
       "src/core/ext/census/rpc_metric_id.h", 
+      "src/core/ext/census/trace_context.c", 
+      "src/core/ext/census/trace_context.h", 
       "src/core/ext/census/tracing.c"
     ], 
     "third_party": false, 
@@ -5925,6 +5981,7 @@
       "src/core/lib/channel/handshaker.h", 
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.h", 
+      "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.h", 
@@ -6032,6 +6089,8 @@
       "src/core/lib/channel/http_client_filter.h", 
       "src/core/lib/channel/http_server_filter.c", 
       "src/core/lib/channel/http_server_filter.h", 
+      "src/core/lib/channel/message_size_filter.c", 
+      "src/core/lib/channel/message_size_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
@@ -6217,6 +6276,7 @@
       "src/core/ext/client_config/client_channel.h", 
       "src/core/ext/client_config/client_channel_factory.h", 
       "src/core/ext/client_config/connector.h", 
+      "src/core/ext/client_config/http_connect_handshaker.h", 
       "src/core/ext/client_config/initial_connect_string.h", 
       "src/core/ext/client_config/lb_policy.h", 
       "src/core/ext/client_config/lb_policy_factory.h", 
@@ -6242,6 +6302,8 @@
       "src/core/ext/client_config/connector.c", 
       "src/core/ext/client_config/connector.h", 
       "src/core/ext/client_config/default_initial_connect_string.c", 
+      "src/core/ext/client_config/http_connect_handshaker.c", 
+      "src/core/ext/client_config/http_connect_handshaker.h", 
       "src/core/ext/client_config/initial_connect_string.c", 
       "src/core/ext/client_config/initial_connect_string.h", 
       "src/core/ext/client_config/lb_policy.c", 
@@ -6487,6 +6549,7 @@
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/grpc_profiler.h", 
@@ -6503,6 +6566,8 @@
     "src": [
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/fixtures/http_proxy.c", 
+      "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.c", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 
