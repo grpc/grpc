@@ -41,9 +41,8 @@
 
 #include <grpc/support/log.h>
 
-const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
-  GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
-  uv_inet_ntop(af, src, dst, (size_t)size);
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  uv_inet_ntop(af, src, dst, size);
   return dst;
 }
 

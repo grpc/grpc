@@ -68,6 +68,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
                      void *timer_cb_arg, gpr_timespec now) {
   uint64_t timeout;
+  uv_timer_t *uv_timer;
   grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg);
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->triggered = 1;
@@ -77,10 +78,11 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   timer->triggered = 0;
   timeout = (uint64_t)gpr_time_to_millis(gpr_time_sub(deadline, now));
   gpr_log(GPR_DEBUG, "Setting timer %p: %lu", timer, timeout);
-  timer->uv_timer = gpr_malloc(sizeof(uv_timer_t));
-  uv_timer_init(uv_default_loop(), timer->uv_timer);
-  timer->uv_timer->data = timer;
-  uv_timer_start(timer->uv_timer, run_expired_timer, timeout, 0);
+  uv_timer = gpr_malloc(sizeof(uv_timer_t));
+  uv_timer_init(uv_default_loop(), uv_timer);
+  uv_timer->data = timer;
+  timer->uv_timer = uv_timer;
+  uv_timer_start(uv_timer, run_expired_timer, timeout, 0);
 }
 
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
@@ -88,7 +90,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     gpr_log(GPR_DEBUG, "Running cancelled timer callback");
     timer->triggered = 1;
     grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
-    stop_uv_timer(timer->uv_timer);
+    stop_uv_timer((uv_timer_t*)timer->uv_timer);
   }
 }
 

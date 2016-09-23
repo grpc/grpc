@@ -35,14 +35,14 @@
 
 #ifdef GRPC_WINDOWS_SOCKETUTILS
 
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
 #include <grpc/support/log.h>
 
-const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
-  GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
   /* Windows InetNtopA wants a mutable ip pointer */
-  return InetNtopA(af, (void *)src, dst, (size_t)size);
+  return InetNtopA(af, (void *)src, dst, size);
 }
 
 #endif /* GRPC_WINDOWS_SOCKETUTILS */

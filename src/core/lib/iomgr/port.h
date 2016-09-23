@@ -37,7 +37,7 @@
 #define GRPC_CORE_LIB_IOMGR_PORT_H
 
 #if defined(GRPC_UV)
-#include <uv.h>
+// Do nothing
 #elif defined(GPR_MANYLINUX1)
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
 #define GRPC_HAVE_IP_PKTINFO 1

@@ -31,11 +31,6 @@
  *
  */
 
-/* We currently need this at the top of the file if we import some iomgr
-   headers because if we are building with libuv, those headers will include
-   uv.h, which needs to be included before other system headers */
-#include "src/core/lib/iomgr/port.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -187,7 +182,7 @@ static void do_nothing(void *ignored) {}
 
 static grpc_resolver *sockaddr_create(
     grpc_resolver_args *args, const char *default_lb_policy_name,
-    int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
+    int parse(grpc_uri *uri, grpc_resolved_address *dst)) {
   int errors_found = 0; /* GPR_FALSE */
   sockaddr_resolver *r;
   gpr_slice path_slice;
@@ -238,9 +233,7 @@ static grpc_resolver *sockaddr_create(
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri,
-               (struct sockaddr_storage *)(&r->addresses->addrs[i].addr),
-               &r->addresses->addrs[i].len)) {
+    if (!parse(&ith_uri, &r->addresses->addrs[i])) {
       errors_found = 1; /* GPR_TRUE */
     }
     gpr_free(part_str);

@@ -34,17 +34,9 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 
-#include "src/core/lib/iomgr/port.h"
-
-#if defined(GRPC_WINSOCK_SOCKET)
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#elif defined(GRPC_POSIX_SOCKET)
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#elif defined(GRPC_UV)
-#include <uv.h>
-#endif
+#include <stddef.h>
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
-const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size);
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H */

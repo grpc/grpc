@@ -93,15 +93,14 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
 }
 
-static void set_magic_initial_string(struct sockaddr **addr, size_t *addr_len,
+static void set_magic_initial_string(grpc_resolved_address **addr,
                                      gpr_slice *connect_string) {
   GPR_ASSERT(addr);
-  GPR_ASSERT(addr_len);
+  GPR_ASSERT((*addr)->len);
   *connect_string = gpr_slice_from_copied_string(magic_connect_string);
 }
 
-static void reset_addr_and_set_magic_string(struct sockaddr **addr,
-                                            size_t *addr_len,
+static void reset_addr_and_set_magic_string(grpc_resolved_address **addr,
                                             gpr_slice *connect_string) {
   struct sockaddr_in target;
   *connect_string = gpr_slice_from_copied_string(magic_connect_string);
@@ -109,9 +108,9 @@ static void reset_addr_and_set_magic_string(struct sockaddr **addr,
   target.sin_family = AF_INET;
   target.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   target.sin_port = htons((uint16_t)server_port);
-  *addr_len = sizeof(target);
-  *addr = (struct sockaddr *)gpr_malloc(sizeof(target));
-  memcpy(*addr, &target, sizeof(target));
+  (*addr)->len = sizeof(target);
+  *addr = (grpc_resolved_address *)gpr_malloc(sizeof(grpc_resolved_address));
+  memcpy((*addr)->addr, &target, sizeof(target));
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {

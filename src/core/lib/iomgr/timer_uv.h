@@ -34,13 +34,13 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H
 
-#include <uv.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 struct grpc_timer {
   grpc_closure closure;
-  uv_timer_t *uv_timer;
+  /* This is actually a uv_timer_t*, but we want to keep platform-specific
+     types out of headers */
+  void *uv_timer;
   int triggered;
 };
 

@@ -37,6 +37,7 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
@@ -47,7 +48,7 @@
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
+                             const grpc_resolved_address *addr,
                              gpr_timespec deadline);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */

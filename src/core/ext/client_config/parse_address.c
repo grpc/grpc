@@ -31,6 +31,7 @@
  *
  */
 
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/ext/client_config/parse_address.h"
 
 #include <stdio.h>
@@ -45,32 +46,40 @@
 #include <grpc/support/string_util.h>
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
+
+int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+  struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
 
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, uri->path);
-  *len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
+  resolved_addr->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
 
   return 1;
 }
-#endif
 
-int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+#else /* GRPC_HAVE_UNIX_SOCKET */
+
+int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+  abort();
+}
+
+#endif /* GRPC_HAVE_UNIX_SOCKET */
+
+int parse_ipv4(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
   const char *host_port = uri->path;
   char *host;
   char *port;
   int port_num;
   int result = 0;
-  struct sockaddr_in *in = (struct sockaddr_in *)addr;
+  struct sockaddr_in *in = (struct sockaddr_in *)resolved_addr->addr;
 
   if (*host_port == '/') ++host_port;
   if (!gpr_split_host_port(host_port, &host, &port)) {
     return 0;
   }
 
-  memset(in, 0, sizeof(*in));
-  *len = sizeof(*in);
+  memset(resolved_addr, 0, sizeof(grpc_resolved_address));
+  resolved_addr->len = sizeof(struct sockaddr_in);
   in->sin_family = AF_INET;
   if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
     gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
@@ -96,13 +105,13 @@ done:
   return result;
 }
 
-int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+int parse_ipv6(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
   const char *host_port = uri->path;
   char *host;
   char *port;
   int port_num;
   int result = 0;
-  struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr;
+  struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)resolved_addr->addr;
 
   if (*host_port == '/') ++host_port;
   if (!gpr_split_host_port(host_port, &host, &port)) {
@@ -110,7 +119,7 @@ int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
   }
 
   memset(in6, 0, sizeof(*in6));
-  *len = sizeof(*in6);
+  resolved_addr->len = sizeof(*in6);
   in6->sin6_family = AF_INET6;
   if (inet_pton(AF_INET6, host, &in6->sin6_addr) == 0) {
     gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);

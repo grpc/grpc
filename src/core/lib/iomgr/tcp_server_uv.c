@@ -42,6 +42,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
@@ -171,8 +172,7 @@ static void on_connect(uv_stream_t *server, int status) {
   uv_tcp_t *client;
   grpc_endpoint *ep = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_storage peer_name;
-  int peer_name_len = sizeof(peer_name);
+  grpc_resolved_address peer_name;
   char *peer_name_string;
   int err;
 
@@ -189,10 +189,12 @@ static void on_connect(uv_stream_t *server, int status) {
   // UV documentation says this is guaranteed to succeed
   uv_accept((uv_stream_t *)server, (uv_stream_t *)client);
   peer_name_string = NULL;
-  err = uv_tcp_getpeername(client, (struct sockaddr *)&peer_name,
-                           &peer_name_len);
+  memset(&peer_name, 0, sizeof(grpc_resolved_address));
+  peer_name.len = sizeof(struct sockaddr_storage);
+  err = uv_tcp_getpeername(client, (struct sockaddr *)&peer_name.addr,
+                           (int*)&peer_name.len);
   if (err == 0) {
-    peer_name_string = grpc_sockaddr_to_uri((struct sockaddr *)&peer_name);
+    peer_name_string = grpc_sockaddr_to_uri(&peer_name);
   } else {
     gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s",
             uv_strerror(status));
@@ -206,18 +208,17 @@ static void on_connect(uv_stream_t *server, int status) {
 
 static grpc_error *add_socket_to_server(grpc_tcp_server *s,
                                         uv_tcp_t *handle,
-                                        struct sockaddr *addr,
-                                        size_t addr_len, unsigned port_index,
+                                        const grpc_resolved_address *addr,
+                                        unsigned port_index,
                                         grpc_tcp_listener **listener) {
   grpc_tcp_listener *sp = NULL;
   int port = -1;
   int status;
   grpc_error *error;
-  struct sockaddr_storage sockname_temp;
-  int sockname_len;
+  grpc_resolved_address sockname_temp;
 
   // The last argument to uv_tcp_bind is flags
-  status = uv_tcp_bind(handle, addr, 0);
+  status = uv_tcp_bind(handle, (struct sockaddr *)addr->addr, 0);
   if (status != 0) {
     error = GRPC_ERROR_CREATE("Failed to bind to port");
     error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
@@ -225,9 +226,9 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s,
     return error;
   }
 
-  sockname_len = (int)sizeof(sockname_temp);
-  status = uv_tcp_getsockname(handle, (struct sockaddr *)&sockname_temp,
-                              &sockname_len);
+  sockname_temp.len = (int)sizeof(struct sockaddr_storage);
+  status = uv_tcp_getsockname(handle, (struct sockaddr *)&sockname_temp.addr,
+                              (int *)&sockname_temp.len);
   if (status != 0) {
     error = GRPC_ERROR_CREATE("getsockname failed");
     error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
@@ -235,7 +236,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s,
     return error;
   }
 
-  port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
+  port = grpc_sockaddr_get_port(&sockname_temp);
 
   GPR_ASSERT(port >= 0);
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
@@ -259,16 +260,16 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                                     size_t addr_len, int *port) {
+grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
+                                     const grpc_resolved_address *addr,
+                                     int *port) {
   // This function is mostly copied from tcp_server_windows.c
   grpc_tcp_listener *sp = NULL;
   uv_tcp_t *handle;
-  struct sockaddr_in6 addr6_v4mapped;
-  struct sockaddr_in6 wildcard;
-  struct sockaddr *allocated_addr = NULL;
-  struct sockaddr_storage sockname_temp;
-  int sockname_len;
+  grpc_resolved_address addr6_v4mapped;
+  grpc_resolved_address wildcard;
+  grpc_resolved_address *allocated_addr = NULL;
+  grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
@@ -281,13 +282,13 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
      as some previously created listener. */
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (sp = s->head; sp; sp = sp->next) {
-      sockname_len = sizeof(sockname_temp);
-      if (0 == uv_tcp_getsockname(sp->handle, (struct sockaddr *)&sockname_temp,
-                                  &sockname_len)) {
-        *port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
+      sockname_temp.len = sizeof(struct sockaddr_storage);
+      if (0 == uv_tcp_getsockname(sp->handle, (struct sockaddr *)&sockname_temp.addr,
+                                  (int *)&sockname_temp.len)) {
+        *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
-          allocated_addr = gpr_malloc(addr_len);
-          memcpy(allocated_addr, addr, addr_len);
+          allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));
+          memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, *port);
           addr = allocated_addr;
           break;
@@ -297,24 +298,21 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   }
 
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = (const struct sockaddr *)&addr6_v4mapped;
-    addr_len = sizeof(addr6_v4mapped);
+    addr = &addr6_v4mapped;
   }
 
   /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
   if (grpc_sockaddr_is_wildcard(addr, port)) {
     grpc_sockaddr_make_wildcard6(*port, &wildcard);
 
-    addr = (struct sockaddr *)&wildcard;
-    addr_len = sizeof(wildcard);
+    addr = &wildcard;
   }
 
   handle = gpr_malloc(sizeof(uv_tcp_t));
   gpr_log(GPR_DEBUG, "Allocating uv_tcp_t handle %p", handle);
   status = uv_tcp_init(uv_default_loop(), handle);
   if (status == 0) {
-    error = add_socket_to_server(s, handle, (struct sockaddr *)addr, addr_len,
-                                 port_index, &sp);
+    error = add_socket_to_server(s, handle, addr, port_index, &sp);
   } else {
     error = GRPC_ERROR_CREATE("Failed to initialize UV tcp handle");
     error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,

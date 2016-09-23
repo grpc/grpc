@@ -254,7 +254,7 @@ static int set_socket_dualstack(int fd) {
   }
 }
 
-static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
+static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
   char *addr_str;
   grpc_sockaddr_to_string(&addr_str, addr, 0);
@@ -264,10 +264,12 @@ static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
   return err;
 }
 
-grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
+grpc_error *grpc_create_dualstack_socket(const grpc_resolved_address *resolved_addr,
+                                         int type,
                                          int protocol,
                                          grpc_dualstack_mode *dsmode,
                                          int *newfd) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {
@@ -282,9 +284,9 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
       return GRPC_ERROR_NONE;
     }
     /* If this isn't an IPv4 address, then return whatever we've got. */
-    if (!grpc_sockaddr_is_v4mapped(addr, NULL)) {
+    if (!grpc_sockaddr_is_v4mapped(resolved_addr, NULL)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return error_for_fd(*newfd, addr);
+      return error_for_fd(*newfd, resolved_addr);
     }
     /* Fall back to AF_INET. */
     if (*newfd >= 0) {
@@ -294,11 +296,12 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = socket(family, type, protocol);
-  return error_for_fd(*newfd, addr);
+  return error_for_fd(*newfd, resolved_addr);
 }
 
-const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
-  return inet_ntop(af, src, dst, size);
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  GPR_ASSERT(size <= (socklen_t)-1);
+  return inet_ntop(af, src, dst, (socklen_t)size);
 }
 
 #endif

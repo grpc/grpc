@@ -31,6 +31,8 @@
  *
  */
 
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include "test/core/util/test_tcp_server.h"
 
 #include <grpc/grpc.h>
@@ -41,7 +43,7 @@
 #include <grpc/support/time.h>
 #include <string.h>
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 
@@ -64,18 +66,19 @@ void test_tcp_server_init(test_tcp_server *server,
 }
 
 void test_tcp_server_start(test_tcp_server *server, int port) {
-  struct sockaddr_in addr;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   int port_added;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons((uint16_t)port);
-  memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
+  addr->sin_family = AF_INET;
+  addr->sin_port = htons((uint16_t)port);
+  memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
 
   grpc_error *error = grpc_tcp_server_create(&server->shutdown_complete, NULL,
                                              &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  error = grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr),
+  error = grpc_tcp_server_add_port(server->tcp_server, &resolved_addr,
                                    &port_added);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port_added == port);

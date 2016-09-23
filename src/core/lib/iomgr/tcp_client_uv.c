@@ -118,8 +118,8 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx,
                              grpc_closure *closure, grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr,
-                             size_t addr_len, gpr_timespec deadline) {
+                             const grpc_resolved_address *resolved_addr,
+                             gpr_timespec deadline) {
   grpc_uv_tcp_connect *connect;
   (void)interested_parties;
   connect = gpr_malloc(sizeof(grpc_uv_tcp_connect));
@@ -128,11 +128,12 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx,
   connect->endpoint = ep;
   connect->tcp_handle = gpr_malloc(sizeof(uv_tcp_t));
   gpr_log(GPR_DEBUG, "Allocated uv_tcp_t handle %p", connect->tcp_handle);
-  connect->addr_name = grpc_sockaddr_to_uri(addr);
+  connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
   // TODO(murgatroid99): figure out what the return value here means
-  uv_tcp_connect(&connect->connect_req, connect->tcp_handle, addr,
+  uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
+                 (const struct sockaddr *)resolved_addr->addr,
                  uv_tc_on_connect);
   grpc_timer_init(exec_ctx, &connect->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),

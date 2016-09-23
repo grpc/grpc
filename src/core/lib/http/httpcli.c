@@ -32,7 +32,6 @@
  */
 
 #include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 
@@ -126,7 +125,7 @@ static void append_error(internal_request *req, grpc_error *error) {
     req->overall_error = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
   grpc_resolved_address *addr = &req->addresses->addrs[req->next_address - 1];
-  char *addr_text = grpc_sockaddr_to_uri((struct sockaddr *)addr->addr);
+  char *addr_text = grpc_sockaddr_to_uri(addr);
   req->overall_error = grpc_error_add_child(
       req->overall_error,
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
@@ -226,7 +225,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   grpc_closure_init(&req->connected, on_connected, req);
   grpc_tcp_client_connect(
       exec_ctx, &req->connected, &req->ep, req->context->pollset_set,
-      (struct sockaddr *)&addr->addr, addr->len, req->deadline);
+      addr, req->deadline);
 }
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

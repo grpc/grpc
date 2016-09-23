@@ -59,11 +59,6 @@
  *   the subchannel by the caller.
  */
 
-/* We currently need this at the top of the file if we import some iomgr
-   headers because if we are building with libuv, those headers will include
-   uv.h, which needs to be included before other system headers */
-#include "src/core/lib/iomgr/port.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -631,8 +626,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   size_t subchannel_idx = 0;
   for (size_t i = 0; i < p->num_addresses; i++) {
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
-    sc_args.addr = (struct sockaddr *)args->addresses[i].resolved_address->addr;
-    sc_args.addr_len = args->addresses[i].resolved_address->len;
+    sc_args.addr = args->addresses[i].resolved_address;
 
     p->user_data_pointers[i] = args->addresses[i].user_data;
 

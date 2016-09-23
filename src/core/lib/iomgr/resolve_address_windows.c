@@ -34,8 +34,9 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+
+#include "src/core/lib/iomgr/resolve_address.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -124,8 +125,7 @@ static grpc_error *blocking_resolve_address_impl(
   {
     for (i = 0; i < (*addresses)->naddrs; i++) {
       char *buf;
-      grpc_sockaddr_to_string(
-          &buf, (struct sockaddr *)&(*addresses)->addrs[i].addr, 0);
+      grpc_sockaddr_to_string(&buf, (*addresses)->addrs[i], 0);
       gpr_free(buf);
     }
   }

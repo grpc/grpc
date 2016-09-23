@@ -34,13 +34,15 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
+#include "src/core/lib/iomgr/resolve_address.h"
+
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include "src/core/lib/iomgr/error.h"
 
 /* a wrapper for accept or accept4 */
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
+int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr,
                  int nonblock, int cloexec);
 
 /* set a socket to non blocking mode */
@@ -125,7 +127,7 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
      IPv4, so that bind() or connect() see the correct family.
    Also, it's important to distinguish between DUALSTACK and IPV6 when
    listening on the [::] wildcard address. */
-grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
+grpc_error *grpc_create_dualstack_socket(const grpc_resolved_address *addr, int type,
                                          int protocol,
                                          grpc_dualstack_mode *dsmode,
                                          int *newfd);

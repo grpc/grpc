@@ -34,8 +34,9 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET
 
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+
+#include "src/core/lib/iomgr/resolve_address.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -49,7 +50,6 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"

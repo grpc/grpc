@@ -71,7 +71,7 @@ typedef struct {
   grpc_closure *closure;
 } async_connect;
 
-static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
+static grpc_error *prepare_socket(const grpc_resolved_address *addr, int fd) {
   grpc_error *err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
@@ -227,14 +227,14 @@ finish:
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *closure, grpc_endpoint **ep,
                                     grpc_pollset_set *interested_parties,
-                                    const struct sockaddr *addr,
-                                    size_t addr_len, gpr_timespec deadline) {
+                                    const grpc_resolved_address *addr,
+                                    gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
   async_connect *ac;
-  struct sockaddr_in6 addr6_v4mapped;
-  struct sockaddr_in addr4_copy;
+  grpc_resolved_address addr6_v4mapped;
+  grpc_resolved_address addr4_copy;
   grpc_fd *fdobj;
   char *name;
   char *addr_str;
@@ -244,8 +244,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = (const struct sockaddr *)&addr6_v4mapped;
-    addr_len = sizeof(addr6_v4mapped);
+    addr = &addr6_v4mapped;
   }
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
@@ -256,8 +255,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (dsmode == GRPC_DSMODE_IPV4) {
     /* If we got an AF_INET socket, map the address back to IPv4. */
     GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
-    addr = (struct sockaddr *)&addr4_copy;
-    addr_len = sizeof(addr4_copy);
+    addr = &addr4_copy;
   }
   if ((error = prepare_socket(addr, fd)) != GRPC_ERROR_NONE) {
     grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
@@ -265,8 +263,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   do {
-    GPR_ASSERT(addr_len < ~(socklen_t)0);
-    err = connect(fd, addr, (socklen_t)addr_len);
+    GPR_ASSERT(addr->len < ~(socklen_t)0);
+    err = connect(fd, (const struct sockaddr *)addr->addr, (socklen_t)addr->len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);
@@ -321,16 +319,16 @@ done:
 // overridden by api_fuzzer.c
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
-    size_t addr_len, gpr_timespec deadline) = tcp_client_connect_impl;
+    grpc_pollset_set *interested_parties, const grpc_resolved_address *addr,
+    gpr_timespec deadline) = tcp_client_connect_impl;
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
+                             const grpc_resolved_address *addr,
                              gpr_timespec deadline) {
   grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties, addr,
-                               addr_len, deadline);
+                               deadline);
 }
 
 #endif

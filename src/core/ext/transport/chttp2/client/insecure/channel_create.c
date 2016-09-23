@@ -149,7 +149,7 @@ static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
   c->tcp = NULL;
   grpc_closure_init(&c->connected, connected, c);
   grpc_tcp_client_connect(exec_ctx, &c->connected, &c->tcp,
-                          args->interested_parties, args->addr, args->addr_len,
+                          args->interested_parties, args->addr,
                           args->deadline);
 }
 

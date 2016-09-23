@@ -35,16 +35,16 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
 
 #include <grpc/support/slice.h>
-#include "src/core/lib/iomgr/sockaddr.h"
 
-typedef void (*grpc_set_initial_connect_string_func)(struct sockaddr **addr,
-                                                     size_t *addr_len,
+#include "src/core/lib/iomgr/resolve_address.h"
+
+typedef void (*grpc_set_initial_connect_string_func)(grpc_resolved_address **addr,
                                                      gpr_slice *initial_str);
 void grpc_test_set_initial_connect_string_function(
     grpc_set_initial_connect_string_func func);
 
 /** Set a string to be sent once connected. Optionally reset addr. */
-void grpc_set_initial_connect_string(struct sockaddr **addr, size_t *addr_len,
+void grpc_set_initial_connect_string(grpc_resolved_address **addr,
                                      gpr_slice *connect_string);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H */

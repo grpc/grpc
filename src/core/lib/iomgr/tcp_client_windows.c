@@ -129,13 +129,13 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
                              grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
+                             const grpc_resolved_address *addr,
                              gpr_timespec deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
-  struct sockaddr_in6 addr6_v4mapped;
-  struct sockaddr_in6 local_address;
+  grpc_resolved_address addr6_v4mapped;
+  grpc_resolved_address local_address;
   async_connect *ac;
   grpc_winsocket *socket = NULL;
   LPFN_CONNECTEX ConnectEx;
@@ -148,8 +148,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = (const struct sockaddr *)&addr6_v4mapped;
-    addr_len = sizeof(addr6_v4mapped);
+    addr = &addr6_v4mapped;
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
@@ -178,7 +177,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status = bind(sock, (struct sockaddr *)&local_address, sizeof(local_address));
+  status = bind(sock, (struct sockaddr *)&local_address.addr, local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -187,7 +186,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
   success =
-      ConnectEx(sock, addr, (int)addr_len, NULL, 0, NULL, &info->overlapped);
+      ConnectEx(sock, (struct sockaddr *)&addr->addr, (int)addr->len, NULL, 0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
      an IOCP notification, so let's ignore it. */

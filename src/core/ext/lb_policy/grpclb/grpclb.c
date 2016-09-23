@@ -96,10 +96,8 @@
  * - Implement LB service forwarding (point 2c. in the doc's diagram).
  */
 
-/* We currently need this at the top of the file if we import some iomgr
-   headers because if we are building with libuv, those headers will include
-   uv.h, which needs to be included before other system headers */
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <errno.h>
 
 #include <string.h>
@@ -115,7 +113,6 @@
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
@@ -445,7 +442,7 @@ static size_t process_serverlist(const grpc_grpclb_serverlist *serverlist,
       gpr_log(GPR_ERROR,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri((struct sockaddr *)sa));
+              grpc_sockaddr_to_uri(lb_addr->resolved_address));
       lb_addr->user_data = GRPC_MDELEM_LOAD_REPORTING_INITIAL_EMPTY;
     }
     ++addr_idx;
@@ -593,8 +590,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * ipvX://ip1:port1,ip2:port2,...
    * TODO(dgq): support mixed ip version */
   char **addr_strs = gpr_malloc(sizeof(char *) * args->num_addresses);
-  addr_strs[0] = grpc_sockaddr_to_uri(
-      (const struct sockaddr *)&args->addresses[0].resolved_address->addr);
+  addr_strs[0] = grpc_sockaddr_to_uri(args->addresses[0].resolved_address);
   for (size_t i = 1; i < args->num_addresses; i++) {
     if (args->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,
@@ -604,7 +600,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(
         grpc_sockaddr_to_string(
             &addr_strs[i],
-            (const struct sockaddr *)&args->addresses[i].resolved_address->addr,
+            args->addresses[i].resolved_address,
             true) == 0);
   }
   size_t uri_path_len;

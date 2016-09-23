@@ -38,6 +38,7 @@
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
@@ -78,8 +79,9 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
    but not dualstack sockets. */
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                                     size_t addr_len, int *out_port);
+grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
+                                     const grpc_resolved_address *addr,
+                                     int *out_port);
 
 /* Number of fds at the given port_index, or 0 if port_index is out of
    bounds. */
