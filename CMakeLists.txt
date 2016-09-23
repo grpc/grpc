@@ -438,6 +438,7 @@ add_library(grpc
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -668,6 +669,7 @@ add_library(grpc_cronet
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -896,6 +898,7 @@ add_library(grpc_unsecure
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c

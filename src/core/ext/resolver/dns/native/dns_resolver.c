@@ -37,6 +37,8 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_config/http_connect_handshaker.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -53,8 +55,10 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
-  /** name to resolve */
-  char *name;
+  /** target name */
+  char *target_name;
+  /** name to resolve (usually the same as target_name) */
+  char *name_to_resolve;
   /** default port to use */
   char *default_port;
   /** load balancing policy name */
@@ -63,7 +67,7 @@ typedef struct {
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** are we currently resolving? */
-  int resolving;
+  bool resolving;
   /** which version of the result have we published? */
   int published_version;
   /** which version of the result is current? */
@@ -165,7 +169,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_resolver_result *result = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
-  r->resolving = 0;
+  r->resolving = false;
   if (r->addresses != NULL) {
     grpc_lb_addresses *addresses =
         grpc_lb_addresses_create(r->addresses->naddrs);
@@ -176,7 +180,8 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
           NULL /* balancer_name */, NULL /* user_data */);
     }
     grpc_resolved_addresses_destroy(r->addresses);
-    result = grpc_resolver_result_create(addresses, r->lb_policy_name, NULL);
+    result = grpc_resolver_result_create(r->target_name, addresses,
+                                         r->lb_policy_name, NULL);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -211,9 +216,9 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
                                        dns_resolver *r) {
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
-  r->resolving = 1;
+  r->resolving = true;
   r->addresses = NULL;
-  grpc_resolve_address(exec_ctx, r->name, r->default_port,
+  grpc_resolve_address(exec_ctx, r->name_to_resolve, r->default_port,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
@@ -237,7 +242,8 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_result) {
     grpc_resolver_result_unref(exec_ctx, r->resolved_result);
   }
-  gpr_free(r->name);
+  gpr_free(r->target_name);
+  gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -246,22 +252,23 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
 static grpc_resolver *dns_create(grpc_resolver_args *args,
                                  const char *default_port,
                                  const char *lb_policy_name) {
-  dns_resolver *r;
-  const char *path = args->uri->path;
-
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
-
+  // Get name from args.
+  const char *path = args->uri->path;
   if (path[0] == '/') ++path;
-
-  r = gpr_malloc(sizeof(dns_resolver));
+  // Get proxy name, if any.
+  char *proxy_name = grpc_get_http_proxy_server();
+  // Create resolver.
+  dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
-  r->name = gpr_strdup(path);
+  r->target_name = gpr_strdup(path);
+  r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
