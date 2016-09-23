@@ -50,6 +50,7 @@ typedef struct {
 } reclaimer_args;
 static void reclaimer_cb(grpc_exec_ctx *exec_ctx, void *args,
                          grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   reclaimer_args *a = args;
   grpc_buffer_user_free(exec_ctx, a->buffer_user, a->size);
   grpc_buffer_user_finish_reclaimation(exec_ctx, a->buffer_user);
@@ -63,6 +64,15 @@ grpc_closure *make_reclaimer(grpc_buffer_user *buffer_user, size_t size,
   a->buffer_user = buffer_user;
   a->then = then;
   return grpc_closure_create(reclaimer_cb, a);
+}
+
+static void unused_reclaimer_cb(grpc_exec_ctx *exec_ctx, void *arg,
+                                grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
+  grpc_closure_run(exec_ctx, arg, GRPC_ERROR_NONE);
+}
+grpc_closure *make_unused_reclaimer(grpc_closure *then) {
+  return grpc_closure_create(unused_reclaimer_cb, then);
 }
 
 static void destroy_user(grpc_buffer_user *usr) {
@@ -290,6 +300,204 @@ static void test_blocked_until_scheduled_reclaim(void) {
   destroy_user(&usr);
 }
 
+static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
+  gpr_log(GPR_INFO, "** test_blocked_until_scheduled_reclaim_and_scavenge **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  grpc_buffer_user usr1;
+  grpc_buffer_user usr2;
+  grpc_buffer_user_init(&usr1, p);
+  grpc_buffer_user_init(&usr2, p);
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr1, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(done);
+  }
+  bool reclaim_done = false;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr1, false,
+        make_reclaimer(&usr1, 1024, set_bool(&reclaim_done)));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr2, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(reclaim_done);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, &usr2, 1024);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr1);
+  destroy_user(&usr2);
+}
+
+static void test_blocked_until_scheduled_destructive_reclaim(void) {
+  gpr_log(GPR_INFO, "** test_blocked_until_scheduled_destructive_reclaim **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(done);
+  }
+  bool reclaim_done = false;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, true,
+        make_reclaimer(&usr, 1024, set_bool(&reclaim_done)));
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(reclaim_done);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, &usr, 1024);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
+}
+
+static void test_unused_reclaim_is_cancelled(void) {
+  gpr_log(GPR_INFO, "** test_unused_reclaim_is_cancelled **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  bool benign_done = false;
+  bool destructive_done = false;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, false, make_unused_reclaimer(set_bool(&benign_done)));
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, true,
+        make_unused_reclaimer(set_bool(&destructive_done)));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(!benign_done);
+    GPR_ASSERT(!destructive_done);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
+  GPR_ASSERT(benign_done);
+  GPR_ASSERT(destructive_done);
+}
+
+static void test_benign_reclaim_is_preferred(void) {
+  gpr_log(GPR_INFO, "** test_benign_reclaim_is_preferred **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  bool benign_done = false;
+  bool destructive_done = false;
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, false,
+        make_reclaimer(&usr, 1024, set_bool(&benign_done)));
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, true,
+        make_unused_reclaimer(set_bool(&destructive_done)));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(!benign_done);
+    GPR_ASSERT(!destructive_done);
+  }
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(benign_done);
+    GPR_ASSERT(!destructive_done);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, &usr, 1024);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
+  GPR_ASSERT(benign_done);
+  GPR_ASSERT(destructive_done);
+}
+
+static void test_multiple_reclaims_can_be_triggered(void) {
+  gpr_log(GPR_INFO, "** test_multiple_reclaims_can_be_triggered **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+  bool benign_done = false;
+  bool destructive_done = false;
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, false,
+        make_reclaimer(&usr, 512, set_bool(&benign_done)));
+    grpc_buffer_user_post_reclaimer(
+        &exec_ctx, &usr, true,
+        make_reclaimer(&usr, 512, set_bool(&destructive_done)));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(!benign_done);
+    GPR_ASSERT(!destructive_done);
+  }
+  {
+    bool done = false;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(benign_done);
+    GPR_ASSERT(destructive_done);
+    GPR_ASSERT(done);
+  }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, &usr, 1024);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  grpc_buffer_pool_unref(p);
+  destroy_user(&usr);
+  GPR_ASSERT(benign_done);
+  GPR_ASSERT(destructive_done);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -303,6 +511,11 @@ int main(int argc, char **argv) {
   test_scavenge();
   test_scavenge_blocked();
   test_blocked_until_scheduled_reclaim();
+  test_blocked_until_scheduled_reclaim_and_scavenge();
+  test_blocked_until_scheduled_destructive_reclaim();
+  test_unused_reclaim_is_cancelled();
+  test_benign_reclaim_is_preferred();
+  test_multiple_reclaims_can_be_triggered();
   grpc_shutdown();
   return 0;
 }

@@ -162,10 +162,6 @@ static void bpstep_sched(grpc_exec_ctx *exec_ctx,
 
 /* returns true if all allocations are completed */
 static bool bpalloc(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool) {
-  if (buffer_pool->free_pool <= 0) {
-    return false;
-  }
-
   grpc_buffer_user *buffer_user;
   while ((buffer_user =
               bulist_pop(buffer_pool, GRPC_BULIST_AWAITING_ALLOCATION))) {
@@ -308,7 +304,9 @@ static void bp_resize(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
 
 static void bpreclaimation_done_closure(grpc_exec_ctx *exec_ctx, void *bp,
                                         grpc_error *error) {
-  bpstep_sched(exec_ctx, bp);
+  grpc_buffer_pool *buffer_pool = bp;
+  buffer_pool->reclaiming = false;
+  bpstep_sched(exec_ctx, buffer_pool);
 }
 
 /*******************************************************************************
