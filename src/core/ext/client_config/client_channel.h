@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CHANNEL_H
 #define GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CHANNEL_H
 
+#include "src/core/ext/client_config/client_channel_factory.h"
 #include "src/core/ext/client_config/resolver.h"
 #include "src/core/lib/channel/channel_stack.h"
 
@@ -46,12 +47,12 @@
 
 extern const grpc_channel_filter grpc_client_channel_filter;
 
-/* post-construction initializer to let the client channel know which
-   transport setup it should cancel upon destruction, or initiate when it needs
-   a connection */
-void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,
-                                      grpc_channel_stack *channel_stack,
-                                      grpc_resolver *resolver);
+/* Post-construction initializer to give the client channel its resolver
+   and factory. */
+void grpc_client_channel_finish_initialization(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
+    grpc_resolver *resolver,
+    grpc_client_channel_factory *client_channel_factory);
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);

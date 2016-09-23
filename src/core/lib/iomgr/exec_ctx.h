@@ -40,8 +40,8 @@
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
-struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
+typedef struct grpc_combiner grpc_combiner;
 
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 /** Execution context.
@@ -66,13 +66,23 @@ typedef struct grpc_workqueue grpc_workqueue;
  */
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  grpc_workqueue *stealing_from_workqueue;
+  grpc_closure *stolen_closure;
+  /** currently active combiner: updated only via combiner.c */
+  grpc_combiner *active_combiner;
+  grpc_combiner *last_combiner;
   bool cached_ready_to_finish;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 };
 
+/* initializer for grpc_exec_ctx:
+   prefer to use GRPC_EXEC_CTX_INIT whenever possible */
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, false, finish_check_arg, finish_check }
+  {                                                                          \
+    GRPC_CLOSURE_LIST_INIT, NULL, NULL, NULL, NULL, false, finish_check_arg, \
+        finish_check                                                         \
+  }
 #else
 struct grpc_exec_ctx {
   bool cached_ready_to_finish;
@@ -83,8 +93,10 @@ struct grpc_exec_ctx {
   { false, finish_check_arg, finish_check }
 #endif
 
+/* initialize an execution context at the top level of an API call into grpc
+   (this is safe to use elsewhere, though possibly not as efficient) */
 #define GRPC_EXEC_CTX_INIT \
-  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_never_ready_to_finish, NULL)
+  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_always_ready_to_finish, NULL)
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.

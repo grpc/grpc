@@ -35,10 +35,16 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/profiling/timers.h"
+
 void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                        void *cb_arg) {
   closure->cb = cb;
   closure->cb_arg = cb_arg;
+}
+
+void grpc_closure_list_init(grpc_closure_list *closure_list) {
+  closure_list->head = closure_list->tail = NULL;
 }
 
 void grpc_closure_list_append(grpc_closure_list *closure_list,
@@ -47,7 +53,7 @@ void grpc_closure_list_append(grpc_closure_list *closure_list,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  closure->error = error;
+  closure->error_data.error = error;
   closure->next_data.next = NULL;
   if (closure_list->head == NULL) {
     closure_list->head = closure;
@@ -60,8 +66,8 @@ void grpc_closure_list_append(grpc_closure_list *closure_list,
 void grpc_closure_list_fail_all(grpc_closure_list *list,
                                 grpc_error *forced_failure) {
   for (grpc_closure *c = list->head; c != NULL; c = c->next_data.next) {
-    if (c->error == GRPC_ERROR_NONE) {
-      c->error = GRPC_ERROR_REF(forced_failure);
+    if (c->error_data.error == GRPC_ERROR_NONE) {
+      c->error_data.error = GRPC_ERROR_REF(forced_failure);
     }
   }
   GRPC_ERROR_UNREF(forced_failure);
@@ -105,4 +111,12 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {
   wc->cb_arg = cb_arg;
   grpc_closure_init(&wc->wrapper, closure_wrapper, wc);
   return &wc->wrapper;
+}
+
+void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
+                      grpc_error *error) {
+  GPR_TIMER_BEGIN("grpc_closure_run", 0);
+  c->cb(exec_ctx, c->cb_arg, error);
+  GRPC_ERROR_UNREF(error);
+  GPR_TIMER_END("grpc_closure_run", 0);
 }

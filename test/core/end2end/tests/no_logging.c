@@ -286,6 +286,8 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
 }
 
 void no_logging(grpc_end2end_test_config config) {
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+  grpc_tracer_set_enabled("all", 0);
   test_no_logging_in_one_request(config);
   test_no_error_logging_in_entire_process(config);
 }

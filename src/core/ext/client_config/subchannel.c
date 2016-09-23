@@ -33,6 +33,7 @@
 
 #include "src/core/ext/client_config/subchannel.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -219,8 +220,8 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "SUBCHANNEL: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val,
-          old_val + delta, reason);
+          "SUBCHANNEL: %p %s 0x%08" PRIxPTR " -> 0x%08" PRIxPTR " [%s]", c,
+          purpose, old_val, old_val + delta, reason);
 #endif
   return old_val;
 }
@@ -347,21 +348,16 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
       }
       if (0 ==
           strcmp(c->args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
-        if (c->args->args[i].type == GRPC_ARG_INTEGER) {
-          if (c->args->args[i].value.integer >= 0) {
-            gpr_backoff_init(
-                &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
-                GRPC_SUBCHANNEL_RECONNECT_JITTER,
-                GPR_MIN(c->args->args[i].value.integer,
-                        GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000),
-                c->args->args[i].value.integer);
-          } else {
-            gpr_log(GPR_ERROR, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS
-                    " : must be non-negative");
-          }
-        } else {
-          gpr_log(GPR_ERROR,
-                  GRPC_ARG_MAX_RECONNECT_BACKOFF_MS " : must be an integer");
+        const grpc_integer_options options = {-1, 0, INT_MAX};
+        const int value =
+            grpc_channel_arg_get_integer(&c->args->args[i], options);
+        if (value >= 0) {
+          gpr_backoff_init(
+              &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
+              GRPC_SUBCHANNEL_RECONNECT_JITTER,
+              GPR_MIN(value,
+                      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000),
+              value);
         }
       }
     }
@@ -504,14 +500,13 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset_set *interested_parties,
                                           grpc_connectivity_state *state,
                                           grpc_closure *closure) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
-  op.connectivity_state = state;
-  op.on_connectivity_state_change = closure;
-  op.bind_pollset_set = interested_parties;
+  op->connectivity_state = state;
+  op->on_connectivity_state_change = closure;
+  op->bind_pollset_set = interested_parties;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 void grpc_connected_subchannel_notify_on_state_change(
@@ -525,12 +520,11 @@ void grpc_connected_subchannel_notify_on_state_change(
 void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
                                     grpc_connected_subchannel *con,
                                     grpc_closure *closure) {
-  grpc_transport_op op;
+  grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
-  op.send_ping = closure;
+  op->send_ping = closure;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 static void publish_transport_locked(grpc_exec_ctx *exec_ctx,

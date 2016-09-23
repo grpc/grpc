@@ -57,6 +57,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
   if (dec_arg->first_pass) { /* count how many server do we have */
     grpc_grpclb_server server;
     if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
+      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
       return false;
     }
     dec_arg->num_servers++;
@@ -69,6 +70,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
           gpr_malloc(sizeof(grpc_grpclb_server *) * dec_arg->num_servers);
     }
     if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
+      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
       return false;
     }
     dec_arg->servers[dec_arg->decoding_idx++] = server;
@@ -118,6 +120,7 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
   if (!pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res)) {
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
   grpc_grpclb_initial_response *initial_res =
@@ -145,6 +148,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   arg.first_pass = true;
   status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
   if (!status) {
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
 
@@ -152,6 +156,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   status =
       pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields, &res);
   if (!status) {
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
 

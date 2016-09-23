@@ -177,7 +177,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+  grpc_closure_run(exec_ctx, cb, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -209,11 +209,11 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  GPR_TIMER_BEGIN("recvmsg", 1);
+  GPR_TIMER_BEGIN("recvmsg", 0);
   do {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
-  GPR_TIMER_END("recvmsg", 0);
+  GPR_TIMER_END("recvmsg", read_bytes >= 0);
 
   if (read_bytes < 0) {
     /* NB: After calling call_read_cb a parallel call of the read handler may
@@ -379,15 +379,21 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
   }
 
   if (!tcp_flush(tcp, &error)) {
+    if (grpc_tcp_trace) {
+      gpr_log(GPR_DEBUG, "write: delayed");
+    }
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
-    GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
-    cb->cb(exec_ctx, cb->cb_arg, error);
-    GPR_TIMER_END("tcp_handle_write.cb", 0);
+    if (grpc_tcp_trace) {
+      const char *str = grpc_error_string(error);
+      gpr_log(GPR_DEBUG, "write: %s", str);
+      grpc_error_free_string(str);
+    }
+
+    grpc_closure_run(exec_ctx, cb, error);
     TCP_UNREF(exec_ctx, tcp, "write");
-    GRPC_ERROR_UNREF(error);
   }
 }
 
@@ -425,8 +431,16 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
+    if (grpc_tcp_trace) {
+      gpr_log(GPR_DEBUG, "write: delayed");
+    }
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
+    if (grpc_tcp_trace) {
+      const char *str = grpc_error_string(error);
+      gpr_log(GPR_DEBUG, "write: %s", str);
+      grpc_error_free_string(str);
+    }
     grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
   }
 

@@ -265,7 +265,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   } else {
     out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
-    gpr_log(GPR_DEBUG, "%p create copying", out);
+    gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
     out->ints = gpr_avl_ref(in->ints);
     out->strs = gpr_avl_ref(in->strs);
@@ -332,7 +332,7 @@ grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
   return new;
 }
 
-static const char *no_error_string = "null";
+static const char *no_error_string = "\"No Error\"";
 static const char *oom_error_string = "\"Out of memory\"";
 static const char *cancelled_error_string = "\"Cancelled\"";
 

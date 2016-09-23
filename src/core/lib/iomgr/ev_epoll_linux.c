@@ -152,14 +152,13 @@ static void fd_global_shutdown(void);
  * Polling island Declarations
  */
 
-//#define GRPC_PI_REF_COUNT_DEBUG
-#ifdef GRPC_PI_REF_COUNT_DEBUG
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 
 #define PI_ADD_REF(p, r) pi_add_ref_dbg((p), (r), __FILE__, __LINE__)
 #define PI_UNREF(exec_ctx, p, r) \
   pi_unref_dbg((exec_ctx), (p), (r), __FILE__, __LINE__)
 
-#else /* defined(GRPC_PI_REF_COUNT_DEBUG) */
+#else /* defined(GRPC_WORKQUEUE_REFCOUNT_DEBUG) */
 
 #define PI_ADD_REF(p, r) pi_add_ref((p))
 #define PI_UNREF(exec_ctx, p, r) pi_unref((exec_ctx), (p))
@@ -185,8 +184,11 @@ typedef struct polling_island {
    * (except mu and ref_count) are invalid and must be ignored. */
   gpr_atm merged_to;
 
-  /* The workqueue associated with this polling island */
-  grpc_workqueue *workqueue;
+  gpr_atm poller_count;
+  gpr_mu workqueue_read_mu;
+  gpr_mpscq workqueue_items;
+  gpr_atm workqueue_item_count;
+  grpc_wakeup_fd workqueue_wakeup_fd;
 
   /* The fd of the underlying epoll set */
   int epoll_fd;
@@ -275,6 +277,8 @@ static bool append_error(grpc_error **composite, grpc_error *error,
    threads that woke up MUST NOT call grpc_wakeup_fd_consume_wakeup() */
 static grpc_wakeup_fd polling_island_wakeup_fd;
 
+static __thread polling_island *g_current_thread_polling_island;
+
 /* Forward declaration */
 static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
@@ -289,12 +293,12 @@ static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi);
 gpr_atm g_epoll_sync;
 #endif /* defined(GRPC_TSAN) */
 
-#ifdef GRPC_PI_REF_COUNT_DEBUG
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
-static void pi_add_ref_dbg(polling_island *pi, char *reason, char *file,
-                           int line) {
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+static void pi_add_ref_dbg(polling_island *pi, const char *reason,
+                           const char *file, int line) {
   long old_cnt = gpr_atm_acq_load(&pi->ref_count);
   pi_add_ref(pi);
   gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
@@ -302,11 +306,41 @@ static void pi_add_ref_dbg(polling_island *pi, char *reason, char *file,
 }
 
 static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
-                         char *reason, char *file, int line) {
+                         const char *reason, const char *file, int line) {
   long old_cnt = gpr_atm_acq_load(&pi->ref_count);
   pi_unref(exec_ctx, pi);
   gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
           (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
+}
+
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
+                                     const char *file, int line,
+                                     const char *reason) {
+  if (workqueue != NULL) {
+    pi_add_ref_dbg((polling_island *)workqueue, reason, file, line);
+  }
+  return workqueue;
+}
+
+static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            const char *file, int line, const char *reason) {
+  if (workqueue != NULL) {
+    pi_unref_dbg(exec_ctx, (polling_island *)workqueue, reason, file, line);
+  }
+}
+#else
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
+  if (workqueue != NULL) {
+    pi_add_ref((polling_island *)workqueue);
+  }
+  return workqueue;
+}
+
+static void workqueue_unref(grpc_exec_ctx *exec_ctx,
+                            grpc_workqueue *workqueue) {
+  if (workqueue != NULL) {
+    pi_unref(exec_ctx, (polling_island *)workqueue);
+  }
 }
 #endif
 
@@ -315,10 +349,7 @@ static void pi_add_ref(polling_island *pi) {
 }
 
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi) {
-  /* If ref count went to one, we're back to just the workqueue owning a ref.
-     Unref the workqueue to break the loop.
-
-     If ref count went to zero, delete the polling island.
+  /* If ref count went to zero, delete the polling island.
      Note that this deletion not be done under a lock. Once the ref count goes
      to zero, we are guaranteed that no one else holds a reference to the
      polling island (and that there is no racing pi_add_ref() call either).
@@ -326,20 +357,12 @@ static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi) {
      Also, if we are deleting the polling island and the merged_to field is
      non-empty, we should remove a ref to the merged_to polling island
    */
-  switch (gpr_atm_full_fetch_add(&pi->ref_count, -1)) {
-    case 2: /* last external ref: the only one now owned is by the workqueue */
-      GRPC_WORKQUEUE_UNREF(exec_ctx, pi->workqueue, "polling_island");
-      break;
-    case 1: {
-      polling_island *next = (polling_island *)gpr_atm_acq_load(&pi->merged_to);
-      polling_island_delete(exec_ctx, pi);
-      if (next != NULL) {
-        PI_UNREF(exec_ctx, next, "pi_delete"); /* Recursive call */
-      }
-      break;
+  if (1 == gpr_atm_full_fetch_add(&pi->ref_count, -1)) {
+    polling_island *next = (polling_island *)gpr_atm_acq_load(&pi->merged_to);
+    polling_island_delete(exec_ctx, pi);
+    if (next != NULL) {
+      PI_UNREF(exec_ctx, next, "pi_delete"); /* Recursive call */
     }
-    case 0:
-      GPR_UNREACHABLE_CODE(return );
   }
 }
 
@@ -488,10 +511,19 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
   pi->fd_capacity = 0;
   pi->fds = NULL;
   pi->epoll_fd = -1;
-  pi->workqueue = NULL;
+
+  gpr_mu_init(&pi->workqueue_read_mu);
+  gpr_mpscq_init(&pi->workqueue_items);
+  gpr_atm_rel_store(&pi->workqueue_item_count, 0);
 
   gpr_atm_rel_store(&pi->ref_count, 0);
+  gpr_atm_rel_store(&pi->poller_count, 0);
   gpr_atm_rel_store(&pi->merged_to, (gpr_atm)NULL);
+
+  if (!append_error(error, grpc_wakeup_fd_init(&pi->workqueue_wakeup_fd),
+                    err_desc)) {
+    goto done;
+  }
 
   pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 
@@ -501,26 +533,14 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
   }
 
   polling_island_add_wakeup_fd_locked(pi, &grpc_global_wakeup_fd, error);
+  polling_island_add_wakeup_fd_locked(pi, &pi->workqueue_wakeup_fd, error);
 
   if (initial_fd != NULL) {
     polling_island_add_fds_locked(pi, &initial_fd, 1, true, error);
   }
 
-  if (append_error(error, grpc_workqueue_create(exec_ctx, &pi->workqueue),
-                   err_desc) &&
-      *error == GRPC_ERROR_NONE) {
-    polling_island_add_fds_locked(pi, &pi->workqueue->wakeup_read_fd, 1, true,
-                                  error);
-    GPR_ASSERT(pi->workqueue->wakeup_read_fd->polling_island == NULL);
-    pi->workqueue->wakeup_read_fd->polling_island = pi;
-    PI_ADD_REF(pi, "fd");
-  }
-
 done:
   if (*error != GRPC_ERROR_NONE) {
-    if (pi->workqueue != NULL) {
-      GRPC_WORKQUEUE_UNREF(exec_ctx, pi->workqueue, "polling_island");
-    }
     polling_island_delete(exec_ctx, pi);
     pi = NULL;
   }
@@ -533,7 +553,11 @@ static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi) {
   if (pi->epoll_fd >= 0) {
     close(pi->epoll_fd);
   }
+  GPR_ASSERT(gpr_atm_no_barrier_load(&pi->workqueue_item_count) == 0);
+  gpr_mu_destroy(&pi->workqueue_read_mu);
+  gpr_mpscq_destroy(&pi->workqueue_items);
   gpr_mu_destroy(&pi->mu);
+  grpc_wakeup_fd_destroy(&pi->workqueue_wakeup_fd);
   gpr_free(pi->fds);
   gpr_free(pi);
 }
@@ -678,6 +702,40 @@ static void polling_island_unlock_pair(polling_island *p, polling_island *q) {
   }
 }
 
+static void workqueue_maybe_wakeup(polling_island *pi) {
+  bool force_wakeup = false;
+  bool is_current_poller = (g_current_thread_polling_island == pi);
+  gpr_atm min_current_pollers_for_wakeup = is_current_poller ? 1 : 0;
+  gpr_atm current_pollers = gpr_atm_no_barrier_load(&pi->poller_count);
+  if (force_wakeup || current_pollers > min_current_pollers_for_wakeup) {
+    GRPC_LOG_IF_ERROR("workqueue_wakeup_fd",
+                      grpc_wakeup_fd_wakeup(&pi->workqueue_wakeup_fd));
+  }
+}
+
+static void workqueue_move_items_to_parent(polling_island *q) {
+  polling_island *p = (polling_island *)gpr_atm_no_barrier_load(&q->merged_to);
+  if (p == NULL) {
+    return;
+  }
+  gpr_mu_lock(&q->workqueue_read_mu);
+  int num_added = 0;
+  while (gpr_atm_no_barrier_load(&q->workqueue_item_count) > 0) {
+    gpr_mpscq_node *n = gpr_mpscq_pop(&q->workqueue_items);
+    if (n != NULL) {
+      gpr_atm_no_barrier_fetch_add(&q->workqueue_item_count, -1);
+      gpr_atm_no_barrier_fetch_add(&p->workqueue_item_count, 1);
+      gpr_mpscq_push(&p->workqueue_items, n);
+      num_added++;
+    }
+  }
+  gpr_mu_unlock(&q->workqueue_read_mu);
+  if (num_added > 0) {
+    workqueue_maybe_wakeup(p);
+  }
+  workqueue_move_items_to_parent(p);
+}
+
 static polling_island *polling_island_merge(polling_island *p,
                                             polling_island *q,
                                             grpc_error **error) {
@@ -702,6 +760,8 @@ static polling_island *polling_island_merge(polling_island *p,
     /* Add the 'merged_to' link from p --> q */
     gpr_atm_rel_store(&p->merged_to, (gpr_atm)q);
     PI_ADD_REF(q, "pi_merge"); /* To account for the new incoming ref from p */
+
+    workqueue_move_items_to_parent(q);
   }
   /* else if p == q, nothing needs to be done */
 
@@ -710,6 +770,26 @@ static polling_island *polling_island_merge(polling_island *p,
   /* Return the merged polling island (Note that no merge would have happened
      if p == q which is ok) */
   return q;
+}
+
+static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
+                              grpc_workqueue *workqueue, grpc_closure *closure,
+                              grpc_error *error) {
+  GPR_TIMER_BEGIN("workqueue.enqueue", 0);
+  /* take a ref to the workqueue: otherwise it can happen that whatever events
+   * this kicks off ends up destroying the workqueue before this function
+   * completes */
+  GRPC_WORKQUEUE_REF(workqueue, "enqueue");
+  polling_island *pi = (polling_island *)workqueue;
+  gpr_atm last = gpr_atm_no_barrier_fetch_add(&pi->workqueue_item_count, 1);
+  closure->error_data.error = error;
+  gpr_mpscq_push(&pi->workqueue_items, &closure->next_data.atm_next);
+  if (last == 0) {
+    workqueue_maybe_wakeup(pi);
+  }
+  workqueue_move_items_to_parent(pi);
+  GRPC_WORKQUEUE_UNREF(exec_ctx, workqueue, "enqueue");
+  GPR_TIMER_END("workqueue.enqueue", 0);
 }
 
 static grpc_error *polling_island_global_init() {
@@ -1042,11 +1122,8 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  grpc_workqueue *workqueue = NULL;
-  if (fd->polling_island != NULL) {
-    workqueue =
-        GRPC_WORKQUEUE_REF(fd->polling_island->workqueue, "get_workqueue");
-  }
+  grpc_workqueue *workqueue = GRPC_WORKQUEUE_REF(
+      (grpc_workqueue *)fd->polling_island, "fd_get_workqueue");
   gpr_mu_unlock(&fd->mu);
   return workqueue;
 }
@@ -1299,7 +1376,26 @@ static void pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->polling_island == NULL);
 }
 
-#define GRPC_EPOLL_MAX_EVENTS 1000
+static bool maybe_do_workqueue_work(grpc_exec_ctx *exec_ctx,
+                                    polling_island *pi) {
+  if (gpr_mu_trylock(&pi->workqueue_read_mu)) {
+    gpr_mpscq_node *n = gpr_mpscq_pop(&pi->workqueue_items);
+    gpr_mu_unlock(&pi->workqueue_read_mu);
+    if (n != NULL) {
+      if (gpr_atm_full_fetch_add(&pi->workqueue_item_count, -1) > 1) {
+        workqueue_maybe_wakeup(pi);
+      }
+      grpc_closure *c = (grpc_closure *)n;
+      grpc_closure_run(exec_ctx, c, c->error_data.error);
+      return true;
+    } else if (gpr_atm_no_barrier_load(&pi->workqueue_item_count) > 0) {
+      workqueue_maybe_wakeup(pi);
+    }
+  }
+  return false;
+}
+
+#define GRPC_EPOLL_MAX_EVENTS 100
 /* Note: sig_mask contains the signal mask to use *during* epoll_wait() */
 static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset *pollset,
@@ -1354,7 +1450,10 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   PI_ADD_REF(pi, "ps_work");
   gpr_mu_unlock(&pollset->mu);
 
-  do {
+  if (!maybe_do_workqueue_work(exec_ctx, pi)) {
+    gpr_atm_no_barrier_fetch_add(&pi->poller_count, 1);
+    g_current_thread_polling_island = pi;
+
     GRPC_SCHEDULING_START_BLOCKING_REGION;
     ep_rv = epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms,
                         sig_mask);
@@ -1386,6 +1485,11 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         append_error(error,
                      grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd),
                      err_desc);
+      } else if (data_ptr == &pi->workqueue_wakeup_fd) {
+        append_error(error,
+                     grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd),
+                     err_desc);
+        maybe_do_workqueue_work(exec_ctx, pi);
       } else if (data_ptr == &polling_island_wakeup_fd) {
         GRPC_POLLING_TRACE(
             "pollset_work: pollset: %p, worker: %p polling island (epoll_fd: "
@@ -1408,7 +1512,10 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
         }
       }
     }
-  } while (ep_rv == GRPC_EPOLL_MAX_EVENTS);
+
+    g_current_thread_polling_island = NULL;
+    gpr_atm_no_barrier_fetch_add(&pi->poller_count, -1);
+  }
 
   GPR_ASSERT(pi != NULL);
 
@@ -1531,6 +1638,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
+  GPR_TIMER_BEGIN("pollset_add_fd", 0);
+
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&pollset->mu);
@@ -1643,6 +1752,8 @@ retry:
   gpr_mu_unlock(&pollset->mu);
 
   GRPC_LOG_IF_ERROR("pollset_add_fd", error);
+
+  GPR_TIMER_END("pollset_add_fd", 0);
 }
 
 /*******************************************************************************
@@ -1863,6 +1974,10 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_fd = pollset_set_del_fd,
 
     .kick_poller = kick_poller,
+
+    .workqueue_ref = workqueue_ref,
+    .workqueue_unref = workqueue_unref,
+    .workqueue_enqueue = workqueue_enqueue,
 
     .shutdown_engine = shutdown_engine,
 };

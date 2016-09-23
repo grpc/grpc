@@ -44,6 +44,9 @@
 extern int grpc_cq_pluck_trace;
 extern int grpc_cq_event_timeout_trace;
 extern int grpc_trace_operation_failures;
+#ifndef NDEBUG
+extern int grpc_trace_pending_tags;
+#endif
 
 typedef struct grpc_cq_completion {
   /** user supplied tag */

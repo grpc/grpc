@@ -95,9 +95,25 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
+/* Creates and returns a gpr_slice containing random alphanumeric characters. */
+static gpr_slice generate_random_slice() {
+  size_t i;
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+  char output[1024 * 1024];
+  for (i = 0; i < GPR_ARRAY_SIZE(output) - 1; ++i) {
+    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+  }
+  output[GPR_ARRAY_SIZE(output) - 1] = '\0';
+  return gpr_slice_from_copied_string(output);
+}
+
 static void request_response_with_payload(grpc_end2end_test_fixture f) {
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
+  /* Create large request and response bodies. These are big enough to require
+   * multiple round trips to deliver to the peer, and their exact contents of
+   * will be verified on completion. */
+  gpr_slice request_payload_slice = generate_random_slice();
+  gpr_slice response_payload_slice = generate_random_slice();
+
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
@@ -222,8 +238,9 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

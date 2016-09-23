@@ -39,6 +39,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
+#include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 
 gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
                                         grpc_transport_one_way_stats *stats) {
@@ -83,10 +85,11 @@ grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_rst_stream_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
+grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
+                                                void *parser,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                gpr_slice slice, int is_last) {
   uint8_t *const beg = GPR_SLICE_START_PTR(slice);
   uint8_t *const end = GPR_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
@@ -97,19 +100,28 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(
     cur++;
     p->byte++;
   }
-  stream_parsing->stats.incoming.framing_bytes += (uint64_t)(end - cur);
+  s->stats.incoming.framing_bytes += (uint64_t)(end - cur);
 
   if (p->byte == 4) {
     GPR_ASSERT(is_last);
-    stream_parsing->received_close = 1;
-    if (stream_parsing->forced_close_error == GRPC_ERROR_NONE) {
-      stream_parsing->forced_close_error = grpc_error_set_int(
-          GRPC_ERROR_CREATE("RST_STREAM"), GRPC_ERROR_INT_HTTP2_ERROR,
-          (intptr_t)((((uint32_t)p->reason_bytes[0]) << 24) |
-                     (((uint32_t)p->reason_bytes[1]) << 16) |
-                     (((uint32_t)p->reason_bytes[2]) << 8) |
-                     (((uint32_t)p->reason_bytes[3]))));
+    uint32_t reason = (((uint32_t)p->reason_bytes[0]) << 24) |
+                      (((uint32_t)p->reason_bytes[1]) << 16) |
+                      (((uint32_t)p->reason_bytes[2]) << 8) |
+                      (((uint32_t)p->reason_bytes[3]));
+    grpc_error *error = GRPC_ERROR_NONE;
+    if (reason != GRPC_CHTTP2_NO_ERROR) {
+      error = grpc_error_set_int(GRPC_ERROR_CREATE("RST_STREAM"),
+                                 GRPC_ERROR_INT_HTTP2_ERROR, reason);
+      grpc_status_code status_code = grpc_chttp2_http2_error_to_grpc_status(
+          (grpc_chttp2_error_code)reason, s->deadline);
+      char *status_details;
+      gpr_asprintf(&status_details, "Received RST_STREAM with error code %d",
+                   reason);
+      gpr_slice slice_details = gpr_slice_from_copied_string(status_details);
+      gpr_free(status_details);
+      grpc_chttp2_fake_status(exec_ctx, t, s, status_code, &slice_details);
     }
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, error);
   }
 
   return GRPC_ERROR_NONE;

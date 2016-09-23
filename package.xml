@@ -94,6 +94,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
@@ -122,6 +123,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/mpscq.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/percent_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice.c" role="src" />
@@ -183,6 +185,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
@@ -190,6 +193,7 @@
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
@@ -229,7 +233,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
@@ -333,6 +336,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
@@ -342,6 +346,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/message_size_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.c" role="src" />
@@ -349,6 +354,7 @@
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
@@ -391,7 +397,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
@@ -521,6 +526,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/resource.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,53 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
+#include "src/core/lib/support/mpscq.h"
 
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include <grpc/support/log.h>
 
-struct grpc_fd;
+void gpr_mpscq_init(gpr_mpscq *q) {
+  gpr_atm_no_barrier_store(&q->head, (gpr_atm)&q->stub);
+  q->tail = &q->stub;
+  gpr_atm_no_barrier_store(&q->stub.next, (gpr_atm)NULL);
+}
 
-struct grpc_workqueue {
-  gpr_refcount refs;
+void gpr_mpscq_destroy(gpr_mpscq *q) {
+  GPR_ASSERT(gpr_atm_no_barrier_load(&q->head) == (gpr_atm)&q->stub);
+  GPR_ASSERT(q->tail == &q->stub);
+}
 
-  gpr_mu mu;
-  grpc_closure_list closure_list;
+void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
+  gpr_atm_no_barrier_store(&n->next, (gpr_atm)NULL);
+  gpr_mpscq_node *prev =
+      (gpr_mpscq_node *)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
+  gpr_atm_rel_store(&prev->next, (gpr_atm)n);
+}
 
-  grpc_wakeup_fd wakeup_fd;
-  struct grpc_fd *wakeup_read_fd;
-
-  grpc_closure read_closure;
-};
-
-/** Create a work queue. Returns an error if creation fails. If creation
-    succeeds, sets *workqueue to point to it. */
-grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_workqueue **workqueue);
-
-#endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H */
+gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
+  gpr_mpscq_node *tail = q->tail;
+  gpr_mpscq_node *next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
+  if (tail == &q->stub) {
+    // indicates the list is actually (ephemerally) empty
+    if (next == NULL) return NULL;
+    q->tail = next;
+    tail = next;
+    next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
+  }
+  if (next != NULL) {
+    q->tail = next;
+    return tail;
+  }
+  gpr_mpscq_node *head = (gpr_mpscq_node *)gpr_atm_acq_load(&q->head);
+  if (tail != head) {
+    // indicates a retry is in order: we're still adding
+    return NULL;
+  }
+  gpr_mpscq_push(q, &q->stub);
+  next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
+  if (next != NULL) {
+    q->tail = next;
+    return tail;
+  }
+  // indicates a retry is in order: we're still adding
+  return NULL;
+}

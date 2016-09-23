@@ -40,19 +40,11 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/lib/iomgr/workqueue_posix.h"
-#endif
-
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/workqueue_windows.h"
 #endif
 
 /* grpc_workqueue is forward declared in exec_ctx.h */
-
-/* Deprecated: do not use.
-   This has *already* been removed in a future commit. */
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 
 /* Reference counting functions. Use the macro's always
    (GRPC_WORKQUEUE_{REF,UNREF}).
@@ -62,20 +54,20 @@ void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
    string will be printed alongside the refcount. When it is not defined, the
    string will be discarded at compilation time. */
 
-//#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
+/*#define GRPC_WORKQUEUE_REFCOUNT_DEBUG*/
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
-  (grpc_workqueue_ref((p), __FILE__, __LINE__, (r)), (p))
+  grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_WORKQUEUE_UNREF(exec_ctx, p, r) \
   grpc_workqueue_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
-void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
-                        const char *reason);
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason);
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                           const char *file, int line, const char *reason);
 #else
-#define GRPC_WORKQUEUE_REF(p, r) (grpc_workqueue_ref((p)), (p))
+#define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
 #define GRPC_WORKQUEUE_UNREF(cl, p, r) grpc_workqueue_unref((cl), (p))
-void grpc_workqueue_ref(grpc_workqueue *workqueue);
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue);
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
 

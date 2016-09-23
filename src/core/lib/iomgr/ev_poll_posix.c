@@ -1236,6 +1236,32 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 }
 
 /*******************************************************************************
+ * workqueue stubs
+ */
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
+                                     const char *file, int line,
+                                     const char *reason) {
+  return workqueue;
+}
+static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            const char *file, int line, const char *reason) {}
+#else
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
+  return workqueue;
+}
+static void workqueue_unref(grpc_exec_ctx *exec_ctx,
+                            grpc_workqueue *workqueue) {}
+#endif
+
+static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
+                              grpc_workqueue *workqueue, grpc_closure *closure,
+                              grpc_error *error) {
+  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+}
+
+/*******************************************************************************
  * event engine binding
  */
 
@@ -1272,6 +1298,10 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_fd = pollset_set_del_fd,
 
     .kick_poller = kick_poller,
+
+    .workqueue_ref = workqueue_ref,
+    .workqueue_unref = workqueue_unref,
+    .workqueue_enqueue = workqueue_enqueue,
 
     .shutdown_engine = shutdown_engine,
 };

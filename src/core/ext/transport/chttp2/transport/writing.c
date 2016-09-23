@@ -40,346 +40,215 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
 
-static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
-                            grpc_chttp2_transport_writing *transport_writing);
+static void add_to_write_list(grpc_chttp2_write_cb **list,
+                              grpc_chttp2_write_cb *cb) {
+  cb->next = *list;
+  *list = cb;
+}
 
-int grpc_chttp2_unlocking_check_writes(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_writing *transport_writing) {
-  grpc_chttp2_stream_global *stream_global;
-  grpc_chttp2_stream_writing *stream_writing;
+static void finish_write_cb(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                            grpc_chttp2_stream *s, grpc_chttp2_write_cb *cb,
+                            grpc_error *error) {
+  grpc_chttp2_complete_closure_step(exec_ctx, t, s, &cb->closure, error,
+                                    "finish_write_cb");
+  cb->next = t->write_cb_pool;
+  t->write_cb_pool = cb;
+}
 
-  GPR_TIMER_BEGIN("grpc_chttp2_unlocking_check_writes", 0);
+static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                        grpc_chttp2_stream *s, size_t send_bytes,
+                        grpc_chttp2_write_cb **list, grpc_error *error) {
+  grpc_chttp2_write_cb *cb = *list;
+  *list = NULL;
+  while (cb) {
+    grpc_chttp2_write_cb *next = cb->next;
+    if (cb->call_at_byte <= send_bytes) {
+      finish_write_cb(exec_ctx, t, s, cb, GRPC_ERROR_REF(error));
+    } else {
+      cb->call_at_byte -= send_bytes;
+      add_to_write_list(list, cb);
+    }
+    cb = next;
+  }
+}
 
-  transport_writing->max_frame_size =
-      transport_global->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
+                             grpc_chttp2_transport *t) {
+  grpc_chttp2_stream *s;
 
-  /* simple writes are queued to qbuf, and flushed here */
-  gpr_slice_buffer_swap(&transport_global->qbuf, &transport_writing->outbuf);
-  GPR_ASSERT(transport_global->qbuf.count == 0);
+  GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
-  grpc_chttp2_hpack_compressor_set_max_table_size(
-      &transport_writing->hpack_compressor,
-      transport_global->settings[GRPC_PEER_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
-
-  if (transport_global->dirtied_local_settings &&
-      !transport_global->sent_local_settings) {
+  if (t->dirtied_local_settings && !t->sent_local_settings) {
     gpr_slice_buffer_add(
-        &transport_writing->outbuf,
+        &t->outbuf,
         grpc_chttp2_settings_create(
-            transport_global->settings[GRPC_SENT_SETTINGS],
-            transport_global->settings[GRPC_LOCAL_SETTINGS],
-            transport_global->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
-    transport_global->force_send_settings = 0;
-    transport_global->dirtied_local_settings = 0;
-    transport_global->sent_local_settings = 1;
+            t->settings[GRPC_SENT_SETTINGS], t->settings[GRPC_LOCAL_SETTINGS],
+            t->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
+    t->force_send_settings = 0;
+    t->dirtied_local_settings = 0;
+    t->sent_local_settings = 1;
   }
 
-  GRPC_CHTTP2_FLOW_MOVE_TRANSPORT("write", transport_writing, outgoing_window,
-                                  transport_global, outgoing_window);
-  if (transport_writing->outgoing_window > 0) {
-    while (grpc_chttp2_list_pop_stalled_by_transport(transport_global,
-                                                     &stream_global)) {
-      grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
-                                  false, "transport.read_flow_control");
+  /* simple writes are queued to qbuf, and flushed here */
+  gpr_slice_buffer_move_into(&t->qbuf, &t->outbuf);
+  GPR_ASSERT(t->qbuf.count == 0);
+
+  grpc_chttp2_hpack_compressor_set_max_table_size(
+      &t->hpack_compressor,
+      t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
+
+  if (t->outgoing_window > 0) {
+    while (grpc_chttp2_list_pop_stalled_by_transport(t, &s)) {
+      grpc_chttp2_become_writable(exec_ctx, t, s, false,
+                                  "transport.read_flow_control");
     }
   }
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
-  while (grpc_chttp2_list_pop_writable_stream(
-      transport_global, transport_writing, &stream_global, &stream_writing)) {
-    bool sent_initial_metadata = stream_writing->sent_initial_metadata;
-    bool become_writable = false;
+  while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
+    bool sent_initial_metadata = s->sent_initial_metadata;
+    bool now_writing = false;
 
-    stream_writing->id = stream_global->id;
-    stream_writing->read_closed = stream_global->read_closed;
+    GRPC_CHTTP2_IF_TRACING(gpr_log(
+        GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t,
+        t->is_client ? "CLIENT" : "SERVER", s->id, sent_initial_metadata,
+        s->send_initial_metadata != NULL, s->announce_window));
 
-    GRPC_CHTTP2_FLOW_MOVE_STREAM("write", transport_writing, stream_writing,
-                                 outgoing_window, stream_global,
-                                 outgoing_window);
-
-    if (!sent_initial_metadata && stream_global->send_initial_metadata) {
-      stream_writing->send_initial_metadata =
-          stream_global->send_initial_metadata;
-      stream_global->send_initial_metadata = NULL;
-      become_writable = true;
+    /* send initial metadata if it's available */
+    if (!sent_initial_metadata && s->send_initial_metadata) {
+      grpc_chttp2_encode_header(
+          &t->hpack_compressor, s->id, s->send_initial_metadata, 0,
+          t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+          &s->stats.outgoing, &t->outbuf);
+      s->send_initial_metadata = NULL;
+      s->sent_initial_metadata = true;
       sent_initial_metadata = true;
+      now_writing = true;
+    }
+    /* send any window updates */
+    if (s->announce_window > 0) {
+      uint32_t announce = s->announce_window;
+      gpr_slice_buffer_add(&t->outbuf,
+                           grpc_chttp2_window_update_create(
+                               s->id, s->announce_window, &s->stats.outgoing));
+      GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
-      if (stream_global->send_message != NULL) {
-        gpr_slice hdr = gpr_slice_malloc(5);
-        uint8_t *p = GPR_SLICE_START_PTR(hdr);
-        uint32_t len = stream_global->send_message->length;
-        GPR_ASSERT(stream_writing->send_message == NULL);
-        p[0] = (stream_global->send_message->flags &
-                GRPC_WRITE_INTERNAL_COMPRESS) != 0;
-        p[1] = (uint8_t)(len >> 24);
-        p[2] = (uint8_t)(len >> 16);
-        p[3] = (uint8_t)(len >> 8);
-        p[4] = (uint8_t)(len);
-        gpr_slice_buffer_add(&stream_writing->flow_controlled_buffer, hdr);
-        if (stream_global->send_message->length > 0) {
-          stream_writing->send_message = stream_global->send_message;
-        } else {
-          stream_writing->send_message = NULL;
+      /* send any body bytes, if allowed by flow control */
+      if (s->flow_controlled_buffer.length > 0) {
+        uint32_t max_outgoing =
+            (uint32_t)GPR_MIN(t->settings[GRPC_ACKED_SETTINGS]
+                                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+                              GPR_MIN(s->outgoing_window, t->outgoing_window));
+        if (max_outgoing > 0) {
+          uint32_t send_bytes =
+              (uint32_t)GPR_MIN(max_outgoing, s->flow_controlled_buffer.length);
+          bool is_last_data_frame =
+              s->fetching_send_message == NULL &&
+              send_bytes == s->flow_controlled_buffer.length;
+          bool is_last_frame =
+              is_last_data_frame && s->send_trailing_metadata != NULL &&
+              grpc_metadata_batch_is_empty(s->send_trailing_metadata);
+          grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, send_bytes,
+                                  is_last_frame, &s->stats.outgoing,
+                                  &t->outbuf);
+          GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, outgoing_window,
+                                        send_bytes);
+          GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, outgoing_window,
+                                           send_bytes);
+          if (is_last_frame) {
+            s->send_trailing_metadata = NULL;
+            s->sent_trailing_metadata = true;
+            if (!t->is_client && !s->read_closed) {
+              gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
+                                                   s->id, GRPC_CHTTP2_NO_ERROR,
+                                                   &s->stats.outgoing));
+            }
+          }
+          s->sending_bytes += send_bytes;
+          now_writing = true;
+          if (s->flow_controlled_buffer.length > 0) {
+            GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
+            grpc_chttp2_list_add_writable_stream(t, s);
+          }
+        } else if (t->outgoing_window == 0) {
+          grpc_chttp2_list_add_stalled_by_transport(t, s);
+          now_writing = true;
         }
-        stream_writing->stream_fetched = 0;
-        stream_global->send_message = NULL;
       }
-      if ((stream_writing->send_message != NULL ||
-           stream_writing->flow_controlled_buffer.length > 0) &&
-          stream_writing->outgoing_window > 0) {
-        if (transport_writing->outgoing_window > 0) {
-          become_writable = true;
-        } else {
-          grpc_chttp2_list_add_stalled_by_transport(transport_writing,
-                                                    stream_writing);
+      if (s->send_trailing_metadata != NULL &&
+          s->fetching_send_message == NULL &&
+          s->flow_controlled_buffer.length == 0) {
+        grpc_chttp2_encode_header(
+            &t->hpack_compressor, s->id, s->send_trailing_metadata, true,
+            t->settings[GRPC_ACKED_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+            &s->stats.outgoing, &t->outbuf);
+        s->send_trailing_metadata = NULL;
+        s->sent_trailing_metadata = true;
+        if (!t->is_client && !s->read_closed) {
+          gpr_slice_buffer_add(
+              &t->outbuf, grpc_chttp2_rst_stream_create(
+                              s->id, GRPC_CHTTP2_NO_ERROR, &s->stats.outgoing));
         }
-      }
-      if (stream_global->send_trailing_metadata) {
-        stream_writing->send_trailing_metadata =
-            stream_global->send_trailing_metadata;
-        stream_global->send_trailing_metadata = NULL;
-        become_writable = true;
+        now_writing = true;
       }
     }
 
-    if (!stream_global->read_closed &&
-        stream_global->unannounced_incoming_window_for_writing > 1024) {
-      GRPC_CHTTP2_FLOW_MOVE_STREAM("write", transport_global, stream_writing,
-                                   announce_window, stream_global,
-                                   unannounced_incoming_window_for_writing);
-      become_writable = true;
-    }
-
-    if (become_writable) {
-      grpc_chttp2_list_add_writing_stream(transport_writing, stream_writing);
+    if (now_writing) {
+      if (!grpc_chttp2_list_add_writing_stream(t, s)) {
+        /* already in writing list: drop ref */
+        GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:already_writing");
+      }
     } else {
-      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
+      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:no_write");
     }
   }
 
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
      also; 3/4 is a magic number that will likely get tuned soon */
-  if (transport_global->announce_incoming_window > 0) {
-    uint32_t announced = (uint32_t)GPR_MIN(
-        transport_global->announce_incoming_window, UINT32_MAX);
-    GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", transport_global,
-                                     announce_incoming_window, announced);
+  if (t->announce_incoming_window > 0) {
+    uint32_t announced =
+        (uint32_t)GPR_MIN(t->announce_incoming_window, UINT32_MAX);
+    GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, announce_incoming_window,
+                                     announced);
     grpc_transport_one_way_stats throwaway_stats;
-    gpr_slice_buffer_add(
-        &transport_writing->outbuf,
-        grpc_chttp2_window_update_create(0, announced, &throwaway_stats));
+    gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
+                                         0, announced, &throwaway_stats));
   }
 
-  GPR_TIMER_END("grpc_chttp2_unlocking_check_writes", 0);
+  GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return transport_writing->outbuf.count > 0 ||
-         grpc_chttp2_list_have_writing_streams(transport_writing);
+  return t->outbuf.count > 0;
 }
 
-void grpc_chttp2_perform_writes(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
-    grpc_endpoint *endpoint) {
-  GPR_ASSERT(transport_writing->outbuf.count > 0 ||
-             grpc_chttp2_list_have_writing_streams(transport_writing));
+void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                           grpc_error *error) {
+  GPR_TIMER_BEGIN("grpc_chttp2_end_write", 0);
+  grpc_chttp2_stream *s;
 
-  finalize_outbuf(exec_ctx, transport_writing);
-
-  GPR_ASSERT(endpoint);
-
-  if (transport_writing->outbuf.count > 0) {
-    grpc_endpoint_write(exec_ctx, endpoint, &transport_writing->outbuf,
-                        &transport_writing->done_cb);
-  } else {
-    grpc_exec_ctx_sched(exec_ctx, &transport_writing->done_cb, GRPC_ERROR_NONE,
-                        NULL);
-  }
-}
-
-static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
-                            grpc_chttp2_transport_writing *transport_writing) {
-  grpc_chttp2_stream_writing *stream_writing;
-
-  GPR_TIMER_BEGIN("finalize_outbuf", 0);
-
-  bool is_first_data_frame = true;
-  while (
-      grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
-    uint32_t max_outgoing =
-        (uint32_t)GPR_MIN(transport_writing->max_frame_size,
-                          GPR_MIN(stream_writing->outgoing_window,
-                                  transport_writing->outgoing_window));
-    /* send initial metadata if it's available */
-    if (stream_writing->send_initial_metadata != NULL) {
-      grpc_chttp2_encode_header(
-          &transport_writing->hpack_compressor, stream_writing->id,
-          stream_writing->send_initial_metadata, 0,
-          transport_writing->max_frame_size, &stream_writing->stats,
-          &transport_writing->outbuf);
-      stream_writing->send_initial_metadata = NULL;
-      stream_writing->sent_initial_metadata = 1;
-    }
-    /* send any window updates */
-    if (stream_writing->announce_window > 0 &&
-        stream_writing->send_initial_metadata == NULL) {
-      uint32_t announce = stream_writing->announce_window;
-      gpr_slice_buffer_add(
-          &transport_writing->outbuf,
-          grpc_chttp2_window_update_create(stream_writing->id,
-                                           stream_writing->announce_window,
-                                           &stream_writing->stats));
-      GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", transport_writing, stream_writing,
-                                    announce_window, announce);
-      stream_writing->announce_window = 0;
-    }
-    /* fetch any body bytes */
-    while (!stream_writing->fetching && stream_writing->send_message &&
-           stream_writing->flow_controlled_buffer.length < max_outgoing &&
-           stream_writing->stream_fetched <
-               stream_writing->send_message->length) {
-      if (grpc_byte_stream_next(exec_ctx, stream_writing->send_message,
-                                &stream_writing->fetching_slice, max_outgoing,
-                                &stream_writing->finished_fetch)) {
-        stream_writing->stream_fetched +=
-            GPR_SLICE_LENGTH(stream_writing->fetching_slice);
-        if (stream_writing->stream_fetched ==
-            stream_writing->send_message->length) {
-          stream_writing->send_message = NULL;
-        }
-        gpr_slice_buffer_add(&stream_writing->flow_controlled_buffer,
-                             stream_writing->fetching_slice);
-      } else {
-        stream_writing->fetching = 1;
-      }
-    }
-    /* send any body bytes */
-    if (stream_writing->flow_controlled_buffer.length > 0) {
-      if (max_outgoing > 0) {
-        uint32_t send_bytes = (uint32_t)GPR_MIN(
-            max_outgoing, stream_writing->flow_controlled_buffer.length);
-        int is_last_data_frame =
-            stream_writing->send_message == NULL &&
-            send_bytes == stream_writing->flow_controlled_buffer.length;
-        int is_last_frame = is_last_data_frame &&
-                            stream_writing->send_trailing_metadata != NULL &&
-                            grpc_metadata_batch_is_empty(
-                                stream_writing->send_trailing_metadata);
-        grpc_chttp2_encode_data(
-            stream_writing->id, &stream_writing->flow_controlled_buffer,
-            send_bytes, is_last_frame, &stream_writing->stats,
-            &transport_writing->outbuf);
-        if (is_first_data_frame) {
-          /* TODO(dgq): this is a hack. It'll be fix in a future refactoring */
-          stream_writing->stats.data_bytes -= 5; /* discount grpc framing */
-          is_first_data_frame = false;
-        }
-        GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", transport_writing,
-                                      stream_writing, outgoing_window,
-                                      send_bytes);
-        GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", transport_writing,
-                                         outgoing_window, send_bytes);
-        if (is_last_frame) {
-          stream_writing->send_trailing_metadata = NULL;
-          stream_writing->sent_trailing_metadata = 1;
-        }
-        if (is_last_data_frame) {
-          GPR_ASSERT(stream_writing->send_message == NULL);
-          stream_writing->sent_message = 1;
-        }
-      } else if (transport_writing->outgoing_window == 0) {
-        grpc_chttp2_list_add_writing_stalled_by_transport(transport_writing,
-                                                          stream_writing);
-        grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
-      }
-    }
-    /* send trailing metadata if it's available and we're ready for it */
-    if (stream_writing->send_message == NULL &&
-        stream_writing->flow_controlled_buffer.length == 0 &&
-        stream_writing->send_trailing_metadata != NULL) {
-      if (grpc_metadata_batch_is_empty(
-              stream_writing->send_trailing_metadata)) {
-        grpc_chttp2_encode_data(
-            stream_writing->id, &stream_writing->flow_controlled_buffer, 0, 1,
-            &stream_writing->stats, &transport_writing->outbuf);
-      } else {
-        grpc_chttp2_encode_header(
-            &transport_writing->hpack_compressor, stream_writing->id,
-            stream_writing->send_trailing_metadata, 1,
-            transport_writing->max_frame_size, &stream_writing->stats,
-            &transport_writing->outbuf);
-      }
-      if (!transport_writing->is_client && !stream_writing->read_closed) {
-        gpr_slice_buffer_add(&transport_writing->outbuf,
-                             grpc_chttp2_rst_stream_create(
-                                 stream_writing->id, GRPC_CHTTP2_NO_ERROR,
-                                 &stream_writing->stats));
-      }
-      stream_writing->send_trailing_metadata = NULL;
-      stream_writing->sent_trailing_metadata = 1;
-    }
-    /* if there's more to write, then loop, otherwise prepare to finish the
-     * write */
-    if ((stream_writing->flow_controlled_buffer.length > 0 ||
-         (stream_writing->send_message && !stream_writing->fetching)) &&
-        stream_writing->outgoing_window > 0) {
-      if (transport_writing->outgoing_window > 0) {
-        grpc_chttp2_list_add_writing_stream(transport_writing, stream_writing);
-      } else {
-        grpc_chttp2_list_add_writing_stalled_by_transport(transport_writing,
-                                                          stream_writing);
-        grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
-      }
-    } else {
-      grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
-    }
-  }
-
-  GPR_TIMER_END("finalize_outbuf", 0);
-}
-
-void grpc_chttp2_cleanup_writing(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_writing *transport_writing) {
-  grpc_chttp2_stream_writing *stream_writing;
-  grpc_chttp2_stream_global *stream_global;
-
-  if (grpc_chttp2_list_flush_writing_stalled_by_transport(exec_ctx,
-                                                          transport_writing)) {
-    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
-                               "resume_stalled_stream");
-  }
-
-  while (grpc_chttp2_list_pop_written_stream(
-      transport_global, transport_writing, &stream_global, &stream_writing)) {
-    if (stream_writing->sent_initial_metadata) {
+  while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
+    if (s->sent_initial_metadata) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, transport_global, stream_global,
-          &stream_global->send_initial_metadata_finished, GRPC_ERROR_NONE);
+          exec_ctx, t, s, &s->send_initial_metadata_finished,
+          GRPC_ERROR_REF(error), "send_initial_metadata_finished");
     }
-    grpc_transport_move_one_way_stats(&stream_writing->stats,
-                                      &stream_global->stats.outgoing);
-    if (stream_writing->sent_message) {
-      GPR_ASSERT(stream_writing->send_message == NULL);
+    if (s->sending_bytes != 0) {
+      update_list(exec_ctx, t, s, s->sending_bytes, &s->on_write_finished_cbs,
+                  GRPC_ERROR_REF(error));
+      s->sending_bytes = 0;
+    }
+    if (s->sent_trailing_metadata) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, transport_global, stream_global,
-          &stream_global->send_message_finished, GRPC_ERROR_NONE);
-      stream_writing->sent_message = 0;
+          exec_ctx, t, s, &s->send_trailing_metadata_finished,
+          GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
+      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
+                                     GRPC_ERROR_REF(error));
     }
-    if (stream_writing->sent_trailing_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, transport_global, stream_global,
-          &stream_global->send_trailing_metadata_finished, GRPC_ERROR_NONE);
-    }
-    if (stream_writing->sent_trailing_metadata) {
-      grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
-                                     !transport_global->is_client, 1,
-                                     GRPC_ERROR_NONE);
-    }
-    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
+    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");
   }
-  gpr_slice_buffer_reset_and_unref(&transport_writing->outbuf);
+  gpr_slice_buffer_reset_and_unref(&t->outbuf);
+  GRPC_ERROR_UNREF(error);
+  GPR_TIMER_END("grpc_chttp2_end_write", 0);
 }
