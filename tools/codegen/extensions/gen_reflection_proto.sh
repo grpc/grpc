@@ -29,20 +29,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -e
+cd $(dirname $0)/../../..
+
 PROTO_DIR="src/proto/grpc/reflection/v1alpha"
 PROTO_FILE="reflection"
 HEADER_DIR="include/grpc++/ext"
 SRC_DIR="src/cpp/ext"
 INCLUDE_DIR="grpc++/ext"
 TMP_DIR="tmp"
-GRPC_PLUGIN="bins/opt/grpc_cpp_plugin"
-PROTOC="bins/opt/protobuf/protoc"
 
-set -e
+if hash grpc_cpp_plugin 2>/dev/null; then
+  GRPC_PLUGIN=$(which grpc_cpp_plugin)
+else
+  if [ -f bins/opt/grpc_cpp_plugin ]; then
+    GRPC_PLUGIN="bins/opt/grpc_cpp_plugin"
+  else
+    echo "gRPC protoc plugin not found"
+    exit 1
+  fi
+fi
+
+if hash protoc 2>/dev/null; then
+  PROTOC=$(which protoc)
+else
+  if [ -f bins/opt/protobuf/protoc ]; then
+    PROTOC="bins/opt/protobuf/protoc"
+  else
+    echo "protoc not found"
+    exit 1
+  fi
+fi
 
 TMP_DIR=${TMP_DIR}_${PROTO_FILE}
-
-cd $(dirname $0)/../../..
 
 [ ! -d $HEADER_DIR ] && mkdir -p $HEADER_DIR || :
 [ ! -d $SRC_DIR ] && mkdir -p $SRC_DIR || :
