@@ -250,6 +250,7 @@ finish:
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
+    grpc_channel_args_destroy(ac->channel_args);
     gpr_free(ac);
   }
   grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);

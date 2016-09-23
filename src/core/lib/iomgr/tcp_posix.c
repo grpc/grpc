@@ -114,12 +114,18 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_fd_shutdown(exec_ctx, tcp->em_fd);
 }
 
-static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+static void tcp_end_free(grpc_exec_ctx *exec_ctx, void *tcp,
+                         grpc_error *error) {
+  gpr_free(tcp);
+}
+
+static void tcp_begin_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
   gpr_free(tcp->peer_string);
-  gpr_free(tcp);
+  grpc_buffer_user_destroy(exec_ctx, &tcp->buffer_user,
+                           grpc_closure_create(tcp_end_free, tcp));
 }
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/
@@ -132,7 +138,7 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
           reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref(&tcp->refcount)) {
-    tcp_free(exec_ctx, tcp);
+    tcp_begin_free(exec_ctx, tcp);
   }
 }
 
@@ -147,7 +153,7 @@ static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   if (gpr_unref(&tcp->refcount)) {
-    tcp_free(exec_ctx, tcp);
+    tcp_begin_free(exec_ctx, tcp);
   }
 }
 
