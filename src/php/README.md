@@ -1,7 +1,8 @@
 
 #Overview
 
-This directory contains source code for PHP implementation of gRPC layered on shared C library.
+This directory contains source code for PHP implementation of gRPC layered on
+shared C library.
 
 #Status
 
@@ -9,15 +10,27 @@ GA
 
 ## Environment
 
-Prerequisite:
+**Prerequisite:**
 * `php` 5.5 or above, 7.0 or above
-* `pear` and `pecl`
-* `phpunit`
+* `pecl`
+* `composer`
+* `phpunit` (optional)
 
-**PEAR:**
+**Ubuntu/Debian:**
+```sh
+$ sudo apt-get install php5 php5-dev
+```
+
+**PEAR/PECL:**
 ```sh
 $ curl -O http://pear.php.net/go-pear.phar
 $ sudo php -d detect_unicode=0 go-pear.phar
+```
+
+**Composer:**
+```sh
+$ curl -sS https://getcomposer.org/installer | php
+$ sudo mv composer.phar /usr/local/bin/composer
 ```
 
 **PHPUnit:**
@@ -29,15 +42,32 @@ $ sudo mv phpunit-old.phar /usr/bin/phpunit
 
 ## Quick Install
 
-Install the gRPC PHP extension
+**Install the gRPC PHP extension**
 
 ```sh
 sudo pecl install grpc
 ```
 
-This will compile and install the gRPC PHP extension into the standard PHP extension directory. You should be able to run the [unit tests](#unit-tests), with the PHP extension installed.
+This will compile and install the gRPC PHP extension into the standard PHP
+extension directory. You should be able to run the [unit tests](#unit-tests),
+with the PHP extension installed.
 
-To run tests with generated stub code from `.proto` files, you will also need the `composer`, `protoc` and `protoc-gen-php` binaries. You can find out how to get these [below](#generated-code-tests).
+
+**Add the gRPC PHP library as a Composer dependency**
+
+You need to add this to your project's `composer.json` file.
+
+```
+  "require": {
+    "grpc/grpc": "v1.0.0"
+  }
+```
+
+To run tests with generated stub code from `.proto` files, you will also need
+the `composer` and `protoc` binaries. You can find out how to get these
+[below](#generated-code-tests).
+
+
 
 ## Build from Source
 
@@ -98,45 +128,46 @@ $ ./bin/run_tests.sh
 
 ## Generated Code Tests
 
-This section specifies the prerequisites for running the generated code tests, as well as how to run the tests themselves.
+This section specifies the prerequisites for running the generated code tests,
+as well as how to run the tests themselves.
 
 ### Composer
 
-If you don't have it already, install `composer` to pull in some runtime dependencies based on the `composer.json` file.
+Install the runtime dependencies via `composer install`.
 
 ```sh
-$ curl -sS https://getcomposer.org/installer | php
-$ sudo mv composer.phar /usr/local/bin/composer
-
 $ cd grpc/src/php
 $ composer install
 ```
 
 ### Protobuf compiler
 
-Again if you don't have it already, you need to install the protobuf compiler `protoc`, version 3.0.0+.
+Again if you don't have it already, you need to install the protobuf compiler
+`protoc`, version 3.1.0+.
 
-If you compiled the gRPC C core library from source above, the `protoc` binary should have been installed as well. If it hasn't been installed, you can run the following commands to install it.
+If `protoc` hasn't been installed, you can download the `protoc` binaries from
+[the protocol buffers Github repository](https://github.com/google/protobuf/releases).
+
+If you really must compile `protoc` from source, you can run the following
+commands, but this is risky because there is no easy way to uninstall /
+upgrade to a newer release.
 
 ```sh
 $ cd grpc/third_party/protobuf
-$ sudo make install   # 'make' should have been run by core grpc
+$ ./autogen.sh && ./configure && make
+$ sudo make install
 ```
 
-Alternatively, you can download `protoc` binaries from [the protocol buffers Github repository](https://github.com/google/protobuf/releases).
 
+### PHP Protoc Plugin
 
-### PHP protobuf compiler
+You need the gRPC PHP protoc plugin to generate the client stub classes.
 
-You need to install `protoc-gen-php` to generate stub class `.php` files from service definition `.proto` files.
+It should already been compiled when you run `make` from the root directory
+of this repo. The plugin can be found in the `bins/opt` directory. We are
+planning to provide a better way to download and install the plugin
+in the future.
 
-```sh
-$ git clone https://github.com/stanley-cheung/Protobuf-PHP
-$ cd Protobuf-PHP
-$ gem install rake ronn
-$ rake pear:package version=1.0
-$ sudo pear install Protobuf-1.0.tgz
-```
 
 ### Client Stub
 
@@ -149,7 +180,8 @@ $ ./bin/generate_proto_php.sh
 
 ### Run test server
 
-Run a local server serving the math services. Please see [Node][] for how to run an example server.
+Run a local server serving the math services. Please see [Node][] for how to
+run an example server.
 
 ```sh
 $ cd grpc
