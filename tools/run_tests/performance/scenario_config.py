@@ -219,53 +219,36 @@ class CXXLanguage:
           server_core_limit=1, async_server_threads=1,
           secure=secure)
 
-      for synchronicity in ['sync', 'async']:
-        yield _ping_pong_scenario(
-            'cpp_protobuf_%s_streaming_ping_pong_%s' % (synchronicity, secstr),
-            rpc_type='STREAMING',
-            client_type='%s_CLIENT' % synchronicity.upper(),
-            server_type='%s_SERVER' % synchronicity.upper(),
-            server_core_limit=1, async_server_threads=1,
-            secure=secure)
+      for rpc_type in ['unary', 'streaming']:
+        for synchronicity in ['sync', 'async']:
+          yield _ping_pong_scenario(
+              'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
+              rpc_type=rpc_type.upper(),
+              client_type='%s_CLIENT' % synchronicity.upper(),
+              server_type='%s_SERVER' % synchronicity.upper(),
+              server_core_limit=1, async_server_threads=1,
+              secure=secure)
 
-        yield _ping_pong_scenario(
-            'cpp_protobuf_%s_unary_ping_pong_%s' % (synchronicity, secstr),
-            rpc_type='UNARY',
-            client_type='%s_CLIENT' % synchronicity.upper(),
-            server_type='%s_SERVER' % synchronicity.upper(),
-            server_core_limit=1, async_server_threads=1,
-            secure=secure,
-            categories=smoketest_categories)
+          yield _ping_pong_scenario(
+              'cpp_protobuf_%s_%s_qps_unconstrained_%s' % (synchronicity, rpc_type, secstr),
+              rpc_type=rpc_type.upper(),
+              client_type='%s_CLIENT' % synchronicity.upper(),
+              server_type='%s_SERVER' % synchronicity.upper(),
+              unconstrained_client=synchronicity,
+              secure=secure,
+              categories=smoketest_categories+[SCALABLE])
 
-        yield _ping_pong_scenario(
-            'cpp_protobuf_%s_unary_qps_unconstrained_%s' % (synchronicity, secstr),
-            rpc_type='UNARY',
-            client_type='%s_CLIENT' % synchronicity.upper(),
-            server_type='%s_SERVER' % synchronicity.upper(),
-            unconstrained_client=synchronicity,
-            secure=secure,
-            categories=smoketest_categories+[SCALABLE])
-
-        yield _ping_pong_scenario(
-            'cpp_protobuf_%s_streaming_qps_unconstrained_%s' % (synchronicity, secstr),
-            rpc_type='STREAMING',
-            client_type='%s_CLIENT' % synchronicity.upper(),
-            server_type='%s_SERVER' % synchronicity.upper(),
-            unconstrained_client=synchronicity,
-            secure=secure,
-            categories=[SCALABLE])
-
-        for channels in geometric_progression(1, 500, math.sqrt(10)):
-          for outstanding in geometric_progression(1, 20000, math.sqrt(10)):
-              if synchronicity == 'sync' and outstanding > 1200: continue
-              if outstanding < channels: continue
-              yield _ping_pong_scenario(
-                  'cpp_protobuf_%s_unary_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, secstr, channels, outstanding),
-                  rpc_type='UNARY',
-                  client_type='%s_CLIENT' % synchronicity.upper(),
-                  server_type='%s_SERVER' % synchronicity.upper(),
-                  unconstrained_client=synchronicity, secure=secure,
-                  categories=[SWEEP], channels=channels, outstanding=outstanding)
+          for channels in geometric_progression(1, 20000, math.sqrt(10)):
+            for outstanding in geometric_progression(1, 200000, math.sqrt(10)):
+                if synchronicity == 'sync' and outstanding > 1200: continue
+                if outstanding < channels: continue
+                yield _ping_pong_scenario(
+                    'cpp_protobuf_%s_%s_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, rpc_type, secstr, channels, outstanding),
+                    rpc_type=rpc_type.upper(),
+                    client_type='%s_CLIENT' % synchronicity.upper(),
+                    server_type='%s_SERVER' % synchronicity.upper(),
+                    unconstrained_client=synchronicity, secure=secure,
+                    categories=[SWEEP], channels=channels, outstanding=outstanding)
 
   def __str__(self):
     return 'c++'

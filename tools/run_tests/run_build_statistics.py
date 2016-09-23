@@ -75,6 +75,8 @@ _KNOWN_ERRORS = [
     ('hudson.remoting.RemotingSystemException: java.io.IOException: '
      'Backing channel is disconnected.'),
     'hudson.remoting.ChannelClosedException',
+    'Could not initialize class hudson.Util',
+    'Too many open files in system',
     'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=epoll',
     'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=legacy',
     'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=poll',

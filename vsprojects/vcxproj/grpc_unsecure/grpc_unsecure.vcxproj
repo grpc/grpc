@@ -392,6 +392,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\http_connect_handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\initial_connect_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.h" />
@@ -677,6 +678,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\default_initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\http_connect_handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\initial_connect_string.c">
     </ClCompile>

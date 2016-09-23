@@ -283,6 +283,7 @@ typedef struct glb_lb_policy {
   /** mutex protecting remaining members */
   gpr_mu mu;
 
+  const char *server_name;
   grpc_client_channel_factory *cc_factory;
 
   /** for communicating with the LB server */
@@ -438,6 +439,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
 
   grpc_lb_policy_args args;
   memset(&args, 0, sizeof(args));
+  args.server_name = glb_policy->server_name;
   args.client_channel_factory = glb_policy->cc_factory;
   args.addresses = process_serverlist(serverlist);
 
@@ -563,6 +565,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * policy is only instantiated and used in that case.
    *
    * Create a client channel over them to communicate with a LB service */
+  glb_policy->server_name = gpr_strdup(args->server_name);
   glb_policy->cc_factory = args->client_channel_factory;
   GPR_ASSERT(glb_policy->cc_factory != NULL);
 
@@ -629,6 +632,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   GPR_ASSERT(glb_policy->pending_picks == NULL);
   GPR_ASSERT(glb_policy->pending_pings == NULL);
+  gpr_free((void *)glb_policy->server_name);
   grpc_channel_destroy(glb_policy->lb_channel);
   glb_policy->lb_channel = NULL;
   grpc_connectivity_state_destroy(exec_ctx, &glb_policy->state_tracker);
@@ -940,9 +944,8 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
    * entities passed to glb_pick(). */
   lb_client->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
-      glb_policy->base.interested_parties, "/BalanceLoad",
-      NULL, /* FIXME(dgq): which "host" value to use? */
-      lb_client->deadline, NULL);
+      glb_policy->base.interested_parties,
+      "/grpc.lb.v1.LoadBalancer/BalanceLoad", NULL, lb_client->deadline, NULL);
 
   grpc_metadata_array_init(&lb_client->initial_metadata_recv);
   grpc_metadata_array_init(&lb_client->trailing_metadata_recv);

@@ -351,6 +351,7 @@ filegroups:
   - src/core/ext/client_config/client_channel.h
   - src/core/ext/client_config/client_channel_factory.h
   - src/core/ext/client_config/connector.h
+  - src/core/ext/client_config/http_connect_handshaker.h
   - src/core/ext/client_config/initial_connect_string.h
   - src/core/ext/client_config/lb_policy.h
   - src/core/ext/client_config/lb_policy_factory.h
@@ -370,6 +371,7 @@ filegroups:
   - src/core/ext/client_config/client_config_plugin.c
   - src/core/ext/client_config/connector.c
   - src/core/ext/client_config/default_initial_connect_string.c
+  - src/core/ext/client_config/http_connect_handshaker.c
   - src/core/ext/client_config/initial_connect_string.c
   - src/core/ext/client_config/lb_policy.c
   - src/core/ext/client_config/lb_policy_factory.c
@@ -505,6 +507,7 @@ filegroups:
   build: test
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/grpc_profiler.h
@@ -517,6 +520,7 @@ filegroups:
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
+  - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/grpc_profiler.c
@@ -1081,12 +1085,14 @@ libs:
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
   deps:
   - grpc++_reflection
   - grpc++
