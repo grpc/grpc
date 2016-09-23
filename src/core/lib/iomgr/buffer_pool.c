@@ -210,8 +210,8 @@ static bool bpscavenge(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool) {
 static bool bpreclaim(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool,
                       bool destructive) {
   if (buffer_pool->reclaiming) return true;
-  grpc_bulist list = destructive ? GRPC_BULIST_RECLAIMER_BENIGN
-                                 : GRPC_BULIST_RECLAIMER_DESTRUCTIVE;
+  grpc_bulist list = destructive ? GRPC_BULIST_RECLAIMER_DESTRUCTIVE
+                                 : GRPC_BULIST_RECLAIMER_BENIGN;
   grpc_buffer_user *buffer_user = bulist_pop(buffer_pool, list);
   if (buffer_user == NULL) return false;
   buffer_pool->reclaiming = true;
