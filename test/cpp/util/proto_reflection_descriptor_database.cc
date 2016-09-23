@@ -314,13 +314,16 @@ ProtoReflectionDescriptorDatabase::GetStream() {
   return stream_;
 }
 
-void ProtoReflectionDescriptorDatabase::DoOneRequest(
+bool ProtoReflectionDescriptorDatabase::DoOneRequest(
     const ServerReflectionRequest& request,
     ServerReflectionResponse& response) {
+  bool request_succeed = false;
   stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
+  if (GetStream()->Write(request) && GetStream()->Read(&response)) {
+    request_succeed = true;
+  }
   stream_mutex_.unlock();
+  return request_succeed;
 }
 
 }  // namespace grpc
