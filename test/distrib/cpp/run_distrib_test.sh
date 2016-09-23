@@ -33,7 +33,7 @@ set -ex
 git clone $EXTERNAL_GIT_ROOT
 cd grpc
 
-# clone submodules
+# clone gRPC submodules, use data from locally cloned submodules where possible
 git submodule | awk -v EXTERNAL_GIT_ROOT=$EXTERNAL_GIT_ROOT/ '{ system("git \
 submodule update --init --reference " EXTERNAL_GIT_ROOT$2 " " $2) }'
 
