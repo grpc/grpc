@@ -321,6 +321,8 @@ grpc_buffer_pool *grpc_buffer_pool_create(void) {
   buffer_pool->combiner = grpc_combiner_create(NULL);
   buffer_pool->free_pool = INT64_MAX;
   buffer_pool->size = INT64_MAX;
+  buffer_pool->step_scheduled = false;
+  buffer_pool->reclaiming = false;
   grpc_closure_init(&buffer_pool->bpstep_closure, bpstep, buffer_pool);
   grpc_closure_init(&buffer_pool->bpreclaimation_done_closure,
                     bpreclaimation_done_closure, buffer_pool);
@@ -404,8 +406,8 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
                             grpc_buffer_user *buffer_user, size_t size,
                             grpc_closure *optional_on_done) {
   gpr_mu_lock(&buffer_user->mu);
-  buffer_user->allocated += size;
-  buffer_user->free_pool -= size;
+  buffer_user->allocated += (int64_t)size;
+  buffer_user->free_pool -= (int64_t)size;
   if (buffer_user->free_pool < 0) {
     grpc_closure_list_append(&buffer_user->on_allocated, optional_on_done,
                              GRPC_ERROR_NONE);
@@ -426,8 +428,8 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&buffer_user->mu);
   GPR_ASSERT(buffer_user->allocated >= (int64_t)size);
   bool was_zero_or_negative = buffer_user->free_pool <= 0;
-  buffer_user->free_pool += size;
-  buffer_user->allocated -= size;
+  buffer_user->free_pool += (int64_t)size;
+  buffer_user->allocated -= (int64_t)size;
   bool is_bigger_than_zero = buffer_user->free_pool > 0;
   if (is_bigger_than_zero && was_zero_or_negative &&
       !buffer_user->added_to_free_pool) {
