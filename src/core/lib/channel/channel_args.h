@@ -89,4 +89,12 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
 
+typedef struct grpc_integer_options {
+  int default_value;  // Return this if value is outside of expected bounds.
+  int min_value;
+  int max_value;
+} grpc_integer_options;
+/** Returns the value of \a arg, subject to the contraints in \a options. */
+int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options);
+
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

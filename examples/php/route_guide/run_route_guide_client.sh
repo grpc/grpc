@@ -30,5 +30,6 @@
 
 set -e
 cd $(dirname $0)
-php $extension_dir -d extension=grpc.so -d max_execution_time=300 \
-  route_guide_client.php ../../node/route_guide/route_guide_db.json
+php -d extension=grpc.so -d max_execution_time=300 \
+  route_guide_client.php \
+  ../../node/static_codegen/route_guide/route_guide_db.json

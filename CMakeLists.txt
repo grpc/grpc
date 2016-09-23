@@ -191,6 +191,7 @@ add_library(gpr
   src/core/lib/support/log_linux.c
   src/core/lib/support/log_posix.c
   src/core/lib/support/log_windows.c
+  src/core/lib/support/mpscq.c
   src/core/lib/support/murmur_hash.c
   src/core/lib/support/percent_encoding.c
   src/core/lib/support/slice.c
@@ -258,20 +259,17 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -300,6 +298,7 @@ add_library(grpc
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -307,6 +306,7 @@ add_library(grpc
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -439,6 +439,7 @@ add_library(grpc
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -479,6 +480,7 @@ add_library(grpc
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
   src/core/ext/census/resource.c
+  src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_plugin_registry.c
 )
@@ -507,27 +509,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc/grpc_security.h
   include/grpc/census.h
 )
@@ -558,6 +556,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -565,6 +564,7 @@ add_library(grpc_cronet
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -671,6 +671,7 @@ add_library(grpc_cronet
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -737,27 +738,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc/grpc_cronet.h
   include/grpc/grpc_security.h
 )
@@ -789,6 +786,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -796,6 +794,7 @@ add_library(grpc_unsecure
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -902,6 +901,7 @@ add_library(grpc_unsecure
   src/core/ext/client_config/client_config_plugin.c
   src/core/ext/client_config/connector.c
   src/core/ext/client_config/default_initial_connect_string.c
+  src/core/ext/client_config/http_connect_handshaker.c
   src/core/ext/client_config/initial_connect_string.c
   src/core/ext/client_config/lb_policy.c
   src/core/ext/client_config/lb_policy_factory.c
@@ -938,6 +938,7 @@ add_library(grpc_unsecure
   src/core/ext/census/operation.c
   src/core/ext/census/placeholders.c
   src/core/ext/census/resource.c
+  src/core/ext/census/trace_context.c
   src/core/ext/census/tracing.c
   src/core/plugin_registry/grpc_unsecure_plugin_registry.c
 )
@@ -964,27 +965,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -1046,6 +1043,7 @@ add_library(grpc++
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1053,6 +1051,7 @@ add_library(grpc++
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -1202,27 +1201,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/call.h
@@ -1246,6 +1241,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/service_type.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync.h
@@ -1319,6 +1315,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/service_type.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync.h
@@ -1326,27 +1323,23 @@ foreach(_hdr
   include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -1403,6 +1396,7 @@ add_library(grpc++_unsecure
   src/core/lib/channel/handshaker.c
   src/core/lib/channel/http_client_filter.c
   src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/message_size_filter.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/debug/trace.c
@@ -1410,6 +1404,7 @@ add_library(grpc++_unsecure
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
@@ -1558,27 +1553,23 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
   include/grpc/status.h
-  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/propagation_bits.h
   include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/alloc.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/log.h
+  include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/slice_buffer.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/impl/codegen/time.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/call.h
@@ -1602,6 +1593,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/service_type.h
   include/grpc++/impl/codegen/status.h
   include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync.h

@@ -52,6 +52,8 @@ class ServerCredentials;
 class Service;
 class ThreadPoolInterface;
 
+extern CoreCodegenInterface* g_core_codegen_interface;
+
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
@@ -78,7 +80,10 @@ class ServerInterface : public CallHook {
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
-  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
+  void Shutdown() {
+    ShutdownInternal(
+        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  }
 
   /// Block waiting for all work to complete.
   ///
@@ -129,7 +134,7 @@ class ServerInterface : public CallHook {
 
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 
-  virtual int max_message_size() const = 0;
+  virtual int max_receive_message_size() const = 0;
 
   virtual grpc_server* server() = 0;
 
@@ -200,8 +205,8 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(payload_, request_,
-                                                    server_->max_message_size())
+          SerializationTraits<Message>::Deserialize(
+              payload_, request_, server_->max_receive_message_size())
               .ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
       *status = serialization_status && *status;

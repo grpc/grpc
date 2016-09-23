@@ -147,7 +147,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
-const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
+const char *grpc_mdstr_as_c_string(const grpc_mdstr *s);
 
 #define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
 
