@@ -69,7 +69,7 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-  EXTRA_ENV_COMPILE_ARGS = '-std=c++11'
+  EXTRA_ENV_COMPILE_ARGS = ''
   if 'win32' in sys.platform:
     if sys.version_info < (3, 5):
       # We use define flags here and don't directly add to DEFINE_MACROS below to
@@ -118,19 +118,6 @@ if "win32" in sys.platform:
     DEFINE_MACROS += (('MS_WIN64', 1),)
 elif "linux" in sys.platform or "darwin" in sys.platform:
   DEFINE_MACROS += (('HAVE_PTHREAD', 1),)
-
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python3 was built with.
-# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
-if 'darwin' in sys.platform and PY3:
-  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-  if mac_target and (pkg_resources.parse_version(mac_target) <
-		     pkg_resources.parse_version('10.9.0')):
-    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
-    os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-        r'macosx-[0-9]+\.[0-9]+-(.+)',
-        r'macosx-10.9-\1',
-        util.get_platform())
 
 def package_data():
   tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace('.', os.path.sep)

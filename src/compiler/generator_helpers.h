@@ -255,7 +255,8 @@ inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
 inline grpc::string GenerateCommentsWithPrefix(
     const std::vector<grpc::string> &in, const grpc::string &prefix) {
   std::ostringstream oss;
-  for (auto it = in.begin(); it != in.end(); it++) {
+  for (std::vector<grpc::string>::const_iterator it = in.begin();
+       it != in.end(); it++) {
     const grpc::string &elem = *it;
     if (elem.empty()) {
       oss << prefix << "\n";
