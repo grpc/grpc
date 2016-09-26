@@ -140,6 +140,35 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
+  ChannelArguments args;
+  for (auto option = options_.begin(); option != options_.end(); ++option) {
+    (*option)->UpdateArguments(&args);
+    (*option)->UpdatePlugins(&plugins_);
+  }
+
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin)->UpdateChannelArguments(&args);
+  }
+
+  if (max_receive_message_size_ >= 0) {
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
+  }
+
+  if (max_send_message_size_ >= 0) {
+    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
+  }
+
+  args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+              enabled_compression_algorithms_bitset_);
+  if (maybe_default_compression_level_.is_set) {
+    args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL,
+                maybe_default_compression_level_.level);
+  }
+  if (maybe_default_compression_algorithm_.is_set) {
+    args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                maybe_default_compression_algorithm_.algorithm);
+  }
+
   // == Determine if the server has any syncrhonous methods ==
   bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
@@ -182,36 +211,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     for (int i = 0; i < num_cqs; i++) {
       sync_server_cqs->emplace_back(new ServerCompletionQueue());
     }
-  }
-
-  // == Channel args ==
-  ChannelArguments args;
-  for (auto option = options_.begin(); option != options_.end(); ++option) {
-    (*option)->UpdateArguments(&args);
-    (*option)->UpdatePlugins(&plugins_);
-  }
-
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->UpdateChannelArguments(&args);
-  }
-
-  if (max_receive_message_size_ >= 0) {
-    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
-  }
-
-  if (max_send_message_size_ >= 0) {
-    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
-  }
-
-  args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
-              enabled_compression_algorithms_bitset_);
-  if (maybe_default_compression_level_.is_set) {
-    args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL,
-                maybe_default_compression_level_.level);
-  }
-  if (maybe_default_compression_algorithm_.is_set) {
-    args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
-                maybe_default_compression_algorithm_.algorithm);
   }
 
   // TODO (sreek) Make the number of pollers configurable
