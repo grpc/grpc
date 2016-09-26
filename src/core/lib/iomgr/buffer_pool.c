@@ -221,6 +221,52 @@ static bool bpreclaim(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool,
 }
 
 /*******************************************************************************
+ * bu_slice: a slice implementation that is backed by a grpc_buffer_user
+ */
+
+typedef struct {
+  gpr_slice_refcount base;
+  gpr_refcount refs;
+  grpc_buffer_user *buffer_user;
+  size_t size;
+} bu_slice_refcount;
+
+static void bu_slice_ref(void *p) {
+  bu_slice_refcount *rc = p;
+  gpr_ref(&rc->refs);
+}
+
+static void bu_slice_unref(void *p) {
+  bu_slice_refcount *rc = p;
+  if (gpr_unref(&rc->refs)) {
+    /* TODO(ctiller): this is dangerous, but I think safe for now:
+       we have no guarantee here that we're at a safe point for creating an
+       execution context, but we have no way of writing this code otherwise.
+       In the future: consider lifting gpr_slice to grpc, and offering an
+       internal_{ref,unref} pair that is execution context aware. Alternatively,
+       make exec_ctx be thread local and 'do the right thing' (whatever that is)
+       if NULL */
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_free(&exec_ctx, rc->buffer_user, rc->size);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
+static gpr_slice bu_slice_create(grpc_buffer_user *buffer_user, size_t size) {
+  bu_slice_refcount *rc = gpr_malloc(sizeof(bu_slice_refcount) + size);
+  rc->base.ref = bu_slice_ref;
+  rc->base.unref = bu_slice_unref;
+  gpr_ref_init(&rc->refs, 1);
+  rc->buffer_user = buffer_user;
+  rc->size = size;
+  gpr_slice slice;
+  slice.refcount = &rc->base;
+  slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
+  slice.data.refcounted.length = size;
+  return slice;
+}
+
+/*******************************************************************************
  * grpc_buffer_pool internal implementation
  */
 
@@ -282,6 +328,20 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
   grpc_exec_ctx_sched(exec_ctx, buffer_user->on_done_destroy, GRPC_ERROR_NONE,
                       NULL);
   grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
+}
+
+static void bu_allocated_slices(grpc_exec_ctx *exec_ctx, void *ts,
+                                grpc_error *error) {
+  grpc_buffer_user_slice_allocator *alloc_temp_storage = ts;
+  if (error == GRPC_ERROR_NONE) {
+    for (size_t i = 0; i < alloc_temp_storage->count; i++) {
+      gpr_slice_buffer_add(alloc_temp_storage->dest,
+                           bu_slice_create(alloc_temp_storage->buffer_user,
+                                           alloc_temp_storage->length));
+    }
+  }
+  grpc_closure_run(exec_ctx, alloc_temp_storage->on_done,
+                   GRPC_ERROR_REF(error));
 }
 
 typedef struct {
@@ -490,4 +550,19 @@ void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
   grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                         &buffer_user->buffer_pool->bpreclaimation_done_closure,
                         GRPC_ERROR_NONE, false);
+}
+
+void grpc_buffer_user_alloc_slices(
+    grpc_exec_ctx *exec_ctx, grpc_buffer_user *buffer_user,
+    grpc_buffer_user_slice_allocator *alloc_temp_storage, size_t length,
+    size_t count, gpr_slice_buffer *dest, grpc_closure *on_done) {
+  grpc_closure_init(&alloc_temp_storage->on_allocated, bu_allocated_slices,
+                    alloc_temp_storage);
+  alloc_temp_storage->on_done = on_done;
+  alloc_temp_storage->length = length;
+  alloc_temp_storage->count = count;
+  alloc_temp_storage->dest = dest;
+  alloc_temp_storage->buffer_user = buffer_user;
+  grpc_buffer_user_alloc(exec_ctx, buffer_user, count * length,
+                         &alloc_temp_storage->on_allocated);
 }

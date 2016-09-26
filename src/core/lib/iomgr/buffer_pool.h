@@ -98,4 +98,18 @@ void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
 void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
                                           grpc_buffer_user *buffer_user);
 
+typedef struct grpc_buffer_user_slice_allocator {
+  grpc_closure on_allocated;
+  grpc_closure *on_done;
+  size_t length;
+  size_t count;
+  gpr_slice_buffer *dest;
+  grpc_buffer_user *buffer_user;
+} grpc_buffer_user_slice_allocator;
+
+void grpc_buffer_user_alloc_slices(
+    grpc_exec_ctx *exec_ctx, grpc_buffer_user *buffer_user,
+    grpc_buffer_user_slice_allocator *alloc_temp_storage, size_t length,
+    size_t count, gpr_slice_buffer *dest, grpc_closure *on_done);
+
 #endif /* GRPC_CORE_LIB_IOMGR_BUFFER_POOL_H */
