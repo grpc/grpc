@@ -162,7 +162,7 @@ grpc_error *grpc_call_stack_init(
     grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
     int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
     grpc_call_context_element *context, const void *transport_server_data,
-    gpr_timespec deadline, grpc_call_stack *call_stack) {
+    grpc_mdstr *path, gpr_timespec deadline, grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   grpc_call_element_args args;
   size_t count = channel_stack->count;
@@ -183,6 +183,7 @@ grpc_error *grpc_call_stack_init(
     args.call_stack = call_stack;
     args.server_transport_data = transport_server_data;
     args.context = context;
+    args.path = path;
     args.deadline = deadline;
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;

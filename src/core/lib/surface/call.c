@@ -242,10 +242,14 @@ grpc_call *grpc_call_create(
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = server_transport_data == NULL;
+  grpc_mdstr *path = NULL;
   if (call->is_client) {
     GPR_ASSERT(add_initial_metadata_count < MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = add_initial_metadata[i];
+      if (add_initial_metadata[i]->key == GRPC_MDSTR_PATH) {
+        path = GRPC_MDSTR_REF(add_initial_metadata[i]->value);
+      }
     }
     call->send_extra_metadata_count = (int)add_initial_metadata_count;
   } else {
@@ -307,7 +311,7 @@ grpc_call *grpc_call_create(
   /* initial refcount dropped by grpc_call_destroy */
   grpc_error *error = grpc_call_stack_init(
       &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
-      server_transport_data, send_deadline, CALL_STACK_FROM_CALL(call));
+      server_transport_data, path, send_deadline, CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code status;
     const char *error_str;
@@ -331,6 +335,8 @@ grpc_call *grpc_call_create(
     grpc_call_stack_set_pollset_or_pollset_set(
         &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
   }
+
+  if (path != NULL) GRPC_MDSTR_UNREF(path);
 
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_call_create", 0);

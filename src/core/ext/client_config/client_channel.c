@@ -421,6 +421,9 @@ typedef struct client_channel_call_data {
   grpc_deadline_state deadline_state;
   gpr_timespec deadline;
 
+  // Request path.
+  grpc_mdstr *path;
+
   grpc_error *cancel_error;
 
   /** either 0 for no call, 1 for cancelled, or a pointer to a
@@ -432,9 +435,6 @@ typedef struct client_channel_call_data {
   subchannel_creation_phase creation_phase;
   grpc_connected_subchannel *connected_subchannel;
   grpc_polling_entity *pollent;
-
-  grpc_mdstr *path;
-  grpc_method_config *method_config;
 
   grpc_transport_stream_op **waiting_ops;
   size_t waiting_ops_count;
@@ -511,9 +511,7 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
 
 static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
-  grpc_call_element *elem = arg;
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
+  call_data *calld = arg;
   gpr_mu_lock(&calld->mu);
   GPR_ASSERT(calld->creation_phase ==
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
@@ -528,18 +526,11 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                 GRPC_ERROR_CREATE_REFERENCING(
                     "Cancelled before creating subchannel", &error, 1));
   } else {
-    /* Get method config. */
-// FIXME: need to actually use the config data!
-// FIXME: think about refcounting vs. atomicity here
-    if (chand->method_config_table != NULL) {
-      calld->method_config = grpc_method_config_table_get_method_config(
-          chand->method_config_table, calld->path);
-    }
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
     grpc_error *new_error = grpc_connected_subchannel_create_call(
-        exec_ctx, calld->connected_subchannel, calld->pollent, calld->deadline,
-        &subchannel_call);
+        exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
+        calld->deadline, &subchannel_call);
     if (new_error != GRPC_ERROR_NONE) {
       new_error = grpc_error_add_child(new_error, error);
       subchannel_call = CANCELLED_CALL;
@@ -745,15 +736,8 @@ retry:
   if (calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       calld->connected_subchannel == NULL &&
       op->send_initial_metadata != NULL) {
-    for (grpc_linked_mdelem *mdelem = op->send_initial_metadata->list.head;
-         mdelem != NULL; mdelem = mdelem->next) {
-      if (mdelem->md->key == GRPC_MDSTR_PATH) {
-        calld->path = GRPC_MDSTR_REF(mdelem->md->value);
-        break;
-      }
-    }
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
-    grpc_closure_init(&calld->next_step, subchannel_ready, elem);
+    grpc_closure_init(&calld->next_step, subchannel_ready, calld);
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
     if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
                         op->send_initial_metadata_flags,
@@ -768,8 +752,8 @@ retry:
       calld->connected_subchannel != NULL) {
     grpc_subchannel_call *subchannel_call = NULL;
     grpc_error *error = grpc_connected_subchannel_create_call(
-        exec_ctx, calld->connected_subchannel, calld->pollent, calld->deadline,
-        &subchannel_call);
+        exec_ctx, calld->connected_subchannel, calld->pollent, calld->path,
+        calld->deadline, &subchannel_call);
     if (error != GRPC_ERROR_NONE) {
       subchannel_call = CANCELLED_CALL;
       fail_locked(exec_ctx, calld, GRPC_ERROR_REF(error));
@@ -790,15 +774,22 @@ retry:
 static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
+  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  grpc_deadline_state_init(exec_ctx, elem, args);
+  gpr_mu_lock(&chand->mu);
+  grpc_method_config_table *method_config_table =
+      chand->method_config_table == NULL
+          ? NULL
+          : grpc_method_config_table_ref(chand->method_config_table);
+  gpr_mu_unlock(&chand->mu);
+  grpc_deadline_state_init(exec_ctx, elem, args, method_config_table);
+  grpc_method_config_table_unref(chand->method_config_table);
   calld->deadline = args->deadline;
+  calld->path = GRPC_MDSTR_REF(args->path);
   calld->cancel_error = GRPC_ERROR_NONE;
   gpr_atm_rel_store(&calld->subchannel_call, 0);
   gpr_mu_init(&calld->mu);
   calld->connected_subchannel = NULL;
-  calld->path = NULL;
-  calld->method_config = NULL;
   calld->waiting_ops = NULL;
   calld->waiting_ops_count = 0;
   calld->waiting_ops_capacity = 0;
@@ -815,11 +806,8 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  void *and_free_memory) {
   call_data *calld = elem->call_data;
   grpc_deadline_state_destroy(exec_ctx, elem);
+  GRPC_MDSTR_UNREF(calld->path);
   GRPC_ERROR_UNREF(calld->cancel_error);
-
-// FIXME: remove
-  if (calld->path != NULL) GRPC_MDSTR_UNREF(calld->path);
-
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, call, "client_channel_destroy_call");

@@ -35,6 +35,8 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
 
+#include "src/core/ext/client_config/method_config.h"
+
 // State used for filters that enforce call deadlines.
 // Must be the first field in the filter's call_data.
 typedef struct grpc_deadline_state {
@@ -63,7 +65,8 @@ typedef struct grpc_deadline_state {
 // caller's responsibility to chain to the next filter if necessary
 // after the function returns.
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_element_args* args);
+                              grpc_call_element_args* args,
+                              grpc_method_config_table* method_config_table);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
 void grpc_deadline_state_client_start_transport_stream_op(
