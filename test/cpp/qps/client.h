@@ -129,7 +129,10 @@ class HistogramEntry GRPC_FINAL {
 
 class Client {
  public:
-  Client() : timer_(new UsageTimer), interarrival_timer_() {
+  Client()
+      : timer_(new UsageTimer),
+        interarrival_timer_(),
+        started_requests_(false) {
     gpr_event_init(&start_requests_);
   }
   virtual ~Client() {}

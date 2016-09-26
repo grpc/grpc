@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,27 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
+#define GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
 
-#include <grpc/support/alloc.h>
+#include <grpc++/support/config.h>
+#include "test/cpp/util/config_grpc_cli.h"
 
-#include "src/core/lib/http/parser.h"
+namespace grpc {
+namespace testing {
 
-bool squelch = true;
-bool leak_check = true;
+grpc::string DescribeServiceList(std::vector<grpc::string> service_list,
+                                 grpc::protobuf::DescriptorPool& desc_pool);
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_http_parser parser;
-  grpc_http_response response;
-  memset(&response, 0, sizeof(response));
-  grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
-  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  GRPC_ERROR_UNREF(grpc_http_parser_parse(&parser, slice, NULL));
-  GRPC_ERROR_UNREF(grpc_http_parser_eof(&parser));
-  gpr_slice_unref(slice);
-  grpc_http_parser_destroy(&parser);
-  grpc_http_response_destroy(&response);
-  return 0;
-}
+grpc::string DescribeService(const grpc::protobuf::ServiceDescriptor* service);
+
+grpc::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method);
+
+grpc::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service);
+
+grpc::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method);
+
+}  // namespase testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H

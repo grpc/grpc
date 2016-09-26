@@ -51,8 +51,13 @@
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
+#include "test/cpp/util/service_describer.h"
 #include "test/cpp/util/test_config.h"
 
+namespace grpc {
+namespace testing {
+
+DEFINE_bool(l, false, "Use a long listing format");
 DEFINE_bool(remotedb, true, "Use server types to parse and format messages");
 DEFINE_string(metadata, "",
               "Metadata to send to server, in the form of key1:val1:key2:val2");
@@ -62,8 +67,6 @@ DEFINE_bool(binary_input, false, "Input in binary format");
 DEFINE_bool(binary_output, false, "Output in binary format");
 DEFINE_string(infile, "", "Input file (default is stdin)");
 
-namespace grpc {
-namespace testing {
 namespace {
 
 class GrpcTool {
@@ -75,6 +78,8 @@ class GrpcTool {
             GrpcToolOutputCallback callback);
   bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
                   GrpcToolOutputCallback callback);
+  bool ListServices(int argc, const char** argv, const CliCredentials& cred,
+                    GrpcToolOutputCallback callback);
   bool PrintType(int argc, const char** argv, const CliCredentials& cred,
                  GrpcToolOutputCallback callback);
   // TODO(zyc): implement the following methods
@@ -165,8 +170,8 @@ struct Command {
 
 const Command ops[] = {
     {"help", BindWith5Args(&GrpcTool::Help), 0, INT_MAX},
-    // {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
-    // {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+    {"ls", BindWith5Args(&GrpcTool::ListServices), 1, 3},
+    {"list", BindWith5Args(&GrpcTool::ListServices), 1, 3},
     {"call", BindWith5Args(&GrpcTool::CallMethod), 2, 3},
     {"type", BindWith5Args(&GrpcTool::PrintType), 2, 2},
     // {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
@@ -178,7 +183,7 @@ void Usage(const grpc::string& msg) {
   fprintf(
       stderr,
       "%s\n"
-      // "  grpc_cli ls ...         ; List services\n"
+      "  grpc_cli ls ...         ; List services\n"
       "  grpc_cli call ...       ; Call method\n"
       "  grpc_cli type ...       ; Print type\n"
       // "  grpc_cli parse ...      ; Parse message\n"
@@ -255,6 +260,106 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
     cmd->function(this, -1, NULL, cred, callback);
   }
   return true;
+}
+
+bool GrpcTool::ListServices(int argc, const char** argv,
+                            const CliCredentials& cred,
+                            GrpcToolOutputCallback callback) {
+  CommandUsage(
+      "List services\n"
+      "  grpc_cli ls <address> [<service>[/<method>]]\n"
+      "    <address>                ; host:port\n"
+      "    <service>                ; Exported service name\n"
+      "    <method>                 ; Method name\n"
+      "    --l                      ; Use a long listing format\n"
+      "    --outfile                ; Output filename (defaults to stdout)\n" +
+      cred.GetCredentialUsage());
+
+  grpc::string server_address(argv[0]);
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateChannel(server_address, cred.GetCredentials());
+  grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
+  grpc::protobuf::DescriptorPool desc_pool(&desc_db);
+
+  std::vector<grpc::string> service_list;
+  if (!desc_db.GetServices(&service_list)) {
+    return false;
+  }
+
+  // If no service is specified, dump the list of services.
+  grpc::string output;
+  if (argc < 2) {
+    // List all services, if --l is passed, then include full description,
+    // otherwise include a summarized list only.
+    if (FLAGS_l) {
+      output = DescribeServiceList(service_list, desc_pool);
+    } else {
+      for (auto it = service_list.begin(); it != service_list.end(); it++) {
+        auto const& service = *it;
+        output.append(service);
+        output.append("\n");
+      }
+    }
+  } else {
+    grpc::string service_name;
+    grpc::string method_name;
+    std::stringstream ss(argv[1]);
+
+    // Remove leading slashes.
+    while (ss.peek() == '/') {
+      ss.get();
+    }
+
+    // Parse service and method names. Support the following patterns:
+    //   Service
+    //   Service Method
+    //   Service.Method
+    //   Service/Method
+    if (argc == 3) {
+      std::getline(ss, service_name, '/');
+      method_name = argv[2];
+    } else {
+      if (std::getline(ss, service_name, '/')) {
+        std::getline(ss, method_name);
+      }
+    }
+
+    const grpc::protobuf::ServiceDescriptor* service =
+        desc_pool.FindServiceByName(service_name);
+    if (service != nullptr) {
+      if (method_name.empty()) {
+        output = FLAGS_l ? DescribeService(service) : SummarizeService(service);
+      } else {
+        method_name.insert(0, 1, '.');
+        method_name.insert(0, service_name);
+        const grpc::protobuf::MethodDescriptor* method =
+            desc_pool.FindMethodByName(method_name);
+        if (method != nullptr) {
+          output = FLAGS_l ? DescribeMethod(method) : SummarizeMethod(method);
+        } else {
+          fprintf(stderr, "Method %s not found in service %s.\n",
+                  method_name.c_str(), service_name.c_str());
+          return false;
+        }
+      }
+    } else {
+      if (!method_name.empty()) {
+        fprintf(stderr, "Service %s not found.\n", service_name.c_str());
+        return false;
+      } else {
+        const grpc::protobuf::MethodDescriptor* method =
+            desc_pool.FindMethodByName(service_name);
+        if (method != nullptr) {
+          output = FLAGS_l ? DescribeMethod(method) : SummarizeMethod(method);
+        } else {
+          fprintf(stderr, "Service or method %s not found.\n",
+                  service_name.c_str());
+          return false;
+        }
+      }
+    }
+  }
+  return callback(output);
 }
 
 bool GrpcTool::PrintType(int argc, const char** argv,
