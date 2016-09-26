@@ -35,9 +35,11 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static void *tag(intptr_t i) { return (void *)i; }
@@ -65,9 +67,15 @@ static void run_test(bool fail_fast) {
   cqv = cq_verifier_create(cq);
 
   /* create a call, channel to a port which will refuse connection */
-  chan = grpc_insecure_channel_create("localhost:54321", NULL, NULL);
+  int port = grpc_pick_unused_port_or_die();
+  char *addr;
+  gpr_join_host_port(&addr, "localhost", port);
+
+  chan = grpc_insecure_channel_create(addr, NULL, NULL);
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Foo", "nonexistant", deadline, NULL);
+
+  gpr_free(addr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
