@@ -153,12 +153,14 @@ static void bpstep(grpc_exec_ctx *exec_ctx, void *bp, grpc_error *error) {
   } while (bpscavenge(exec_ctx, buffer_pool));
   bpreclaim(exec_ctx, buffer_pool, false) ||
       bpreclaim(exec_ctx, buffer_pool, true);
+  grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
 }
 
 static void bpstep_sched(grpc_exec_ctx *exec_ctx,
                          grpc_buffer_pool *buffer_pool) {
   if (buffer_pool->step_scheduled) return;
   buffer_pool->step_scheduled = true;
+  grpc_buffer_pool_internal_ref(buffer_pool);
   grpc_combiner_execute_finally(exec_ctx, buffer_pool->combiner,
                                 &buffer_pool->bpstep_closure, GRPC_ERROR_NONE,
                                 false);
@@ -329,6 +331,10 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
                       GRPC_ERROR_CANCELLED, NULL);
   grpc_exec_ctx_sched(exec_ctx, buffer_user->on_done_destroy, GRPC_ERROR_NONE,
                       NULL);
+  if (buffer_user->free_pool != 0) {
+    buffer_user->buffer_pool->free_pool += buffer_user->free_pool;
+    bpstep_sched(exec_ctx, buffer_user->buffer_pool);
+  }
   grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
 }
 

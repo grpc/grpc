@@ -524,6 +524,51 @@ static void test_buffer_user_stays_allocated_until_memory_released(void) {
     grpc_exec_ctx_finish(&exec_ctx);
     GPR_ASSERT(done);
   }
+  grpc_buffer_pool_unref(p);
+}
+
+static void test_pools_merged_on_buffer_user_deletion(void) {
+  gpr_log(GPR_INFO, "** test_pools_merged_on_buffer_user_deletion **");
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+  for (int i = 0; i < 10; i++) {
+    grpc_buffer_user usr;
+    grpc_buffer_user_init(&usr, p);
+    bool done = false;
+    bool reclaimer_cancelled = false;
+    {
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_buffer_user_post_reclaimer(
+          &exec_ctx, &usr, false,
+          make_unused_reclaimer(set_bool(&reclaimer_cancelled)));
+      grpc_exec_ctx_finish(&exec_ctx);
+      GPR_ASSERT(!reclaimer_cancelled);
+    }
+    {
+      bool allocated = false;
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, set_bool(&allocated));
+      grpc_exec_ctx_finish(&exec_ctx);
+      GPR_ASSERT(allocated);
+      GPR_ASSERT(!reclaimer_cancelled);
+    }
+    {
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_buffer_pool_unref(p);
+      grpc_buffer_user_shutdown(&exec_ctx, &usr, set_bool(&done));
+      grpc_exec_ctx_finish(&exec_ctx);
+      GPR_ASSERT(!done);
+      GPR_ASSERT(!reclaimer_cancelled);
+    }
+    {
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_buffer_user_free(&exec_ctx, &usr, 1024);
+      grpc_exec_ctx_finish(&exec_ctx);
+      GPR_ASSERT(done);
+      GPR_ASSERT(reclaimer_cancelled);
+    }
+  }
+  grpc_buffer_pool_unref(p);
 }
 
 int main(int argc, char **argv) {
@@ -545,6 +590,7 @@ int main(int argc, char **argv) {
   test_benign_reclaim_is_preferred();
   test_multiple_reclaims_can_be_triggered();
   test_buffer_user_stays_allocated_until_memory_released();
+  test_pools_merged_on_buffer_user_deletion();
   grpc_shutdown();
   return 0;
 }
