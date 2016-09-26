@@ -74,6 +74,7 @@ typedef struct {
   grpc_call_stack *call_stack;
   const void *server_transport_data;
   grpc_call_context_element *context;
+  gpr_timespec deadline;
 } grpc_call_element_args;
 
 typedef struct {
@@ -220,13 +221,11 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_stack *channel_stack,
-                                 int initial_refs, grpc_iomgr_cb_func destroy,
-                                 void *destroy_arg,
-                                 grpc_call_context_element *context,
-                                 const void *transport_server_data,
-                                 grpc_call_stack *call_stack);
+grpc_error *grpc_call_stack_init(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
+    int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
+    grpc_call_context_element *context, const void *transport_server_data,
+    gpr_timespec deadline, grpc_call_stack *call_stack);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -289,6 +288,11 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_element *cur_elem,
                                                 grpc_status_code status,
                                                 gpr_slice *optional_message);
+
+void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *cur_elem,
+                                               grpc_status_code status,
+                                               gpr_slice *optional_message);
 
 extern int grpc_trace_channel;
 

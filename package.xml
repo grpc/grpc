@@ -182,6 +182,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
@@ -346,6 +347,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
