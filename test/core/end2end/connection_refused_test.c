@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 
 static void *tag(intptr_t i) { return (void *)i; }
 
-int main(int argc, char **argv) {
+static void run_test(bool fail_fast) {
   grpc_channel *chan;
   grpc_call *call;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
@@ -55,7 +55,8 @@ int main(int argc, char **argv) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  grpc_test_init(argc, argv);
+  gpr_log(GPR_INFO, "TEST: fail_fast=%d", fail_fast);
+
   grpc_init();
 
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -72,7 +73,7 @@ int main(int argc, char **argv) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = fail_fast ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -89,7 +90,11 @@ int main(int argc, char **argv) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+  if (fail_fast) {
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+  }
 
   grpc_completion_queue_shutdown(cq);
   while (
@@ -105,6 +110,11 @@ int main(int argc, char **argv) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_shutdown();
+}
 
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  run_test(true);
+  run_test(false);
   return 0;
 }

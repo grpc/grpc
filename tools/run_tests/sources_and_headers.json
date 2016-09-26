@@ -325,6 +325,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "connection_refused_test", 
+    "src": [
+      "test/core/end2end/connection_refused_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "dns_resolver_connectivity_test", 
     "src": [
       "test/core/client_config/resolvers/dns_resolver_connectivity_test.c"

@@ -919,6 +919,7 @@ client_fuzzer: $(BINDIR)/$(CONFIG)/client_fuzzer
 combiner_test: $(BINDIR)/$(CONFIG)/combiner_test
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
 concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
+connection_refused_test: $(BINDIR)/$(CONFIG)/connection_refused_test
 dns_resolver_connectivity_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test
 dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
@@ -1249,6 +1250,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/combiner_test \
   $(BINDIR)/$(CONFIG)/compression_test \
   $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
+  $(BINDIR)/$(CONFIG)/connection_refused_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_test \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
@@ -1575,6 +1577,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
 	$(E) "[RUN]     Testing concurrent_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/concurrent_connectivity_test || ( echo test concurrent_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing connection_refused_test"
+	$(Q) $(BINDIR)/$(CONFIG)/connection_refused_test || ( echo test connection_refused_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test || ( echo test dns_resolver_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_test"
@@ -7543,6 +7547,38 @@ deps_concurrent_connectivity_test: $(CONCURRENT_CONNECTIVITY_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CONCURRENT_CONNECTIVITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CONNECTION_REFUSED_TEST_SRC = \
+    test/core/end2end/connection_refused_test.c \
+
+CONNECTION_REFUSED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_REFUSED_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/connection_refused_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/connection_refused_test: $(CONNECTION_REFUSED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CONNECTION_REFUSED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/connection_refused_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/connection_refused_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_connection_refused_test: $(CONNECTION_REFUSED_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CONNECTION_REFUSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
