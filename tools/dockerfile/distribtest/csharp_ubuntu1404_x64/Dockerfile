@@ -37,4 +37,24 @@ RUN apt-get update && apt-get install -y \
     ca-certificates-mono \
     nuget
 
+# make sure we have nuget 2.12+ (in case there's an older cached docker image)
+RUN apt-get update && apt-get install -y nuget
+
 RUN apt-get update && apt-get install -y unzip
+
+# Install dotnet CLI
+RUN apt-get install -y apt-transport-https
+RUN sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
+RUN apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+RUN apt-get update && apt-get install -y dotnet-dev-1.0.0-preview2-003121
+
+# Trigger the population of the local package cache for dotnet CLI
+RUN mkdir warmup \
+    && cd warmup \
+    && dotnet new \
+    && cd .. \
+    && rm -rf warmup
+
+# TODO(jtattermusch): without libc-dev, netcoreapp1.0 targets fail with
+# System.DllNotFoundException: Unable to load DLL 'libdl.so'
+RUN apt-get install -y libc-dev

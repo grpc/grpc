@@ -33,6 +33,8 @@
 
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -40,8 +42,8 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

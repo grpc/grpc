@@ -48,6 +48,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -161,9 +162,20 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_chttp2_transport *transport;
   grpc_chttp2_stream *stream;
   int is_tail;
+
+  gpr_mu slice_mu;  // protects slices, on_next
   gpr_slice_buffer slices;
   grpc_closure *on_next;
   gpr_slice *next;
+
+  struct {
+    grpc_closure closure;
+    gpr_slice *slice;
+    size_t max_size_hint;
+    grpc_closure *on_complete;
+  } next_action;
+  grpc_closure destroy_action;
+  grpc_closure finished_action;
 };
 
 typedef struct {
@@ -223,6 +235,8 @@ typedef struct {
   uint8_t is_client;
   /** callback for when writing is done */
   grpc_closure done_cb;
+  /** maximum frame size */
+  uint32_t max_frame_size;
 } grpc_chttp2_transport_writing;
 
 struct grpc_chttp2_transport_parsing {
@@ -294,23 +308,11 @@ struct grpc_chttp2_transport_parsing {
   int64_t outgoing_window;
 };
 
-typedef void (*grpc_chttp2_locked_action)(grpc_exec_ctx *ctx,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s, void *arg);
-
-typedef struct grpc_chttp2_executor_action_header {
-  grpc_chttp2_stream *stream;
-  grpc_chttp2_locked_action action;
-  struct grpc_chttp2_executor_action_header *next;
-  void *arg;
-} grpc_chttp2_executor_action_header;
-
 typedef enum {
+  /** no writing activity allowed */
+  GRPC_CHTTP2_WRITES_CORKED,
   /** no writing activity */
   GRPC_CHTTP2_WRITING_INACTIVE,
-  /** write has been requested, but not scheduled yet */
-  GRPC_CHTTP2_WRITE_REQUESTED_WITH_POLLER,
-  GRPC_CHTTP2_WRITE_REQUESTED_NO_POLLER,
   /** write has been requested and scheduled against the workqueue */
   GRPC_CHTTP2_WRITE_SCHEDULED,
   /** write has been initiated after being reaped from the workqueue */
@@ -331,7 +333,7 @@ struct grpc_chttp2_transport {
   gpr_refcount shutdown_ep_refs;
 
   struct {
-    gpr_mu mu;
+    grpc_combiner *combiner;
 
     /** is a thread currently in the global lock */
     bool global_active;
@@ -339,9 +341,8 @@ struct grpc_chttp2_transport {
     bool parsing_active;
     /** write execution state of the transport */
     grpc_chttp2_write_state write_state;
-
-    grpc_chttp2_executor_action_header *pending_actions_head;
-    grpc_chttp2_executor_action_header *pending_actions_tail;
+    /** has a check_read_ops been scheduled */
+    bool check_read_ops_scheduled;
   } executor;
 
   /** is the transport destroying itself? */
@@ -378,10 +379,16 @@ struct grpc_chttp2_transport {
   grpc_closure writing_action;
   /** closure to start reading from the endpoint */
   grpc_closure reading_action;
+  grpc_closure reading_action_locked;
+  grpc_closure post_parse_locked;
   /** closure to actually do parsing */
   grpc_closure parsing_action;
   /** closure to initiate writing */
   grpc_closure initiate_writing;
+  /** closure to finish writing */
+  grpc_closure terminate_writing;
+  /** closure to flush read state up the stack */
+  grpc_closure initiate_read_flush_locked;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -525,10 +532,15 @@ struct grpc_chttp2_stream_parsing {
 };
 
 struct grpc_chttp2_stream {
+  grpc_chttp2_transport *t;
   grpc_stream_refcount *refcount;
   grpc_chttp2_stream_global global;
   grpc_chttp2_stream_writing writing;
   grpc_chttp2_stream_parsing parsing;
+
+  grpc_closure init_stream;
+  grpc_closure destroy_stream;
+  void *destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
   uint8_t included[STREAM_LIST_COUNT];
@@ -624,7 +636,7 @@ int grpc_chttp2_list_pop_waiting_for_concurrency(
     grpc_chttp2_stream_global **stream_global);
 
 void grpc_chttp2_list_add_check_read_ops(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 bool grpc_chttp2_list_remove_check_read_ops(
     grpc_chttp2_transport_global *transport_global,
@@ -703,12 +715,6 @@ void grpc_chttp2_complete_closure_step(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, grpc_closure **pclosure,
     grpc_error *error);
-
-void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
-                                      grpc_chttp2_transport *transport,
-                                      grpc_chttp2_stream *optional_stream,
-                                      grpc_chttp2_locked_action action,
-                                      void *arg, size_t sizeof_arg);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \

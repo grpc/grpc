@@ -110,6 +110,10 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
 void grpc_mdelem_unref(grpc_mdelem *md);
 #endif
 
+/* Recover a char* from a grpc_mdstr. The returned string is null terminated.
+   Does not promise that the returned string has no embedded nulls however. */
+const char *grpc_mdstr_as_c_string(const grpc_mdstr *s);
+
 #define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */

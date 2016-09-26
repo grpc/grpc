@@ -36,14 +36,14 @@ namespace Grpc;
 
 /**
  * Represents an active call that sends a single message and then gets a stream
- * of reponses.
+ * of responses.
  */
 class ServerStreamingCall extends AbstractCall
 {
     /**
      * Start the call.
      *
-     * @param $data The data to send
+     * @param mixed $data     The data to send
      * @param array $metadata Metadata to send with the call, if applicable
      * @param array $options  an array of options, possible keys:
      *                        'flags' => a number
@@ -51,7 +51,7 @@ class ServerStreamingCall extends AbstractCall
     public function start($data, $metadata = [], $options = [])
     {
         $message_array = ['message' => $data->serialize()];
-        if (isset($options['flags'])) {
+        if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
         $event = $this->call->startBatch([
@@ -64,7 +64,7 @@ class ServerStreamingCall extends AbstractCall
     }
 
     /**
-     * @return An iterator of response values
+     * @return mixed An iterator of response values
      */
     public function responses()
     {
@@ -82,8 +82,8 @@ class ServerStreamingCall extends AbstractCall
     /**
      * Wait for the server to send the status, and return it.
      *
-     * @return object The status object, with integer $code, string $details,
-     *                and array $metadata members
+     * @return \stdClass The status object, with integer $code, string $details,
+     *                   and array $metadata members
      */
     public function getStatus()
     {

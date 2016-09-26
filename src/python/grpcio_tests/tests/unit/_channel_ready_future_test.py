@@ -79,7 +79,7 @@ class ChannelReadyFutureTest(unittest.TestCase):
 
   def test_immediately_connectable_channel_connectivity(self):
     thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
-    server = _server.Server(thread_pool, ())
+    server = _server.Server(thread_pool, (), ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     channel = grpc.insecure_channel('localhost:{}'.format(port))

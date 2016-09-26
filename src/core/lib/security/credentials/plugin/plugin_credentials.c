@@ -37,6 +37,7 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -71,16 +72,36 @@ static void plugin_md_request_metadata_ready(void *request,
           error_details);
   } else {
     size_t i;
+    bool seen_illegal_header = false;
     grpc_credentials_md *md_array = NULL;
-    if (num_md > 0) {
+    for (i = 0; i < num_md; i++) {
+      const char *key_str = (const char*)GPR_SLICE_START_PTR(md[i]->key->slice);
+      const size_t key_len = GPR_SLICE_LENGTH(md[i]->key->slice);
+      const char *value_str = (const char*)GPR_SLICE_START_PTR(md[i]->value->slice);
+      const size_t value_len = GPR_SLICE_LENGTH(md[i]->value->slice);
+
+      if (!grpc_header_key_is_legal(key_str, key_len)) {
+        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", key_str);
+        seen_illegal_header = true;
+        break;
+      } else if (!grpc_is_binary_header(key_str, key_len) &&
+                 !grpc_header_nonbin_value_is_legal(value_str, value_len)) {
+        gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
+        seen_illegal_header = true;
+        break;
+      }
+    }
+    if (seen_illegal_header) {
+      r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
+            "Illegal metadata");
+    } else if (num_md > 0) {
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
         md_array[i].key = gpr_slice_ref(md[i]->key->slice);
         md_array[i].value = gpr_slice_ref(md[i]->value->slice);
       }
-    }
-    r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK, NULL);
-    if (md_array != NULL) {
+      r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
+            NULL);
       for (i = 0; i < num_md; i++) {
         gpr_slice_unref(md_array[i].key);
         gpr_slice_unref(md_array[i].value);
