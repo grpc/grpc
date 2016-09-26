@@ -32,12 +32,12 @@ set -e
 
 mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc /var/local/git/grpc
+# clone gRPC submodules, use data from locally cloned submodules where possible
+(cd /var/local/jenkins/grpc / && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+${name}')
 
 cd /var/local/git/grpc
-
-# clone gRPC submodules, use data from locally cloned submodules where possible
-git submodule | awk '{ system("git submodule update --init --reference \
-./../../jenkins/grpc/" $2 " " $2) }'
 
 # build grpc cpp plugin for generating grpc pb files
 make grpc_cpp_plugin

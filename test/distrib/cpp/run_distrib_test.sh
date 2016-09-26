@@ -31,11 +31,13 @@
 set -ex
 
 git clone $EXTERNAL_GIT_ROOT
-cd grpc
-
 # clone gRPC submodules, use data from locally cloned submodules where possible
-git submodule | awk -v EXTERNAL_GIT_ROOT=$EXTERNAL_GIT_ROOT/ '{ system("git \
-submodule update --init --reference " EXTERNAL_GIT_ROOT$2 " " $2) }'
+(cd /var/local/jenkins/grpc / && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+${name}')
+ 
+
+cd grpc
 
 cd third_party/protobuf && ./autogen.sh && \
 ./configure && make -j4 && make check && make install && ldconfig

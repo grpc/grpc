@@ -38,9 +38,9 @@ then
   mkdir -p /var/local/git
   git clone "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
   # clone gRPC submodules, use data from locally cloned submodules where possible
-  (cd var/local/git/grpc && exec git submodule | awk -v \
-  EXTERNAL_GIT_ROOT=$EXTERNAL_GIT_ROOT/ '{ system("git submodule update --init \
-  --reference " EXTERNAL_GIT_ROOT$2 " " $2) }')
+  (cd /var/local/jenkins/grpc / && git submodule foreach 'cd /var/local/git/grpc \
+  && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+  ${name}')
 else
   mkdir -p "/var/local/git/grpc/$RELATIVE_COPY_PATH"
   cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
