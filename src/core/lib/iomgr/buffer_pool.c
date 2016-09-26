@@ -249,6 +249,7 @@ static void bu_slice_unref(void *p) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_buffer_user_free(&exec_ctx, rc->buffer_user, rc->size);
     grpc_exec_ctx_finish(&exec_ctx);
+    gpr_free(rc);
   }
 }
 
@@ -332,16 +333,15 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
 
 static void bu_allocated_slices(grpc_exec_ctx *exec_ctx, void *ts,
                                 grpc_error *error) {
-  grpc_buffer_user_slice_allocator *alloc_temp_storage = ts;
+  grpc_buffer_user_slice_allocator *slice_allocator = ts;
   if (error == GRPC_ERROR_NONE) {
-    for (size_t i = 0; i < alloc_temp_storage->count; i++) {
-      gpr_slice_buffer_add(alloc_temp_storage->dest,
-                           bu_slice_create(alloc_temp_storage->buffer_user,
-                                           alloc_temp_storage->length));
+    for (size_t i = 0; i < slice_allocator->count; i++) {
+      gpr_slice_buffer_add_indexed(slice_allocator->dest,
+                                   bu_slice_create(slice_allocator->buffer_user,
+                                                   slice_allocator->length));
     }
   }
-  grpc_closure_run(exec_ctx, alloc_temp_storage->on_done,
-                   GRPC_ERROR_REF(error));
+  grpc_closure_run(exec_ctx, &slice_allocator->on_done, GRPC_ERROR_REF(error));
 }
 
 typedef struct {
@@ -552,17 +552,21 @@ void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
                         GRPC_ERROR_NONE, false);
 }
 
+void grpc_buffer_user_slice_allocator_init(
+    grpc_buffer_user_slice_allocator *slice_allocator,
+    grpc_buffer_user *buffer_user, grpc_iomgr_cb_func cb, void *p) {
+  grpc_closure_init(&slice_allocator->on_allocated, bu_allocated_slices,
+                    slice_allocator);
+  grpc_closure_init(&slice_allocator->on_done, cb, p);
+  slice_allocator->buffer_user = buffer_user;
+}
+
 void grpc_buffer_user_alloc_slices(
-    grpc_exec_ctx *exec_ctx, grpc_buffer_user *buffer_user,
-    grpc_buffer_user_slice_allocator *alloc_temp_storage, size_t length,
-    size_t count, gpr_slice_buffer *dest, grpc_closure *on_done) {
-  grpc_closure_init(&alloc_temp_storage->on_allocated, bu_allocated_slices,
-                    alloc_temp_storage);
-  alloc_temp_storage->on_done = on_done;
-  alloc_temp_storage->length = length;
-  alloc_temp_storage->count = count;
-  alloc_temp_storage->dest = dest;
-  alloc_temp_storage->buffer_user = buffer_user;
-  grpc_buffer_user_alloc(exec_ctx, buffer_user, count * length,
-                         &alloc_temp_storage->on_allocated);
+    grpc_exec_ctx *exec_ctx, grpc_buffer_user_slice_allocator *slice_allocator,
+    size_t length, size_t count, gpr_slice_buffer *dest) {
+  slice_allocator->length = length;
+  slice_allocator->count = count;
+  slice_allocator->dest = dest;
+  grpc_buffer_user_alloc(exec_ctx, slice_allocator->buffer_user, count * length,
+                         &slice_allocator->on_allocated);
 }

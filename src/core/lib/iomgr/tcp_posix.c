@@ -102,6 +102,7 @@ typedef struct {
   char *peer_string;
 
   grpc_buffer_user buffer_user;
+  grpc_buffer_user_slice_allocator slice_allocator;
 } grpc_tcp;
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -189,7 +190,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 }
 
 #define MAX_READ_IOVEC 4
-static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -200,10 +201,6 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
   GPR_TIMER_BEGIN("tcp_continue_read", 0);
 
-  while (tcp->incoming_buffer->count < (size_t)tcp->iov_size) {
-    gpr_slice_buffer_add_indexed(tcp->incoming_buffer,
-                                 gpr_slice_malloc(tcp->slice_size));
-  }
   for (i = 0; i < tcp->incoming_buffer->count; i++) {
     iov[i].iov_base = GPR_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
     iov[i].iov_len = GPR_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
@@ -258,6 +255,22 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   }
 
   GPR_TIMER_END("tcp_continue_read", 0);
+}
+
+static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcp,
+                                     grpc_error *error) {
+  tcp_do_read(exec_ctx, tcp);
+}
+
+static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+  if (tcp->incoming_buffer->count < (size_t)tcp->iov_size) {
+    grpc_buffer_user_alloc_slices(
+        exec_ctx, &tcp->slice_allocator, tcp->slice_size,
+        (size_t)tcp->iov_size - tcp->incoming_buffer->count,
+        tcp->incoming_buffer);
+  } else {
+    tcp_do_read(exec_ctx, tcp);
+  }
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -515,6 +528,8 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
   grpc_buffer_user_init(&tcp->buffer_user, buffer_pool);
+  grpc_buffer_user_slice_allocator_init(
+      &tcp->slice_allocator, &tcp->buffer_user, tcp_read_allocation_done, tcp);
   /* Tell network status tracker about new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
 
