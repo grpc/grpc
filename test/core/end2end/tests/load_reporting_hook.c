@@ -286,7 +286,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_metadata initial_lr_metadata;
 
   initial_lr_metadata.key =
-      grpc_mdstr_as_c_string(GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN);
+      grpc_mdstr_as_c_string(GRPC_MDSTR_LOAD_REPORTING_INITIAL);
   initial_lr_metadata.value = client_token;
   initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
   memset(&initial_lr_metadata.internal_data, 0,

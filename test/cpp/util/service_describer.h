@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,27 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_ALLOC_H
-#define GRPC_IMPL_CODEGEN_ALLOC_H
+#ifndef GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
+#define GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
 
-#include <stddef.h>
+#include <grpc++/support/config.h>
+#include "test/cpp/util/config_grpc_cli.h"
 
-#include <grpc/impl/codegen/port_platform.h>
+namespace grpc {
+namespace testing {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+grpc::string DescribeServiceList(std::vector<grpc::string> service_list,
+                                 grpc::protobuf::DescriptorPool& desc_pool);
 
-typedef struct gpr_allocation_functions {
-  void *(*malloc_fn)(size_t size);
-  void *(*realloc_fn)(void *ptr, size_t size);
-  void (*free_fn)(void *ptr);
-} gpr_allocation_functions;
+grpc::string DescribeService(const grpc::protobuf::ServiceDescriptor* service);
 
-/* malloc, never returns NULL */
-GPRAPI void *gpr_malloc(size_t size);
-/* free */
-GPRAPI void gpr_free(void *ptr);
-/* realloc, never returns NULL */
-GPRAPI void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPRAPI void *gpr_malloc_aligned(size_t size, size_t alignment_log);
-/* free memory allocated by gpr_malloc_aligned */
-GPRAPI void gpr_free_aligned(void *ptr);
+grpc::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method);
 
-/** Request the family of allocation functions in \a functions be used. NOTE
- * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
-GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
+grpc::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service);
 
-/** Return the family of allocation functions currently in effect. */
-GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
+grpc::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method);
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespase testing
+}  // namespace grpc
 
-#endif /* GRPC_IMPL_CODEGEN_ALLOC_H */
+#endif  // GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H

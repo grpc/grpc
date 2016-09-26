@@ -120,7 +120,7 @@ static grpc_mdelem *recv_md_filter(void *user_data, grpc_mdelem *md) {
     if (grpc_load_reporting_trace) {
       gpr_log(GPR_DEBUG, "[LR] Target host: '%s'", calld->target_host);
     }
-  } else if (md->key == GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN) {
+  } else if (md->key == GRPC_MDSTR_LOAD_REPORTING_INITIAL) {
     calld->initial_lr_token = gpr_slice_ref(md->value->slice);
     calld->initial_lr_token_len = GPR_SLICE_LENGTH(md->value->slice);
     if (grpc_load_reporting_trace) {
@@ -217,7 +217,7 @@ static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
-  if (md->key == GRPC_MDSTR_GRPC_LOAD_REPORTING_TOKEN) {
+  if (md->key == GRPC_MDSTR_LOAD_REPORTING_INITIAL) {
     calld->trailing_lr_token = gpr_slice_ref(md->value->slice);
     if (grpc_load_reporting_trace) {
       char *hexdump = gpr_dump_slice(calld->trailing_lr_token, GPR_DUMP_HEX);
