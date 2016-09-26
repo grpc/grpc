@@ -112,6 +112,7 @@
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
@@ -285,6 +286,7 @@ typedef struct glb_lb_policy {
 
   const char *server_name;
   grpc_client_channel_factory *cc_factory;
+  grpc_channel_args *args;
 
   /** for communicating with the LB server */
   grpc_channel *lb_channel;
@@ -442,6 +444,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   args.server_name = glb_policy->server_name;
   args.client_channel_factory = glb_policy->cc_factory;
   args.addresses = process_serverlist(serverlist);
+  args.additional_args = glb_policy->args;
 
   grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
 
@@ -567,6 +570,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * Create a client channel over them to communicate with a LB service */
   glb_policy->server_name = gpr_strdup(args->server_name);
   glb_policy->cc_factory = args->client_channel_factory;
+  glb_policy->args = grpc_channel_args_copy(args->additional_args);
   GPR_ASSERT(glb_policy->cc_factory != NULL);
 
   /* construct a target from the addresses in args, given in the form
@@ -633,6 +637,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   GPR_ASSERT(glb_policy->pending_picks == NULL);
   GPR_ASSERT(glb_policy->pending_pings == NULL);
   gpr_free((void *)glb_policy->server_name);
+  grpc_channel_args_destroy(glb_policy->args);
   grpc_channel_destroy(glb_policy->lb_channel);
   glb_policy->lb_channel = NULL;
   grpc_connectivity_state_destroy(exec_ctx, &glb_policy->state_tracker);

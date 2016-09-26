@@ -272,6 +272,16 @@ int grpc_channel_args_compare(const grpc_channel_args *a,
   return 0;
 }
 
+const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
+                                       const char *name) {
+  if (args != NULL) {
+    for (size_t i = 0; i < args->num_args; ++i) {
+      if (args->args[i].key == name) return &args->args[i];
+    }
+  }
+  return NULL;
+}
+
 int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options) {
   if (arg->type != GRPC_ARG_INTEGER) {
     gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);

@@ -35,6 +35,7 @@
 #include <stdbool.h>
 
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -81,5 +82,9 @@ void grpc_method_config_table_add_method_config(
 /// Caller owns a reference to result.
 grpc_method_config* grpc_method_config_table_get_method_config(
     grpc_method_config_table* table, grpc_mdstr* path);
+
+/// Returns a channel arg containing \a table.
+grpc_arg grpc_method_config_table_create_channel_arg(
+    grpc_method_config_table* table);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_METHOD_CONFIG_H */

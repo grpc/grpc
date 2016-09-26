@@ -33,7 +33,6 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_RESULT_H
 
 #include "src/core/ext/client_config/lb_policy_factory.h"
-#include "src/core/ext/client_config/method_config.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 // TODO(roth, ctiller): In the long term, we are considering replacing
@@ -52,8 +51,7 @@ typedef struct grpc_resolver_result grpc_resolver_result;
 /// Takes ownership of \a addresses, \a lb_policy_args.
 grpc_resolver_result* grpc_resolver_result_create(
     const char* server_name, grpc_lb_addresses* addresses,
-    const char* lb_policy_name, grpc_channel_args* lb_policy_args,
-    grpc_method_config_table* method_configs);
+    const char* lb_policy_name, grpc_channel_args* lb_policy_args);
 
 void grpc_resolver_result_ref(grpc_resolver_result* result);
 void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
@@ -66,8 +64,6 @@ grpc_lb_addresses* grpc_resolver_result_get_addresses(
 const char* grpc_resolver_result_get_lb_policy_name(
     grpc_resolver_result* result);
 grpc_channel_args* grpc_resolver_result_get_lb_policy_args(
-    grpc_resolver_result* result);
-grpc_method_config_table* grpc_resolver_result_get_method_configs(
     grpc_resolver_result* result);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_RESULT_H */

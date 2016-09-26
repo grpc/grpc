@@ -33,9 +33,11 @@
 
 #include <string.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -211,4 +213,73 @@ grpc_method_config* grpc_method_config_table_get_method_config(
     GRPC_MDSTR_UNREF(wildcard_path);
   }
   return grpc_method_config_ref(method_config);
+}
+
+static void* copy_arg(void* p) {
+  return grpc_method_config_table_ref(p);
+}
+
+static void destroy_arg(void* p) {
+  grpc_method_config_table_unref(p);
+}
+
+static int cmp_arg(void* p1, void* p2) {
+  grpc_method_config_table* t1 = p1;
+  grpc_method_config_table* t2 = p2;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(t1->entries); ++i) {
+    grpc_method_config_table_entry* e1 = &t1->entries[i];
+    grpc_method_config_table_entry* e2 = &t2->entries[i];
+    // Compare paths by hash value.
+    if (e1->path->hash < e2->path->hash) return -1;
+    if (e1->path->hash > e2->path->hash) return 1;
+    // Compare wait_for_ready.
+    const bool wait_for_ready1 =
+        e1->method_config->wait_for_ready == NULL
+        ? false : *e1->method_config->wait_for_ready;
+    const bool wait_for_ready2 =
+        e2->method_config->wait_for_ready == NULL
+        ? false : *e2->method_config->wait_for_ready;
+    if (wait_for_ready1 < wait_for_ready2) return -1;
+    if (wait_for_ready1 > wait_for_ready2) return 1;
+    // Compare timeout.
+    const gpr_timespec timeout1 =
+        e1->method_config->timeout == NULL
+        ? gpr_inf_past(GPR_CLOCK_MONOTONIC) : *e1->method_config->timeout;
+    const gpr_timespec timeout2 =
+        e2->method_config->timeout == NULL
+        ? gpr_inf_past(GPR_CLOCK_MONOTONIC) : *e2->method_config->timeout;
+    const int timeout_result = gpr_time_cmp(timeout1, timeout2);
+    if (timeout_result != 0) return timeout_result;
+    // Compare max_request_message_bytes.
+    const int32_t max_request_message_bytes1 =
+        e1->method_config->max_request_message_bytes == NULL
+        ? -1 : *e1->method_config->max_request_message_bytes;
+    const int32_t max_request_message_bytes2 =
+        e2->method_config->max_request_message_bytes == NULL
+        ? -1 : *e2->method_config->max_request_message_bytes;
+    if (max_request_message_bytes1 < max_request_message_bytes2) return -1;
+    if (max_request_message_bytes1 > max_request_message_bytes2) return 1;
+    // Compare max_response_message_bytes.
+    const int32_t max_response_message_bytes1 =
+        e1->method_config->max_response_message_bytes == NULL
+        ? -1 : *e1->method_config->max_response_message_bytes;
+    const int32_t max_response_message_bytes2 =
+        e2->method_config->max_response_message_bytes == NULL
+        ? -1 : *e2->method_config->max_response_message_bytes;
+    if (max_response_message_bytes1 < max_response_message_bytes2) return -1;
+    if (max_response_message_bytes1 > max_response_message_bytes2) return 1;
+  }
+  return 0;
+}
+
+static grpc_arg_pointer_vtable arg_vtable = {copy_arg, destroy_arg, cmp_arg};
+
+grpc_arg grpc_method_config_table_create_channel_arg(
+    grpc_method_config_table* table) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_ARG_SERVICE_CONFIG;
+  arg.value.pointer.p = grpc_method_config_table_ref(table);
+  arg.value.pointer.vtable = &arg_vtable;
+  return arg;
 }

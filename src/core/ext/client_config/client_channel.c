@@ -43,6 +43,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/method_config.h"
 #include "src/core/ext/client_config/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -70,15 +71,14 @@ typedef struct client_channel_channel_data {
   /** client channel factory */
   grpc_client_channel_factory *client_channel_factory;
 
-  /** mutex protecting client configuration, including all
-      variables below in this data structure */
+  /** mutex protecting all variables below in this data structure */
   gpr_mu mu;
-  /** currently active load balancer - guarded by mu */
+  /** currently active load balancer */
   grpc_lb_policy *lb_policy;
-  /** incoming resolver result - set by resolver.next(), guarded by mu */
-  grpc_resolver_result *incoming_resolver_result;
-  /** current resolver result */
-  grpc_resolver_result *current_resolver_result;
+  /** method config table */
+  grpc_method_config_table *method_config_table;
+  /** incoming resolver result - set by resolver.next() */
+  grpc_resolver_result *resolver_result;
   /** a list of closures that are all waiting for config to come in */
   grpc_closure_list waiting_for_config_closures;
   /** resolver callback */
@@ -176,23 +176,23 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   channel_data *chand = arg;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
+  grpc_method_config_table *method_config_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
 
-  if (chand->incoming_resolver_result != NULL) {
+  if (chand->resolver_result != NULL) {
     grpc_lb_policy_args lb_policy_args;
     lb_policy_args.server_name =
-        grpc_resolver_result_get_server_name(chand->incoming_resolver_result);
+        grpc_resolver_result_get_server_name(chand->resolver_result);
     lb_policy_args.addresses =
-        grpc_resolver_result_get_addresses(chand->incoming_resolver_result);
-    lb_policy_args.additional_args = grpc_resolver_result_get_lb_policy_args(
-        chand->incoming_resolver_result);
+        grpc_resolver_result_get_addresses(chand->resolver_result);
+    lb_policy_args.additional_args =
+        grpc_resolver_result_get_lb_policy_args(chand->resolver_result);
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy = grpc_lb_policy_create(
         exec_ctx,
-        grpc_resolver_result_get_lb_policy_name(
-            chand->incoming_resolver_result),
+        grpc_resolver_result_get_lb_policy_name(chand->resolver_result),
         &lb_policy_args);
     if (lb_policy != NULL) {
       GRPC_LB_POLICY_REF(lb_policy, "config_change");
@@ -200,11 +200,15 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       state =
           grpc_lb_policy_check_connectivity(exec_ctx, lb_policy, &state_error);
     }
-    if (chand->current_resolver_result != NULL) {
-      grpc_resolver_result_unref(exec_ctx, chand->current_resolver_result);
+    const grpc_arg *channel_arg = grpc_channel_args_find(
+        lb_policy_args.additional_args, GRPC_ARG_SERVICE_CONFIG);
+    if (channel_arg != NULL) {
+      GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
+      method_config_table = grpc_method_config_table_ref(
+          (grpc_method_config_table *)channel_arg->value.pointer.p);
     }
-    chand->current_resolver_result = chand->incoming_resolver_result;
-    chand->incoming_resolver_result = NULL;
+    grpc_resolver_result_unref(exec_ctx, chand->resolver_result);
+    chand->resolver_result = NULL;
   }
 
   if (lb_policy != NULL) {
@@ -215,6 +219,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&chand->mu);
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
+  if (chand->method_config_table != NULL) {
+    grpc_method_config_table_unref(chand->method_config_table);
+  }
+  chand->method_config_table = method_config_table;
   if (lb_policy != NULL) {
     grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
                                NULL);
@@ -238,8 +246,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver,
-                       &chand->incoming_resolver_result,
+    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
     gpr_mu_unlock(&chand->mu);
   } else {
@@ -376,8 +383,8 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
-  if (chand->current_resolver_result != NULL) {
-    grpc_resolver_result_unref(exec_ctx, chand->current_resolver_result);
+  if (chand->method_config_table != NULL) {
+    grpc_method_config_table_unref(chand->method_config_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -512,11 +519,9 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
     /* Get method config. */
 // FIXME: need to actually use the config data!
 // FIXME: think about refcounting vs. atomicity here
-    grpc_method_config_table* table = grpc_resolver_result_get_method_configs(
-        chand->current_resolver_result);
-    if (table != NULL) {
+    if (chand->method_config_table != NULL) {
       calld->method_config = grpc_method_config_table_get_method_config(
-          table, calld->path);
+          chand->method_config_table, calld->path);
     }
     /* Create call on subchannel. */
     grpc_subchannel_call *subchannel_call = NULL;
@@ -626,8 +631,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = true;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver,
-                       &chand->incoming_resolver_result,
+    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
   }
   if (chand->resolver != NULL) {
@@ -836,7 +840,7 @@ void grpc_client_channel_finish_initialization(
       chand->exit_idle_when_lb_policy_arrives) {
     chand->started_resolving = true;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, resolver, &chand->incoming_resolver_result,
+    grpc_resolver_next(exec_ctx, resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
   }
   chand->client_channel_factory = client_channel_factory;
@@ -858,8 +862,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
       if (!chand->started_resolving && chand->resolver != NULL) {
         GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
         chand->started_resolving = true;
-        grpc_resolver_next(exec_ctx, chand->resolver,
-                           &chand->incoming_resolver_result,
+        grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                            &chand->on_resolver_result_changed);
       }
     }
