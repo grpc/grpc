@@ -745,22 +745,11 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
-    grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-    bool finish_ctx = false;
-    /* FIXME: API allows a NULL exec_ctx, although this might cause us to delete
-       ourself before some enqueued work in some other exec_ctx runs. */
-    if (exec_ctx == NULL) {
-      exec_ctx = &local_exec_ctx;
-      finish_ctx = true;
-    }
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
     grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
-    if (finish_ctx) {
-      grpc_exec_ctx_finish(exec_ctx);
-    }
   }
 }
 
