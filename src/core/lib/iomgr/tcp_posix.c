@@ -125,8 +125,8 @@ static void tcp_begin_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
   gpr_free(tcp->peer_string);
-  grpc_buffer_user_destroy(exec_ctx, &tcp->buffer_user,
-                           grpc_closure_create(tcp_end_free, tcp));
+  grpc_buffer_user_shutdown(exec_ctx, &tcp->buffer_user,
+                            grpc_closure_create(tcp_end_free, tcp));
 }
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/

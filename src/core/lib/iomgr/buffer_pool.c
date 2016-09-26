@@ -115,6 +115,7 @@ static grpc_buffer_user *bulist_pop(grpc_buffer_pool *buffer_pool,
         buffer_user->links[list].prev;
     buffer_user->links[list].prev->links[list].next =
         buffer_user->links[list].next;
+    *root = buffer_user->links[list].next;
   }
   buffer_user->links[list].next = buffer_user->links[list].prev = NULL;
   return buffer_user;
@@ -365,8 +366,8 @@ static void bp_resize(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
   gpr_free(a);
 }
 
-static void bpreclaimation_done_closure(grpc_exec_ctx *exec_ctx, void *bp,
-                                        grpc_error *error) {
+static void bp_reclaimation_done(grpc_exec_ctx *exec_ctx, void *bp,
+                                 grpc_error *error) {
   grpc_buffer_pool *buffer_pool = bp;
   buffer_pool->reclaiming = false;
   bpstep_sched(exec_ctx, buffer_pool);
@@ -386,7 +387,7 @@ grpc_buffer_pool *grpc_buffer_pool_create(void) {
   buffer_pool->reclaiming = false;
   grpc_closure_init(&buffer_pool->bpstep_closure, bpstep, buffer_pool);
   grpc_closure_init(&buffer_pool->bpreclaimation_done_closure,
-                    bpreclaimation_done_closure, buffer_pool);
+                    bp_reclaimation_done, buffer_pool);
   for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
     buffer_pool->roots[i] = NULL;
   }
@@ -481,6 +482,7 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
   grpc_closure_list_init(&buffer_user->on_allocated);
   buffer_user->allocating = false;
   buffer_user->added_to_free_pool = false;
+  buffer_user->on_done_destroy = NULL;
   buffer_user->reclaimers[0] = NULL;
   buffer_user->reclaimers[1] = NULL;
   for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
@@ -488,18 +490,25 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
   }
 }
 
-void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
-                              grpc_buffer_user *buffer_user,
-                              grpc_closure *on_done) {
+void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
+                               grpc_buffer_user *buffer_user,
+                               grpc_closure *on_done) {
+  gpr_mu_lock(&buffer_user->mu);
+  GPR_ASSERT(buffer_user->on_done_destroy == NULL);
   buffer_user->on_done_destroy = on_done;
-  grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
-                        &buffer_user->destroy_closure, GRPC_ERROR_NONE, false);
+  if (buffer_user->allocated == 0) {
+    grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
+                          &buffer_user->destroy_closure, GRPC_ERROR_NONE,
+                          false);
+  }
+  gpr_mu_unlock(&buffer_user->mu);
 }
 
 void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
                             grpc_buffer_user *buffer_user, size_t size,
                             grpc_closure *optional_on_done) {
   gpr_mu_lock(&buffer_user->mu);
+  GPR_ASSERT(buffer_user->on_done_destroy == NULL);
   buffer_user->allocated += (int64_t)size;
   buffer_user->free_pool -= (int64_t)size;
   if (buffer_user->free_pool < 0) {
@@ -531,6 +540,11 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
     grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                           &buffer_user->add_to_free_pool_closure,
                           GRPC_ERROR_NONE, false);
+  }
+  if (buffer_user->on_done_destroy != NULL && buffer_user->allocated == 0) {
+    grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
+                          &buffer_user->destroy_closure, GRPC_ERROR_NONE,
+                          false);
   }
   gpr_mu_unlock(&buffer_user->mu);
 }

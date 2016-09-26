@@ -140,7 +140,7 @@ static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   half *m = (half *)ep;
-  grpc_buffer_user_destroy(exec_ctx, &m->buffer_user,
+  grpc_buffer_user_shutdown(exec_ctx, &m->buffer_user,
                            grpc_closure_create(me_really_destroy, m));
 }
 
