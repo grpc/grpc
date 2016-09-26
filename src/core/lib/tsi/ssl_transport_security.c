@@ -33,8 +33,8 @@
 
 #include "src/core/lib/iomgr/sockaddr.h"
 
-#include "src/core/lib/tsi/ssl_transport_security.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/tsi/ssl_transport_security.h"
 
 #include <grpc/support/port_platform.h>
 

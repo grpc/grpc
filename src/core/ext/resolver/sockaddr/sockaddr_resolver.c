@@ -161,9 +161,10 @@ char *unix_get_default_authority(grpc_resolver_factory *factory,
 
 static void do_nothing(void *ignored) {}
 
-static grpc_resolver *sockaddr_create(
-    grpc_resolver_args *args, const char *default_lb_policy_name,
-    int parse(grpc_uri *uri, grpc_resolved_address *dst)) {
+static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
+                                      const char *default_lb_policy_name,
+                                      int parse(grpc_uri *uri,
+                                                grpc_resolved_address *dst)) {
   bool errors_found = false;
   sockaddr_resolver *r;
   gpr_slice path_slice;

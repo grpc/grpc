@@ -582,13 +582,12 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     }
     if (args->addresses->addresses[i].is_balancer) {
       if (addr_index == 0) {
-        addr_strs[addr_index++] = grpc_sockaddr_to_uri(
-            &args->addresses->addresses[i].address);
+        addr_strs[addr_index++] =
+            grpc_sockaddr_to_uri(&args->addresses->addresses[i].address);
       } else {
         GPR_ASSERT(grpc_sockaddr_to_string(
                        &addr_strs[addr_index++],
-                       &args->addresses->addresses[i].address,
-                       true) == 0);
+                       &args->addresses->addresses[i].address, true) == 0);
       }
     }
   }

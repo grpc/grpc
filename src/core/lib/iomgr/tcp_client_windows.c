@@ -177,7 +177,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status = bind(sock, (struct sockaddr *)&local_address.addr, local_address.len);
+  status =
+      bind(sock, (struct sockaddr *)&local_address.addr, local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -185,8 +186,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  success =
-      ConnectEx(sock, (struct sockaddr *)&addr->addr, (int)addr->len, NULL, 0, NULL, &info->overlapped);
+  success = ConnectEx(sock, (struct sockaddr *)&addr->addr, (int)addr->len,
+                      NULL, 0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
      an IOCP notification, so let's ignore it. */

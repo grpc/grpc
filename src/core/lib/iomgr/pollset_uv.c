@@ -42,13 +42,9 @@
 
 gpr_mu grpc_polling_mu;
 
-size_t grpc_pollset_size() {
-  return 1;
-}
+size_t grpc_pollset_size() { return 1; }
 
-void grpc_pollset_global_init(void) {
-  gpr_mu_init(&grpc_polling_mu);
-}
+void grpc_pollset_global_init(void) { gpr_mu_init(&grpc_polling_mu); }
 
 void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
 
@@ -57,7 +53,7 @@ void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
 }
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                             grpc_closure *closure) {
+                           grpc_closure *closure) {
   grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
 }
 

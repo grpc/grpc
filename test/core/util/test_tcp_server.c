@@ -78,8 +78,8 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   grpc_error *error = grpc_tcp_server_create(&server->shutdown_complete, NULL,
                                              &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  error = grpc_tcp_server_add_port(server->tcp_server, &resolved_addr,
-                                   &port_added);
+  error =
+      grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port_added == port);
 

@@ -175,8 +175,8 @@ static void test_sockaddr_is_wildcard(void) {
   GPR_ASSERT(port == -1);
 }
 
-static void expect_sockaddr_str(const char *expected, grpc_resolved_address *addr,
-                                int normalize) {
+static void expect_sockaddr_str(const char *expected,
+                                grpc_resolved_address *addr, int normalize) {
   int result;
   char *str;
   gpr_log(GPR_INFO, "  expect_sockaddr_str(%s)", expected);
@@ -188,7 +188,8 @@ static void expect_sockaddr_str(const char *expected, grpc_resolved_address *add
   gpr_free(str);
 }
 
-static void expect_sockaddr_uri(const char *expected, grpc_resolved_address *addr) {
+static void expect_sockaddr_uri(const char *expected,
+                                grpc_resolved_address *addr) {
   char *str;
   gpr_log(GPR_INFO, "  expect_sockaddr_uri(%s)", expected);
   str = grpc_sockaddr_to_uri(addr);

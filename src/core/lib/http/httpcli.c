@@ -223,9 +223,8 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   }
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
-  grpc_tcp_client_connect(
-      exec_ctx, &req->connected, &req->ep, req->context->pollset_set,
-      addr, req->deadline);
+  grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
+                          req->context->pollset_set, addr, req->deadline);
 }
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

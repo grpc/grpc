@@ -264,11 +264,9 @@ static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
   return err;
 }
 
-grpc_error *grpc_create_dualstack_socket(const grpc_resolved_address *resolved_addr,
-                                         int type,
-                                         int protocol,
-                                         grpc_dualstack_mode *dsmode,
-                                         int *newfd) {
+grpc_error *grpc_create_dualstack_socket(
+    const grpc_resolved_address *resolved_addr, int type, int protocol,
+    grpc_dualstack_mode *dsmode, int *newfd) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   int family = addr->sa_family;
   if (family == AF_INET6) {

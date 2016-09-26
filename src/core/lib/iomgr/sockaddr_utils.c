@@ -54,7 +54,8 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address *resolved_addr,
                               grpc_resolved_address *resolved_addr4_out) {
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
-  struct sockaddr_in *addr4_out = (struct sockaddr_in *)resolved_addr4_out->addr;
+  struct sockaddr_in *addr4_out =
+      (struct sockaddr_in *)resolved_addr4_out->addr;
   if (addr->sa_family == AF_INET6) {
     const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
@@ -78,7 +79,8 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address *resolved_addr,
                               grpc_resolved_address *resolved_addr6_out) {
   GPR_ASSERT(resolved_addr != resolved_addr6_out);
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
-  struct sockaddr_in6 *addr6_out = (struct sockaddr_in6 *)resolved_addr6_out->addr;
+  struct sockaddr_in6 *addr6_out =
+      (struct sockaddr_in6 *)resolved_addr6_out->addr;
   if (addr->sa_family == AF_INET) {
     const struct sockaddr_in *addr4 = (const struct sockaddr_in *)addr;
     memset(resolved_addr6_out, 0, sizeof(*resolved_addr6_out));
@@ -92,7 +94,8 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address *resolved_addr,
   return 0;
 }
 
-int grpc_sockaddr_is_wildcard(const grpc_resolved_address *resolved_addr, int *port_out) {
+int grpc_sockaddr_is_wildcard(const grpc_resolved_address *resolved_addr,
+                              int *port_out) {
   const struct sockaddr *addr;
   grpc_resolved_address addr4_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
@@ -129,7 +132,8 @@ void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address *wild4_out,
   grpc_sockaddr_make_wildcard6(port, wild6_out);
 }
 
-void grpc_sockaddr_make_wildcard4(int port, grpc_resolved_address *resolved_wild_out) {
+void grpc_sockaddr_make_wildcard4(int port,
+                                  grpc_resolved_address *resolved_wild_out) {
   struct sockaddr_in *wild_out = (struct sockaddr_in *)resolved_wild_out->addr;
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
@@ -138,8 +142,10 @@ void grpc_sockaddr_make_wildcard4(int port, grpc_resolved_address *resolved_wild
   resolved_wild_out->len = sizeof(struct sockaddr_in);
 }
 
-void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address *resolved_wild_out) {
-  struct sockaddr_in6 *wild_out = (struct sockaddr_in6 *)resolved_wild_out->addr;
+void grpc_sockaddr_make_wildcard6(int port,
+                                  grpc_resolved_address *resolved_wild_out) {
+  struct sockaddr_in6 *wild_out =
+      (struct sockaddr_in6 *)resolved_wild_out->addr;
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin6_family = AF_INET6;
@@ -147,7 +153,8 @@ void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address *resolved_wild
   resolved_wild_out->len = sizeof(struct sockaddr_in6);
 }
 
-int grpc_sockaddr_to_string(char **out, const grpc_resolved_address *resolved_addr,
+int grpc_sockaddr_to_string(char **out,
+                            const grpc_resolved_address *resolved_addr,
                             int normalize) {
   const struct sockaddr *addr;
   const int save_errno = errno;
@@ -227,7 +234,8 @@ int grpc_sockaddr_get_port(const grpc_resolved_address *resolved_addr) {
   }
 }
 
-int grpc_sockaddr_set_port(const grpc_resolved_address *resolved_addr, int port) {
+int grpc_sockaddr_set_port(const grpc_resolved_address *resolved_addr,
+                           int port) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   switch (addr->sa_family) {
     case AF_INET:

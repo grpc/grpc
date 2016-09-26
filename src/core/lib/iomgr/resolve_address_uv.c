@@ -56,18 +56,16 @@ typedef struct request {
   struct addrinfo *hints;
 } request;
 
-static grpc_error *handle_addrinfo_result(int status,
-                                          struct addrinfo *result,
+static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
                                           grpc_resolved_addresses **addresses) {
-
   struct addrinfo *resp;
   size_t i;
   if (status != 0) {
     grpc_error *error;
     *addresses = NULL;
     error = GRPC_ERROR_CREATE("getaddrinfo failed");
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                               uv_strerror(status));
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     return error;
   }
   (*addresses) = gpr_malloc(sizeof(grpc_resolved_addresses));
@@ -168,8 +166,6 @@ done:
   return err;
 }
 
-
-
 grpc_error *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port,
     grpc_resolved_addresses **addresses) = blocking_resolve_address_impl;
@@ -217,8 +213,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   if (s != 0) {
     *addrs = NULL;
     err = GRPC_ERROR_CREATE("getaddrinfo failed");
-    err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR,
-                             uv_strerror(s));
+    err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR, uv_strerror(s));
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
     gpr_free(r);
     gpr_free(req);

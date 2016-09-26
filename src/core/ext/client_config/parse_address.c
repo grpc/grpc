@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/ext/client_config/parse_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -59,9 +59,7 @@ int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
-  abort();
-}
+int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) { abort(); }
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 

@@ -343,7 +343,8 @@ static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
 
   sockname_temp.len = sizeof(struct sockaddr_storage);
 
-  if (getsockname(fd, (struct sockaddr *)sockname_temp.addr, (socklen_t *)&sockname_temp.len) < 0) {
+  if (getsockname(fd, (struct sockaddr *)sockname_temp.addr,
+                  (socklen_t *)&sockname_temp.len) < 0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     goto error;
   }
@@ -443,8 +444,7 @@ error:
 
 static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
                                         const grpc_resolved_address *addr,
-                                        unsigned port_index,
-                                        unsigned fd_index,
+                                        unsigned port_index, unsigned fd_index,
                                         grpc_tcp_listener **listener) {
   grpc_tcp_listener *sp = NULL;
   int port = -1;
@@ -503,8 +503,8 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     int fd = -1;
     int port = -1;
     grpc_dualstack_mode dsmode;
-    err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0,
-                                       &dsmode, &fd);
+    err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
+                                       &fd);
     if (err != GRPC_ERROR_NONE) return err;
     err = prepare_socket(fd, &listener->addr, true, &port);
     if (err != GRPC_ERROR_NONE) return err;

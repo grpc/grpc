@@ -74,14 +74,11 @@ static void uv_close_callback(uv_handle_t *handle) {
   gpr_free(handle);
 }
 
-static void tcp_free(grpc_tcp *tcp) {
-  gpr_free(tcp);
-}
+static void tcp_free(grpc_tcp *tcp) { gpr_free(tcp); }
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/
 #ifdef GRPC_TCP_REFCOUNT_DEBUG
-#define TCP_UNREF(tcp, reason) \
-  tcp_unref((tcp), (reason), __FILE__, __LINE__)
+#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_tcp *tcp, const char *reason, const char *file,
                       int line) {
@@ -110,7 +107,8 @@ static void tcp_unref(grpc_tcp *tcp) {
 static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
-static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size,
+                         uv_buf_t *buf) {
   grpc_tcp *tcp = handle->data;
   (void)suggested_size;
   tcp->read_slice = gpr_slice_malloc(GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
@@ -118,7 +116,8 @@ static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size, uv_buf_t *b
   buf->len = GPR_SLICE_LENGTH(tcp->read_slice);
 }
 
-static void read_callback(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+static void read_callback(uv_stream_t *stream, ssize_t nread,
+                          const uv_buf_t *buf) {
   gpr_slice sub;
   grpc_error *error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -147,7 +146,8 @@ static void read_callback(uv_stream_t *stream, ssize_t nread, const uv_buf_t *bu
       for (i = 0; i < tcp->read_slices->count; i++) {
         char *dump = gpr_dump_slice(tcp->read_slices->slices[i],
                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
+        gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string,
+                dump);
         gpr_free(dump);
       }
     }
@@ -170,11 +170,12 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_slice_buffer_reset_and_unref(read_slices);
   TCP_REF(tcp, "read");
   // TODO(murgatroid99): figure out what the return value here means
-  status = uv_read_start((uv_stream_t *)tcp->handle, alloc_uv_buf, read_callback);
+  status =
+      uv_read_start((uv_stream_t *)tcp->handle, alloc_uv_buf, read_callback);
   if (status != 0) {
     error = GRPC_ERROR_CREATE("TCP Read failed at start");
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                               uv_strerror(status));
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
   }
   if (grpc_tcp_trace) {
@@ -219,8 +220,8 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     size_t i;
 
     for (i = 0; i < write_slices->count; i++) {
-      char *data =
-          gpr_dump_slice(write_slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      char *data = gpr_dump_slice(write_slices->slices[i],
+                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
       gpr_free(data);
     }
@@ -261,24 +262,22 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void uv_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                               grpc_pollset *pollset) {
   // No-op. We're ignoring pollsets currently
-  (void) exec_ctx;
-  (void) ep;
-  (void) pollset;
-  grpc_tcp *tcp = (grpc_tcp *) ep;
+  (void)exec_ctx;
+  (void)ep;
+  (void)pollset;
+  grpc_tcp *tcp = (grpc_tcp *)ep;
   tcp->pollset = pollset;
 }
 
 static void uv_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {
   // No-op. We're ignoring pollsets currently
-  (void) exec_ctx;
-  (void) ep;
-  (void) pollset;
+  (void)exec_ctx;
+  (void)ep;
+  (void)pollset;
 }
 
-static void shutdown_callback(uv_shutdown_t *req, int status) {
-  gpr_free(req);
-}
+static void shutdown_callback(uv_shutdown_t *req, int status) { gpr_free(req); }
 
 static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
@@ -299,7 +298,7 @@ static char *uv_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_workqueue *uv_get_workqueue(grpc_endpoint *ep) {return NULL; }
+static grpc_workqueue *uv_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
 static grpc_endpoint_vtable vtable = {uv_endpoint_read,
                                       uv_endpoint_write,

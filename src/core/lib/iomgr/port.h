@@ -123,7 +123,7 @@
 #endif
 
 #if defined(GRPC_POSIX_SOCKET) + defined(GRPC_WINSOCK_SOCKET) + \
-  defined(GRPC_CUSTOM_SOCKET) + defined(GRPC_UV) !=              \
+        defined(GRPC_CUSTOM_SOCKET) + defined(GRPC_UV) !=       \
     1
 #error Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GPR_CUSTOM_SOCKET
 #endif

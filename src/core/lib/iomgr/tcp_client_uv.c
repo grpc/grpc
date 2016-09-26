@@ -65,7 +65,8 @@ static void tcp_close_callback(uv_handle_t *handle) {
   gpr_free(handle);
 }
 
-static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
+static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
+                           grpc_error *error) {
   int done;
   grpc_uv_tcp_connect *connect = acp;
   if (error == GRPC_ERROR_NONE) {
@@ -89,13 +90,13 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   grpc_closure *closure = connect->closure;
   grpc_timer_cancel(&exec_ctx, &connect->alarm);
   if (status == 0) {
-    *connect->endpoint = grpc_tcp_create(connect->tcp_handle,
-                                         connect->addr_name);
+    *connect->endpoint =
+        grpc_tcp_create(connect->tcp_handle, connect->addr_name);
   } else {
     error = GRPC_ERROR_CREATE("Failed to connect to remote host");
     error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, -status);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                               uv_strerror(status));
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     if (status == UV_ECANCELED) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
                                  "Timeout occurred");
@@ -115,8 +116,8 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx,
-                             grpc_closure *closure, grpc_endpoint **ep,
+void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                             grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
                              const grpc_resolved_address *resolved_addr,
                              gpr_timespec deadline) {

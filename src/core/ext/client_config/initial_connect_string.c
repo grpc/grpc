@@ -35,8 +35,8 @@
 
 #include <stddef.h>
 
-extern void grpc_set_default_initial_connect_string(grpc_resolved_address **addr,
-                                                    gpr_slice *initial_str);
+extern void grpc_set_default_initial_connect_string(
+    grpc_resolved_address **addr, gpr_slice *initial_str);
 
 static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
     grpc_set_default_initial_connect_string;

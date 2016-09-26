@@ -69,7 +69,8 @@ int grpc_is_unix_socket(const grpc_resolved_address *resolved_addr) {
   return addr->sa_family == AF_UNIX;
 }
 
-void grpc_unlink_if_unix_domain_socket(const grpc_resolved_address *resolved_addr) {
+void grpc_unlink_if_unix_domain_socket(
+    const grpc_resolved_address *resolved_addr) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
     return;
@@ -82,15 +83,15 @@ void grpc_unlink_if_unix_domain_socket(const grpc_resolved_address *resolved_add
   }
 }
 
-char *grpc_sockaddr_to_uri_unix_if_possible(const grpc_resolved_address *resolved_addr) {
+char *grpc_sockaddr_to_uri_unix_if_possible(
+    const grpc_resolved_address *resolved_addr) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
     return NULL;
   }
 
   char *result;
-  gpr_asprintf(&result, "unix:%s",
-               ((struct sockaddr_un *)addr)->sun_path);
+  gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un *)addr)->sun_path);
   return result;
 }
 

@@ -42,19 +42,17 @@
 
 #include <uv.h>
 
-static void timer_close_callback(uv_handle_t *handle) {
-  gpr_free(handle);
-}
+static void timer_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
 static void stop_uv_timer(uv_timer_t *handle) {
   uv_timer_stop(handle);
-  uv_unref((uv_handle_t*) handle);
+  uv_unref((uv_handle_t *)handle);
   gpr_log(GPR_DEBUG, "Closing uv_timer_t handle %p", handle);
-  uv_close((uv_handle_t*) handle, timer_close_callback);
+  uv_close((uv_handle_t *)handle, timer_close_callback);
 }
 
 void run_expired_timer(uv_timer_t *handle) {
-  grpc_timer *timer = (grpc_timer*)handle->data;
+  grpc_timer *timer = (grpc_timer *)handle->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_log(GPR_DEBUG, "Timer callback: %p", timer);
   GPR_ASSERT(!timer->triggered);
@@ -90,7 +88,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     gpr_log(GPR_DEBUG, "Running cancelled timer callback");
     timer->triggered = 1;
     grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
-    stop_uv_timer((uv_timer_t*)timer->uv_timer);
+    stop_uv_timer((uv_timer_t *)timer->uv_timer);
   }
 }
 

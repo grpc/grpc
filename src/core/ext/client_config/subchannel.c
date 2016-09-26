@@ -320,7 +320,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     c->filters = NULL;
   }
   c->addr = gpr_malloc(sizeof(grpc_resolved_address));
-  if (args->addr->len) memcpy(c->addr, args->addr, sizeof(grpc_resolved_address));
+  if (args->addr->len)
+    memcpy(c->addr, args->addr, sizeof(grpc_resolved_address));
   c->pollset_set = grpc_pollset_set_create();
   grpc_set_initial_connect_string(&c->addr, &c->initial_connect_string);
   c->args = grpc_channel_args_copy(args->args);

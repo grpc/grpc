@@ -120,8 +120,7 @@ void bad_server_thread(void *vargs) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->ss_family = AF_INET;
-  error =
-      grpc_tcp_server_add_port(s, &resolved_addr, &port);
+  error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);

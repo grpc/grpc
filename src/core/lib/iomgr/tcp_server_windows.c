@@ -193,9 +193,9 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 }
 
 /* Prepare (bind) a recently-created socket for listening. */
-static grpc_error *prepare_socket(SOCKET sock, const grpc_resolved_address *addr,
+static grpc_error *prepare_socket(SOCKET sock,
+                                  const grpc_resolved_address *addr,
                                   int *port) {
-  
   grpc_resolved_address sockname_temp;
   grpc_error *error = GRPC_ERROR_NONE;
 
@@ -204,7 +204,8 @@ static grpc_error *prepare_socket(SOCKET sock, const grpc_resolved_address *addr
     goto failure;
   }
 
-  if (bind(sock, (const struct sockaddr *)addr->addr, (int)addr->len) == SOCKET_ERROR) {
+  if (bind(sock, (const struct sockaddr *)addr->addr, (int)addr->len) ==
+      SOCKET_ERROR) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
   }
@@ -215,8 +216,8 @@ static grpc_error *prepare_socket(SOCKET sock, const grpc_resolved_address *addr
   }
 
   sockname_temp.len = sizeof(struct sockaddr_storage);
-  if (getsockname(sock, (struct sockaddr *)sockname_temp.addr, &sockname_temp.len) ==
-      SOCKET_ERROR) {
+  if (getsockname(sock, (struct sockaddr *)sockname_temp.addr,
+                  &sockname_temp.len) == SOCKET_ERROR) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getsockname");
     goto failure;
   }
@@ -364,7 +365,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         gpr_log(GPR_ERROR, "setsockopt error: %s", utf8_message);
         gpr_free(utf8_message);
       }
-      err = getpeername(sock, (struct sockaddr *)peer_name.addr, &peer_name.len);
+      err =
+          getpeername(sock, (struct sockaddr *)peer_name.addr, &peer_name.len);
       if (!err) {
         peer_name_string = grpc_sockaddr_to_uri(&peer_name);
       } else {
@@ -453,7 +455,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
 }
 
 grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
-				     const grpc_resolved_address *addr,
+                                     const grpc_resolved_address *addr,
                                      int *port) {
   grpc_tcp_listener *sp = NULL;
   SOCKET sock;
@@ -474,7 +476,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->socket->socket,
-                           (struct sockaddr *)sockname_temp.addr, &sockname_temp.len)) {
+                           (struct sockaddr *)sockname_temp.addr,
+                           &sockname_temp.len)) {
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
           allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));

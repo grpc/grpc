@@ -38,8 +38,8 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
-typedef void (*grpc_set_initial_connect_string_func)(grpc_resolved_address **addr,
-                                                     gpr_slice *initial_str);
+typedef void (*grpc_set_initial_connect_string_func)(
+    grpc_resolved_address **addr, gpr_slice *initial_str);
 void grpc_test_set_initial_connect_string_function(
     grpc_set_initial_connect_string_func func);
 
