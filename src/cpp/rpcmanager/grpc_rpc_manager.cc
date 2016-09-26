@@ -64,8 +64,6 @@ GrpcRpcManager::GrpcRpcManager(int min_pollers, int max_pollers)
 
 GrpcRpcManager::~GrpcRpcManager() {
   std::unique_lock<grpc::mutex> lock(mu_);
-  // ShutdownRpcManager() and Wait() must be called before destroying the object
-  GPR_ASSERT(shutdown_);
   GPR_ASSERT(num_threads_ == 0);
 
   CleanupCompletedThreads();

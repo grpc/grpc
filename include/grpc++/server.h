@@ -208,9 +208,6 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   bool shutdown_;
   bool shutdown_notified_;
 
-  /// The completion queue to use for server shutdown completion notification
-  CompletionQueue shutdown_cq_;
-
   // TODO (sreek) : Remove num_running_cb_ and callback_cv_;
   // The number of threads which are running callbacks.
   // int num_running_cb_;
