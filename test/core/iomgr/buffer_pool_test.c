@@ -38,6 +38,10 @@
 
 #include "test/core/util/test_config.h"
 
+static void inc_int_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
+  ++*(int *)a;
+}
+
 static void set_bool_cb(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
   *(bool *)a = true;
 }
@@ -524,7 +528,6 @@ static void test_buffer_user_stays_allocated_until_memory_released(void) {
     grpc_exec_ctx_finish(&exec_ctx);
     GPR_ASSERT(done);
   }
-  grpc_buffer_pool_unref(p);
 }
 
 static void test_pools_merged_on_buffer_user_deletion(void) {
@@ -554,7 +557,6 @@ static void test_pools_merged_on_buffer_user_deletion(void) {
     }
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_buffer_pool_unref(p);
       grpc_buffer_user_shutdown(&exec_ctx, &usr, set_bool(&done));
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(!done);
@@ -569,6 +571,72 @@ static void test_pools_merged_on_buffer_user_deletion(void) {
     }
   }
   grpc_buffer_pool_unref(p);
+}
+
+static void test_one_slice(void) {
+  gpr_log(GPR_INFO, "** test_one_slice **");
+
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+
+  grpc_buffer_user_slice_allocator alloc;
+  int num_allocs = 0;
+  grpc_buffer_user_slice_allocator_init(&alloc, &usr, inc_int_cb, &num_allocs);
+
+  gpr_slice_buffer buffer;
+  gpr_slice_buffer_init(&buffer);
+
+  {
+    const int start_allocs = num_allocs;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(num_allocs == start_allocs + 1);
+  }
+
+  gpr_slice_buffer_destroy(&buffer);
+  destroy_user(&usr);
+  grpc_buffer_pool_unref(p);
+}
+
+static void test_one_slice_deleted_late(void) {
+  gpr_log(GPR_INFO, "** test_one_slice_deleted_late **");
+
+  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool_resize(p, 1024);
+
+  grpc_buffer_user usr;
+  grpc_buffer_user_init(&usr, p);
+
+  grpc_buffer_user_slice_allocator alloc;
+  int num_allocs = 0;
+  grpc_buffer_user_slice_allocator_init(&alloc, &usr, inc_int_cb, &num_allocs);
+
+  gpr_slice_buffer buffer;
+  gpr_slice_buffer_init(&buffer);
+
+  {
+    const int start_allocs = num_allocs;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_alloc_slices(&exec_ctx, &alloc, 1024, 1, &buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(num_allocs == start_allocs + 1);
+  }
+
+  bool done = false;
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_shutdown(&exec_ctx, &usr, set_bool(&done));
+    grpc_exec_ctx_finish(&exec_ctx);
+    GPR_ASSERT(!done);
+  }
+
+  grpc_buffer_pool_unref(p);
+  gpr_slice_buffer_destroy(&buffer);
+  GPR_ASSERT(done);
 }
 
 int main(int argc, char **argv) {
@@ -591,6 +659,8 @@ int main(int argc, char **argv) {
   test_multiple_reclaims_can_be_triggered();
   test_buffer_user_stays_allocated_until_memory_released();
   test_pools_merged_on_buffer_user_deletion();
+  test_one_slice();
+  test_one_slice_deleted_late();
   grpc_shutdown();
   return 0;
 }

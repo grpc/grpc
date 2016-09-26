@@ -80,6 +80,7 @@ typedef struct {
   msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   size_t slice_size;
   gpr_refcount refcount;
+  gpr_atm shutdown_count;
 
   /* garbage after the last read */
   gpr_slice_buffer last_read_buffer;
@@ -109,24 +110,29 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                             grpc_error *error);
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                              grpc_error *error);
+static void tcp_unref_closure(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
+                              grpc_error *error);
+
+static void tcp_maybe_shutdown_buffer_user(grpc_exec_ctx *exec_ctx,
+                                           grpc_tcp *tcp) {
+  if (gpr_atm_full_fetch_add(&tcp->shutdown_count, 1) == 0) {
+    grpc_buffer_user_shutdown(exec_ctx, &tcp->buffer_user,
+                              grpc_closure_create(tcp_unref_closure, tcp));
+  }
+}
 
 static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
+  tcp_maybe_shutdown_buffer_user(exec_ctx, tcp);
   grpc_fd_shutdown(exec_ctx, tcp->em_fd);
 }
 
-static void tcp_end_free(grpc_exec_ctx *exec_ctx, void *tcp,
-                         grpc_error *error) {
-  gpr_free(tcp);
-}
-
-static void tcp_begin_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
   gpr_free(tcp->peer_string);
-  grpc_buffer_user_shutdown(exec_ctx, &tcp->buffer_user,
-                            grpc_closure_create(tcp_end_free, tcp));
+  gpr_free(tcp);
 }
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/
@@ -139,7 +145,7 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
           reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref(&tcp->refcount)) {
-    tcp_begin_free(exec_ctx, tcp);
+    tcp_free(exec_ctx, tcp);
   }
 }
 
@@ -154,16 +160,22 @@ static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   if (gpr_unref(&tcp->refcount)) {
-    tcp_begin_free(exec_ctx, tcp);
+    tcp_free(exec_ctx, tcp);
   }
 }
 
 static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
+static void tcp_unref_closure(grpc_exec_ctx *exec_ctx, void *arg,
+                              grpc_error *error) {
+  TCP_UNREF(exec_ctx, arg, "buffer_user");
+}
+
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
+  tcp_maybe_shutdown_buffer_user(exec_ctx, tcp);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 
@@ -519,8 +531,10 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
   tcp->slice_size = slice_size;
   tcp->iov_size = 1;
   tcp->finished_edge = true;
-  /* paired with unref in grpc_tcp_destroy */
-  gpr_ref_init(&tcp->refcount, 1);
+  /* paired with unref in grpc_tcp_destroy, and with the shutdown for our
+   * buffer_user */
+  gpr_ref_init(&tcp->refcount, 2);
+  gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   tcp->read_closure.cb = tcp_handle_read;
   tcp->read_closure.cb_arg = tcp;

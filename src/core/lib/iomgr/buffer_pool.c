@@ -149,10 +149,11 @@ static void bpstep(grpc_exec_ctx *exec_ctx, void *bp, grpc_error *error) {
   grpc_buffer_pool *buffer_pool = bp;
   buffer_pool->step_scheduled = false;
   do {
-    if (bpalloc(exec_ctx, buffer_pool)) return;
+    if (bpalloc(exec_ctx, buffer_pool)) goto done;
   } while (bpscavenge(exec_ctx, buffer_pool));
   bpreclaim(exec_ctx, buffer_pool, false) ||
       bpreclaim(exec_ctx, buffer_pool, true);
+done:
   grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
 }
 
@@ -335,6 +336,9 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
     buffer_user->buffer_pool->free_pool += buffer_user->free_pool;
     bpstep_sched(exec_ctx, buffer_user->buffer_pool);
   }
+#ifndef NDEBUG
+  gpr_free(buffer_user->asan_canary);
+#endif
   grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
 }
 
@@ -494,6 +498,9 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
   for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
     buffer_user->links[i].next = buffer_user->links[i].prev = NULL;
   }
+#ifndef NDEBUG
+  buffer_user->asan_canary = gpr_malloc(1);
+#endif
 }
 
 void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
@@ -514,7 +521,14 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
                             grpc_buffer_user *buffer_user, size_t size,
                             grpc_closure *optional_on_done) {
   gpr_mu_lock(&buffer_user->mu);
-  GPR_ASSERT(buffer_user->on_done_destroy == NULL);
+  if (buffer_user->on_done_destroy != NULL) {
+    /* already shutdown */
+    grpc_exec_ctx_sched(
+        exec_ctx, optional_on_done,
+        GRPC_ERROR_CREATE("Buffer pool user is already shutdown"), NULL);
+    gpr_mu_unlock(&buffer_user->mu);
+    return;
+  }
   buffer_user->allocated += (int64_t)size;
   buffer_user->free_pool -= (int64_t)size;
   if (buffer_user->free_pool < 0) {

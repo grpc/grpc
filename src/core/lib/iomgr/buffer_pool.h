@@ -65,6 +65,10 @@ struct grpc_buffer_user {
   grpc_closure allocate_closure;
   grpc_closure add_to_free_pool_closure;
 
+#ifndef NDEBUG
+  void *asan_canary;
+#endif
+
   gpr_mu mu;
   int64_t allocated;
   int64_t free_pool;
