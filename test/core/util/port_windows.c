@@ -35,6 +35,8 @@
 #include "test/core/util/test_config.h"
 #if defined(GRPC_WINSOCK_SOCKET) && defined(GRPC_TEST_PICK_PORT)
 
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include "test/core/util/port.h"
 
 #include <errno.h>

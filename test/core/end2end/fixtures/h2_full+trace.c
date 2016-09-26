@@ -34,7 +34,6 @@
 #include "test/core/end2end/end2end_tests.h"
 
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>

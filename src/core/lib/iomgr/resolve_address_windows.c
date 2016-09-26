@@ -125,7 +125,7 @@ static grpc_error *blocking_resolve_address_impl(
   {
     for (i = 0; i < (*addresses)->naddrs; i++) {
       char *buf;
-      grpc_sockaddr_to_string(&buf, (*addresses)->addrs[i], 0);
+      grpc_sockaddr_to_string(&buf, &(*addresses)->addrs[i], 0);
       gpr_free(buf);
     }
   }
