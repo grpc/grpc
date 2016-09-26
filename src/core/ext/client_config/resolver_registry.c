@@ -65,10 +65,13 @@ void grpc_resolver_registry_shutdown(void) {
 
 void grpc_resolver_registry_set_default_prefix(
     const char *default_resolver_prefix) {
-  GPR_ASSERT(strlen(default_resolver_prefix) <
-             DEFAULT_RESOLVER_PREFIX_MAX_LENGTH);
-  memcpy(g_default_resolver_prefix, default_resolver_prefix,
-         DEFAULT_RESOLVER_PREFIX_MAX_LENGTH);
+  const size_t len = strlen(default_resolver_prefix);
+  GPR_ASSERT(len < DEFAULT_RESOLVER_PREFIX_MAX_LENGTH &&
+             "default resolver prefix too long");
+  GPR_ASSERT(len > 0 && "default resolver prefix can't be empty");
+  // By the previous assert, default_resolver_prefix is safe to be copied with a
+  // plain strcpy.
+  strcpy(g_default_resolver_prefix, default_resolver_prefix);
 }
 
 void grpc_register_resolver_type(grpc_resolver_factory *factory) {
@@ -114,22 +117,16 @@ static grpc_resolver_factory *resolve_factory(const char *target,
   *uri = grpc_uri_parse(target, 1);
   factory = lookup_factory_by_uri(*uri);
   if (factory == NULL) {
-    if (g_default_resolver_prefix[0] != '\0') {
-      grpc_uri_destroy(*uri);
-      gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
-      *uri = grpc_uri_parse(tmp, 1);
-      factory = lookup_factory_by_uri(*uri);
-      if (factory == NULL) {
-        grpc_uri_destroy(grpc_uri_parse(target, 0));
-        grpc_uri_destroy(grpc_uri_parse(tmp, 0));
-        gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
-                tmp);
-      }
-      gpr_free(tmp);
-    } else {
+    grpc_uri_destroy(*uri);
+    gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
+    *uri = grpc_uri_parse(tmp, 1);
+    factory = lookup_factory_by_uri(*uri);
+    if (factory == NULL) {
       grpc_uri_destroy(grpc_uri_parse(target, 0));
-      gpr_log(GPR_ERROR, "don't know how to resolve '%s'", target);
+      grpc_uri_destroy(grpc_uri_parse(tmp, 0));
+      gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target, tmp);
     }
+    gpr_free(tmp);
   }
   return factory;
 }
