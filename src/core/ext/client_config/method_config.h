@@ -37,6 +37,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/transport/hashtable.h"
 #include "src/core/lib/transport/metadata.h"
 
 /// Per-method configuration.
@@ -50,6 +51,9 @@ grpc_method_config* grpc_method_config_create(
 grpc_method_config* grpc_method_config_ref(grpc_method_config* method_config);
 void grpc_method_config_unref(grpc_method_config* method_config);
 
+int grpc_method_config_cmp(grpc_method_config* method_config1,
+                           grpc_method_config* method_config2);
+
 /// These methods return NULL if the requested field is unset.
 /// The caller does NOT take ownership of the result.
 bool* grpc_method_config_get_wait_for_ready(grpc_method_config* method_config);
@@ -60,23 +64,26 @@ int32_t* grpc_method_config_get_max_response_message_bytes(
     grpc_method_config* method_config);
 
 /// A table of method configs.
-typedef struct grpc_method_config_table grpc_method_config_table;
+typedef grpc_hash_table grpc_method_config_table;
 
-grpc_method_config_table* grpc_method_config_table_create();
+typedef struct grpc_method_config_table_entry {
+  /// The name is of one of the following forms:
+  ///   service/method -- specifies exact service and method name
+  ///   service/*      -- matches all methods for the specified service
+  grpc_mdstr* method_name;
+  grpc_method_config* method_config;
+} grpc_method_config_table_entry;
+
+/// Takes new references to all keys and values in \a entries.
+grpc_method_config_table* grpc_method_config_table_create(
+    size_t num_entries, grpc_method_config_table_entry* entries);
 
 grpc_method_config_table* grpc_method_config_table_ref(
     grpc_method_config_table* table);
 void grpc_method_config_table_unref(grpc_method_config_table* table);
 
-/// Adds \a method_config to \a table.  \a paths indicates the set of path
-/// names for which this config applies.  Each name is of one of the
-/// following forms:
-///   service/method -- specifies exact service and method name
-///   service/*      -- matches all methods for the specified service
-/// Takes new references to all elements of \a paths and to \a method_config.
-void grpc_method_config_table_add_method_config(
-    grpc_method_config_table* table, grpc_mdstr** paths, size_t num_paths,
-    grpc_method_config* method_config);
+int grpc_method_config_table_cmp(grpc_method_config_table* table1,
+                                 grpc_method_config_table* table2);
 
 /// Returns NULL if the method has no config.
 /// Caller owns a reference to result.

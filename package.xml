@@ -253,6 +253,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/hashtable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
@@ -428,6 +429,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/hashtable.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />

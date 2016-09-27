@@ -362,6 +362,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\hashtable.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
@@ -603,6 +604,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\hashtable.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
     </ClCompile>

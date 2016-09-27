@@ -863,6 +863,7 @@ src/core/lib/surface/lame_client.h \
 src/core/lib/surface/server.h \
 src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.h \
+src/core/lib/transport/hashtable.h \
 src/core/lib/transport/metadata.h \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/static_metadata.h \
@@ -1038,6 +1039,7 @@ src/core/lib/surface/validate_metadata.c \
 src/core/lib/surface/version.c \
 src/core/lib/transport/byte_stream.c \
 src/core/lib/transport/connectivity_state.c \
+src/core/lib/transport/hashtable.c \
 src/core/lib/transport/metadata.c \
 src/core/lib/transport/metadata_batch.c \
 src/core/lib/transport/static_metadata.c \

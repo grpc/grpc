@@ -651,6 +651,7 @@
         'src/core/lib/surface/version.c',
         'src/core/lib/transport/byte_stream.c',
         'src/core/lib/transport/connectivity_state.c',
+        'src/core/lib/transport/hashtable.c',
         'src/core/lib/transport/metadata.c',
         'src/core/lib/transport/metadata_batch.c',
         'src/core/lib/transport/static_metadata.c',
