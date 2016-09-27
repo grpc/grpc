@@ -51,9 +51,9 @@
 #include <grpc++/impl/codegen/string_ref.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
 
 struct grpc_byte_buffer;
 
@@ -92,7 +92,7 @@ inline grpc_mdelem** FillMetadataArray(
     return nullptr;
   }
   grpc_mdelem** metadata_array =
-      (grpc_mdelem**)(g_core_codegen_interface->gpr_malloc(
+      static_cast<grpc_mdelem**>(g_core_codegen_interface->gpr_malloc(
           metadata.size() * sizeof(grpc_mdelem*)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
@@ -202,6 +202,9 @@ class CallOpSendInitialMetadata {
     flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
+    initial_metadata_storage_ =
+        static_cast<grpc_linked_mdelem*>(g_core_codegen_interface->gpr_malloc(
+            sizeof(grpc_linked_mdelem) * metadata.size()));
   }
 
   void set_compression_level(grpc_compression_level level) {
@@ -218,6 +221,7 @@ class CallOpSendInitialMetadata {
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
+    op->data.send_initial_metadata.metadata_storage = initial_metadata_storage_;
     op->data.send_initial_metadata.maybe_compression_level.is_set =
         maybe_compression_level_.is_set;
     op->data.send_initial_metadata.maybe_compression_level.level =
@@ -226,6 +230,7 @@ class CallOpSendInitialMetadata {
   void FinishOp(bool* status, int max_receive_message_size) {
     if (!send_) return;
     g_core_codegen_interface->gpr_free(initial_metadata_);
+    g_core_codegen_interface->gpr_free(initial_metadata_storage_);
     send_ = false;
   }
 
@@ -233,6 +238,7 @@ class CallOpSendInitialMetadata {
   uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_mdelem** initial_metadata_;
+  grpc_linked_mdelem* initial_metadata_storage_;
   struct {
     bool is_set;
     grpc_compression_level level;
@@ -447,6 +453,9 @@ class CallOpServerSendStatus {
       const Status& status) {
     trailing_metadata_count_ = trailing_metadata.size();
     trailing_metadata_ = FillMetadataArray(trailing_metadata);
+    trailing_metadata_storage_ =
+        static_cast<grpc_linked_mdelem*>(g_core_codegen_interface->gpr_malloc(
+            sizeof(grpc_linked_mdelem) * trailing_metadata.size()));
     send_status_available_ = true;
     send_status_code_ = static_cast<grpc_status_code>(GetCanonicalCode(status));
     send_status_details_ = status.error_message();
@@ -460,6 +469,8 @@ class CallOpServerSendStatus {
     op->data.send_status_from_server.trailing_metadata_count =
         trailing_metadata_count_;
     op->data.send_status_from_server.trailing_metadata = trailing_metadata_;
+    op->data.send_status_from_server.metadata_storage =
+        trailing_metadata_storage_;
     op->data.send_status_from_server.status = send_status_code_;
     op->data.send_status_from_server.status_details =
         send_status_details_.empty() ? nullptr : send_status_details_.c_str();
@@ -470,6 +481,7 @@ class CallOpServerSendStatus {
   void FinishOp(bool* status, int max_receive_message_size) {
     if (!send_status_available_) return;
     g_core_codegen_interface->gpr_free(trailing_metadata_);
+    g_core_codegen_interface->gpr_free(trailing_metadata_storage_);
     send_status_available_ = false;
   }
 
@@ -479,6 +491,7 @@ class CallOpServerSendStatus {
   grpc::string send_status_details_;
   size_t trailing_metadata_count_;
   grpc_mdelem** trailing_metadata_;
+  grpc_linked_mdelem* trailing_metadata_storage_;
 };
 
 class CallOpRecvInitialMetadata {
