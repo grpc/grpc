@@ -297,7 +297,7 @@ class Server::SyncRequestManager : public GrpcRpcManager {
         server_cq_(server_cq),
         global_callbacks_(global_callbacks) {}
 
-  static const int kRpcPollingTimeoutMsec = 10;
+  static const int kRpcPollingTimeoutMsec = 500;
 
   WorkStatus PollForWork(void** tag, bool* ok) GRPC_OVERRIDE {
     *tag = nullptr;
