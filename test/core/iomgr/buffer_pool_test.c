@@ -83,8 +83,10 @@ static void destroy_user(grpc_buffer_user *usr) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   bool done = false;
   grpc_buffer_user_shutdown(&exec_ctx, usr, set_bool(&done));
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(done);
+  grpc_buffer_user_destroy(&exec_ctx, usr);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op(void) {
@@ -528,6 +530,11 @@ static void test_buffer_user_stays_allocated_until_memory_released(void) {
     grpc_exec_ctx_finish(&exec_ctx);
     GPR_ASSERT(done);
   }
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_destroy(&exec_ctx, &usr);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 static void test_pools_merged_on_buffer_user_deletion(void) {
@@ -568,6 +575,11 @@ static void test_pools_merged_on_buffer_user_deletion(void) {
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(done);
       GPR_ASSERT(reclaimer_cancelled);
+    }
+    {
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_buffer_user_destroy(&exec_ctx, &usr);
+      grpc_exec_ctx_finish(&exec_ctx);
     }
   }
   grpc_buffer_pool_unref(p);
@@ -678,6 +690,11 @@ static void test_one_slice_deleted_late(void) {
   grpc_buffer_pool_unref(p);
   gpr_slice_buffer_destroy(&buffer);
   GPR_ASSERT(done);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_buffer_user_destroy(&exec_ctx, &usr);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 int main(int argc, char **argv) {

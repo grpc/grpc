@@ -337,11 +337,6 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
     buffer_user->buffer_pool->free_pool += buffer_user->free_pool;
     bpstep_sched(exec_ctx, buffer_user->buffer_pool);
   }
-#ifndef NDEBUG
-  gpr_free(buffer_user->asan_canary);
-#endif
-  grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
-  gpr_mu_destroy(&buffer_user->mu);
 }
 
 static void bu_allocated_slices(grpc_exec_ctx *exec_ctx, void *ts,
@@ -521,6 +516,15 @@ void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&buffer_user->mu);
 }
 
+void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_buffer_user *buffer_user) {
+#ifndef NDEBUG
+  gpr_free(buffer_user->asan_canary);
+#endif
+  grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
+  gpr_mu_destroy(&buffer_user->mu);
+}
+
 void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
                             grpc_buffer_user *buffer_user, size_t size,
                             grpc_closure *optional_on_done) {
@@ -580,7 +584,7 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
 void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
                                      grpc_buffer_user *buffer_user,
                                      bool destructive, grpc_closure *closure) {
-  if (gpr_atm_acq_load(&buffer_user->on_done_destroy_closure) != 0) {
+  if (gpr_atm_acq_load(&buffer_user->on_done_destroy_closure) == 0) {
     GPR_ASSERT(buffer_user->reclaimers[destructive] == NULL);
     buffer_user->reclaimers[destructive] = closure;
     grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,

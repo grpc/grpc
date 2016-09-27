@@ -90,6 +90,8 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
 void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
                                grpc_buffer_user *buffer_user,
                                grpc_closure *on_done);
+void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_buffer_user *buffer_user);
 
 void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
                             grpc_buffer_user *buffer_user, size_t size,
