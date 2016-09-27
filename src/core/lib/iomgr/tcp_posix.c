@@ -131,6 +131,7 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
+  grpc_buffer_user_destroy(exec_ctx, &tcp->buffer_user);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
 }
