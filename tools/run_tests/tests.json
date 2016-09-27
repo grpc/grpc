@@ -31465,10 +31465,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31477,10 +31474,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_secure", 
     "timeout_seconds": 180
@@ -31492,10 +31486,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 1, 
     "defaults": "boringssl", 
@@ -31504,10 +31495,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_one_server_core_secure", 
     "timeout_seconds": 180
@@ -31519,10 +31507,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31531,10 +31516,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_unary_ping_pong_secure", 
     "timeout_seconds": 180
@@ -31546,10 +31528,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31558,10 +31537,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_secure", 
     "timeout_seconds": 180
@@ -31573,10 +31549,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31585,10 +31558,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_unary_ping_pong_secure", 
     "timeout_seconds": 180
@@ -31600,10 +31570,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31612,10 +31579,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_secure", 
     "timeout_seconds": 180
@@ -31627,10 +31591,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31639,10 +31600,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_ping_pong_secure", 
     "timeout_seconds": 180
@@ -31654,10 +31612,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31666,10 +31621,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_secure", 
     "timeout_seconds": 180
@@ -31681,10 +31633,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31693,10 +31642,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_streaming_ping_pong_secure", 
     "timeout_seconds": 180
@@ -31708,10 +31654,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31720,10 +31663,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_secure", 
     "timeout_seconds": 180
@@ -31735,10 +31675,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31747,10 +31684,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_unconstrained_insecure", 
     "timeout_seconds": 180
@@ -31762,10 +31696,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 1, 
     "defaults": "boringssl", 
@@ -31774,10 +31705,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_generic_async_streaming_qps_one_server_core_insecure", 
     "timeout_seconds": 180
@@ -31789,10 +31717,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31801,10 +31726,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_unary_ping_pong_insecure", 
     "timeout_seconds": 180
@@ -31816,10 +31738,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31828,10 +31747,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_unary_qps_unconstrained_insecure", 
     "timeout_seconds": 180
@@ -31843,10 +31759,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31855,10 +31768,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_unary_ping_pong_insecure", 
     "timeout_seconds": 180
@@ -31870,10 +31780,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31882,10 +31789,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_unary_qps_unconstrained_insecure", 
     "timeout_seconds": 180
@@ -31897,10 +31801,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31909,10 +31810,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_ping_pong_insecure", 
     "timeout_seconds": 180
@@ -31924,10 +31822,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31936,10 +31831,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_sync_streaming_qps_unconstrained_insecure", 
     "timeout_seconds": 180
@@ -31951,10 +31843,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 2, 
     "defaults": "boringssl", 
@@ -31963,10 +31852,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_streaming_ping_pong_insecure", 
     "timeout_seconds": 180
@@ -31978,10 +31864,7 @@
     ], 
     "boringssl": true, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 8, 
     "defaults": "boringssl", 
@@ -31990,10 +31873,7 @@
     "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "shortname": "json_run_localhost:cpp_protobuf_async_streaming_qps_unconstrained_insecure", 
     "timeout_seconds": 180
