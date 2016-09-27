@@ -31,13 +31,9 @@
 
 import os
 import os.path
-import shutil
 import sys
 
-from distutils import core as _core
-from distutils import extension as _extension
 import setuptools
-from setuptools.command import egg_info
 
 import grpc.tools.command
 
@@ -60,15 +56,12 @@ INSTALL_REQUIRES = (
     'coverage>=4.0',
     'enum34>=1.0.4',
     'futures>=2.2.0',
-    'grpcio>=0.14.0',
-    'grpcio-health-checking>=0.14.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
+    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
+    'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
     'oauth2client>=1.4.7',
-    'protobuf>=3.0.0a3',
+    'protobuf>=3.0.0',
     'six>=1.10',
-)
-
-SETUP_REQUIRES = (
-    'grpcio-tools>=0.14.0',
 )
 
 COMMAND_CLASS = {
@@ -115,7 +108,6 @@ setuptools.setup(
   package_dir=PACKAGE_DIRECTORIES,
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
-  setup_requires=SETUP_REQUIRES,
   cmdclass=COMMAND_CLASS,
   tests_require=TESTS_REQUIRE,
   test_suite=TEST_SUITE,

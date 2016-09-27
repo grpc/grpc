@@ -6,7 +6,7 @@
       "Grpc.Core": {
         "target": "project"
       },
-      "Google.Protobuf": "3.0.0-beta3"
+      "Google.Protobuf": "3.0.0"
     },
     "frameworks": {
       "net45": {
@@ -15,12 +15,12 @@
           "System.IO": ""
         }
       },
-      "netstandard1.5": {
-        "imports": [
-          "portable-net45"
-        ],
+      "netcoreapp1.0": {
         "dependencies": {
-          "NETStandard.Library": "1.6.0"
+          "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.0.0"
+          }
         }
       }
     }

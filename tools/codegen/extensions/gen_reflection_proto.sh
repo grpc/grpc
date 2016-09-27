@@ -36,7 +36,7 @@ SRC_DIR="src/cpp/ext"
 INCLUDE_DIR="grpc++/ext"
 TMP_DIR="tmp"
 GRPC_PLUGIN="bins/opt/grpc_cpp_plugin"
-PROTOC=third_party/protobuf/src/protoc
+PROTOC="bins/opt/protobuf/protoc"
 
 set -e
 

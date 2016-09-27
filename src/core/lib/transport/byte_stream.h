@@ -59,12 +59,8 @@ struct grpc_byte_stream {
  * on_complete will not be called), 0 if the bytes will be available
  * asynchronously.
  *
- * on entry, *remaining can be set as a hint as to the maximum number
+ * max_size_hint can be set as a hint as to the maximum number
  * of bytes that would be acceptable to read.
- *
- * fills *buffer, *length, *remaining with the bytes, length of bytes
- * and length of data remaining to be read before either returning 1
- * or calling on_complete.
  *
  * once a slice is returned into *slice, it is owned by the caller.
  */

@@ -1078,7 +1078,7 @@ def access_token_call_credentials(access_token):
 
   Args:
     access_token: A string to place directly in the http request
-      authorization header, ie "Authorization: Bearer <access_token>".
+      authorization header, ie "authorization: Bearer <access_token>".
 
   Returns:
     A CallCredentials.
@@ -1189,11 +1189,11 @@ def insecure_channel(target, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, options, None)
+  return _channel.Channel(target, () if options is None else options, None)
 
 
 def secure_channel(target, credentials, options=None):
-  """Creates an insecure Channel to a server.
+  """Creates a secure Channel to a server.
 
   Args:
     target: The target to which to connect.
@@ -1205,10 +1205,11 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, options, credentials._credentials)
+  return _channel.Channel(target, () if options is None else options,
+                          credentials._credentials)
 
 
-def server(thread_pool, handlers=None):
+def server(thread_pool, handlers=None, options=None):
   """Creates a Server with which RPCs can be serviced.
 
   Args:
@@ -1219,12 +1220,15 @@ def server(thread_pool, handlers=None):
       only handlers the server will use to service RPCs; other handlers may
       later be added by calling add_generic_rpc_handlers any time before the
       returned Server is started.
+    options: A sequence of string-value pairs according to which to configure
+      the created server.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
   from grpc import _server
-  return _server.Server(thread_pool, () if handlers is None else handlers)
+  return _server.Server(thread_pool, () if handlers is None else handlers,
+                        () if options is None else options)
 
 
 ###################################  __all__  #################################

@@ -40,7 +40,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -52,22 +51,20 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
-  /** subchannel factory */
-  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
   /** the addresses that we've 'resolved' */
-  grpc_resolved_addresses *addresses;
+  grpc_lb_addresses *addresses;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** have we published? */
-  int published;
+  bool published;
   /** pending next completion, or NULL */
   grpc_closure *next_completion;
-  /** target config address for next completion */
-  grpc_client_config **target_config;
+  /** target result address for next completion */
+  grpc_resolver_result **target_result;
 } sockaddr_resolver;
 
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -79,7 +76,7 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *r);
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                          grpc_client_config **target_config,
+                          grpc_resolver_result **target_result,
                           grpc_closure *on_complete);
 
 static const grpc_resolver_vtable sockaddr_resolver_vtable = {
@@ -91,7 +88,7 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx,
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
-    *r->target_config = NULL;
+    *r->target_result = NULL;
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -102,19 +99,19 @@ static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
-  r->published = 0;
+  r->published = false;
   sockaddr_maybe_finish_next_locked(exec_ctx, r);
   gpr_mu_unlock(&r->mu);
 }
 
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                          grpc_client_config **target_config,
+                          grpc_resolver_result **target_result,
                           grpc_closure *on_complete) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
-  r->target_config = target_config;
+  r->target_result = target_result;
   sockaddr_maybe_finish_next_locked(exec_ctx, r);
   gpr_mu_unlock(&r->mu);
 }
@@ -122,17 +119,10 @@ static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                               sockaddr_resolver *r) {
   if (r->next_completion != NULL && !r->published) {
-    grpc_client_config *cfg = grpc_client_config_create();
-    grpc_lb_policy_args lb_policy_args;
-    memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.addresses = r->addresses;
-    lb_policy_args.client_channel_factory = r->client_channel_factory;
-    grpc_lb_policy *lb_policy =
-        grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
-    grpc_client_config_set_lb_policy(cfg, lb_policy);
-    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
-    r->published = 1;
-    *r->target_config = cfg;
+    r->published = true;
+    *r->target_result = grpc_resolver_result_create(
+        "", grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
+        r->lb_policy_name, NULL);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -141,8 +131,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
-  grpc_resolved_addresses_destroy(r->addresses);
+  grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
@@ -175,7 +164,7 @@ static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
     grpc_resolver_args *args, const char *default_lb_policy_name,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
-  int errors_found = 0; /* GPR_FALSE */
+  bool errors_found = false;
   sockaddr_resolver *r;
   gpr_slice path_slice;
   gpr_slice_buffer path_parts;
@@ -216,21 +205,18 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_init(&path_parts);
 
   gpr_slice_split(path_slice, ",", &path_parts);
-  r->addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-  r->addresses->naddrs = path_parts.count;
-  r->addresses->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * r->addresses->naddrs);
-
-  for (size_t i = 0; i < r->addresses->naddrs; i++) {
+  r->addresses = grpc_lb_addresses_create(path_parts.count);
+  for (size_t i = 0; i < r->addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri,
-               (struct sockaddr_storage *)(&r->addresses->addrs[i].addr),
-               &r->addresses->addrs[i].len)) {
-      errors_found = 1; /* GPR_TRUE */
+    if (!parse(&ith_uri, (struct sockaddr_storage *)(&r->addresses->addresses[i]
+                                                          .address.addr),
+               &r->addresses->addresses[i].address.len)) {
+      errors_found = true;
     }
     gpr_free(part_str);
+    r->addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
 
@@ -238,7 +224,7 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_unref(path_slice);
   if (errors_found) {
     gpr_free(r->lb_policy_name);
-    grpc_resolved_addresses_destroy(r->addresses);
+    grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
     gpr_free(r);
     return NULL;
   }
@@ -246,8 +232,6 @@ static grpc_resolver *sockaddr_create(
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
-  r->client_channel_factory = args->client_channel_factory;
-  grpc_client_channel_factory_ref(r->client_channel_factory);
 
   return &r->base;
 }

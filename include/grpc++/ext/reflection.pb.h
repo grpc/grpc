@@ -83,7 +83,7 @@ class ServiceResponse;
 
 // ===================================================================
 
-class ServerReflectionRequest : public ::google::protobuf::Message {
+class ServerReflectionRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ServerReflectionRequest) */ {
  public:
   ServerReflectionRequest();
   virtual ~ServerReflectionRequest();
@@ -126,7 +126,11 @@ class ServerReflectionRequest : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -260,7 +264,7 @@ class ServerReflectionRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class ExtensionRequest : public ::google::protobuf::Message {
+class ExtensionRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ExtensionRequest) */ {
  public:
   ExtensionRequest();
   virtual ~ExtensionRequest();
@@ -294,7 +298,11 @@ class ExtensionRequest : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -350,7 +358,7 @@ class ExtensionRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class ServerReflectionResponse : public ::google::protobuf::Message {
+class ServerReflectionResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ServerReflectionResponse) */ {
  public:
   ServerReflectionResponse();
   virtual ~ServerReflectionResponse();
@@ -392,7 +400,11 @@ class ServerReflectionResponse : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -505,7 +517,7 @@ class ServerReflectionResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class FileDescriptorResponse : public ::google::protobuf::Message {
+class FileDescriptorResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.FileDescriptorResponse) */ {
  public:
   FileDescriptorResponse();
   virtual ~FileDescriptorResponse();
@@ -539,7 +551,11 @@ class FileDescriptorResponse : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -593,7 +609,7 @@ class FileDescriptorResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class ExtensionNumberResponse : public ::google::protobuf::Message {
+class ExtensionNumberResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ExtensionNumberResponse) */ {
  public:
   ExtensionNumberResponse();
   virtual ~ExtensionNumberResponse();
@@ -627,7 +643,11 @@ class ExtensionNumberResponse : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -690,7 +710,7 @@ class ExtensionNumberResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class ListServiceResponse : public ::google::protobuf::Message {
+class ListServiceResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ListServiceResponse) */ {
  public:
   ListServiceResponse();
   virtual ~ListServiceResponse();
@@ -724,7 +744,11 @@ class ListServiceResponse : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -774,7 +798,7 @@ class ListServiceResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class ServiceResponse : public ::google::protobuf::Message {
+class ServiceResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ServiceResponse) */ {
  public:
   ServiceResponse();
   virtual ~ServiceResponse();
@@ -808,7 +832,11 @@ class ServiceResponse : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();
@@ -857,7 +885,7 @@ class ServiceResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class ErrorResponse : public ::google::protobuf::Message {
+class ErrorResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:grpc.reflection.v1alpha.ErrorResponse) */ {
  public:
   ErrorResponse();
   virtual ~ErrorResponse();
@@ -891,7 +919,11 @@ class ErrorResponse : public ::google::protobuf::Message {
       ::google::protobuf::io::CodedInputStream* input);
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
   int GetCachedSize() const { return _cached_size_; }
   private:
   void SharedCtor();

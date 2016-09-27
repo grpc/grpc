@@ -38,3 +38,6 @@ docker build -t grpc_check_generated_pb_files tools/dockerfile/grpc_check_genera
 
 # run check_pb_files against the checked out codebase
 docker run -e TEST=$TEST --rm=true -v ${HOST_GIT_ROOT:-`pwd`}:/var/local/jenkins/grpc -t grpc_check_generated_pb_files /var/local/jenkins/grpc/tools/dockerfile/grpc_check_generated_pb_files/check_pb_files.sh
+
+# If the test fails, please make sure your protobuf submodule is up-to-date and run
+# tools/codegen/extensions/gen_reflection_proto.sh to update the generated files.

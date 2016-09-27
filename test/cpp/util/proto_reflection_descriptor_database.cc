@@ -58,7 +58,7 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
     stream_->WritesDone();
     Status status = stream_->Finish();
     if (!status.ok()) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_INFO,
               "ServerReflectionInfo rpc failed. Error code: %d, details: %s",
               (int)status.error_code(), status.error_message().c_str());
     }

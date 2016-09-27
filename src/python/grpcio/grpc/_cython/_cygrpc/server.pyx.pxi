@@ -34,11 +34,12 @@ import time
 
 cdef class Server:
 
-  def __cinit__(self, ChannelArgs arguments=None):
+  def __cinit__(self, ChannelArgs arguments):
+    grpc_init()
     cdef grpc_channel_args *c_arguments = NULL
     self.references = []
     self.registered_completion_queues = []
-    if arguments is not None:
+    if len(arguments) > 0:
       c_arguments = &arguments.c_args
       self.references.append(arguments)
     with nogil:
@@ -172,3 +173,4 @@ cdef class Server:
         while not self.is_shutdown:
           time.sleep(0)
       grpc_server_destroy(self.c_server)
+    grpc_shutdown()

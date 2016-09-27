@@ -32,12 +32,12 @@
 import threading
 import time
 import unittest
-from concurrent import futures
 
 import grpc
 from grpc import _channel
 from grpc import _server
 from tests.unit.framework.common import test_constants
+from tests.unit import _thread_pool
 
 
 def _ready_in_connectivities(connectivities):
@@ -78,7 +78,7 @@ class ChannelConnectivityTest(unittest.TestCase):
   def test_lonely_channel_connectivity(self):
     callback = _Callback()
 
-    channel = _channel.Channel('localhost:12345', None, None)
+    channel = _channel.Channel('localhost:12345', (), None)
     channel.subscribe(callback.update, try_to_connect=False)
     first_connectivities = callback.block_until_connectivities_satisfy(bool)
     channel.subscribe(callback.update, try_to_connect=True)
@@ -104,13 +104,14 @@ class ChannelConnectivityTest(unittest.TestCase):
         grpc.ChannelConnectivity.READY, fifth_connectivities)
 
   def test_immediately_connectable_channel_connectivity(self):
-    server = _server.Server(futures.ThreadPoolExecutor(max_workers=0), ())
+    thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+    server = _server.Server(thread_pool, (), ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     first_callback = _Callback()
     second_callback = _Callback()
 
-    channel = _channel.Channel('localhost:{}'.format(port), None, None)
+    channel = _channel.Channel('localhost:{}'.format(port), (), None)
     channel.subscribe(first_callback.update, try_to_connect=False)
     first_connectivities = first_callback.block_until_connectivities_satisfy(
         bool)
@@ -141,20 +142,23 @@ class ChannelConnectivityTest(unittest.TestCase):
         fourth_connectivities)
     self.assertNotIn(
         grpc.ChannelConnectivity.SHUTDOWN, fourth_connectivities)
+    self.assertFalse(thread_pool.was_used())
 
   def test_reachable_then_unreachable_channel_connectivity(self):
-    server = _server.Server(futures.ThreadPoolExecutor(max_workers=0), ())
+    thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+    server = _server.Server(thread_pool, (), ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     callback = _Callback()
 
-    channel = _channel.Channel('localhost:{}'.format(port), None, None)
+    channel = _channel.Channel('localhost:{}'.format(port), (), None)
     channel.subscribe(callback.update, try_to_connect=True)
     callback.block_until_connectivities_satisfy(_ready_in_connectivities)
     # Now take down the server and confirm that channel readiness is repudiated.
     server.stop(None)
     callback.block_until_connectivities_satisfy(_last_connectivity_is_not_ready)
     channel.unsubscribe(callback.update)
+    self.assertFalse(thread_pool.was_used())
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
-	branch = 3.0.0-beta-3
+	branch = 3.0.x
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://github.com/gflags/gflags.git
@@ -17,3 +17,6 @@
 [submodule "third_party/nanopb"]
 	path = third_party/nanopb
 	url = https://github.com/nanopb/nanopb.git
+[submodule "third_party/thrift"]
+	path = third_party/thrift
+	url = https://github.com/apache/thrift.git

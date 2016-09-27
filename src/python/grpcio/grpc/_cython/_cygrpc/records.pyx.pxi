@@ -39,7 +39,7 @@ class ConnectivityState:
 class ChannelArgKey:
   enable_census = GRPC_ARG_ENABLE_CENSUS
   max_concurrent_streams = GRPC_ARG_MAX_CONCURRENT_STREAMS
-  max_message_length = GRPC_ARG_MAX_MESSAGE_LENGTH
+  max_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
   http2_initial_sequence_number = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
   default_authority = GRPC_ARG_DEFAULT_AUTHORITY
   primary_user_agent_string = GRPC_ARG_PRIMARY_USER_AGENT_STRING
@@ -176,12 +176,14 @@ cdef class Timespec:
 cdef class CallDetails:
 
   def __cinit__(self):
+    grpc_init()
     with nogil:
       grpc_call_details_init(&self.c_details)
 
   def __dealloc__(self):
     with nogil:
       grpc_call_details_destroy(&self.c_details)
+    grpc_shutdown()
 
   @property
   def method(self):
@@ -232,6 +234,7 @@ cdef class Event:
 cdef class ByteBuffer:
 
   def __cinit__(self, bytes data):
+    grpc_init()
     if data is None:
       self.c_byte_buffer = NULL
       return
@@ -288,6 +291,7 @@ cdef class ByteBuffer:
   def __dealloc__(self):
     if self.c_byte_buffer != NULL:
       grpc_byte_buffer_destroy(self.c_byte_buffer)
+    grpc_shutdown()
 
 
 cdef class SslPemKeyCertPair:
@@ -319,6 +323,7 @@ cdef class ChannelArg:
 cdef class ChannelArgs:
 
   def __cinit__(self, args):
+    grpc_init()
     self.args = list(args)
     for arg in self.args:
       if not isinstance(arg, ChannelArg):
@@ -333,6 +338,7 @@ cdef class ChannelArgs:
   def __dealloc__(self):
     with nogil:
       gpr_free(self.c_args.arguments)
+    grpc_shutdown()
 
   def __len__(self):
     # self.args is never stale; it's only updated from this file
@@ -399,6 +405,7 @@ cdef class _MetadataIterator:
 cdef class Metadata:
 
   def __cinit__(self, metadata):
+    grpc_init()
     self.metadata = list(metadata)
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
@@ -420,6 +427,7 @@ cdef class Metadata:
     # it'd be nice if that were documented somewhere...)
     # TODO(atash): document this in the C core
     grpc_metadata_array_destroy(&self.c_metadata_array)
+    grpc_shutdown()
 
   def __len__(self):
     return self.c_metadata_array.count
@@ -437,6 +445,7 @@ cdef class Metadata:
 cdef class Operation:
 
   def __cinit__(self):
+    grpc_init()
     self.references = []
     self._received_status_details = NULL
     self._received_status_details_capacity = 0
@@ -529,6 +538,7 @@ cdef class Operation:
     # This means that we need to clean up after receive_status_on_client.
     if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
       gpr_free(self._received_status_details)
+    grpc_shutdown()
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
   cdef Operation op = Operation()
@@ -645,6 +655,7 @@ cdef class _OperationsIterator:
 cdef class Operations:
 
   def __cinit__(self, operations):
+    grpc_init()
     self.operations = list(operations)  # normalize iterable
     self.c_ops = NULL
     self.c_nops = 0
@@ -667,6 +678,7 @@ cdef class Operations:
   def __dealloc__(self):
     with nogil:
       gpr_free(self.c_ops)
+    grpc_shutdown()
 
   def __iter__(self):
     return _OperationsIterator(self)

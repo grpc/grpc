@@ -41,6 +41,7 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_config/http_connect_handshaker.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -114,8 +115,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&c->mu);
     c->result->transport = grpc_create_chttp2_transport(
         exec_ctx, c->args.channel_args, secure_endpoint, 1);
-    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
-                                        0);
+    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL);
     auth_context_arg = grpc_auth_context_to_arg(auth_context);
     c->result->channel_args =
         grpc_channel_args_copy_and_add(c->tmp_args, &auth_context_arg, 1);
@@ -126,10 +126,13 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data,
+                              grpc_channel_args *args,
+                              gpr_slice_buffer *read_buffer, void *user_data,
                               grpc_error *error) {
   connector *c = user_data;
+  c->tmp_args = args;
   if (error != GRPC_ERROR_NONE) {
+    gpr_free(read_buffer);
     grpc_closure *notify = c->notify;
     c->notify = NULL;
     grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
@@ -137,10 +140,9 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     // TODO(roth, jboeuf): Convert security connector handshaking to use new
     // handshake API, and then move the code from on_secure_handshake_done()
     // into this function.
-    c->tmp_args = args;
     grpc_channel_security_connector_do_handshake(
-        exec_ctx, c->security_connector, endpoint, c->args.deadline,
-        on_secure_handshake_done, c);
+        exec_ctx, c->security_connector, endpoint, read_buffer,
+        c->args.deadline, on_secure_handshake_done, c);
   }
 }
 
@@ -219,7 +221,6 @@ typedef struct {
   gpr_refcount refs;
   grpc_channel_args *merge_args;
   grpc_channel_security_connector *security_connector;
-  grpc_channel *master;
 } client_channel_factory;
 
 static void client_channel_factory_ref(
@@ -234,10 +235,6 @@ static void client_channel_factory_unref(
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "client_channel_factory");
-    if (f->master != NULL) {
-      GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master,
-                                  "client_channel_factory");
-    }
     grpc_channel_args_destroy(f->merge_args);
     gpr_free(f);
   }
@@ -255,6 +252,13 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
   c->handshake_mgr = grpc_handshake_manager_create();
+  char *proxy_name = grpc_get_http_proxy_server();
+  if (proxy_name != NULL) {
+    grpc_handshake_manager_add(
+        c->handshake_mgr,
+        grpc_http_connect_handshaker_create(proxy_name, args->server_name));
+    gpr_free(proxy_name);
+  }
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;
@@ -275,10 +279,10 @@ static grpc_channel *client_channel_factory_create_channel(
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(final_args);
 
-  grpc_resolver *resolver = grpc_resolver_create(target, &f->base);
+  grpc_resolver *resolver = grpc_resolver_create(target);
   if (resolver != NULL) {
-    grpc_client_channel_set_resolver(
-        exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
+    grpc_client_channel_finish_initialization(
+        exec_ctx, grpc_channel_get_channel_stack(channel), resolver, &f->base);
     GRPC_RESOLVER_UNREF(exec_ctx, resolver, "create");
   } else {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
@@ -355,10 +359,6 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
 
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
-  if (channel != NULL) {
-    f->master = channel;
-    GRPC_CHANNEL_INTERNAL_REF(f->master, "grpc_secure_channel_create");
-  }
 
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);

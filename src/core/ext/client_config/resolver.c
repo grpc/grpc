@@ -76,7 +76,7 @@ void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
 }
 
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                        grpc_client_config **target_config,
+                        grpc_resolver_result **result,
                         grpc_closure *on_complete) {
-  resolver->vtable->next(exec_ctx, resolver, target_config, on_complete);
+  resolver->vtable->next(exec_ctx, resolver, result, on_complete);
 }

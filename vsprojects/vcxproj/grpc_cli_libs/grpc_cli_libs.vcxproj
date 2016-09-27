@@ -148,15 +148,25 @@
 
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\config_grpc_cli.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\service_describer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\service_describer.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -166,8 +176,8 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_plugin_support\grpc_plugin_support.vcxproj">
-      <Project>{B6E81D84-2ACB-41B8-8781-493A944C7817}</Project>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_config\grpc++_test_config.vcxproj">
+      <Project>{3F7D093D-11F9-C4BC-BEB7-18EB28E3F290}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

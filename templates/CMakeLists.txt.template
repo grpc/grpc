@@ -66,6 +66,12 @@
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
 
+  if (NOT MSVC)
+    set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
+  else()
+    set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
+  endif()
+
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -76,6 +82,10 @@
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
+
+  if (MSVC)
+    add_definitions( -D_WIN32_WINNT=0x600 )
+  endif()
 
   if (gRPC_USE_PROTO_LITE)
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
@@ -116,6 +126,7 @@
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
     if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
+      set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
       if(TARGET <%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
         set(_gRPC_PROTOBUF_LIBRARIES <%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
@@ -255,17 +266,21 @@
   </%def>
 
   <%def name="cc_install(tgt)">
-  install(TARGETS ${tgt.name} EXPORT gRPCTargets
-    RUNTIME DESTINATION <%text>${CMAKE_INSTALL_BINDIR}</%text>
-    LIBRARY DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
-    ARCHIVE DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
-  )
+  if (gRPC_INSTALL)
+    install(TARGETS ${tgt.name} EXPORT gRPCTargets
+      RUNTIME DESTINATION <%text>${CMAKE_INSTALL_BINDIR}</%text>
+      LIBRARY DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
+      ARCHIVE DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
+    )
+  endif()
   </%def>
 
-  install(EXPORT gRPCTargets
-    DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
-    NAMESPACE gRPC::
-  )
+  if (gRPC_INSTALL)
+    install(EXPORT gRPCTargets
+      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      NAMESPACE gRPC::
+    )
+  endif()
 
   foreach(_config gRPCConfig gRPCConfigVersion)
     configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in

@@ -56,7 +56,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_linux.c \
     src/core/lib/support/log_posix.c \
     src/core/lib/support/log_windows.c \
+    src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
+    src/core/lib/support/percent_encoding.c \
     src/core/lib/support/slice.c \
     src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
@@ -90,6 +92,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -97,6 +100,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
+    src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
@@ -226,10 +230,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
     src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config.c \
     src/core/ext/client_config/client_config_plugin.c \
     src/core/ext/client_config/connector.c \
     src/core/ext/client_config/default_initial_connect_string.c \
+    src/core/ext/client_config/http_connect_handshaker.c \
     src/core/ext/client_config/initial_connect_string.c \
     src/core/ext/client_config/lb_policy.c \
     src/core/ext/client_config/lb_policy_factory.c \
@@ -238,8 +242,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
+    src/core/ext/client_config/resolver_result.c \
     src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
@@ -261,6 +265,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
@@ -269,6 +274,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
     src/core/ext/census/resource.c \
+    src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
     src/boringssl/err_data.c \

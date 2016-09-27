@@ -139,6 +139,53 @@ def _is_use_docker_child():
   return True if os.getenv('RUN_TESTS_COMMAND') else False
 
 
+_PythonConfigVars = collections.namedtuple(
+  '_ConfigVars', ['shell', 'builder', 'builder_prefix_arguments',
+                  'venv_relative_python', 'toolchain', 'runner'])
+
+
+def _python_config_generator(name, major, minor, bits, config_vars):
+  return PythonConfig(
+    name,
+    config_vars.shell + config_vars.builder + config_vars.builder_prefix_arguments + [
+      _python_pattern_function(major=major, minor=minor, bits=bits)] + [
+      name] + config_vars.venv_relative_python + config_vars.toolchain,
+    config_vars.shell + config_vars.runner + [
+      os.path.join(name, config_vars.venv_relative_python[0])])
+
+
+def _pypy_config_generator(name, major, config_vars):
+  return PythonConfig(
+    name,
+    config_vars.shell + config_vars.builder + config_vars.builder_prefix_arguments + [
+      _pypy_pattern_function(major=major)] + [
+      name] + config_vars.venv_relative_python + config_vars.toolchain,
+    config_vars.shell + config_vars.runner + [
+      os.path.join(name, config_vars.venv_relative_python[0])])
+
+
+def _python_pattern_function(major, minor, bits):
+  # Bit-ness is handled by the test machine's environment
+  if os.name == "nt":
+    if bits == "64":
+      return '/c/Python{major}{minor}/python.exe'.format(
+        major=major, minor=minor, bits=bits)
+    else:
+      return '/c/Python{major}{minor}_{bits}bits/python.exe'.format(
+        major=major, minor=minor, bits=bits)
+  else:
+    return 'python{major}.{minor}'.format(major=major, minor=minor)
+
+
+def _pypy_pattern_function(major):
+  if major == '2':
+    return 'pypy'
+  elif major == '3':
+    return 'pypy3'
+  else:
+    raise ValueError("Unknown PyPy major version")
+
+
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
@@ -299,7 +346,7 @@ class NodeLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5'])
+                                         'node4', 'node5', 'node6'])
     if self.args.compiler == 'default':
       self.node_version = '4'
     else:
@@ -471,36 +518,40 @@ class PythonLanguage(object):
       bits = '32'
     else:
       bits = '64'
+
     if os.name == 'nt':
       shell = ['bash']
       builder = [os.path.abspath('tools/run_tests/build_python_msys2.sh')]
       builder_prefix_arguments = ['MINGW{}'.format(bits)]
       venv_relative_python = ['Scripts/python.exe']
       toolchain = ['mingw32']
-      python_pattern_function = lambda major, minor, bits: (
-          '/c/Python{major}{minor}/python.exe'.format(major=major, minor=minor, bits=bits)
-	  if bits == '64' else
-	  '/c/Python{major}{minor}_{bits}bits/python.exe'.format(
-              major=major, minor=minor, bits=bits))
     else:
       shell = []
       builder = [os.path.abspath('tools/run_tests/build_python.sh')]
       builder_prefix_arguments = []
       venv_relative_python = ['bin/python']
       toolchain = ['unix']
-      # Bit-ness is handled by the test machine's environment
-      python_pattern_function = lambda major, minor, bits: 'python{major}.{minor}'.format(major=major, minor=minor)
+
     runner = [os.path.abspath('tools/run_tests/run_python.sh')]
-    python_config_generator = lambda name, major, minor, bits: PythonConfig(
-        name,
-        shell + builder + builder_prefix_arguments
-	    + [python_pattern_function(major=major, minor=minor, bits=bits)]
-	    + [name] + venv_relative_python + toolchain,
-        shell + runner + [os.path.join(name, venv_relative_python[0])])
-    python27_config = python_config_generator(name='py27', major='2', minor='7', bits=bits)
-    python34_config = python_config_generator(name='py34', major='3', minor='4', bits=bits)
-    python35_config = python_config_generator(name='py35', major='3', minor='5', bits=bits)
-    python36_config = python_config_generator(name='py36', major='3', minor='6', bits=bits)
+    config_vars = _PythonConfigVars(shell, builder, builder_prefix_arguments,
+                              venv_relative_python, toolchain, runner)
+    python27_config = _python_config_generator(name='py27', major='2',
+                                               minor='7', bits=bits,
+                                               config_vars=config_vars)
+    python34_config = _python_config_generator(name='py34', major='3',
+                                               minor='4', bits=bits,
+                                               config_vars=config_vars)
+    python35_config = _python_config_generator(name='py35', major='3',
+                                               minor='5', bits=bits,
+                                               config_vars=config_vars)
+    python36_config = _python_config_generator(name='py36', major='3',
+                                               minor='6', bits=bits,
+                                               config_vars=config_vars)
+    pypy27_config = _pypy_config_generator(name='pypy', major='2',
+                                           config_vars=config_vars)
+    pypy32_config = _pypy_config_generator(name='pypy3', major='3',
+                                           config_vars=config_vars)
+
     if args.compiler == 'default':
       if os.name == 'nt':
         return (python27_config,)
@@ -514,6 +565,10 @@ class PythonLanguage(object):
       return (python35_config,)
     elif args.compiler == 'python3.6':
       return (python36_config,)
+    elif args.compiler == 'pypy':
+      return (pypy27_config,)
+    elif args.compiler == 'pypy3':
+      return (pypy32_config,)
     else:
       raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -599,15 +654,9 @@ class CSharpLanguage(object):
     assembly_extension = '.exe'
 
     if self.args.compiler == 'coreclr':
-      if self.platform == 'linux':
-        assembly_subdir += '/netstandard1.5/debian.8-x64'
-        assembly_extension = ''
-      elif self.platform == 'mac':
-        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
-        assembly_extension = ''
-      else:
-        assembly_subdir += '/netstandard1.5/win7-x64'
-      runtime_cmd = []
+      assembly_subdir += '/netcoreapp1.0'
+      runtime_cmd = ['dotnet', 'exec']
+      assembly_extension = '.dll'
     else:
       nunit_args += ['--noresult', '--workers=1']
       if self.platform == 'windows':
@@ -701,14 +750,16 @@ class ObjCLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
-                                 timeout_seconds=None,
-                                 shortname='objc-tests',
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                                 timeout_seconds=15*60,
-                                 shortname='objc-examples-build',
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    return [
+        self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
+                              timeout_seconds=None,
+                              shortname='objc-tests',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+        self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
+                              timeout_seconds=30*60,
+                              shortname='objc-examples-build',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+    ]
 
   def pre_build_steps(self):
     return []
@@ -893,6 +944,7 @@ def runs_per_test_type(arg_str):
         msg = '\'{}\' is not a positive integer or \'inf\''.format(arg_str)
         raise argparse.ArgumentTypeError(msg)
 
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
@@ -946,7 +998,7 @@ argp.add_argument('--compiler',
                            'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
-                           'python2.7', 'python3.4', 'python3.5', 'python3.6',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
                            'node0.12', 'node4', 'node5',
                            'coreclr'],
                   default='default',
@@ -1143,18 +1195,6 @@ def _shut_down_legacy_server(legacy_server_port):
     pass
   else:
     urllib.request.urlopen(
-        'http://localhost:%d/quitquitquit' % legacy_server_port).read()
-
-
-def _shut_down_legacy_server(legacy_server_port):
-  try:
-    version = int(urllib2.urlopen(
-        'http://localhost:%d/version_number' % legacy_server_port,
-        timeout=10).read())
-  except:
-    pass
-  else:
-    urllib2.urlopen(
         'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
 

@@ -44,9 +44,10 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (version_for_cocoapods_2.0-100-gc880e42)
  05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
  c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- f8ac463766281625ad710900479130c7fcb4d63b third_party/nanopb (nanopb-0.3.4-29-gf8ac463)
- bdeb215cab2985195325fcd5e70c3fa751f46e0f third_party/protobuf (v3.0.0-beta-3.3)
+ 68a86e96481e6bea987df8de47027847b30c325b third_party/nanopb (nanopb-0.3.6-6-g68a86e9)
+ bba446bbf2ac7b0b9923d4eb07d5acd0665a8cf0 third_party/protobuf (v3.0.0-beta-4-160-gbba446b)
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
+ bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift
 EOF
 
 diff -u $submodules $want_submodules

@@ -50,7 +50,6 @@ cp grpc-*.tgz $artifacts/grpc.tgz
 mkdir -p bin
 
 cd $base/src/node/health_check
-npm update
 npm pack
 cp grpc-health-check-*.tgz $artifacts/
 
