@@ -6760,6 +6760,8 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
+    test/core/end2end/tests/buffer_pool_client.c \
+    test/core/end2end/tests/buffer_pool_server.c \
     test/core/end2end/tests/call_creds.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
@@ -6843,6 +6845,8 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
+    test/core/end2end/tests/buffer_pool_client.c \
+    test/core/end2end/tests/buffer_pool_server.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
     test/core/end2end/tests/cancel_after_invoke.c \

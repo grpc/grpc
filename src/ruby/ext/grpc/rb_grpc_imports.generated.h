@@ -359,7 +359,7 @@ extern grpc_buffer_pool_unref_type grpc_buffer_pool_unref_import;
 typedef void(*grpc_buffer_pool_resize_type)(grpc_buffer_pool *buffer_pool, size_t new_size);
 extern grpc_buffer_pool_resize_type grpc_buffer_pool_resize_import;
 #define grpc_buffer_pool_resize grpc_buffer_pool_resize_import
-typedef grpc_arg_pointer_vtable *(*grpc_buffer_pool_arg_vtable_type)(void);
+typedef const grpc_arg_pointer_vtable *(*grpc_buffer_pool_arg_vtable_type)(void);
 extern grpc_buffer_pool_arg_vtable_type grpc_buffer_pool_arg_vtable_import;
 #define grpc_buffer_pool_arg_vtable grpc_buffer_pool_arg_vtable_import
 typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
