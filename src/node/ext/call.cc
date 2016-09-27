@@ -613,8 +613,8 @@ NAN_METHOD(Call::New) {
         return Nan::ThrowTypeError("Call's fourth argument must be a string");
       }
       call = new Call(wrapped_call);
-      info.This()->SetHiddenValue(Nan::New("channel_").ToLocalChecked(),
-                                  channel_object);
+      Nan::Set(info.This(), Nan::New("channel_").ToLocalChecked(),
+               channel_object);
     }
     call->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
