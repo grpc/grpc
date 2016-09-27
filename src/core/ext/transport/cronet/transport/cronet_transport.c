@@ -531,7 +531,8 @@ static void create_grpc_frame(gpr_slice_buffer *write_slice_buffer,
 */
 static void convert_metadata_to_cronet_headers(
     grpc_linked_mdelem *head, const char *host, char **pp_url,
-    cronet_bidirectional_stream_header **pp_headers, size_t *p_num_headers) {
+    cronet_bidirectional_stream_header **pp_headers, size_t *p_num_headers,
+    const char ** method) {
   grpc_linked_mdelem *curr = head;
   /* Walk the linked list and get number of header fields */
   size_t num_headers_available = 0;
@@ -558,9 +559,18 @@ static void convert_metadata_to_cronet_headers(
     curr = curr->next;
     const char *key = grpc_mdstr_as_c_string(mdelem->key);
     const char *value = grpc_mdstr_as_c_string(mdelem->value);
-    if (mdelem->key == GRPC_MDSTR_METHOD || mdelem->key == GRPC_MDSTR_SCHEME ||
+    if (mdelem->key == GRPC_MDSTR_SCHEME ||
         mdelem->key == GRPC_MDSTR_AUTHORITY) {
       /* Cronet populates these fields on its own */
+      continue;
+    }
+    if (mdelem->key == GRPC_MDSTR_METHOD) {
+      if (mdelem->value == GRPC_MDSTR_PUT) {
+        *method = grpc_static_metadata_strings[74];
+      } else {
+        /* POST method in default*/
+        *method = grpc_static_metadata_strings[71];
+      }
       continue;
     }
     if (mdelem->key == GRPC_MDSTR_PATH) {
@@ -760,14 +770,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                                                 &cronet_callbacks);
     CRONET_LOG(GPR_DEBUG, "%p = cronet_bidirectional_stream_create()", s->cbs);
     char *url;
+    const char *method;
     s->header_array.headers = NULL;
     convert_metadata_to_cronet_headers(
         stream_op->send_initial_metadata->list.head, s->curr_ct.host, &url,
-        &s->header_array.headers, &s->header_array.count);
+        &s->header_array.headers, &s->header_array.count, &method);
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_start(%p, %s)", s->cbs,
                url);
-    cronet_bidirectional_stream_start(s->cbs, url, 0, "POST", &s->header_array,
+    cronet_bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array,
                                       false);
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_WITH_CALLBACK;
