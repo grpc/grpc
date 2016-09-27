@@ -218,9 +218,9 @@ static bool bpreclaim(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool,
   grpc_buffer_user *buffer_user = bulist_pop(buffer_pool, list);
   if (buffer_user == NULL) return false;
   buffer_pool->reclaiming = true;
-  grpc_exec_ctx_sched(exec_ctx, buffer_user->reclaimers[destructive],
-                      GRPC_ERROR_NONE, NULL);
+  grpc_closure *c = buffer_user->reclaimers[destructive];
   buffer_user->reclaimers[destructive] = NULL;
+  grpc_closure_run(exec_ctx, c, GRPC_ERROR_NONE);
   return true;
 }
 
@@ -330,8 +330,9 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
                       GRPC_ERROR_CANCELLED, NULL);
   grpc_exec_ctx_sched(exec_ctx, buffer_user->reclaimers[1],
                       GRPC_ERROR_CANCELLED, NULL);
-  grpc_exec_ctx_sched(exec_ctx, buffer_user->on_done_destroy, GRPC_ERROR_NONE,
-                      NULL);
+  grpc_exec_ctx_sched(exec_ctx, (grpc_closure *)gpr_atm_no_barrier_load(
+                                    &buffer_user->on_done_destroy_closure),
+                      GRPC_ERROR_NONE, NULL);
   if (buffer_user->free_pool != 0) {
     buffer_user->buffer_pool->free_pool += buffer_user->free_pool;
     bpstep_sched(exec_ctx, buffer_user->buffer_pool);
@@ -340,6 +341,7 @@ static void bu_destroy(grpc_exec_ctx *exec_ctx, void *bu, grpc_error *error) {
   gpr_free(buffer_user->asan_canary);
 #endif
   grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
+  gpr_mu_destroy(&buffer_user->mu);
 }
 
 static void bu_allocated_slices(grpc_exec_ctx *exec_ctx, void *ts,
@@ -492,7 +494,7 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
   grpc_closure_list_init(&buffer_user->on_allocated);
   buffer_user->allocating = false;
   buffer_user->added_to_free_pool = false;
-  buffer_user->on_done_destroy = NULL;
+  gpr_atm_no_barrier_store(&buffer_user->on_done_destroy_closure, 0);
   buffer_user->reclaimers[0] = NULL;
   buffer_user->reclaimers[1] = NULL;
   for (int i = 0; i < GRPC_BULIST_COUNT; i++) {
@@ -507,8 +509,10 @@ void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
                                grpc_buffer_user *buffer_user,
                                grpc_closure *on_done) {
   gpr_mu_lock(&buffer_user->mu);
-  GPR_ASSERT(buffer_user->on_done_destroy == NULL);
-  buffer_user->on_done_destroy = on_done;
+  GPR_ASSERT(gpr_atm_no_barrier_load(&buffer_user->on_done_destroy_closure) ==
+             0);
+  gpr_atm_no_barrier_store(&buffer_user->on_done_destroy_closure,
+                           (gpr_atm)on_done);
   if (buffer_user->allocated == 0) {
     grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                           &buffer_user->destroy_closure, GRPC_ERROR_NONE,
@@ -521,7 +525,9 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
                             grpc_buffer_user *buffer_user, size_t size,
                             grpc_closure *optional_on_done) {
   gpr_mu_lock(&buffer_user->mu);
-  if (buffer_user->on_done_destroy != NULL) {
+  grpc_closure *on_done_destroy = (grpc_closure *)gpr_atm_no_barrier_load(
+      &buffer_user->on_done_destroy_closure);
+  if (on_done_destroy != NULL) {
     /* already shutdown */
     grpc_exec_ctx_sched(
         exec_ctx, optional_on_done,
@@ -561,7 +567,9 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
                           &buffer_user->add_to_free_pool_closure,
                           GRPC_ERROR_NONE, false);
   }
-  if (buffer_user->on_done_destroy != NULL && buffer_user->allocated == 0) {
+  grpc_closure *on_done_destroy = (grpc_closure *)gpr_atm_no_barrier_load(
+      &buffer_user->on_done_destroy_closure);
+  if (on_done_destroy != NULL && buffer_user->allocated == 0) {
     grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                           &buffer_user->destroy_closure, GRPC_ERROR_NONE,
                           false);
@@ -572,11 +580,15 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
 void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
                                      grpc_buffer_user *buffer_user,
                                      bool destructive, grpc_closure *closure) {
-  GPR_ASSERT(buffer_user->reclaimers[destructive] == NULL);
-  buffer_user->reclaimers[destructive] = closure;
-  grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
-                        &buffer_user->post_reclaimer_closure[destructive],
-                        GRPC_ERROR_NONE, false);
+  if (gpr_atm_acq_load(&buffer_user->on_done_destroy_closure) != 0) {
+    GPR_ASSERT(buffer_user->reclaimers[destructive] == NULL);
+    buffer_user->reclaimers[destructive] = closure;
+    grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
+                          &buffer_user->post_reclaimer_closure[destructive],
+                          GRPC_ERROR_NONE, false);
+  } else {
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CANCELLED, NULL);
+  }
 }
 
 void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,

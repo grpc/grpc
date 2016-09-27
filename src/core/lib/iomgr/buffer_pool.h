@@ -80,7 +80,7 @@ struct grpc_buffer_user {
   grpc_closure post_reclaimer_closure[2];
 
   grpc_closure destroy_closure;
-  grpc_closure *on_done_destroy;
+  gpr_atm on_done_destroy_closure;
 
   grpc_buffer_user_link links[GRPC_BULIST_COUNT];
 };

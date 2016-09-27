@@ -256,8 +256,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->read_action_locked, read_action_locked, t);
   grpc_closure_init(&t->benign_reclaimer, benign_reclaimer, t);
   grpc_closure_init(&t->destructive_reclaimer, destructive_reclaimer, t);
-  grpc_closure_init(&t->benign_reclaimer, benign_reclaimer_locked, t);
-  grpc_closure_init(&t->destructive_reclaimer, destructive_reclaimer_locked, t);
+  grpc_closure_init(&t->benign_reclaimer_locked, benign_reclaimer_locked, t);
+  grpc_closure_init(&t->destructive_reclaimer_locked, destructive_reclaimer_locked, t);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->hpack_parser);
@@ -379,6 +379,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 
   grpc_chttp2_initiate_write(exec_ctx, t, false, "init");
+  post_benign_reclaimer(exec_ctx, t);
 }
 
 static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
