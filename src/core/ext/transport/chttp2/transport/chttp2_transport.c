@@ -127,6 +127,11 @@ static void destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *t,
 static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *t,
                                          grpc_error *error);
 
+static void post_benign_reclaimer(grpc_exec_ctx *exec_ctx,
+                                  grpc_chttp2_transport *t);
+static void post_destructive_reclaimer(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_transport *t);
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -462,6 +467,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
+    post_destructive_reclaimer(exec_ctx, t);
   }
 
   GPR_TIMER_END("init_stream", 0);
@@ -769,6 +775,7 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     s->max_recv_bytes = GPR_MAX(stream_incoming_window, s->max_recv_bytes);
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
+    post_destructive_reclaimer(exec_ctx, t);
     grpc_chttp2_become_writable(exec_ctx, t, s, true, "new_stream");
   }
   /* cancel out streams that will never be started */
@@ -1337,13 +1344,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 
   if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-    if (!t->benign_reclaimer_registered) {
-      t->benign_reclaimer_registered = true;
-      GRPC_CHTTP2_REF_TRANSPORT(t, "benign_reclaimer");
-      grpc_buffer_user_post_reclaimer(exec_ctx,
-                                      grpc_endpoint_get_buffer_user(t->ep),
-                                      false, &t->benign_reclaimer);
-    }
+    post_benign_reclaimer(exec_ctx, t);
     if (t->sent_goaway_state == GRPC_CHTTP2_GOAWAY_SENT) {
       close_transport_locked(
           exec_ctx, t,
@@ -2081,6 +2082,28 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
  * BUFFER POOLS
  */
 
+static void post_benign_reclaimer(grpc_exec_ctx *exec_ctx,
+                                  grpc_chttp2_transport *t) {
+  if (!t->benign_reclaimer_registered) {
+    t->benign_reclaimer_registered = true;
+    GRPC_CHTTP2_REF_TRANSPORT(t, "benign_reclaimer");
+    grpc_buffer_user_post_reclaimer(exec_ctx,
+                                    grpc_endpoint_get_buffer_user(t->ep), false,
+                                    &t->benign_reclaimer);
+  }
+}
+
+static void post_destructive_reclaimer(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_transport *t) {
+  if (!t->destructive_reclaimer_registered) {
+    t->destructive_reclaimer_registered = true;
+    GRPC_CHTTP2_REF_TRANSPORT(t, "destructive_reclaimer");
+    grpc_buffer_user_post_reclaimer(exec_ctx,
+                                    grpc_endpoint_get_buffer_user(t->ep), true,
+                                    &t->destructive_reclaimer);
+  }
+}
+
 static void benign_reclaimer(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
   grpc_chttp2_transport *t = arg;
@@ -2119,6 +2142,7 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            GRPC_ERROR_INT_HTTP2_ERROR,
                                            GRPC_CHTTP2_ENHANCE_YOUR_CALM));
     if (n > 1) {
+      post_destructive_reclaimer(exec_ctx, t);
       t->destructive_reclaimer_registered = true;
       grpc_buffer_user_post_reclaimer(exec_ctx,
                                       grpc_endpoint_get_buffer_user(t->ep),
