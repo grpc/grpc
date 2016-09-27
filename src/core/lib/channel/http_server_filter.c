@@ -42,6 +42,8 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
+extern int grpc_http_trace;
+
 typedef struct call_data {
   uint8_t seen_path;
   uint8_t seen_method;
@@ -209,9 +211,11 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
             err, GRPC_ERROR_CREATE("Missing te: trailers header"));
       }
       /* Error this call out */
-      const char *error_str = grpc_error_string(err);
-      gpr_log(GPR_ERROR, "Invalid http2 headers: %s", error_str);
-      grpc_error_free_string(error_str);
+      if (grpc_http_trace) {
+        const char *error_str = grpc_error_string(err);
+        gpr_log(GPR_ERROR, "Invalid http2 headers: %s", error_str);
+        grpc_error_free_string(error_str);
+      }
       grpc_call_element_send_cancel(exec_ctx, elem);
     }
   } else {
