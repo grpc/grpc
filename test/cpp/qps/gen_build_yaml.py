@@ -85,5 +85,6 @@ print yaml.dump({
       'timeout_seconds': 3*60
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
+    if 'scalable' in scenario_json.get('CATEGORIES', [])
   ]
 })
