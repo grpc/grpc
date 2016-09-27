@@ -225,7 +225,12 @@ extern id const kGRPCTrailersKey;
  */
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
+              requestsWriter:(GRXWriter *)requestsWriter;
+
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+              requestsWriter:(GRXWriter *)requestsWriter
+                 http2Method:(NSString *)http2Method NS_DESIGNATED_INITIALIZER;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and

@@ -64,16 +64,26 @@
 @implementation GRPCOpSendMetadata
 
 - (instancetype)init {
-  return [self initWithMetadata:nil handler:nil];
+  return [self initWithMetadata:nil http2Method:nil handler:nil];
 }
 
-- (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void (^)())handler {
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
+                         handler:(void (^)())handler {
+  return [self initWithMetadata:metadata http2Method:@"POST" handler:handler];
+}
+
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
+                     http2Method:(NSString *)http2Method
+                         handler:(void (^)())handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_INITIAL_METADATA;
     _op.data.send_initial_metadata.count = metadata.count;
     _op.data.send_initial_metadata.metadata = metadata.grpc_metadataArray;
     _op.data.send_initial_metadata.maybe_compression_level.is_set = false;
     _op.data.send_initial_metadata.maybe_compression_level.level = 0;
+    if ([http2Method isEqualToString:@"PUT"]) {
+      _op.flags = GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+    }
     _handler = handler;
   }
   return self;

@@ -65,7 +65,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 #pragma clang diagnostic ignored "-Wobjc-designated-initializers"
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestsWriter {
+              requestsWriter:(GRXWriter *)requestsWriter
+                 http2Method:(NSString *)http2Method {
   [NSException raise:NSInvalidArgumentException
               format:@"Please use ProtoRPC's designated initializer instead."];
   return nil;
@@ -77,7 +78,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                       method:(GRPCProtoMethod *)method
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
-          responsesWriteable:(id<GRXWriteable>)responsesWriteable {
+          responsesWriteable:(id<GRXWriteable>)responsesWriteable
+                 http2Method:(NSString *)http2Method {
   // Because we can't tell the type system to constrain the class, we need to check at runtime:
   if (![responseClass respondsToSelector:@selector(parseFromData:error:)]) {
     [NSException raise:NSInvalidArgumentException
@@ -91,7 +93,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     }
     return [proto data];
   }];
-  if ((self = [super initWithHost:host path:method.HTTPPath requestsWriter:bytesWriter])) {
+  if ((self = [super initWithHost:host path:method.HTTPPath requestsWriter:bytesWriter
+                      http2Method:http2Method])) {
     __weak ProtoRPC *weakSelf = self;
 
     // A writeable that parses the proto messages received.

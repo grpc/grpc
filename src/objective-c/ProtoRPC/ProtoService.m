@@ -68,7 +68,8 @@
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
                 requestsWriter:(GRXWriter *)requestsWriter
                  responseClass:(Class)responseClass
-            responsesWriteable:(id<GRXWriteable>)responsesWriteable {
+            responsesWriteable:(id<GRXWriteable>)responsesWriteable
+                   http2Method:(NSString *)http2Method {
   GRPCProtoMethod *methodName = [[GRPCProtoMethod alloc] initWithPackage:_packageName
                                                                  service:_serviceName
                                                                   method:method];
@@ -76,7 +77,8 @@
                                       method:methodName
                               requestsWriter:requestsWriter
                                responseClass:responseClass
-                          responsesWriteable:responsesWriteable];
+                          responsesWriteable:responsesWriteable
+                                 http2Method:http2Method];
 }
 @end
 
