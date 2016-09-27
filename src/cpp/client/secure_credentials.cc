@@ -209,9 +209,9 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
         it->first.c_str(), (const uint8_t*)it->second.data(),
         it->second.length()));
   }
-  // XXX: don't use a c style cast
-  cb(user_data, md.empty() ? nullptr : (const grpc_mdelem**)&md[0], md.size(),
-     static_cast<grpc_status_code>(status.error_code()),
+  cb(user_data,
+     md.empty() ? nullptr : const_cast<const grpc_mdelem**>(md.data()),
+     md.size(), static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
 }
 

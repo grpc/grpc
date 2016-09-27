@@ -75,9 +75,11 @@ static void plugin_md_request_metadata_ready(void *request,
     bool seen_illegal_header = false;
     grpc_credentials_md *md_array = NULL;
     for (i = 0; i < num_md; i++) {
-      const char *key_str = (const char*)GPR_SLICE_START_PTR(md[i]->key->slice);
+      const char *key_str =
+          (const char *)GPR_SLICE_START_PTR(md[i]->key->slice);
       const size_t key_len = GPR_SLICE_LENGTH(md[i]->key->slice);
-      const char *value_str = (const char*)GPR_SLICE_START_PTR(md[i]->value->slice);
+      const char *value_str =
+          (const char *)GPR_SLICE_START_PTR(md[i]->value->slice);
       const size_t value_len = GPR_SLICE_LENGTH(md[i]->value->slice);
 
       if (!grpc_header_key_is_legal(key_str, key_len)) {

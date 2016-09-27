@@ -74,7 +74,6 @@ extern "C" {
 
 void grpc_test_only_set_metadata_hash_seed(uint32_t seed);
 
-
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
 gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
