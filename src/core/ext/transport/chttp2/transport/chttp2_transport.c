@@ -1339,6 +1339,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     if (!t->benign_reclaimer_registered) {
       t->benign_reclaimer_registered = true;
+      GRPC_CHTTP2_REF_TRANSPORT(t, "benign_reclaimer");
       grpc_buffer_user_post_reclaimer(exec_ctx,
                                       grpc_endpoint_get_buffer_user(t->ep),
                                       false, &t->benign_reclaimer);
