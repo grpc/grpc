@@ -1553,8 +1553,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
               call, STATUS_FROM_API_OVERRIDE,
               GRPC_MDSTR_REF(call->send_extra_metadata[1].md->value));
         }
-        set_status_code(call, STATUS_FROM_API_OVERRIDE,
-                        (uint32_t)op->data.send_status_from_server.status);
+        if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
+          set_status_code(call, STATUS_FROM_API_OVERRIDE,
+                          (uint32_t)op->data.send_status_from_server.status);
+        }
         if (!prepare_application_metadata(
                 call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,

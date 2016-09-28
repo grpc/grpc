@@ -253,6 +253,11 @@ void buffer_pool_server(grpc_end2end_test_config config) {
           abort();
       }
       GPR_ASSERT(pending_client_calls > 0);
+
+      grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
+      grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
+      grpc_call_destroy(client_calls[call_id]);
+
       pending_client_calls--;
     } else if (ev_tag < SERVER_RECV_BASE_TAG) {
       /* new incoming call to the server */
@@ -280,11 +285,22 @@ void buffer_pool_server(grpc_end2end_test_config config) {
       GPR_ASSERT(pending_server_start_calls > 0);
       pending_server_start_calls--;
       pending_server_recv_calls++;
+
+      grpc_call_details_destroy(&call_details[call_id]);
     } else if (ev_tag < SERVER_END_BASE_TAG) {
       /* finished read on the server */
       int call_id = ev_tag - SERVER_RECV_BASE_TAG;
       GPR_ASSERT(call_id >= 0);
       GPR_ASSERT(call_id < NUM_CALLS);
+
+      if (ev.success) {
+        if (request_payload_recv[call_id] != NULL) {
+          grpc_byte_buffer_destroy(request_payload_recv[call_id]);
+          request_payload_recv[call_id] = NULL;
+        }
+      } else {
+        GPR_ASSERT(request_payload_recv[call_id] == NULL);
+      }
 
       memset(ops, 0, sizeof(ops));
       op = ops;
@@ -318,6 +334,8 @@ void buffer_pool_server(grpc_end2end_test_config config) {
       }
       GPR_ASSERT(pending_server_end_calls > 0);
       pending_server_end_calls--;
+
+      grpc_call_destroy(server_calls[call_id]);
     }
   }
 
@@ -325,6 +343,8 @@ void buffer_pool_server(grpc_end2end_test_config config) {
       GPR_INFO,
       "Done. %d total calls: %d cancelled at server, %d cancelled at client.",
       NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client);
+
+  GPR_ASSERT(cancelled_calls_on_client == cancelled_calls_on_server);
 
   end_test(&f);
   config.tear_down_data(&f);

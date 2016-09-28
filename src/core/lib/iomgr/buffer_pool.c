@@ -242,6 +242,7 @@ static bool bpreclaim(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool,
             buffer_user->name, destructive ? "destructive" : "benign");
   }
   buffer_pool->reclaiming = true;
+  grpc_buffer_pool_internal_ref(buffer_pool);
   grpc_closure *c = buffer_user->reclaimers[destructive];
   buffer_user->reclaimers[destructive] = NULL;
   grpc_closure_run(exec_ctx, c, GRPC_ERROR_NONE);
@@ -402,6 +403,7 @@ static void bp_reclaimation_done(grpc_exec_ctx *exec_ctx, void *bp,
   grpc_buffer_pool *buffer_pool = bp;
   buffer_pool->reclaiming = false;
   bpstep_sched(exec_ctx, buffer_pool);
+  grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
 }
 
 /*******************************************************************************

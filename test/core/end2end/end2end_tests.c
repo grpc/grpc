@@ -47,8 +47,6 @@ extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
-extern void buffer_pool_client(grpc_end2end_test_config config);
-extern void buffer_pool_client_pre_init(void);
 extern void buffer_pool_server(grpc_end2end_test_config config);
 extern void buffer_pool_server_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
@@ -141,7 +139,6 @@ void grpc_end2end_tests_pre_init(void) {
   g_pre_init_called = true;
   bad_hostname_pre_init();
   binary_metadata_pre_init();
-  buffer_pool_client_pre_init();
   buffer_pool_server_pre_init();
   call_creds_pre_init();
   cancel_after_accept_pre_init();
@@ -196,7 +193,6 @@ void grpc_end2end_tests(int argc, char **argv,
   if (argc <= 1) {
     bad_hostname(config);
     binary_metadata(config);
-    buffer_pool_client(config);
     buffer_pool_server(config);
     call_creds(config);
     cancel_after_accept(config);
@@ -250,10 +246,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("binary_metadata", argv[i])) {
       binary_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("buffer_pool_client", argv[i])) {
-      buffer_pool_client(config);
       continue;
     }
     if (0 == strcmp("buffer_pool_server", argv[i])) {

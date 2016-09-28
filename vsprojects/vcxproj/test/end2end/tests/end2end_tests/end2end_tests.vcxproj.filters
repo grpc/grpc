@@ -10,9 +10,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\buffer_pool_client.c">
-      <Filter>test\core\end2end\tests</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\buffer_pool_server.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
