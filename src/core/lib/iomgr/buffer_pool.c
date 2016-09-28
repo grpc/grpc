@@ -439,6 +439,7 @@ void grpc_buffer_pool_internal_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_buffer_pool *buffer_pool) {
   if (gpr_unref(&buffer_pool->refs)) {
     grpc_combiner_destroy(exec_ctx, buffer_pool->combiner);
+    gpr_free(buffer_pool->name);
     gpr_free(buffer_pool);
   }
 }
@@ -563,6 +564,7 @@ void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
 #endif
   grpc_buffer_pool_internal_unref(exec_ctx, buffer_user->buffer_pool);
   gpr_mu_destroy(&buffer_user->mu);
+  gpr_free(buffer_user->name);
 }
 
 void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
