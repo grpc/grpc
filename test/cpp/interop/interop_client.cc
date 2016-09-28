@@ -937,5 +937,25 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
+bool InteropClient::DoUnimplementedMethod() {
+  gpr_log(GPR_DEBUG, "Sending a request for an unimplemented rpc...");
+
+  Empty request = Empty::default_instance();
+  Empty response = Empty::default_instance();
+  ClientContext context;
+
+  gpr_log(GPR_DEBUG, "here");
+
+  Status s = serviceStub_.Get()->UnimplementedCall(
+    &context, request, &response);
+
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "unimplemented rpc done.");
+  return true;
+}
+
 }  // namespace testing
 }  // namespace grpc

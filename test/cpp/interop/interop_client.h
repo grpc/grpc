@@ -79,6 +79,7 @@ class InteropClient {
   bool DoEmptyStream();
   bool DoStatusWithMessage();
   bool DoCustomMetadata();
+  bool DoUnimplementedMethod();
   // Auth tests.
   // username is a string containing the user email
   bool DoJwtTokenCreds(const grpc::string& username);

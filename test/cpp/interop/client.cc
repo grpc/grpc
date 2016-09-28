@@ -79,7 +79,8 @@ DEFINE_string(test_case, "large_unary",
               "slow_consumer : single request with response streaming with "
               "slow client consumer;\n"
               "status_code_and_message: verify status code & message;\n"
-              "timeout_on_sleeping_server: deadline exceeds on stream;\n");
+              "timeout_on_sleeping_server: deadline exceeds on stream;\n"
+              "unimplemented_method: client calls an unimplemented_method;\n");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
@@ -149,6 +150,8 @@ int main(int argc, char** argv) {
     client.DoStatusWithMessage();
   } else if (FLAGS_test_case == "custom_metadata") {
     client.DoCustomMetadata();
+  } else if (FLAGS_test_case == "unimplemented_method") {
+    client.DoUnimplementedMethod();
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
@@ -166,6 +169,7 @@ int main(int argc, char** argv) {
     client.DoEmptyStream();
     client.DoStatusWithMessage();
     client.DoCustomMetadata();
+    client.DoUnimplementedMethod();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_use_tls) {
       grpc::string json_key = GetServiceAccountJsonKey();
@@ -198,7 +202,8 @@ int main(int argc, char** argv) {
                                "server_compressed_unary",
                                "server_streaming",
                                "status_code_and_message",
-                               "timeout_on_sleeping_server"};
+                               "timeout_on_sleeping_server",
+                               "unimplemented_method"};
     char* joined_testcases =
         gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
 
