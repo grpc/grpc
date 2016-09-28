@@ -66,7 +66,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestsWriter
-                       flags:(uint32_t)flags {
+                       flags:(GRPCCallFlags)flags {
   [NSException raise:NSInvalidArgumentException
               format:@"Please use ProtoRPC's designated initializer instead."];
   return nil;
@@ -79,7 +79,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable
-                       flags:(uint32_t)flags {
+                       flags:(GRPCCallFlags)flags {
   // Because we can't tell the type system to constrain the class, we need to check at runtime:
   if (![responseClass respondsToSelector:@selector(parseFromData:error:)]) {
     [NSException raise:NSInvalidArgumentException

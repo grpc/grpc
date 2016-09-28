@@ -155,6 +155,19 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 };
 
 /**
+ * Flags for options of a gRPC call
+ *
+ */
+typedef NS_OPTIONS(NSUInteger, GRPCCallFlags) {
+  /** Signal that the call is idempotent */
+  GRPCFlagIdempotentRequest = 0x00000010,
+  /** Signal that the call should not return UNAVAILABLE before it has started */
+  GRPCFlagIgnoreConnectivity = 0x00000020,
+  /** Signal that the call is cacheable. GRPC is free to use GET verb */
+  GRPCFlagCacheableRequest = 0x00000040,
+};
+
+/**
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
  * the server.
  */
@@ -230,7 +243,7 @@ extern id const kGRPCTrailersKey;
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestsWriter
-                       flags:(uint32_t)flags NS_DESIGNATED_INITIALIZER;
+                       flags:(GRPCCallFlags)flags NS_DESIGNATED_INITIALIZER;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and

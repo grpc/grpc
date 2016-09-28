@@ -32,6 +32,7 @@
  */
 
 #import <Foundation/Foundation.h>
+#import "ProtoRPC.h"
 
 @class GRPCProtoCall;
 @protocol GRXWriteable;
@@ -48,7 +49,7 @@ __attribute__((deprecated("Please use GRPCProtoService.")))
            requestsWriter:(GRXWriter *)requestsWriter
   	        responseClass:(Class)responseClass
   	   responsesWriteable:(id<GRXWriteable>)responsesWriteable
-                    flags:(uint32_t)flags;
+                    flags:(GRPCCallFlags)flags;
 @end
 
 

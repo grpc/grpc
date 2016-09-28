@@ -69,7 +69,7 @@
                 requestsWriter:(GRXWriter *)requestsWriter
                  responseClass:(Class)responseClass
             responsesWriteable:(id<GRXWriteable>)responsesWriteable
-                         flags:(uint32_t)flags {
+                         flags:(GRPCCallFlags)flags {
   GRPCProtoMethod *methodName = [[GRPCProtoMethod alloc] initWithPackage:_packageName
                                                                  service:_serviceName
                                                                   method:method];

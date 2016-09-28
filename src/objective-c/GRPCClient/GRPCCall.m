@@ -75,7 +75,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
   NSString *_host;
   NSString *_path;
-  uint32_t _flags;
+  GRPCCallFlags _flags;
   GRPCWrappedCall *_wrappedCall;
   GRPCConnectivityMonitor *_connectivityMonitor;
 
@@ -123,7 +123,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestWriter
-                       flags:(uint32_t)flags {
+                       flags:(GRPCCallFlags)flags {
   if (!host || !path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
