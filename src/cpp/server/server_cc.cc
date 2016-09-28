@@ -118,12 +118,18 @@ class Server::UnimplementedAsyncResponse GRPC_FINAL
   UnimplementedAsyncRequest* const request_;
 };
 
+// TODO (sreek) - This might no longer be needed
 class Server::ShutdownRequest GRPC_FINAL : public CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) {
     delete this;
     return false;
   }
+};
+
+class ShutdownTag : public CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
 class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
@@ -147,6 +153,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     grpc_metadata_array_destroy(&request_metadata_);
   }
 
+  // TODO (Sreek) This function is probably no longer needed
   static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
     void* tag = nullptr;
     *ok = false;
@@ -158,6 +165,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
+  // TODO (sreek) - This function is probably no longer needed
   static bool AsyncWait(CompletionQueue* cq, SyncRequest** req, bool* ok,
                         gpr_timespec deadline) {
     void* tag = nullptr;
@@ -177,12 +185,16 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     GPR_UNREACHABLE_CODE(return false);
   }
 
+  // TODO (sreek) - Refactor this SetupRequest/TeardownRequest and ResetRequest
+  // functions
   void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
     cq_ = nullptr;
   }
+
+  void ResetRequest() { in_flight_ = false; }
 
   void Request(grpc_server* server, grpc_completion_queue* notify_cq) {
     GPR_ASSERT(cq_ && !in_flight_);
@@ -275,53 +287,167 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
+class Server::SyncRequestManager : public GrpcRpcManager {
+ public:
+  SyncRequestManager(Server* server, CompletionQueue* server_cq,
+                     std::shared_ptr<GlobalCallbacks> global_callbacks,
+                     int min_pollers, int max_pollers)
+      : GrpcRpcManager(min_pollers, max_pollers),
+        server_(server),
+        server_cq_(server_cq),
+        global_callbacks_(global_callbacks) {}
+
+  static const int kRpcPollingTimeoutMsec = 3000;
+
+  WorkStatus PollForWork(void** tag, bool* ok) GRPC_OVERRIDE {
+    *tag = nullptr;
+    gpr_timespec deadline =
+        gpr_time_from_millis(kRpcPollingTimeoutMsec, GPR_TIMESPAN);
+
+    switch (server_cq_->AsyncNext(tag, ok, deadline)) {
+      case CompletionQueue::TIMEOUT:
+        return TIMEOUT;
+      case CompletionQueue::SHUTDOWN:
+        return SHUTDOWN;
+      case CompletionQueue::GOT_EVENT:
+        return WORK_FOUND;
+    }
+
+    GPR_UNREACHABLE_CODE(return TIMEOUT);
+  }
+
+  void DoWork(void* tag, bool ok) GRPC_OVERRIDE {
+    SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
+
+    if (!sync_req) {
+      // No tag. Nothing to work on
+      // TODO (sreek) - Log a warning here since this is an unlikely case
+      return;
+    }
+
+    if (ok) {
+      SyncRequest::CallData cd(server_, sync_req);
+      {
+        sync_req->SetupRequest();
+        if (!IsShutdown()) {
+          sync_req->Request(server_->c_server(), server_cq_->cq());
+        } else {
+          sync_req->TeardownRequest();
+        }
+      }
+      GPR_TIMER_SCOPE("cd.Run()", 0);
+      cd.Run(global_callbacks_);
+    } else {
+      sync_req->ResetRequest();
+      // ok is false. For some reason, the tag was returned but event was not
+      // successful. In this case, request again unless we are shutting down
+      if (!IsShutdown()) {
+        // TODO (sreek) Remove this
+        // sync_req->Request(server_->c_server(), server_cq_->cq());
+      }
+    }
+  }
+
+  void AddSyncMethod(RpcServiceMethod* method, void* tag) {
+    sync_methods_.emplace_back(method, tag);
+  }
+
+  void AddUnknownSyncMethod() {
+    // TODO (sreek) - Check if !sync_methods_.empty() is really needed here
+    if (!sync_methods_.empty()) {
+      unknown_method_.reset(new RpcServiceMethod(
+          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
+      // Use of emplace_back with just constructor arguments is not accepted
+      // here by gcc-4.4 because it can't match the anonymous nullptr with a
+      // proper constructor implicitly. Construct the object and use push_back.
+      sync_methods_.push_back(SyncRequest(unknown_method_.get(), nullptr));
+    }
+  }
+
+  void ShutdownAndDrainCompletionQueue() {
+    server_cq_->Shutdown();
+
+    // Drain any pending items from the queue
+    void* tag;
+    bool ok;
+    while (server_cq_->Next(&tag, &ok)) {
+      // Nothing to be done here
+    }
+  }
+
+  void Start() {
+    if (!sync_methods_.empty()) {
+      for (auto m = sync_methods_.begin(); m != sync_methods_.end(); m++) {
+        m->SetupRequest();
+        m->Request(server_->c_server(), server_cq_->cq());
+      }
+
+      GrpcRpcManager::Initialize();
+    }
+  }
+
+ private:
+  Server* server_;
+  CompletionQueue* server_cq_;
+  std::vector<SyncRequest> sync_methods_;
+  std::unique_ptr<RpcServiceMethod> unknown_method_;
+  std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
+};
+
 static internal::GrpcLibraryInitializer g_gli_initializer;
-Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_receive_message_size, ChannelArguments* args)
+Server::Server(
+    std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+        sync_server_cqs,
+    int max_receive_message_size, ChannelArguments* args, int min_pollers,
+    int max_pollers)
     : max_receive_message_size_(max_receive_message_size),
+      sync_server_cqs_(sync_server_cqs),
       started_(false),
       shutdown_(false),
       shutdown_notified_(false),
-      num_running_cb_(0),
-      sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
       server_(nullptr),
-      thread_pool_(thread_pool),
-      thread_pool_owned_(thread_pool_owned),
       server_initializer_(new ServerInitializer(this)) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
   global_callbacks_->UpdateArguments(args);
+
+  for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
+       it++) {
+    sync_req_mgrs_.emplace_back(new SyncRequestManager(
+        this, (*it).get(), global_callbacks_, min_pollers, max_pollers));
+  }
+
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
+
   server_ = grpc_server_create(&channel_args, nullptr);
-  if (thread_pool_ == nullptr) {
-    grpc_server_register_non_listening_completion_queue(server_, cq_.cq(),
-                                                        nullptr);
-  } else {
-    grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
-  }
 }
 
 Server::~Server() {
   {
+    // TODO (sreek) Check if we can just call Shutdown() even in case where
+    // started_ == false. This will make things much simpler
     grpc::unique_lock<grpc::mutex> lock(mu_);
     if (started_ && !shutdown_) {
       lock.unlock();
       Shutdown();
     } else if (!started_) {
-      cq_.Shutdown();
+      // Shutdown the completion queues
+      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+        (*it)->ShutdownAndDrainCompletionQueue();
+      }
     }
   }
+
+  // TODO(sreek) Do thisfor all cqs ?
+  /*
   void* got_tag;
   bool ok;
   GPR_ASSERT(!cq_.Next(&got_tag, &ok));
+  */
   grpc_server_destroy(server_);
-  if (thread_pool_owned_) {
-    delete thread_pool_;
-  }
-  delete sync_methods_;
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
@@ -331,8 +457,6 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
 }
 
 grpc_server* Server::c_server() { return server_; }
-
-CompletionQueue* Server::completion_queue() { return &cq_; }
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     RpcServiceMethod* method) {
@@ -354,6 +478,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
                "Can only register an asynchronous service against one server.");
     service->server_ = this;
   }
+
   const char* method_name = nullptr;
   for (auto it = service->methods_.begin(); it != service->methods_.end();
        ++it) {
@@ -372,7 +497,9 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
     if (method->handler() == nullptr) {
       method->set_server_tag(tag);
     } else {
-      sync_methods_->emplace_back(method, tag);
+      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+        (*it)->AddSyncMethod(method, tag);
+      }
     }
     method_name = method->name();
   }
@@ -408,20 +535,23 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   grpc_server_start(server_);
 
   if (!has_generic_service_) {
-    if (!sync_methods_->empty()) {
-      unknown_method_.reset(new RpcServiceMethod(
-          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-      // Use of emplace_back with just constructor arguments is not accepted
-      // here by gcc-4.4 because it can't match the anonymous nullptr with a
-      // proper constructor implicitly. Construct the object and use push_back.
-      sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
+    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+      (*it)->AddUnknownSyncMethod();
     }
+
     for (size_t i = 0; i < num_cqs; i++) {
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
     }
   }
+
+  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+    (*it)->Start();
+  }
+
+  /* TODO (Sreek) - No longer needed (being done in (*it)->Start above) */
+  /*
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
     for (auto m = sync_methods_->begin(); m != sync_methods_->end(); m++) {
@@ -429,24 +559,76 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       m->Request(server_, cq_.cq());
     }
 
-    ScheduleCallback();
+    GrpcRpcManager::Initialize();
   }
+  */
 
   return true;
 }
 
+/* TODO (sreek) check if started_ and shutdown_ are needed anymore */
 void Server::ShutdownInternal(gpr_timespec deadline) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
+
+    /// The completion queue to use for server shutdown completion notification
+    CompletionQueue shutdown_cq;
+    ShutdownTag shutdown_tag;  // Dummy shutdown tag
+    grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
+
+    // Shutdown all RpcManagers. This will try to gracefully stop all the
+    // threads in the RpcManagers (once they process any inflight requests)
+    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+      (*it)->ShutdownRpcManager();
+    }
+
+    shutdown_cq.Shutdown();
+
+    void* tag;
+    bool ok;
+    CompletionQueue::NextStatus status =
+        shutdown_cq.AsyncNext(&tag, &ok, deadline);
+
+    // If this timed out, it means we are done with the grace period for a clean
+    // shutdown. We should force a shutdown now by cancelling all inflight calls
+    if (status == CompletionQueue::NextStatus::TIMEOUT) {
+      grpc_server_cancel_all_calls(server_);
+    }
+    // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
+    // successfully shutdown
+
+    // Wait for threads in all RpcManagers to terminate
+    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+      (*it)->Wait();
+      (*it)->ShutdownAndDrainCompletionQueue();
+    }
+
+    // Drain the shutdown queue (if the previous call to AsyncNext() timed out
+    // and we didn't remove the tag from the queue yet)
+    while(shutdown_cq.Next(&tag, &ok)) {
+      // Nothing to be done here
+    }
+
+    /*
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
     lock.unlock();
+    */
+
+    // TODO (sreek) Delete this
+    /*
+    GrpcRpcManager::ShutdownRpcManager();
+    GrpcRpcManager::Wait();
+    */
+
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
     // Since nothing else needs to touch state guarded by mu_, holding it
     // through this loop is fine.
+    //
+    /*
     SyncRequest* request;
     bool ok;
     while (SyncRequest::AsyncWait(&cq_, &request, &ok, deadline)) {
@@ -458,11 +640,15 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
       }
     }
     lock.lock();
+    */
 
+    /* TODO (sreek) - Remove this block */
     // Wait for running callbacks to finish.
-    while (num_running_cb_ != 0) {
-      callback_cv_.wait(lock);
-    }
+    /*
+     while (num_running_cb_ != 0) {
+       callback_cv_.wait(lock);
+     }
+     */
 
     shutdown_notified_ = true;
     shutdown_cv_.notify_all();
@@ -587,46 +773,86 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
   request_->stream()->call_.PerformOps(this);
 }
 
+// TODO: sreek - Remove this function
 void Server::ScheduleCallback() {
+  GPR_ASSERT(false);
+  /*
   {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_running_cb_++;
   }
   thread_pool_->Add(std::bind(&Server::RunRpc, this));
+  */
 }
 
+// TODO: sreek - Remove this function
 void Server::RunRpc() {
-  // Wait for one more incoming rpc.
-  bool ok;
-  GPR_TIMER_SCOPE("Server::RunRpc", 0);
-  auto* mrd = SyncRequest::Wait(&cq_, &ok);
-  if (mrd) {
-    ScheduleCallback();
-    if (ok) {
-      SyncRequest::CallData cd(this, mrd);
-      {
-        mrd->SetupRequest();
-        grpc::unique_lock<grpc::mutex> lock(mu_);
-        if (!shutdown_) {
-          mrd->Request(server_, cq_.cq());
-        } else {
-          // destroy the structure that was created
-          mrd->TeardownRequest();
+  GPR_ASSERT(false);
+  /*
+    // Wait for one more incoming rpc.
+    bool ok;
+    GPR_TIMER_SCOPE("Server::RunRpc", 0);
+    auto* mrd = SyncRequest::Wait(&cq_, &ok);
+    if (mrd) {
+      ScheduleCallback();
+      if (ok) {
+        SyncRequest::CallData cd(this, mrd);
+        {
+          mrd->SetupRequest();
+          grpc::unique_lock<grpc::mutex> lock(mu_);
+          if (!shutdown_) {
+            mrd->Request(server_, cq_.cq());
+          } else {
+            // destroy the structure that was created
+            mrd->TeardownRequest();
+          }
         }
+        GPR_TIMER_SCOPE("cd.Run()", 0);
+        cd.Run(global_callbacks_);
       }
-      GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run(global_callbacks_);
     }
-  }
 
-  {
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    num_running_cb_--;
-    if (shutdown_) {
-      callback_cv_.notify_all();
+    {
+      grpc::unique_lock<grpc::mutex> lock(mu_);
+      num_running_cb_--;
+      if (shutdown_) {
+        callback_cv_.notify_all();
+      }
     }
+    */
+}
+
+/* TODO (sreek) Move this to SyncRequestManager */
+/*
+void Server::PollForWork(bool& is_work_found, void** tag) {
+  is_work_found = true;
+  *tag = nullptr;
+  auto* mrd = SyncRequest::Wait(&cq_, &is_work_found);
+  if (is_work_found) {
+    *tag = mrd;
   }
 }
+
+
+void Server::DoWork(void* tag) {
+  auto* mrd = static_cast<SyncRequest*>(tag);
+  if (mrd) {
+    SyncRequest::CallData cd(this, mrd);
+    {
+      mrd->SetupRequest();
+      grpc::unique_lock<grpc::mutex> lock(mu_);
+      if (!shutdown_) {
+        mrd->Request(server_, cq_.cq());
+      } else {
+        // destroy the structure that was created
+        mrd->TeardownRequest();
+      }
+    }
+    GPR_TIMER_SCOPE("cd.Run()", 0);
+    cd.Run(global_callbacks_);
+  }
+}
+*/
 
 ServerInitializer* Server::initializer() { return server_initializer_.get(); }
 

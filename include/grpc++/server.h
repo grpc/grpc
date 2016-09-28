@@ -50,6 +50,8 @@
 #include <grpc++/support/status.h>
 #include <grpc/compression.h>
 
+#include "src/cpp/rpcmanager/grpc_rpc_manager.h"
+
 struct grpc_server;
 
 namespace grpc {
@@ -96,9 +98,6 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   // Returns a \em raw pointer to the underlying grpc_server instance.
   grpc_server* c_server();
 
-  // Returns a \em raw pointer to the underlying CompletionQueue.
-  CompletionQueue* completion_queue();
-
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
@@ -108,18 +107,38 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   class AsyncRequest;
   class ShutdownRequest;
 
+  /// SyncRequestManager is an implementation of GrpcRpcManager. This class is
+  /// responsible for polling for incoming RPCs and calling the RPC handlers.
+  /// This is only used in case of a Sync server (i.e a server exposing a sync
+  /// interface)
+  class SyncRequestManager;
+
   class UnimplementedAsyncRequestContext;
   class UnimplementedAsyncRequest;
   class UnimplementedAsyncResponse;
 
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
-  /// \param thread_pool The threadpool instance to use for call processing.
-  /// \param thread_pool_owned Does the server own the \a thread_pool instance?
-  /// \param max_receive_message_size Maximum message length that the channel
-  /// can receive.
-  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         int max_receive_message_size, ChannelArguments* args);
+  /// \param sync_server_cqs The completion queues to use if the server is a
+  /// synchronous server (or a hybrid server). The server polls for new RPCs on
+  /// these queues
+  ///
+  /// \param max_message_size Maximum message length that the channel can
+  /// receive.
+  ///
+  /// \param args The channel args
+  ///
+  /// \param min_pollers The minimum number of polling threads per server
+  /// completion queue (in param sync_server_cqs) to use for listening to
+  /// incoming requests (used only in case of sync server)
+  ///
+  /// \param max_pollers The maximum number of polling threads per server
+  /// completion queue (in param sync_server_cqs) to use for listening to
+  /// incoming requests (used only in case of sync server)
+  Server(std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+             sync_server_cqs,
+         int max_message_size, ChannelArguments* args, int min_pollers,
+         int max_pollers);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -174,33 +193,35 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
 
   const int max_receive_message_size_;
 
-  // Completion queue.
-  CompletionQueue cq_;
+  /// The following completion queues are ONLY used in case of Sync API i.e if
+  /// the server has any services with sync methods. The server uses these
+  /// completion queues to poll for new RPCs
+  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+      sync_server_cqs_;
+
+  /// List of GrpcRpcManager instances (one for each cq in the sync_server_cqs)
+  std::vector<std::unique_ptr<SyncRequestManager>> sync_req_mgrs_;
 
   // Sever status
   grpc::mutex mu_;
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;
+
+  // TODO (sreek) : Remove num_running_cb_ and callback_cv_;
   // The number of threads which are running callbacks.
-  int num_running_cb_;
-  grpc::condition_variable callback_cv_;
+  // int num_running_cb_;
+  // grpc::condition_variable callback_cv_;
 
   grpc::condition_variable shutdown_cv_;
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
-  std::list<SyncRequest>* sync_methods_;
   std::vector<grpc::string> services_;
-  std::unique_ptr<RpcServiceMethod> unknown_method_;
   bool has_generic_service_;
 
-  // Pointer to the c grpc server.
+  // Pointer to the c core's grpc server.
   grpc_server* server_;
-
-  ThreadPoolInterface* thread_pool_;
-  // Whether the thread pool is created and owned by the server.
-  bool thread_pool_owned_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
 };

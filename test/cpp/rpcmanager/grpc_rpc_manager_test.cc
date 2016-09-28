@@ -28,21 +28,62 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ *is % allowed in string
  */
 
-#include <grpc++/server_posix.h>
+#include <chrono>
+#include <memory>
+#include <string>
 
-#include <grpc/grpc_posix.h>
+#include <gflags/gflags.h>
+#include <grpc++/grpc++.h>
 
-namespace grpc {
+#include "test/cpp/rpcmanager/grpc_rpc_manager_test.h"
+#include "test/cpp/util/test_config.h"
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+using grpc::testing::GrpcRpcManagerTest;
 
-void AddInsecureChannelFromFd(Server* server, int fd) {
-  grpc_server_add_insecure_channel_from_fd(server->c_server(), NULL, fd);
+// TODO: sreek - Rewrite this test. Find a better test case
+
+grpc::GrpcRpcManager::WorkStatus GrpcRpcManagerTest::PollForWork(void **tag,
+                                                                 bool *ok) {
+  {
+    std::unique_lock<grpc::mutex> lock(mu_);
+    std::cout << "Poll: " << std::this_thread::get_id() << std::endl;
+  }
+
+  WorkStatus work_status = WORK_FOUND;
+  *tag = nullptr;
+  *ok = true;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  {
+    std::unique_lock<grpc::mutex> lock(mu_);
+    num_calls_++;
+    if (num_calls_ > 50) {
+      std::cout << "poll: False" << std::endl;
+      work_status = SHUTDOWN;
+      ShutdownRpcManager();
+    }
+  }
+
+  return work_status;
 }
 
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+void GrpcRpcManagerTest::DoWork(void *tag, bool ok) {
+  {
+    std::unique_lock<grpc::mutex> lock(mu_);
+    std::cout << "Work: " << std::this_thread::get_id() << std::endl;
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
 
-}  // namespace grpc
+int main(int argc, char **argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+  GrpcRpcManagerTest test_rpc_manager(3, 15, 20);
+  test_rpc_manager.Initialize();
+  test_rpc_manager.Wait();
+
+  return 0;
+}

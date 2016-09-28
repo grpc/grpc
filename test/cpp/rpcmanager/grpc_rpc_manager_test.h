@@ -28,21 +28,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ *is % allowed in string
  */
+#ifndef GRPC_TEST_CPP_GRPC_RPC_MANAGER_TEST_H
+#define GRPC_TEST_CPP_GRPC_RPC_MANAGER_TEST_H
 
-#include <grpc++/server_posix.h>
-
-#include <grpc/grpc_posix.h>
+#include "src/cpp/rpcmanager/grpc_rpc_manager.h"
 
 namespace grpc {
+namespace testing {
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+class GrpcRpcManagerTest GRPC_FINAL : public GrpcRpcManager {
+ public:
+  GrpcRpcManagerTest(int min_pollers, int max_pollers, int max_threads)
+      : GrpcRpcManager(min_pollers, max_pollers), num_calls_(0){};
 
-void AddInsecureChannelFromFd(Server* server, int fd) {
-  grpc_server_add_insecure_channel_from_fd(server->c_server(), NULL, fd);
-}
+  grpc::GrpcRpcManager::WorkStatus PollForWork(void **tag,
+                                               bool *ok) GRPC_OVERRIDE;
+  void DoWork(void *tag, bool ok) GRPC_OVERRIDE;
 
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+ private:
+  grpc::mutex mu_;
+  int num_calls_;
+};
 
+}  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_GRPC_RPC_MANAGER_TEST_H
