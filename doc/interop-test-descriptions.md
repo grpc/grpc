@@ -70,6 +70,10 @@ cache matches left over from previous tests.
 Note that client adds a `x-user-ip` header with value `1.2.3.4` to the request.
 This is done since some proxys such as GFE will not cache requests from
 localhost.
+Note also that the client request needs to marked as cacheable. For now this is
+achieved by setting the cacheable flag in the request context to 'true'.Longer
+term this will be automatically set via method options specified in the proto
+file.
 
 Server features:
 * [CacheableUnaryCall][]
