@@ -176,7 +176,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("read_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), buffer_pool,
                        slice_size, "test");
   grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);
@@ -226,7 +226,7 @@ static void large_read_test(size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("large_read_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), buffer_pool,
                        slice_size, "test");
   grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);
@@ -364,7 +364,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("write_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"), buffer_pool,
                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, "test");
   grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);
@@ -430,7 +430,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("release_fd_test");
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), buffer_pool,
                        slice_size, "test");
   GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
@@ -520,7 +520,8 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   create_sockets(sv);
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool =
+      grpc_buffer_pool_create("tcp_posix_test_socketpair");
   f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client"),
                                 buffer_pool, slice_size, "test");
   f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server"),

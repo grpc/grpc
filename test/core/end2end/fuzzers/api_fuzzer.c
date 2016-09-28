@@ -522,7 +522,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int pending_pings = 0;
 
   g_active_call = new_call(NULL, ROOT);
-  g_buffer_pool = grpc_buffer_pool_create();
+  g_buffer_pool = grpc_buffer_pool_create("api_fuzzer");
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 

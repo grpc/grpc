@@ -56,7 +56,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("server_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, buffer_pool);
   grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);

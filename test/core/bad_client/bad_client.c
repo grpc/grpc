@@ -114,7 +114,7 @@ void grpc_run_bad_client_test(
   grpc_init();
 
   /* Create endpoints */
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("bad_client_test");
   sfd = grpc_iomgr_create_endpoint_pair("fixture", buffer_pool, 65536);
   grpc_buffer_pool_internal_unref(&exec_ctx, buffer_pool);
 

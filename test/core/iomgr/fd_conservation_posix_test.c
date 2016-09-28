@@ -52,7 +52,8 @@ int main(int argc, char **argv) {
      of descriptors */
   rlim.rlim_cur = rlim.rlim_max = 10;
   GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool =
+      grpc_buffer_pool_create("fd_conservation_posix_test");
 
   for (i = 0; i < 100; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

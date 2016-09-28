@@ -42,6 +42,8 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
+int grpc_buffer_pool_trace = 0;
+
 typedef bool (*bpstate_func)(grpc_exec_ctx *exec_ctx,
                              grpc_buffer_pool *buffer_pool);
 

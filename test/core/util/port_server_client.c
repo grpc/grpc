@@ -49,8 +49,6 @@
 
 #include "src/core/lib/http/httpcli.h"
 
-int grpc_buffer_pool_trace = 0;
-
 typedef struct freereq {
   gpr_mu *mu;
   grpc_polling_entity pops;

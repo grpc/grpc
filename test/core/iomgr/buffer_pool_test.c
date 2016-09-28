@@ -91,31 +91,31 @@ static void destroy_user(grpc_buffer_user *usr) {
 
 static void test_no_op(void) {
   gpr_log(GPR_INFO, "** test_no_op **");
-  grpc_buffer_pool_unref(grpc_buffer_pool_create());
+  grpc_buffer_pool_unref(grpc_buffer_pool_create("test_no_op"));
 }
 
 static void test_resize_then_destroy(void) {
   gpr_log(GPR_INFO, "** test_resize_then_destroy **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_resize_then_destroy");
   grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_pool_unref(p);
 }
 
 static void test_buffer_user_no_op(void) {
   gpr_log(GPR_INFO, "** test_buffer_user_no_op **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_buffer_user_no_op");
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   grpc_buffer_pool_unref(p);
   destroy_user(&usr);
 }
 
 static void test_instant_alloc_then_free(void) {
   gpr_log(GPR_INFO, "** test_instant_alloc_then_free **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_instant_alloc_then_free");
   grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, NULL);
@@ -132,10 +132,10 @@ static void test_instant_alloc_then_free(void) {
 
 static void test_instant_alloc_free_pair(void) {
   gpr_log(GPR_INFO, "** test_instant_alloc_free_pair **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_instant_alloc_free_pair");
   grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_buffer_user_alloc(&exec_ctx, &usr, 1024, NULL);
@@ -148,10 +148,10 @@ static void test_instant_alloc_free_pair(void) {
 
 static void test_simple_async_alloc(void) {
   gpr_log(GPR_INFO, "** test_simple_async_alloc **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_simple_async_alloc");
   grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   {
     bool done = false;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -170,10 +170,11 @@ static void test_simple_async_alloc(void) {
 
 static void test_async_alloc_blocked_by_size(void) {
   gpr_log(GPR_INFO, "** test_async_alloc_blocked_by_size **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_async_alloc_blocked_by_size");
   grpc_buffer_pool_resize(p, 1);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   bool done = false;
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -194,12 +195,12 @@ static void test_async_alloc_blocked_by_size(void) {
 
 static void test_scavenge(void) {
   gpr_log(GPR_INFO, "** test_scavenge **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_scavenge");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr1;
   grpc_buffer_user usr2;
-  grpc_buffer_user_init(&usr1, p);
-  grpc_buffer_user_init(&usr2, p);
+  grpc_buffer_user_init(&usr1, p, "usr1");
+  grpc_buffer_user_init(&usr2, p, "usr2");
   {
     bool done = false;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -231,12 +232,12 @@ static void test_scavenge(void) {
 
 static void test_scavenge_blocked(void) {
   gpr_log(GPR_INFO, "** test_scavenge_blocked **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_scavenge_blocked");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr1;
   grpc_buffer_user usr2;
-  grpc_buffer_user_init(&usr1, p);
-  grpc_buffer_user_init(&usr2, p);
+  grpc_buffer_user_init(&usr1, p, "usr1");
+  grpc_buffer_user_init(&usr2, p, "usr2");
   bool done;
   {
     done = false;
@@ -270,10 +271,11 @@ static void test_scavenge_blocked(void) {
 
 static void test_blocked_until_scheduled_reclaim(void) {
   gpr_log(GPR_INFO, "** test_blocked_until_scheduled_reclaim **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_blocked_until_scheduled_reclaim");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   {
     bool done = false;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -308,12 +310,13 @@ static void test_blocked_until_scheduled_reclaim(void) {
 
 static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
   gpr_log(GPR_INFO, "** test_blocked_until_scheduled_reclaim_and_scavenge **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create(
+      "test_blocked_until_scheduled_reclaim_and_scavenge");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr1;
   grpc_buffer_user usr2;
-  grpc_buffer_user_init(&usr1, p);
-  grpc_buffer_user_init(&usr2, p);
+  grpc_buffer_user_init(&usr1, p, "usr1");
+  grpc_buffer_user_init(&usr2, p, "usr2");
   {
     bool done = false;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -349,10 +352,11 @@ static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
 
 static void test_blocked_until_scheduled_destructive_reclaim(void) {
   gpr_log(GPR_INFO, "** test_blocked_until_scheduled_destructive_reclaim **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create(
+      "test_blocked_until_scheduled_destructive_reclaim");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   {
     bool done = false;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -387,10 +391,11 @@ static void test_blocked_until_scheduled_destructive_reclaim(void) {
 
 static void test_unused_reclaim_is_cancelled(void) {
   gpr_log(GPR_INFO, "** test_unused_reclaim_is_cancelled **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_unused_reclaim_is_cancelled");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   bool benign_done = false;
   bool destructive_done = false;
   {
@@ -412,10 +417,11 @@ static void test_unused_reclaim_is_cancelled(void) {
 
 static void test_benign_reclaim_is_preferred(void) {
   gpr_log(GPR_INFO, "** test_benign_reclaim_is_preferred **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_benign_reclaim_is_preferred");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   bool benign_done = false;
   bool destructive_done = false;
   {
@@ -459,10 +465,11 @@ static void test_benign_reclaim_is_preferred(void) {
 
 static void test_multiple_reclaims_can_be_triggered(void) {
   gpr_log(GPR_INFO, "** test_multiple_reclaims_can_be_triggered **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_multiple_reclaims_can_be_triggered");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   bool benign_done = false;
   bool destructive_done = false;
   {
@@ -507,10 +514,11 @@ static void test_multiple_reclaims_can_be_triggered(void) {
 static void test_buffer_user_stays_allocated_until_memory_released(void) {
   gpr_log(GPR_INFO,
           "** test_buffer_user_stays_allocated_until_memory_released **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create(
+      "test_buffer_user_stays_allocated_until_memory_released");
   grpc_buffer_pool_resize(p, 1024 * 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   bool done = false;
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -539,11 +547,12 @@ static void test_buffer_user_stays_allocated_until_memory_released(void) {
 
 static void test_pools_merged_on_buffer_user_deletion(void) {
   gpr_log(GPR_INFO, "** test_pools_merged_on_buffer_user_deletion **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_pools_merged_on_buffer_user_deletion");
   grpc_buffer_pool_resize(p, 1024);
   for (int i = 0; i < 10; i++) {
     grpc_buffer_user usr;
-    grpc_buffer_user_init(&usr, p);
+    grpc_buffer_user_init(&usr, p, "usr");
     bool done = false;
     bool reclaimer_cancelled = false;
     {
@@ -587,10 +596,11 @@ static void test_pools_merged_on_buffer_user_deletion(void) {
 
 static void test_reclaimers_can_be_posted_repeatedly(void) {
   gpr_log(GPR_INFO, "** test_reclaimers_can_be_posted_repeatedly **");
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p =
+      grpc_buffer_pool_create("test_reclaimers_can_be_posted_repeatedly");
   grpc_buffer_pool_resize(p, 1024);
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
   {
     bool allocated = false;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -629,11 +639,11 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
 static void test_one_slice(void) {
   gpr_log(GPR_INFO, "** test_one_slice **");
 
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_one_slice");
   grpc_buffer_pool_resize(p, 1024);
 
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
 
   grpc_buffer_user_slice_allocator alloc;
   int num_allocs = 0;
@@ -658,11 +668,11 @@ static void test_one_slice(void) {
 static void test_one_slice_deleted_late(void) {
   gpr_log(GPR_INFO, "** test_one_slice_deleted_late **");
 
-  grpc_buffer_pool *p = grpc_buffer_pool_create();
+  grpc_buffer_pool *p = grpc_buffer_pool_create("test_one_slice_deleted_late");
   grpc_buffer_pool_resize(p, 1024);
 
   grpc_buffer_user usr;
-  grpc_buffer_user_init(&usr, p);
+  grpc_buffer_user_init(&usr, p, "usr");
 
   grpc_buffer_user_slice_allocator alloc;
   int num_allocs = 0;
