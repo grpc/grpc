@@ -904,17 +904,14 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
 
   if (grpc_http_trace) {
     char *str = grpc_transport_stream_op_string(op);
-    gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s", str);
+    gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
+            op->on_complete);
     gpr_free(str);
   }
 
   grpc_closure *on_complete = op->on_complete;
   if (on_complete == NULL) {
     on_complete = grpc_closure_create(do_nothing, NULL);
-  }
-
-  if (grpc_http_trace) {
-    gpr_log(GPR_DEBUG, "  on_complete = %p", on_complete);
   }
 
   /* use final_data as a barrier until enqueue time; the inital counter is
@@ -1009,6 +1006,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           (ssize_t)s->flow_controlled_buffer.length + (ssize_t)len;
       s->complete_fetch_covered_by_poller = op->covered_by_poller;
       if (flags & GRPC_WRITE_BUFFER_HINT) {
+        /* allow up to 64kb to be buffered */
+        /* TODO(ctiller): make this configurable */
         s->fetching_slice_end_offset -= 65536;
       }
       continue_fetching_send_locked(exec_ctx, t, s);
@@ -1233,7 +1232,6 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
     if (s->seen_error) {
       while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
              NULL) {
-        gpr_log(GPR_DEBUG, "discard %p", bs);
         incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
       }
     }
@@ -1252,7 +1250,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
     while (s->final_metadata_requested && s->seen_error &&
            (bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
                NULL) {
-      gpr_log(GPR_DEBUG, "discard %p", bs);
       incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
     }
     if (s->incoming_frames.head != NULL) {
@@ -1277,7 +1274,6 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
     if (s->seen_error) {
       while ((bs = grpc_chttp2_incoming_frame_queue_pop(&s->incoming_frames)) !=
              NULL) {
-        gpr_log(GPR_DEBUG, "discard %p", bs);
         incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
       }
     }
