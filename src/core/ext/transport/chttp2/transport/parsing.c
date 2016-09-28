@@ -375,22 +375,26 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     return err;
   }
 
-  if (incoming_frame_size > s->incoming_window) {
-    char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
-                 t->incoming_frame_size, s->incoming_window);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
-    gpr_free(msg);
-    return err;
-  }
-
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
-  GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window,
-                                incoming_frame_size);
-  s->received_bytes += incoming_frame_size;
-  s->max_recv_bytes -=
-      (uint32_t)GPR_MIN(s->max_recv_bytes, incoming_frame_size);
+
+  if (s != NULL) {
+    if (incoming_frame_size > s->incoming_window) {
+      char *msg;
+      gpr_asprintf(&msg,
+                   "frame of size %d overflows incoming window of %" PRId64,
+                   t->incoming_frame_size, s->incoming_window);
+      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      gpr_free(msg);
+      return err;
+    }
+
+    GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window,
+                                  incoming_frame_size);
+    s->received_bytes += incoming_frame_size;
+    s->max_recv_bytes -=
+        (uint32_t)GPR_MIN(s->max_recv_bytes, incoming_frame_size);
+  }
 
   return GRPC_ERROR_NONE;
 }
@@ -400,20 +404,22 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
+  err = update_incoming_window(exec_ctx, t, s);
+  if (err != GRPC_ERROR_NONE) {
+    goto error_handler;
+  }
   if (s == NULL) {
     return init_skip_frame_parser(exec_ctx, t, 0);
   }
   s->stats.incoming.framing_bytes += 9;
-  if (s->read_closed) {
+  if (err == GRPC_ERROR_NONE && s->read_closed) {
     return init_skip_frame_parser(exec_ctx, t, 0);
-  }
-  if (err == GRPC_ERROR_NONE) {
-    err = update_incoming_window(exec_ctx, t, s);
   }
   if (err == GRPC_ERROR_NONE) {
     err = grpc_chttp2_data_parser_begin_frame(&s->data_parser,
                                               t->incoming_frame_flags, s->id);
   }
+error_handler:
   if (err == GRPC_ERROR_NONE) {
     t->incoming_stream = s;
     t->parser = grpc_chttp2_data_parser_parse;
@@ -421,7 +427,9 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
-    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false, err);
+    if (s != NULL) {
+      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false, err);
+    }
     gpr_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(t->incoming_stream_id,
                                                 GRPC_CHTTP2_PROTOCOL_ERROR,
