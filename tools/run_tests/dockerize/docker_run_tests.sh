@@ -43,10 +43,20 @@ chown $(whoami) $XDG_CACHE_HOME
 
 mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc /var/local/git/grpc
-# clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc / && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
+
+# (todo (mattkwong): the /var/local/jenkins/grpc has no submodules and boringssl 
+# has non-submodule files in it. Figure out how to fix this for local cloning 
+## this prints to console "reports reports.zip"
+# ls /var/local/jenkins/grpc/third_party/boringssl
+## none of these print anything (empty directory)
+# ls /var/local/jenkins/grpc/third_party/gflags
+# ls /var/local/jenkins/grpc/third_party/googletest
+# ls /var/local/jenkins/grpc/third_party/nanopb
+# ls /var/local/jenkins/grpc/third_party/protobuf
+# ls /var/local/jenkins/grpc/third_party/thrift
+# ls /var/local/jenkins/grpc/third_party/zlib
+
+(cd /var/local/git/grpc && git submodule update --init --recursive )
 
 mkdir -p reports
 
