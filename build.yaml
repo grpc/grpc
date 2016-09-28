@@ -738,7 +738,6 @@ filegroups:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   uses:
-  - grpc_base
   - grpc++_codegen_base
 - name: grpc++_codegen_base
   language: c++

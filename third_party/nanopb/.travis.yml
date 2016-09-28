@@ -1,0 +1,54 @@
+# Travis CI has no ability to handle 3 langauges (c, c++, python)
+# and it overrides $CC/$CXX if language is set to c/c++ (only one, not both).
+#
+# Set language to python since at least the result of that is something useful.
+language: python
+
+python:
+    - "2.7"
+    - "3.4"
+
+# Manage the C/C++ compiler manually
+env:
+    - CC=gcc     CXX=g++
+    - CC=gcc-4.8 CXX=g++-4.8
+    - CC=gcc-4.9 CXX=g++-4.9
+    - CC=gcc-5   CXX=g++-5
+    - CC=clang   CXX=clang++
+
+addons:
+    apt:
+        sources:
+            - ubuntu-toolchain-r-test
+        packages:
+            - gcc-4.8
+            - g++-4.8
+            - gcc-4.9
+            - g++-4.9
+            - gcc-5
+            - g++-5
+
+
+before_install:
+    - export PATH=$HOME/.local/bin:$HOME/protobuf/bin:$PATH
+    - export MAKEFLAGS=-j$(grep processor /proc/cpuinfo | wc -l)
+    - $CC --version
+    - $CXX --version
+    - python --version
+    - lsb_release -a
+
+# Seems to be issues with concurrent builds
+#cache:
+#    directories:
+#        - $HOME/protobuf
+
+install:
+    - curl -L https://github.com/google/protobuf/releases/download/v3.0.0-beta-1/protobuf-python-3.0.0-alpha-4.tar.gz | tar xzf -
+      && pushd protobuf-3.0.0-alpha-4
+      && ./configure --prefix=$HOME/protobuf && make && make install
+      && pushd python && python setup.py build && python setup.py install && popd
+      && popd
+
+script:
+    - pushd generator/proto && make && popd
+    - pushd tests && python2 $(which scons) CC=$CC CXX=$CXX && popd

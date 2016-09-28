@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+enum MessageStatus {
+    FAIL = 0;
+    OK = 1;
+};
+
+message MessageInfo {
+   required fixed32 msg_id = 1;
+   optional fixed32 interface_id = 2;
+}
+
+message MessageResponseInfo {
+   required fixed64 interface_id = 1;
+   required fixed32 seq = 2;
+   required fixed32 msg_id = 3;
+}
+
+message MessageHeader {
+   required MessageInfo info = 1;
+   optional MessageResponseInfo response_info = 2;
+   optional MessageResponse response = 3;
+}
+
+message MessageResponse {
+   required MessageStatus status = 1;
+   required fixed32 seq = 2;
+}
+
