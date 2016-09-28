@@ -62,6 +62,22 @@ class ServerBuilder {
  public:
   ServerBuilder();
 
+  struct SyncServerSettings {
+    // Number of server completion queues to create to listen to incoming RPCs.
+    int num_cqs;
+
+    // Minimum number of threads per completion queue that should be listening
+    // to incoming RPCs.
+    int min_pollers;
+
+    // Maximum number of threads per completion queue that can be listening to
+    // incoming RPCs.
+    int max_pollers;
+
+    // The timeout for server completion queue's AsyncNext call.
+    int cq_timeout_msec;
+  };
+
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by \a BuildAndStart().
@@ -115,6 +131,9 @@ class ServerBuilder {
 
   ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
+  /// Note: Only useful if this is a Synchronous server.
+  void SetSyncServerSettings(SyncServerSettings settings);
+
   /// Tries to bind \a server to the given \a addr.
   ///
   /// It can be invoked multiple times.
@@ -164,17 +183,19 @@ class ServerBuilder {
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
-  // TODO (sreek) Make these configurable
-  // The default number of minimum and maximum number of polling threads needed
-  // per completion queue. These are only used in case of Sync server
-  const int kDefaultMinPollers = 1;
-  const int kDefaultMaxPollers = -1; // Unlimited
-
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
     int* selected_port;
   };
+
+  // Sync server settings. If this is not set via SetSyncServerSettings(), the
+  // following default values are used:
+  //    sync_server_settings_.num_cqs = Number of CPUs
+  //    sync_server_settings_.min_pollers = 1
+  //    sync_server_settings_.max_pollers = INT_MAX
+  //    sync_server_settings_.cq_timeout_msec = 1000
+  struct SyncServerSettings sync_server_settings_;
 
   typedef std::unique_ptr<grpc::string> HostString;
   struct NamedService {

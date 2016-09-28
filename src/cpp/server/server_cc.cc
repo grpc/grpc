@@ -291,18 +291,17 @@ class Server::SyncRequestManager : public GrpcRpcManager {
  public:
   SyncRequestManager(Server* server, CompletionQueue* server_cq,
                      std::shared_ptr<GlobalCallbacks> global_callbacks,
-                     int min_pollers, int max_pollers)
+                     int min_pollers, int max_pollers, int cq_timeout_msec)
       : GrpcRpcManager(min_pollers, max_pollers),
         server_(server),
         server_cq_(server_cq),
+        cq_timeout_msec_(cq_timeout_msec),
         global_callbacks_(global_callbacks) {}
-
-  static const int kRpcPollingTimeoutMsec = 3000;
 
   WorkStatus PollForWork(void** tag, bool* ok) GRPC_OVERRIDE {
     *tag = nullptr;
     gpr_timespec deadline =
-        gpr_time_from_millis(kRpcPollingTimeoutMsec, GPR_TIMESPAN);
+        gpr_time_from_millis(cq_timeout_msec_, GPR_TIMESPAN);
 
     switch (server_cq_->AsyncNext(tag, ok, deadline)) {
       case CompletionQueue::TIMEOUT:
@@ -389,6 +388,7 @@ class Server::SyncRequestManager : public GrpcRpcManager {
  private:
   Server* server_;
   CompletionQueue* server_cq_;
+  int cq_timeout_msec_;
   std::vector<SyncRequest> sync_methods_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
@@ -399,7 +399,7 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
     int max_receive_message_size, ChannelArguments* args, int min_pollers,
-    int max_pollers)
+    int max_pollers, int sync_cq_timeout_msec)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(sync_server_cqs),
       started_(false),
@@ -415,8 +415,9 @@ Server::Server(
 
   for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
        it++) {
-    sync_req_mgrs_.emplace_back(new SyncRequestManager(
-        this, (*it).get(), global_callbacks_, min_pollers, max_pollers));
+    sync_req_mgrs_.emplace_back(
+        new SyncRequestManager(this, (*it).get(), global_callbacks_,
+                               min_pollers, max_pollers, sync_cq_timeout_msec));
   }
 
   grpc_channel_args channel_args;
@@ -606,7 +607,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out
     // and we didn't remove the tag from the queue yet)
-    while(shutdown_cq.Next(&tag, &ok)) {
+    while (shutdown_cq.Next(&tag, &ok)) {
       // Nothing to be done here
     }
 

@@ -226,6 +226,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
         kMaxMessageSize_(8192),
         special_service_("special") {
     GetParam().Log();
+
+    sync_server_settings_.max_pollers = INT_MAX;
+    sync_server_settings_.min_pollers = 1;
+    sync_server_settings_.cq_timeout_msec = 10;
+    sync_server_settings_.num_cqs = 4;
   }
 
   void TearDown() GRPC_OVERRIDE {
@@ -250,6 +255,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
+
+    builder.SetSyncServerSettings(sync_server_settings_);
+
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
   }
@@ -279,6 +287,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       ServerBuilder builder;
       builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
       builder.RegisterService(proxy_service_.get());
+      builder.SetSyncServerSettings(sync_server_settings_);
+
       proxy_server_ = builder.BuildAndStart();
 
       channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
@@ -299,6 +309,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
+  ServerBuilder::SyncServerSettings sync_server_settings_;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,

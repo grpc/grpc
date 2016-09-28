@@ -62,6 +62,7 @@ ServerBuilder::ServerBuilder()
     auto& factory = *it;
     plugins_.emplace_back(factory());
   }
+
   // all compression algorithms enabled by default.
   enabled_compression_algorithms_bitset_ =
       (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
@@ -69,6 +70,17 @@ ServerBuilder::ServerBuilder()
          sizeof(maybe_default_compression_level_));
   memset(&maybe_default_compression_algorithm_, 0,
          sizeof(maybe_default_compression_algorithm_));
+
+
+  // Sync server setting defaults
+  sync_server_settings_.min_pollers = 1;
+  sync_server_settings_.max_pollers = INT_MAX;
+
+  int num_cpus = gpr_cpu_num_cores();
+  num_cpus = GPR_MAX(num_cpus, 4);
+  sync_server_settings_.num_cqs = num_cpus;
+
+  sync_server_settings_.cq_timeout_msec = 1000;
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
@@ -129,6 +141,10 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
   maybe_default_compression_algorithm_.is_set = true;
   maybe_default_compression_algorithm_.algorithm = algorithm;
   return *this;
+}
+
+void ServerBuilder:: SetSyncServerSettings(SyncServerSettings settings) {
+  sync_server_settings_ = settings; // copy the settings
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
@@ -200,23 +216,17 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   if (has_sync_methods) {
     // If the server has synchronous methods, it will need completion queues to
-    // handle those methods. Create one cq per core (or create 4 if number of
-    // cores is less than 4 or unavailable)
-    //
-    // TODO (sreek) - The default number 4 is just a guess. Check if a lower or
-    // higher number makes sense
-    int num_cqs = gpr_cpu_num_cores();
-    num_cqs = GPR_MAX(num_cqs, 4);
-
-    for (int i = 0; i < num_cqs; i++) {
+    // handle those methods.
+    for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
       sync_server_cqs->emplace_back(new ServerCompletionQueue());
     }
   }
 
   // TODO (sreek) Make the number of pollers configurable
-  std::unique_ptr<Server> server(
-      new Server(sync_server_cqs, max_receive_message_size_, &args,
-                 kDefaultMinPollers, kDefaultMaxPollers));
+  std::unique_ptr<Server> server(new Server(
+      sync_server_cqs, max_receive_message_size_, &args,
+      sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
+      sync_server_settings_.cq_timeout_msec));
 
   ServerInitializer* initializer = server->initializer();
 
