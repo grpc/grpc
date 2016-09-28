@@ -40,7 +40,7 @@ namespace testing {
 
 class GrpcRpcManagerTest GRPC_FINAL : public GrpcRpcManager {
  public:
-  GrpcRpcManagerTest(int min_pollers, int max_pollers, int max_threads)
+  GrpcRpcManagerTest(int min_pollers, int max_pollers)
       : GrpcRpcManager(min_pollers, max_pollers), num_calls_(0){};
 
   grpc::GrpcRpcManager::WorkStatus PollForWork(void **tag,

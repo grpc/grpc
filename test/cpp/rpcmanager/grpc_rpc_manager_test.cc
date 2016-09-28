@@ -81,7 +81,7 @@ void GrpcRpcManagerTest::DoWork(void *tag, bool ok) {
 
 int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  GrpcRpcManagerTest test_rpc_manager(3, 15, 20);
+  GrpcRpcManagerTest test_rpc_manager(3, 15);
   test_rpc_manager.Initialize();
   test_rpc_manager.Wait();
 

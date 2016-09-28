@@ -71,7 +71,6 @@ ServerBuilder::ServerBuilder()
   memset(&maybe_default_compression_algorithm_, 0,
          sizeof(maybe_default_compression_algorithm_));
 
-
   // Sync server setting defaults
   sync_server_settings_.min_pollers = 1;
   sync_server_settings_.max_pollers = INT_MAX;
@@ -143,8 +142,8 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
   return *this;
 }
 
-void ServerBuilder:: SetSyncServerSettings(SyncServerSettings settings) {
-  sync_server_settings_ = settings; // copy the settings
+void ServerBuilder::SetSyncServerSettings(SyncServerSettings settings) {
+  sync_server_settings_ = settings;  // copy the settings
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
@@ -215,14 +214,20 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
           new std::vector<std::unique_ptr<ServerCompletionQueue>>());
 
   if (has_sync_methods) {
-    // If the server has synchronous methods, it will need completion queues to
-    // handle those methods.
+    // This is a Sync server
+    gpr_log(GPR_INFO,
+            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
+            "%d, CQ timeout (msec): %d",
+            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
+            sync_server_settings_.max_pollers,
+            sync_server_settings_.cq_timeout_msec);
+
+    // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
       sync_server_cqs->emplace_back(new ServerCompletionQueue());
     }
   }
 
-  // TODO (sreek) Make the number of pollers configurable
   std::unique_ptr<Server> server(new Server(
       sync_server_cqs, max_receive_message_size_, &args,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
