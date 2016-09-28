@@ -849,7 +849,7 @@ bool InteropClient::DoCacheableUnary() {
   gpr_log(GPR_DEBUG, "Sending RPC with cacheable response");
 
   // Create request with current timestamp
-  gpr_timespec ts = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
   std::string timestamp = std::to_string(ts.tv_nsec);
   SimpleRequest request;
   request.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
