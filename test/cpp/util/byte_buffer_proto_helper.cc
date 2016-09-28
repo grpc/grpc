@@ -38,7 +38,7 @@ namespace testing {
 
 bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
   std::vector<Slice> slices;
-  buffer->Dump(&slices);
+  (void)buffer->Dump(&slices);
   grpc::string buf;
   buf.reserve(buffer->Length());
   for (auto s = slices.begin(); s != slices.end(); s++) {
