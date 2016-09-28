@@ -41,8 +41,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/ext/client_config/method_config.h"
 
+#define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
 // The protobuf library will (by default) start warning at 100 megs.
-#define DEFAULT_MAX_MESSAGE_LENGTH (4 * 1024 * 1024)
+#define DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 typedef struct call_data {
   int max_send_size;
@@ -73,9 +74,9 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
   if (*calld->recv_message != NULL && calld->max_recv_size >= 0 &&
       (*calld->recv_message)->length > (size_t)calld->max_recv_size) {
     char* message_string;
-    gpr_asprintf(
-        &message_string, "Received message larger than max (%u vs. %d)",
-        (*calld->recv_message)->length, calld->max_recv_size);
+    gpr_asprintf(&message_string,
+                 "Received message larger than max (%u vs. %d)",
+                 (*calld->recv_message)->length, calld->max_recv_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
     grpc_call_element_send_close_with_message(
@@ -161,19 +162,22 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
   memset(chand, 0, sizeof(*chand));
-  chand->max_send_size = DEFAULT_MAX_MESSAGE_LENGTH;
-  chand->max_recv_size = DEFAULT_MAX_MESSAGE_LENGTH;
-  const grpc_integer_options options = {DEFAULT_MAX_MESSAGE_LENGTH, 0, INT_MAX};
+  chand->max_send_size = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  chand->max_recv_size = DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
-      chand->max_send_size = (size_t)grpc_channel_arg_get_integer(
-          &args->channel_args->args[i], options);
+      const grpc_integer_options options = {DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0,
+                                            INT_MAX};
+      chand->max_send_size =
+          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      chand->max_recv_size = (size_t)grpc_channel_arg_get_integer(
-          &args->channel_args->args[i], options);
+      const grpc_integer_options options = {DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0,
+                                            INT_MAX};
+      chand->max_recv_size =
+          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
   }
   // Get method config table from channel args.
