@@ -109,6 +109,7 @@ static bool QpsDriver() {
     GetReporter()->ReportQPSPerCore(*result);
     GetReporter()->ReportLatency(*result);
     GetReporter()->ReportTimes(*result);
+    GetReporter()->ReportCpuUsage(*result);
 
     for (int i = 0; success && i < result->client_success_size(); i++) {
       success = result->client_success(i);
