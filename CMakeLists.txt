@@ -1017,6 +1017,7 @@ add_library(grpc++
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
+  src/cpp/common/buffer_pool.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -1148,6 +1149,7 @@ target_link_libraries(grpc++
 
 foreach(_hdr
   include/grpc++/alarm.h
+  include/grpc++/buffer_pool.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
   include/grpc++/completion_queue.h
@@ -1370,6 +1372,7 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
+  src/cpp/common/buffer_pool.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -1500,6 +1503,7 @@ target_link_libraries(grpc++_unsecure
 
 foreach(_hdr
   include/grpc++/alarm.h
+  include/grpc++/buffer_pool.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
   include/grpc++/completion_queue.h

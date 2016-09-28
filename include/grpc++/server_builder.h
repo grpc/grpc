@@ -43,9 +43,12 @@
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
 
+struct grpc_buffer_pool;
+
 namespace grpc {
 
 class AsyncGenericService;
+class BufferPool;
 class CompletionQueue;
 class RpcService;
 class Server;
@@ -61,6 +64,7 @@ class ServerBuilderPluginTest;
 class ServerBuilder {
  public:
   ServerBuilder();
+  ~ServerBuilder();
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
@@ -112,6 +116,9 @@ class ServerBuilder {
   /// level set by \a SetDefaultCompressionLevel.
   ServerBuilder& SetDefaultCompressionAlgorithm(
       grpc_compression_algorithm algorithm);
+
+  /// Set the attached buffer pool for this server
+  ServerBuilder& SetBufferPool(const BufferPool& buffer_pool);
 
   ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
@@ -187,6 +194,7 @@ class ServerBuilder {
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
+  grpc_buffer_pool* buffer_pool_;
   AsyncGenericService* generic_service_;
   struct {
     bool is_set;

@@ -33,6 +33,7 @@
 
 #include <grpc++/server_builder.h>
 
+#include <grpc++/buffer_pool.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
 #include <grpc/support/log.h>
@@ -54,6 +55,7 @@ static void do_plugin_list_init(void) {
 ServerBuilder::ServerBuilder()
     : max_receive_message_size_(-1),
       max_send_message_size_(-1),
+      buffer_pool_(nullptr),
       generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
@@ -68,6 +70,12 @@ ServerBuilder::ServerBuilder()
          sizeof(maybe_default_compression_level_));
   memset(&maybe_default_compression_algorithm_, 0,
          sizeof(maybe_default_compression_algorithm_));
+}
+
+ServerBuilder::~ServerBuilder() {
+  if (buffer_pool_ != nullptr) {
+    grpc_buffer_pool_unref(buffer_pool_);
+  }
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
@@ -130,6 +138,16 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
   return *this;
 }
 
+ServerBuilder& ServerBuilder::SetBufferPool(
+    const grpc::BufferPool& buffer_pool) {
+  if (buffer_pool_ != nullptr) {
+    grpc_buffer_pool_unref(buffer_pool_);
+  }
+  buffer_pool_ = buffer_pool.c_buffer_pool();
+  grpc_buffer_pool_ref(buffer_pool_);
+  return *this;
+}
+
 ServerBuilder& ServerBuilder::AddListeningPort(
     const grpc::string& addr, std::shared_ptr<ServerCredentials> creds,
     int* selected_port) {
@@ -177,6 +195,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   if (maybe_default_compression_algorithm_.is_set) {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
+  }
+  if (buffer_pool_ != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, buffer_pool_,
+                              grpc_buffer_pool_arg_vtable());
   }
   std::unique_ptr<Server> server(new Server(thread_pool.release(), true,
                                             max_receive_message_size_, &args));

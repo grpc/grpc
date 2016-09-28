@@ -259,6 +259,7 @@
 
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\buffer_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
@@ -470,6 +471,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\buffer_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
     </ClCompile>

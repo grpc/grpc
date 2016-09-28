@@ -34,6 +34,7 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc++/buffer_pool.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -240,6 +241,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
+    ConfigureServerBuilder(&builder);
     auto server_creds = GetServerCredentials(GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
@@ -247,11 +249,14 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     builder.RegisterService("foo.test.youtube.com", &special_service_);
-    builder.SetMaxMessageSize(
-        kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
+  }
+
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) {
+    builder->SetMaxMessageSize(
+        kMaxMessageSize_);  // For testing max message size.
   }
 
   void ResetChannel() {
@@ -1476,6 +1481,31 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   }
 }
 
+class BufferPoolEnd2endTest : public End2endTest {
+ public:
+  BufferPoolEnd2endTest() : server_buffer_pool_("server_buffer_pool") {}
+
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) GRPC_OVERRIDE {
+    builder->SetBufferPool(server_buffer_pool_);
+  }
+
+ private:
+  BufferPool server_buffer_pool_;
+};
+
+TEST_P(BufferPoolEnd2endTest, SimpleRequest) {
+  ResetStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_insecure,
                                               bool test_secure) {
@@ -1511,6 +1541,10 @@ INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
+
+INSTANTIATE_TEST_CASE_P(BufferPoolEnd2end, BufferPoolEnd2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
                                                                 true)));
 
 }  // namespace
