@@ -183,7 +183,7 @@ static void test_no_op_with_port_and_start(void) {
 }
 
 static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
-                        socklen_t remote_len, on_connect_result *result) {
+                        GRPC_SOCKLEN_T remote_len, on_connect_result *result) {
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
   int clifd = socket(remote->sa_family, SOCK_STREAM, 0);
   int nconnects_before;
@@ -220,7 +220,7 @@ static void test_connect(unsigned n) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
   struct sockaddr_storage addr1;
-  socklen_t addr_len = sizeof(addr);
+  GRPC_SOCKLEN_T addr_len = sizeof(addr);
   unsigned svr_fd_count;
   int svr_port;
   unsigned svr1_fd_count;
@@ -236,14 +236,14 @@ static void test_connect(unsigned n) {
   memset(&addr1, 0, sizeof(addr1));
   addr.ss_family = addr1.ss_family = AF_INET;
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len,
+             grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, (size_t)addr_len,
                                       &svr_port));
   GPR_ASSERT(svr_port > 0);
   /* Cannot use wildcard (port==0), because add_port() will try to reuse the
      same port as a previous add_port(). */
   svr1_port = grpc_pick_unused_port_or_die();
   grpc_sockaddr_set_port((struct sockaddr *)&addr1, svr1_port);
-  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr1, addr_len,
+  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr1, (size_t)addr_len,
                                       &svr_port) == GRPC_ERROR_NONE &&
              svr_port == svr1_port);
 
@@ -266,7 +266,7 @@ static void test_connect(unsigned n) {
     GPR_ASSERT(fd >= 0);
     if (i == 0) {
       GPR_ASSERT(getsockname(fd, (struct sockaddr *)&addr, &addr_len) == 0);
-      GPR_ASSERT(addr_len <= sizeof(addr));
+      GPR_ASSERT(addr_len <= (GRPC_SOCKLEN_T)sizeof(addr));
     }
   }
   for (i = 0; i < svr1_fd_count; ++i) {
@@ -274,7 +274,7 @@ static void test_connect(unsigned n) {
     GPR_ASSERT(fd >= 0);
     if (i == 0) {
       GPR_ASSERT(getsockname(fd, (struct sockaddr *)&addr1, &addr_len) == 0);
-      GPR_ASSERT(addr_len <= sizeof(addr1));
+      GPR_ASSERT(addr_len <= (GRPC_SOCKLEN_T)sizeof(addr1));
     }
   }
 

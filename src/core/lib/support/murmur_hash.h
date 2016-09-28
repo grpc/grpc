@@ -38,6 +38,21 @@
 
 #include <stddef.h>
 
+#ifdef __hpux
+  #if defined(__GNUC__) && (__GNUC__>4 || (__GNUC__==4 && __GNUC_MINOR__>=3))
+    #define GRPC_LE_WORD(W32)   (__builtin_bswap32(W32))
+  #else
+    #define GRPC_LE_WORD(W32)     \
+     ((((W32) & 0x000000FF)  << 24)  \
+     | (((W32) & 0x0000FF00) <<  8)  \
+     | (((W32) & 0x00FF0000) >>  8)  \
+     | (((W32) & 0xFF000000) >> 24))
+
+  #endif
+#else
+  #define GRPC_LE_WORD(W32)   (W32)
+#endif
+
 /* compute the hash of key (length len) */
 uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed);
 

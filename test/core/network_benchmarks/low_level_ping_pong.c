@@ -340,7 +340,7 @@ error:
 }
 
 /* This roughly matches tcp_server's create_listening_socket */
-static int create_listening_socket(struct sockaddr *port, socklen_t len) {
+static int create_listening_socket(struct sockaddr *port, GRPC_SOCKLEN_T len) {
   int fd = socket(port->sa_family, SOCK_STREAM, 0);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
@@ -378,7 +378,7 @@ error:
   return -1;
 }
 
-static int connect_client(struct sockaddr *addr, socklen_t len) {
+static int connect_client(struct sockaddr *addr, GRPC_SOCKLEN_T len) {
   int fd = socket(addr->sa_family, SOCK_STREAM, 0);
   int err;
   if (fd < 0) {

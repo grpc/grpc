@@ -135,6 +135,8 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
 
   grpc_error **errors = NULL;
   err = grpc_blocking_resolve_address(addr, "https", &resolved);
+  const size_t naddrs = err == GRPC_ERROR_NONE ? resolved->naddrs : 0;
+
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
@@ -145,7 +147,6 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
     goto error;
   }
 
-  const size_t naddrs = resolved->naddrs;
   errors = gpr_malloc(sizeof(*errors) * naddrs);
   for (i = 0; i < naddrs; i++) {
     errors[i] = grpc_tcp_server_add_port(

@@ -142,7 +142,7 @@ static gpr_slice build_response_payload_slice(
     // The following long long int cast is meant to work around the
     // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
     // have a version for int but does have one for long long int.
-    string token_data = "token" + std::to_string((long long int)ports[i]);
+    string token_data = "token" + grpc::to_string((long long int)ports[i]);
     token_data.resize(64, '-');
     server->set_load_balance_token(token_data);
   }

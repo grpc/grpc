@@ -78,7 +78,14 @@ void gpr_precise_clock_now(gpr_timespec *clk) {
   clk->tv_sec = (int64_t)secs;
   clk->tv_nsec = (int32_t)(1e9 * (secs - (double)clk->tv_sec));
 }
-
+#elif defined(__hpux)
+void gpr_precise_clock_init(void) {}
+void gpr_precise_clock_now(gpr_timespec *clk) {
+  double usec = (double)gethrtime();
+  clk->clock_type = GPR_CLOCK_PRECISE;
+  clk->tv_sec = (int64_t)(usec / 1e9);
+  clk->tv_nsec = (int32_t)(usec - (double)clk->tv_sec * 1e9);
+}
 #else  /* GRPC_TIMERS_RDTSC */
 void gpr_precise_clock_init(void) {}
 

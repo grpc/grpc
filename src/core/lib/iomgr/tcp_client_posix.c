@@ -121,7 +121,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
   int so_error = 0;
-  socklen_t so_error_size;
+  GRPC_SOCKLEN_T so_error_size;
   int err;
   int done;
   grpc_endpoint **ep = ac->ep;
@@ -265,8 +265,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   do {
-    GPR_ASSERT(addr_len < ~(socklen_t)0);
-    err = connect(fd, addr, (socklen_t)addr_len);
+    GPR_ASSERT(addr_len < ~(size_t)0);
+    err = connect(fd, addr, (GRPC_SOCKLEN_T)addr_len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);
