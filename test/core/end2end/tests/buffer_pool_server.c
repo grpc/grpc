@@ -257,6 +257,7 @@ void buffer_pool_server(grpc_end2end_test_config config) {
       grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
       grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
       grpc_call_destroy(client_calls[call_id]);
+      gpr_free(details[call_id]);
 
       pending_client_calls--;
     } else if (ev_tag < SERVER_RECV_BASE_TAG) {
@@ -287,6 +288,7 @@ void buffer_pool_server(grpc_end2end_test_config config) {
       pending_server_recv_calls++;
 
       grpc_call_details_destroy(&call_details[call_id]);
+      grpc_metadata_array_destroy(&request_metadata_recv[call_id]);
     } else if (ev_tag < SERVER_END_BASE_TAG) {
       /* finished read on the server */
       int call_id = ev_tag - SERVER_RECV_BASE_TAG;
@@ -345,6 +347,10 @@ void buffer_pool_server(grpc_end2end_test_config config) {
       NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client);
 
   GPR_ASSERT(cancelled_calls_on_client == cancelled_calls_on_server);
+
+  grpc_byte_buffer_destroy(request_payload);
+  gpr_slice_unref(request_payload_slice);
+  grpc_buffer_pool_unref(buffer_pool);
 
   end_test(&f);
   config.tear_down_data(&f);
