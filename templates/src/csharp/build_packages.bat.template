@@ -37,7 +37,7 @@
   
   @rem Current package versions
   set VERSION=${settings.csharp_version}
-  set PROTOBUF_VERSION=3.0.0
+  set PROTOBUF_VERSION=3.1.0
   
   @rem Adjust the location of nuget.exe
   set NUGET=C:\nuget\nuget.exe
