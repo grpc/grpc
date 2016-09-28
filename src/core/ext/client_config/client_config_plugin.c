@@ -43,10 +43,6 @@
 #include "src/core/ext/client_config/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
 
-#ifndef GRPC_DEFAULT_NAME_PREFIX
-#define GRPC_DEFAULT_NAME_PREFIX "dns:///"
-#endif
-
 static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_append_filter(
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
@@ -79,7 +75,7 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
 
 void grpc_client_config_init(void) {
   grpc_lb_policy_registry_init();
-  grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
+  grpc_resolver_registry_init();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, NULL);
