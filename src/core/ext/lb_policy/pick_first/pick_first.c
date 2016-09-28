@@ -472,6 +472,8 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     }
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    /* server_name will be copied as part of the subchannel creation. This makes
+     * the copying of args->server_name (a borrowed pointer) OK. */
     sc_args.server_name = args->server_name;
     sc_args.addr =
         (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
