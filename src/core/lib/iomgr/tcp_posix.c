@@ -544,7 +544,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_buffer_user_init(&tcp->buffer_user, buffer_pool);
+  grpc_buffer_user_init(&tcp->buffer_user, buffer_pool, peer_string);
   grpc_buffer_user_slice_allocator_init(
       &tcp->slice_allocator, &tcp->buffer_user, tcp_read_allocation_done, tcp);
   /* Tell network status tracker about new endpoint */

@@ -38,6 +38,8 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+extern int grpc_buffer_pool_trace;
+
 grpc_buffer_pool *grpc_buffer_pool_internal_ref(grpc_buffer_pool *buffer_pool);
 void grpc_buffer_pool_internal_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_buffer_pool *buffer_pool);
@@ -83,10 +85,12 @@ struct grpc_buffer_user {
   gpr_atm on_done_destroy_closure;
 
   grpc_buffer_user_link links[GRPC_BULIST_COUNT];
+
+  char *name;
 };
 
 void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
-                           grpc_buffer_pool *buffer_pool);
+                           grpc_buffer_pool *buffer_pool, const char *name);
 void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
                                grpc_buffer_user *buffer_user,
                                grpc_closure *on_done);

@@ -163,7 +163,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
-  s->buffer_pool = grpc_buffer_pool_create();
+  s->buffer_pool = grpc_buffer_pool_create(NULL);
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {

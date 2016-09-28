@@ -124,7 +124,8 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_init(&context);
 
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool =
+      grpc_buffer_pool_create("google_default_credentials");
   grpc_httpcli_get(
       &exec_ctx, &context, &detector.pollent, buffer_pool, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),

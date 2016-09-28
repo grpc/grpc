@@ -33,6 +33,8 @@
 
 #include "test/core/util/passthru_endpoint.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -141,7 +143,7 @@ static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   half *m = (half *)ep;
   grpc_buffer_user_shutdown(exec_ctx, &m->buffer_user,
-                           grpc_closure_create(me_really_destroy, m));
+                            grpc_closure_create(me_really_destroy, m));
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
@@ -168,12 +170,16 @@ static const grpc_endpoint_vtable vtable = {
 };
 
 static void half_init(half *m, passthru_endpoint *parent,
-                      grpc_buffer_pool *buffer_pool) {
+                      grpc_buffer_pool *buffer_pool, const char *half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
   gpr_slice_buffer_init(&m->read_buffer);
   m->on_read = NULL;
-  grpc_buffer_user_init(&m->buffer_user, buffer_pool);
+  char *name;
+  gpr_asprintf(&name, "passthru_endpoint_%s_%" PRIxPTR, half_name,
+               (intptr_t)parent);
+  grpc_buffer_user_init(&m->buffer_user, buffer_pool, name);
+  gpr_free(name);
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
@@ -182,8 +188,8 @@ void grpc_passthru_endpoint_create(grpc_endpoint **client,
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
-  half_init(&m->client, m, buffer_pool);
-  half_init(&m->server, m, buffer_pool);
+  half_init(&m->client, m, buffer_pool, "client");
+  half_init(&m->server, m, buffer_pool, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

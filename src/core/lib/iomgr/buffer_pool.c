@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/combiner.h"
@@ -62,6 +63,8 @@ struct grpc_buffer_pool {
   grpc_closure bpreclaimation_done_closure;
 
   grpc_buffer_user *roots[GRPC_BULIST_COUNT];
+
+  char *name;
 };
 
 /*******************************************************************************
@@ -175,8 +178,18 @@ static bool bpalloc(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool) {
     gpr_mu_lock(&buffer_user->mu);
     if (buffer_user->free_pool < 0 &&
         -buffer_user->free_pool <= buffer_pool->free_pool) {
-      buffer_pool->free_pool += buffer_user->free_pool;
+      int64_t amt = -buffer_user->free_pool;
       buffer_user->free_pool = 0;
+      buffer_pool->free_pool -= amt;
+      if (grpc_buffer_pool_trace) {
+        gpr_log(GPR_DEBUG, "BP %s %s: grant alloc %" PRId64
+                           " bytes; bp_free_pool -> %" PRId64,
+                buffer_pool->name, buffer_user->name, amt,
+                buffer_pool->free_pool);
+      }
+    } else if (grpc_buffer_pool_trace && buffer_user->free_pool >= 0) {
+      gpr_log(GPR_DEBUG, "BP %s %s: discard already satisfied alloc request",
+              buffer_pool->name, buffer_user->name);
     }
     if (buffer_user->free_pool >= 0) {
       buffer_user->allocating = false;
@@ -198,8 +211,15 @@ static bool bpscavenge(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool) {
               bulist_pop(buffer_pool, GRPC_BULIST_NON_EMPTY_FREE_POOL))) {
     gpr_mu_lock(&buffer_user->mu);
     if (buffer_user->free_pool > 0) {
-      buffer_pool->free_pool += buffer_user->free_pool;
+      int64_t amt = buffer_user->free_pool;
       buffer_user->free_pool = 0;
+      buffer_pool->free_pool += amt;
+      if (grpc_buffer_pool_trace) {
+        gpr_log(GPR_DEBUG, "BP %s %s: scavenge %" PRId64
+                           " bytes; bp_free_pool -> %" PRId64,
+                buffer_pool->name, buffer_user->name, amt,
+                buffer_pool->free_pool);
+      }
       gpr_mu_unlock(&buffer_user->mu);
       return true;
     } else {
@@ -217,6 +237,10 @@ static bool bpreclaim(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *buffer_pool,
                                  : GRPC_BULIST_RECLAIMER_BENIGN;
   grpc_buffer_user *buffer_user = bulist_pop(buffer_pool, list);
   if (buffer_user == NULL) return false;
+  if (grpc_buffer_pool_trace) {
+    gpr_log(GPR_DEBUG, "BP %s %s: initiate %s reclaimation", buffer_pool->name,
+            buffer_user->name, destructive ? "destructive" : "benign");
+  }
   buffer_pool->reclaiming = true;
   grpc_closure *c = buffer_user->reclaimers[destructive];
   buffer_user->reclaimers[destructive] = NULL;
@@ -384,7 +408,7 @@ static void bp_reclaimation_done(grpc_exec_ctx *exec_ctx, void *bp,
  * grpc_buffer_pool api
  */
 
-grpc_buffer_pool *grpc_buffer_pool_create(void) {
+grpc_buffer_pool *grpc_buffer_pool_create(const char *name) {
   grpc_buffer_pool *buffer_pool = gpr_malloc(sizeof(*buffer_pool));
   gpr_ref_init(&buffer_pool->refs, 1);
   buffer_pool->combiner = grpc_combiner_create(NULL);
@@ -392,6 +416,12 @@ grpc_buffer_pool *grpc_buffer_pool_create(void) {
   buffer_pool->size = INT64_MAX;
   buffer_pool->step_scheduled = false;
   buffer_pool->reclaiming = false;
+  if (name != NULL) {
+    buffer_pool->name = gpr_strdup(name);
+  } else {
+    gpr_asprintf(&buffer_pool->name, "anonymous_pool_%" PRIxPTR,
+                 (intptr_t)buffer_pool);
+  }
   grpc_closure_init(&buffer_pool->bpstep_closure, bpstep, buffer_pool);
   grpc_closure_init(&buffer_pool->bpreclaimation_done_closure,
                     bp_reclaimation_done, buffer_pool);
@@ -451,7 +481,7 @@ grpc_buffer_pool *grpc_buffer_pool_from_channel_args(
       }
     }
   }
-  return grpc_buffer_pool_create();
+  return grpc_buffer_pool_create(NULL);
 }
 
 static void *bp_copy(void *bp) {
@@ -473,7 +503,7 @@ const grpc_arg_pointer_vtable *grpc_buffer_pool_arg_vtable(void) {
  */
 
 void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
-                           grpc_buffer_pool *buffer_pool) {
+                           grpc_buffer_pool *buffer_pool, const char *name) {
   buffer_user->buffer_pool = grpc_buffer_pool_internal_ref(buffer_pool);
   grpc_closure_init(&buffer_user->allocate_closure, &bu_allocate, buffer_user);
   grpc_closure_init(&buffer_user->add_to_free_pool_closure,
@@ -498,6 +528,12 @@ void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
 #ifndef NDEBUG
   buffer_user->asan_canary = gpr_malloc(1);
 #endif
+  if (name != NULL) {
+    buffer_user->name = gpr_strdup(name);
+  } else {
+    gpr_asprintf(&buffer_user->name, "anonymous_buffer_user_%" PRIxPTR,
+                 (intptr_t)buffer_user);
+  }
 }
 
 void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
@@ -533,6 +569,10 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
       &buffer_user->on_done_destroy_closure);
   if (on_done_destroy != NULL) {
     /* already shutdown */
+    if (grpc_buffer_pool_trace) {
+      gpr_log(GPR_DEBUG, "BP %s %s: alloc %" PRIdPTR " after shutdown",
+              buffer_user->buffer_pool->name, buffer_user->name, size);
+    }
     grpc_exec_ctx_sched(
         exec_ctx, optional_on_done,
         GRPC_ERROR_CREATE("Buffer pool user is already shutdown"), NULL);
@@ -541,6 +581,12 @@ void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
   }
   buffer_user->allocated += (int64_t)size;
   buffer_user->free_pool -= (int64_t)size;
+  if (grpc_buffer_pool_trace) {
+    gpr_log(GPR_DEBUG, "BP %s %s: alloc %" PRIdPTR "; allocated -> %" PRId64
+                       ", free_pool -> %" PRId64,
+            buffer_user->buffer_pool->name, buffer_user->name, size,
+            buffer_user->allocated, buffer_user->free_pool);
+  }
   if (buffer_user->free_pool < 0) {
     grpc_closure_list_append(&buffer_user->on_allocated, optional_on_done,
                              GRPC_ERROR_NONE);
@@ -563,6 +609,12 @@ void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
   bool was_zero_or_negative = buffer_user->free_pool <= 0;
   buffer_user->free_pool += (int64_t)size;
   buffer_user->allocated -= (int64_t)size;
+  if (grpc_buffer_pool_trace) {
+    gpr_log(GPR_DEBUG, "BP %s %s: free %" PRIdPTR "; allocated -> %" PRId64
+                       ", free_pool -> %" PRId64,
+            buffer_user->buffer_pool->name, buffer_user->name, size,
+            buffer_user->allocated, buffer_user->free_pool);
+  }
   bool is_bigger_than_zero = buffer_user->free_pool > 0;
   if (is_bigger_than_zero && was_zero_or_negative &&
       !buffer_user->added_to_free_pool) {
@@ -597,6 +649,10 @@ void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
 
 void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
                                           grpc_buffer_user *buffer_user) {
+  if (grpc_buffer_pool_trace) {
+    gpr_log(GPR_DEBUG, "BP %s %s: reclaimation complete",
+            buffer_user->buffer_pool->name, buffer_user->name);
+  }
   grpc_combiner_execute(exec_ctx, buffer_user->buffer_pool->combiner,
                         &buffer_user->buffer_pool->bpreclaimation_done_closure,
                         GRPC_ERROR_NONE, false);

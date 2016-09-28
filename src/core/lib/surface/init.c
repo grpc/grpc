@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/message_size_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/buffer_pool.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -184,6 +185,7 @@ void grpc_init(void) {
     // Default timeout trace to 1
     grpc_cq_event_timeout_trace = 1;
     grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
+    grpc_register_tracer("buffer_pool", &grpc_buffer_pool_trace);
 #ifndef NDEBUG
     grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
 #endif

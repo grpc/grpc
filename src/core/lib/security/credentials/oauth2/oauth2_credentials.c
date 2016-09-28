@@ -310,7 +310,7 @@ static void compute_engine_fetch_oauth2(
   /* TODO(ctiller): Carry the buffer_pool in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("oauth2_credentials");
   grpc_httpcli_get(exec_ctx, httpcli_context, pollent, buffer_pool, &request,
                    deadline, grpc_closure_create(response_cb, metadata_req),
                    &metadata_req->response);
@@ -365,7 +365,8 @@ static void refresh_token_fetch_oauth2(
   /* TODO(ctiller): Carry the buffer_pool in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool =
+      grpc_buffer_pool_create("oauth2_credentials_refresh");
   grpc_httpcli_post(exec_ctx, httpcli_context, pollent, buffer_pool, &request,
                     body, strlen(body), deadline,
                     grpc_closure_create(response_cb, metadata_req),

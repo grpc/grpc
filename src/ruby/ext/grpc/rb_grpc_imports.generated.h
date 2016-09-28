@@ -347,7 +347,7 @@ extern grpc_is_binary_header_type grpc_is_binary_header_import;
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
-typedef grpc_buffer_pool *(*grpc_buffer_pool_create_type)(void);
+typedef grpc_buffer_pool *(*grpc_buffer_pool_create_type)(const char *trace_name);
 extern grpc_buffer_pool_create_type grpc_buffer_pool_create_import;
 #define grpc_buffer_pool_create grpc_buffer_pool_create_import
 typedef void(*grpc_buffer_pool_ref_type)(grpc_buffer_pool *buffer_pool);

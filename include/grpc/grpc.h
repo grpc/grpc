@@ -402,7 +402,7 @@ GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
 
 /** Create a buffer pool */
-GRPCAPI grpc_buffer_pool *grpc_buffer_pool_create(void);
+GRPCAPI grpc_buffer_pool *grpc_buffer_pool_create(const char *trace_name);
 
 /** Add a reference to a buffer pool */
 GRPCAPI void grpc_buffer_pool_ref(grpc_buffer_pool *buffer_pool);

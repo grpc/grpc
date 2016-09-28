@@ -49,6 +49,8 @@
 
 #include "src/core/lib/http/httpcli.h"
 
+int grpc_buffer_pool_trace = 0;
+
 typedef struct freereq {
   gpr_mu *mu;
   grpc_polling_entity pops;
@@ -99,7 +101,8 @@ void grpc_free_port_using_server(char *server, int port) {
   req.http.path = path;
 
   grpc_httpcli_context_init(&context);
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool =
+      grpc_buffer_pool_create("port_server_client/free");
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, buffer_pool, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                    grpc_closure_create(freed_port_from_server, &pr), &rsp);
@@ -169,7 +172,8 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
     req.http.path = "/get";
     grpc_http_response_destroy(&pr->response);
     memset(&pr->response, 0, sizeof(pr->response));
-    grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+    grpc_buffer_pool *buffer_pool =
+        grpc_buffer_pool_create("port_server_client/pick_retry");
     grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pops, buffer_pool, &req,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                      grpc_closure_create(got_port_from_server, pr),
@@ -215,7 +219,8 @@ int grpc_pick_port_using_server(char *server) {
   req.http.path = "/get";
 
   grpc_httpcli_context_init(&context);
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create();
+  grpc_buffer_pool *buffer_pool =
+      grpc_buffer_pool_create("port_server_client/pick");
   grpc_httpcli_get(&exec_ctx, &context, &pr.pops, buffer_pool, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10),
                    grpc_closure_create(got_port_from_server, &pr),

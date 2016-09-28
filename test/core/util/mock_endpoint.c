@@ -33,6 +33,8 @@
 
 #include "test/core/util/mock_endpoint.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -88,7 +90,8 @@ static void unref(grpc_exec_ctx *exec_ctx, grpc_mock_endpoint *m) {
   }
 }
 
-static void me_finish_shutdown(grpc_exec_ctx *exec_ctx, void *me, grpc_error *error) {
+static void me_finish_shutdown(grpc_exec_ctx *exec_ctx, void *me,
+                               grpc_error *error) {
   grpc_mock_endpoint *m = me;
   unref(exec_ctx, m);
 }
@@ -108,7 +111,7 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
-  unref(exec_ctx,m);
+  unref(exec_ctx, m);
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
@@ -139,7 +142,10 @@ grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
   grpc_mock_endpoint *m = gpr_malloc(sizeof(*m));
   m->base.vtable = &vtable;
   m->refs = 2;
-  grpc_buffer_user_init(&m->buffer_user, buffer_pool);
+  char *name;
+  gpr_asprintf(&name, "mock_endpoint_%" PRIxPTR, (intptr_t)m);
+  grpc_buffer_user_init(&m->buffer_user, buffer_pool, name);
+  gpr_free(name);
   gpr_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;
