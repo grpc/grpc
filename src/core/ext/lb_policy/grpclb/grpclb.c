@@ -915,6 +915,9 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error);
 
 static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
+  GPR_ASSERT(glb_policy->server_name != NULL);
+  GPR_ASSERT(glb_policy->server_name[0] != '\0');
+
   lb_client_data *lb_client = gpr_malloc(sizeof(lb_client_data));
   memset(lb_client, 0, sizeof(lb_client_data));
 
@@ -937,14 +940,14 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   lb_client->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,
-      "/grpc.lb.v1.LoadBalancer/BalanceLoad", NULL, lb_client->deadline, NULL);
+      "/grpc.lb.v1.LoadBalancer/BalanceLoad", glb_policy->server_name,
+      lb_client->deadline, NULL);
 
   grpc_metadata_array_init(&lb_client->initial_metadata_recv);
   grpc_metadata_array_init(&lb_client->trailing_metadata_recv);
 
-  grpc_grpclb_request *request = grpc_grpclb_request_create(
-      "load.balanced.service.name"); /* FIXME(dgq): get the name of the load
-                                        balanced service from the resolver */
+  grpc_grpclb_request *request =
+      grpc_grpclb_request_create(glb_policy->server_name);
   gpr_slice request_payload_slice = grpc_grpclb_request_encode(request);
   lb_client->request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
