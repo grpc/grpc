@@ -61,7 +61,7 @@ uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
   /* body */
   for (i = -(int)nblocks; i; i++) {
     memcpy(&k1, blocks + i, sizeof(uint32_t));
-
+    k1 = GRPC_LE_WORD(k1);
     k1 *= c1;
     k1 = ROTL32(k1, 15);
     k1 *= c2;

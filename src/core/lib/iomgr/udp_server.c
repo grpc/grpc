@@ -210,7 +210,7 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
 static int prepare_socket(int fd, const struct sockaddr *addr,
                           size_t addr_len) {
   struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  GRPC_SOCKLEN_T sockname_len;
   /* Set send/receive socket buffers to 1 MB */
   int buffer_size_bytes = 1024 * 1024;
 
@@ -237,8 +237,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     }
   }
 
-  GPR_ASSERT(addr_len < ~(socklen_t)0);
-  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
+  GPR_ASSERT(addr_len < ~(size_t)0);
+  if (bind(fd, addr, (GRPC_SOCKLEN_T)addr_len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
@@ -345,7 +345,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
   struct sockaddr_in addr4_copy;
   struct sockaddr *allocated_addr = NULL;
   struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  GRPC_SOCKLEN_T sockname_len;
   int port;
 
   /* Check if this is a wildcard port, and if so, try to keep the port the same

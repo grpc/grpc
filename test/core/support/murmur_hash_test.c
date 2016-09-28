@@ -59,6 +59,7 @@ static void verification_test(hash_func hash, uint32_t expected) {
   for (i = 0; i < 256; i++) {
     key[i] = (uint8_t)i;
     hashes[i] = hash(key, i, (uint32_t)(256u - i));
+    hashes[i] = GRPC_LE_WORD(hashes[i]);
   }
 
   /* Then hash the result array */

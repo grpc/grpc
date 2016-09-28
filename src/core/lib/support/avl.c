@@ -247,8 +247,9 @@ static gpr_avl_node *in_order_tail(gpr_avl_node *node) {
   return node;
 }
 
-static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
+static gpr_avl_node *grpc_remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
                             void *key) {
+#define remove grpc_remove
   long cmp;
   if (node == NULL) {
     return NULL;

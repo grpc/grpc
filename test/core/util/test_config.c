@@ -274,6 +274,10 @@ static void install_crash_handler() {}
 
 void grpc_test_init(int argc, char **argv) {
   install_crash_handler();
+#ifdef __hpux
+  /* no SO_NOSIGPIPE */
+  GPR_ASSERT(signal(SIGPIPE, SIG_IGN) != SIG_ERR);
+#endif
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
           (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,
           (double)GRPC_TEST_SLOWDOWN_BUILD_FACTOR,

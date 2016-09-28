@@ -204,10 +204,16 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
   msg.msg_iov = iov;
+#ifndef __hpux
   msg.msg_iovlen = tcp->iov_size;
   msg.msg_control = NULL;
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
+#else
+  msg.msg_iovlen = (int)tcp->iov_size;
+  msg.msg_accrights    = 0;
+  msg.msg_accrightslen = 0;
+#endif
 
   GPR_TIMER_BEGIN("recvmsg", 1);
   do {
@@ -284,7 +290,13 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 /* returns true if done, false if pending; if returning true, *error is set */
+
+#ifdef __hpux
+#define MAX_WRITE_IOVEC 5
+#else
 #define MAX_WRITE_IOVEC 1000
+#endif
+
 static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
@@ -319,10 +331,16 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
     msg.msg_iov = iov;
+#ifndef __hpux
     msg.msg_iovlen = iov_size;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
+#else
+    msg.msg_iovlen = (int)iov_size;
+    msg.msg_accrights    = 0;
+    msg.msg_accrightslen = 0;
+#endif
 
     GPR_TIMER_BEGIN("sendmsg", 1);
     do {

@@ -40,7 +40,7 @@
 #include "src/core/lib/iomgr/error.h"
 
 /* a wrapper for accept or accept4 */
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
+int grpc_accept4(int sockfd, struct sockaddr *addr, GRPC_SOCKLEN_T *addrlen,
                  int nonblock, int cloexec);
 
 /* set a socket to non blocking mode */

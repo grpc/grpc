@@ -38,7 +38,9 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-
+#if defined (__hpux)
+#include <sys/pstat.h>
+#endif
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -47,11 +49,20 @@ static __thread char magic_thread_local;
 static long ncpus = 0;
 
 static void init_ncpus() {
+#if defined (__hpux)
+  struct pst_dynamic psd;
+  if (pstat_getdynamic (&psd, sizeof (psd), (size_t) 1, 0) != -1)
+    ncpus = psd.psd_max_proc_cnt;
+  else
+    ncpus = 1;
+  fprintf(stderr, "ncpu=%d\n", (int)ncpus);
+#else
   ncpus = sysconf(_SC_NPROCESSORS_ONLN);
   if (ncpus < 1 || ncpus > INT32_MAX) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
     ncpus = 1;
   }
+#endif
 }
 
 unsigned gpr_cpu_num_cores(void) {
