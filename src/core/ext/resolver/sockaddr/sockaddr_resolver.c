@@ -222,7 +222,7 @@ static grpc_resolver *sockaddr_create(
     if (errors_found) break;
   }
 
-  r->target_name = gpr_dump_slice(path_slice, GPR_DUMP_ASCII);
+  r->target_name = gpr_strdup(args->uri->path);
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
