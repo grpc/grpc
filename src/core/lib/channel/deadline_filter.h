@@ -66,7 +66,7 @@ typedef struct grpc_deadline_state {
 // after the function returns.
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_element_args* args,
-                              grpc_method_config_table* method_config_table);
+                              grpc_method_config* method_config);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
 void grpc_deadline_state_client_start_transport_stream_op(

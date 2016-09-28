@@ -124,7 +124,7 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_element_args* args,
-                              grpc_method_config_table* method_config_table) {
+                              grpc_method_config* method_config) {
   grpc_deadline_state* deadline_state = elem->call_data;
   memset(deadline_state, 0, sizeof(*deadline_state));
   deadline_state->call_stack = args->call_stack;
@@ -133,16 +133,11 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   // set on clients with a finite deadline.
   gpr_timespec deadline =
       gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
-  if (method_config_table != NULL) {
-    grpc_method_config* method_config =
-        grpc_method_config_table_get_method_config(method_config_table,
-                                                   args->path);
-    if (method_config != NULL) {
-      gpr_timespec* per_method_deadline =
-          grpc_method_config_get_timeout(method_config);
-      if (per_method_deadline != NULL) {
-        deadline = gpr_time_min(deadline, *per_method_deadline);
-      }
+  if (method_config != NULL) {
+    gpr_timespec* per_method_deadline =
+        grpc_method_config_get_timeout(method_config);
+    if (per_method_deadline != NULL) {
+      deadline = gpr_time_min(deadline, *per_method_deadline);
     }
   }
   if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) != 0) {
@@ -222,8 +217,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element_args* args) {
   // Note: size of call data is different between client and server.
   memset(elem->call_data, 0, elem->filter->sizeof_call_data);
-  grpc_deadline_state_init(exec_ctx, elem, args,
-                           NULL /* method_config_table */);
+  grpc_deadline_state_init(exec_ctx, elem, args, NULL /* method_config */);
   return GRPC_ERROR_NONE;
 }
 
