@@ -48,7 +48,7 @@
                          handler:(void(^)())handler;
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
-                     http2Method:(NSString *)http2Method
+                           flags:(uint32_t)flags
                          handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end

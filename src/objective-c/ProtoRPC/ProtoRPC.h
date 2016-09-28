@@ -48,7 +48,7 @@ __attribute__((deprecated("Please use GRPCProtoCall.")))
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable
-                 http2Method:(NSString *)http2Method NS_DESIGNATED_INITIALIZER;
+                       flags:(uint32_t)flags NS_DESIGNATED_INITIALIZER;
 
 - (void)start;
 @end

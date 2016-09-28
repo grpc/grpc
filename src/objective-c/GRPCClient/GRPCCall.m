@@ -75,7 +75,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
   NSString *_host;
   NSString *_path;
-  NSString *_http2Method;
+  uint32_t _flags;
   GRPCWrappedCall *_wrappedCall;
   GRPCConnectivityMonitor *_connectivityMonitor;
 
@@ -110,20 +110,20 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil path:nil requestsWriter:nil http2Method:nil];
+  return [self initWithHost:nil path:nil requestsWriter:nil flags:0];
 }
 
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestWriter{
-  return [self initWithHost:host path:path requestsWriter:requestWriter http2Method:@"POST"];
+  return [self initWithHost:host path:path requestsWriter:requestWriter flags:0];
 }
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestWriter
-                 http2Method:(NSString *)http2Method {
+                       flags:(uint32_t)flags {
   if (!host || !path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
@@ -134,7 +134,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
-    _http2Method = http2Method;
+    _flags = flags;
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("io.grpc.call", NULL);
@@ -240,7 +240,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 - (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
-                                                                            http2Method:_http2Method
+                                                                                  flags:_flags
                                                                                 handler:nil]]];
 }
 

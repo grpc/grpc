@@ -66,7 +66,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestsWriter
-                 http2Method:(NSString *)http2Method {
+                       flags:(uint32_t)flags {
   [NSException raise:NSInvalidArgumentException
               format:@"Please use ProtoRPC's designated initializer instead."];
   return nil;
@@ -79,7 +79,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable
-                 http2Method:(NSString *)http2Method {
+                       flags:(uint32_t)flags {
   // Because we can't tell the type system to constrain the class, we need to check at runtime:
   if (![responseClass respondsToSelector:@selector(parseFromData:error:)]) {
     [NSException raise:NSInvalidArgumentException
@@ -94,7 +94,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     return [proto data];
   }];
   if ((self = [super initWithHost:host path:method.HTTPPath requestsWriter:bytesWriter
-                      http2Method:http2Method])) {
+                            flags:flags])) {
     __weak ProtoRPC *weakSelf = self;
 
     // A writeable that parses the proto messages received.
