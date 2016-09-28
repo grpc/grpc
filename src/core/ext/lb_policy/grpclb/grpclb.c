@@ -926,10 +926,8 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   grpc_closure_init(&lb_client->close_sent, close_sent_cb, lb_client);
   grpc_closure_init(&lb_client->srv_status_rcvd, srv_status_rcvd_cb, lb_client);
 
-  /* TODO(dgq): get the deadline from the client config instead of fabricating
-   * one here. */
-  lb_client->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                     gpr_time_from_seconds(3, GPR_TIMESPAN));
+  /* TODO(dgq): get the deadline from the parent channel. */
+  lb_client->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
 
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling

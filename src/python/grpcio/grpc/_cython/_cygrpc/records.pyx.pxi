@@ -39,7 +39,8 @@ class ConnectivityState:
 class ChannelArgKey:
   enable_census = GRPC_ARG_ENABLE_CENSUS
   max_concurrent_streams = GRPC_ARG_MAX_CONCURRENT_STREAMS
-  max_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  max_receive_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  max_send_message_length = GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
   http2_initial_sequence_number = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
   default_authority = GRPC_ARG_DEFAULT_AUTHORITY
   primary_user_agent_string = GRPC_ARG_PRIMARY_USER_AGENT_STRING
