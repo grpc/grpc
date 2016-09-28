@@ -37,6 +37,7 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc++/buffer_pool.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
@@ -93,6 +94,11 @@ class AsyncQpsServerTest : public Server {
 
     for (int i = 0; i < num_threads; i++) {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
+    }
+
+    if (config.buffer_pool_size() > 0) {
+      builder.SetBufferPool(
+          BufferPool("AsyncQpsServerTest").Resize(config.buffer_pool_size()));
     }
 
     server_ = builder.BuildAndStart();

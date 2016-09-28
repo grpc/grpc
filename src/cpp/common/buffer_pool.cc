@@ -43,8 +43,9 @@ BufferPool::BufferPool(const grpc::string& name)
 
 BufferPool::~BufferPool() { grpc_buffer_pool_unref(impl_); }
 
-void BufferPool::Resize(size_t new_size) {
+BufferPool& BufferPool::Resize(size_t new_size) {
   grpc_buffer_pool_resize(impl_, new_size);
+  return *this;
 }
 
 }  // namespace grpc

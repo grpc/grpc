@@ -54,7 +54,7 @@ class BufferPool GRPC_FINAL {
   /// current size of the pool, memory usage will be monotonically decreased
   /// until it falls under new_size. No time bound is given for this to occur
   /// however.
-  void Resize(size_t new_size);
+  BufferPool& Resize(size_t new_size);
 
   grpc_buffer_pool* c_buffer_pool() const { return impl_; }
 

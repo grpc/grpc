@@ -114,7 +114,8 @@ def _ping_pong_scenario(name, rpc_type,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
-                        outstanding=None):
+                        outstanding=None,
+                        buffer_pool_size=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -141,6 +142,8 @@ def _ping_pong_scenario(name, rpc_type,
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
   }
+  if buffer_pool_size:
+    scenario['server_config']['buffer_pool_size'] = buffer_pool_size
   if use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
@@ -237,6 +240,16 @@ class CXXLanguage:
               unconstrained_client=synchronicity,
               secure=secure,
               categories=smoketest_categories+[SCALABLE])
+
+          yield _ping_pong_scenario(
+              'cpp_protobuf_%s_%s_qps_unconstrained_%s_500kib_buffer_pool' % (synchronicity, rpc_type, secstr),
+              rpc_type=rpc_type.upper(),
+              client_type='%s_CLIENT' % synchronicity.upper(),
+              server_type='%s_SERVER' % synchronicity.upper(),
+              unconstrained_client=synchronicity,
+              secure=secure,
+              categories=smoketest_categories+[SCALABLE],
+              buffer_pool_size=500*1024)
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
             for outstanding in geometric_progression(1, 200000, math.sqrt(10)):

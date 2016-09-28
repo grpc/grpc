@@ -36,6 +36,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 
 #include <grpc++/channel.h>
@@ -127,6 +128,16 @@ class HistogramEntry GRPC_FINAL {
   double value_;
 };
 
+typedef std::unordered_map<int, int64_t> StatusHistogram;
+
+inline void MergeStatusHistogram(const StatusHistogram& from,
+                                 StatusHistogram* to) {
+  for (StatusHistogram::const_iterator it = from.begin(); it != from.end();
+       ++it) {
+    (*to)[it->first] += it->second;
+  }
+}
+
 class Client {
  public:
   Client()
@@ -139,6 +150,7 @@ class Client {
 
   ClientStats Mark(bool reset) {
     Histogram latencies;
+    StatusHistogram statuses;
     UsageTimer::Result timer_result;
 
     MaybeStartRequests();
@@ -146,27 +158,36 @@ class Client {
     // avoid std::vector for old compilers that expect a copy constructor
     if (reset) {
       Histogram* to_merge = new Histogram[threads_.size()];
+      StatusHistogram* to_merge_status = new StatusHistogram[threads_.size()];
+
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->BeginSwap(&to_merge[i]);
+        threads_[i]->BeginSwap(&to_merge[i], &to_merge_status[i]);
       }
       std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer_.swap(timer);
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->EndSwap();
         latencies.Merge(to_merge[i]);
+        MergeStatusHistogram(to_merge_status[i], &statuses);
       }
       delete[] to_merge;
+      delete[] to_merge_status;
       timer_result = timer->Mark();
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->MergeStatsInto(&latencies);
+        threads_[i]->MergeStatsInto(&latencies, &statuses);
       }
       timer_result = timer_->Mark();
     }
 
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
+    for (StatusHistogram::const_iterator it = statuses.begin();
+         it != statuses.end(); ++it) {
+      RequestResultCount* rrc = stats.add_request_results();
+      rrc->set_status_code(it->first);
+      rrc->set_count(it->second);
+    }
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
@@ -258,16 +279,16 @@ class Client {
 
     ~Thread() { impl_.join(); }
 
-    void BeginSwap(Histogram* n) {
+    void BeginSwap(Histogram* n, StatusHistogram* s) {
       std::lock_guard<std::mutex> g(mu_);
       n->Swap(&histogram_);
+      s->swap(statuses_);
     }
 
-    void EndSwap() {}
-
-    void MergeStatsInto(Histogram* hist) {
+    void MergeStatsInto(Histogram* hist, StatusHistogram* s) {
       std::unique_lock<std::mutex> g(mu_);
       hist->Merge(histogram_);
+      MergeStatusHistogram(statuses_, s);
     }
 
    private:
@@ -304,6 +325,7 @@ class Client {
 
     std::mutex mu_;
     Histogram histogram_;
+    StatusHistogram statuses_;
     Client* client_;
     const size_t idx_;
     std::thread impl_;
