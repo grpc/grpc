@@ -36,8 +36,11 @@
 
 #include "src/core/ext/client_config/resolver_factory.h"
 
-void grpc_resolver_registry_init(const char *default_prefix);
+void grpc_resolver_registry_init();
 void grpc_resolver_registry_shutdown(void);
+
+/** Set the default URI prefix to \a default_prefix. */
+void grpc_resolver_registry_set_default_prefix(const char *default_prefix);
 
 /** Register a resolver type.
     URI's of \a scheme will be resolved with the given resolver.
