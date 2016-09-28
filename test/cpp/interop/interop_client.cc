@@ -848,10 +848,11 @@ bool InteropClient::DoStatusWithMessage() {
 bool InteropClient::DoCacheableUnary() {
   gpr_log(GPR_DEBUG, "Sending RPC with cacheable response");
 
+  // Create request with current timestamp
+  gpr_timespec ts = gpr_now(GPR_CLOCK_REALTIME);
+  std::string timestamp = std::to_string(ts.tv_nsec);
   SimpleRequest request;
-  request.set_response_size(16);
-  grpc::string payload(16, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), 16);
+  request.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
 
   // Request 1
   ClientContext context1;
@@ -878,7 +879,7 @@ bool InteropClient::DoCacheableUnary() {
   if (!AssertStatusOk(s2)) {
     return false;
   }
-  gpr_log(GPR_DEBUG, "response 1 payload: %s",
+  gpr_log(GPR_DEBUG, "response 2 payload: %s",
           response2.payload().body().c_str());
 
   // Check that the body is same for both requests. It will be the same if the

@@ -65,21 +65,21 @@ ensure that the proto serialized to zero bytes.*
 This test verifies that gRPC requests marked as cacheable use GET verb instead
 of POST, and that server sets appropriate cache control headers for the response
 to be cached by a proxy. This interop test requires that the server is behind
-a caching proxy. It is NOT expected to pass if client is accessing the server
-directly.
+a caching proxy. Use of current timestamp in the request prevents accidental
+cache matches left over from previous tests.
 
 Server features:
 * [CacheableUnaryCall][]
 
 Procedure:
- 1. Client calls CacheableUnaryCall twice, and compares the two responses.
- The server generates a unique response (timestamp) for each request.
- If the second response was delivered from cache, then both responses will
- be the same.
+ 1. Client calls CacheableUnaryCall with `SimpleRequest` request with payload
+    set to current timestamp.
+ 2. Client calls CacheableUnaryCall with `SimpleRequest` request again
+    immediately with the same payload as the previous request.
 
 Client asserts:
-* call was successful
-* responses are the same.
+* Both calls were successful
+* The payload body of both responses is the same.
 
 ### large_unary
 
@@ -961,6 +961,17 @@ Server implements UnaryCall which immediately returns a SimpleResponse with a
 payload body of size `SimpleRequest.response_size` bytes and type as appropriate
 for the `SimpleRequest.response_type`. If the server does not support the
 `response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
+
+### CacheableUnaryCall
+
+Server gets the default Empty proto as the request. It returns the
+SimpleResponse proto with the payload set to current timestamp string.
+In addition it adds
+  1. cache control headers such that the response can be cached by proxies in
+     the response path. Server should be behind a caching proxy for this test
+     to pass.
+  2. adds a `x-user-ip` header with `1.2.3.4` to the response. This is done
+     since some proxys such as GFE will not cache requests from localhost.
 
 ### CompressedResponse
 [CompressedResponse]: #compressedresponse

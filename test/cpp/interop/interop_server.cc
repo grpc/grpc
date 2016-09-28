@@ -159,7 +159,7 @@ class TestServiceImpl : public TestService::Service {
     gpr_timespec ts = gpr_now(GPR_CLOCK_REALTIME);
     std::string timestamp = std::to_string(ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
-    context->AddInitialMetadata("Cache-Control", "max-age=100000, public");
+    context->AddInitialMetadata("cache-control", "max-age=100000, public");
     return Status::OK;
   }
 
