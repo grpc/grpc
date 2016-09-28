@@ -110,10 +110,10 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
   if ((state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
        state == GRPC_CHANNEL_SHUTDOWN) &&
       chand->lb_policy != NULL) {
-    /* cancel fail-fast picks */
+    /* cancel picks with wait_for_ready=false */
     grpc_lb_policy_cancel_picks(
         exec_ctx, chand->lb_policy,
-        /* mask= */ GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY,
+        /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
         /* check= */ 0);
   }
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,

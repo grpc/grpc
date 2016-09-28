@@ -229,10 +229,11 @@ class ClientContext {
   /// EXPERIMENTAL: Trigger wait-for-ready or not on this request
   void set_wait_for_ready(bool wait_for_ready) {
     wait_for_ready_ = wait_for_ready;
+    wait_for_ready_explicitly_set_ = true;
   }
 
   /// DEPRECATED: Use set_wait_for_ready() instead.
-  void set_fail_fast(bool fail_fast) { wait_for_ready_ = !fail_fast; }
+  void set_fail_fast(bool fail_fast) { set_wait_for_ready(!fail_fast); }
 
 #ifndef GRPC_CXX0X_NO_CHRONO
   /// Return the deadline for the client call.
@@ -352,7 +353,7 @@ class ClientContext {
 
   uint32_t initial_metadata_flags() const {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
-           (wait_for_ready_ ? GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY : 0) |
+           (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
            (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0);
   }
 
@@ -360,6 +361,7 @@ class ClientContext {
 
   bool initial_metadata_received_;
   bool wait_for_ready_;
+  bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
   std::shared_ptr<Channel> channel_;

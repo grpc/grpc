@@ -254,15 +254,22 @@ typedef enum grpc_call_error {
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
-#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
+/** DEPRECATED: for backward compatibility */
+#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY \
+    GRPC_INITIAL_METADATA_WAIT_FOR_READY
 /** Signal that the call is cacheable. GRPC is free to use GET verb */
 #define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+/** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
+    by the calling application. */
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
 
 /** Mask of all valid flags */
 #define GRPC_INITIAL_METADATA_USED_MASK        \
   (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY | \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST | \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
