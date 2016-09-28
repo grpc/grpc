@@ -354,7 +354,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
-        max_backoff_ms = grpc_channel_arg_get_integer(
+        initial_backoff_ms = grpc_channel_arg_get_integer(
             &c->args->args[i],
             (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
       }
