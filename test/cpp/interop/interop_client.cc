@@ -944,14 +944,14 @@ bool InteropClient::DoUnimplementedMethod() {
   Empty response = Empty::default_instance();
   ClientContext context;
 
-  gpr_log(GPR_DEBUG, "here");
-
-  Status s = serviceStub_.Get()->UnimplementedCall(
+  Status s = serviceStub_.Get()->UnimplementedMethod(
     &context, request, &response);
 
   if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
     return false;
   }
+
+  GPR_ASSERT(s.error_message().empty());
 
   gpr_log(GPR_DEBUG, "unimplemented rpc done.");
   return true;
