@@ -47,7 +47,7 @@
       <HintPath>..\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf">
-      <HintPath>..\packages\Google.Protobuf.3.0.0\lib\net45\Google.Protobuf.dll</HintPath>
+      <HintPath>..\packages\Google.Protobuf.3.1.0\lib\net45\Google.Protobuf.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

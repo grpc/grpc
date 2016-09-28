@@ -35,7 +35,7 @@
 
 @rem Current package versions
 set VERSION=1.0.1-pre1
-set PROTOBUF_VERSION=3.0.0
+set PROTOBUF_VERSION=3.1.0
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
