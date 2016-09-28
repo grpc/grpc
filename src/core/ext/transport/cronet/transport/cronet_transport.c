@@ -566,10 +566,10 @@ static void convert_metadata_to_cronet_headers(
     }
     if (mdelem->key == GRPC_MDSTR_METHOD) {
       if (mdelem->value == GRPC_MDSTR_PUT) {
-        *method = grpc_static_metadata_strings[74];
+        *method = (const char*)mdelem->value->slice.data.refcounted.bytes;
       } else {
         /* POST method in default*/
-        *method = grpc_static_metadata_strings[71];
+        *method = (const char*)(GRPC_MDSTR_POST->slice.data.refcounted.bytes);
       }
       continue;
     }
