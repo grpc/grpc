@@ -67,13 +67,17 @@ of POST, and that server sets appropriate cache control headers for the response
 to be cached by a proxy. This interop test requires that the server is behind
 a caching proxy. Use of current timestamp in the request prevents accidental
 cache matches left over from previous tests.
+Note that client adds a `x-user-ip` header with value `1.2.3.4` to the request.
+This is done since some proxys such as GFE will not cache requests from
+localhost.
 
 Server features:
 * [CacheableUnaryCall][]
 
 Procedure:
  1. Client calls CacheableUnaryCall with `SimpleRequest` request with payload
-    set to current timestamp.
+    set to current timestamp. Timestamp format is irrelevant, and resolution is
+    in nanoseconds.
  2. Client calls CacheableUnaryCall with `SimpleRequest` request again
     immediately with the same payload as the previous request.
 
@@ -965,13 +969,12 @@ for the `SimpleRequest.response_type`. If the server does not support the
 ### CacheableUnaryCall
 
 Server gets the default SimpleRequest proto as the request. The content of the
-request are ignored. It returns the SimpleResponse proto with the payload set 
-to current timestamp string.  In addition it adds
+request is ignored. It returns the SimpleResponse proto with the payload set
+to current timestamp.  The timestamp is an integer representing current time
+with nanosecond resolution. In addition it adds
   1. cache control headers such that the response can be cached by proxies in
      the response path. Server should be behind a caching proxy for this test
-     to pass.
-  2. adds a `x-user-ip` header with `1.2.3.4` to the response. This is done
-     since some proxys such as GFE will not cache requests from localhost.
+     to pass. Currently we set the max-age to 60 seconds.
 
 ### CompressedResponse
 [CompressedResponse]: #compressedresponse
