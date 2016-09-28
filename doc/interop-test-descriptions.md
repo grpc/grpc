@@ -964,9 +964,9 @@ for the `SimpleRequest.response_type`. If the server does not support the
 
 ### CacheableUnaryCall
 
-Server gets the default Empty proto as the request. It returns the
-SimpleResponse proto with the payload set to current timestamp string.
-In addition it adds
+Server gets the default SimpleRequest proto as the request. The content of the
+request are ignored. It returns the SimpleResponse proto with the payload set 
+to current timestamp string.  In addition it adds
   1. cache control headers such that the response can be cached by proxies in
      the response path. Server should be behind a caching proxy for this test
      to pass.
