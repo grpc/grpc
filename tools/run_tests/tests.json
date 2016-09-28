@@ -13843,27 +13843,6 @@
   }, 
   {
     "args": [
-      "buffer_pool_server"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "call_creds"
     ], 
     "ci_platforms": [
@@ -15502,27 +15481,6 @@
   }, 
   {
     "args": [
-      "buffer_pool_server"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "call_creds"
     ], 
     "ci_platforms": [
@@ -16280,27 +16238,6 @@
   {
     "args": [
       "binary_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "buffer_pool_server"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19100,27 +19037,6 @@
   {
     "args": [
       "binary_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "buffer_pool_server"
     ], 
     "ci_platforms": [
       "windows", 
@@ -28003,27 +27919,6 @@
   {
     "args": [
       "binary_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "buffer_pool_server"
     ], 
     "ci_platforms": [
       "windows", 
@@ -29620,27 +29515,6 @@
   {
     "args": [
       "binary_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "buffer_pool_server"
     ], 
     "ci_platforms": [
       "windows", 
@@ -30399,29 +30273,6 @@
   {
     "args": [
       "binary_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [
-      "msan"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "buffer_pool_server"
     ], 
     "ci_platforms": [
       "windows", 
