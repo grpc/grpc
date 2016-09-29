@@ -751,7 +751,7 @@ Client asserts:
 ### unimplemented_method
 
 This test verifies that calling an unimplemented RPC method returns the 
-UNIMPLEMENTED status code
+UNIMPLEMENTED status code.
 
 Server features:
 N/A
@@ -779,12 +779,7 @@ N/A
 
 Procedure:
 * Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an
-  empty request (defined as `grpc.testing.Empty`):
-
-    ```
-    {
-    }
-    ```
+  empty request (defined as `grpc.testing.Empty`)
 
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
