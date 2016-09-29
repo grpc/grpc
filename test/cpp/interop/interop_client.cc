@@ -135,7 +135,7 @@ bool InteropClient::AssertStatusOk(const Status& s) {
   }
 
   // Note: At this point, s.error_code is definitely not StatusCode::OK (we
-  // already checked for s.ok() all call abort()
+  // already checked for s.ok() above). So, the following will call abort()
   // (unless s.error_code() corresponds to a transient failure and
   // 'do_not_abort_on_transient_failures' is true)
   return AssertStatusCode(s, StatusCode::OK);
