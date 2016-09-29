@@ -45,7 +45,6 @@ int grpc_allow_specialized_wakeup_fd = 1;
 int grpc_allow_pipe_wakeup_fd = 1;
 int grpc_has_wakeup_fd = 1;
 
-
 void grpc_wakeup_fd_global_init(void) {
   if (grpc_allow_specialized_wakeup_fd &&
       grpc_specialized_wakeup_fd_vtable.check_availability()) {
@@ -59,9 +58,7 @@ void grpc_wakeup_fd_global_init(void) {
   }
 }
 
-void grpc_wakeup_fd_global_destroy(void) {
-  wakeup_fd_vtable = NULL;
-}
+void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
 
 grpc_error *grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
   return wakeup_fd_vtable->init(fd_info);
