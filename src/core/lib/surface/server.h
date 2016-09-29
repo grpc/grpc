@@ -63,4 +63,9 @@ const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
 int grpc_server_has_open_connections(grpc_server *server);
 
+/* Do not call this before grpc_server_start. Returns the pollsets and the
+ * number of pollsets via 'pollsets' and 'pollset_count'. */
+void grpc_server_get_pollsets(grpc_server *server, grpc_pollset ***pollsets,
+                              size_t *pollset_count);
+
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */
