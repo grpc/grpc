@@ -2532,6 +2532,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -2808,6 +2809,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -3073,6 +3075,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -3265,6 +3268,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
