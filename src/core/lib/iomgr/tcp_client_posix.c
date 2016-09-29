@@ -196,7 +196,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
     case 0:
       grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
       *ep = grpc_tcp_client_create_from_fd(exec_ctx, fd, ac->channel_args,
-                                           +ac->addr_str);
+                                           ac->addr_str);
       fd = NULL;
       break;
     case ENOBUFS:
