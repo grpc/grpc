@@ -132,7 +132,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   Histogram histogram;
   histogram.MergeProto(result->latencies());
 
-  auto qps = histogram.Count() / average(result->client_stats(), WallTime);
+  auto time_estimate = average(result->client_stats(), WallTime);
+  auto qps = histogram.Count() / time_estimate;
   auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
 
   result->mutable_summary()->set_qps(qps);
@@ -169,8 +170,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
         failures += rrc.count();
       }
     }
-    result->mutable_summary()->set_successful_requests(successes);
-    result->mutable_summary()->set_failed_requests(successes);
+    result->mutable_summary()->set_successful_requests_per_second(successes / time_estimate);
+    result->mutable_summary()->set_failed_requests_per_second(failures / time_estimate);
   }
 }
 

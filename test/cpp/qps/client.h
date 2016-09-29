@@ -321,7 +321,7 @@ class Client {
           histogram_.Add(entry.value());
         }
         if (entry.status_used()) {
-          statuses_[entry.value()]++;
+          statuses_[entry.status()]++;
         }
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");

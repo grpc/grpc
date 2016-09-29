@@ -220,8 +220,8 @@ message ScenarioResultSummary
   double latency_999 = 11;
 
   // Number of requests that succeeded/failed
-  int64 successful_requests = 12;
-  int64 failed_requests = 13;
+  double successful_requests_per_second = 12;
+  double failed_requests_per_second = 13;
 }
 
 // Results of a single benchmark scenario.

@@ -110,11 +110,6 @@ static bool QpsDriver() {
     GetReporter()->ReportLatency(*result);
     GetReporter()->ReportTimes(*result);
 
-    if (result->mutable_summary()->failed_requests()) {
-      std::cerr << "# failed requests: "
-                << result->mutable_summary()->failed_requests() << "\n";
-    }
-
     for (int i = 0; success && i < result->client_success_size(); i++) {
       success = result->client_success(i);
     }
