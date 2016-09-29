@@ -234,10 +234,13 @@ bool PrintBetaServicer(const ServiceDescriptor* service, Printer* out) {
              service->name());
   {
     IndentScope raii_class_indent(out);
-    out->Print("\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
-    "\nIt is recommended to use the GA API (classes and functions in this\n"
-    "file not marked beta) for all further purposes. This class was generated\n"
-     "only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0.\"\"\"\n");
+    out->Print(
+        "\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
+        "\nIt is recommended to use the GA API (classes and functions in this\n"
+        "file not marked beta) for all further purposes. This class was "
+        "generated\n"
+        "only to ease transition from grpcio<0.15.0 to "
+        "grpcio>=0.15.0.\"\"\"\n");
     PrintAllComments(service, out);
     for (int i = 0; i < service->method_count(); ++i) {
       auto meth = service->method(i);
@@ -260,10 +263,13 @@ bool PrintBetaStub(const ServiceDescriptor* service, Printer* out) {
   out->Print("class Beta$Service$Stub(object):\n", "Service", service->name());
   {
     IndentScope raii_class_indent(out);
-    out->Print("\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
-    "\nIt is recommended to use the GA API (classes and functions in this\n"
-    "file not marked beta) for all further purposes. This class was generated\n"
-     "only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0.\"\"\"\n");
+    out->Print(
+        "\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
+        "\nIt is recommended to use the GA API (classes and functions in this\n"
+        "file not marked beta) for all further purposes. This class was "
+        "generated\n"
+        "only to ease transition from grpcio<0.15.0 to "
+        "grpcio>=0.15.0.\"\"\"\n");
     PrintAllComments(service, out);
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* meth = service->method(i);
@@ -295,11 +301,12 @@ bool PrintBetaServerFactory(const grpc::string& package_qualified_service_name,
       "Service", service->name());
   {
     IndentScope raii_create_server_indent(out);
-    out->Print("\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
-    "\nIt is recommended to use the GA API (classes and functions in this\n"
-    "file not marked beta) for all further purposes. This function was\n"
-    "generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"
-    "\"\"\"\n");
+    out->Print(
+        "\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
+        "\nIt is recommended to use the GA API (classes and functions in this\n"
+        "file not marked beta) for all further purposes. This function was\n"
+        "generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"
+        "\"\"\"\n");
     map<grpc::string, grpc::string> method_implementation_constructors;
     map<grpc::string, grpc::string> input_message_modules_and_classes;
     map<grpc::string, grpc::string> output_message_modules_and_classes;
@@ -399,11 +406,12 @@ bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
              " metadata_transformer=None, pool=None, pool_size=None):\n");
   {
     IndentScope raii_create_server_indent(out);
-    out->Print("\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
-    "\nIt is recommended to use the GA API (classes and functions in this\n"
-    "file not marked beta) for all further purposes. This function was\n"
-    "generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"
-    "\"\"\"\n");
+    out->Print(
+        "\"\"\"The Beta API is deprecated for 0.15.0 and later.\n"
+        "\nIt is recommended to use the GA API (classes and functions in this\n"
+        "file not marked beta) for all further purposes. This function was\n"
+        "generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"
+        "\"\"\"\n");
     map<grpc::string, grpc::string> method_cardinalities;
     map<grpc::string, grpc::string> input_message_modules_and_classes;
     map<grpc::string, grpc::string> output_message_modules_and_classes;
