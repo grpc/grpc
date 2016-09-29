@@ -842,7 +842,6 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   if (error != GRPC_ERROR_NONE) {
     got_initial_metadata(exec_ctx, elem, error);
-    GRPC_ERROR_UNREF(error);
     return;
   }
   call_data *calld = elem->call_data;
