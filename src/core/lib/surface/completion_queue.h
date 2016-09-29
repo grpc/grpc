@@ -60,6 +60,8 @@ typedef struct grpc_cq_completion {
   uintptr_t next;
 } grpc_cq_completion;
 
+//#define GRPC_CQ_REF_COUNT_DEBUG
+
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line);

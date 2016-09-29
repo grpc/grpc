@@ -226,7 +226,7 @@ void grpc_transport_stream_op_add_cancellation_with_message(
     error = GRPC_ERROR_CREATE("Call cancelled");
   }
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, status);
-  add_error(op, &op->close_error, error);
+  add_error(op, &op->cancel_error, error);
 }
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
