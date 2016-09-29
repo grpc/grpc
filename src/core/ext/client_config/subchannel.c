@@ -220,8 +220,8 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "SUBCHANNEL: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val,
-          old_val + delta, reason);
+          "SUBCHANNEL: %p %12s 0x%08d -> 0x%08d [%s]", c, purpose, (int)old_val,
+          (int)(old_val + delta), reason);
 #endif
   return old_val;
 }
@@ -629,7 +629,9 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
     c->have_alarm = 1;
     grpc_connectivity_state_set(
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
         "connect_failed");
     gpr_timespec time_til_next = gpr_time_sub(c->next_attempt, now);
     const char *errmsg = grpc_error_string(error);
@@ -698,14 +700,15 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_polling_entity *pollent, grpc_subchannel_call **call) {
+    grpc_polling_entity *pollent, gpr_timespec deadline,
+    grpc_subchannel_call **call) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   *call = gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = con;  // Ref is added below.
   grpc_error *error =
       grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, *call,
-                           NULL, NULL, callstk);
+                           NULL, NULL, deadline, callstk);
   if (error != GRPC_ERROR_NONE) {
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
