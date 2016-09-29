@@ -169,6 +169,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
         failures += rrc.count();
       }
     }
+    result->mutable_summary()->set_successful_requests(successes);
+    result->mutable_summary()->set_failed_requests(successes);
   }
 }
 

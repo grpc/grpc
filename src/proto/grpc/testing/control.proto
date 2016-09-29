@@ -219,6 +219,7 @@ message ScenarioResultSummary
   double latency_99 = 10;
   double latency_999 = 11;
 
+  // Number of requests that succeeded/failed
   int64 successful_requests = 12;
   int64 failed_requests = 13;
 }
