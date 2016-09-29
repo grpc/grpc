@@ -251,7 +251,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   } else if (read_bytes == 0) {
     /* 0 read size ==> end of stream */
     gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    call_read_cb(exec_ctx, tcp, GRPC_ERROR_CREATE("EOF"));
+    call_read_cb(exec_ctx, tcp, GRPC_ERROR_CREATE("Socket closed"));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
@@ -271,9 +271,17 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   GPR_TIMER_END("tcp_continue_read", 0);
 }
 
-static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcp,
+static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
                                      grpc_error *error) {
-  tcp_do_read(exec_ctx, tcp);
+  grpc_tcp *tcp = tcpp;
+  if (error != GRPC_ERROR_NONE) {
+    gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+    call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
+    TCP_UNREF(exec_ctx, tcp, "read");
+  } else {
+    tcp_do_read(exec_ctx, tcp);
+  }
 }
 
 static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
