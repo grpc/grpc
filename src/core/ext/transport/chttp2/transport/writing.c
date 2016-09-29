@@ -70,6 +70,7 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
     cb = next;
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
