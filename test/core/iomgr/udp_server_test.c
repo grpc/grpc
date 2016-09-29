@@ -140,7 +140,7 @@ static void test_no_op_with_port_and_start(void) {
 static void test_receive(int number_of_clients) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
-  socklen_t addr_len = sizeof(addr);
+  GRPC_SOCKLEN_T addr_len = sizeof(addr);
   int clifd, svrfd;
   grpc_udp_server *s = grpc_udp_server_create();
   int i;
@@ -161,7 +161,7 @@ static void test_receive(int number_of_clients) {
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
-  GPR_ASSERT(addr_len <= sizeof(addr));
+  GPR_ASSERT(addr_len <= (GRPC_SOCKLEN_T)sizeof(addr));
 
   pollsets[0] = g_pollset;
   grpc_udp_server_start(&exec_ctx, s, pollsets, 1, NULL);

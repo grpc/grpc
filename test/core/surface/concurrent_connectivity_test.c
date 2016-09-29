@@ -110,7 +110,7 @@ void bad_server_thread(void *vargs) {
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
-  socklen_t addr_len = sizeof(addr);
+  GRPC_SOCKLEN_T addr_len = sizeof(addr);
   int port;
   grpc_tcp_server *s;
   grpc_error *error = grpc_tcp_server_create(NULL, NULL, &s);
@@ -118,7 +118,7 @@ void bad_server_thread(void *vargs) {
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
   error =
-      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len, &port);
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, (size_t)addr_len, &port);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);

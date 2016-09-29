@@ -388,16 +388,19 @@ static grpc_lb_addresses *process_serverlist(
     memset(&addr, 0, sizeof(addr));
     if (ip->size == 4) {
       addr.len = sizeof(struct sockaddr_in);
-      struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr.addr;
-      addr4->sin_family = AF_INET;
-      memcpy(&addr4->sin_addr, ip->bytes, ip->size);
-      addr4->sin_port = netorder_port;
+      struct sockaddr_in addr4; // = (struct sockaddr_in *)&addr.addr;
+      addr4.sin_family = AF_INET;
+      memcpy(&addr4.sin_addr, ip->bytes, ip->size);
+      addr4.sin_port = netorder_port;
+      memcpy(&addr.addr, &addr4, sizeof (struct sockaddr_in));
     } else if (ip->size == 16) {
       addr.len = sizeof(struct sockaddr_in6);
-      struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr.addr;
-      addr6->sin6_family = AF_INET;
-      memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
-      addr6->sin6_port = netorder_port;
+      struct sockaddr_in6 addr6;
+      //struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr.addr;
+      addr6.sin6_family = AF_INET;
+      memcpy(&addr6.sin6_addr, ip->bytes, ip->size);
+      addr6.sin6_port = netorder_port;
+      memcpy(&addr.addr, &addr6, sizeof(struct sockaddr_in6));
     }
 
     /* lb token processing */

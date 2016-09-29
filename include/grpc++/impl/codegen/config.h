@@ -117,12 +117,23 @@ namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
 
-#ifdef GRPC_CXX0X_LIMITED_TOSTRING
+#if defined(GRPC_CXX0X_LIMITED_TOSTRING)
 inline grpc::string to_string(const int x) {
   return std::to_string(static_cast<const long long int>(x));
 }
 inline grpc::string to_string(const unsigned int x) {
   return std::to_string(static_cast<const long long unsigned int>(x));
+}
+#elif defined(GRPC_CXX0X_NO_TOSTRING)
+inline grpc::string to_string(const int x) {
+  char c[36];
+  sprintf(c,"%d", x);
+  return c;
+}
+inline grpc::string to_string(const unsigned int x) {
+  char c[36];
+  sprintf(c,"%u", x);
+  return c;
 }
 #else
 using std::to_string;

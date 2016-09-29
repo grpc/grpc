@@ -277,6 +277,18 @@
   LDFLAGS += -pthread
   endif
 
+  ifeq ($(SYSTEM),HP-UX)
+  CC = gcc
+  CXX = g++
+  LD = g++
+  LIBS = pthread dl rt m nsl unwind
+  LDFLAGS += -pthread -gdwarf2
+  ARCH_FLAGS += -mlp64
+  DEFINES += _INCLUDE_STDC__SOURCE_199901 GRPC_SOCKLEN_T=int GRPC_CXX0X_NO_TOSTRING \
+   _REENTRANT _INCLUDE_XOPEN_SOURCE_EXTENDED _INCLUDE_HPUX_SOURCE \
+   _INCLUDE_XOPEN_SOURCE_520 _INCLUDE_XOPEN_SOURCE_600
+  endif
+
   ifeq ($(SYSTEM),MINGW32)
   LIBS = m pthread ws2_32
   LDFLAGS += -pthread
@@ -1502,9 +1514,15 @@
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
   else
+  ifeq ($(SYSTEM),HP-UX)
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so
+  else
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so.${settings.core_version.major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so
+  endif
   endif
   endif
   % endif

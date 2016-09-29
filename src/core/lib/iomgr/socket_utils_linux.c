@@ -40,7 +40,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
+int grpc_accept4(int sockfd, struct sockaddr *addr, GRPC_SOCKLEN_T *addrlen,
                  int nonblock, int cloexec) {
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;

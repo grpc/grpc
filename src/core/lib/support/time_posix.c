@@ -72,10 +72,11 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
   return rv;
 }
 
+#ifndef __hpux
 /** maps gpr_clock_type --> clockid_t for clock_gettime */
 static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
                                                   CLOCK_REALTIME};
-
+#endif
 void gpr_time_init(void) { gpr_precise_clock_init(); }
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
@@ -89,6 +90,14 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE) && defined(__linux__)
     /* avoid ABI problems by invoking syscalls directly */
     syscall(SYS_clock_gettime, clockid_for_gpr_clock[clock_type], &now);
+#elif defined(__hpux)
+    if (clock_type == GPR_CLOCK_MONOTONIC) {
+      gpr_timespec ret;
+      gpr_precise_clock_now(&ret);
+      ret.clock_type = GPR_CLOCK_MONOTONIC;
+      return ret;
+    } 
+    clock_gettime(CLOCK_REALTIME, &now);
 #else
     clock_gettime(clockid_for_gpr_clock[clock_type], &now);
 #endif

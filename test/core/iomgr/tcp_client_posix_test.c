@@ -86,7 +86,7 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 void test_succeeds(void) {
   struct sockaddr_in addr;
-  socklen_t addr_len = sizeof(addr);
+  GRPC_SOCKLEN_T addr_len = sizeof(addr);
   int svr_fd;
   int r;
   int connections_complete_before;
@@ -112,7 +112,7 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
   grpc_closure_init(&done, must_succeed, NULL);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
-                          (struct sockaddr *)&addr, addr_len,
+                          (struct sockaddr *)&addr, (size_t)addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
   /* await the connection */
@@ -144,7 +144,7 @@ void test_succeeds(void) {
 
 void test_fails(void) {
   struct sockaddr_in addr;
-  socklen_t addr_len = sizeof(addr);
+  GRPC_SOCKLEN_T addr_len = sizeof(addr);
   int connections_complete_before;
   grpc_closure done;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -161,7 +161,7 @@ void test_fails(void) {
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
-                          (struct sockaddr *)&addr, addr_len,
+                          (struct sockaddr *)&addr, (size_t)addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
   gpr_mu_lock(g_mu);

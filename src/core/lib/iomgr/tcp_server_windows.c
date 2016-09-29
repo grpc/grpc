@@ -194,7 +194,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 static grpc_error *prepare_socket(SOCKET sock, const struct sockaddr *addr,
                                   size_t addr_len, int *port) {
   struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  GRPC_SOCKLEN_T sockname_len;
   grpc_error *error = GRPC_ERROR_NONE;
 
   error = grpc_tcp_prepare_socket(sock);
@@ -457,7 +457,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   struct sockaddr_in6 wildcard;
   struct sockaddr *allocated_addr = NULL;
   struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  GRPC_SOCKLEN_T sockname_len;
   unsigned port_index = 0;
   grpc_error *error = GRPC_ERROR_NONE;
 

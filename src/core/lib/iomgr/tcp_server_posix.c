@@ -70,7 +70,7 @@
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
-static gpr_once s_init_max_accept_queue_size;
+static gpr_once s_init_max_accept_queue_size = GPR_ONCE_INIT;
 static int s_max_accept_queue_size;
 
 /* one listening port */
@@ -269,6 +269,13 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
 /* get max listen queue size on linux */
 static void init_max_accept_queue_size(void) {
+#ifdef __hpux
+#define TCP_CONN_REQUEST_MAX 4096
+  /* use  ndd -set /dev/tcp tcp_conn_request_max 4096 
+     or find a way to obtain this variable without root
+  */
+  s_max_accept_queue_size = TCP_CONN_REQUEST_MAX;
+#else
   int n = SOMAXCONN;
   char buf[64];
   FILE *fp = fopen("/proc/sys/net/core/somaxconn", "r");
@@ -293,6 +300,7 @@ static void init_max_accept_queue_size(void) {
             "connection drops",
             s_max_accept_queue_size);
   }
+#endif
 }
 
 static int get_max_accept_queue_size(void) {
@@ -305,7 +313,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
                                   size_t addr_len, bool so_reuseport,
                                   int *port) {
   struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  GRPC_SOCKLEN_T sockname_len;
   grpc_error *err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
@@ -327,9 +335,8 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
-
-  GPR_ASSERT(addr_len < ~(socklen_t)0);
-  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
+  GPR_ASSERT(addr_len < ~(size_t)0);
+  if (bind(fd, addr, (GRPC_SOCKLEN_T)addr_len) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     goto error;
   }
@@ -380,7 +387,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
     struct sockaddr_storage addr;
-    socklen_t addrlen = sizeof(addr);
+    GRPC_SOCKLEN_T addrlen = sizeof(addr);
     char *addr_str;
     char *name;
     /* Note: If we ever decide to return this address to the user, remember to
@@ -549,7 +556,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   struct sockaddr_in addr4_copy;
   struct sockaddr *allocated_addr = NULL;
   struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  GRPC_SOCKLEN_T sockname_len;
   int port;
   unsigned port_index = 0;
   unsigned fd_index = 0;
@@ -766,3 +773,4 @@ void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
 }
 
 #endif
+
