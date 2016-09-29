@@ -266,10 +266,9 @@ const grpc_event_engine_vtable* grpc_init_poll_cv_posix(void) {
   ev_poll_vtable = grpc_init_poll_posix();
   if (!ev_poll_vtable) {
     grpc_global_cv_fd_table_shutdown();
-    grpc_has_wakeup_fd = has_standard_wakeup_fd;
+    grpc_has_wakeup_fd = has_wakeup_fd;
     grpc_allow_specialized_wakeup_fd = allow_specialized_wakeup_fd;
     grpc_allow_pipe_wakeup_fd = allow_pipe_wakeup_fd;
-    grpc_has_wakeup_fd = has_standard_wakeup_fd;
     grpc_global_cv_fd_table_init();
     return NULL;
   }
