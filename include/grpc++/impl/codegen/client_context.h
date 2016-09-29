@@ -354,7 +354,10 @@ class ClientContext {
   uint32_t initial_metadata_flags() const {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
            (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
-           (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0);
+           (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
+           (wait_for_ready_explicitly_set_
+                ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+                : 0);
   }
 
   grpc::string authority() { return authority_; }
