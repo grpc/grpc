@@ -115,17 +115,25 @@ class ClientRequestCreator<ByteBuffer> {
 
 class HistogramEntry GRPC_FINAL {
  public:
-  HistogramEntry() : used_(false) {}
-  bool used() const { return used_; }
+  HistogramEntry() : value_used_(false), status_used_(false) {}
+  bool value_used() const { return value_used_; }
   double value() const { return value_; }
   void set_value(double v) {
-    used_ = true;
+    value_used_ = true;
     value_ = v;
+  }
+  bool status_used() const { return status_used_; }
+  int status() const { return status_; }
+  void set_status(int status) {
+    status_used_ = true;
+    status_ = status;
   }
 
  private:
-  bool used_;
+  bool value_used_;
   double value_;
+  bool status_used_;
+  int status_;
 };
 
 typedef std::unordered_map<int, int64_t> StatusHistogram;
@@ -309,8 +317,11 @@ class Client {
         const bool thread_still_ok = client_->ThreadFunc(&entry, idx_);
         // lock, update histogram if needed and see if we're done
         std::lock_guard<std::mutex> g(mu_);
-        if (entry.used()) {
+        if (entry.value_used()) {
           histogram_.Add(entry.value());
+        }
+        if (entry.status_used()) {
+          statuses_[entry.value()]++;
         }
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
