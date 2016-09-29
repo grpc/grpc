@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 
 #include <grpc++/support/config.h>
 
@@ -87,6 +88,7 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
     reflection_db_->GetServices(&service_list);
   }
 
+  std::unordered_set<grpc::string> known_services;
   if (!protofiles.empty()) {
     source_tree_.MapPath("", proto_path);
     error_printer_.reset(new ErrorPrinter(this));
@@ -100,6 +102,7 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
       if (file_desc) {
         for (int i = 0; i < file_desc->service_count(); i++) {
           service_desc_list_.push_back(file_desc->service(i));
+          known_services.insert(file_desc->service(i)->full_name());
         }
       } else {
         std::cerr << file_name << " not found" << std::endl;
@@ -127,9 +130,12 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
   dynamic_factory_.reset(new protobuf::DynamicMessageFactory(desc_pool_.get()));
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
-    if (const protobuf::ServiceDescriptor* service_desc =
-            desc_pool_->FindServiceByName(*it)) {
-      service_desc_list_.push_back(service_desc);
+    if (known_services.find(*it) == known_services.end()) {
+      if (const protobuf::ServiceDescriptor* service_desc =
+              desc_pool_->FindServiceByName(*it)) {
+        service_desc_list_.push_back(service_desc);
+        known_services.insert(*it);
+      }
     }
   }
 }
