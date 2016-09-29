@@ -83,6 +83,12 @@ typedef struct grpc_server grpc_server;
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
 
+/** Incremental writers allow messages to be written in multiple pieces */
+typedef struct grpc_incremental_message_writer grpc_incremental_message_writer;
+
+/** Incremental readers allow messages to be read in multiple pieces */
+typedef struct grpc_incremental_message_reader grpc_incremental_message_reader;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -364,7 +370,13 @@ typedef enum {
       This op completes after the close has been received by the server.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. */
-  GRPC_OP_RECV_CLOSE_ON_SERVER
+  GRPC_OP_RECV_CLOSE_ON_SERVER,
+  /** Begin sending a message: when this op completes, an instance of a
+      grpc_incremental_message_writer is created */
+  GRPC_OP_SEND_MESSAGE_INCREMENTAL_START,
+  /** Begin receiving a message: when this op completes, an instance of a
+      grpc_incremental_message_reader is created */
+  GRPC_OP_RECV_MESSAGE_INCREMENTAL_START
 } grpc_op_type;
 
 struct grpc_byte_buffer;
@@ -393,7 +405,11 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    struct grpc_byte_buffer *send_message;
+    grpc_byte_buffer *send_message;
+    struct {
+      grpc_incremental_message_writer **writer;
+      uint32_t message_length;
+    } send_message_incremental_start;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
@@ -409,7 +425,10 @@ typedef struct grpc_op {
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    struct grpc_byte_buffer **recv_message;
+    grpc_byte_buffer **recv_message;
+    struct {
+      grpc_incremental_message_reader **reader;
+    } recv_message_incremental_start;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned

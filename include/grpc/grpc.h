@@ -213,6 +213,20 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
                                               const grpc_op *ops, size_t nops,
                                               void *tag, void *reserved);
 
+GRPCAPI grpc_call_error
+grpc_incremental_message_writer_push(grpc_incremental_message_writer *writer,
+                                     grpc_byte_buffer *buffer, void *tag);
+
+GRPCAPI grpc_call_error grpc_incremental_message_writer_destroy(
+    grpc_incremental_message_writer *writer);
+
+GRPCAPI grpc_call_error
+grpc_incremental_message_reader_pull(grpc_incremental_message_reader *reader,
+                                     grpc_byte_buffer *buffer, void *tag);
+
+GRPCAPI grpc_call_error grpc_incremental_message_reader_destroy(
+    grpc_incremental_message_writer *writer);
+
 /** Returns a newly allocated string representing the endpoint to which this
     call is communicating with. The string is in the uri format accepted by
     grpc_channel_create.
