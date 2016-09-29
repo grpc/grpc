@@ -524,6 +524,9 @@ grpc_chttp2_stream *grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport *t,
 grpc_chttp2_stream *grpc_chttp2_parsing_accept_stream(grpc_exec_ctx *exec_ctx,
                                                       grpc_chttp2_transport *t,
                                                       uint32_t id) {
+  if (t->channel_callback.accept_stream == NULL) {
+    return NULL;
+  }
   grpc_chttp2_stream *accepting;
   GPR_ASSERT(t->accepting_stream == NULL);
   t->accepting_stream = &accepting;
