@@ -1,0 +1,11 @@
+Import("env")
+
+# Encode cyclic messages with callback fields
+
+c = Copy("$TARGET", "$SOURCE")
+env.Command("cyclic_callback.proto", "cyclic.proto", c)
+env.NanopbProto(["cyclic_callback", "cyclic_callback.options"])
+
+enc_callback = env.Program(["encode_cyclic_callback.c", "cyclic_callback.pb.c", "$COMMON/pb_encode.o", "$COMMON/pb_common.o"])
+
+
