@@ -46,7 +46,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\buffer_pool.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\buffer_pool_cc.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">

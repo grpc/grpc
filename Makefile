@@ -3586,7 +3586,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/common/buffer_pool.cc \
+    src/cpp/common/buffer_pool_cc.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -4216,7 +4216,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/common/buffer_pool.cc \
+    src/cpp/common/buffer_pool_cc.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
