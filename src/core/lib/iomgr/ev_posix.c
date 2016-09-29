@@ -46,6 +46,7 @@
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
+#include "src/core/lib/iomgr/ev_poll_cv_posix.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -66,6 +67,7 @@ typedef struct {
 static const event_engine_factory g_factories[] = {
     {"epoll", grpc_init_epoll_linux},
     {"poll", grpc_init_poll_posix},
+    {"poll-cv", grpc_init_poll_cv_posix},
     {"legacy", grpc_init_poll_and_epoll_posix},
 };
 

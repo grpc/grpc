@@ -104,6 +104,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_poll_cv_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \

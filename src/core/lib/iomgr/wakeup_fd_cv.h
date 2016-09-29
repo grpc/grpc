@@ -41,7 +41,7 @@
  * A global table of cv wakeup fds is mantained.  A cv wakeup fd is a negative
  * file descriptor.  poll() is then run in a background thread with only the
  * real socket fds while we wait on a condition variable trigged by either the
- * poll() called or a wakeup_fd() call.
+ * poll() completion or a wakeup_fd() call.
  *
  */
 
@@ -49,9 +49,6 @@
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-
-void grpc_global_cv_fd_table_init();
-void grpc_global_cv_fd_table_shutdown();
 
 extern grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
 

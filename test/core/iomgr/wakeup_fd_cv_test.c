@@ -39,7 +39,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/iomgr_posix.h"
 #include "src/core/lib/support/env.h"
 
 typedef struct poll_args {
@@ -102,7 +102,6 @@ void background_poll(void *args) {
 
 void test_many_fds(void) {
   int i;
-  grpc_wakeup_fd_global_init();
   grpc_wakeup_fd fd[1000];
   for (i = 0; i < 1000; i++) {
     GPR_ASSERT(grpc_wakeup_fd_init(&fd[i]) == GRPC_ERROR_NONE);
@@ -110,7 +109,6 @@ void test_many_fds(void) {
   for (i = 0; i < 1000; i++) {
     grpc_wakeup_fd_destroy(&fd[i]);
   }
-  grpc_wakeup_fd_global_destroy();
 }
 
 void test_poll_cv_trigger(void) {
@@ -119,8 +117,6 @@ void test_poll_cv_trigger(void) {
   poll_args pargs;
   gpr_thd_id t_id;
   gpr_thd_options opt;
-  grpc_poll_function = &mock_poll;
-  grpc_wakeup_fd_global_init();
 
   GPR_ASSERT(grpc_wakeup_fd_init(&cvfd1) == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_wakeup_fd_init(&cvfd2) == GRPC_ERROR_NONE);
@@ -226,17 +222,22 @@ void test_poll_cv_trigger(void) {
   GPR_ASSERT(pfds[4].revents == 0);
   GPR_ASSERT(pfds[5].revents == 0);
 
-  grpc_wakeup_fd_global_destroy();
 }
 
 int main(int argc, char **argv) {
-  gpr_setenv("GRPC_POLL_STRATEGY", "poll");
-  grpc_allow_specialized_wakeup_fd = 0;
-  grpc_allow_pipe_wakeup_fd = 0;
+  gpr_setenv("GRPC_POLL_STRATEGY", "poll-cv");
+  grpc_poll_function = &mock_poll;
   gpr_mu_init(&poll_mu);
   gpr_cv_init(&poll_cv);
+
+  grpc_iomgr_platform_init();
   test_many_fds();
+  grpc_iomgr_platform_shutdown();
+
+  grpc_iomgr_platform_init();
   test_poll_cv_trigger();
+  grpc_iomgr_platform_shutdown();
+
   // Make sure detached polling threads have chance
   // to exit and clean up memory.  pthread_exit() causes tsan/msan
   // issues, so we just wait an ample amount of time

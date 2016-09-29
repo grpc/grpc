@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,52 +31,35 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_CV_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_EV_POLL_CV_POSIX_H
 
-#ifdef GPR_POSIX_SOCKET
+#include <grpc/support/sync.h>
 
-#include <stddef.h>
-#include "src/core/lib/iomgr/wakeup_fd_cv.h"
-#include "src/core/lib/iomgr/wakeup_fd_pipe.h"
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
-static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
-int grpc_allow_specialized_wakeup_fd = 1;
-int grpc_allow_pipe_wakeup_fd = 1;
-int grpc_has_wakeup_fd = 1;
+#define FD_TO_IDX(fd) (-(fd)-1)
+#define IDX_TO_FD(idx) (-(idx)-1)
 
+typedef struct cv_node {
+  gpr_cv* cv;
+  struct cv_node* next;
+} cv_node;
 
-void grpc_wakeup_fd_global_init(void) {
-  if (grpc_allow_specialized_wakeup_fd &&
-      grpc_specialized_wakeup_fd_vtable.check_availability()) {
-    wakeup_fd_vtable = &grpc_specialized_wakeup_fd_vtable;
-  } else if (grpc_allow_pipe_wakeup_fd &&
-             grpc_pipe_wakeup_fd_vtable.check_availability()) {
-    wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
-  } else {
-    grpc_has_wakeup_fd = 0;
-    wakeup_fd_vtable = &grpc_cv_wakeup_fd_vtable;
-  }
-}
+typedef struct fd_node {
+  int is_set;
+  cv_node* cvs;
+  struct fd_node* next_free;
+} fd_node;
 
-void grpc_wakeup_fd_global_destroy(void) {
-  wakeup_fd_vtable = NULL;
-}
+typedef struct cv_fd_table {
+  gpr_mu mu;
+  fd_node* cvfds;
+  fd_node* free_fds;
+  unsigned int size;
+  grpc_poll_function_type poll;
+} cv_fd_table;
 
-grpc_error *grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
-  return wakeup_fd_vtable->init(fd_info);
-}
+const grpc_event_engine_vtable* grpc_init_poll_cv_posix(void);
 
-grpc_error *grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info) {
-  return wakeup_fd_vtable->consume(fd_info);
-}
-
-grpc_error *grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
-  return wakeup_fd_vtable->wakeup(fd_info);
-}
-
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info) {
-  wakeup_fd_vtable->destroy(fd_info);
-}
-
-#endif /* GPR_POSIX_WAKEUP_FD */
+#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */

@@ -89,6 +89,7 @@ struct grpc_wakeup_fd {
 
 extern int grpc_allow_specialized_wakeup_fd;
 extern int grpc_allow_pipe_wakeup_fd;
+extern int grpc_has_wakeup_fd;
 
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
