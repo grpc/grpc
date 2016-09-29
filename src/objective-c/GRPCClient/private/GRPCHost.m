@@ -219,6 +219,8 @@ static NSMutableDictionary *kHostCache;
   if (_responseSizeLimitOverride) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
+  NSNumber *initialBackoff = [NSNumber numberWithInt:10000];
+  args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = initialBackoff;
   return args;
 }
 
