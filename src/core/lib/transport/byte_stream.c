@@ -34,14 +34,23 @@
 #include "src/core/lib/transport/byte_stream.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <grpc/support/log.h>
 
-int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, gpr_slice *slice,
-                          size_t max_size_hint, grpc_closure *on_complete) {
-  return byte_stream->next(exec_ctx, byte_stream, slice, max_size_hint,
-                           on_complete);
+bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
+                                 grpc_byte_stream *byte_stream,
+                                 gpr_slice *slice, size_t max_size_hint,
+                                 grpc_closure *on_complete) {
+  return byte_stream->next_slice(exec_ctx, byte_stream, slice, max_size_hint,
+                                 on_complete);
+}
+
+bool grpc_byte_stream_next_buffer(grpc_exec_ctx *exec_ctx,
+                                  grpc_byte_stream *byte_stream, void *buffer,
+                                  size_t size, grpc_closure *on_complete) {
+  return byte_stream->next_buffer(exec_ctx, byte_stream, buffer, size,
+                                  on_complete);
 }
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -51,15 +60,43 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 /* slice_buffer_stream */
 
-static int slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
-                                    grpc_byte_stream *byte_stream,
-                                    gpr_slice *slice, size_t max_size_hint,
-                                    grpc_closure *on_complete) {
+static bool slice_buffer_stream_next_slice(grpc_exec_ctx *exec_ctx,
+                                           grpc_byte_stream *byte_stream,
+                                           gpr_slice *slice,
+                                           size_t max_size_hint,
+                                           grpc_closure *on_complete) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
   GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
   *slice = gpr_slice_ref(stream->backing_buffer->slices[stream->cursor]);
   stream->cursor++;
-  return 1;
+  return true;
+}
+
+static bool slice_buffer_stream_next_buffer(grpc_exec_ctx *exec_ctx,
+                                            grpc_byte_stream *byte_stream,
+                                            void *buffer, size_t size,
+                                            grpc_closure *on_complete) {
+  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+  uint8_t *out = buffer;
+  size_t remaining = size;
+  for (;;) {
+    GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
+    gpr_slice cur = stream->backing_buffer->slices[stream->cursor];
+    if (GPR_SLICE_LENGTH(cur) > remaining) {
+      memcpy(out, GPR_SLICE_START_PTR(cur), remaining);
+      stream->backing_buffer->slices[stream->cursor] =
+          gpr_slice_sub_no_ref(cur, remaining, GPR_SLICE_LENGTH(cur));
+      return true;
+    } else if (GPR_SLICE_LENGTH(cur) == remaining) {
+      memcpy(out, GPR_SLICE_START_PTR(cur), remaining);
+      stream->cursor++;
+      return true;
+    } else {
+      memcpy(out, GPR_SLICE_START_PTR(cur), GPR_SLICE_LENGTH(cur));
+      out += GPR_SLICE_LENGTH(cur);
+      remaining -= GPR_SLICE_LENGTH(cur);
+    }
+  }
 }
 
 static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -71,7 +108,8 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   stream->base.length = (uint32_t)slice_buffer->length;
   stream->base.flags = flags;
-  stream->base.next = slice_buffer_stream_next;
+  stream->base.next_slice = slice_buffer_stream_next_slice;
+  stream->base.next_buffer = slice_buffer_stream_next_buffer;
   stream->base.destroy = slice_buffer_stream_destroy;
   stream->backing_buffer = slice_buffer;
   stream->cursor = 0;

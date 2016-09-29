@@ -798,8 +798,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       gpr_slice_buffer write_slice_buffer;
       gpr_slice slice;
       gpr_slice_buffer_init(&write_slice_buffer);
-      grpc_byte_stream_next(NULL, stream_op->send_message, &slice,
-                            stream_op->send_message->length, NULL);
+      grpc_byte_stream_next_slice(NULL, stream_op->send_message, &slice,
+                                  stream_op->send_message->length, NULL);
       /* Check that compression flag is OFF. We don't support compression yet.
        */
       if (stream_op->send_message->flags != 0) {

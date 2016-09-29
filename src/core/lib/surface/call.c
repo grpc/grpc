@@ -1075,9 +1075,9 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       }
       return;
     }
-    if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
-                              &call->receiving_slice, remaining,
-                              &call->receiving_slice_ready)) {
+    if (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream,
+                                    &call->receiving_slice, remaining,
+                                    &call->receiving_slice_ready)) {
       gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                            call->receiving_slice);
     } else {

@@ -884,9 +884,9 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       s->on_write_finished_cbs = cb;
     }
     s->fetching_send_message = NULL;
-  } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
-                                   &s->fetching_slice, UINT32_MAX,
-                                   &s->complete_fetch)) {
+  } else if (grpc_byte_stream_next_slice(exec_ctx, s->fetching_send_message,
+                                         &s->fetching_slice, UINT32_MAX,
+                                         &s->complete_fetch)) {
     add_fetched_slice_locked(exec_ctx, t, s);
   }
 }
@@ -1958,10 +1958,11 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   incoming_byte_stream_unref(exec_ctx, bs);
 }
 
-static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                                     grpc_byte_stream *byte_stream,
-                                     gpr_slice *slice, size_t max_size_hint,
-                                     grpc_closure *on_complete) {
+static bool incoming_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
+                                            grpc_byte_stream *byte_stream,
+                                            gpr_slice *slice,
+                                            size_t max_size_hint,
+                                            grpc_closure *on_complete) {
   GPR_TIMER_BEGIN("incoming_byte_stream_next", 0);
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
@@ -1974,7 +1975,15 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
   grpc_combiner_execute(exec_ctx, bs->transport->combiner,
                         &bs->next_action.closure, GRPC_ERROR_NONE, false);
   GPR_TIMER_END("incoming_byte_stream_next", 0);
-  return 0;
+  return false;
+}
+
+static bool incoming_byte_stream_next_buffer(grpc_exec_ctx *exec_ctx,
+                                             grpc_byte_stream *byte_stream,
+                                             void *buffer, size_t size,
+                                             grpc_closure *on_complete) {
+  /* TODO(ctiller): implement this */
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -2055,7 +2064,8 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->base.length = frame_size;
   incoming_byte_stream->remaining_bytes = frame_size;
   incoming_byte_stream->base.flags = flags;
-  incoming_byte_stream->base.next = incoming_byte_stream_next;
+  incoming_byte_stream->base.next_slice = incoming_byte_stream_next_slice;
+  incoming_byte_stream->base.next_buffer = incoming_byte_stream_next_buffer;
   incoming_byte_stream->base.destroy = incoming_byte_stream_destroy;
   gpr_mu_init(&incoming_byte_stream->slice_mu);
   gpr_ref_init(&incoming_byte_stream->refs, 2);
