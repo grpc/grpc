@@ -103,8 +103,8 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
                  grpc_mdstr_as_c_string(md->value));
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
-    grpc_call_element_send_cancel_with_message(a->exec_ctx, a->elem,
-                                               GRPC_STATUS_CANCELLED, &message);
+    grpc_call_element_send_close_with_message(a->exec_ctx, a->elem,
+                                              GRPC_STATUS_CANCELLED, &message);
     return NULL;
   } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     return NULL;
