@@ -57,11 +57,14 @@ GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
 
 /** Add the connected communication channel based on file descriptor 'fd' to the
     'server'. The 'fd' must be an open file descriptor corresponding to a
-    connected socket. The 'cq' is a completion queue that will be getting events
-    from that descriptor. */
+    connected socket. Events from the file descriptor may come on any of the
+    server completion queues (i.e completion queues registered via the
+    grpc_server_register_completion_queue API).
+
+    The 'reserved' pointer MUST be NULL.
+    */
 GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
-                                                      grpc_completion_queue *cq,
-                                                      int fd);
+                                                      void *reserved, int fd);
 
 /** GRPC Core POSIX library may internally use signals to optimize some work.
    The library uses (SIGRTMIN + 6) signal by default. Use this API to instruct
