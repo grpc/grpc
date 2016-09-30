@@ -34,14 +34,20 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H
 #define GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H
 
+#include <stdbool.h>
+
 #include "src/core/lib/channel/handshaker.h"
 
-/// Does NOT take ownership of \a proxy_server or \a server_name.
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
-                                                     const char* server_name);
+/// Does NOT take ownership of \a server_name or \a authority. These two
+/// arguments will be the same most of the time except for load balanced
+/// connections to backends where the \a server_name is the IP address of the
+/// backend and \authority, the default authority of the channel.
+grpc_handshaker* grpc_http_connect_handshaker_create(const char *server_name,
+                                                     const char *authority);
 
-/// Returns the name of the proxy to use, or NULL if no proxy is configured.
-/// Caller takes ownership of result.
-char* grpc_get_http_proxy_server();
+/// Returns true if an http proxy is configured. If \a proxy_server is not NULL,
+/// it will be set with the configured proxy server (if any) which the caller
+/// takes ownership of.
+bool grpc_is_http_proxy_configured(char **proxy_server);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H */

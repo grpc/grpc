@@ -259,8 +259,6 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   // Get name from args.
   const char *path = args->uri->path;
   if (path[0] == '/') ++path;
-  // Get proxy name, if any.
-  char *proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
@@ -268,7 +266,10 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->target_name = gpr_strdup(path);
-  r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
+  char *proxy_name = NULL;
+  r->name_to_resolve = grpc_is_http_proxy_configured(&proxy_name)
+                           ? proxy_name
+                           : gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);

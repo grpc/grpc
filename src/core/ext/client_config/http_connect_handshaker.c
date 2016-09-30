@@ -50,8 +50,8 @@ typedef struct http_connect_handshaker {
   // Base class.  Must be first.
   grpc_handshaker base;
 
-  char* proxy_server;
   char* server_name;
+  char* authority;
 
   // State saved while performing the handshake.
   grpc_endpoint* endpoint;
@@ -74,7 +74,7 @@ typedef struct http_connect_handshaker {
 // Unref and clean up handshaker.
 static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
   if (gpr_unref(&handshaker->refcount)) {
-    gpr_free(handshaker->proxy_server);
+    gpr_free(handshaker->authority);
     gpr_free(handshaker->server_name);
     gpr_slice_buffer_destroy(&handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
@@ -206,11 +206,11 @@ static void http_connect_handshaker_do_handshake(
   handshaker->user_data = user_data;
   handshaker->read_buffer = read_buffer;
   // Send HTTP CONNECT request.
-  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s",
-          handshaker->server_name, handshaker->proxy_server);
+  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy with authority %s",
+          handshaker->server_name, handshaker->authority);
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
-  request.host = handshaker->proxy_server;
+  request.host = handshaker->authority;
   request.http.method = "CONNECT";
   request.http.path = handshaker->server_name;
   request.handshaker = &grpc_httpcli_plaintext;
@@ -229,16 +229,16 @@ static const struct grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_destroy, http_connect_handshaker_shutdown,
     http_connect_handshaker_do_handshake};
 
-grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
-                                                     const char* server_name) {
-  GPR_ASSERT(proxy_server != NULL);
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* server_name,
+                                                     const char* authority) {
   GPR_ASSERT(server_name != NULL);
+  GPR_ASSERT(authority != NULL);
   http_connect_handshaker* handshaker =
       gpr_malloc(sizeof(http_connect_handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
-  handshaker->proxy_server = gpr_strdup(proxy_server);
   handshaker->server_name = gpr_strdup(server_name);
+  handshaker->authority = gpr_strdup(authority);
   gpr_slice_buffer_init(&handshaker->write_buffer);
   grpc_closure_init(&handshaker->request_done_closure, on_write_done,
                     handshaker);
@@ -250,11 +250,12 @@ grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
   return &handshaker->base;
 }
 
-char* grpc_get_http_proxy_server() {
+bool grpc_is_http_proxy_configured(char **proxy_server) {
+  if (proxy_server != NULL) *proxy_server = NULL;
   char* uri_str = gpr_getenv("http_proxy");
-  if (uri_str == NULL) return NULL;
+  if (uri_str == NULL) return false;
+  bool result = false;
   grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
-  char* proxy_name = NULL;
   if (uri == NULL || uri->authority == NULL) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
@@ -267,9 +268,10 @@ char* grpc_get_http_proxy_server() {
     gpr_log(GPR_ERROR, "userinfo not supported in proxy URI");
     goto done;
   }
-  proxy_name = gpr_strdup(uri->authority);
+  if (proxy_server != NULL) *proxy_server = gpr_strdup(uri->authority);
+  result = true;
 done:
   gpr_free(uri_str);
   grpc_uri_destroy(uri);
-  return proxy_name;
+  return result;
 }
