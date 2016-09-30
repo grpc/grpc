@@ -284,7 +284,7 @@ grpc_arg grpc_method_config_table_create_channel_arg(
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   arg.key = GRPC_ARG_SERVICE_CONFIG;
-  arg.value.pointer.p = grpc_method_config_table_ref(table);
+  arg.value.pointer.p = table;
   arg.value.pointer.vtable = &arg_vtable;
   return arg;
 }
