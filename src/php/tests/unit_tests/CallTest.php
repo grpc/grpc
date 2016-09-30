@@ -113,10 +113,32 @@ class CallTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testInvalidMetadataKey()
+    public function testInvalidStartBatchKey()
     {
         $batch = [
             'invalid' => ['key1' => 'value1'],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataStrKey()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['Key' => ['value1', 'value2']],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataIntKey()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => [1 => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
     }

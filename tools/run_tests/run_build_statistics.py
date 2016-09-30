@@ -56,13 +56,32 @@ _BUILDS = {'gRPC_master': _HAS_MATRIX,
            'gRPC_interop_pull_requests': not _HAS_MATRIX,
 }
 _URL_BASE = 'https://grpc-testing.appspot.com/job'
+
+# This is a dynamic list where known and active issues should be added. 
+# Fixed ones should be removed.
+# Also try not to add multiple messages from the same failure.
 _KNOWN_ERRORS = [
     'Failed to build workspace Tests with scheme AllTests',
     'Build timed out',
+    'TIMEOUT: tools/run_tests/pre_build_node.sh',
+    'TIMEOUT: tools/run_tests/pre_build_ruby.sh',
     'FATAL: Unable to produce a script file',
-    'FAILED: Failed to build interop docker images',
+    'FAILED: build_docker_c\+\+',
+    'cannot find package \"cloud.google.com/go/compute/metadata\"',
     'LLVM ERROR: IO failure on output stream.',
     'MSBUILD : error MSB1009: Project file does not exist.',
+    'fatal: git fetch_pack: expected ACK/NAK',
+    'Failed to fetch from http://github.com/grpc/grpc.git',
+    ('hudson.remoting.RemotingSystemException: java.io.IOException: '
+     'Backing channel is disconnected.'),
+    'hudson.remoting.ChannelClosedException',
+    'Could not initialize class hudson.Util',
+    'Too many open files in system',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=epoll',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=legacy',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=poll',
+    ('tests.bins/asan/h2_proxy_test streaming_error_response '
+     'GRPC_POLL_STRATEGY=legacy'),
 ]
 _UNKNOWN_ERROR = 'Unknown error'
 _DATASET_ID = 'build_statistics'

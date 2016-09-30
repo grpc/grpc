@@ -114,9 +114,6 @@ class TypeSmokeTest(unittest.TestCase):
         lambda ignored_a, ignored_b: None, b'')
     del plugin
 
-  @unittest.skipIf(
-    platform.python_implementation() == "PyPy",
-    'TODO(issue 7672): figure out why this fails on PyPy')
   def testCallCredentialsFromPluginUpDown(self):
     plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback, b'')
     call_credentials = cygrpc.call_credentials_metadata_plugin(plugin)
@@ -124,7 +121,7 @@ class TypeSmokeTest(unittest.TestCase):
     del call_credentials
 
   def testServerStartNoExplicitShutdown(self):
-    server = cygrpc.Server()
+    server = cygrpc.Server(cygrpc.ChannelArgs([]))
     completion_queue = cygrpc.CompletionQueue()
     server.register_completion_queue(completion_queue)
     port = server.add_http2_port(b'[::]:0')
@@ -134,7 +131,7 @@ class TypeSmokeTest(unittest.TestCase):
 
   def testServerStartShutdown(self):
     completion_queue = cygrpc.CompletionQueue()
-    server = cygrpc.Server()
+    server = cygrpc.Server(cygrpc.ChannelArgs([]))
     server.add_http2_port(b'[::]:0')
     server.register_completion_queue(completion_queue)
     server.start()
@@ -151,7 +148,7 @@ class ServerClientMixin(object):
 
   def setUpMixin(self, server_credentials, client_credentials, host_override):
     self.server_completion_queue = cygrpc.CompletionQueue()
-    self.server = cygrpc.Server()
+    self.server = cygrpc.Server(cygrpc.ChannelArgs([]))
     self.server.register_completion_queue(self.server_completion_queue)
     if server_credentials:
       self.port = self.server.add_http2_port(b'[::]:0', server_credentials)
@@ -167,7 +164,8 @@ class ServerClientMixin(object):
           'localhost:{}'.format(self.port).encode(), client_channel_arguments,
           client_credentials)
     else:
-      self.client_channel = cygrpc.Channel('localhost:{}'.format(self.port).encode())
+      self.client_channel = cygrpc.Channel(
+          'localhost:{}'.format(self.port).encode(), cygrpc.ChannelArgs([]))
     if host_override:
       self.host_argument = None  # default host
       self.expected_host = host_override

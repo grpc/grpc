@@ -1,0 +1,6 @@
+syntax = "proto2";
+import "submessage.proto";
+
+message testmessage {
+ optional submessage sub = 1;
+}

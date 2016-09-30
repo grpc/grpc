@@ -32,12 +32,8 @@ mkdir artifacts
 setlocal
 cd third_party/protobuf
 
-powershell -Command "Invoke-WebRequest https://googlemock.googlecode.com/files/gmock-1.7.0.zip -OutFile gmock.zip"
-powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('gmock.zip', '.');"
-rename gmock-1.7.0 gmock
-
 cd cmake
-cmake -G "%generator%" || goto :error
+cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF || goto :error
 endlocal
 
 call vsprojects/build_plugins.bat || goto :error

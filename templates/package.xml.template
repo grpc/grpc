@@ -24,7 +24,7 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - TBD
+  - Reject metadata keys which are not legal #7881
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
@@ -291,7 +291,7 @@
      <date>2016-08-22</date>
      <license>BSD</license>
      <notes>
-  - TBD
+  - Reject metadata keys which are not legal #7881
      </notes>
     </release>
    </changelog>

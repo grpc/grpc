@@ -45,6 +45,8 @@
 #include <grpc++/ext/reflection.grpc.pb.h>
 #endif  // GRPC_NO_GENERATED_CODE
 #include <grpc++/grpc++.h>
+#include <grpc++/impl/codegen/config_protobuf.h>
+
 namespace grpc {
 
 // ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and

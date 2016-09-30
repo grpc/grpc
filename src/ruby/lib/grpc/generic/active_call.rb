@@ -240,11 +240,8 @@ module GRPC
         @call.metadata = batch_result.metadata
         @metadata_received = true
       end
-      GRPC.logger.debug("received req: #{batch_result}")
       unless batch_result.nil? || batch_result.message.nil?
-        GRPC.logger.debug("received req.to_s: #{batch_result.message}")
         res = @unmarshal.call(batch_result.message)
-        GRPC.logger.debug("received_req (unmarshalled): #{res.inspect}")
         return res
       end
       GRPC.logger.debug('found nil; the final response has been sent')
