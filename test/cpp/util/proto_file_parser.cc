@@ -152,7 +152,8 @@ grpc::string ProtoFileParser::GetFullMethodName(const grpc::string& method) {
       const auto* method_desc = service_desc->method(j);
       if (MethodNameMatch(method_desc->full_name(), method)) {
         if (method_descriptor) {
-          std::ostringstream error_stream("Ambiguous method names: ");
+          std::ostringstream error_stream;
+          error_stream << "Ambiguous method names: ";
           error_stream << method_descriptor->full_name() << " ";
           error_stream << method_desc->full_name();
           LogError(error_stream.str());
