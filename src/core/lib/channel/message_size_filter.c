@@ -38,8 +38,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/ext/client_config/method_config.h"
+#include "src/core/lib/channel/channel_args.h"
 
 #define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
 // The protobuf library will (by default) start warning at 100 megs.
@@ -181,12 +181,12 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
     }
   }
   // Get method config table from channel args.
-  const grpc_arg *channel_arg = grpc_channel_args_find(
-      args->channel_args, GRPC_ARG_SERVICE_CONFIG);
+  const grpc_arg* channel_arg =
+      grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (channel_arg != NULL) {
     GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
     chand->method_config_table = grpc_method_config_table_ref(
-        (grpc_method_config_table *)channel_arg->value.pointer.p);
+        (grpc_method_config_table*)channel_arg->value.pointer.p);
   }
 }
 

@@ -421,8 +421,11 @@ typedef struct client_channel_call_data {
   grpc_deadline_state deadline_state;
   gpr_timespec deadline;
 
-  enum { WAIT_FOR_READY_UNSET, WAIT_FOR_READY_FALSE, WAIT_FOR_READY_TRUE }
-      wait_for_ready_from_service_config;
+  enum {
+    WAIT_FOR_READY_UNSET,
+    WAIT_FOR_READY_FALSE,
+    WAIT_FOR_READY_TRUE
+  } wait_for_ready_from_service_config;
 
   // Request path.
   grpc_mdstr *path;
@@ -798,14 +801,13 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
           : grpc_method_config_table_ref(chand->method_config_table);
   gpr_mu_unlock(&chand->mu);
   grpc_method_config *method_config =
-      method_config_table == NULL
-          ? NULL
-          : grpc_method_config_table_get_method_config(method_config_table,
-                                                       args->path);
+      method_config_table == NULL ? NULL
+                                  : grpc_method_config_table_get_method_config(
+                                        method_config_table, args->path);
   grpc_deadline_state_init(exec_ctx, elem, args, method_config);
   calld->wait_for_ready_from_service_config = WAIT_FOR_READY_UNSET;
   if (method_config != NULL) {
-    bool* wait_for_ready = grpc_method_config_get_wait_for_ready(method_config);
+    bool *wait_for_ready = grpc_method_config_get_wait_for_ready(method_config);
     if (wait_for_ready != NULL) {
       calld->wait_for_ready_from_service_config =
           *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;

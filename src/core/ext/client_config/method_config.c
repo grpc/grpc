@@ -78,8 +78,8 @@ static int timespec_cmp(void* v1, void* v2) {
   return gpr_time_cmp(*(gpr_timespec*)v1, *(gpr_timespec*)v2);
 }
 
-static grpc_hash_table_vtable timespec_vtable = {
-    gpr_free, timespec_copy, timespec_cmp};
+static grpc_hash_table_vtable timespec_vtable = {gpr_free, timespec_copy,
+                                                 timespec_cmp};
 
 // int32 vtable
 
@@ -102,11 +102,11 @@ static grpc_hash_table_vtable int32_vtable = {gpr_free, int32_copy, int32_cmp};
 
 // Hash table keys.
 #define GRPC_METHOD_CONFIG_WAIT_FOR_READY "grpc.wait_for_ready"  // bool
-#define GRPC_METHOD_CONFIG_TIMEOUT "grpc.timeout"  // gpr_timespec
+#define GRPC_METHOD_CONFIG_TIMEOUT "grpc.timeout"                // gpr_timespec
 #define GRPC_METHOD_CONFIG_MAX_REQUEST_MESSAGE_BYTES \
-    "grpc.max_request_message_bytes"  // int32
+  "grpc.max_request_message_bytes"  // int32
 #define GRPC_METHOD_CONFIG_MAX_RESPONSE_MESSAGE_BYTES \
-    "grpc.max_response_message_bytes"  // int32
+  "grpc.max_response_message_bytes"  // int32
 
 struct grpc_method_config {
   grpc_hash_table* table;
@@ -265,13 +265,9 @@ grpc_method_config* grpc_method_config_table_get_method_config(
   return method_config;
 }
 
-static void* copy_arg(void* p) {
-  return grpc_method_config_table_ref(p);
-}
+static void* copy_arg(void* p) { return grpc_method_config_table_ref(p); }
 
-static void destroy_arg(void* p) {
-  grpc_method_config_table_unref(p);
-}
+static void destroy_arg(void* p) { grpc_method_config_table_unref(p); }
 
 static int cmp_arg(void* p1, void* p2) {
   return grpc_method_config_table_cmp(p1, p2);

@@ -58,7 +58,7 @@ typedef struct grpc_hash_table_vtable {
 
 typedef struct grpc_hash_table_entry {
   grpc_mdstr* key;
-  void* value;  /* Must not be NULL. */
+  void* value; /* Must not be NULL. */
   const grpc_hash_table_vtable* vtable;
 } grpc_hash_table_entry;
 

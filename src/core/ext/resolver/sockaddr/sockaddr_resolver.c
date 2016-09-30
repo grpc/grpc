@@ -127,8 +127,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     r->published = true;
     grpc_channel_args *lb_policy_args = NULL;
     if (r->method_config_table != NULL) {
-      const grpc_arg arg = grpc_method_config_table_create_channel_arg(
-          r->method_config_table);
+      const grpc_arg arg =
+          grpc_method_config_table_create_channel_arg(r->method_config_table);
       lb_policy_args = grpc_channel_args_copy_and_add(NULL /* src */, &arg, 1);
     }
     *r->target_result = grpc_resolver_result_create(
@@ -246,29 +246,31 @@ static grpc_resolver *sockaddr_create(
     // Anything other than "0" is interpreted as true.
     bool wait_for_ready =
         wait_for_ready_str != NULL && strcmp("0", wait_for_ready_str) != 0;
-    const char* timeout_str =
+    const char *timeout_str =
         grpc_uri_get_query_arg(args->uri, "timeout_seconds");
-    gpr_timespec timeout = {
-        timeout_str == NULL ? 0 : atoi(timeout_str), 0, GPR_CLOCK_MONOTONIC};
-    const char* max_request_message_bytes_str =
+    gpr_timespec timeout = {timeout_str == NULL ? 0 : atoi(timeout_str), 0,
+                            GPR_CLOCK_MONOTONIC};
+    const char *max_request_message_bytes_str =
         grpc_uri_get_query_arg(args->uri, "max_request_message_bytes");
     int32_t max_request_message_bytes =
         max_request_message_bytes_str == NULL
-        ? 0 : atoi(max_request_message_bytes_str);
-    const char* max_response_message_bytes_str =
+            ? 0
+            : atoi(max_request_message_bytes_str);
+    const char *max_response_message_bytes_str =
         grpc_uri_get_query_arg(args->uri, "max_response_message_bytes");
     int32_t max_response_message_bytes =
         max_response_message_bytes_str == NULL
-        ? 0 : atoi(max_response_message_bytes_str);
+            ? 0
+            : atoi(max_response_message_bytes_str);
     grpc_method_config *method_config = grpc_method_config_create(
         wait_for_ready_str == NULL ? NULL : &wait_for_ready,
         timeout_str == NULL ? NULL : &timeout,
-        max_request_message_bytes_str == NULL
-            ? NULL : &max_request_message_bytes,
-        max_response_message_bytes_str == NULL
-            ? NULL : &max_response_message_bytes);
-    grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string(method_name), method_config};
+        max_request_message_bytes_str == NULL ? NULL
+                                              : &max_request_message_bytes,
+        max_response_message_bytes_str == NULL ? NULL
+                                               : &max_response_message_bytes);
+    grpc_method_config_table_entry entry = {grpc_mdstr_from_string(method_name),
+                                            method_config};
     r->method_config_table = grpc_method_config_table_create(1, &entry);
     GRPC_MDSTR_UNREF(entry.method_name);
     grpc_method_config_unref(method_config);

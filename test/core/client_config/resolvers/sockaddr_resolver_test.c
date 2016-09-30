@@ -61,8 +61,8 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (res->expected_method_name == NULL) {
     GPR_ASSERT(lb_policy_args == NULL);
   } else {
-    const grpc_arg *channel_arg = grpc_channel_args_find(
-        lb_policy_args, GRPC_ARG_SERVICE_CONFIG);
+    const grpc_arg *channel_arg =
+        grpc_channel_args_find(lb_policy_args, GRPC_ARG_SERVICE_CONFIG);
     GPR_ASSERT(channel_arg != NULL);
     GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
     grpc_method_config_table *method_config_table =
@@ -73,18 +73,18 @@ void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         grpc_method_config_table_get_method_config(method_config_table, path);
     GRPC_MDSTR_UNREF(path);
     GPR_ASSERT(method_config != NULL);
-    bool* wait_for_ready = grpc_method_config_get_wait_for_ready(method_config);
+    bool *wait_for_ready = grpc_method_config_get_wait_for_ready(method_config);
     GPR_ASSERT(wait_for_ready != NULL);
     GPR_ASSERT(*wait_for_ready == res->expected_wait_for_ready);
-    gpr_timespec* timeout = grpc_method_config_get_timeout(method_config);
+    gpr_timespec *timeout = grpc_method_config_get_timeout(method_config);
     GPR_ASSERT(timeout != NULL);
     GPR_ASSERT(gpr_time_cmp(*timeout, res->expected_timeout) == 0);
-    int32_t* max_request_message_bytes =
+    int32_t *max_request_message_bytes =
         grpc_method_config_get_max_request_message_bytes(method_config);
     GPR_ASSERT(max_request_message_bytes != NULL);
     GPR_ASSERT(*max_request_message_bytes ==
                res->expected_max_request_message_bytes);
-    int32_t* max_response_message_bytes =
+    int32_t *max_response_message_bytes =
         grpc_method_config_get_max_response_message_bytes(method_config);
     GPR_ASSERT(max_response_message_bytes != NULL);
     GPR_ASSERT(*max_response_message_bytes ==
@@ -117,8 +117,8 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
 }
 
 static void test_succeeds_with_service_config(
-    grpc_resolver_factory *factory, const char *string,
-    const char *method_name, bool wait_for_ready, gpr_timespec timeout,
+    grpc_resolver_factory *factory, const char *string, const char *method_name,
+    bool wait_for_ready, gpr_timespec timeout,
     int32_t max_request_message_bytes, int32_t max_response_message_bytes) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_uri *uri = grpc_uri_parse(string, 0);
