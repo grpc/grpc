@@ -48,8 +48,7 @@ __attribute__((deprecated("Please use GRPCProtoService.")))
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
            requestsWriter:(GRXWriter *)requestsWriter
   	        responseClass:(Class)responseClass
-  	   responsesWriteable:(id<GRXWriteable>)responsesWriteable
-                    flags:(GRPCCallFlags)flags;
+  	   responsesWriteable:(id<GRXWriteable>)responsesWriteable;
 @end
 
 

@@ -158,13 +158,12 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
  * Flags for options of a gRPC call
  *
  */
-typedef NS_OPTIONS(NSUInteger, GRPCCallFlags) {
+typedef NS_ENUM(NSUInteger, GRPCCallAttr) {
+  GRPCCallAttrDefault = 0,
   /** Signal that the call is idempotent */
-  GRPCFlagIdempotentRequest = 0x00000010,
-  /** Signal that the call should not return UNAVAILABLE before it has started */
-  GRPCFlagIgnoreConnectivity = 0x00000020,
+  GRPCCallAttrIdempotentRequest = 1,
   /** Signal that the call is cacheable. GRPC is free to use GET verb */
-  GRPCFlagCacheableRequest = 0x00000040,
+  GRPCCallAttrCacheableRequest = 2,
 };
 
 /**
@@ -238,18 +237,21 @@ extern id const kGRPCTrailersKey;
  */
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestsWriter;
-
-- (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestsWriter
-                       flags:(GRPCCallFlags)flags NS_DESIGNATED_INITIALIZER;
+              requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
  * finishes the response side of the call with an error of code CANCELED.
  */
 - (void)cancel;
+
+/**
+ * Set the call flag for a specific host path.
+ *
+ * Host parameter should not contain the scheme (http:// or https://), only the name or IP addr
+ * and the port number, for example @"localhost:5050".
+ */
++ (void)setCallAttribute:(GRPCCallAttr)callAttr host:(NSString *)host path:(NSString *)path;
 
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end

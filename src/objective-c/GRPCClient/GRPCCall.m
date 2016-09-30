@@ -47,6 +47,7 @@
 
 NSString * const kGRPCHeadersKey = @"io.grpc.HeadersKey";
 NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
+static NSMutableDictionary *callFlags;
 
 @interface GRPCCall () <GRXWriteable>
 // Make them read-write.
@@ -75,7 +76,6 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
   NSString *_host;
   NSString *_path;
-  GRPCCallFlags _flags;
   GRPCWrappedCall *_wrappedCall;
   GRPCConnectivityMonitor *_connectivityMonitor;
 
@@ -107,23 +107,43 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 // TODO(jcanizales): If grpc_init is idempotent, this should be changed from load to initialize.
 + (void)load {
   grpc_init();
+  callFlags = [NSMutableDictionary dictionary];
+}
+
++ (void)setCallAttribute:(GRPCCallAttr)callAttr host:(NSString *)host path:(NSString *)path {
+  NSString *hostAndPath = [NSString stringWithFormat:@"%@%@", host, path];
+  switch (callAttr) {
+    case GRPCCallAttrDefault:
+      callFlags[hostAndPath] = @0;
+      break;
+    case GRPCCallAttrIdempotentRequest:
+      callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+      break;
+    case GRPCCallAttrCacheableRequest:
+      callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+      break;
+    default:
+      break;
+  }
+}
+
++ (uint32_t)getCallFlag:(NSString *)host path:(NSString *)path {
+  NSString *hostAndPath = [NSString stringWithFormat:@"%@%@", host, path];
+  if (nil != [callFlags objectForKey:hostAndPath]) {
+    return [callFlags[hostAndPath] intValue];
+  } else {
+    return 0;
+  }
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil path:nil requestsWriter:nil flags:0];
-}
-
-- (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestWriter{
-  return [self initWithHost:host path:path requestsWriter:requestWriter flags:0];
+  return [self initWithHost:nil path:nil requestsWriter:nil];
 }
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestWriter
-                       flags:(GRPCCallFlags)flags {
+              requestsWriter:(GRXWriter *)requestWriter {
   if (!host || !path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
@@ -134,7 +154,6 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
-    _flags = flags;
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("io.grpc.call", NULL);
@@ -240,7 +259,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 - (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
-                                                                                  flags:_flags
+                                                                                  flags:(uint32_t)[GRPCCall getCallFlag:_host path:_path]
                                                                                 handler:nil]]];
 }
 
