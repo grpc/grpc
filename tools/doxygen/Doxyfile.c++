@@ -807,30 +807,6 @@ include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h \
-include/grpc/byte_buffer.h \
-include/grpc/byte_buffer_reader.h \
-include/grpc/compression.h \
-include/grpc/grpc.h \
-include/grpc/grpc_posix.h \
-include/grpc/grpc_security_constants.h \
-include/grpc/status.h \
-include/grpc/impl/codegen/byte_buffer_reader.h \
-include/grpc/impl/codegen/compression_types.h \
-include/grpc/impl/codegen/connectivity_state.h \
-include/grpc/impl/codegen/grpc_types.h \
-include/grpc/impl/codegen/propagation_bits.h \
-include/grpc/impl/codegen/status.h \
-include/grpc/impl/codegen/atm.h \
-include/grpc/impl/codegen/atm_gcc_atomic.h \
-include/grpc/impl/codegen/atm_gcc_sync.h \
-include/grpc/impl/codegen/atm_windows.h \
-include/grpc/impl/codegen/gpr_types.h \
-include/grpc/impl/codegen/port_platform.h \
-include/grpc/impl/codegen/slice.h \
-include/grpc/impl/codegen/sync.h \
-include/grpc/impl/codegen/sync_generic.h \
-include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h \
 include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \
 include/grpc++/impl/codegen/call.h \
@@ -861,7 +837,24 @@ include/grpc++/impl/codegen/sync.h \
 include/grpc++/impl/codegen/sync_cxx11.h \
 include/grpc++/impl/codegen/sync_no_cxx11.h \
 include/grpc++/impl/codegen/sync_stream.h \
-include/grpc++/impl/codegen/time.h
+include/grpc++/impl/codegen/time.h \
+include/grpc/impl/codegen/byte_buffer_reader.h \
+include/grpc/impl/codegen/compression_types.h \
+include/grpc/impl/codegen/connectivity_state.h \
+include/grpc/impl/codegen/grpc_types.h \
+include/grpc/impl/codegen/propagation_bits.h \
+include/grpc/impl/codegen/status.h \
+include/grpc/impl/codegen/atm.h \
+include/grpc/impl/codegen/atm_gcc_atomic.h \
+include/grpc/impl/codegen/atm_gcc_sync.h \
+include/grpc/impl/codegen/atm_windows.h \
+include/grpc/impl/codegen/gpr_types.h \
+include/grpc/impl/codegen/port_platform.h \
+include/grpc/impl/codegen/slice.h \
+include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_generic.h \
+include/grpc/impl/codegen/sync_posix.h \
+include/grpc/impl/codegen/sync_windows.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

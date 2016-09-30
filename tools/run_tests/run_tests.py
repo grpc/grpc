@@ -999,7 +999,6 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
-                           'node0.12', 'node4', 'node5',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')

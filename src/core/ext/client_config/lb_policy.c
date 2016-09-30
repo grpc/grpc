@@ -108,16 +108,18 @@ int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 }
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                                grpc_connected_subchannel **target) {
-  policy->vtable->cancel_pick(exec_ctx, policy, target);
+                                grpc_connected_subchannel **target,
+                                grpc_error *error) {
+  policy->vtable->cancel_pick(exec_ctx, policy, target, error);
 }
 
 void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq) {
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error *error) {
   policy->vtable->cancel_picks(exec_ctx, policy, initial_metadata_flags_mask,
-                               initial_metadata_flags_eq);
+                               initial_metadata_flags_eq, error);
 }
 
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy) {
