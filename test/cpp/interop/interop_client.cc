@@ -850,7 +850,7 @@ bool InteropClient::DoCacheableUnary() {
 
   // Create request with current timestamp
   gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-  std::string timestamp = std::to_string(ts.tv_nsec);
+  std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
   SimpleRequest request;
   request.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
 
