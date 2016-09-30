@@ -63,6 +63,13 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+#================
+# Add backport to Debian sources.list and update git to version > 1.7
+RUN echo "deb http://http.debian.net/debian wheezy-backports main" \
+  >/etc/apt/sources.list.d/wheezy-backports.list
+RUN apt-get update -qq
+RUN apt-get -t wheezy-backports install -y -qq git mercurial
+
 #====================
 # Python dependencies
 
