@@ -53,10 +53,10 @@ typedef struct {
   gpr_refcount refs;
   /** load balancing policy name */
   char *lb_policy_name;
-
+  /** the path component of the uri passed in */
+  char *target_name;
   /** the addresses that we've 'resolved' */
   grpc_lb_addresses *addresses;
-
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** have we published? */
@@ -121,7 +121,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
   if (r->next_completion != NULL && !r->published) {
     r->published = true;
     *r->target_result = grpc_resolver_result_create(
-        "", grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
+        r->target_name,
+        grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
         r->lb_policy_name, NULL);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
@@ -133,6 +134,7 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_mu_destroy(&r->mu);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r->lb_policy_name);
+  gpr_free(r->target_name);
   gpr_free(r);
 }
 
@@ -220,10 +222,12 @@ static grpc_resolver *sockaddr_create(
     if (errors_found) break;
   }
 
+  r->target_name = gpr_strdup(args->uri->path);
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
     gpr_free(r->lb_policy_name);
+    gpr_free(r->target_name);
     grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
     gpr_free(r);
     return NULL;
