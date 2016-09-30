@@ -298,8 +298,15 @@ int grpc_chttp2_list_pop_waiting_for_concurrency(
 }
 
 void grpc_chttp2_list_add_check_read_ops(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {
+  grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
+  if (!t->executor.check_read_ops_scheduled) {
+    grpc_combiner_execute_finally(exec_ctx, t->executor.combiner,
+                                  &t->initiate_read_flush_locked,
+                                  GRPC_ERROR_NONE, false);
+    t->executor.check_read_ops_scheduled = true;
+  }
   stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
                   STREAM_FROM_GLOBAL(stream_global),
                   GRPC_CHTTP2_LIST_CHECK_READ_OPS);

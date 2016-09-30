@@ -43,10 +43,13 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/deadline_filter.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/channel/message_size_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
@@ -97,6 +100,21 @@ static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
 }
 
 static void register_builtin_channel_init() {
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      prepend_filter, (void *)&grpc_client_deadline_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
+      (void *)&grpc_server_deadline_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      prepend_filter, (void *)&grpc_message_size_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      prepend_filter, (void *)&grpc_message_size_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
+      (void *)&grpc_message_size_filter);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
       (void *)&grpc_compress_filter);
@@ -165,6 +183,7 @@ void grpc_init(void) {
     grpc_register_tracer("http1", &grpc_http1_trace);
     grpc_register_tracer("compression", &grpc_compression_trace);
     grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
+    grpc_register_tracer("combiner", &grpc_combiner_trace);
     // Default pluck trace to 1
     grpc_cq_pluck_trace = 1;
     grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);

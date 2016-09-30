@@ -87,6 +87,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -108,9 +111,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -129,9 +129,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -144,16 +141,13 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -166,9 +160,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">

@@ -386,7 +386,7 @@ void Init_grpc_channel() {
   rb_define_const(grpc_rb_cChannel, "MAX_CONCURRENT_STREAMS",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
   rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
-                  ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
+                  ID2SYM(rb_intern(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)));
   id_insecure_channel = rb_intern("this_channel_is_insecure");
   Init_grpc_propagate_masks();
   Init_grpc_connectivity_states();

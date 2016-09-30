@@ -39,6 +39,7 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
