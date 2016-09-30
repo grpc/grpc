@@ -87,7 +87,7 @@ void PrintIncludes(Printer *printer, const std::vector<grpc::string>& headers, c
   }
 }
 
-grpc::string GetHeaderPrologue(File *file, const Parameters & /*params*/) {
+grpc::string GetHeaderPrologue(File *file, const Parameters& params) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -108,8 +108,13 @@ grpc::string GetHeaderPrologue(File *file, const Parameters & /*params*/) {
       printer->Print(vars, "// Original file comments:\n");
       printer->Print(leading_comments.c_str());
     }
-    printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
-    printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
+    if (params.is_mock) {
+      printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
+      printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
+    } else {
+      printer->Print(vars, "#ifndef GRPC_$filename_identifier$_MOCK__INCLUDED\n");
+      printer->Print(vars, "#define GRPC_$filename_identifier$_MOCK__INCLUDED\n");
+    }
     printer->Print(vars, "\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "\n");
@@ -137,6 +142,12 @@ grpc::string GetHeaderIncludes(File *file,
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
+
+    if (params.is_mock) {
+      vars["header_filename"] = params.header_filename;
+      printer->Print(vars, "#include \"$header_filename$\"\n");
+    }
+
     printer->Print(vars, "\n");
     printer->Print(vars, "namespace grpc {\n");
     printer->Print(vars, "class CompletionQueue;\n");
@@ -467,24 +478,24 @@ void PrintHeaderServerMethodSync(Printer *printer, const Method *method,
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
                    "::grpc::ServerContext* context, const $Request$* request, "
-                   "$Response$* response);\n");
+                   "$Response$* response) = 0;\n");
   } else if (method->ClientOnlyStreaming()) {
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
                    "::grpc::ServerContext* context, "
                    "::grpc::ServerReader< $Request$>* reader, "
-                   "$Response$* response);\n");
+                   "$Response$* response) = 0;\n");
   } else if (method->ServerOnlyStreaming()) {
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
                    "::grpc::ServerContext* context, const $Request$* request, "
-                   "::grpc::ServerWriter< $Response$>* writer);\n");
+                   "::grpc::ServerWriter< $Response$>* writer) = 0;\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
         "virtual ::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
-        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream);"
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) = 0;"
         "\n");
   }
   printer->Print(method->GetTrailingComments().c_str());
@@ -776,6 +787,28 @@ void PrintHeaderService(Printer *printer,
   printer->Print(service->GetTrailingComments().c_str());
 }
 
+void PrintMockHeaderService(Printer *printer,
+                            const Service *service,
+                            std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Service"] = service->name();
+
+  printer->Print(*vars, "class Mock$Service$Impl : public $Service$::Service {\n");
+  printer->Print(*vars, "public:\n");
+  printer->Indent();
+
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Method"] = service->method(i)->name();
+    (*vars)["Request"] = service->method(i)->input_type_name();
+    (*vars)["Response"] = service->method(i)->output_type_name();
+    printer->Print(*vars, "MOCK_METHOD3($Method$, ::grpc::Status(::grpc::ServerContext* context,\n");
+    printer->Print(*vars, "const $Request$* request,\n");
+    printer->Print(*vars, "$Response$* response));\n");
+  }
+
+  printer->Outdent();
+  printer->Print(*vars, "};\n");
+}
+
 grpc::string GetHeaderServices(File *file,
                                const Parameters &params) {
   grpc::string output;
@@ -796,7 +829,11 @@ grpc::string GetHeaderServices(File *file,
     }
 
     for (int i = 0; i < file->service_count(); ++i) {
-      PrintHeaderService(printer.get(), file->service(i).get(), &vars);
+      if (params.is_mock) {
+        PrintMockHeaderService(printer.get(), file->service(i).get(), &vars);
+      } else {
+        PrintHeaderService(printer.get(), file->service(i).get(), &vars);
+      }
       printer->Print("\n");
     }
 

@@ -62,6 +62,11 @@ struct Parameters {
   bool use_system_headers;
   // Prefix to any grpc include
   grpc::string grpc_search_path;
+
+  // If true, the generated file is a mock of the actual serivce.
+  bool is_mock = false;
+  // Contains the file path where the header will be stored.
+  grpc::string header_filename;
 };
 
 // A common interface for objects having comments in the source.

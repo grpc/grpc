@@ -224,6 +224,7 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     grpc::string file_name = grpc_generator::StripProto(file->name());
+    generator_parameters.header_filename = file_name + ".grpc.pb.h";
 
     grpc::string header_code =
         grpc_cpp_generator::GetHeaderPrologue(&pbfile, generator_parameters) +
@@ -231,9 +232,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         grpc_cpp_generator::GetHeaderServices(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetHeaderEpilogue(&pbfile, generator_parameters);
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> header_output(
-        context->Open(file_name + ".grpc.pb.h"));
-    grpc::protobuf::io::CodedOutputStream header_coded_out(
-        header_output.get());
+        context->Open(generator_parameters.header_filename));
+    grpc::protobuf::io::CodedOutputStream header_coded_out(header_output.get());
     header_coded_out.WriteRaw(header_code.data(), header_code.size());
 
     grpc::string source_code =
@@ -246,6 +246,18 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     grpc::protobuf::io::CodedOutputStream source_coded_out(
         source_output.get());
     source_coded_out.WriteRaw(source_code.data(), source_code.size());
+
+    generator_parameters.is_mock = true;
+    grpc::string mock_header_code =
+        grpc_cpp_generator::GetHeaderPrologue(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetHeaderIncludes(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetHeaderServices(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetHeaderEpilogue(&pbfile, generator_parameters);
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> mock_header_output(
+        context->Open(file_name + ".grpc.pb.mock.h"));
+    grpc::protobuf::io::CodedOutputStream mock_header_coded_out(
+        mock_header_output.get());
+    mock_header_coded_out.WriteRaw(mock_header_code.data(), mock_header_code.size());
 
     return true;
   }
