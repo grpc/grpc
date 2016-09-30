@@ -578,7 +578,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                        &addr_strs[addr_index++],
                        (const struct sockaddr *)&args->addresses->addresses[i]
                            .address.addr,
-                       true) == 0);
+                       true) > 0);
       }
     }
   }
@@ -649,7 +649,6 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     *pp->target = NULL;
     grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete, GRPC_ERROR_NONE,
                         NULL);
-    gpr_free(pp);
     pp = next;
   }
 
@@ -692,7 +691,6 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_exec_ctx_sched(
           exec_ctx, &pp->wrapped_on_complete,
           GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
-      gpr_free(pp);
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -725,7 +723,6 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_exec_ctx_sched(
           exec_ctx, &pp->wrapped_on_complete,
           GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
-      gpr_free(pp);
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
