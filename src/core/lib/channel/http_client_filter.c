@@ -65,6 +65,7 @@ typedef struct call_data {
   gpr_slice incoming_slice;
   grpc_slice_buffer_stream replacement_stream;
   gpr_slice_buffer slices;
+  grpc_mdstr *payload_bytes_mdstr;
   /* flag that indicates that all slices of send_messages aren't availble */
   bool send_message_blocked;
 
@@ -147,6 +148,7 @@ static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
   call_data *calld = elem->call_data;
   if (calld->payload_bytes) {
     gpr_free(calld->payload_bytes);
+    GRPC_MDSTR_UNREF(calld->payload_bytes_mdstr);
     calld->payload_bytes = NULL;
   }
   calld->on_complete->cb(exec_ctx, calld->on_complete->cb_arg, error);
@@ -243,10 +245,10 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       if (calld->send_message_blocked == false) {
         /* when all the send_message data is available, then create a MDELEM and
         append to headers */
+        calld->payload_bytes_mdstr = grpc_mdstr_from_buffer(
+            calld->payload_bytes, op->send_message->length);
         grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
-            GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-            grpc_mdstr_from_buffer(calld->payload_bytes,
-                                   op->send_message->length));
+            GRPC_MDSTR_GRPC_PAYLOAD_BIN, calld->payload_bytes_mdstr);
         grpc_metadata_batch_add_tail(op->send_initial_metadata,
                                      &calld->payload_bin, payload_bin);
         calld->on_complete = op->on_complete;
