@@ -1,0 +1,35 @@
+# Build and run a test that encodes and decodes a message that contains
+# all of the Protocol Buffers data types.
+
+Import("env")
+
+env.NanopbProto(["alltypes", "alltypes.options"])
+enc = env.Program(["encode_alltypes.c", "alltypes.pb.c", "$COMMON/pb_encode.o", "$COMMON/pb_common.o"])
+dec = env.Program(["decode_alltypes.c", "alltypes.pb.c", "$COMMON/pb_decode.o", "$COMMON/pb_common.o"])
+
+# Test the round-trip from nanopb encoder to nanopb decoder
+env.RunTest(enc)
+env.RunTest([dec, "encode_alltypes.output"])
+
+# Re-encode the data using protoc, and check that the results from nanopb
+# match byte-per-byte to the protoc output.
+env.Decode("encode_alltypes.output.decoded",
+           ["encode_alltypes.output", "alltypes.proto"],
+           MESSAGE='AllTypes')
+env.Encode("encode_alltypes.output.recoded",
+           ["encode_alltypes.output.decoded", "alltypes.proto"],
+           MESSAGE='AllTypes')
+env.Compare(["encode_alltypes.output", "encode_alltypes.output.recoded"])
+
+# Do the same checks with the optional fields present.
+env.RunTest("optionals.output", enc, ARGS = ['1'])
+env.RunTest("optionals.decout", [dec, "optionals.output"], ARGS = ['1'])
+env.Decode("optionals.output.decoded",
+           ["optionals.output", "alltypes.proto"],
+           MESSAGE='AllTypes')
+env.Encode("optionals.output.recoded",
+           ["optionals.output.decoded", "alltypes.proto"],
+           MESSAGE='AllTypes')
+env.Compare(["optionals.output", "optionals.output.recoded"])
+
+

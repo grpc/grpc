@@ -78,10 +78,21 @@ class ServerBuilder {
   /// Only matches requests with :authority \a host
   ServerBuilder& RegisterService(const grpc::string& host, Service* service);
 
-  /// Set max message size in bytes.
-  ServerBuilder& SetMaxMessageSize(int max_message_size) {
-    max_message_size_ = max_message_size;
+  /// Set max receive message size in bytes.
+  ServerBuilder& SetMaxReceiveMessageSize(int max_receive_message_size) {
+    max_receive_message_size_ = max_receive_message_size;
     return *this;
+  }
+
+  /// Set max send message size in bytes.
+  ServerBuilder& SetMaxSendMessageSize(int max_send_message_size) {
+    max_send_message_size_ = max_send_message_size;
+    return *this;
+  }
+
+  /// \deprecated For backward compatibility.
+  ServerBuilder& SetMaxMessageSize(int max_message_size) {
+    return SetMaxReceiveMessageSize(max_message_size);
   }
 
   /// Set the support status for compression algorithms. All algorithms are
@@ -168,7 +179,8 @@ class ServerBuilder {
     Service* service;
   };
 
-  int max_message_size_;
+  int max_receive_message_size_;
+  int max_send_message_size_;
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;

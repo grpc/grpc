@@ -654,15 +654,9 @@ class CSharpLanguage(object):
     assembly_extension = '.exe'
 
     if self.args.compiler == 'coreclr':
-      if self.platform == 'linux':
-        assembly_subdir += '/netstandard1.5/debian.8-x64'
-        assembly_extension = ''
-      elif self.platform == 'mac':
-        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
-        assembly_extension = ''
-      else:
-        assembly_subdir += '/netstandard1.5/win7-x64'
-      runtime_cmd = []
+      assembly_subdir += '/netcoreapp1.0'
+      runtime_cmd = ['dotnet', 'exec']
+      assembly_extension = '.dll'
     else:
       nunit_args += ['--noresult', '--workers=1']
       if self.platform == 'windows':
@@ -1005,7 +999,6 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
-                           'node0.12', 'node4', 'node5',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
@@ -1201,18 +1194,6 @@ def _shut_down_legacy_server(legacy_server_port):
     pass
   else:
     urllib.request.urlopen(
-        'http://localhost:%d/quitquitquit' % legacy_server_port).read()
-
-
-def _shut_down_legacy_server(legacy_server_port):
-  try:
-    version = int(urllib2.urlopen(
-        'http://localhost:%d/version_number' % legacy_server_port,
-        timeout=10).read())
-  except:
-    pass
-  else:
-    urllib2.urlopen(
         'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
 

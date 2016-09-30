@@ -40,6 +40,8 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc/support/log.h>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to connect to");

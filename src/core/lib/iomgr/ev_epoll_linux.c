@@ -1531,6 +1531,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
+  GPR_TIMER_BEGIN("pollset_add_fd", 0);
+
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&pollset->mu);
@@ -1643,6 +1645,8 @@ retry:
   gpr_mu_unlock(&pollset->mu);
 
   GRPC_LOG_IF_ERROR("pollset_add_fd", error);
+
+  GPR_TIMER_END("pollset_add_fd", 0);
 }
 
 /*******************************************************************************
@@ -1893,7 +1897,7 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    grpc_use_signal(SIGRTMIN + 2);
+    grpc_use_signal(SIGRTMIN + 6);
   }
 
   fd_global_init();

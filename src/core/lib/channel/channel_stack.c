@@ -32,6 +32,7 @@
  */
 
 #include "src/core/lib/channel/channel_stack.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include <stdlib.h>
@@ -157,13 +158,11 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_stack *channel_stack,
-                                 int initial_refs, grpc_iomgr_cb_func destroy,
-                                 void *destroy_arg,
-                                 grpc_call_context_element *context,
-                                 const void *transport_server_data,
-                                 grpc_call_stack *call_stack) {
+grpc_error *grpc_call_stack_init(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
+    int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
+    grpc_call_context_element *context, const void *transport_server_data,
+    gpr_timespec deadline, grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   grpc_call_element_args args;
   size_t count = channel_stack->count;
@@ -184,6 +183,7 @@ grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
     args.call_stack = call_stack;
     args.server_transport_data = transport_server_data;
     args.context = context;
+    args.deadline = deadline;
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
@@ -270,21 +270,38 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
       sizeof(grpc_call_stack)));
 }
 
+static void destroy_op(grpc_exec_ctx *exec_ctx, void *op, grpc_error *error) {
+  gpr_free(op);
+}
+
 void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
-                                   grpc_call_element *cur_elem) {
-  grpc_transport_stream_op op;
-  memset(&op, 0, sizeof(op));
-  op.cancel_error = GRPC_ERROR_CANCELLED;
-  grpc_call_next_op(exec_ctx, cur_elem, &op);
+                                   grpc_call_element *elem) {
+  grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
+  memset(op, 0, sizeof(*op));
+  op->cancel_error = GRPC_ERROR_CANCELLED;
+  op->on_complete = grpc_closure_create(destroy_op, op);
+  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
 }
 
 void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
-                                                grpc_call_element *cur_elem,
+                                                grpc_call_element *elem,
                                                 grpc_status_code status,
                                                 gpr_slice *optional_message) {
-  grpc_transport_stream_op op;
-  memset(&op, 0, sizeof(op));
-  grpc_transport_stream_op_add_cancellation_with_message(&op, status,
+  grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
+  memset(op, 0, sizeof(*op));
+  op->on_complete = grpc_closure_create(destroy_op, op);
+  grpc_transport_stream_op_add_cancellation_with_message(op, status,
                                                          optional_message);
-  grpc_call_next_op(exec_ctx, cur_elem, &op);
+  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
+}
+
+void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *elem,
+                                               grpc_status_code status,
+                                               gpr_slice *optional_message) {
+  grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
+  memset(op, 0, sizeof(*op));
+  op->on_complete = grpc_closure_create(destroy_op, op);
+  grpc_transport_stream_op_add_close(op, status, optional_message);
+  elem->filter->start_transport_stream_op(exec_ctx, elem, op);
 }

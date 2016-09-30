@@ -29,6 +29,10 @@
 
 @rem Builds gRPC NuGet packages
 
+@rem This way of building nuget packages is now obsolete. C# nuget packages
+@rem with CoreCLR support are now being built using the dotnet cli
+@rem in build_packages_dotnetcli.sh
+
 @rem Current package versions
 set VERSION=1.1.0-dev
 set PROTOBUF_VERSION=3.0.0
@@ -77,8 +81,8 @@ endlocal
 xcopy /Y /I *.nupkg ..\..\artifacts\
 
 @rem create a zipfile with the artifacts as well
-powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('..\..\artifacts', 'csharp_nugets.zip');"
-xcopy /Y /I csharp_nugets.zip ..\..\artifacts\
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('..\..\artifacts', 'csharp_nugets_obsolete.zip');"
+xcopy /Y /I csharp_nugets_obsolete.zip ..\..\artifacts\
 
 goto :EOF
 

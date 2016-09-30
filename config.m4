@@ -56,6 +56,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_linux.c \
     src/core/lib/support/log_posix.c \
     src/core/lib/support/log_windows.c \
+    src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
     src/core/lib/support/percent_encoding.c \
     src/core/lib/support/slice.c \
@@ -88,9 +89,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
+    src/core/lib/channel/message_size_filter.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -98,6 +101,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
+    src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
@@ -232,6 +236,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/client_config_plugin.c \
     src/core/ext/client_config/connector.c \
     src/core/ext/client_config/default_initial_connect_string.c \
+    src/core/ext/client_config/http_connect_handshaker.c \
     src/core/ext/client_config/initial_connect_string.c \
     src/core/ext/client_config/lb_policy.c \
     src/core/ext/client_config/lb_policy_factory.c \
@@ -272,6 +277,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
     src/core/ext/census/resource.c \
+    src/core/ext/census/trace_context.c \
     src/core/ext/census/tracing.c \
     src/core/plugin_registry/grpc_plugin_registry.c \
     src/boringssl/err_data.c \

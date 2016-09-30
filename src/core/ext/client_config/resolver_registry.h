@@ -36,8 +36,11 @@
 
 #include "src/core/ext/client_config/resolver_factory.h"
 
-void grpc_resolver_registry_init(const char *default_prefix);
+void grpc_resolver_registry_init();
 void grpc_resolver_registry_shutdown(void);
+
+/** Set the default URI prefix to \a default_prefix. */
+void grpc_resolver_registry_set_default_prefix(const char *default_prefix);
 
 /** Register a resolver type.
     URI's of \a scheme will be resolved with the given resolver.
@@ -55,8 +58,7 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     If a resolver factory was found, use it to instantiate a resolver and
     return it.
     If a resolver factory was not found, return NULL. */
-grpc_resolver *grpc_resolver_create(
-    const char *target, grpc_client_channel_factory *client_channel_factory);
+grpc_resolver *grpc_resolver_create(const char *target);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */
