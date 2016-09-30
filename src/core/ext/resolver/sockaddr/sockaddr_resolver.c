@@ -54,14 +54,14 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
+  /** the path component of the uri passed in */
+  char *target_name;
+  /** the addresses that we've 'resolved' */
+  grpc_lb_addresses *addresses;
   /** load balancing policy name */
   char *lb_policy_name;
   /** method config table */
   grpc_method_config_table *method_config_table;
-
-  /** the addresses that we've 'resolved' */
-  grpc_lb_addresses *addresses;
-
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** have we published? */
@@ -132,7 +132,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
       lb_policy_args = grpc_channel_args_copy_and_add(NULL /* src */, &arg, 1);
     }
     *r->target_result = grpc_resolver_result_create(
-        "", grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
+        r->target_name,
+        grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
         r->lb_policy_name, lb_policy_args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
@@ -142,6 +143,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
+  gpr_free(r->target_name);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r->lb_policy_name);
   grpc_method_config_table_unref(r->method_config_table);
@@ -184,6 +186,7 @@ static grpc_resolver *sockaddr_create(
 
   sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
+  r->target_name = gpr_strdup(args->uri->path);
 
   // Initialize LB policy name.
   r->lb_policy_name =
@@ -232,6 +235,7 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_unref(path_slice);
   if (errors_found) {
     gpr_free(r->lb_policy_name);
+    gpr_free(r->target_name);
     grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
     gpr_free(r);
     return NULL;

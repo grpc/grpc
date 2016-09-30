@@ -46,6 +46,7 @@
 #include "test/core/util/test_config.h"
 
 typedef struct on_resolution_arg {
+  char *expected_server_name;
   const char *expected_method_name;
   bool expected_wait_for_ready;
   gpr_timespec expected_timeout;
@@ -56,6 +57,9 @@ typedef struct on_resolution_arg {
 
 void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   on_resolution_arg *res = arg;
+  const char *server_name =
+      grpc_resolver_result_get_server_name(res->resolver_result);
+  GPR_ASSERT(strcmp(res->expected_server_name, server_name) == 0);
   const grpc_channel_args *lb_policy_args =
       grpc_resolver_result_get_lb_policy_args(res->resolver_result);
   if (res->expected_method_name == NULL) {
@@ -107,6 +111,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(resolver != NULL);
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
+  on_res_arg.expected_server_name = uri->path;
   grpc_closure *on_resolution =
       grpc_closure_create(on_resolution_cb, &on_res_arg);
   grpc_resolver_next(&exec_ctx, resolver, &on_res_arg.resolver_result,
@@ -133,6 +138,7 @@ static void test_succeeds_with_service_config(
   GPR_ASSERT(resolver != NULL);
   on_resolution_arg on_res_arg;
   memset(&on_res_arg, 0, sizeof(on_res_arg));
+  on_res_arg.expected_server_name = uri->path;
   on_res_arg.expected_method_name = method_name;
   on_res_arg.expected_wait_for_ready = wait_for_ready;
   on_res_arg.expected_timeout = timeout;
