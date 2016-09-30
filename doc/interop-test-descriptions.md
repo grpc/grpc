@@ -767,7 +767,6 @@ Procedure:
    
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
-* received status message is empty or null/unset
 
 ### unimplemented_service
 
@@ -783,7 +782,6 @@ Procedure:
 
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
-* received status message is empty or null/unset
 
 ### cancel_after_begin
 
