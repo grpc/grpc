@@ -1430,6 +1430,7 @@ add_library(grpc_plugin_support
   src/compiler/csharp_generator.cc
   src/compiler/node_generator.cc
   src/compiler/objective_c_generator.cc
+  src/compiler/php_generator.cc
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
 )
@@ -1763,6 +1764,34 @@ target_link_libraries(grpc_objective_c_plugin
 
 if (gRPC_INSTALL)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_executable(grpc_php_plugin
+  src/compiler/php_plugin.cc
+)
+
+target_include_directories(grpc_php_plugin
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_php_plugin
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_plugin_support
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
