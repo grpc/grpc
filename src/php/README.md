@@ -68,7 +68,6 @@ the `composer` and `protoc` binaries. You can find out how to get these
 [below](#generated-code-tests).
 
 
-
 ## Build from Source
 
 
