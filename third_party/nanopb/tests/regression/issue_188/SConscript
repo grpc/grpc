@@ -1,0 +1,6 @@
+# Regression test for issue with Enums inside OneOf.
+
+Import('env')
+
+env.NanopbProto('oneof')
+
