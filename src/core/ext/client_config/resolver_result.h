@@ -48,7 +48,7 @@
 /// Results reported from a grpc_resolver.
 typedef struct grpc_resolver_result grpc_resolver_result;
 
-/// Takes ownership of \a addresses, \a lb_policy_args.
+/// Takes ownership of \a addresses and \a lb_policy_args.
 grpc_resolver_result* grpc_resolver_result_create(
     const char* server_name, grpc_lb_addresses* addresses,
     const char* lb_policy_name, grpc_channel_args* lb_policy_args);

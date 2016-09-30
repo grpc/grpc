@@ -36,12 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/channel/channel_args.h"
-
-//
-// grpc_resolver_result
-//
 
 struct grpc_resolver_result {
   gpr_refcount refs;

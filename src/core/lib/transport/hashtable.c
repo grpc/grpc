@@ -77,7 +77,7 @@ grpc_hash_table* grpc_hash_table_create(size_t num_entries,
   grpc_hash_table* table = gpr_malloc(sizeof(*table));
   memset(table, 0, sizeof(*table));
   gpr_ref_init(&table->refs, 1);
-  // Quadratic chaining gets best performance when the table is no more
+  // Quadratic probing gets best performance when the table is no more
   // than half full.
   table->num_entries = num_entries * 2;
   const size_t entry_size = sizeof(grpc_hash_table_entry) * table->num_entries;

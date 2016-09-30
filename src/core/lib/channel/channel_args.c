@@ -276,7 +276,9 @@ const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
                                        const char *name) {
   if (args != NULL) {
     for (size_t i = 0; i < args->num_args; ++i) {
-      if (args->args[i].key == name) return &args->args[i];
+      if (strcmp(args->args[i].key, name) == 0) {
+        return &args->args[i];
+      }
     }
   }
   return NULL;

@@ -121,35 +121,35 @@ grpc_method_config* grpc_method_config_create(
     int32_t* max_request_message_bytes, int32_t* max_response_message_bytes) {
   grpc_method_config* method_config = gpr_malloc(sizeof(grpc_method_config));
   memset(method_config, 0, sizeof(grpc_method_config));
+  method_config->wait_for_ready_key =
+      grpc_mdstr_from_string(GRPC_METHOD_CONFIG_WAIT_FOR_READY);
+  method_config->timeout_key =
+      grpc_mdstr_from_string(GRPC_METHOD_CONFIG_TIMEOUT);
+  method_config->max_request_message_bytes_key =
+      grpc_mdstr_from_string(GRPC_METHOD_CONFIG_MAX_REQUEST_MESSAGE_BYTES);
+  method_config->max_response_message_bytes_key =
+      grpc_mdstr_from_string(GRPC_METHOD_CONFIG_MAX_RESPONSE_MESSAGE_BYTES);
   grpc_hash_table_entry entries[4];
   size_t num_entries = 0;
   if (wait_for_ready != NULL) {
-    method_config->wait_for_ready_key =
-        grpc_mdstr_from_string(GRPC_METHOD_CONFIG_WAIT_FOR_READY);
     entries[num_entries].key = method_config->wait_for_ready_key;
     entries[num_entries].value = wait_for_ready;
     entries[num_entries].vtable = &bool_vtable;
     ++num_entries;
   }
   if (timeout != NULL) {
-    method_config->timeout_key =
-        grpc_mdstr_from_string(GRPC_METHOD_CONFIG_TIMEOUT);
     entries[num_entries].key = method_config->timeout_key;
     entries[num_entries].value = timeout;
     entries[num_entries].vtable = &timespec_vtable;
     ++num_entries;
   }
   if (max_request_message_bytes != NULL) {
-    method_config->max_request_message_bytes_key =
-        grpc_mdstr_from_string(GRPC_METHOD_CONFIG_MAX_REQUEST_MESSAGE_BYTES);
     entries[num_entries].key = method_config->max_request_message_bytes_key;
     entries[num_entries].value = max_request_message_bytes;
     entries[num_entries].vtable = &int32_vtable;
     ++num_entries;
   }
   if (max_response_message_bytes != NULL) {
-    method_config->max_response_message_bytes_key =
-        grpc_mdstr_from_string(GRPC_METHOD_CONFIG_MAX_RESPONSE_MESSAGE_BYTES);
     entries[num_entries].key = method_config->max_response_message_bytes_key;
     entries[num_entries].value = max_response_message_bytes;
     entries[num_entries].vtable = &int32_vtable;
@@ -170,6 +170,7 @@ void grpc_method_config_unref(grpc_method_config* method_config) {
     GRPC_MDSTR_UNREF(method_config->timeout_key);
     GRPC_MDSTR_UNREF(method_config->max_request_message_bytes_key);
     GRPC_MDSTR_UNREF(method_config->max_response_message_bytes_key);
+    gpr_free(method_config);
   }
 }
 
@@ -261,7 +262,7 @@ grpc_method_config* grpc_method_config_table_get_method_config(
     method_config = grpc_hash_table_get(table, wildcard_path);
     GRPC_MDSTR_UNREF(wildcard_path);
   }
-  return grpc_method_config_ref(method_config);
+  return method_config;
 }
 
 static void* copy_arg(void* p) {

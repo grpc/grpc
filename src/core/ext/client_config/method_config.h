@@ -86,7 +86,7 @@ int grpc_method_config_table_cmp(grpc_method_config_table* table1,
                                  grpc_method_config_table* table2);
 
 /// Returns NULL if the method has no config.
-/// Caller owns a reference to result.
+/// Caller does NOT own a reference to the result.
 grpc_method_config* grpc_method_config_table_get_method_config(
     grpc_method_config_table* table, grpc_mdstr* path);
 

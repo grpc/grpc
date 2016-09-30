@@ -811,7 +811,9 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
           *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
     }
   }
-  grpc_method_config_table_unref(chand->method_config_table);
+  if (method_config_table != NULL) {
+    grpc_method_config_table_unref(method_config_table);
+  }
   calld->deadline = args->deadline;
   calld->path = GRPC_MDSTR_REF(args->path);
   calld->cancel_error = GRPC_ERROR_NONE;
