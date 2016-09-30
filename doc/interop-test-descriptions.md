@@ -82,7 +82,7 @@ Procedure:
     request context. Longer term this should be driven by the method option
     specified in the proto file itself.
  2. Client calls CacheableUnaryCall with `SimpleRequest` request again
-    immediately with the same payload as the previous request. Cacheable flat is
+    immediately with the same payload as the previous request. Cacheable flag is
     also set for this request's context.
 
 Client asserts:
