@@ -221,7 +221,6 @@ void test_poll_cv_trigger(void) {
   GPR_ASSERT(pfds[3].revents == 0);
   GPR_ASSERT(pfds[4].revents == 0);
   GPR_ASSERT(pfds[5].revents == 0);
-
 }
 
 int main(int argc, char **argv) {

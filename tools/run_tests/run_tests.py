@@ -1027,7 +1027,7 @@ argp.add_argument('--force_default_poller', default=False, action='store_const',
 args = argp.parse_args()
 
 if args.force_default_poller:
-  _POLLING_STRATEGIES = {'linux': ['poll-cv']}
+  _POLLING_STRATEGIES = {}
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
 
