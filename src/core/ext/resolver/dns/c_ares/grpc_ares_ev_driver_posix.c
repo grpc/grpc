@@ -58,6 +58,7 @@ typedef struct fd_pair {
 } fd_pair;
 
 struct grpc_ares_ev_driver {
+  gpr_mu mu;
   bool closing;
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
   int bitmask;
@@ -66,6 +67,9 @@ struct grpc_ares_ev_driver {
   ares_channel channel;
   fd_pair *fds;
 };
+
+static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
+                                             grpc_ares_ev_driver *ev_driver);
 
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set) {
@@ -76,6 +80,7 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
     gpr_free(*ev_driver);
     return GRPC_ERROR_CREATE("Failed to init ares channel");
   }
+  gpr_mu_init(&(*ev_driver)->mu);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = NULL;
   (*ev_driver)->closing = false;
@@ -108,6 +113,7 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_ares_ev_driver *d = arg;
   size_t i;
 
+  gpr_mu_lock(&d->mu);
   if (error == GRPC_ERROR_NONE) {
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       ares_process_fd(
@@ -118,15 +124,22 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   } else {
     ares_cancel(d->channel);
   }
-  grpc_ares_notify_on_event(exec_ctx, d);
+  grpc_ares_notify_on_event_locked(exec_ctx, d);
+  if (d->closing) {
+    ares_destroy(d->channel);
+    gpr_mu_unlock(&d->mu);
+    gpr_free(d);
+    return;
+  }
+  gpr_mu_unlock(&d->mu);
 }
 
 ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
   return &ev_driver->channel;
 }
 
-void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
-                               grpc_ares_ev_driver *ev_driver) {
+static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
+                                             grpc_ares_ev_driver *ev_driver) {
   size_t i;
   fd_pair *new_list = NULL;
   if (!ev_driver->closing) {
@@ -141,7 +154,7 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
         if (!fdp) {
           char *fd_name;
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
-          
+
           fdp = gpr_malloc(sizeof(fd_pair));
           fdp->grpc_fd = grpc_fd_create(ev_driver->socks[i], fd_name);
           fdp->fd = ev_driver->socks[i];
@@ -177,10 +190,19 @@ void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
   }
 
   ev_driver->fds = new_list;
+}
+
+void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
+                               grpc_ares_ev_driver *ev_driver) {
+  gpr_mu_lock(&ev_driver->mu);
+  grpc_ares_notify_on_event_locked(exec_ctx, ev_driver);
   if (ev_driver->closing) {
     ares_destroy(ev_driver->channel);
+    gpr_mu_unlock(&ev_driver->mu);
     gpr_free(ev_driver);
+    return;
   }
+  gpr_mu_unlock(&ev_driver->mu);
 }
 
 #endif /* GPR_POSIX_SOCKET */
