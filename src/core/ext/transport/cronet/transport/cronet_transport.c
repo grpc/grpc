@@ -57,6 +57,14 @@
     if (grpc_cronet_trace) gpr_log(__VA_ARGS__); \
   } while (0)
 
+#define free_read_buffer(state_rs)                                    \
+  if ((state_rs).read_buffer &&                                       \
+      (state_rs).read_buffer != (state_rs).grpc_header_bytes) {       \
+    gpr_free((state_rs).read_buffer);                                 \
+    (state_rs).read_buffer = NULL;                                    \
+  }
+
+
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
 int grpc_cronet_trace = 0;
 
@@ -341,11 +349,7 @@ static void on_failed(cronet_bidirectional_stream *stream, int net_error) {
     gpr_free(s->state.ws.write_buffer);
     s->state.ws.write_buffer = NULL;
   }
-  if (s->state.rs.read_buffer &&
-      s->state.rs.read_buffer != s->state.rs.grpc_header_bytes) {
-    gpr_free(s->state.rs.read_buffer);
-    s->state.rs.read_buffer = NULL;
-  }
+  free_read_buffer(s->state.rs);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
@@ -368,11 +372,7 @@ static void on_canceled(cronet_bidirectional_stream *stream) {
     gpr_free(s->state.ws.write_buffer);
     s->state.ws.write_buffer = NULL;
   }
-  if (s->state.rs.read_buffer &&
-      s->state.rs.read_buffer != s->state.rs.grpc_header_bytes) {
-    gpr_free(s->state.rs.read_buffer);
-    s->state.rs.read_buffer = NULL;
-  }
+  free_read_buffer(s->state.rs);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
@@ -387,11 +387,7 @@ static void on_succeeded(cronet_bidirectional_stream *stream) {
   cronet_bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_SUCCEEDED] = true;
   s->cbs = NULL;
-  if (s->state.rs.read_buffer &&
-      s->state.rs.read_buffer != s->state.rs.grpc_header_bytes) {
-    gpr_free(s->state.rs.read_buffer);
-    s->state.rs.read_buffer = NULL;
-  }
+  free_read_buffer(s->state.rs);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
 }
@@ -916,11 +912,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);
-      if (stream_state.rs.read_buffer &&
-          stream_state.rs.read_buffer != stream_state.rs.grpc_header_bytes) {
-        gpr_free(stream_state.rs.read_buffer);
-        stream_state.rs.read_buffer = NULL;
-      }
+      free_read_buffer(stream_state->rs);
       gpr_slice_buffer_init(&stream_state->rs.read_slice_buffer);
       gpr_slice_buffer_add(&stream_state->rs.read_slice_buffer,
                            read_data_slice);
