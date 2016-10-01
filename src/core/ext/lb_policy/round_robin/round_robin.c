@@ -393,10 +393,10 @@ static void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
-static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                   const grpc_lb_policy_pick_args *pick_args,
-                   grpc_connected_subchannel **target, void **user_data,
-                   grpc_closure *on_complete) {
+static bool rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                    const grpc_lb_policy_pick_args *pick_args,
+                    grpc_connected_subchannel **target, void **user_data,
+                    grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   ready_list *selected;
@@ -416,7 +416,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     /* only advance the last picked pointer if the selection was used */
     advance_last_picked_locked(p);
-    return 1;
+    return true;
   } else {
     /* no pick currently available. Save for later in list of pending picks */
     if (!p->started_picking) {
@@ -433,7 +433,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp->user_data = user_data;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);
-    return 0;
+    return false;
   }
 }
 
