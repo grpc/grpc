@@ -82,7 +82,7 @@ _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 # the tests pass on any language. This approach will no longer be necessary
 # when the testing infrastructure would be able to support different testing
 # configurations for different branches of the repository.
-_FREE_PASS = object()
+_UNSUPPORTED_COMPILER_SKIP_TESTS = object()
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -162,7 +162,7 @@ class CLanguage(object):
                                                                        self.args.compiler)
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     out = []
     binaries = get_c_tests(self.args.travis, self.test_lang)
@@ -226,7 +226,7 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       # don't build tools on windows just yet
@@ -237,7 +237,7 @@ class CLanguage(object):
     return self._make_options;
 
   def pre_build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_c.bat']]
@@ -248,7 +248,7 @@ class CLanguage(object):
     return []
 
   def post_tests_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return []
@@ -259,7 +259,7 @@ class CLanguage(object):
     return 'Makefile'
 
   def _clang_make_options(self, version_suffix=''):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['CC=clang%s' % version_suffix,
             'CXX=clang++%s' % version_suffix,
@@ -267,7 +267,7 @@ class CLanguage(object):
             'LDXX=clang++%s' % version_suffix]
 
   def _gcc_make_options(self, version_suffix):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['CC=gcc%s' % version_suffix,
             'CXX=g++%s' % version_suffix,
@@ -276,7 +276,7 @@ class CLanguage(object):
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
-    if self.args.compiler is _FREE_PASS and args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and args.travis:
       return (), ()
 
     if not use_docker and not _is_use_docker_child():
@@ -320,17 +320,17 @@ class NodeLanguage(object):
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         _FREE_PASS])
+                                         _UNSUPPORTED_COMPILER_SKIP_TESTS])
     if self.args.compiler == 'default':
       self.node_version = '4'
-    elif self.args.compiler is _FREE_PASS:
-      self.node_version = _FREE_PASS
+    elif self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS:
+      self.node_version = _UNSUPPORTED_COMPILER_SKIP_TESTS
     else:
       # Take off the word "node"
       self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return [self.config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
@@ -340,7 +340,7 @@ class NodeLanguage(object):
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_node.bat']]
@@ -354,7 +354,7 @@ class NodeLanguage(object):
     return []
 
   def build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\build_node.bat']]
@@ -379,10 +379,10 @@ class PhpLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default', _FREE_PASS])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
@@ -391,7 +391,7 @@ class PhpLanguage(object):
     return []
 
   def make_targets(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['static_c', 'shared_c']
 
@@ -399,12 +399,12 @@ class PhpLanguage(object):
     return []
 
   def build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/build_php.sh']]
 
   def post_tests_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/post_tests_php.sh']]
 
@@ -423,10 +423,10 @@ class Php7Language(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default', _FREE_PASS])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
@@ -435,7 +435,7 @@ class Php7Language(object):
     return []
 
   def make_targets(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['static_c', 'shared_c']
 
@@ -443,12 +443,12 @@ class Php7Language(object):
     return []
 
   def build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/build_php.sh']]
 
   def post_tests_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/post_tests_php.sh']]
 
@@ -564,17 +564,17 @@ class RubyLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default', _FREE_PASS])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/pre_build_ruby.sh']]
 
@@ -585,12 +585,12 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/build_ruby.sh']]
 
   def post_tests_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['tools/run_tests/post_tests_ruby.sh']]
 
@@ -620,7 +620,7 @@ class CSharpLanguage(object):
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(arch_option)]
     else:
-      _check_compiler(self.args.compiler, ['default', 'coreclr', _FREE_PASS])
+      _check_compiler(self.args.compiler, ['default', 'coreclr', _UNSUPPORTED_COMPILER_SKIP_TESTS])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
         self._docker_distro = 'coreclr'
       else:
@@ -636,7 +636,7 @@ class CSharpLanguage(object):
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     with open('src/csharp/tests.json') as f:
       tests_by_assembly = json.load(f)
@@ -693,7 +693,7 @@ class CSharpLanguage(object):
     return specs
 
   def pre_build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_csharp.bat']]
@@ -701,17 +701,17 @@ class CSharpLanguage(object):
       return [['tools/run_tests/pre_build_csharp.sh']]
 
   def make_targets(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['grpc_csharp_ext']
 
   def make_options(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return self._make_options
 
   def build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.args.compiler == 'coreclr':
       if self.platform == 'windows':
@@ -727,7 +727,7 @@ class CSharpLanguage(object):
         return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\post_tests_csharp.bat']]
@@ -750,10 +750,10 @@ class ObjCLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default', _FREE_PASS])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [
         self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
@@ -770,7 +770,7 @@ class ObjCLanguage(object):
     return []
 
   def make_targets(self):
-    if self.args.compiler == _FREE_PASS and self.args.travis:
+    if self.args.compiler == _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['interop_server']
 
@@ -778,7 +778,7 @@ class ObjCLanguage(object):
     return []
 
   def build_steps(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return [['src/objective-c/tests/build_tests.sh']]
 
@@ -800,11 +800,11 @@ class Sanity(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default', _FREE_PASS])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
     import yaml
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
       return [self.config.job_spec(cmd['script'].split(),
@@ -816,7 +816,7 @@ class Sanity(object):
     return []
 
   def make_targets(self):
-    if self.args.compiler is _FREE_PASS and self.args.travis:
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
       return ()
     return ['run_dep_checks']
 
@@ -964,7 +964,7 @@ _COMPILER_CHOICES = ('default',
                      'python2.7', 'python3.4',
                      'node0.12', 'node4', 'node5',
                      'coreclr',
-                     _FREE_PASS,)
+                     _UNSUPPORTED_COMPILER_SKIP_TESTS,)
 
 
 def _is_travis_enabled():
@@ -984,7 +984,7 @@ def _compiler_choices(compiler):
     if compiler in _COMPILER_CHOICES:
       return compiler
     else:
-      return _FREE_PASS
+      return _UNSUPPORTED_COMPILER_SKIP_TESTS
   else:
     if compiler in _COMPILER_CHOICES:
       return compiler
