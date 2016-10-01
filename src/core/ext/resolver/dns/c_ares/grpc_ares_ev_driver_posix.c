@@ -51,25 +51,38 @@
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
-typedef struct fd_pair {
+typedef struct fd_node {
   grpc_fd *grpc_fd;
-  int fd;
-  struct fd_pair *next;
-} fd_pair;
+  struct fd_node *next;
+} fd_node;
 
 struct grpc_ares_ev_driver {
-  gpr_mu mu;
-  bool closing;
-  ares_socket_t socks[ARES_GETSOCK_MAXNUM];
-  int bitmask;
-  grpc_closure driver_closure;
-  grpc_pollset_set *pollset_set;
+  /** the ares_channel owned by this event driver */
   ares_channel channel;
-  fd_pair *fds;
+  /** a closure wrapping the driver_cb, which should be invoked each time the ev
+      driver gets notified by fds. */
+  grpc_closure driver_closure;
+  /** pollset set for driving the IO events of the channel */
+  grpc_pollset_set *pollset_set;
+
+  /** mutex guarding the reset of the state */
+  gpr_mu mu;
+  /** has grpc_ares_ev_driver_destroy been called on this event driver? */
+  bool closing;
+  /** is this event driver currently working? */
+  bool working;
+  /** an array of ares sockets that the ares channel owned by this event driver
+      is currently using */
+  ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+  /** a bitmask that can tell if an ares socket in the socks array is readable
+      or/and writable */
+  int socks_bitmask;
+  /** a list of grpc_fd that this event driver is currently using. */
+  fd_node *fds;
 };
 
-static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
-                                             grpc_ares_ev_driver *ev_driver);
+static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
+                                      grpc_ares_ev_driver *ev_driver);
 
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set) {
@@ -91,21 +104,24 @@ void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
   ev_driver->closing = true;
 }
 
-static fd_pair *get_fd(fd_pair **head, int fd) {
-  fd_pair dummy_head;
-  fd_pair *node;
-  fd_pair *ret;
+static fd_node *get_fd(fd_node **head, int fd) {
+  fd_node dummy_head;
+  fd_node *node;
+  fd_node *ret;
 
   dummy_head.next = *head;
   node = &dummy_head;
   while (node->next != NULL) {
-    if (node->next->fd == fd) {
+    if (grpc_fd_wrapped_fd(node->next->grpc_fd) == fd) {
+      gpr_log(GPR_ERROR, "equal");
       ret = node->next;
       node->next = node->next->next;
       *head = dummy_head.next;
       return ret;
     }
+    // node = node->next;
   }
+  gpr_log(GPR_ERROR, "not equal");
   return NULL;
 }
 
@@ -113,65 +129,57 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_ares_ev_driver *d = arg;
   size_t i;
 
-  gpr_mu_lock(&d->mu);
   if (error == GRPC_ERROR_NONE) {
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-      ares_process_fd(
-          d->channel,
-          ARES_GETSOCK_READABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD,
-          ARES_GETSOCK_WRITABLE(d->bitmask, i) ? d->socks[i] : ARES_SOCKET_BAD);
+      ares_process_fd(d->channel, ARES_GETSOCK_READABLE(d->socks_bitmask, i)
+                                      ? d->socks[i]
+                                      : ARES_SOCKET_BAD,
+                      ARES_GETSOCK_WRITABLE(d->socks_bitmask, i)
+                          ? d->socks[i]
+                          : ARES_SOCKET_BAD);
     }
   } else {
     ares_cancel(d->channel);
   }
-  grpc_ares_notify_on_event_locked(exec_ctx, d);
-  if (d->closing) {
-    ares_destroy(d->channel);
-    gpr_mu_unlock(&d->mu);
-    gpr_free(d);
-    return;
-  }
-  gpr_mu_unlock(&d->mu);
+  grpc_ares_notify_on_event(exec_ctx, d);
 }
 
 ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
   return &ev_driver->channel;
 }
 
-static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
-                                             grpc_ares_ev_driver *ev_driver) {
+static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
+                                      grpc_ares_ev_driver *ev_driver) {
   size_t i;
-  fd_pair *new_list = NULL;
+  fd_node *new_list = NULL;
   if (!ev_driver->closing) {
-    ev_driver->bitmask =
+    ev_driver->socks_bitmask =
         ares_getsock(ev_driver->channel, ev_driver->socks, ARES_GETSOCK_MAXNUM);
     grpc_closure_init(&ev_driver->driver_closure, driver_cb, ev_driver);
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-
-      if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i) ||
-          ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
-        fd_pair *fdp = get_fd(&ev_driver->fds, ev_driver->socks[i]);
-        if (!fdp) {
+      if (ARES_GETSOCK_READABLE(ev_driver->socks_bitmask, i) ||
+          ARES_GETSOCK_WRITABLE(ev_driver->socks_bitmask, i)) {
+        fd_node *fdn = get_fd(&ev_driver->fds, ev_driver->socks[i]);
+        if (!fdn) {
           char *fd_name;
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
 
-          fdp = gpr_malloc(sizeof(fd_pair));
-          fdp->grpc_fd = grpc_fd_create(ev_driver->socks[i], fd_name);
-          fdp->fd = ev_driver->socks[i];
+          fdn = gpr_malloc(sizeof(fd_node));
+          fdn->grpc_fd = grpc_fd_create(ev_driver->socks[i], fd_name);
           grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
-                                  fdp->grpc_fd);
+                                  fdn->grpc_fd);
 
           gpr_free(fd_name);
         }
-        fdp->next = new_list;
-        new_list = fdp;
+        fdn->next = new_list;
+        new_list = fdn;
 
-        if (ARES_GETSOCK_READABLE(ev_driver->bitmask, i)) {
-          grpc_fd_notify_on_read(exec_ctx, fdp->grpc_fd,
+        if (ARES_GETSOCK_READABLE(ev_driver->socks_bitmask, i)) {
+          grpc_fd_notify_on_read(exec_ctx, fdn->grpc_fd,
                                  &ev_driver->driver_closure);
         }
-        if (ARES_GETSOCK_WRITABLE(ev_driver->bitmask, i)) {
-          grpc_fd_notify_on_write(exec_ctx, fdp->grpc_fd,
+        if (ARES_GETSOCK_WRITABLE(ev_driver->socks_bitmask, i)) {
+          grpc_fd_notify_on_write(exec_ctx, fdn->grpc_fd,
                                   &ev_driver->driver_closure);
         }
       }
@@ -179,7 +187,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
   }
 
   while (ev_driver->fds != NULL) {
-    fd_pair *cur;
+    fd_node *cur;
 
     cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
@@ -190,19 +198,31 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
   }
 
   ev_driver->fds = new_list;
-}
+  // If the ev driver has no working fd, all the tasks are done.
+  if (!new_list) {
+    gpr_mu_lock(&ev_driver->mu);
+    ev_driver->working = false;
+    gpr_mu_unlock(&ev_driver->mu);
+  }
 
-void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
-                               grpc_ares_ev_driver *ev_driver) {
-  gpr_mu_lock(&ev_driver->mu);
-  grpc_ares_notify_on_event_locked(exec_ctx, ev_driver);
   if (ev_driver->closing) {
     ares_destroy(ev_driver->channel);
-    gpr_mu_unlock(&ev_driver->mu);
     gpr_free(ev_driver);
     return;
   }
+}
+
+void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
+                               grpc_ares_ev_driver *ev_driver) {
+  gpr_mu_lock(&ev_driver->mu);
+  if (ev_driver->working) {
+    gpr_mu_unlock(&ev_driver->mu);
+    return;
+  } else {
+    ev_driver->working = true;
+  }
   gpr_mu_unlock(&ev_driver->mu);
+  grpc_ares_notify_on_event(exec_ctx, ev_driver);
 }
 
 #endif /* GPR_POSIX_SOCKET */

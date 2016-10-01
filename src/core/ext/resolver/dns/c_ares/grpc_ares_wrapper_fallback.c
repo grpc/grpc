@@ -55,6 +55,6 @@ grpc_error *grpc_ares_init(void) { return GRPC_ERROR_NONE; }
 
 void grpc_ares_cleanup(void) {}
 
-int grpc_ares_need_poll_entity(void) { return 0; }
+bool grpc_ares_need_poll_entity(void) { return false; }
 
 #endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

@@ -187,7 +187,7 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
-  grpc_ares_notify_on_event(exec_ctx, ev_driver);
+  grpc_ares_ev_driver_start(exec_ctx, ev_driver);
 }
 
 static int try_fake_resolve(const char *name, const char *port,
@@ -307,6 +307,6 @@ void grpc_ares_cleanup(void) {
   gpr_mu_unlock(&g_init_mu);
 }
 
-int grpc_ares_need_poll_entity(void) { return 1; }
+bool grpc_ares_need_poll_entity(void) { return true; }
 
 #endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

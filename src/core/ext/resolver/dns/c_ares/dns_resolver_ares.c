@@ -64,6 +64,8 @@ typedef struct {
   grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
+  /** polling entity for driving the async IO events */
+  grpc_polling_entity *pollent;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -88,7 +90,6 @@ typedef struct {
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
 
-  grpc_polling_entity *pollent;
 } dns_resolver;
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);

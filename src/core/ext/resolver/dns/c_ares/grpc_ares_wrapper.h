@@ -41,6 +41,9 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+/* Asynchronously resolve addr. Use default_port if a port isn't designated
+   in addr, otherwise use the port in addr. grpc_ares_init() must be called
+   at least once before this function . */
 extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          const char *addr,
                                          const char *default_port,
@@ -48,11 +51,19 @@ extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
 
+/* Initialize gRPC ares wrapper. Must be called at least once before
+   grpc_resolve_address_ares(). */
 grpc_error *grpc_ares_init(void);
 
+/* Uninitialized gRPC ares wrapper. If there was more than one previous call to
+   grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
+   it is the call matching the call to grpc_ares_init() which initialized the
+   wrapper. */
 void grpc_ares_cleanup(void);
 
+/* Returns true if the gRPC ares wrapper implementation needs a polling entity,
+   false otherwise. */
 /* TODO(zyc): remove this temporary hack after we can build c-ares on windows */
-int grpc_ares_need_poll_entity(void);
+bool grpc_ares_need_poll_entity(void);
 
 #endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */
