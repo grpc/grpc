@@ -75,7 +75,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
                  (*calld->recv_message)->length, chand->max_recv_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
-    grpc_call_element_send_cancel_with_message(
+    grpc_call_element_send_close_with_message(
         exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Invoke the next callback.
@@ -96,7 +96,7 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                  op->send_message->length, chand->max_send_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
-    grpc_call_element_send_cancel_with_message(
+    grpc_call_element_send_close_with_message(
         exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Inject callback for receiving a message.
