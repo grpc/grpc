@@ -155,15 +155,15 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 };
 
 /**
- * Flags for options of a gRPC call
- *
+ * Safety remark of a gRPC method as defined in RFC 2616 Section 9.1
  */
-typedef NS_ENUM(NSUInteger, GRPCCallAttr) {
-  GRPCCallAttrDefault = 0,
-  /** Signal that the call is idempotent */
-  GRPCCallAttrIdempotentRequest = 1,
-  /** Signal that the call is cacheable. GRPC is free to use GET verb */
-  GRPCCallAttrCacheableRequest = 2,
+typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
+  /** Signal that there is no guarantees on how the call affects the server state. */
+  GRPCCallSafetyDefault = 0,
+  /** Signal that the call is idempotent. gRPC is free to use PUT verb. */
+  GRPCCallSafetyIdempotentRequest = 1,
+  /** Signal that the call is cacheable and will not affect server state. gRPC is free to use GET verb. */
+  GRPCCallSafetyCacheableRequest = 2,
 };
 
 /**
@@ -251,7 +251,7 @@ extern id const kGRPCTrailersKey;
  * Host parameter should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
-+ (void)setCallAttribute:(GRPCCallAttr)callAttr host:(NSString *)host path:(NSString *)path;
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
 
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end

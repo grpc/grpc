@@ -110,16 +110,16 @@ static NSMutableDictionary *callFlags;
   callFlags = [NSMutableDictionary dictionary];
 }
 
-+ (void)setCallAttribute:(GRPCCallAttr)callAttr host:(NSString *)host path:(NSString *)path {
-  NSString *hostAndPath = [NSString stringWithFormat:@"%@%@", host, path];
-  switch (callAttr) {
-    case GRPCCallAttrDefault:
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path {
+  NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
+  switch (callSafety) {
+    case GRPCCallSafetyDefault:
       callFlags[hostAndPath] = @0;
       break;
-    case GRPCCallAttrIdempotentRequest:
+    case GRPCCallSafetyIdempotentRequest:
       callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
       break;
-    case GRPCCallAttrCacheableRequest:
+    case GRPCCallSafetyCacheableRequest:
       callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
       break;
     default:
@@ -127,13 +127,9 @@ static NSMutableDictionary *callFlags;
   }
 }
 
-+ (uint32_t)getCallFlag:(NSString *)host path:(NSString *)path {
-  NSString *hostAndPath = [NSString stringWithFormat:@"%@%@", host, path];
-  if (nil != [callFlags objectForKey:hostAndPath]) {
-    return [callFlags[hostAndPath] intValue];
-  } else {
-    return 0;
-  }
++ (uint32_t)callFlagsForHost:(NSString *)host path:(NSString *)path {
+  NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
+  return [callFlags[hostAndPath] intValue];
 }
 
 - (instancetype)init {
@@ -259,7 +255,7 @@ static NSMutableDictionary *callFlags;
 - (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
-                                                                                  flags:(uint32_t)[GRPCCall getCallFlag:_host path:_path]
+                                                                                  flags:[GRPCCall callFlagsForHost:_host path:_path]
                                                                                 handler:nil]]];
 }
 
