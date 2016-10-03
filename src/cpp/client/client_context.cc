@@ -36,6 +36,7 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include <grpc++/security/credentials.h>
@@ -60,6 +61,7 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       fail_fast_(true),
       idempotent_(false),
+      cacheable_(false),
       call_(nullptr),
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),

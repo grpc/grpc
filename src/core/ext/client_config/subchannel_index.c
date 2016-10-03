@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -85,6 +86,7 @@ static grpc_subchannel_key *create_key(
   } else {
     k->args.filters = NULL;
   }
+  k->args.server_name = gpr_strdup(args->server_name);
   k->args.addr_len = args->addr_len;
   k->args.addr = gpr_malloc(args->addr_len);
   if (k->args.addr_len > 0) {
@@ -111,6 +113,8 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
   if (c != 0) return c;
   c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
+  c = strcmp(a->args.server_name, b->args.server_name);
+  if (c != 0) return c;
   if (a->args.addr_len) {
     c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
     if (c != 0) return c;
@@ -126,9 +130,10 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
 void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_key *k) {
   grpc_connector_unref(exec_ctx, k->connector);
-  gpr_free(k->args.addr);
   gpr_free((grpc_channel_args *)k->args.filters);
   grpc_channel_args_destroy((grpc_channel_args *)k->args.args);
+  gpr_free((void *)k->args.server_name);
+  gpr_free(k->args.addr);
   gpr_free(k);
 }
 

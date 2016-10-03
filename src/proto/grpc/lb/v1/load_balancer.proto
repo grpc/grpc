@@ -32,7 +32,6 @@ syntax = "proto3";
 package grpc.lb.v1;
 
 message Duration {
-
   // Signed seconds of the span of time. Must be from -315,576,000,000
   // to +315,576,000,000 inclusive.
   int64 seconds = 1;
@@ -93,21 +92,16 @@ message LoadBalanceResponse {
 }
 
 message InitialLoadBalanceResponse {
-  oneof initial_response_type {
-    // TODO(zhangkun83): ClientConfig not yet defined
-    //ClientConfig client_config = 1;
-
-    // This is an application layer redirect that indicates the client should
-    // use the specified server for load balancing. When this field is set in
-    // the response, the client should open a separate connection to the
-    // load_balancer_delegate and call the BalanceLoad method.
-    string load_balancer_delegate = 2;
-  }
+  // This is an application layer redirect that indicates the client should use
+  // the specified server for load balancing. When this field is non-empty in
+  // the response, the client should open a separate connection to the
+  // load_balancer_delegate and call the BalanceLoad method.
+  string load_balancer_delegate = 1;
 
   // This interval defines how often the client should send the client stats
   // to the load balancer. Stats should only be reported when the duration is
   // positive.
-  Duration client_stats_report_interval = 3;
+  Duration client_stats_report_interval = 2;
 }
 
 message ServerList {
@@ -125,14 +119,17 @@ message ServerList {
 }
 
 message Server {
-  // A resolved address and port for the server. The IP address string may
+  // A resolved address for the server, serialized in network-byte-order. It may
   // either be an IPv4 or IPv6 address.
-  string ip_address = 1;
+  bytes ip_address = 1;
+
+  // A resolved port number for the server.
   int32 port = 2;
 
-  // An opaque token that is passed from the client to the server in metadata.
-  // The server may expect this token to indicate that the request from the
-  // client was load balanced.
+  // An opaque but printable token given to the frontend for each pick. All
+  // frontend requests for that pick must include the token in its initial
+  // metadata. The token is used by the backend to verify the request and to
+  // allow the backend to report load to the gRPC LB system.
   string load_balance_token = 3;
 
   // Indicates whether this particular request should be dropped by the client

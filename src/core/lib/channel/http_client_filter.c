@@ -103,8 +103,8 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
                  grpc_mdstr_as_c_string(md->value));
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
-    grpc_call_element_send_cancel_with_message(a->exec_ctx, a->elem,
-                                               GRPC_STATUS_CANCELLED, &message);
+    grpc_call_element_send_close_with_message(a->exec_ctx, a->elem,
+                                              GRPC_STATUS_CANCELLED, &message);
     return NULL;
   } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     return NULL;
@@ -233,7 +233,6 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     if (method == GRPC_MDELEM_METHOD_GET) {
       /* allocate memory to hold the entire payload */
       calld->payload_bytes = gpr_malloc(op->send_message->length);
-      GPR_ASSERT(calld->payload_bytes);
 
       /* read slices of send_message and copy into payload_bytes */
       calld->send_op = *op;

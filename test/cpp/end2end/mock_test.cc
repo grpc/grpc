@@ -31,6 +31,7 @@
  *
  */
 
+#include <climits>
 #include <thread>
 
 #include <grpc++/channel.h>
@@ -40,6 +41,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
@@ -63,6 +65,10 @@ class MockClientReaderWriter GRPC_FINAL
     : public ClientReaderWriterInterface<W, R> {
  public:
   void WaitForInitialMetadata() GRPC_OVERRIDE {}
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    *sz = UINT_MAX;
+    return true;
+  }
   bool Read(R* msg) GRPC_OVERRIDE { return true; }
   bool Write(const W& msg) GRPC_OVERRIDE { return true; }
   bool WritesDone() GRPC_OVERRIDE { return true; }
@@ -74,6 +80,10 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
  public:
   MockClientReaderWriter() : writes_done_(false) {}
   void WaitForInitialMetadata() GRPC_OVERRIDE {}
+  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+    *sz = UINT_MAX;
+    return true;
+  }
   bool Read(EchoResponse* msg) GRPC_OVERRIDE {
     if (writes_done_) return false;
     msg->set_message(last_message_);

@@ -41,6 +41,7 @@ namespace Grpc;
 class BaseStub
 {
     private $hostname;
+    private $hostname_override;
     private $channel;
 
     // a callback function
@@ -74,6 +75,9 @@ class BaseStub
             $opts['grpc.primary_user_agent'] .= ' ';
         } else {
             $opts['grpc.primary_user_agent'] = '';
+        }
+        if (!empty($opts['grpc.ssl_target_name_override'])) {
+            $this->hostname_override = $opts['grpc.ssl_target_name_override'];
         }
         $opts['grpc.primary_user_agent'] .=
             'grpc-php/'.$package_config['version'];
@@ -173,7 +177,13 @@ class BaseStub
         }
         $service_name = substr($method, 0, $last_slash_idx);
 
-        return 'https://'.$this->hostname.$service_name;
+        if ($this->hostname_override) {
+            $hostname = $this->hostname_override;
+        } else {
+            $hostname = $this->hostname;
+        }
+
+        return 'https://'.$hostname.$service_name;
     }
 
     /**

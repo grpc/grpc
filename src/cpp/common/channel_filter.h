@@ -36,7 +36,7 @@
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/alloc.h>
+#include <grpc/support/alloc.h>
 
 #include <functional>
 #include <vector>

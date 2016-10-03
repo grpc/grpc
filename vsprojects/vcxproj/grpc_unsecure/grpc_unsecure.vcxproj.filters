@@ -22,6 +22,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -29,6 +32,9 @@
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
@@ -50,6 +56,9 @@
       <Filter>src\core\lib\http</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.c">
@@ -370,6 +379,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\default_initial_connect_string.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\http_connect_handshaker.c">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\initial_connect_string.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
@@ -490,6 +502,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\resource.c">
       <Filter>src\core\ext\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\trace_context.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
       <Filter>src\core\ext\census</Filter>
     </ClCompile>
@@ -519,9 +534,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -540,9 +552,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
@@ -555,16 +564,13 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
@@ -577,9 +583,6 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h">
@@ -605,6 +608,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -612,6 +618,9 @@
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\message_size_filter.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h">
@@ -633,6 +642,9 @@
       <Filter>src\core\lib\http</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h">
@@ -899,6 +911,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\connector.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\http_connect_handshaker.h">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\initial_connect_string.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
@@ -996,6 +1011,9 @@
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_context.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
   </ItemGroup>

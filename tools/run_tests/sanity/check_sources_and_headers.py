@@ -63,7 +63,8 @@ def target_has_header(target, name):
 def produces_object(name):
   return os.path.splitext(name)[1] in ['.c', '.cc']
 
-obj_producer_to_source = {'c': {}, 'c++': {}, 'csharp': {}}
+c_ish = {}
+obj_producer_to_source = {'c': c_ish, 'c++': c_ish, 'csharp': {}}
 
 errors = 0
 for target in js:
@@ -74,19 +75,19 @@ for target in js:
       for line in src:
         m = re_inc1.match(line)
         if m:
-          if not target_has_header(target, m.group(1)):
+          if not target_has_header(target, m.group(1)) and not target['is_filegroup']:
             print (
               'target %s (%s) does not name header %s as a dependency' % (
                 target['name'], fn, m.group(1)))
             errors += 1
         m = re_inc2.match(line)
         if m:
-          if not target_has_header(target, 'include/' + m.group(1)):
+          if not target_has_header(target, 'include/' + m.group(1)) and not target['is_filegroup']:
             print (
               'target %s (%s) does not name header %s as a dependency' % (
                 target['name'], fn, m.group(1)))
             errors += 1
-  if target['type'] == 'lib':
+  if target['type'] in ['lib', 'filegroup']:
     for fn in target['src']:
       language = target['language']
       if produces_object(fn):
