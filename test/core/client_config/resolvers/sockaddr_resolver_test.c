@@ -74,7 +74,7 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_closure *on_resolution =
       grpc_closure_create(on_resolution_cb, &on_res_arg);
 
-  grpc_resolver_next(&exec_ctx, resolver, &on_res_arg.resolver_result,
+  grpc_resolver_next(&exec_ctx, resolver, NULL, &on_res_arg.resolver_result,
                      on_resolution);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_succeeds");
   grpc_exec_ctx_finish(&exec_ctx);
