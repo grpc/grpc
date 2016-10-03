@@ -105,6 +105,8 @@ void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
   ev_driver->closing = true;
 }
 
+// Search fd in the fd_node list head. This is an O(n) search, the max possible
+// value of n is ARES_GETSOCK_MAXNUM (16).
 static fd_node *get_fd(fd_node **head, int fd) {
   fd_node dummy_head;
   fd_node *node;
@@ -124,6 +126,7 @@ static fd_node *get_fd(fd_node **head, int fd) {
   return NULL;
 }
 
+// Process each file descriptor that may wake this callback up.
 static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_ares_ev_driver *d = arg;
   size_t i;
@@ -147,6 +150,8 @@ ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
   return &ev_driver->channel;
 }
 
+// Get the file descriptors used by the ev_driver's ares channel, register
+// driver_closure with these filedescriptors.
 static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
                                       grpc_ares_ev_driver *ev_driver) {
   size_t i;

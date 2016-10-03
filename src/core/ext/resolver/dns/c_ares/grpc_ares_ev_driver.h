@@ -61,7 +61,7 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set);
 
 /* Destroys \a ev_driver asynchronously. The actual cleanup happens after
-   grpc_ares_ev_driver_start() is called, or \ev_driver is already working. */
+   grpc_ares_ev_driver_start() is called, or \a ev_driver is already working. */
 void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver);
 
 #endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
