@@ -332,36 +332,40 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&c->connected, subchannel_connected, c);
   grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
-  gpr_backoff_init(&c->backoff_state,
-                   GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
-                   GRPC_SUBCHANNEL_RECONNECT_JITTER,
-                   GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
-                   GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  int initial_backoff_ms =
+      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
+  int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+  bool fixed_reconnect_backoff = false;
   if (c->args) {
     for (size_t i = 0; i < c->args->num_args; i++) {
       if (0 == strcmp(c->args->args[i].key,
                       "grpc.testing.fixed_reconnect_backoff")) {
         GPR_ASSERT(c->args->args[i].type == GRPC_ARG_INTEGER);
-        gpr_backoff_init(&c->backoff_state, 1.0, 0.0,
-                         c->args->args[i].value.integer,
-                         c->args->args[i].value.integer);
-      }
-      if (0 ==
-          strcmp(c->args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
-        const grpc_integer_options options = {-1, 0, INT_MAX};
-        const int value =
-            grpc_channel_arg_get_integer(&c->args->args[i], options);
-        if (value >= 0) {
-          gpr_backoff_init(
-              &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
-              GRPC_SUBCHANNEL_RECONNECT_JITTER,
-              GPR_MIN(value,
-                      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000),
-              value);
-        }
+        fixed_reconnect_backoff = true;
+        initial_backoff_ms = max_backoff_ms = grpc_channel_arg_get_integer(
+            &c->args->args[i],
+            (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
+      } else if (0 == strcmp(c->args->args[i].key,
+                             GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        max_backoff_ms = grpc_channel_arg_get_integer(
+            &c->args->args[i],
+            (grpc_integer_options){max_backoff_ms, 100, INT_MAX});
+      } else if (0 == strcmp(c->args->args[i].key,
+                             GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        initial_backoff_ms = grpc_channel_arg_get_integer(
+            &c->args->args[i],
+            (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
       }
     }
   }
+  gpr_backoff_init(
+      &c->backoff_state,
+      fixed_reconnect_backoff ? 1.0
+                              : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
+      fixed_reconnect_backoff ? 0.0 : GRPC_SUBCHANNEL_RECONNECT_JITTER,
+      initial_backoff_ms, max_backoff_ms);
   gpr_mu_init(&c->mu);
 
   return grpc_subchannel_index_register(exec_ctx, key, c);

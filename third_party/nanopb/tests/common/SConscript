@@ -1,0 +1,48 @@
+# Build the common files needed by multiple test cases
+
+Import('env')
+
+# Protocol definitions for the encode/decode_unittests
+env.NanopbProto("unittestproto")
+
+# Protocol definitions for basic_buffer/stream tests
+env.NanopbProto("person")
+
+#--------------------------------------------
+# Binaries of the pb_decode.c and pb_encode.c
+# These are built using more strict warning flags.
+strict = env.Clone()
+strict.Append(CFLAGS = strict['CORECFLAGS'])
+strict.Object("pb_decode.o", "$NANOPB/pb_decode.c")
+strict.Object("pb_encode.o", "$NANOPB/pb_encode.c")
+strict.Object("pb_common.o", "$NANOPB/pb_common.c")
+
+#-----------------------------------------------
+# Binaries of pb_decode etc. with malloc support
+# Uses malloc_wrappers.c to count allocations.
+malloc_env = env.Clone()
+malloc_env.Append(CPPDEFINES = {'PB_ENABLE_MALLOC': 1,
+                                'PB_SYSTEM_HEADER': '\\"malloc_wrappers_syshdr.h\\"'})
+malloc_env.Append(CPPPATH = ["$COMMON"])
+
+if 'SYSHDR' in malloc_env:
+    malloc_env.Append(CPPDEFINES = {'PB_OLD_SYSHDR': malloc_env['SYSHDR']})
+
+# Disable libmudflap, because it will confuse valgrind
+# and other memory leak detection tools.
+if '-fmudflap' in env["CCFLAGS"]:
+    malloc_env["CCFLAGS"].remove("-fmudflap")
+    malloc_env["LINKFLAGS"].remove("-fmudflap")
+    malloc_env["LIBS"].remove("mudflap")
+
+malloc_strict = malloc_env.Clone()
+malloc_strict.Append(CFLAGS = malloc_strict['CORECFLAGS'])
+malloc_strict.Object("pb_decode_with_malloc.o", "$NANOPB/pb_decode.c")
+malloc_strict.Object("pb_encode_with_malloc.o", "$NANOPB/pb_encode.c")
+malloc_strict.Object("pb_common_with_malloc.o", "$NANOPB/pb_common.c")
+
+malloc_env.Object("malloc_wrappers.o", "malloc_wrappers.c")
+malloc_env.Depends("$NANOPB/pb.h", ["malloc_wrappers_syshdr.h", "malloc_wrappers.h"])
+
+Export("malloc_env")
+
