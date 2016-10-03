@@ -42,7 +42,7 @@ INSTANCE_NAME="${1:-grpc-jenkins-worker1}"
 gcloud compute instances create $INSTANCE_NAME \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    --machine-type n1-standard-8 \
+    --machine-type n1-highmem-8 \
     --image=ubuntu-1510 \
     --image-project=grpc-testing \
     --boot-disk-size 1000

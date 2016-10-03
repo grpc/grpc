@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,36 +31,28 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
+#ifndef GRPC_INTERNAL_COMPILER_PHP_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_PHP_GENERATOR_HELPERS_H
 
-#include "src/core/ext/client_config/subchannel.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include <algorithm>
 
-typedef struct grpc_subchannel_factory grpc_subchannel_factory;
-typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
-/** Constructor for new configured channels.
-    Creating decorators around this type is encouraged to adapt behavior. */
-struct grpc_subchannel_factory {
-  const grpc_subchannel_factory_vtable *vtable;
-};
+namespace grpc_php_generator {
 
-struct grpc_subchannel_factory_vtable {
-  void (*ref)(grpc_subchannel_factory *factory);
-  void (*unref)(grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory);
-  grpc_subchannel *(*create_subchannel)(grpc_exec_ctx *exec_ctx,
-                                        grpc_subchannel_factory *factory,
-                                        grpc_subchannel_args *args);
-};
+inline grpc::string GetPHPServiceFilename(const grpc::string& filename) {
+  return grpc_generator::StripProto(filename) + "_grpc_pb.php";
+}
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
-void grpc_subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                   grpc_subchannel_factory *factory);
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetPHPComments(const DescriptorType* desc,
+                                   grpc::string prefix) {
+  return grpc_generator::GetPrefixedComments(desc, true, prefix);
+}
 
-/** Create a new grpc_subchannel */
-grpc_subchannel *grpc_subchannel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
-    grpc_subchannel_args *args);
+}  // namespace grpc_php_generator
 
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */
+#endif  // GRPC_INTERNAL_COMPILER_PHP_GENERATOR_HELPERS_H

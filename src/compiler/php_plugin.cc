@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,43 @@
  *
  */
 
-#include "src/core/ext/client_config/subchannel_factory.h"
+// Generates PHP gRPC service interface out of Protobuf IDL.
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory* factory) {
-  factory->vtable->ref(factory);
-}
+#include <memory>
 
-void grpc_subchannel_factory_unref(grpc_exec_ctx* exec_ctx,
-                                   grpc_subchannel_factory* factory) {
-  factory->vtable->unref(exec_ctx, factory);
-}
+#include "src/compiler/config.h"
+#include "src/compiler/php_generator.h"
+#include "src/compiler/php_generator_helpers.h"
 
-grpc_subchannel* grpc_subchannel_factory_create_subchannel(
-    grpc_exec_ctx* exec_ctx, grpc_subchannel_factory* factory,
-    grpc_subchannel_args* args) {
-  return factory->vtable->create_subchannel(exec_ctx, factory, args);
+using grpc_php_generator::GenerateFile;
+using grpc_php_generator::GetPHPServiceFilename;
+
+class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+ public:
+  PHPGrpcGenerator() {}
+  ~PHPGrpcGenerator() {}
+
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const grpc::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                grpc::string *error) const {
+    grpc::string code = GenerateFile(file);
+    if (code.size() == 0) {
+      return true;
+    }
+
+    // Get output file name
+    grpc::string file_name = GetPHPServiceFilename(file->name());
+
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->Open(file_name));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+    return true;
+  }
+};
+
+int main(int argc, char *argv[]) {
+  PHPGrpcGenerator generator;
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }
