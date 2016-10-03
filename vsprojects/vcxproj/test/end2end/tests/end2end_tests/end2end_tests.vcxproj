@@ -207,6 +207,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\network_status_change.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_logging.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload.c">
@@ -226,6 +228,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_calls.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_tags.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_cacheable_request.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_delayed_request.c">
     </ClCompile>

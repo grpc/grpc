@@ -70,7 +70,7 @@ static void verifier_succeeds(grpc_server *server, grpc_completion_queue *cq,
                                               &deadline, &request_metadata_recv,
                                               &payload, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(payload != NULL);
@@ -96,7 +96,7 @@ static void verifier_fails(grpc_server *server, grpc_completion_queue *cq,
                                               &deadline, &request_metadata_recv,
                                               &payload, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(payload == NULL);

@@ -41,6 +41,8 @@
 #include <memory>
 #include <vector>
 
+#include "src/compiler/config.h"
+
 #ifndef GRPC_CUSTOM_STRING
 #include <string>
 #define GRPC_CUSTOM_STRING std::string

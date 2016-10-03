@@ -90,6 +90,9 @@ GRPCAPI void grpc_shutdown(void);
 /** Return a string representing the current version of grpc */
 GRPCAPI const char *grpc_version_string(void);
 
+/** Return a string specifying what the 'g' in gRPC stands for */
+GRPCAPI const char *grpc_g_stands_for(void);
+
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
 

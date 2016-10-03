@@ -928,7 +928,8 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     fd->polling_island = NULL;
   }
 
-  grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error),
+                      NULL);
 
   gpr_mu_unlock(&fd->mu);
   UNREF_BY(fd, 2, reason); /* Drop the reference */
@@ -940,6 +941,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     PI_UNREF(exec_ctx, unref_pi, "fd_orphan");
   }
   GRPC_LOG_IF_ERROR("fd_orphan", GRPC_ERROR_REF(error));
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_error *fd_shutdown_error(bool shutdown) {
@@ -1353,8 +1355,10 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&pollset->mu);
 
   do {
+    GRPC_SCHEDULING_START_BLOCKING_REGION;
     ep_rv = epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms,
                         sig_mask);
+    GRPC_SCHEDULING_END_BLOCKING_REGION;
     if (ep_rv < 0) {
       if (errno != EINTR) {
         gpr_asprintf(&err_msg,
@@ -1527,6 +1531,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
+  GPR_TIMER_BEGIN("pollset_add_fd", 0);
+
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&pollset->mu);
@@ -1639,6 +1645,8 @@ retry:
   gpr_mu_unlock(&pollset->mu);
 
   GRPC_LOG_IF_ERROR("pollset_add_fd", error);
+
+  GPR_TIMER_END("pollset_add_fd", 0);
 }
 
 /*******************************************************************************
@@ -1889,7 +1897,7 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    grpc_use_signal(SIGRTMIN + 2);
+    grpc_use_signal(SIGRTMIN + 6);
   }
 
   fd_global_init();

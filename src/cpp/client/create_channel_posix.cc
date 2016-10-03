@@ -51,6 +51,16 @@ std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
       "", grpc_insecure_channel_create_from_fd(target.c_str(), fd, nullptr));
 }
 
+std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
+    const grpc::string& target, int fd, const ChannelArguments& args) {
+  internal::GrpcLibrary init_lib;
+  init_lib.init();
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
+  return CreateChannelInternal("", grpc_insecure_channel_create_from_fd(
+                                       target.c_str(), fd, &channel_args));
+}
+
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 }  // namespace grpc

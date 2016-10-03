@@ -1,0 +1,9 @@
+/* Test that a file without any messages works. */
+
+syntax = "proto2";
+
+enum Test {
+    First = 1;
+}
+
+

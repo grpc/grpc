@@ -43,14 +43,14 @@ class UnaryCall extends AbstractCall
     /**
      * Start the call.
      *
-     * @param $data The data to send
+     * @param mixed $data     The data to send
      * @param array $metadata Metadata to send with the call, if applicable
      * @param array $options  an array of options, possible keys:
      *                        'flags' => a number
      */
     public function start($data, $metadata = [], $options = [])
     {
-        $message_array = ['message' => $data->serialize()];
+        $message_array = ['message' => $this->serializeMessage($data)];
         if (isset($options['flags'])) {
             $message_array['flags'] = $options['flags'];
         }
@@ -66,7 +66,7 @@ class UnaryCall extends AbstractCall
     /**
      * Wait for the server to respond with data and a status.
      *
-     * @return [response data, status]
+     * @return array [response data, status]
      */
     public function wait()
     {

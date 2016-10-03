@@ -7,6 +7,7 @@
   "_beta_features_test.BetaFeaturesTest", 
   "_beta_features_test.ContextManagementAndLifecycleTest", 
   "_cancel_many_calls_test.CancelManyCallsTest",
+  "_channel_args_test.ChannelArgsTest",
   "_channel_connectivity_test.ChannelConnectivityTest",
   "_channel_ready_future_test.ChannelReadyFutureTest",
   "_channel_test.ChannelTest", 

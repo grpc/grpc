@@ -46,9 +46,9 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
+#include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
-#include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -175,7 +175,7 @@ template <int I>
 class CallNoOp {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {}
-  void FinishOp(bool* status, int max_message_size) {}
+  void FinishOp(bool* status, int max_receive_message_size) {}
 };
 
 class CallOpSendInitialMetadata {
@@ -213,7 +213,7 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.maybe_compression_level.level =
         maybe_compression_level_.level;
   }
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (!send_) return;
     g_core_codegen_interface->gpr_free(initial_metadata_);
     send_ = false;
@@ -253,7 +253,7 @@ class CallOpSendMessage {
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
     send_buf_ = nullptr;
   }
@@ -301,13 +301,14 @@ class CallOpRecvMessage {
     op->data.recv_message = &recv_buf_;
   }
 
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (message_ == nullptr) return;
     if (recv_buf_) {
       if (*status) {
-        got_message = *status = SerializationTraits<R>::Deserialize(
-                                    recv_buf_, message_, max_message_size)
-                                    .ok();
+        got_message = *status =
+            SerializationTraits<R>::Deserialize(recv_buf_, message_,
+                                                max_receive_message_size)
+                .ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
@@ -330,7 +331,8 @@ class CallOpRecvMessage {
 namespace CallOpGenericRecvMessageHelper {
 class DeserializeFunc {
  public:
-  virtual Status Deserialize(grpc_byte_buffer* buf, int max_message_size) = 0;
+  virtual Status Deserialize(grpc_byte_buffer* buf,
+                             int max_receive_message_size) = 0;
   virtual ~DeserializeFunc() {}
 };
 
@@ -339,8 +341,9 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
  public:
   DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(grpc_byte_buffer* buf,
-                     int max_message_size) GRPC_OVERRIDE {
-    return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
+                     int max_receive_message_size) GRPC_OVERRIDE {
+    return SerializationTraits<R>::Deserialize(buf, message_,
+                                               max_receive_message_size);
   }
 
   ~DeserializeFuncType() GRPC_OVERRIDE {}
@@ -379,12 +382,13 @@ class CallOpGenericRecvMessage {
     op->data.recv_message = &recv_buf_;
   }
 
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (!deserialize_) return;
     if (recv_buf_) {
       if (*status) {
         got_message = true;
-        *status = deserialize_->Deserialize(recv_buf_, max_message_size).ok();
+        *status =
+            deserialize_->Deserialize(recv_buf_, max_receive_message_size).ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
@@ -418,7 +422,7 @@ class CallOpClientSendClose {
     op->flags = 0;
     op->reserved = NULL;
   }
-  void FinishOp(bool* status, int max_message_size) { send_ = false; }
+  void FinishOp(bool* status, int max_receive_message_size) { send_ = false; }
 
  private:
   bool send_;
@@ -434,7 +438,7 @@ class CallOpServerSendStatus {
     trailing_metadata_count_ = trailing_metadata.size();
     trailing_metadata_ = FillMetadataArray(trailing_metadata);
     send_status_available_ = true;
-    send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+    send_status_code_ = static_cast<grpc_status_code>(GetCanonicalCode(status));
     send_status_details_ = status.error_message();
   }
 
@@ -453,7 +457,7 @@ class CallOpServerSendStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (!send_status_available_) return;
     g_core_codegen_interface->gpr_free(trailing_metadata_);
     send_status_available_ = false;
@@ -486,7 +490,7 @@ class CallOpRecvInitialMetadata {
     op->flags = 0;
     op->reserved = NULL;
   }
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (recv_initial_metadata_ == nullptr) return;
     FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
     recv_initial_metadata_ = nullptr;
@@ -525,7 +529,7 @@ class CallOpClientRecvStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_receive_message_size) {
     if (recv_status_ == nullptr) return;
     FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
     *recv_status_ = Status(
@@ -562,13 +566,13 @@ class CallOpSetCollectionInterface
 /// API.
 class CallOpSetInterface : public CompletionQueueTag {
  public:
-  CallOpSetInterface() : max_message_size_(0) {}
+  CallOpSetInterface() : max_receive_message_size_(0) {}
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
   virtual void FillOps(grpc_op* ops, size_t* nops) = 0;
 
-  void set_max_message_size(int max_message_size) {
-    max_message_size_ = max_message_size;
+  void set_max_receive_message_size(int max_receive_message_size) {
+    max_receive_message_size_ = max_receive_message_size;
   }
 
   /// Mark this as belonging to a collection if needed
@@ -577,7 +581,7 @@ class CallOpSetInterface : public CompletionQueueTag {
   }
 
  protected:
-  int max_message_size_;
+  int max_receive_message_size_;
   std::shared_ptr<CallOpSetCollectionInterface> collection_;
 };
 
@@ -609,12 +613,12 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
-    this->Op1::FinishOp(status, max_message_size_);
-    this->Op2::FinishOp(status, max_message_size_);
-    this->Op3::FinishOp(status, max_message_size_);
-    this->Op4::FinishOp(status, max_message_size_);
-    this->Op5::FinishOp(status, max_message_size_);
-    this->Op6::FinishOp(status, max_message_size_);
+    this->Op1::FinishOp(status, max_receive_message_size_);
+    this->Op2::FinishOp(status, max_receive_message_size_);
+    this->Op3::FinishOp(status, max_receive_message_size_);
+    this->Op4::FinishOp(status, max_receive_message_size_);
+    this->Op5::FinishOp(status, max_receive_message_size_);
+    this->Op6::FinishOp(status, max_receive_message_size_);
     *tag = return_tag_;
     collection_.reset();  // drop the ref at this point
     return true;
@@ -646,32 +650,35 @@ class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
-      : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
-
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
-       int max_message_size)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
-        max_message_size_(max_message_size) {}
+        max_receive_message_size_(-1) {}
+
+  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+       int max_receive_message_size)
+      : call_hook_(call_hook),
+        cq_(cq),
+        call_(call),
+        max_receive_message_size_(max_receive_message_size) {}
 
   void PerformOps(CallOpSetInterface* ops) {
-    if (max_message_size_ > 0) {
-      ops->set_max_message_size(max_message_size_);
+    if (max_receive_message_size_ > 0) {
+      ops->set_max_receive_message_size(max_receive_message_size_);
     }
     call_hook_->PerformOpsOnCall(ops, this);
   }
 
-  grpc_call* call() { return call_; }
-  CompletionQueue* cq() { return cq_; }
+  grpc_call* call() const { return call_; }
+  CompletionQueue* cq() const { return cq_; }
 
-  int max_message_size() { return max_message_size_; }
+  int max_receive_message_size() { return max_receive_message_size_; }
 
  private:
   CallHook* call_hook_;
   CompletionQueue* cq_;
   grpc_call* call_;
-  int max_message_size_;
+  int max_receive_message_size_;
 };
 
 }  // namespace grpc

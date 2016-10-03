@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
                                  call, ops, (size_t)(op - ops), tag(1), NULL));
   /* verify that all tags get completed */
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);

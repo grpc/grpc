@@ -42,6 +42,7 @@ import sys
 CONFIG = [
     'grpc-timeout',
     'grpc-internal-encoding-request',
+    'grpc-payload-bin',
     ':path',
     'grpc-encoding',
     'grpc-accept-encoding',
@@ -51,7 +52,7 @@ CONFIG = [
     'grpc-message',
     'grpc-status',
     'grpc-tracing-bin',
-    'grpc-census-bin',
+    'grpc-stats-bin',
     '',
     ('grpc-status', '0'),
     ('grpc-status', '1'),
