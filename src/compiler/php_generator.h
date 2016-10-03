@@ -1,7 +1,6 @@
-<?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,52 +31,15 @@
  *
  */
 
-namespace Grpc;
+#ifndef GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
+#define GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
 
-/**
- * Represents an active call that sends a single message and then gets a single
- * response.
- */
-class UnaryCall extends AbstractCall
-{
-    /**
-     * Start the call.
-     *
-     * @param mixed $data     The data to send
-     * @param array $metadata Metadata to send with the call, if applicable
-     * @param array $options  an array of options, possible keys:
-     *                        'flags' => a number
-     */
-    public function start($data, $metadata = [], $options = [])
-    {
-        $message_array = ['message' => $this->serializeMessage($data)];
-        if (isset($options['flags'])) {
-            $message_array['flags'] = $options['flags'];
-        }
-        $event = $this->call->startBatch([
-            OP_SEND_INITIAL_METADATA => $metadata,
-            OP_RECV_INITIAL_METADATA => true,
-            OP_SEND_MESSAGE => $message_array,
-            OP_SEND_CLOSE_FROM_CLIENT => true,
-        ]);
-        $this->metadata = $event->metadata;
-    }
+#include "src/compiler/config.h"
 
-    /**
-     * Wait for the server to respond with data and a status.
-     *
-     * @return array [response data, status]
-     */
-    public function wait()
-    {
-        $event = $this->call->startBatch([
-            OP_RECV_MESSAGE => true,
-            OP_RECV_STATUS_ON_CLIENT => true,
-        ]);
+namespace grpc_php_generator {
 
-        $status = $event->status;
-        $this->trailing_metadata = $status->metadata;
+grpc::string GenerateFile(const grpc::protobuf::FileDescriptor *file);
 
-        return [$this->deserializeResponse($event->message), $status];
-    }
-}
+}  // namespace grpc_php_generator
+
+#endif  // GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
