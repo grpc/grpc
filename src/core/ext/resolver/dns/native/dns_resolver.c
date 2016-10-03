@@ -53,8 +53,6 @@
 typedef struct {
   /** base class: must be first */
   grpc_resolver base;
-  /** refcount */
-  gpr_refcount refs;
   /** target name */
   char *target_name;
   /** name to resolve (usually the same as target_name) */
@@ -260,7 +258,6 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   // Create resolver.
   dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
-  gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->target_name = gpr_strdup(path);

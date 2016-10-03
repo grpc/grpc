@@ -51,8 +51,6 @@
 typedef struct {
   /** base class: must be first */
   grpc_resolver base;
-  /** refcount */
-  gpr_refcount refs;
   /** the path component of the uri passed in */
   char *target_name;
   /** the addresses that we've 'resolved' */
@@ -170,25 +168,21 @@ static grpc_resolver *sockaddr_create(
             args->uri->scheme);
     return NULL;
   }
-
-  sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
-  memset(r, 0, sizeof(*r));
-  r->target_name = gpr_strdup(args->uri->path);
-
+  /* Construct addresses. */
   gpr_slice path_slice =
       gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
   gpr_slice_buffer path_parts;
   gpr_slice_buffer_init(&path_parts);
   gpr_slice_split(path_slice, ",", &path_parts);
-  r->addresses = grpc_lb_addresses_create(path_parts.count);
+  grpc_lb_addresses *addresses = grpc_lb_addresses_create(path_parts.count);
   bool errors_found = false;
-  for (size_t i = 0; i < r->addresses->num_addresses; i++) {
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri, (struct sockaddr_storage *)(&r->addresses->addresses[i]
+    if (!parse(&ith_uri, (struct sockaddr_storage *)(&addresses->addresses[i]
                                                           .address.addr),
-               &r->addresses->addresses[i].address.len)) {
+               &addresses->addresses[i].address.len)) {
       errors_found = true;
     }
     gpr_free(part_str);
@@ -197,16 +191,16 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
-    gpr_free(r->target_name);
-    grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
-    gpr_free(r);
+    grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
     return NULL;
   }
-
-  gpr_ref_init(&r->refs, 1);
+  /* Instantiate resolver. */
+  sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
+  memset(r, 0, sizeof(*r));
+  r->target_name = gpr_strdup(args->uri->path);
+  r->addresses = addresses;
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
-
   return &r->base;
 }
 
