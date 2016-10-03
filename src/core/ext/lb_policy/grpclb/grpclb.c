@@ -105,6 +105,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/client_config/client_channel_factory.h"
 #include "src/core/ext/client_config/lb_policy_factory.h"
@@ -765,7 +766,10 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
-  glb_policy->deadline = pick_args->deadline;
+  /* use the longest deadline across incoming calls for the communication with
+   * the LB server */
+  glb_policy->deadline =
+      gpr_time_max(pick_args->deadline, glb_policy->deadline);
   bool pick_done;
 
   if (glb_policy->rr_policy != NULL) {
@@ -802,9 +806,9 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
           pick_args->initial_metadata, pick_args->lb_token_mdelem_storage,
           GRPC_MDELEM_REF(glb_policy->wc_arg.lb_token));
     }
+  } else {
     /* else, the pending pick will be registered and taken care of by the
      * pending pick list inside the RR policy (glb_policy->rr_policy) */
-  } else {
     grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
                                            glb_policy->base.interested_parties);
     add_pending_pick(&glb_policy->pending_picks, pick_args, target,
@@ -926,6 +930,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   grpc_closure_init(&lb_client->close_sent, close_sent_cb, lb_client);
   grpc_closure_init(&lb_client->srv_status_rcvd, srv_status_rcvd_cb, lb_client);
 
+  /* the longest deadline across incoming calls */
   lb_client->deadline = glb_policy->deadline;
 
   /* Note the following LB call progresses every time there's activity in \a
