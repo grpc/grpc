@@ -823,14 +823,10 @@ void grpc_client_channel_finish_initialization(
   GPR_ASSERT(!chand->resolver);
   chand->resolver = resolver;
   GRPC_RESOLVER_REF(resolver, "channel");
-  // TODO(zyc): check if the following part is needed
-  // if (!grpc_closure_list_empty(chand->waiting_for_config_closures) ||
-  //     chand->exit_idle_when_lb_policy_arrives) {
-  //   chand->started_resolving = true;
-  //   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-  //   grpc_resolver_next(exec_ctx, resolver, &chand->resolver_result,
-  //                      &chand->on_resolver_result_changed);
-  // }
+
+  GPR_ASSERT(grpc_closure_list_empty(chand->waiting_for_config_closures));
+  GPR_ASSERT(!chand->exit_idle_when_lb_policy_arrives);
+
   chand->client_channel_factory = client_channel_factory;
   grpc_client_channel_factory_ref(client_channel_factory);
   gpr_mu_unlock(&chand->mu);
