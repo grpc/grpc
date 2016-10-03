@@ -50,6 +50,7 @@ class GrpcRpcManager {
   // This function MUST be called before using the object
   void Initialize();
 
+  // The return type of PollForWork() function
   enum WorkStatus { WORK_FOUND, SHUTDOWN, TIMEOUT };
 
   // "Polls" for new work.

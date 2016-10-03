@@ -120,7 +120,6 @@ void GrpcRpcManager::Initialize() {
 // below the maximum threshold, we can let the current thread continue as poller
 bool GrpcRpcManager::MaybeContinueAsPoller() {
   std::unique_lock<grpc::mutex> lock(mu_);
-
   if (shutdown_ || num_pollers_ > max_pollers_) {
     return false;
   }
@@ -170,7 +169,6 @@ void GrpcRpcManager::MainWorkLoop() {
       }
     }
 
-    // TODO (sreek) See if we need to check for shutdown here and quit
     // Note that MaybeCreatePoller does check for shutdown and creates a new
     // thread only if GrpcRpcManager is not shutdown
     if (work_status == WORK_FOUND) {

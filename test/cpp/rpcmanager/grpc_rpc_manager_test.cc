@@ -37,32 +37,40 @@
 
 #include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
+#include <grpc/support/log.h>
 
 #include "test/cpp/rpcmanager/grpc_rpc_manager_test.h"
 #include "test/cpp/util/test_config.h"
 
 using grpc::testing::GrpcRpcManagerTest;
 
-// TODO: sreek - Rewrite this test. Find a better test case
+static const int kMinPollers = 2;
+static const int kMaxPollers = 10;
+
+static const int kPollingTimeoutMsec = 10;
+static const int kDoWorkDurationMsec = 1;
+
+static const int kNumDoWorkIterations = 10;
 
 grpc::GrpcRpcManager::WorkStatus GrpcRpcManagerTest::PollForWork(void **tag,
                                                                  bool *ok) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
-    std::cout << "Poll: " << std::this_thread::get_id() << std::endl;
+    gpr_log(GPR_INFO, "PollForWork: Entered");
   }
 
   WorkStatus work_status = WORK_FOUND;
   *tag = nullptr;
   *ok = true;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // Simulate "polling for work" by sleeping for sometime
+  std::this_thread::sleep_for(std::chrono::milliseconds(kPollingTimeoutMsec));
 
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     num_calls_++;
-    if (num_calls_ > 50) {
-      std::cout << "poll: False" << std::endl;
+    if (num_calls_ > kNumDoWorkIterations) {
+      gpr_log(GPR_DEBUG, "PollForWork: Returning shutdown");
       work_status = SHUTDOWN;
       ShutdownRpcManager();
     }
@@ -74,14 +82,16 @@ grpc::GrpcRpcManager::WorkStatus GrpcRpcManagerTest::PollForWork(void **tag,
 void GrpcRpcManagerTest::DoWork(void *tag, bool ok) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
-    std::cout << "Work: " << std::this_thread::get_id() << std::endl;
+    gpr_log(GPR_DEBUG, "DoWork()");
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+  // Simulate "doing work" by sleeping
+  std::this_thread::sleep_for(std::chrono::milliseconds(kDoWorkDurationMsec));
 }
 
 int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  GrpcRpcManagerTest test_rpc_manager(3, 15);
+  GrpcRpcManagerTest test_rpc_manager(kMinPollers, kMaxPollers);
   test_rpc_manager.Initialize();
   test_rpc_manager.Wait();
 
