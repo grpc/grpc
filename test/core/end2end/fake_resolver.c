@@ -57,8 +57,6 @@ typedef struct {
   // base class -- must be first
   grpc_resolver base;
 
-  gpr_refcount refs;
-
   // passed-in parameters
   char* target_name;  // the path component of the uri passed in
   grpc_lb_addresses* addresses;
@@ -150,61 +148,46 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
             args->uri->scheme);
     return NULL;
   }
-  fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
-  memset(r, 0, sizeof(*r));
-  r->target_name = gpr_strdup(args->uri->path);
-  // Initialize LB policy name.
-  r->lb_policy_name =
-      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
-  if (r->lb_policy_name == NULL) {
-    r->lb_policy_name = gpr_strdup("pick_first");
-  }
-  // Get lb_enabled arg.
+  // Get lb_enabled arg.  Anything other than "0" is interpreted as true.
   const char* lb_enabled_qpart =
       grpc_uri_get_query_arg(args->uri, "lb_enabled");
-  // Anything other than "0" is interpreted as true.
   const bool lb_enabled =
       lb_enabled_qpart != NULL && strcmp("0", lb_enabled_qpart) != 0;
-  if (strcmp("grpclb", r->lb_policy_name) == 0 && !lb_enabled) {
-    // we want grpclb but the "resolved" addresses aren't LB enabled. Bail
-    // out, as this is meant mostly for tests.
-    gpr_log(GPR_ERROR,
-            "Requested 'grpclb' LB policy but resolved addresses don't "
-            "support load balancing.");
-    abort();
-  }
   // Construct addresses.
   gpr_slice path_slice =
       gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
   gpr_slice_buffer path_parts;
   gpr_slice_buffer_init(&path_parts);
   gpr_slice_split(path_slice, ",", &path_parts);
-  r->addresses = grpc_lb_addresses_create(path_parts.count);
+  grpc_lb_addresses* addresses = grpc_lb_addresses_create(path_parts.count);
   bool errors_found = false;
-  for (size_t i = 0; i < r->addresses->num_addresses; i++) {
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
     char* part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
     if (!parse_ipv4(&ith_uri,
-                    (struct sockaddr_storage*)(&r->addresses->addresses[i]
+                    (struct sockaddr_storage*)(&addresses->addresses[i]
                                                     .address.addr),
-                    &r->addresses->addresses[i].address.len)) {
+                    &addresses->addresses[i].address.len)) {
       errors_found = true;
     }
     gpr_free(part_str);
-    r->addresses->addresses[i].is_balancer = lb_enabled;
+    addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
-    gpr_free(r->lb_policy_name);
-    gpr_free(r->target_name);
-    grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
-    gpr_free(r);
+    grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
     return NULL;
   }
-  gpr_ref_init(&r->refs, 1);
+  // Instantiate resolver.
+  fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
+  memset(r, 0, sizeof(*r));
+  r->target_name = gpr_strdup(args->uri->path);
+  r->addresses = addresses;
+  r->lb_policy_name =
+      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &fake_resolver_vtable);
   return &r->base;
