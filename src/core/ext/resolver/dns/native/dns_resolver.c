@@ -61,8 +61,6 @@ typedef struct {
   char *name_to_resolve;
   /** default port to use */
   char *default_port;
-  /** load balancing policy name */
-  char *lb_policy_name;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -181,7 +179,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     }
     grpc_resolved_addresses_destroy(r->addresses);
     result = grpc_resolver_result_create(r->target_name, addresses,
-                                         r->lb_policy_name, NULL);
+                                         NULL /* lb_policy_name */, NULL);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -245,13 +243,11 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_free(r->target_name);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
-  gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
 
 static grpc_resolver *dns_create(grpc_resolver_args *args,
-                                 const char *default_port,
-                                 const char *lb_policy_name) {
+                                 const char *default_port) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
@@ -272,7 +268,6 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   r->default_port = gpr_strdup(default_port);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
-  r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }
 
@@ -286,7 +281,7 @@ static void dns_factory_unref(grpc_resolver_factory *factory) {}
 
 static grpc_resolver *dns_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_resolver_args *args) {
-  return dns_create(args, "https", "pick_first");
+  return dns_create(args, "https");
 }
 
 static char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,
