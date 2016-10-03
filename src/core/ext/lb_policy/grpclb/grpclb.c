@@ -763,10 +763,10 @@ static void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&glb_policy->mu);
 }
 
-static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                    const grpc_lb_policy_pick_args *pick_args,
-                    grpc_connected_subchannel **target, void **user_data,
-                    grpc_closure *on_complete) {
+static bool glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                     const grpc_lb_policy_pick_args *pick_args,
+                     grpc_connected_subchannel **target, void **user_data,
+                     grpc_closure *on_complete) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
 
   if (pick_args->lb_token_mdelem_storage == NULL) {
@@ -776,11 +776,11 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         GRPC_ERROR_CREATE("No mdelem storage for the LB token. Load reporting "
                           "won't work without it. Failing"),
         NULL);
-    return 1;
+    return true;
   }
 
   gpr_mu_lock(&glb_policy->mu);
-  int r;
+  bool pick_done;
 
   if (glb_policy->rr_policy != NULL) {
     if (grpc_lb_glb_trace) {
@@ -799,10 +799,11 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_closure_init(&glb_policy->wrapped_on_complete, wrapped_rr_closure,
                       &glb_policy->wc_arg);
 
-    r = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pick_args, target,
+    pick_done =
+        grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pick_args, target,
                             (void **)&glb_policy->wc_arg.lb_token,
                             &glb_policy->wrapped_on_complete);
-    if (r != 0) {
+    if (pick_done) {
       /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
       if (grpc_lb_glb_trace) {
         gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
@@ -824,10 +825,10 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!glb_policy->started_picking) {
       start_picking(exec_ctx, glb_policy);
     }
-    r = 0;
+    pick_done = false;
   }
   gpr_mu_unlock(&glb_policy->mu);
-  return r;
+  return pick_done;
 }
 
 static grpc_connectivity_state glb_check_connectivity(

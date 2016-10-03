@@ -204,10 +204,10 @@ static void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
-static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                   const grpc_lb_policy_pick_args *pick_args,
-                   grpc_connected_subchannel **target, void **user_data,
-                   grpc_closure *on_complete) {
+static bool pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                    const grpc_lb_policy_pick_args *pick_args,
+                    grpc_connected_subchannel **target, void **user_data,
+                    grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
 
@@ -215,7 +215,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   if (selected != NULL) {
     *target = selected;
-    return 1;
+    return true;
   }
 
   /* No subchannel selected yet, so acquire lock and then attempt again */
@@ -224,7 +224,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (selected) {
     gpr_mu_unlock(&p->mu);
     *target = selected;
-    return 1;
+    return true;
   } else {
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
@@ -239,7 +239,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp->on_complete = on_complete;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);
-    return 0;
+    return false;
   }
 }
 
