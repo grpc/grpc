@@ -686,7 +686,8 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                            grpc_connected_subchannel **target) {
+                            grpc_connected_subchannel **target,
+                            grpc_error *error) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
   pending_pick *pp = glb_policy->pending_picks;
@@ -697,8 +698,10 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(
           exec_ctx, pp->pollent, glb_policy->base.interested_parties);
       *target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
-                          GRPC_ERROR_CANCELLED, NULL);
+      grpc_exec_ctx_sched(
+          exec_ctx, &pp->wrapped_on_complete,
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+      gpr_free(pp);
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -706,12 +709,14 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&glb_policy->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_call *lb_client_data_get_call(struct lb_client_data *lb_client);
 static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                              uint32_t initial_metadata_flags_mask,
-                             uint32_t initial_metadata_flags_eq) {
+                             uint32_t initial_metadata_flags_eq,
+                             grpc_error *error) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
   if (glb_policy->lb_client != NULL) {
@@ -726,8 +731,10 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         initial_metadata_flags_eq) {
       grpc_polling_entity_del_from_pollset_set(
           exec_ctx, pp->pollent, glb_policy->base.interested_parties);
-      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
-                          GRPC_ERROR_CANCELLED, NULL);
+      grpc_exec_ctx_sched(
+          exec_ctx, &pp->wrapped_on_complete,
+          GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
+      gpr_free(pp);
     } else {
       pp->next = glb_policy->pending_picks;
       glb_policy->pending_picks = pp;
@@ -735,6 +742,7 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&glb_policy->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void query_for_backends(grpc_exec_ctx *exec_ctx,
@@ -913,6 +921,9 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error);
 
 static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
+  GPR_ASSERT(glb_policy->server_name != NULL);
+  GPR_ASSERT(glb_policy->server_name[0] != '\0');
+
   lb_client_data *lb_client = gpr_malloc(sizeof(lb_client_data));
   memset(lb_client, 0, sizeof(lb_client_data));
 
@@ -924,10 +935,8 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   grpc_closure_init(&lb_client->close_sent, close_sent_cb, lb_client);
   grpc_closure_init(&lb_client->srv_status_rcvd, srv_status_rcvd_cb, lb_client);
 
-  /* TODO(dgq): get the deadline from the client config instead of fabricating
-   * one here. */
-  lb_client->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                     gpr_time_from_seconds(3, GPR_TIMESPAN));
+  /* TODO(dgq): get the deadline from the parent channel. */
+  lb_client->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
 
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling
@@ -935,14 +944,14 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   lb_client->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,
-      "/grpc.lb.v1.LoadBalancer/BalanceLoad", NULL, lb_client->deadline, NULL);
+      "/grpc.lb.v1.LoadBalancer/BalanceLoad", glb_policy->server_name,
+      lb_client->deadline, NULL);
 
   grpc_metadata_array_init(&lb_client->initial_metadata_recv);
   grpc_metadata_array_init(&lb_client->trailing_metadata_recv);
 
-  grpc_grpclb_request *request = grpc_grpclb_request_create(
-      "load.balanced.service.name"); /* FIXME(dgq): get the name of the load
-                                        balanced service from the resolver */
+  grpc_grpclb_request *request =
+      grpc_grpclb_request_create(glb_policy->server_name);
   gpr_slice request_payload_slice = grpc_grpclb_request_encode(request);
   lb_client->request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);

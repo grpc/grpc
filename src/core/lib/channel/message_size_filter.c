@@ -40,8 +40,9 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
+#define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
 // The protobuf library will (by default) start warning at 100 megs.
-#define DEFAULT_MAX_MESSAGE_LENGTH (4 * 1024 * 1024)
+#define DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 typedef struct call_data {
   // Receive closures are chained: we inject this closure as the
@@ -55,8 +56,8 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  size_t max_send_size;
-  size_t max_recv_size;
+  int max_send_size;
+  int max_recv_size;
 } channel_data;
 
 // Callback invoked when we receive a message.  Here we check the max
@@ -66,15 +67,15 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
   grpc_call_element* elem = user_data;
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
-  if (*calld->recv_message != NULL &&
-      (*calld->recv_message)->length > chand->max_recv_size) {
+  if (*calld->recv_message != NULL && chand->max_recv_size >= 0 &&
+      (*calld->recv_message)->length > (size_t)chand->max_recv_size) {
     char* message_string;
-    gpr_asprintf(
-        &message_string, "Received message larger than max (%u vs. %lu)",
-        (*calld->recv_message)->length, (unsigned long)chand->max_recv_size);
+    gpr_asprintf(&message_string,
+                 "Received message larger than max (%u vs. %d)",
+                 (*calld->recv_message)->length, chand->max_recv_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
-    grpc_call_element_send_cancel_with_message(
+    grpc_call_element_send_close_with_message(
         exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Invoke the next callback.
@@ -88,14 +89,14 @@ static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
   // Check max send message size.
-  if (op->send_message != NULL &&
-      op->send_message->length > chand->max_send_size) {
+  if (op->send_message != NULL && chand->max_send_size >= 0 &&
+      op->send_message->length > (size_t)chand->max_send_size) {
     char* message_string;
-    gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %lu)",
-                 op->send_message->length, (unsigned long)chand->max_send_size);
+    gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
+                 op->send_message->length, chand->max_send_size);
     gpr_slice message = gpr_slice_from_copied_string(message_string);
     gpr_free(message_string);
-    grpc_call_element_send_cancel_with_message(
+    grpc_call_element_send_close_with_message(
         exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Inject callback for receiving a message.
@@ -130,19 +131,22 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
   memset(chand, 0, sizeof(*chand));
-  chand->max_send_size = DEFAULT_MAX_MESSAGE_LENGTH;
-  chand->max_recv_size = DEFAULT_MAX_MESSAGE_LENGTH;
-  const grpc_integer_options options = {DEFAULT_MAX_MESSAGE_LENGTH, 0, INT_MAX};
+  chand->max_send_size = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  chand->max_recv_size = DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
-      chand->max_send_size = (size_t)grpc_channel_arg_get_integer(
-          &args->channel_args->args[i], options);
+      const grpc_integer_options options = {DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0,
+                                            INT_MAX};
+      chand->max_send_size =
+          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      chand->max_recv_size = (size_t)grpc_channel_arg_get_integer(
-          &args->channel_args->args[i], options);
+      const grpc_integer_options options = {DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0,
+                                            INT_MAX};
+      chand->max_recv_size =
+          grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
   }
 }

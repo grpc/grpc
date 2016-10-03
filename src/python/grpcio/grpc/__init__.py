@@ -649,6 +649,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -662,6 +666,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -675,6 +683,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -688,6 +700,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A StreamStreamMultiCallable value for the named stream-stream method.

@@ -319,6 +319,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                             ? GRPC_ERROR_NONE
                             : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+    if (allocated) gpr_free(allocated);
     return;
   }
 

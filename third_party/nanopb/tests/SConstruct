@@ -1,0 +1,155 @@
+Help('''
+Type 'scons' to build and run all the available test cases.
+It will automatically detect your platform and C compiler and
+build appropriately.
+
+You can modify the behavious using following options:
+CC          Name of C compiler
+CXX         Name of C++ compiler
+CCFLAGS     Flags to pass to the C compiler
+CXXFLAGS    Flags to pass to the C++ compiler
+
+For example, for a clang build, use:
+scons CC=clang CXX=clang++
+''')
+
+import os
+env = Environment(ENV = os.environ, tools = ['default', 'nanopb'])
+
+# Allow overriding the compiler with scons CC=???
+if 'CC' in ARGUMENTS: env.Replace(CC = ARGUMENTS['CC'])
+if 'CXX' in ARGUMENTS: env.Replace(CXX = ARGUMENTS['CXX'])
+if 'CCFLAGS' in ARGUMENTS: env.Append(CCFLAGS = ARGUMENTS['CCFLAGS'])
+if 'CXXFLAGS' in ARGUMENTS: env.Append(CXXFLAGS = ARGUMENTS['CXXFLAGS'])
+
+# Add the builders defined in site_init.py
+add_nanopb_builders(env)
+
+# Path to the files shared by tests, and to the nanopb core.
+env.Append(CPPPATH = ["#../", "$COMMON"])
+
+# Path for finding nanopb.proto
+env.Append(PROTOCPATH = '#../generator')
+
+# Check the compilation environment, unless we are just cleaning up.
+if not env.GetOption('clean'):
+    def check_ccflags(context, flags, linkflags = ''):
+        '''Check if given CCFLAGS are supported'''
+        context.Message('Checking support for CCFLAGS="%s"... ' % flags)
+        oldflags = context.env['CCFLAGS']
+        oldlinkflags = context.env['CCFLAGS']
+        context.env.Append(CCFLAGS = flags)
+        context.env.Append(LINKFLAGS = linkflags)
+        result = context.TryCompile("int main() {return 0;}", '.c')
+        context.env.Replace(CCFLAGS = oldflags)
+        context.env.Replace(LINKFLAGS = oldlinkflags)
+        context.Result(result)
+        return result
+    
+    conf = Configure(env, custom_tests = {'CheckCCFLAGS': check_ccflags})
+
+    # If the platform doesn't support C99, use our own header file instead.
+    stdbool = conf.CheckCHeader('stdbool.h')
+    stdint = conf.CheckCHeader('stdint.h')
+    stddef = conf.CheckCHeader('stddef.h')
+    string = conf.CheckCHeader('string.h')
+    stdlib = conf.CheckCHeader('stdlib.h')
+    if not stdbool or not stdint or not stddef or not string:
+        conf.env.Append(CPPDEFINES = {'PB_SYSTEM_HEADER': '\\"pb_syshdr.h\\"'})
+        conf.env.Append(CPPPATH = "#../extra")
+	conf.env.Append(SYSHDR = '\\"pb_syshdr.h\\"')
+        
+        if stdbool: conf.env.Append(CPPDEFINES = {'HAVE_STDBOOL_H': 1})
+        if stdint: conf.env.Append(CPPDEFINES = {'HAVE_STDINT_H': 1})
+        if stddef: conf.env.Append(CPPDEFINES = {'HAVE_STDDEF_H': 1})
+        if string: conf.env.Append(CPPDEFINES = {'HAVE_STRING_H': 1})
+        if stdlib: conf.env.Append(CPPDEFINES = {'HAVE_STDLIB_H': 1})
+    
+    # Check if we can use pkg-config to find protobuf include path
+    status, output = conf.TryAction('pkg-config protobuf --variable=includedir > $TARGET')
+    if status:
+        conf.env.Append(PROTOCPATH = output.strip())
+    else:
+        conf.env.Append(PROTOCPATH = '/usr/include')
+    
+    # Check protoc version
+    status, output = conf.TryAction('$PROTOC --version > $TARGET')
+    if status:
+        conf.env['PROTOC_VERSION'] = output
+
+    # Check if libmudflap is available (only with GCC)
+    if 'gcc' in env['CC']:
+        if conf.CheckLib('mudflap'):
+            conf.env.Append(CCFLAGS = '-fmudflap')
+            conf.env.Append(LINKFLAGS = '-fmudflap')
+    
+    # Check if we can use extra strict warning flags (only with GCC)
+    extra = '-Wcast-qual -Wlogical-op -Wconversion'
+    extra += ' -fstrict-aliasing -Wstrict-aliasing=1'
+    extra += ' -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls'
+    extra += ' -Wstack-protector '
+    if 'gcc' in env['CC']:
+        if conf.CheckCCFLAGS(extra):
+            conf.env.Append(CORECFLAGS = extra)
+    
+    # Check if we can use undefined behaviour sanitizer (only with clang)
+    extra = '-fsanitize=undefined '
+    if 'clang' in env['CC']:
+        if conf.CheckCCFLAGS(extra, linkflags = extra):
+            conf.env.Append(CORECFLAGS = extra)
+            conf.env.Append(LINKFLAGS = extra)
+    
+    # End the config stuff
+    env = conf.Finish()
+
+# Initialize the CCFLAGS according to the compiler
+if 'gcc' in env['CC']:
+    # GNU Compiler Collection
+    
+    # Debug info, warnings as errors
+    env.Append(CFLAGS = '-ansi -pedantic -g -Wall -Werror -fprofile-arcs -ftest-coverage ')
+    env.Append(CORECFLAGS = '-Wextra')
+    env.Append(LINKFLAGS = '-g --coverage')
+    
+    # We currently need uint64_t anyway, even though ANSI C90 otherwise..
+    env.Append(CFLAGS = '-Wno-long-long')
+elif 'clang' in env['CC']:
+    # CLang
+    env.Append(CFLAGS = '-ansi -g -Wall -Werror')
+    env.Append(CORECFLAGS = ' -Wextra -Wcast-qual -Wconversion')
+elif 'cl' in env['CC']:
+    # Microsoft Visual C++
+    
+    # Debug info on, warning level 2 for tests, warnings as errors
+    env.Append(CFLAGS = '/Zi /W2 /WX')
+    env.Append(LINKFLAGS = '/DEBUG')
+    
+    # More strict checks on the nanopb core
+    env.Append(CORECFLAGS = '/W4')
+elif 'tcc' in env['CC']:
+    # Tiny C Compiler
+    env.Append(CFLAGS = '-Wall -Werror -g')
+
+env.SetDefault(CORECFLAGS = '')
+
+if 'clang' in env['CXX']:
+    env.Append(CXXFLAGS = '-g -Wall -Werror -Wextra -Wno-missing-field-initializers')
+elif 'g++' in env['CXX'] or 'gcc' in env['CXX']:
+    env.Append(CXXFLAGS = '-g -Wall -Werror -Wextra -Wno-missing-field-initializers')
+elif 'cl' in env['CXX']:
+    env.Append(CXXFLAGS = '/Zi /W2 /WX')
+
+# Now include the SConscript files from all subdirectories
+import os.path
+env['VARIANT_DIR'] = 'build'
+env['BUILD'] = '#' + env['VARIANT_DIR']
+env['COMMON'] = '#' + env['VARIANT_DIR'] + '/common'
+
+# Include common/SConscript first to make sure its exports are available
+# to other SConscripts.
+SConscript("common/SConscript", exports = 'env', variant_dir = env['VARIANT_DIR'] + '/common')
+
+for subdir in Glob('*/SConscript') + Glob('regression/*/SConscript'):
+    if str(subdir).startswith("common"): continue
+    SConscript(subdir, exports = 'env', variant_dir = env['VARIANT_DIR'] + '/' + os.path.dirname(str(subdir)))
+

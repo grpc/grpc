@@ -280,7 +280,7 @@ def main():
       )
   }
   print yaml.dump(json)
-p
+
 
 if __name__ == '__main__':
   main()
