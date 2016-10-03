@@ -34,6 +34,14 @@
 
 set -ex
 
+# Create some swap space
+sudo dd if=/dev/zero of=/swap bs=1024 count=10485760
+sudo chmod 600 /swap
+sudo mkswap /swap
+sudo sed -i '$ a\/swap none swap sw 0 0' /etc/fstab
+sudo swapon -a
+
+# Typical apt-get maintenance
 sudo apt-get update
 
 # Install JRE

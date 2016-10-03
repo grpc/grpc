@@ -28,13 +28,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 set +e
-cd $(dirname $0)
+cd $(dirname $0)/../../..
 
-gen_code='../tests/generated_code'
-interop='../tests/interop'
+protoc --proto_path=src/proto/math \
+       --php_out=src/php/tests/generated_code \
+       --grpc_out=src/php/tests/generated_code \
+       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
+       src/proto/math/math.proto
 
-protoc-gen-php -i $gen_code -o $gen_code $gen_code/math.proto
+# replace the Empty message with EmptyMessage
+# because Empty is a PHP reserved word
+sed -i 's/message Empty/message EmptyMessage/g' \
+    src/proto/grpc/testing/empty.proto
+sed -i 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
+    src/proto/grpc/testing/test.proto
 
-protoc-gen-php -i $interop -o $interop $interop/test.proto
+protoc --proto_path=. \
+       --php_out=src/php/tests/interop \
+       --grpc_out=src/php/tests/interop \
+       --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
+       src/proto/grpc/testing/messages.proto \
+       src/proto/grpc/testing/empty.proto \
+       src/proto/grpc/testing/test.proto
+
+# change it back
+sed -i 's/message EmptyMessage/message Empty/g' \
+    src/proto/grpc/testing/empty.proto
+sed -i 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
+    src/proto/grpc/testing/test.proto

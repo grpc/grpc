@@ -214,7 +214,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   request.ParseFromArray(GPR_SLICE_START_PTR(request_payload_slice),
                          GPR_SLICE_LENGTH(request_payload_slice));
   GPR_ASSERT(request.has_initial_request());
-  GPR_ASSERT(request.initial_request().name() == "load.balanced.service.name");
+  GPR_ASSERT(request.initial_request().name() == sf->servers_hostport);
   gpr_slice_unref(request_payload_slice);
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(request_payload_recv);
