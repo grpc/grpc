@@ -13,3 +13,5 @@ number:
 
 - remove `GRPC_ARG_MAX_MESSAGE_LENGTH` channel arg from
   `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
+- remove `ServerBuilder::SetMaxMessageSize()` method from
+  `include/grpc++/server_builder.h` (commit `6980362`)

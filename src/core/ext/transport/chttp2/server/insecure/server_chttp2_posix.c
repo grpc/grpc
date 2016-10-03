@@ -50,12 +50,10 @@
 #include "src/core/lib/surface/server.h"
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
-                                              void *reserved,
-                                              int fd) {
+                                              void *reserved, int fd) {
   GPR_ASSERT(reserved == NULL);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
   char *name;
   gpr_asprintf(&name, "fd:%d", fd);
 
@@ -84,8 +82,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
-                                              void *cq,
-                                              int fd) {
+                                              void *reserved, int fd) {
   GPR_ASSERT(0);
 }
 

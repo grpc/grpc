@@ -61,12 +61,13 @@ GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
     server completion queues (i.e completion queues registered via the
     grpc_server_register_completion_queue API).
 
-    The 'reserved' pointer MUST be NULL */
+    The 'reserved' pointer MUST be NULL.
+    */
 GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
                                                       void *reserved, int fd);
 
 /** GRPC Core POSIX library may internally use signals to optimize some work.
-   The library uses (SIGRTMIN + 2) signal by default. Use this API to instruct
+   The library uses (SIGRTMIN + 6) signal by default. Use this API to instruct
    the library to use a different signal i.e 'signum' instead.
    Note:
    - To prevent GRPC library from using any signals, pass a 'signum' of -1
