@@ -156,7 +156,9 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
 
 #define CLIENT_INIT(cert_type)                                               \
   static void CLIENT_INIT_NAME(cert_type)(grpc_end2end_test_fixture * f,     \
-                                          grpc_channel_args * client_args) { \
+                                          grpc_channel_args * client_args,   \
+                                          const char *query_args) { \
+    GPR_ASSERT(query_args == NULL);                                          \
     grpc_channel_credentials *ssl_creds = NULL;                              \
     grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = {          \
         test_self_signed_client_key, test_self_signed_client_cert};          \

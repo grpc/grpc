@@ -104,7 +104,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  config.init_client(f, client_args);
+  config.init_client(f, client_args, NULL);
 
   c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
                                "/foo", "foo.test.google.fr", deadline, NULL);

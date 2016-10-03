@@ -86,7 +86,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
   grpc_exec_ctx_sched(exec_ctx, calld->next_recv_message_ready, error, NULL);
 }
 
-// Start transport op.
+// Start transport stream op.
 static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                       grpc_call_element* elem,
                                       grpc_transport_stream_op* op) {

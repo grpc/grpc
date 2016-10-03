@@ -56,7 +56,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   // proxy, only on the backend server.
   f = config.create_fixture(NULL, NULL);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  config.init_client(&f, client_args, NULL);
   return f;
 }
 
