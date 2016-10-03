@@ -126,12 +126,6 @@ class ServerInterface : public CallHook {
   /// \return true on a successful shutdown.
   virtual bool Start(ServerCompletionQueue** cqs, size_t num_cqs) = 0;
 
-  /// Process one or more incoming calls.
-  virtual void RunRpc() = 0;
-
-  /// Schedule \a RunRpc to run in the threadpool.
-  virtual void ScheduleCallback() = 0;
-
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 
   virtual int max_receive_message_size() const = 0;

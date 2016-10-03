@@ -176,12 +176,6 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   /// \return true on a successful shutdown.
   bool Start(ServerCompletionQueue** cqs, size_t num_cqs) GRPC_OVERRIDE;
 
-  /// Process one or more incoming calls.
-  void RunRpc() GRPC_OVERRIDE;
-
-  /// Schedule \a RunRpc to run in the threadpool.
-  void ScheduleCallback() GRPC_OVERRIDE;
-
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
 
   void ShutdownInternal(gpr_timespec deadline) GRPC_OVERRIDE;

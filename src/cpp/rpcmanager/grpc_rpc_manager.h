@@ -47,7 +47,7 @@ class GrpcRpcManager {
   explicit GrpcRpcManager(int min_pollers, int max_pollers);
   virtual ~GrpcRpcManager();
 
-  // This function MUST be called before using the object
+  // Initializes and Starts the Rpc Manager threads
   void Initialize();
 
   // The return type of PollForWork() function
