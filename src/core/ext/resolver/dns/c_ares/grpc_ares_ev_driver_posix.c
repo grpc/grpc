@@ -97,6 +97,7 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = NULL;
   (*ev_driver)->closing = false;
+  (*ev_driver)->working = false;
   return GRPC_ERROR_NONE;
 }
 
