@@ -1656,6 +1656,8 @@ cc_library(
     "src/compiler/node_generator_helpers.h",
     "src/compiler/objective_c_generator.h",
     "src/compiler/objective_c_generator_helpers.h",
+    "src/compiler/php_generator.h",
+    "src/compiler/php_generator_helpers.h",
     "src/compiler/python_generator.h",
     "src/compiler/ruby_generator.h",
     "src/compiler/ruby_generator_helpers-inl.h",
@@ -1665,6 +1667,7 @@ cc_library(
     "src/compiler/csharp_generator.cc",
     "src/compiler/node_generator.cc",
     "src/compiler/objective_c_generator.cc",
+    "src/compiler/php_generator.cc",
     "src/compiler/python_generator.cc",
     "src/compiler/ruby_generator.cc",
   ],
@@ -2255,6 +2258,18 @@ cc_binary(
   name = "grpc_objective_c_plugin",
   srcs = [
     "src/compiler/objective_c_plugin.cc",
+  ],
+  deps = [
+    "//external:protobuf_compiler",
+    ":grpc_plugin_support",
+  ],
+)
+
+
+cc_binary(
+  name = "grpc_php_plugin",
+  srcs = [
+    "src/compiler/php_plugin.cc",
   ],
   deps = [
     "//external:protobuf_compiler",

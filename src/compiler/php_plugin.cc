@@ -1,7 +1,6 @@
-<?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,52 +31,43 @@
  *
  */
 
-namespace Grpc;
+// Generates PHP gRPC service interface out of Protobuf IDL.
 
-/**
- * Represents an active call that sends a single message and then gets a single
- * response.
- */
-class UnaryCall extends AbstractCall
-{
-    /**
-     * Start the call.
-     *
-     * @param mixed $data     The data to send
-     * @param array $metadata Metadata to send with the call, if applicable
-     * @param array $options  an array of options, possible keys:
-     *                        'flags' => a number
-     */
-    public function start($data, $metadata = [], $options = [])
-    {
-        $message_array = ['message' => $this->serializeMessage($data)];
-        if (isset($options['flags'])) {
-            $message_array['flags'] = $options['flags'];
-        }
-        $event = $this->call->startBatch([
-            OP_SEND_INITIAL_METADATA => $metadata,
-            OP_RECV_INITIAL_METADATA => true,
-            OP_SEND_MESSAGE => $message_array,
-            OP_SEND_CLOSE_FROM_CLIENT => true,
-        ]);
-        $this->metadata = $event->metadata;
+#include <memory>
+
+#include "src/compiler/config.h"
+#include "src/compiler/php_generator.h"
+#include "src/compiler/php_generator_helpers.h"
+
+using grpc_php_generator::GenerateFile;
+using grpc_php_generator::GetPHPServiceFilename;
+
+class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+ public:
+  PHPGrpcGenerator() {}
+  ~PHPGrpcGenerator() {}
+
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const grpc::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                grpc::string *error) const {
+    grpc::string code = GenerateFile(file);
+    if (code.size() == 0) {
+      return true;
     }
 
-    /**
-     * Wait for the server to respond with data and a status.
-     *
-     * @return array [response data, status]
-     */
-    public function wait()
-    {
-        $event = $this->call->startBatch([
-            OP_RECV_MESSAGE => true,
-            OP_RECV_STATUS_ON_CLIENT => true,
-        ]);
+    // Get output file name
+    grpc::string file_name = GetPHPServiceFilename(file->name());
 
-        $status = $event->status;
-        $this->trailing_metadata = $status->metadata;
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->Open(file_name));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+    return true;
+  }
+};
 
-        return [$this->deserializeResponse($event->message), $status];
-    }
+int main(int argc, char *argv[]) {
+  PHPGrpcGenerator generator;
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }
