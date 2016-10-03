@@ -330,7 +330,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
-  [GRPCCall setCallAttribute:GRPCCallAttrIdempotentRequest host:kHostAddress path:kUnaryCallMethod.HTTPPath];
+  [GRPCCall setCallSafety:GRPCCallSafetyIdempotentRequest host:kHostAddress path:kUnaryCallMethod.HTTPPath];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTAssertNotNil(value, @"nil value received as response.");
