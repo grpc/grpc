@@ -592,50 +592,6 @@ static bool prepare_application_metadata(
   int total_count = count + additional_metadata_count;
   grpc_metadata_batch *batch =
       &call->metadata_batch[0 /* is_receiving */][is_trailing];
-  //  for (i = 0; i < total_count; i++) {
-  //    const grpc_mdelem *md =
-  //        get_md_elem(metadata, additional_metadata, i, count);
-  //    /* XXX la instancia de grpc_linked_mdelem "l" no es una instancia
-  //     * inicializada: se saca un puntero a md_internal_data que se va
-  //     llenando
-  //     * despues. Que necesidad hay de guardar el linked_mdelem dentro de las
-  //     * instancias de la difunta grpc_metadata? */
-  //    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-  //    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-  //    /* XXX y era aqui donde realmente se guardaban los k/v, segun entraban
-  //    via
-  //     * los campos key/value de grpc_metadata. En principio ahora ya no haria
-  //     * falta, ya que todo esto esta directamente en el nuevo "md" de tipo
-  //     * grpc_mdelem */
-  //    l->md = grpc_mdelem_from_string_and_buffer(
-  //        md->key, (const uint8_t *)md->value, md->value_length);
-  //    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
-  //                                  GRPC_MDSTR_LENGTH(l->md->key))) {
-  //      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
-  //              grpc_mdstr_as_c_string(l->md->key));
-  //      break;
-  //    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
-  //                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
-  //               !grpc_header_nonbin_value_is_legal(
-  //                   grpc_mdstr_as_c_string(l->md->value),
-  //                   GRPC_MDSTR_LENGTH(l->md->value))) {
-  //      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
-  //      break;
-  //    }
-  //  }
-  //  if (i != total_count) {
-  //    /* If we are in here, some keys were invalid. Cleanup (undo) the created
-  //     * mdelems */
-  //    /* XXX todo esto no deberia de hacer falta, ya que a call solo deberian
-  //     * entrar ya mdelems completamente validos */
-  //    for (int j = 0; j <= i; j++) {
-  //      const grpc_metadata *md =
-  //          get_md_elem(metadata, additional_metadata, j, count);
-  //      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-  //      GRPC_MDELEM_UNREF(l->md);
-  //    }
-  //    return false;
-  //  }
   if (prepend_extra_metadata) {
     if (call->send_extra_metadata_count == 0) {
       prepend_extra_metadata = 0;
@@ -652,28 +608,25 @@ static bool prepare_application_metadata(
     }
   }
 
-  /* XXX crea la grpc_linked_mdelem a partir de los inputs */
+  /* Setup the grpc_linked_mdelem \a metadata_storage instance from inputs
+   * (comprised of \a metadata and \a additional_metadata). */
   mdelem_and_storage md_st, prev_md_st, next_md_st;
-  /* XXX: the next three loops can be merged into a single one */
   for (int i = 0; i < total_count; i++) {
     get_md_and_storage(metadata, additional_metadata, metadata_storage,
                        additional_metadata_storage, i, count, &md_st);
     md_st.storage->md = md_st.mdelem;
-  }
-
-  for (int i = 1; i < total_count; i++) {
-    get_md_and_storage(metadata, additional_metadata, metadata_storage,
-                       additional_metadata_storage, i, count, &md_st);
-    get_md_and_storage(metadata, additional_metadata, metadata_storage,
-                       additional_metadata_storage, i - 1, count, &prev_md_st);
-    md_st.storage->prev = prev_md_st.storage;
-  }
-  for (int i = 0; i < total_count - 1; i++) {
-    get_md_and_storage(metadata, additional_metadata, metadata_storage,
-                       additional_metadata_storage, i, count, &md_st);
-    get_md_and_storage(metadata, additional_metadata, metadata_storage,
-                       additional_metadata_storage, i + 1, count, &next_md_st);
-    md_st.storage->next = next_md_st.storage;
+    if (i >= 1) {
+      get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                         additional_metadata_storage, i - 1, count,
+                         &prev_md_st);
+      md_st.storage->prev = prev_md_st.storage;
+    }
+    if (i < total_count - 1) {
+      get_md_and_storage(metadata, additional_metadata, metadata_storage,
+                         additional_metadata_storage, i + 1, count,
+                         &next_md_st);
+      md_st.storage->next = next_md_st.storage;
+    }
   }
 
   switch (prepend_extra_metadata * 2 + (total_count != 0)) {
@@ -692,8 +645,6 @@ static bool prepare_application_metadata(
                          additional_metadata_storage, total_count - 1, count,
                          &last);
 
-      /* XXX nodo de tipo grpc_linked_mdelem. Lo unico que contiene es punteros
-       * next/prev y grpc_mdelem *md */
       batch->list.head = first.storage;
       batch->list.tail = last.storage;
       batch->list.head->prev = NULL;
