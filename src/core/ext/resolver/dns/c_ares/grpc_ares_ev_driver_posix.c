@@ -64,13 +64,8 @@ struct grpc_ares_ev_driver {
   grpc_closure driver_closure;
   /** pollset set for driving the IO events of the channel */
   grpc_pollset_set *pollset_set;
-
-  /** mutex guarding the reset of the state */
-  gpr_mu mu;
   /** has grpc_ares_ev_driver_destroy been called on this event driver? */
   bool closing;
-  /** is this event driver currently working? */
-  bool working;
   /** an array of ares sockets that the ares channel owned by this event driver
       is currently using */
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -79,6 +74,11 @@ struct grpc_ares_ev_driver {
   int socks_bitmask;
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node *fds;
+
+  /** mutex guarding the reset of the state */
+  gpr_mu mu;
+  /** is this event driver currently working? */
+  bool working;
 };
 
 static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
@@ -114,15 +114,13 @@ static fd_node *get_fd(fd_node **head, int fd) {
   node = &dummy_head;
   while (node->next != NULL) {
     if (grpc_fd_wrapped_fd(node->next->grpc_fd) == fd) {
-      gpr_log(GPR_ERROR, "equal");
       ret = node->next;
       node->next = node->next->next;
       *head = dummy_head.next;
       return ret;
     }
-    // node = node->next;
+    node = node->next;
   }
-  gpr_log(GPR_ERROR, "not equal");
   return NULL;
 }
 
