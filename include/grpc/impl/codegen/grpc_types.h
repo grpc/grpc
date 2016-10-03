@@ -242,7 +242,9 @@ typedef enum grpc_call_error {
   /** this batch of operations leads to more operations than allowed */
   GRPC_CALL_ERROR_BATCH_TOO_BIG,
   /** payload type requested is not the type registered */
-  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
+  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH,
+  /** not currently in an incremental operation */
+  GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL
 } grpc_call_error;
 
 /* Write Flags: */

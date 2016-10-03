@@ -116,6 +116,12 @@ typedef struct batch_control {
   grpc_transport_stream_op op;
 } batch_control;
 
+typedef enum {
+  SENDRECV_IDLE,
+  SENDRECV_FULL_MESSAGE,
+  SENDRECV_INCREMENTAL
+} sendrecv_mode;
+
 struct grpc_call {
   grpc_completion_queue *cq;
   grpc_polling_entity pollent;
@@ -135,10 +141,10 @@ struct grpc_call {
   uint8_t used_batches;
   /** which ops are in-flight */
   bool sent_initial_metadata;
-  bool sending_message;
+  sendrecv_mode send_mode;
   bool sent_final_op;
   bool received_initial_metadata;
-  bool receiving_message;
+  sendrecv_mode recv_mode;
   bool requested_final_op;
   bool received_final_op;
 
@@ -187,6 +193,19 @@ struct grpc_call {
     } full;
     struct {
       grpc_byte_stream stream;
+      grpc_byte_buffer *buffer;
+      void *tag;
+      grpc_closure *on_next;
+      bool next_is_buffer;
+      union {
+        struct {
+          gpr_slice *slice;
+        } slice;
+        struct {
+          void *buffer;
+          size_t size;
+        } buffer;
+      } next;
     } incremental;
   } sending;
   grpc_byte_stream *receiving_stream;
@@ -1051,7 +1070,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
         call->receiving_stream->length -
         (*call->receiving.full.buffer)->data.raw.slice_buffer.length;
     if (remaining == 0) {
-      call->receiving_message = 0;
+      call->recv_mode = SENDRECV_IDLE;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
       if (gpr_unref(&bctl->steps_to_complete)) {
@@ -1116,7 +1135,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
     *call->receiving.full.buffer = NULL;
-    call->receiving_message = 0;
+    call->recv_mode = SENDRECV_IDLE;
     if (gpr_unref(&bctl->steps_to_complete)) {
       post_batch_completion(exec_ctx, bctl);
     }
@@ -1148,24 +1167,90 @@ static void receiving_incremental_stream_ready(grpc_exec_ctx *exec_ctx,
  * STREAM SEND PATH: INCREMENTAL MESSAGES
  */
 
+static grpc_call *incwr_call_from_stream(grpc_byte_stream *byte_stream) {
+  intptr_t offset =
+      (intptr_t) & ((grpc_call *)NULL)->sending.incremental.stream;
+  return (grpc_call *)(((char *)byte_stream) - offset);
+}
+
 static bool incwr_bs_next_slice(grpc_exec_ctx *exec_ctx,
                                 grpc_byte_stream *byte_stream, gpr_slice *slice,
                                 size_t max_size_hint,
                                 grpc_closure *on_complete) {
-  abort();
+  grpc_call *call = incwr_call_from_stream(byte_stream);
+  gpr_mu_lock(&call->mu);
+  GPR_ASSERT(call->sending.incremental.on_next == NULL);
+  if (call->sending.incremental.buffer != NULL) {
+    incwr_complete_slice(exec_ctx, call, slice);
+    gpr_mu_unlock(&call->mu);
+    return true;
+  }
+  call->sending.incremental.next_is_buffer = false;
+  call->sending.incremental.next.slice.slice = slice;
+  gpr_mu_unlock(&call->mu);
   return false;
 }
 
 static bool incwr_bs_next_buffer(grpc_exec_ctx *exec_ctx,
                                  grpc_byte_stream *byte_stream, void *buffer,
                                  size_t size, grpc_closure *on_complete) {
-  abort();
+  grpc_call *call = incwr_call_from_stream(byte_stream);
+  gpr_mu_lock(&call->mu);
+  GPR_ASSERT(call->sending.incremental.on_next == NULL);
+  if (call->sending.incremental.buffer != NULL) {
+    if (incwr_maybe_complete_buffer(exec_ctx, call, &buffer, &size)) {
+      gpr_mu_unlock(&call->mu);
+      return true;
+    }
+  }
+  call->sending.incremental.next_is_buffer = true;
+  call->sending.incremental.next.buffer.buffer = buffer;
+  call->sending.incremental.next.buffer.size = size;
+  gpr_mu_unlock(&call->mu);
   return false;
 }
 
 static void incwr_bs_destroy(grpc_exec_ctx *exec_ctx,
                              grpc_byte_stream *byte_stream) {
   abort();
+}
+
+grpc_call_error grpc_call_incremental_message_writer_push(
+    grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  gpr_mu_lock(&call->mu);
+  if (call->send_mode != SENDRECV_INCREMENTAL) {
+    gpr_mu_unlock(&call->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL;
+  }
+  if (call->sending.incremental.buffer != NULL) {
+    gpr_mu_unlock(&call->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+  call->sending.incremental.buffer = buffer;
+  call->sending.incremental.tag = tag;
+  if (call->sending.incremental.on_next != NULL) {
+    bool done;
+    if (call->sending.incremental.next_is_buffer) {
+      done = incwr_maybe_complete_buffer(
+          exec_ctx, call, &call->sending.incremental.next.buffer.buffer,
+          &call->sending.incremental.next.buffer.size);
+    } else {
+      incwr_complete_slice(&exec_ctx, call,
+                           &call->sending.incremental.next.slice);
+      done = true;
+    }
+    if (done) {
+      grpc_exec_ctx_sched(&exec_ctx, call->sending.incremental.on_next,
+                          GRPC_ERROR_NONE, NULL);
+      call->sending.incremental.on_next = NULL;
+    }
+  }
+  gpr_mu_unlock(&call->mu);
+  grpc_exec_ctx_finish(&exec_ctx);
+  return GRPC_CALL_OK;
 }
 
 /*******************************************************************************
@@ -1367,7 +1452,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
   if (bctl->send_message) {
-    call->sending_message = 0;
+    call->send_mode = SENDRECV_IDLE;
   }
   if (bctl->send_final_op) {
     grpc_metadata_batch_destroy(
@@ -1534,12 +1619,12 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
-        if (call->sending_message) {
+        if (call->send_mode != SENDRECV_IDLE) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
         bctl->send_message = 1;
-        call->sending_message = 1;
+        call->send_mode = SENDRECV_FULL_MESSAGE;
         grpc_slice_buffer_stream_init(
             &call->sending.full.stream,
             &op->data.send_message->data.raw.slice_buffer, op->flags);
@@ -1550,12 +1635,12 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (call->sending_message) {
+        if (call->send_mode != SENDRECV_IDLE) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
         bctl->send_message_incremental_start = 1;
-        call->sending_message = 1;
+        call->send_mode = SENDRECV_INCREMENTAL;
         call->sending.incremental.stream.length =
             op->data.send_message_incremental_start.message_length;
         call->sending.incremental.stream.flags = op->flags;
@@ -1659,11 +1744,11 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (call->receiving_message) {
+        if (call->recv_mode != SENDRECV_IDLE) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->receiving_message = 1;
+        call->recv_mode = SENDRECV_FULL_MESSAGE;
         bctl->recv_message = 1;
         call->receiving.full.buffer = op->data.recv_message;
         stream_op->recv_message = &call->receiving_stream;
@@ -1678,11 +1763,11 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (call->receiving_message) {
+        if (call->recv_mode != SENDRECV_IDLE) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->receiving_message = 1;
+        call->recv_mode = SENDRECV_INCREMENTAL;
         bctl->recv_message = 1;
         call->receiving.incremental.length_target =
             op->data.recv_message_incremental_start.message_length;
@@ -1770,7 +1855,7 @@ done_with_error:
     grpc_metadata_batch_clear(&call->metadata_batch[0][0]);
   }
   if (bctl->send_message) {
-    call->sending_message = 0;
+    call->send_mode = SENDRECV_IDLE;
     grpc_byte_stream_destroy(exec_ctx, &call->sending.full.stream.base);
   }
   if (bctl->send_final_op) {
@@ -1781,7 +1866,7 @@ done_with_error:
     call->received_initial_metadata = 0;
   }
   if (bctl->recv_message) {
-    call->receiving_message = 0;
+    call->recv_mode = SENDRECV_IDLE;
   }
   if (bctl->recv_final_op) {
     call->requested_final_op = 0;
@@ -1869,6 +1954,8 @@ const char *grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH";
     case GRPC_CALL_ERROR_TOO_MANY_OPERATIONS:
       return "GRPC_CALL_ERROR_TOO_MANY_OPERATIONS";
+    case GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL:
+      return "GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL";
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
   }
