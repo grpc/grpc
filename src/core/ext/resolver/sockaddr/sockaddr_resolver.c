@@ -51,8 +51,6 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
-  /** load balancing policy name */
-  char *lb_policy_name;
   /** the path component of the uri passed in */
   char *target_name;
   /** the addresses that we've 'resolved' */
@@ -123,7 +121,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     *r->target_result = grpc_resolver_result_create(
         r->target_name,
         grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        r->lb_policy_name, NULL);
+        NULL /* lb_policy_name */, NULL);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -133,7 +131,6 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
-  gpr_free(r->lb_policy_name);
   gpr_free(r->target_name);
   gpr_free(r);
 }
@@ -180,24 +177,6 @@ static grpc_resolver *sockaddr_create(
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
 
-  r->lb_policy_name =
-      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
-  const char *lb_enabled_qpart =
-      grpc_uri_get_query_arg(args->uri, "lb_enabled");
-  /* anything other than "0" is interpreted as true */
-  const bool lb_enabled =
-      (lb_enabled_qpart != NULL && (strcmp("0", lb_enabled_qpart) != 0));
-
-  if (r->lb_policy_name != NULL && strcmp("grpclb", r->lb_policy_name) == 0 &&
-      !lb_enabled) {
-    /* we want grpclb but the "resolved" addresses aren't LB enabled. Bail
-     * out, as this is meant mostly for tests. */
-    gpr_log(GPR_ERROR,
-            "Requested 'grpclb' LB policy but resolved addresses don't "
-            "support load balancing.");
-    abort();
-  }
-
   path_slice =
       gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
   gpr_slice_buffer_init(&path_parts);
@@ -214,7 +193,6 @@ static grpc_resolver *sockaddr_create(
       errors_found = true;
     }
     gpr_free(part_str);
-    r->addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
 
@@ -222,7 +200,6 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
-    gpr_free(r->lb_policy_name);
     gpr_free(r->target_name);
     grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
     gpr_free(r);
