@@ -164,7 +164,7 @@ char *unix_get_default_authority(grpc_resolver_factory *factory,
 static void do_nothing(void *ignored) {}
 
 static grpc_resolver *sockaddr_create(
-    grpc_resolver_args *args, const char *default_lb_policy_name,
+    grpc_resolver_args *args,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
   bool errors_found = false;
   sockaddr_resolver *r;
@@ -196,10 +196,6 @@ static grpc_resolver *sockaddr_create(
             "Requested 'grpclb' LB policy but resolved addresses don't "
             "support load balancing.");
     abort();
-  }
-
-  if (r->lb_policy_name == NULL) {
-    r->lb_policy_name = gpr_strdup(default_lb_policy_name);
   }
 
   path_slice =
@@ -251,7 +247,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 #define DECL_FACTORY(name)                                                  \
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
-    return sockaddr_create(args, "pick_first", parse_##name);               \
+    return sockaddr_create(args, parse_##name);                             \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
