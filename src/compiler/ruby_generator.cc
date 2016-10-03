@@ -115,17 +115,8 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
 
 }  // namespace
 
-grpc::string SnakeCaseToCamelCase(grpc::string input) {
-  grpc::string output;
-  std::vector<grpc::string> words = Split(input, '_');
-  for(size_t i = 0; i < words.size(); i++) {
-    output.append(CapitalizeFirst(words[i]));
-  }
-  return output;
-}
-
 // The following functions are copied directly from the source for the protoc ruby generator
-// to ensure compatibility ('int i' changed to 'uint i' is the only change).
+// to ensure compatibility (with the exception of int and string type changes).
 // See https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
 // TODO: keep up to date with protoc code generation, though this behavior isn't expected to change
 bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }
@@ -137,9 +128,9 @@ char ToUpper(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
 // names must be PascalCased.
 //
 //   foo_bar_baz -> FooBarBaz
-std::string PackageToModule(const std::string& name) {
+grpc::string PackageToModule(const grpc::string& name) {
   bool next_upper = true;
-  std::string result;
+  grpc::string result;
   result.reserve(name.size());
 
   for (uint i = 0; i < name.size(); i++) {
