@@ -181,12 +181,25 @@ struct grpc_call {
   grpc_call *sibling_next;
   grpc_call *sibling_prev;
 
-  grpc_slice_buffer_stream sending_stream;
+  union {
+    struct {
+      grpc_slice_buffer_stream stream;
+    } full;
+    struct {
+      grpc_byte_stream stream;
+    } incremental;
+  } sending;
   grpc_byte_stream *receiving_stream;
-  grpc_byte_buffer **receiving_buffer;
-  gpr_slice receiving_slice;
-  grpc_closure receiving_slice_ready;
-  grpc_closure receiving_stream_ready;
+  union {
+    struct {
+      grpc_byte_buffer **buffer;
+      gpr_slice slice;
+    } full;
+    struct {
+      uint32_t *length_target;
+    } incremental;
+  } receiving;
+  grpc_closure receiving_next_step;
   grpc_closure receiving_initial_metadata_ready;
   uint32_t test_only_last_message_flags;
 
@@ -1027,15 +1040,16 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
 }
 
 /*******************************************************************************
- * STREAM RECEIVE PATH
+ * STREAM RECEIVE PATH: FULL MESSAGES
  */
 
 static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
                                       batch_control *bctl) {
   grpc_call *call = bctl->call;
   for (;;) {
-    size_t remaining = call->receiving_stream->length -
-                       (*call->receiving_buffer)->data.raw.slice_buffer.length;
+    size_t remaining =
+        call->receiving_stream->length -
+        (*call->receiving.full.buffer)->data.raw.slice_buffer.length;
     if (remaining == 0) {
       call->receiving_message = 0;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
@@ -1045,11 +1059,13 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       }
       return;
     }
+    grpc_closure_init(&call->receiving_next_step, receiving_slice_ready, bctl);
     if (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream,
-                                    &call->receiving_slice, remaining,
-                                    &call->receiving_slice_ready)) {
-      gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                           call->receiving_slice);
+                                    &call->receiving.full.slice, remaining,
+                                    &call->receiving_next_step)) {
+      gpr_slice_buffer_add(
+          &(*call->receiving.full.buffer)->data.raw.slice_buffer,
+          call->receiving.full.slice);
     } else {
       return;
     }
@@ -1062,8 +1078,8 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
 
   if (error == GRPC_ERROR_NONE) {
-    gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                         call->receiving_slice);
+    gpr_slice_buffer_add(&(*call->receiving.full.buffer)->data.raw.slice_buffer,
+                         call->receiving.full.slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
     if (grpc_trace_operation_failures) {
@@ -1071,8 +1087,8 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     }
     grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
     call->receiving_stream = NULL;
-    grpc_byte_buffer_destroy(*call->receiving_buffer);
-    *call->receiving_buffer = NULL;
+    grpc_byte_buffer_destroy(*call->receiving.full.buffer);
+    *call->receiving.full.buffer = NULL;
     if (gpr_unref(&bctl->steps_to_complete)) {
       post_batch_completion(exec_ctx, bctl);
     }
@@ -1099,7 +1115,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                                   bool success) {
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
-    *call->receiving_buffer = NULL;
+    *call->receiving.full.buffer = NULL;
     call->receiving_message = 0;
     if (gpr_unref(&bctl->steps_to_complete)) {
       post_batch_completion(exec_ctx, bctl);
@@ -1108,17 +1124,48 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
     call->test_only_last_message_flags = call->receiving_stream->flags;
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
         (call->incoming_compression_algorithm > GRPC_COMPRESS_NONE)) {
-      *call->receiving_buffer = grpc_raw_compressed_byte_buffer_create(
+      *call->receiving.full.buffer = grpc_raw_compressed_byte_buffer_create(
           NULL, 0, call->incoming_compression_algorithm);
     } else {
-      *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+      *call->receiving.full.buffer = grpc_raw_byte_buffer_create(NULL, 0);
     }
-    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready,
-                      bctl);
     continue_receiving_slices(exec_ctx, bctl);
     /* early out */
     return;
   }
+}
+
+/*******************************************************************************
+ * STREAM RECEIVE PATH: INCREMENTAL MESSAGES
+ */
+
+static void receiving_incremental_stream_ready(grpc_exec_ctx *exec_ctx,
+                                               void *bctlp, grpc_error *error) {
+  abort();
+}
+
+/*******************************************************************************
+ * STREAM SEND PATH: INCREMENTAL MESSAGES
+ */
+
+static bool incwr_bs_next_slice(grpc_exec_ctx *exec_ctx,
+                                grpc_byte_stream *byte_stream, gpr_slice *slice,
+                                size_t max_size_hint,
+                                grpc_closure *on_complete) {
+  abort();
+  return false;
+}
+
+static bool incwr_bs_next_buffer(grpc_exec_ctx *exec_ctx,
+                                 grpc_byte_stream *byte_stream, void *buffer,
+                                 size_t size, grpc_closure *on_complete) {
+  abort();
+  return false;
+}
+
+static void incwr_bs_destroy(grpc_exec_ctx *exec_ctx,
+                             grpc_byte_stream *byte_stream) {
+  abort();
 }
 
 /*******************************************************************************
@@ -1494,17 +1541,13 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->send_message = 1;
         call->sending_message = 1;
         grpc_slice_buffer_stream_init(
-            &call->sending_stream,
+            &call->sending.full.stream,
             &op->data.send_message->data.raw.slice_buffer, op->flags);
-        stream_op->send_message = &call->sending_stream.base;
+        stream_op->send_message = &call->sending.full.stream.base;
         break;
       case GRPC_OP_SEND_MESSAGE_INCREMENTAL_START:
         if (!are_write_flags_valid(op->flags)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
-          goto done_with_error;
-        }
-        if (op->data.send_message_incremental_start.writer == NULL) {
-          error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
         if (call->sending_message) {
@@ -1513,10 +1556,13 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         bctl->send_message_incremental_start = 1;
         call->sending_message = 1;
-        grpc_slice_buffer_stream_init(
-            &call->sending_stream,
-            &op->data.send_message->data.raw.slice_buffer, op->flags);
-        stream_op->send_message = &call->sending_stream.base;
+        call->sending.incremental.stream.length =
+            op->data.send_message_incremental_start.message_length;
+        call->sending.incremental.stream.flags = op->flags;
+        call->sending.incremental.stream.next_slice = incwr_bs_next_slice;
+        call->sending.incremental.stream.next_buffer = incwr_bs_next_buffer;
+        call->sending.incremental.stream.destroy = incwr_bs_destroy;
+        stream_op->send_message = &call->sending.incremental.stream;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         /* Flag validation: currently allow no flags */
@@ -1619,11 +1665,31 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         call->receiving_message = 1;
         bctl->recv_message = 1;
-        call->receiving_buffer = op->data.recv_message;
+        call->receiving.full.buffer = op->data.recv_message;
         stream_op->recv_message = &call->receiving_stream;
-        grpc_closure_init(&call->receiving_stream_ready, receiving_stream_ready,
+        grpc_closure_init(&call->receiving_next_step, receiving_stream_ready,
                           bctl);
-        stream_op->recv_message_ready = &call->receiving_stream_ready;
+        stream_op->recv_message_ready = &call->receiving_next_step;
+        num_completion_callbacks_needed++;
+        break;
+      case GRPC_OP_RECV_MESSAGE_INCREMENTAL_START:
+        /* Flag validation: currently allow no flags */
+        if (op->flags != 0) {
+          error = GRPC_CALL_ERROR_INVALID_FLAGS;
+          goto done_with_error;
+        }
+        if (call->receiving_message) {
+          error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+          goto done_with_error;
+        }
+        call->receiving_message = 1;
+        bctl->recv_message = 1;
+        call->receiving.incremental.length_target =
+            op->data.recv_message_incremental_start.message_length;
+        stream_op->recv_message = &call->receiving_stream;
+        grpc_closure_init(&call->receiving_next_step,
+                          receiving_incremental_stream_ready, bctl);
+        stream_op->recv_message_ready = &call->receiving_next_step;
         num_completion_callbacks_needed++;
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -1705,7 +1771,7 @@ done_with_error:
   }
   if (bctl->send_message) {
     call->sending_message = 0;
-    grpc_byte_stream_destroy(exec_ctx, &call->sending_stream.base);
+    grpc_byte_stream_destroy(exec_ctx, &call->sending.full.stream.base);
   }
   if (bctl->send_final_op) {
     call->sent_final_op = 0;

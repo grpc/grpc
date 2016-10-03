@@ -848,10 +848,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               gpr_free((void *)op->data.send_status_from_server.status_details);
               break;
             case GRPC_OP_SEND_MESSAGE:
+            case GRPC_OP_SEND_MESSAGE_INCREMENTAL_START:
             case GRPC_OP_SEND_INITIAL_METADATA:
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
             case GRPC_OP_RECV_INITIAL_METADATA:
             case GRPC_OP_RECV_MESSAGE:
+            case GRPC_OP_RECV_MESSAGE_INCREMENTAL_START:
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               break;

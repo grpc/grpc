@@ -83,12 +83,6 @@ typedef struct grpc_server grpc_server;
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
 
-/** Incremental writers allow messages to be written in multiple pieces */
-typedef struct grpc_incremental_message_writer grpc_incremental_message_writer;
-
-/** Incremental readers allow messages to be read in multiple pieces */
-typedef struct grpc_incremental_message_reader grpc_incremental_message_reader;
-
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -410,7 +404,6 @@ typedef struct grpc_op {
     } send_initial_metadata;
     grpc_byte_buffer *send_message;
     struct {
-      grpc_incremental_message_writer **writer;
       uint32_t message_length;
     } send_message_incremental_start;
     struct {
@@ -430,7 +423,7 @@ typedef struct grpc_op {
        */
     grpc_byte_buffer **recv_message;
     struct {
-      grpc_incremental_message_reader **reader;
+      uint32_t *message_length;
     } recv_message_incremental_start;
     struct {
       /** ownership of the array is with the caller, but ownership of the
