@@ -31,25 +31,17 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
+#ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H
+#define GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#include "test/core/end2end/cq_verifier.h"
 
-#include "src/core/lib/iomgr/port.h"
+typedef struct expectation expectation;
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
+expectation *cq_verifier_get_first_expectation(cq_verifier *v);
 
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
+void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e);
 
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
+grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds);
 
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H */

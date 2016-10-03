@@ -80,7 +80,7 @@ void grpc_free_port_using_server(char *server, int port) {
   grpc_httpcli_response rsp;
   freereq pr;
   char *path;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_RUN_INNER_LOOP;
   grpc_closure *shutdown_closure;
 
   grpc_init();

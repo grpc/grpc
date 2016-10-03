@@ -345,10 +345,6 @@ HOST_CXX ?= $(CXX)
 HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
-ifdef EXTRA_DEFINES
-DEFINES += $(EXTRA_DEFINES)
-endif
-
 CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
 ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
@@ -446,6 +442,14 @@ CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
+
+
+CFLAGS += $(EXTRA_CFLAGS)
+CXXFLAGS += $(EXTRA_CXXFLAGS)
+CPPFLAGS += $(EXTRA_CPPFLAGS)
+LDFLAGS += $(EXTRA_LDFLAGS)
+DEFINES += $(EXTRA_DEFINES)
+LDLIBS += $(EXTRA_LDLIBS)
 
 HOST_CPPFLAGS = $(CPPFLAGS)
 HOST_CFLAGS = $(CFLAGS)
@@ -2546,6 +2550,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -2832,6 +2837,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -3076,6 +3082,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/data/test_root_cert.c \
     test/core/security/oauth2_utils.c \
     test/core/end2end/cq_verifier.c \
+    test/core/end2end/cq_verifier_native.c \
+    test/core/end2end/cq_verifier_uv.c \
     test/core/end2end/fixtures/http_proxy.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
@@ -3086,6 +3094,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/passthru_endpoint.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
+    test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
     src/core/lib/channel/channel_args.c \
@@ -3107,6 +3116,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -3253,6 +3263,8 @@ endif
 
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/cq_verifier.c \
+    test/core/end2end/cq_verifier_native.c \
+    test/core/end2end/cq_verifier_uv.c \
     test/core/end2end/fixtures/http_proxy.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
@@ -3263,6 +3275,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/passthru_endpoint.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
+    test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
@@ -3310,6 +3323,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -3661,6 +3675,7 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -4300,6 +4315,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \

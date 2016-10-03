@@ -39,9 +39,9 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs')
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs exclude_iomgrs')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [])
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [])
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
@@ -58,7 +58,7 @@ END2END_FIXTURES = {
     'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,
     'h2_full+pipe': default_unsecure_fixture_options._replace(
-        platforms=['linux']),
+        platforms=['linux'], exclude_iomgrs=['uv']),
     'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),
     'h2_http_proxy': default_unsecure_fixture_options._replace(ci_mac=False),
     'h2_oauth2': default_secure_fixture_options._replace(ci_mac=False),
@@ -280,7 +280,7 @@ def main():
       )
   }
   print yaml.dump(json)
-
+p
 
 if __name__ == '__main__':
   main()

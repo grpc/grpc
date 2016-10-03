@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test requires posix wakeup fds
+#ifdef GRPC_POSIX_WAKEUP_FD
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <string.h>
@@ -119,3 +124,11 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+#else /* GRPC_POSIX_WAKEUP_FD */
+
+int main(int argc, char **argv) {
+  return 1;
+}
+
+#endif /* GRPC_POSIX_WAKEUP_FD */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,20 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
-
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_UV
-#include <uv.h>
-#endif
 
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
+#include <stdlib.h>
 
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
+#include "src/core/lib/iomgr/endpoint_pair.h"
 
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
+                                                   size_t read_slice_size) {
+  grpc_endpoint_pair endpoint_pair;
+  // TODO(mlumish): implement this properly under libuv
+  abort();
+  return endpoint_pair;
+}
+
+#endif /* GRPC_UV */

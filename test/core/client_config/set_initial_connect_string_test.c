@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -40,7 +42,6 @@
 #include <grpc/support/thd.h>
 
 #include "src/core/ext/client_config/initial_connect_string.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"

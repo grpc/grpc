@@ -135,7 +135,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
     error = GRPC_ERROR_CREATE("EOF");
   } else if (nread > 0) {
     // Successful read
-    sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, nread);
+    sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, (size_t)nread);
     gpr_slice_buffer_add(tcp->read_slices, sub);
     error = GRPC_ERROR_NONE;
     if (grpc_tcp_trace) {
@@ -217,10 +217,10 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   uv_write_t *write_req;
 
   if (grpc_tcp_trace) {
-    size_t i;
+    size_t j;
 
-    for (i = 0; i < write_slices->count; i++) {
-      char *data = gpr_dump_slice(write_slices->slices[i],
+    for (j = 0; j < write_slices->count; j++) {
+      char *data = gpr_dump_slice(write_slices->slices[j],
                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
       gpr_free(data);

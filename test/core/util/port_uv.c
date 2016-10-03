@@ -31,25 +31,28 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
-
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-
 #include "src/core/lib/iomgr/port.h"
+#include "test/core/util/test_config.h"
+#if defined(GRPC_UV) && defined(GRPC_TEST_PICK_PORT)
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
+#include <grpc/support/log.h>
 
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
+#include "test/core/util/port.h"
 
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
+int grpc_pick_unused_port(void) {
+  // Temporary implementation
+  return 4242;
+}
 
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+int grpc_pick_unused_port_or_die(void) {
+  int port = grpc_pick_unused_port();
+  GPR_ASSERT(port > 0);
+  return port;
+}
+
+void grpc_recycle_unused_port(int port) {
+  // Temporary implementation
+  (void)port;
+}
+
+#endif /* GRPC_UV && GRPC_TEST_PICK_PORT */

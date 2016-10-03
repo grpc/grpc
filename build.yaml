@@ -275,6 +275,7 @@ filegroups:
   - src/core/lib/iomgr/combiner.c
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
+  - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll_linux.c
@@ -522,6 +523,7 @@ filegroups:
   build: test
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/end2end/cq_verifier_internal.h
   - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
@@ -535,6 +537,8 @@ filegroups:
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
+  - test/core/end2end/cq_verifier_native.c
+  - test/core/end2end/cq_verifier_uv.c
   - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
@@ -545,6 +549,7 @@ filegroups:
   - test/core/util/passthru_endpoint.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
+  - test/core/util/port_uv.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   deps:
@@ -1511,6 +1516,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2451,6 +2458,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2466,6 +2475,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2480,6 +2491,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2514,6 +2527,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: timer_list_test
   build: test
   language: c
@@ -2524,6 +2539,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: transport_connectivity_state_test
   build: test
   language: c

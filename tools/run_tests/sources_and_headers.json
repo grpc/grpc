@@ -6111,6 +6111,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/endpoint_pair_posix.c", 
+      "src/core/lib/iomgr/endpoint_pair_uv.c", 
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
@@ -6549,6 +6550,7 @@
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/cq_verifier_internal.h", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
@@ -6566,6 +6568,9 @@
     "src": [
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/cq_verifier_internal.h", 
+      "test/core/end2end/cq_verifier_native.c", 
+      "test/core/end2end/cq_verifier_uv.c", 
       "test/core/end2end/fixtures/http_proxy.c", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.c", 
@@ -6586,6 +6591,7 @@
       "test/core/util/port_posix.c", 
       "test/core/util/port_server_client.c", 
       "test/core/util/port_server_client.h", 
+      "test/core/util/port_uv.c", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"

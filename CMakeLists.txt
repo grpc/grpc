@@ -309,6 +309,7 @@ add_library(grpc
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -577,6 +578,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -817,6 +819,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -1085,6 +1088,7 @@ add_library(grpc++
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -1449,6 +1453,7 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c

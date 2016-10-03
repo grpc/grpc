@@ -38,7 +38,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and

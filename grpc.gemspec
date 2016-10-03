@@ -359,6 +359,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/combiner.c )
   s.files += %w( src/core/lib/iomgr/endpoint.c )
   s.files += %w( src/core/lib/iomgr/endpoint_pair_posix.c )
+  s.files += %w( src/core/lib/iomgr/endpoint_pair_uv.c )
   s.files += %w( src/core/lib/iomgr/endpoint_pair_windows.c )
   s.files += %w( src/core/lib/iomgr/error.c )
   s.files += %w( src/core/lib/iomgr/ev_epoll_linux.c )

@@ -83,7 +83,7 @@ _DEFAULT_TIMEOUT_SECONDS = 5 * 60
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
-  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[]):
+  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[], iomgr_platform='native'):
     if environ is None:
       environ = {}
     self.build_config = config
@@ -91,6 +91,7 @@ class Config(object):
     self.environ['CONFIG'] = config
     self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
+    self.iomgr_platform = iomgr_platform
 
   def job_spec(self, cmdline, timeout_seconds=_DEFAULT_TIMEOUT_SECONDS,
                shortname=None, environ={}, cpu_cost=1.0, flaky=False):
@@ -202,6 +203,18 @@ class CLanguage(object):
     else:
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
                                                                        self.args.compiler)
+    if args.iomgr_platform == "uv":
+      cflags = '-DGRPC_UV '
+      try:
+        cflags += subprocess.check_output(['pkg-config', '--cflags', 'libuv']).strip() + ' '
+      except subprocess.CalledProcessError:
+        pass
+      try:
+        ldflags = subprocess.check_output(['pkg-config', '--libs', 'libuv']).strip() + ' '
+      except subprocess.CalledProcessError:
+        ldflags = '-luv '
+      self._make_options += ['EXTRA_CPPFLAGS={}'.format(cflags),
+                             'EXTRA_LDLIBS={}'.format(ldflags)]
 
   def test_specs(self):
     out = []
@@ -217,6 +230,8 @@ class CLanguage(object):
              'GRPC_VERBOSITY': 'DEBUG'}
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         if self.config.build_config in target['exclude_configs']:
+          continue
+        if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
           continue
         if self.platform == 'windows':
           binary = 'vsprojects/%s%s/%s.exe' % (
@@ -1003,6 +1018,10 @@ argp.add_argument('--compiler',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
+argp.add_argument('--iomgr_platform',
+                  choices=['native', 'uv'],
+                  default='native',
+                  help='Selects iomgr platform to build on')
 argp.add_argument('--build_only',
                   default=False,
                   action='store_const',

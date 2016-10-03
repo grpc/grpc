@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,43 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
+/* This check is for testing only. */
+#ifndef GRPC_UV
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#include "test/core/end2end/cq_verifier_internal.h"
 
-#include "src/core/lib/iomgr/port.h"
+/* the verifier itself */
+struct cq_verifier {
+  /* bound completion queue */
+  grpc_completion_queue *cq;
+  /* start of expectation list */
+  expectation *first_expectation;
+  uv_timer_t timer;
+};
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
+cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
+  cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
+  v->cq = cq;
+  cq_verifier_set_first_expectation(v,NULL);
+  return v;
+}
 
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
+void cq_verifier_destroy(cq_verifier *v) {
+  cq_verify(v);
+  gpr_free(v);
+}
 
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
+expectation *cq_verifier_get_first_expectation(cq_verifier *v) {
+  return v->first_expectation;
+}
 
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e) {
+  v->first_expectation = e;
+}
+
+grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds) {
+  const gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(timeout_seconds);
+  return grpc_completion_queue_next(v->cq, deadline, NULL);
+}
+
+#endif /* GRPC_UV */
