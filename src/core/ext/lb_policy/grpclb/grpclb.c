@@ -275,7 +275,7 @@ typedef struct glb_lb_policy {
   const char *server_name;
   grpc_client_channel_factory *cc_factory;
 
-  /** deadline for the original client's call */
+  /** deadline for the LB's call */
   gpr_timespec deadline;
 
   /** for communicating with the LB server */
@@ -766,10 +766,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   gpr_mu_lock(&glb_policy->mu);
-  /* use the longest deadline across incoming calls for the communication with
-   * the LB server */
-  glb_policy->deadline =
-      gpr_time_max(pick_args->deadline, glb_policy->deadline);
+  glb_policy->deadline = pick_args->deadline;
   bool pick_done;
 
   if (glb_policy->rr_policy != NULL) {
@@ -930,7 +927,6 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   grpc_closure_init(&lb_client->close_sent, close_sent_cb, lb_client);
   grpc_closure_init(&lb_client->srv_status_rcvd, srv_status_rcvd_cb, lb_client);
 
-  /* the longest deadline across incoming calls */
   lb_client->deadline = glb_policy->deadline;
 
   /* Note the following LB call progresses every time there's activity in \a
