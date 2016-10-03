@@ -68,7 +68,7 @@ static double GetCpuLoad(Scenario * scenario, double offered_load) {
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);
-  // GetReporter()->ReportTimes(*result);
+  GetReporter()->ReportTimes(*result);
   GetReporter()->ReportCpuUsage(*result);
 
   bool success = true;
@@ -119,7 +119,7 @@ static double SearchOfferedLoad(double initial_offered_load, double targeted_cpu
       current_offered_load *= 2;
       current_cpu_load = GetCpuLoad(scenario, current_offered_load);
       gpr_log(GPR_INFO, "do while: current_offered_load %f", current_offered_load);
-    } while (current_cpu_load < targeted_cpu_load - 1);
+    } while (current_cpu_load < targeted_cpu_load);
 
     double targeted_offered_load = BinarySearch(scenario, targeted_cpu_load,
                                                 current_offered_load / 2,
