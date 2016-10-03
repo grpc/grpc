@@ -115,6 +115,16 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
 
 }  // namespace
 
+grpc::string SnakeCaseToCamelCase(grpc::string input) {
+  grpc::string output;
+  std::vector<grpc::string> words = Split(input, '_');
+  for(size_t i = 0; i < words.size(); i++) {
+    output.append(CapitalizeFirst(words[i]));
+  }
+  return output;
+}
+
+
 grpc::string GetServices(const FileDescriptor *file) {
   grpc::string output;
   {
@@ -156,7 +166,7 @@ grpc::string GetServices(const FileDescriptor *file) {
     std::vector<grpc::string> modules = Split(file->package(), '.');
     for (size_t i = 0; i < modules.size(); ++i) {
       std::map<grpc::string, grpc::string> module_vars =
-          ListToDict({"module.name", CapitalizeFirst(modules[i]), });
+          ListToDict({"module.name", SnakeCaseToCamelCase(modules[i]), });
       out.Print(module_vars, "module $module.name$\n");
       out.Indent();
     }
