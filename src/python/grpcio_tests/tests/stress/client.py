@@ -30,9 +30,10 @@
 """Entry point for running stress tests."""
 
 import argparse
+from concurrent import futures
 import threading
 
-from grpc.beta import implementations
+import grpc
 from six.moves import queue
 from src.proto.grpc.testing import metrics_pb2
 from src.proto.grpc.testing import test_pb2
@@ -92,24 +93,24 @@ def _parse_weighted_test_cases(test_case_args):
 
 def run_test(args):
   test_cases = _parse_weighted_test_cases(args.test_cases)
-  test_servers = args.server_addresses.split(',')
+  test_server_targets = args.server_addresses.split(',')
   # Propagate any client exceptions with a queue
   exception_queue = queue.Queue()
   stop_event = threading.Event()
   hist = histogram.Histogram(1, 1)
   runners = []
 
-  server = metrics_pb2.beta_create_MetricsService_server(
-      metrics_server.MetricsServer(hist))
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=25))
+  metrics_pb2.add_MetricsServiceServicer_to_server(
+      metrics_server.MetricsServer(hist), server)
   server.add_insecure_port('[::]:{}'.format(args.metrics_port))
   server.start()
 
-  for test_server in test_servers:
-    host, port = test_server.split(':', 1)
+  for test_server_target in test_server_targets:
     for _ in xrange(args.num_channels_per_server):
-      channel = implementations.insecure_channel(host, int(port))
+      channel = grpc.insecure_channel(test_server_target)
       for _ in xrange(args.num_stubs_per_channel):
-        stub = test_pb2.beta_create_TestService_stub(channel)
+        stub = test_pb2.TestServiceStub(channel)
         runner = test_runner.TestRunner(stub, test_cases, hist,
                                         exception_queue, stop_event)
         runners.append(runner)
@@ -128,8 +129,8 @@ def run_test(args):
     stop_event.set()
     for runner in runners:
       runner.join()
-      runner = None
-    server.stop(0)
+    runner = None
+    server.stop(None)
 
 if __name__ == '__main__':
   run_test(_args())

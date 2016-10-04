@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from distutils import cygwinccompiler
 from distutils import extension
 from distutils import util
 import errno
@@ -68,26 +69,35 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-  EXTRA_ENV_COMPILE_ARGS = '-fno-wrapv -frtti -std=c++11'
+  EXTRA_ENV_COMPILE_ARGS = '-std=c++11'
   if 'win32' in sys.platform:
-    # We use define flags here and don't directly add to DEFINE_MACROS below to
-    # ensure that the expert user/builder has a way of turning it off (via the
-    # envvars) without adding yet more GRPC-specific envvars.
-    # See https://sourceforge.net/p/mingw-w64/bugs/363/
-    if '32' in platform.architecture()[0]:
-      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+    if sys.version_info < (3, 5):
+      # We use define flags here and don't directly add to DEFINE_MACROS below to
+      # ensure that the expert user/builder has a way of turning it off (via the
+      # envvars) without adding yet more GRPC-specific envvars.
+      # See https://sourceforge.net/p/mingw-w64/bugs/363/
+      if '32' in platform.architecture()[0]:
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+      else:
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
     else:
-      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+      # We need to statically link the C++ Runtime, only the C runtime is
+      # available dynamically
+      EXTRA_ENV_COMPILE_ARGS += ' /MT'
+  elif "linux" in sys.platform or "darwin" in sys.platform:
+    EXTRA_ENV_COMPILE_ARGS += ' -fno-wrapv -frtti'
 if EXTRA_ENV_LINK_ARGS is None:
-  EXTRA_ENV_LINK_ARGS = '-lpthread'
-  if 'win32' in sys.platform:
-    # TODO(atash) check if this is actually safe to just import and call on
-    # non-Windows (to avoid breaking import style)
-    from distutils.cygwinccompiler import get_msvcr
-    msvcr = get_msvcr()[0]
+  EXTRA_ENV_LINK_ARGS = ''
+  if "linux" in sys.platform or "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += ' -lpthread'
+  elif "win32" in sys.platform and sys.version_info < (3, 5):
+    msvcr = cygwinccompiler.get_msvcr()[0]
+    # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
+    # influence on the linkage outcome on MinGW for non-C++ programs.
     EXTRA_ENV_LINK_ARGS += (
         ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
         '-static'.format(msvcr=msvcr))
+
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
@@ -101,9 +111,13 @@ PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
 GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
 GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
-DEFINE_MACROS = (('HAVE_PTHREAD', 1),)
-if "win32" in sys.platform and '64bit' in platform.architecture()[0]:
-  DEFINE_MACROS += (('MS_WIN64', 1),)
+DEFINE_MACROS = ()
+if "win32" in sys.platform:
+  DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1),)
+  if '64bit' in platform.architecture()[0]:
+    DEFINE_MACROS += (('MS_WIN64', 1),)
+elif "linux" in sys.platform or "darwin" in sys.platform:
+  DEFINE_MACROS += (('HAVE_PTHREAD', 1),)
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.
@@ -177,8 +191,8 @@ setuptools.setup(
   packages=setuptools.find_packages('.'),
   namespace_packages=['grpc'],
   install_requires=[
-    'protobuf>=3.0.0a3',
-    'grpcio>=0.15.0',
+    'protobuf>=3.0.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
   ],
   package_data=package_data(),
 )

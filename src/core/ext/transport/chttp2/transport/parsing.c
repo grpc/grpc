@@ -41,9 +41,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 #define TRANSPORT_FROM_PARSING(tp)                                        \
   ((grpc_chttp2_transport *)((char *)(tp)-offsetof(grpc_chttp2_transport, \
@@ -177,7 +177,8 @@ void grpc_chttp2_publish_reads(
       stream_global->seen_error = true;
       stream_global->exceeded_metadata_size =
           stream_parsing->exceeded_metadata_size;
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
 
     /* flush stats to global stream state */
@@ -203,7 +204,8 @@ void grpc_chttp2_publish_reads(
       stream_global->incoming_frames.tail->is_tail = 0;
     }
     if (stream_parsing->data_parser.incoming_frames.head != NULL) {
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
     grpc_chttp2_incoming_frame_queue_merge(
         &stream_global->incoming_frames,
@@ -219,7 +221,8 @@ void grpc_chttp2_publish_reads(
       GPR_SWAP(grpc_chttp2_incoming_metadata_buffer,
                stream_parsing->metadata_buffer[0],
                stream_global->received_initial_metadata);
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
     if (!stream_global->published_trailing_metadata &&
         stream_parsing->got_metadata_on_parse[1]) {
@@ -228,7 +231,8 @@ void grpc_chttp2_publish_reads(
       GPR_SWAP(grpc_chttp2_incoming_metadata_buffer,
                stream_parsing->metadata_buffer[1],
                stream_global->received_trailing_metadata);
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
 
     if (stream_parsing->forced_close_error != GRPC_ERROR_NONE) {
@@ -668,8 +672,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
     if (!cached_timeout) {
       /* not already parsed: parse it now, and store the result away */
       cached_timeout = gpr_malloc(sizeof(gpr_timespec));
-      if (!grpc_chttp2_decode_timeout(grpc_mdstr_as_c_string(md->value),
-                                      cached_timeout)) {
+      if (!grpc_http2_decode_timeout(grpc_mdstr_as_c_string(md->value),
+                                     cached_timeout)) {
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
                 grpc_mdstr_as_c_string(md->value));
         *cached_timeout = gpr_inf_future(GPR_TIMESPAN);

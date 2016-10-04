@@ -44,9 +44,6 @@ mkdir -p /tmp/ccache
 # its cache location now that --download-cache is deprecated).
 mkdir -p /tmp/xdg-cache-home
 
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
-
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
@@ -86,9 +83,12 @@ docker run \
   $DOCKER_IMAGE_NAME \
   bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_FAILED="true"
 
-docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
-unzip -o $git_root/reports.zip -d $git_root || true
-rm -f reports.zip
+# use unique name for reports.zip to prevent clash between concurrent
+# run_tests.py runs 
+TEMP_REPORTS_ZIP=`mktemp`
+docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" ${TEMP_REPORTS_ZIP} || true
+unzip -o ${TEMP_REPORTS_ZIP} -d $git_root || true
+rm -f ${TEMP_REPORTS_ZIP}
 
 # remove the container, possibly killing it first
 docker rm -f $CONTAINER_NAME || true

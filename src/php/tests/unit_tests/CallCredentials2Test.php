@@ -132,4 +132,68 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         unset($call);
         unset($server_call);
     }
+
+    public function invalidKeyCallbackFunc($context)
+    {
+        $this->assertTrue(is_string($context->service_url));
+        $this->assertTrue(is_string($context->method_name));
+
+        return ['K1' => ['v1']];
+    }
+
+    public function testCallbackWithInvalidKey()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              '/abc/dummy_method',
+                              $deadline,
+                              $this->host_override);
+
+        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+            array($this, 'invalidKeyCallbackFunc'));
+        $call->setCredentials($call_credentials);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
+    }
+
+    public function invalidReturnCallbackFunc($context)
+    {
+        $this->assertTrue(is_string($context->service_url));
+        $this->assertTrue(is_string($context->method_name));
+
+        return 'a string';
+    }
+
+    public function testCallbackWithInvalidReturnValue()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              '/abc/dummy_method',
+                              $deadline,
+                              $this->host_override);
+
+        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+            array($this, 'invalidReturnCallbackFunc'));
+        $call->setCredentials($call_credentials);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
+    }
 }

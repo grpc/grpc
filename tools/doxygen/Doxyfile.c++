@@ -830,6 +830,7 @@ include/grpc++/impl/codegen/server_interface.h \
 include/grpc++/impl/codegen/service_type.h \
 include/grpc++/impl/codegen/status.h \
 include/grpc++/impl/codegen/status_code_enum.h \
+include/grpc++/impl/codegen/status_helper.h \
 include/grpc++/impl/codegen/string_ref.h \
 include/grpc++/impl/codegen/stub_options.h \
 include/grpc++/impl/codegen/sync.h \
@@ -837,27 +838,23 @@ include/grpc++/impl/codegen/sync_cxx11.h \
 include/grpc++/impl/codegen/sync_no_cxx11.h \
 include/grpc++/impl/codegen/sync_stream.h \
 include/grpc++/impl/codegen/time.h \
-include/grpc/impl/codegen/byte_buffer.h \
 include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/status.h \
-include/grpc/impl/codegen/alloc.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
 include/grpc/impl/codegen/atm_windows.h \
-include/grpc/impl/codegen/log.h \
+include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/slice.h \
-include/grpc/impl/codegen/slice_buffer.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h \
-include/grpc/impl/codegen/time.h
+include/grpc/impl/codegen/sync_windows.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -4,10 +4,19 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_credentials.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\service_describer.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
   </ItemGroup>
@@ -15,10 +24,22 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_credentials.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\config_grpc_cli.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\service_describer.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>

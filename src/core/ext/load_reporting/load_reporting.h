@@ -34,42 +34,47 @@
 #ifndef GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H
 #define GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H
 
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/surface/call.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include "src/core/lib/channel/channel_stack.h"
 
-typedef struct grpc_load_reporting_config grpc_load_reporting_config;
+/** Metadata key for initial metadata coming from clients */
+/* TODO(dgq): change to the final value TBD */
+#define GRPC_LOAD_REPORTING_INITIAL_MD_KEY "load-reporting-initial"
 
-/** Call information to be passed to the provided load reporting function upon
- * completion of the call */
+/** Metadata key for trailing metadata from servers */
+/* TODO(dgq): change to the final value TBD */
+#define GRPC_LOAD_REPORTING_TRAILING_MD_KEY "load-reporting-trailing"
+
+/** Identifiers for the invocation point of the users LR callback */
+typedef enum grpc_load_reporting_source {
+  GRPC_LR_POINT_UNKNOWN = 0,
+  GRPC_LR_POINT_CHANNEL_CREATION,
+  GRPC_LR_POINT_CHANNEL_DESTRUCTION,
+  GRPC_LR_POINT_CALL_CREATION,
+  GRPC_LR_POINT_CALL_DESTRUCTION
+} grpc_load_reporting_source;
+
+/** Call information to be passed to the provided LR callback. */
 typedef struct grpc_load_reporting_call_data {
-  const grpc_call_stats *stats;   /**< Stats for the call */
-  const char *trailing_md_string; /**< LR trailing metadata info */
+  const grpc_load_reporting_source source; /**< point of last data update. */
+
+  /** Unique identifier for the channel associated with the data */
+  intptr_t channel_id;
+
+  /** Unique identifier for the call associated with the data. If the call
+   * hasn't been created yet, it'll have a value of zero. */
+  intptr_t call_id;
+
+  /** Only valid when \a source is \a GRPC_LR_POINT_CALL_DESTRUCTION, that is,
+   * once the call has completed */
+  const grpc_call_final_info *final_info;
+
+  const char *initial_md_string;  /**< value string for LR's initial md key */
+  const char *trailing_md_string; /**< value string for LR's trailing md key */
+  const char *method_name;        /**< Corresponds to :path header */
 } grpc_load_reporting_call_data;
 
-/** Custom function to be called by the load reporting filter. */
-typedef void (*grpc_load_reporting_fn)(
-    const grpc_load_reporting_call_data *call_data, void *user_data);
-
-/** Register \a fn as the function to be invoked by the load reporting filter.
- * \a fn will be invoked at the beginning and at the end of the call.
- *
- * For the first invocation, \a fn's first argument
- * (grpc_load_reporting_call_data*) will be NULL. \a user_data is always passed
- * as-is. */
-grpc_load_reporting_config *grpc_load_reporting_config_create(
-    grpc_load_reporting_fn fn, void *user_data);
-
-grpc_load_reporting_config *grpc_load_reporting_config_copy(
-    grpc_load_reporting_config *src);
-
-void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lrc);
-
-/** Invoke the function registered by \a grpc_load_reporting_init. */
-void grpc_load_reporting_config_call(
-    grpc_load_reporting_config *lrc,
-    const grpc_load_reporting_call_data *call_data);
-
 /** Return a \a grpc_arg enabling load reporting */
-grpc_arg grpc_load_reporting_config_create_arg(grpc_load_reporting_config *lrc);
+grpc_arg grpc_load_reporting_enable_arg();
 
 #endif /* GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H */

@@ -69,8 +69,8 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_call)
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-/* Initializes an instance of wrapped_grpc_call to be associated with an object
- * of a class specified by class_type */
+/* Initializes an instance of wrapped_grpc_call to be associated with an
+ * object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_call(zend_class_entry *class_type
                                               TSRMLS_DC) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_call);
@@ -164,6 +164,9 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
     if (key_type1 != HASH_KEY_IS_STRING) {
       return false;
     }
+    if (!grpc_header_key_is_legal(key1, strlen(key1))) {
+      return false;
+    }
     inner_array_hash = Z_ARRVAL_P(inner_array);
     PHP_GRPC_HASH_FOREACH_VAL_START(inner_array_hash, value)
       if (Z_TYPE_P(value) != IS_STRING) {
@@ -192,10 +195,11 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
 
 /**
  * Constructs a new instance of the Call class.
- * @param Channel $channel The channel to associate the call with. Must not be
- *     closed.
+ * @param Channel $channel_obj The channel to associate the call with.
+ *                             Must not be closed.
  * @param string $method The method to call
- * @param Timeval $absolute_deadline The deadline for completing the call
+ * @param Timeval $deadline_obj The deadline for completing the call
+ * @param string $host_override The host is set by user (optional)
  */
 PHP_METHOD(Call, __construct) {
   zval *channel_obj;
@@ -234,7 +238,7 @@ PHP_METHOD(Call, __construct) {
 
 /**
  * Start a batch of RPC actions.
- * @param array batch Array of actions to take
+ * @param array $array Array of actions to take
  * @return object Object with results of all actions
  */
 PHP_METHOD(Call, startBatch) {
@@ -512,8 +516,9 @@ PHP_METHOD(Call, getPeer) {
 }
 
 /**
- * Cancel the call. This will cause the call to end with STATUS_CANCELLED if it
- * has not already ended with another status.
+ * Cancel the call. This will cause the call to end with STATUS_CANCELLED
+ * if it has not already ended with another status.
+ * @return void
  */
 PHP_METHOD(Call, cancel) {
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
@@ -522,8 +527,8 @@ PHP_METHOD(Call, cancel) {
 
 /**
  * Set the CallCredentials for this call.
- * @param CallCredentials creds_obj The CallCredentials object
- * @param int The error code
+ * @param CallCredentials $creds_obj The CallCredentials object
+ * @return int The error code
  */
 PHP_METHOD(Call, setCredentials) {
   zval *creds_obj;

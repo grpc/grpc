@@ -52,7 +52,6 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/time.h>
 
 struct grpc_completion_queue;
 
@@ -68,8 +67,10 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+namespace internal {
 template <class W, class R>
-class ServerReaderWriter;
+class ServerReaderWriterBody;
+}
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -178,15 +179,15 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class W>
   friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::ServerReaderWriter;
+  friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class BidiStreamingHandler;
+  template <class Streamer, bool WriteNeeded>
+  friend class TemplatedBidiStreamingHandler;
   friend class UnknownMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
@@ -217,7 +218,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// Performs a single polling pluck on \a tag.
   /// \warning Must not be mixed with calls to \a Next.
   void TryPluck(CompletionQueueTag* tag) {
-    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+    auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;

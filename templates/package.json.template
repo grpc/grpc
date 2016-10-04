@@ -37,7 +37,7 @@
     "devDependencies": {
       "async": "^1.5.0",
       "google-auth-library": "^0.9.2",
-      "google-protobuf": "^3.0.0-alpha.5",
+      "google-protobuf": "^3.0.0",
       "istanbul": "^0.3.21",
       "jsdoc": "^3.3.2",
       "jshint": "^2.5.0",

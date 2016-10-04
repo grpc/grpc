@@ -96,7 +96,7 @@ ifneq ($(HAS_VALID_PROTOC),true)
 	@echo "Please install Google protocol buffers 3.0.0 and its compiler."
 	@echo "You can find it here:"
 	@echo
-	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-beta-3.3"
+	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0"
 	@echo
 	@echo "Here is what I get when trying to evaluate your version of protoc:"
 	@echo

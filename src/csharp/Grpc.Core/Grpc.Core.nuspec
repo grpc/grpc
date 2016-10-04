@@ -15,7 +15,7 @@
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
     <dependencies>
-      <dependency id="Ix-Async" version="1.2.5" />
+      <dependency id="System.Interactive.Async" version="3.0.0" />
     </dependencies>
   </metadata>
   <files>

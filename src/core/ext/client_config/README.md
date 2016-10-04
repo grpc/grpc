@@ -12,7 +12,7 @@ data might include:
 - a load balancing policy to decide which server to send a request to
 - a set of filters to mutate outgoing requests (say, by adding metadata)
 
-The resolver provides this data as a stream of grpc_client_config objects to
+The resolver provides this data as a stream of grpc_resolver_result objects to
 the channel. We represent configuration as a stream so that it can be changed
 by the resolver during execution, by reacting to external events (such as a
 new configuration file being pushed to some store).
@@ -22,7 +22,7 @@ Load Balancing
 --------------
 
 Load balancing configuration is provided by a grpc_lb_policy object, stored as
-part of grpc_client_config.
+part of grpc_resolver_result.
 
 The primary job of the load balancing policies is to pick a target server given only the
 initial metadata for a request. It does this by providing a grpc_subchannel

@@ -55,7 +55,8 @@ typedef struct server_connect_state {
 } server_connect_state;
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data,
+                              grpc_channel_args *args,
+                              gpr_slice_buffer *read_buffer, void *user_data,
                               grpc_error *error) {
   server_connect_state *state = user_data;
   if (error != GRPC_ERROR_NONE) {
@@ -64,6 +65,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     grpc_error_free_string(error_str);
     GRPC_ERROR_UNREF(error);
     grpc_handshake_manager_shutdown(exec_ctx, state->handshake_mgr);
+    gpr_free(read_buffer);
   } else {
     // Beware that the call to grpc_create_chttp2_transport() has to happen
     // before grpc_tcp_server_destroy(). This is fine here, but similar code
@@ -75,7 +77,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     grpc_server_setup_transport(exec_ctx, state->server, transport,
                                 state->accepting_pollset,
                                 grpc_server_get_channel_args(state->server));
-    grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, read_buffer);
   }
   // Clean up.
   grpc_channel_args_destroy(args);

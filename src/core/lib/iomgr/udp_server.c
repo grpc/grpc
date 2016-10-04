@@ -170,6 +170,8 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
 
+      /* Call the orphan_cb to signal that the FD is about to be closed and
+       * should no longer be used. */
       GPR_ASSERT(sp->orphan_cb);
       sp->orphan_cb(sp->emfd);
 
@@ -196,6 +198,11 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
   /* shutdown all fd's */
   if (s->active_ports) {
     for (i = 0; i < s->nports; i++) {
+      /* Call the orphan_cb to signal that the FD is about to be closed and
+       * should no longer be used. */
+      GPR_ASSERT(sp->orphan_cb);
+      sp->orphan_cb(sp->emfd);
+
       grpc_fd_shutdown(exec_ctx, s->ports[i].emfd);
     }
     gpr_mu_unlock(&s->mu);

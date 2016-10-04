@@ -43,6 +43,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\empty_batch.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_call_init_fails.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
@@ -64,6 +67,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\large_metadata.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\load_reporting_hook.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_concurrent_streams.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
@@ -74,6 +80,9 @@
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\network_status_change.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_logging.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
@@ -104,6 +113,9 @@
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_tags.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_cacheable_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_delayed_request.c">

@@ -41,29 +41,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
-static void client_channel_factory_ref(grpc_client_channel_factory *scv) {}
-static void client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                         grpc_client_channel_factory *scv) {}
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
-    grpc_subchannel_args *args) {
-  return NULL;
-}
-
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_client_channel_type type,
-    grpc_channel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
-}
-
-static const grpc_client_channel_factory_vtable sc_vtable = {
-    client_channel_factory_ref, client_channel_factory_unref,
-    client_channel_factory_create_subchannel,
-    client_channel_factory_create_channel};
-
-static grpc_client_channel_factory cc_factory = {&sc_vtable};
-
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
 
@@ -92,7 +69,6 @@ static grpc_resolver *create_resolver(const char *name) {
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  args.client_channel_factory = &cc_factory;
   grpc_resolver *resolver =
       grpc_resolver_factory_create_resolver(factory, &args);
   grpc_resolver_factory_unref(factory);
@@ -127,26 +103,26 @@ int main(int argc, char **argv) {
 
   grpc_resolver *resolver = create_resolver("dns:test");
 
-  grpc_client_config *config = (grpc_client_config *)1;
+  grpc_resolver_result *result = (grpc_resolver_result *)1;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_event ev1;
   gpr_event_init(&ev1);
-  grpc_resolver_next(&exec_ctx, resolver, &config,
+  grpc_resolver_next(&exec_ctx, resolver, &result,
                      grpc_closure_create(on_done, &ev1));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(5, &ev1));
-  GPR_ASSERT(config == NULL);
+  GPR_ASSERT(result == NULL);
 
   gpr_event ev2;
   gpr_event_init(&ev2);
-  grpc_resolver_next(&exec_ctx, resolver, &config,
+  grpc_resolver_next(&exec_ctx, resolver, &result,
                      grpc_closure_create(on_done, &ev2));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(30, &ev2));
-  GPR_ASSERT(config != NULL);
+  GPR_ASSERT(result != NULL);
 
-  grpc_client_config_unref(&exec_ctx, config);
+  grpc_resolver_result_unref(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
   grpc_exec_ctx_finish(&exec_ctx);
 
