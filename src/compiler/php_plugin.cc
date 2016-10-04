@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,43 @@
  *
  */
 
-var messages = require('./helloworld_pb');
-var services = require('./helloworld_grpc_pb');
+// Generates PHP gRPC service interface out of Protobuf IDL.
 
-var grpc = require('grpc');
+#include <memory>
 
-function main() {
-  var client = new services.GreeterClient('localhost:50051',
-                                          grpc.credentials.createInsecure());
-  var request = new messages.HelloRequest();
-  var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
-  } else {
-    user = 'world';
+#include "src/compiler/config.h"
+#include "src/compiler/php_generator.h"
+#include "src/compiler/php_generator_helpers.h"
+
+using grpc_php_generator::GenerateFile;
+using grpc_php_generator::GetPHPServiceFilename;
+
+class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+ public:
+  PHPGrpcGenerator() {}
+  ~PHPGrpcGenerator() {}
+
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const grpc::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                grpc::string *error) const {
+    grpc::string code = GenerateFile(file);
+    if (code.size() == 0) {
+      return true;
+    }
+
+    // Get output file name
+    grpc::string file_name = GetPHPServiceFilename(file->name());
+
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->Open(file_name));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+    return true;
   }
-  request.setName(user);
-  client.sayHello(request, function(err, response) {
-    console.log('Greeting:', response.getMessage());
-  });
-}
+};
 
-main();
+int main(int argc, char *argv[]) {
+  PHPGrpcGenerator generator;
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,28 @@
  *
  */
 
-var messages = require('./helloworld_pb');
-var services = require('./helloworld_grpc_pb');
+#ifndef GRPC_INTERNAL_COMPILER_PHP_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_PHP_GENERATOR_HELPERS_H
 
-var grpc = require('grpc');
+#include <algorithm>
 
-function main() {
-  var client = new services.GreeterClient('localhost:50051',
-                                          grpc.credentials.createInsecure());
-  var request = new messages.HelloRequest();
-  var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
-  } else {
-    user = 'world';
-  }
-  request.setName(user);
-  client.sayHello(request, function(err, response) {
-    console.log('Greeting:', response.getMessage());
-  });
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
+
+namespace grpc_php_generator {
+
+inline grpc::string GetPHPServiceFilename(const grpc::string& filename) {
+  return grpc_generator::StripProto(filename) + "_grpc_pb.php";
 }
 
-main();
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetPHPComments(const DescriptorType* desc,
+                                   grpc::string prefix) {
+  return grpc_generator::GetPrefixedComments(desc, true, prefix);
+}
+
+}  // namespace grpc_php_generator
+
+#endif  // GRPC_INTERNAL_COMPILER_PHP_GENERATOR_HELPERS_H
