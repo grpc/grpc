@@ -460,7 +460,7 @@ static void perform_request(client_fixture *cf) {
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
-                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1000), NULL);
+                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL);
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char *peer;
