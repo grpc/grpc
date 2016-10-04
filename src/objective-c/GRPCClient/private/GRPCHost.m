@@ -219,6 +219,8 @@ static NSMutableDictionary *kHostCache;
   if (_responseSizeLimitOverride) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
+  // Use 10000ms initial backoff time for correct behavior on bad/slow networks  
+  args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = @10000;
   return args;
 }
 

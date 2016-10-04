@@ -100,7 +100,7 @@ TEST_F(ByteBufferTest, Dump) {
   slices.push_back(Slice(world, Slice::STEAL_REF));
   ByteBuffer buffer(&slices[0], 2);
   slices.clear();
-  buffer.Dump(&slices);
+  (void)buffer.Dump(&slices);
   EXPECT_TRUE(SliceEqual(slices[0], hello));
   EXPECT_TRUE(SliceEqual(slices[1], world));
 }

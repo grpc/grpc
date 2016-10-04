@@ -75,14 +75,14 @@ for target in js:
       for line in src:
         m = re_inc1.match(line)
         if m:
-          if not target_has_header(target, m.group(1)):
+          if not target_has_header(target, m.group(1)) and not target['is_filegroup']:
             print (
               'target %s (%s) does not name header %s as a dependency' % (
                 target['name'], fn, m.group(1)))
             errors += 1
         m = re_inc2.match(line)
         if m:
-          if not target_has_header(target, 'include/' + m.group(1)):
+          if not target_has_header(target, 'include/' + m.group(1)) and not target['is_filegroup']:
             print (
               'target %s (%s) does not name header %s as a dependency' % (
                 target['name'], fn, m.group(1)))
