@@ -363,16 +363,6 @@ static void on_new_call(void *arg, int success) {
     for (size_t i = 0; i < pc->c2p_initial_metadata.count; ++i) {
       GRPC_MDELEM_REF(pc->c2p_initial_metadata.metadata[i]);
     }
-    /*grpc_metadata_array_init(&pc->c2p_initial_metadata);*/
-    /*pc->c2p_initial_metadata.count = proxy->new_call_metadata.count;*/
-    /*pc->c2p_initial_metadata.capacity = proxy->new_call_metadata.capacity;*/
-    /*pc->c2p_initial_metadata.metadata =*/
-    /*gpr_malloc(sizeof(grpc_mdelem *) * proxy->new_call_metadata.count);*/
-    /*for (size_t i = 0; i < proxy->new_call_metadata.count; ++i) {*/
-    /*gpr_log(GPR_INFO, "LOOOOOOOOOOOOL"); // XXX*/
-    /*pc->c2p_initial_metadata.metadata[i] =*/
-    /*GRPC_MDELEM_REF(proxy->new_call_metadata.metadata[i]);*/
-    /*}*/
 
     pc->c2p_initial_metadata_storage =
         gpr_malloc(sizeof(grpc_linked_mdelem) * pc->c2p_initial_metadata.count);

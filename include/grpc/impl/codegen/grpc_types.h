@@ -267,23 +267,6 @@ typedef enum grpc_call_error {
    GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
    GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
 
-#if 0
-/** A single metadata element */
-typedef struct grpc_metadata {
-  const char *key;
-  const char *value;
-  size_t value_length;
-  uint32_t flags;
-
-  /** The following fields are reserved for grpc internal use.
-      There is no need to initialize them, and they will be set to garbage
-      during calls to grpc. */
-  struct {
-    void *obfuscated[4]; /* XXX: contains a grpc_linked_mdelem */
-  } internal_data;
-} grpc_metadata;
-#endif
-
 /** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
   /** Shutting down */
@@ -323,7 +306,6 @@ typedef struct grpc_mdelem {
   /* there is a private part to this in metadata.c */
 } grpc_mdelem;
 
-/* XXX: docs */
 typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;
   struct grpc_linked_mdelem *next;
