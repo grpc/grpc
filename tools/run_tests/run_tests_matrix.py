@@ -195,15 +195,6 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='coreclr',
                               labels=['portability'],
                               extra_args=extra_args)
-  
-  for compiler in ['node5', 'node0.12']:
-    test_jobs += _generate_jobs(languages=['node'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                arch='default',
-                                compiler=compiler,
-                                labels=['portability'],
-                                extra_args=extra_args)
   return test_jobs  
 
 
