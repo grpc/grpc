@@ -361,6 +361,7 @@
       "grpc_test_util"
     ], 
     "headers": [], 
+    "is_filegroup": false, 
     "language": "c", 
     "name": "dns_resolver_connectivity_test", 
     "src": [
@@ -4889,6 +4890,27 @@
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc++_base", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc_cronet"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_cronet", 
+    "src": [
+      "src/cpp/client/cronet_credentials.cc", 
+      "src/cpp/client/insecure_credentials.cc", 
+      "src/cpp/common/insecure_create_auth_context.cc", 
+      "src/cpp/server/insecure_server_credentials.cc"
     ], 
     "third_party": false, 
     "type": "lib"
