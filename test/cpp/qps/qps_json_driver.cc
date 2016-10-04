@@ -50,7 +50,7 @@ DEFINE_string(scenarios_json, "",
               "JSON string containing an array of Scenario objects");
 DEFINE_bool(quit, false, "Quit the workers");
 
-DEFINE_bool(search, flase, "Search for offered load setting that achieves targeted cpu load");
+DEFINE_bool(search, false, "Search for offered load setting that achieves targeted cpu load");
 
 DEFINE_double(initial_offered_load, 1000.0, "Set up for intial offered load");
 
@@ -98,7 +98,7 @@ static double GetCpuLoad(Scenario * scenario, double offered_load, bool* success
 }
 
 static double BinarySearch(Scenario * scenario, double targeted_cpu_load,
-                        double low_offered_load, double high_offered_load, bool* success) {
+                        double low, double high, bool* success) {
   while (low <= high - FLAGS_precision) {
     double mid = low + (high - low) /2;
     double current_cpu_load = GetCpuLoad(scenario, mid, success);
