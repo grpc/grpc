@@ -194,6 +194,11 @@ struct grpc_call {
     struct {
       grpc_byte_stream stream;
       grpc_byte_buffer *buffer;
+      union {
+        struct {
+          size_t slice_index;
+        } raw;
+      } buffer_progress;
       void *tag;
       grpc_closure *on_next;
       bool next_is_buffer;
@@ -1163,6 +1168,12 @@ static void receiving_incremental_stream_ready(grpc_exec_ctx *exec_ctx,
   abort();
 }
 
+grpc_call_error grpc_call_incremental_message_reader_pull(
+    grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
+  abort();
+  return GRPC_CALL_OK;
+}
+
 /*******************************************************************************
  * STREAM SEND PATH: INCREMENTAL MESSAGES
  */
@@ -1171,6 +1182,24 @@ static grpc_call *incwr_call_from_stream(grpc_byte_stream *byte_stream) {
   intptr_t offset =
       (intptr_t) & ((grpc_call *)NULL)->sending.incremental.stream;
   return (grpc_call *)(((char *)byte_stream) - offset);
+}
+
+static bool incwr_maybe_complete_buffer(grpc_exec_ctx *exec_ctx,
+                                        grpc_call *call, void **buffer,
+                                        size_t *size) {
+  abort();
+  return false;
+}
+
+static void incwr_complete_slice(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                                 gpr_slice *slice) {
+  switch (call->sending.incremental.buffer->type) {
+    case GRPC_BB_RAW:
+      *slice = call->sending.incremental.buffer->data.raw.slice_buffer
+                   .slices[call->sending.incremental.buffer_progress.raw
+                               .slice_index++];
+      break;
+  }
 }
 
 static bool incwr_bs_next_slice(grpc_exec_ctx *exec_ctx,
@@ -1235,11 +1264,11 @@ grpc_call_error grpc_call_incremental_message_writer_push(
     bool done;
     if (call->sending.incremental.next_is_buffer) {
       done = incwr_maybe_complete_buffer(
-          exec_ctx, call, &call->sending.incremental.next.buffer.buffer,
+          &exec_ctx, call, &call->sending.incremental.next.buffer.buffer,
           &call->sending.incremental.next.buffer.size);
     } else {
       incwr_complete_slice(&exec_ctx, call,
-                           &call->sending.incremental.next.slice);
+                           call->sending.incremental.next.slice.slice);
       done = true;
     }
     if (done) {
