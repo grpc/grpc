@@ -144,7 +144,7 @@ class ProtoServerReflectionTest : public ::testing::Test {
 TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
   ResetStub();
 
-  std::vector<std::string> services;
+  std::vector<grpc::string> services;
   desc_db_->GetServices(&services);
   // The service list has at least one service (reflection servcie).
   EXPECT_TRUE(services.size() > 0);
