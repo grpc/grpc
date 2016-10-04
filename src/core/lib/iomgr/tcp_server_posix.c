@@ -648,35 +648,40 @@ done:
   }
 }
 
+/* Return listener at port_index or NULL. */
+static grpc_tcp_listener *get_port_index(grpc_tcp_server *s,
+                                         unsigned port_index) {
+  unsigned num_ports = 0;
+  grpc_tcp_listener *sp;
+  for (sp = s->head; sp; sp = sp->next) {
+    if (!sp->is_sibling) {
+      if (++num_ports > port_index) {
+        return sp;
+      }
+    }
+  }
+  return NULL;
+}
+
 unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
                                        unsigned port_index) {
   unsigned num_fds = 0;
-  grpc_tcp_listener *sp;
-  for (sp = s->head; sp && port_index != 0; sp = sp->next) {
-    if (!sp->is_sibling) {
-      --port_index;
-    }
+  grpc_tcp_listener *sp = get_port_index(s, port_index);
+  for (; sp; sp = sp->sibling) {
+    ++num_fds;
   }
-  for (; sp; sp = sp->sibling, ++num_fds)
-    ;
   return num_fds;
 }
 
 int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
                             unsigned fd_index) {
-  grpc_tcp_listener *sp;
-  for (sp = s->head; sp && port_index != 0; sp = sp->next) {
-    if (!sp->is_sibling) {
-      --port_index;
+  grpc_tcp_listener *sp = get_port_index(s, port_index);
+  for (; sp; sp = sp->sibling, --fd_index) {
+    if (fd_index == 0) {
+      return sp->fd;
     }
   }
-  for (; sp && fd_index != 0; sp = sp->sibling, --fd_index)
-    ;
-  if (sp) {
-    return sp->fd;
-  } else {
-    return -1;
-  }
+  return -1;
 }
 
 void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
