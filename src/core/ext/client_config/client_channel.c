@@ -195,7 +195,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // Special case: If all of the addresses are balancer addresses,
     // assume that we should use the grpclb policy, regardless of what the
     // resolver actually specified.
-    const char* lb_policy_name =
+    const char *lb_policy_name =
         grpc_resolver_result_get_lb_policy_name(chand->resolver_result);
     bool found_backend_address = false;
     for (size_t i = 0; i < lb_policy_args.addresses->num_addresses; ++i) {
@@ -209,7 +209,8 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         gpr_log(GPR_INFO,
                 "resolver requested LB policy %s but provided only balancer "
                 "addresses, no backend addresses -- forcing use of grpclb LB "
-                "policy", (lb_policy_name == NULL ? "(none)" : lb_policy_name));
+                "policy",
+                (lb_policy_name == NULL ? "(none)" : lb_policy_name));
       }
       lb_policy_name = "grpclb";
     }

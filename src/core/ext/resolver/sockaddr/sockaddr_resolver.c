@@ -160,9 +160,10 @@ char *unix_get_default_authority(grpc_resolver_factory *factory,
 
 static void do_nothing(void *ignored) {}
 
-static grpc_resolver *sockaddr_create(
-    grpc_resolver_args *args,
-    int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
+static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
+                                      int parse(grpc_uri *uri,
+                                                struct sockaddr_storage *dst,
+                                                size_t *len)) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
             args->uri->scheme);
@@ -180,9 +181,10 @@ static grpc_resolver *sockaddr_create(
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri, (struct sockaddr_storage *)(&addresses->addresses[i]
-                                                          .address.addr),
-               &addresses->addresses[i].address.len)) {
+    if (!parse(
+            &ith_uri,
+            (struct sockaddr_storage *)(&addresses->addresses[i].address.addr),
+            &addresses->addresses[i].address.len)) {
       errors_found = true;
     }
     gpr_free(part_str);
