@@ -27,35 +27,20 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# Creates a standard jenkins worker on GCE.
-
+#
+# Create a workspace in a subdirectory to allow running multiple builds in isolation.
+# WORKSPACE_NAME env variable needs to contain name of the workspace to create.
+# All cmdline args will be passed to run_tests.py script (executed in the 
+# newly created workspace)
 set -ex
 
-cd $(dirname $0)
+cd $(dirname $0)/../..
 
-CLOUD_PROJECT=grpc-testing
-ZONE=us-central1-a
+rm -rf "${WORKSPACE_NAME}"
+# TODO(jtattermusch): clone --recursive fetches the submodules from github.
+# Try avoiding that to save time and network capacity.
+git clone --recursive . "${WORKSPACE_NAME}"
 
-INSTANCE_NAME="${1:-grpc-jenkins-worker1}"
+echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
+"${WORKSPACE_NAME}/tools/run_tests/run_tests.py" $@
 
-gcloud compute instances create $INSTANCE_NAME \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    --machine-type n1-highmem-8 \
-    --image=ubuntu-1510 \
-    --image-project=grpc-testing \
-    --boot-disk-size 1000
-
-echo 'Created GCE instance, waiting 60 seconds for it to come online.'
-sleep 60
-
-gcloud compute copy-files \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    jenkins_master.pub linux_worker_init.sh ${INSTANCE_NAME}:~
-
-gcloud compute ssh \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    $INSTANCE_NAME --command "./linux_worker_init.sh"
