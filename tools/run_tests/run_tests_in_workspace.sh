@@ -42,5 +42,5 @@ rm -rf "${WORKSPACE_NAME}"
 git clone --recursive . "${WORKSPACE_NAME}"
 
 echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
-"${WORKSPACE_NAME}/tools/run_tests/run_tests.py" $@
+python "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" $@
 
