@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,19 +28,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Create a workspace in a subdirectory to allow running multiple builds in isolation.
-# WORKSPACE_NAME env variable needs to contain name of the workspace to create.
-# All cmdline args will be passed to run_tests.py script (executed in the 
-# newly created workspace)
-set -ex
+# This script is invoked by Jenkins and triggers a test run, bypassing
+# all args to the test script.
+#
+# Setting up rvm environment BEFORE we set -ex.
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
+# To prevent cygwin bash complaining about empty lines ending with \r
+# we set the igncr option. The option doesn't exist on Linux, so we fallback
+# to just 'set -ex' there.
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-cd $(dirname $0)/../..
-
-rm -rf "${WORKSPACE_NAME}"
-# TODO(jtattermusch): clone --recursive fetches the submodules from github.
-# Try avoiding that to save time and network capacity.
-git clone --recursive . "${WORKSPACE_NAME}"
-
-echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
-python "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" $@
-
+python tools/run_tests/run_tests_matrix.py $@
