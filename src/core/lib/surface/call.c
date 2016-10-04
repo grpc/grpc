@@ -269,6 +269,9 @@ static void set_status_from_error(grpc_call *call, status_source source,
                                   grpc_error *error);
 static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                                   bool success);
+static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
+                                              batch_control *bctl,
+                                              bool success);
 static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
 
 /*******************************************************************************
@@ -1064,6 +1067,35 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
 }
 
 /*******************************************************************************
+ * STREAM RECEIVE PATH: COMMON
+ */
+
+static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
+                                   grpc_error *error) {
+  batch_control *bctl = bctlp;
+  grpc_call *call = bctl->call;
+
+  gpr_mu_lock(&call->mu);
+  if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
+      call->receiving_stream == NULL) {
+    gpr_mu_unlock(&call->mu);
+    switch (call->recv_mode) {
+      case SENDRECV_IDLE:
+        GPR_UNREACHABLE_CODE(return );
+      case SENDRECV_FULL_MESSAGE:
+        process_data_after_md(exec_ctx, bctlp, error);
+        break;
+      case SENDRECV_INCREMENTAL:
+        process_incremental_data_after_md(exec_ctx, bctlp, error);
+        break;
+    }
+  } else {
+    call->saved_receiving_stream_ready_bctlp = bctlp;
+    gpr_mu_unlock(&call->mu);
+  }
+}
+
+/*******************************************************************************
  * STREAM RECEIVE PATH: FULL MESSAGES
  */
 
@@ -1119,22 +1151,6 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
-static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                   grpc_error *error) {
-  batch_control *bctl = bctlp;
-  grpc_call *call = bctl->call;
-
-  gpr_mu_lock(&bctl->call->mu);
-  if (bctl->call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
-      call->receiving_stream == NULL) {
-    gpr_mu_unlock(&bctl->call->mu);
-    process_data_after_md(exec_ctx, bctlp, error);
-  } else {
-    call->saved_receiving_stream_ready_bctlp = bctlp;
-    gpr_mu_unlock(&bctl->call->mu);
-  }
-}
-
 static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                                   bool success) {
   grpc_call *call = bctl->call;
@@ -1163,15 +1179,25 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
  * STREAM RECEIVE PATH: INCREMENTAL MESSAGES
  */
 
-static void receiving_incremental_stream_ready(grpc_exec_ctx *exec_ctx,
-                                               void *bctlp, grpc_error *error) {
-  abort();
-}
-
 grpc_call_error grpc_call_incremental_message_reader_pull(
     grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
   abort();
   return GRPC_CALL_OK;
+}
+
+static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
+                                              batch_control *bctl,
+                                              bool success) {
+  grpc_call *call = bctl->call;
+  if (call->receiving_stream == NULL) {
+    call->recv_mode = SENDRECV_IDLE;
+  } else {
+    call->test_only_last_message_flags = call->receiving_stream->flags;
+    *call->receiving.incremental.length_target = call->receiving_stream->length;
+  }
+  if (gpr_unref(&bctl->steps_to_complete)) {
+    post_batch_completion(exec_ctx, bctl);
+  }
 }
 
 /*******************************************************************************
@@ -1801,8 +1827,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->receiving.incremental.length_target =
             op->data.recv_message_incremental_start.message_length;
         stream_op->recv_message = &call->receiving_stream;
-        grpc_closure_init(&call->receiving_next_step,
-                          receiving_incremental_stream_ready, bctl);
+        grpc_closure_init(&call->receiving_next_step, receiving_stream_ready,
+                          bctl);
         stream_op->recv_message_ready = &call->receiving_next_step;
         num_completion_callbacks_needed++;
         break;
