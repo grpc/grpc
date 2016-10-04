@@ -8,7 +8,7 @@
   "version": "1.1.0",
   "require": {
     "php": ">=5.5.0",
-    "stanley-cheung/protobuf-php": "v0.6"
+    "google/protobuf": "v3.1.0-alpha-1"
   },
   "require-dev": {
     "google/auth": "v0.9"
