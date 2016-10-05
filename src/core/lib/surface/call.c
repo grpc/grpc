@@ -122,6 +122,12 @@ typedef enum {
   SENDRECV_INCREMENTAL
 } sendrecv_mode;
 
+typedef enum {
+  NEXT_SLICE_EMPTY,
+  NEXT_SLICE_REQUESTED,
+  NEXT_SLICE_PRESENT,
+} next_slice_state;
+
 struct grpc_call {
   grpc_completion_queue *cq;
   grpc_polling_entity pollent;
@@ -202,6 +208,7 @@ struct grpc_call {
       void *tag;
       grpc_closure *on_next;
       bool next_is_buffer;
+      grpc_cq_completion cq_completion;
       union {
         struct {
           gpr_slice *slice;
@@ -221,8 +228,12 @@ struct grpc_call {
     } full;
     struct {
       uint32_t *length_target;
+      uint32_t length;
       grpc_byte_buffer *pull_target;
+      void *pull_tag;
+      next_slice_state next_slice_state;
       gpr_slice next_slice;
+      grpc_cq_completion cq_completion;
     } incremental;
   } receiving;
   grpc_closure receiving_next_step;
@@ -1182,19 +1193,81 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
  */
 
 static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
+                                            grpc_call *call);
+
+static void got_next_incr_slice(grpc_exec_ctx *exec_ctx, void *callp,
+                                grpc_error *error) {
+  grpc_call *call = callp;
+  gpr_mu_lock(&call->mu);
+  GPR_ASSERT(call->receiving.incremental.next_slice_state ==
+             NEXT_SLICE_REQUESTED);
+  call->receiving.incremental.next_slice_state = NEXT_SLICE_PRESENT;
+  maybe_continue_incremental_recv(exec_ctx, call);
+  gpr_mu_unlock(&call->mu);
+}
+
+static uint32_t incrcv_remaining(grpc_call *call) {
+  return call->receiving.incremental.length -
+         (uint32_t)call->receiving.incremental.pull_target->data.raw
+             .slice_buffer.length;
+}
+
+static void pull_reaped(grpc_exec_ctx *exec_ctx, void *callp,
+                        grpc_cq_completion *completion) {}
+
+static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
                                             grpc_call *call) {
   if (call->receiving.incremental.length_target == NULL &&
       call->receiving.incremental.pull_target != NULL) {
-    grpc_closure_init(&call->receiving_next_step, got_next_incr_slice, call);
-    if (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream,
-                                    &call->receiving.incremental.next_slice,
-                                    remaining, &call->receiving_next_step)) {
+    switch (call->receiving.incremental.pull_target->type) {
+      case GRPC_BB_RAW: {
+        switch (call->receiving.incremental.next_slice_state) {
+          case NEXT_SLICE_REQUESTED:
+            break;
+          case NEXT_SLICE_PRESENT:
+            gpr_slice_buffer_add(
+                &call->receiving.incremental.pull_target->data.raw.slice_buffer,
+                call->receiving.incremental.next_slice);
+            call->receiving.incremental.next_slice_state = NEXT_SLICE_EMPTY;
+          /* fall through */
+          case NEXT_SLICE_EMPTY:
+            grpc_closure_init(&call->receiving_next_step, got_next_incr_slice,
+                              call);
+            while (incrcv_remaining(call) > 0) {
+              if (grpc_byte_stream_next_slice(
+                      exec_ctx, call->receiving_stream,
+                      &call->receiving.incremental.next_slice,
+                      incrcv_remaining(call), &call->receiving_next_step)) {
+                gpr_slice_buffer_add(&call->receiving.incremental.pull_target
+                                          ->data.raw.slice_buffer,
+                                     call->receiving.incremental.next_slice);
+              } else {
+                call->receiving.incremental.next_slice_state =
+                    NEXT_SLICE_REQUESTED;
+                break;
+              }
+            }
+            if (call->receiving.incremental.pull_target->data.raw.slice_buffer
+                    .length > 0) {
+              call->receiving.incremental.pull_target = NULL;
+              grpc_cq_end_op(exec_ctx, call->cq,
+                             call->receiving.incremental.pull_tag,
+                             GRPC_ERROR_NONE, pull_reaped, call,
+                             &call->receiving.incremental.cq_completion);
+            }
+            break;
+        }
+      }
     }
   }
 }
 
 grpc_call_error grpc_call_incremental_message_reader_pull(
     grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
+  GRPC_API_TRACE(
+      "grpc_call_incremental_message_reader_pull(call=%p, buffer=%p, tag=%p)",
+      3, (call, buffer, tag));
+
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&call->mu);
   if (call->recv_mode != SENDRECV_INCREMENTAL) {
@@ -1207,7 +1280,9 @@ grpc_call_error grpc_call_incremental_message_reader_pull(
     grpc_exec_ctx_finish(&exec_ctx);
     return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
   }
+  grpc_cq_begin_op(call->cq, tag);
   call->receiving.incremental.pull_target = buffer;
+  call->receiving.incremental.pull_tag = tag;
   maybe_continue_incremental_recv(&exec_ctx, call);
   gpr_mu_unlock(&call->mu);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -1222,7 +1297,8 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
     call->recv_mode = SENDRECV_IDLE;
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
-    *call->receiving.incremental.length_target = call->receiving_stream->length;
+    *call->receiving.incremental.length_target =
+        call->receiving.incremental.length = call->receiving_stream->length;
     call->receiving.incremental.length_target = NULL;
     maybe_continue_incremental_recv(exec_ctx, call);
   }
@@ -1248,13 +1324,28 @@ static bool incwr_maybe_complete_buffer(grpc_exec_ctx *exec_ctx,
   return false;
 }
 
+static bool incwr_at_end_of_slice_buffer(grpc_call *call) {
+  return call->sending.incremental.buffer_progress.raw.slice_index ==
+         call->sending.incremental.buffer->data.raw.slice_buffer.count;
+}
+
+static void incwr_published_send(grpc_exec_ctx *exec_ctx, void *callp,
+                                 grpc_cq_completion *unused) {}
+
 static void incwr_complete_slice(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                  gpr_slice *slice) {
   switch (call->sending.incremental.buffer->type) {
     case GRPC_BB_RAW:
+      GPR_ASSERT(!incwr_at_end_of_slice_buffer(call));
       *slice = call->sending.incremental.buffer->data.raw.slice_buffer
                    .slices[call->sending.incremental.buffer_progress.raw
                                .slice_index++];
+      if (incwr_at_end_of_slice_buffer(call)) {
+        call->sending.incremental.buffer = NULL;
+        grpc_cq_end_op(exec_ctx, call->cq, call->sending.incremental.tag,
+                       GRPC_ERROR_NONE, incwr_published_send, call,
+                       &call->sending.incremental.cq_completion);
+      }
       break;
   }
 }
@@ -1273,6 +1364,7 @@ static bool incwr_bs_next_slice(grpc_exec_ctx *exec_ctx,
   }
   call->sending.incremental.next_is_buffer = false;
   call->sending.incremental.next.slice.slice = slice;
+  call->sending.incremental.on_next = on_complete;
   gpr_mu_unlock(&call->mu);
   return false;
 }
@@ -1303,6 +1395,10 @@ static void incwr_bs_destroy(grpc_exec_ctx *exec_ctx,
 
 grpc_call_error grpc_call_incremental_message_writer_push(
     grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
+  GRPC_API_TRACE(
+      "grpc_call_incremental_message_writer_push(call=%p, buffer=%p, tag=%p)",
+      3, (call, buffer, tag));
+
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&call->mu);
   if (call->send_mode != SENDRECV_INCREMENTAL) {
@@ -1315,8 +1411,14 @@ grpc_call_error grpc_call_incremental_message_writer_push(
     grpc_exec_ctx_finish(&exec_ctx);
     return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
   }
+  grpc_cq_begin_op(call->cq, tag);
   call->sending.incremental.buffer = buffer;
   call->sending.incremental.tag = tag;
+  switch (buffer->type) {
+    case GRPC_BB_RAW:
+      call->sending.incremental.buffer_progress.raw.slice_index = 0;
+      break;
+  }
   if (call->sending.incremental.on_next != NULL) {
     bool done;
     if (call->sending.incremental.next_is_buffer) {

@@ -208,7 +208,7 @@ void incremental_message(grpc_end2end_test_config config) {
     error = grpc_call_incremental_message_writer_push(c, send_buffer,
                                                       tag(10000000 + i));
     GPR_ASSERT(GRPC_CALL_OK == error);
-    error = grpc_call_incremental_message_reader_pull(c, recv_buffer,
+    error = grpc_call_incremental_message_reader_pull(s, recv_buffer,
                                                       tag(20000000 + i));
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(10000000 + i), 1);
