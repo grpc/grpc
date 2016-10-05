@@ -59,10 +59,14 @@ typedef struct grpc_lb_policy_pick_args {
   grpc_polling_entity *pollent;
   /** Initial metadata associated with the picking call. */
   grpc_metadata_batch *initial_metadata;
-  /** See \a GRPC_INITIAL_METADATA_* in grpc_types.h */
+  /** Bitmask used for selective cancelling. See \a
+   * grpc_lb_policy_cancel_picks() and \a GRPC_INITIAL_METADATA_* in
+   * grpc_types.h */
   uint32_t initial_metadata_flags;
   /** Storage for LB token in \a initial_metadata, or NULL if not used */
   grpc_linked_mdelem *lb_token_mdelem_storage;
+  /** Deadline for the call to the LB server */
+  gpr_timespec deadline;
 } grpc_lb_policy_pick_args;
 
 struct grpc_lb_policy_vtable {
@@ -77,12 +81,12 @@ struct grpc_lb_policy_vtable {
 
   /** \see grpc_lb_policy_cancel_pick */
   void (*cancel_pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                      grpc_connected_subchannel **target);
+                      grpc_connected_subchannel **target, grpc_error *error);
 
   /** \see grpc_lb_policy_cancel_picks */
   void (*cancel_picks)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                        uint32_t initial_metadata_flags_mask,
-                       uint32_t initial_metadata_flags_eq);
+                       uint32_t initial_metadata_flags_eq, grpc_error *error);
 
   /** \see grpc_lb_policy_ping_one */
   void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
@@ -161,7 +165,8 @@ void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     The \a on_complete callback of the pending picks will be invoked with \a
     *target set to NULL. */
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                                grpc_connected_subchannel **target);
+                                grpc_connected_subchannel **target,
+                                grpc_error *error);
 
 /** Cancel all pending picks for which their \a initial_metadata_flags (as given
     in the call to \a grpc_lb_policy_pick) matches \a initial_metadata_flags_eq
@@ -169,7 +174,8 @@ void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
                                  grpc_lb_policy *policy,
                                  uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq);
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error *error);
 
 /** Try to enter a READY connectivity state */
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
