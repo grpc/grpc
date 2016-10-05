@@ -444,16 +444,16 @@ typedef struct client_channel_call_data {
   // stack and each has its own mutex.  If/when we have time, find a way
   // to avoid this without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
-  gpr_timespec deadline;
 
+  grpc_mdstr *path;  // Request path.
+  gpr_timespec call_start_time;
+  gpr_timespec deadline;
   enum {
     WAIT_FOR_READY_UNSET,
     WAIT_FOR_READY_FALSE,
     WAIT_FOR_READY_TRUE
   } wait_for_ready_from_service_config;
-
-  // Request path.
-  grpc_mdstr *path;
+  grpc_closure read_service_config;
 
   grpc_error *cancel_error;
 
@@ -657,6 +657,20 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     int r;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel");
     gpr_mu_unlock(&chand->mu);
+    // If the application explicitly set wait_for_ready, use that.
+    // Otherwise, if the service config specified a value for this
+    // method, use that.
+    gpr_mu_lock(&calld->mu);
+    if ((initial_metadata_flags &
+         GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) == 0 &&
+        calld->wait_for_ready_from_service_config != WAIT_FOR_READY_UNSET) {
+      if (calld->wait_for_ready_from_service_config == WAIT_FOR_READY_TRUE) {
+        initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+      } else {
+        initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+      }
+    }
+    gpr_mu_unlock(&calld->mu);
     // TODO(dgq): make this deadline configurable somehow.
     const grpc_lb_policy_pick_args inputs = {
         calld->pollent, initial_metadata, initial_metadata_flags,
@@ -769,24 +783,12 @@ retry:
       calld->connected_subchannel == NULL &&
       op->send_initial_metadata != NULL) {
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
-    // If the application explicitly set wait_for_ready, use that.
-    // Otherwise, if the service config specified a value for this
-    // method, use that.
-    uint32_t initial_metadata_flags = op->send_initial_metadata_flags;
-    if ((initial_metadata_flags &
-         GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) == 0 &&
-        calld->wait_for_ready_from_service_config != WAIT_FOR_READY_UNSET) {
-      if (calld->wait_for_ready_from_service_config == WAIT_FOR_READY_TRUE) {
-        initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-      } else {
-        initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-      }
-    }
     grpc_closure_init(&calld->next_step, subchannel_ready, calld);
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
     if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
-                        initial_metadata_flags, &calld->connected_subchannel,
-                        &calld->next_step, GRPC_ERROR_NONE)) {
+                        op->send_initial_metadata_flags,
+                        &calld->connected_subchannel, &calld->next_step,
+                        GRPC_ERROR_NONE)) {
       calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     }
@@ -814,36 +816,69 @@ retry:
   GPR_TIMER_END("cc_start_transport_stream_op", 0);
 }
 
+// Gets data from the service config.  Invoked when the resolver returns
+// its initial result.
+static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
+                                grpc_error *error) {
+  grpc_call_element *elem = arg;
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  // If this is an error, there's no point in looking at the service config.
+  if (error != GRPC_ERROR_NONE) return;
+  // Get the method config table from channel data.
+  gpr_mu_lock(&chand->mu);
+  grpc_method_config_table *method_config_table = NULL;
+  if (chand->method_config_table != NULL) {
+    method_config_table =
+        grpc_method_config_table_ref(chand->method_config_table);
+  }
+  gpr_mu_unlock(&chand->mu);
+  // If the method config table was present, use it.
+  if (method_config_table != NULL) {
+    grpc_method_config *method_config =
+        grpc_method_config_table_get_method_config(method_config_table,
+                                                   calld->path);
+    if (method_config != NULL) {
+      gpr_timespec *per_method_timeout =
+          grpc_method_config_get_timeout(method_config);
+      bool *wait_for_ready =
+          grpc_method_config_get_wait_for_ready(method_config);
+      if (per_method_timeout != NULL || wait_for_ready != NULL) {
+        gpr_mu_lock(&calld->mu);
+        if (per_method_timeout != NULL) {
+          gpr_timespec per_method_deadline =
+              gpr_time_add(calld->call_start_time, *per_method_timeout);
+          if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+            calld->deadline = per_method_deadline;
+            // Reset deadline timer.
+            grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
+          }
+        }
+        if (wait_for_ready != NULL) {
+          calld->wait_for_ready_from_service_config =
+              *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
+        }
+        gpr_mu_unlock(&calld->mu);
+      }
+    }
+    grpc_method_config_table_unref(method_config_table);
+  }
+}
+
 /* Constructor for call_data */
 static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  gpr_mu_lock(&chand->mu);
-  grpc_method_config_table *method_config_table =
-      chand->method_config_table == NULL
-          ? NULL
-          : grpc_method_config_table_ref(chand->method_config_table);
-  gpr_mu_unlock(&chand->mu);
-  grpc_method_config *method_config =
-      method_config_table == NULL ? NULL
-                                  : grpc_method_config_table_get_method_config(
-                                        method_config_table, args->path);
-  grpc_deadline_state_init(exec_ctx, elem, args, method_config);
-  calld->wait_for_ready_from_service_config = WAIT_FOR_READY_UNSET;
-  if (method_config != NULL) {
-    bool *wait_for_ready = grpc_method_config_get_wait_for_ready(method_config);
-    if (wait_for_ready != NULL) {
-      calld->wait_for_ready_from_service_config =
-          *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
-    }
-  }
-  if (method_config_table != NULL) {
-    grpc_method_config_table_unref(method_config_table);
-  }
-  calld->deadline = args->deadline;
+  // Initialize data members.
+  grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   calld->path = GRPC_MDSTR_REF(args->path);
+  // TODO(roth): Is there a better value to use here for the actual start
+  // time of the call (i.e., something initialized at the surface layer)?
+  calld->call_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
+  calld->wait_for_ready_from_service_config = WAIT_FOR_READY_UNSET;
   calld->cancel_error = GRPC_ERROR_NONE;
   gpr_atm_rel_store(&calld->subchannel_call, 0);
   gpr_mu_init(&calld->mu);
@@ -854,6 +889,53 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   calld->owning_call = args->call_stack;
   calld->pollent = NULL;
+  // If the resolver has already returned results, then we can access
+  // the service config parameters immediately.  Otherwise, we need to
+  // defer that work until the resolver returns an initial result.
+  // TODO(roth): This code is almost but not quite identical to the code
+  // in read_service_config() above.  It would be nice to find a way to
+  // combine them, to avoid having to maintain it twice.
+  gpr_mu_lock(&chand->mu);
+  if (chand->lb_policy != NULL) {
+    // We already have a resolver result, so check for service config.
+    if (chand->method_config_table != NULL) {
+      grpc_method_config_table *method_config_table =
+          grpc_method_config_table_ref(chand->method_config_table);
+      gpr_mu_unlock(&chand->mu);
+      grpc_method_config *method_config =
+          grpc_method_config_table_get_method_config(method_config_table,
+                                                     args->path);
+      if (method_config != NULL) {
+        gpr_timespec *per_method_timeout =
+            grpc_method_config_get_timeout(method_config);
+        if (per_method_timeout != NULL) {
+          gpr_timespec per_method_deadline =
+              gpr_time_add(calld->call_start_time, *per_method_timeout);
+          calld->deadline = gpr_time_min(calld->deadline, per_method_deadline);
+        }
+        bool *wait_for_ready =
+            grpc_method_config_get_wait_for_ready(method_config);
+        if (wait_for_ready != NULL) {
+          calld->wait_for_ready_from_service_config =
+              *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
+        }
+      }
+      grpc_method_config_table_unref(method_config_table);
+    } else {
+      gpr_mu_unlock(&chand->mu);
+    }
+  } else {
+    // We don't yet have a resolver result, so register a callback to
+    // get the service config data once the resolver returns.
+    grpc_closure_init(&calld->read_service_config, read_service_config, elem);
+    grpc_closure_list_append(&chand->waiting_for_config_closures,
+                             &calld->read_service_config, GRPC_ERROR_NONE);
+    gpr_mu_unlock(&chand->mu);
+  }
+  // Start the deadline timer with the current deadline value.  If we
+  // do not yet have service config data, then the timer may be reset
+  // later.
+  grpc_deadline_state_start(exec_ctx, elem, calld->deadline);
   return GRPC_ERROR_NONE;
 }
 

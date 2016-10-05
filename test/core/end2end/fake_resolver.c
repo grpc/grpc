@@ -203,7 +203,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
     const char* timeout_str =
         grpc_uri_get_query_arg(args->uri, "timeout_seconds");
     gpr_timespec timeout = {timeout_str == NULL ? 0 : atoi(timeout_str), 0,
-                            GPR_CLOCK_MONOTONIC};
+                            GPR_TIMESPAN};
     const char* max_request_message_bytes_str =
         grpc_uri_get_query_arg(args->uri, "max_request_message_bytes");
     int32_t max_request_message_bytes =
