@@ -36,6 +36,7 @@ import multiprocessing
 import os
 import report_utils
 import sys
+from filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -231,6 +232,11 @@ argp.add_argument('--dry_run',
                   action='store_const',
                   const=True,
                   help='Only print what would be run.')
+argp.add_argument('--filter_pr_tests',
+	          default=False,
+		  action='store_const',	
+		  const=True,	  
+		  help='Filters out tests irrelavant to pull request changes.')
 args = argp.parse_args()
 
 extra_args = []
@@ -263,6 +269,18 @@ for job in jobs:
   else:
     print '  %s' % job.shortname
 print
+
+if args.filter_pr_tests:
+  print 'IMPORTANT: Test filtering is not active; this is only for testing.'
+  relevant_jobs = filter_tests(jobs)
+  print
+  if len(relevant_jobs) == len(jobs):
+    print 'No tests were filtered.'
+  else:
+    print 'These tests were filtered:'
+    for job in list(set(jobs) - set(relevant_jobs)):
+      print '  %s' % job.shortname
+  print
 
 if args.dry_run:
   print '--dry_run was used, exiting'
