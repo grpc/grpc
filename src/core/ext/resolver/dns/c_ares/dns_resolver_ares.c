@@ -279,17 +279,29 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
 static grpc_resolver *dns_create(grpc_resolver_args *args,
                                  const char *default_port,
                                  const char *lb_policy_name) {
+  dns_resolver *r;
+  grpc_error *error = GRPC_ERROR_NONE;
+  char *proxy_name;
+  // Get name from args.
+  const char *path = args->uri->path;
+
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
-  // Get name from args.
-  const char *path = args->uri->path;
+
+  error = grpc_ares_init();
+  if (error != GRPC_ERROR_NONE) {
+    GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
+    return NULL;
+  }
+
   if (path[0] == '/') ++path;
+
   // Get proxy name, if any.
-  char *proxy_name = grpc_get_http_proxy_server();
+  proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
-  dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
+  r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
