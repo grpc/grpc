@@ -111,7 +111,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
 
   const std::shared_ptr<ClientStream> GetStream();
 
-  void DoOneRequest(
+  bool DoOneRequest(
       const grpc::reflection::v1alpha::ServerReflectionRequest& request,
       grpc::reflection::v1alpha::ServerReflectionResponse& response);
 
