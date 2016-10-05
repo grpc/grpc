@@ -221,6 +221,8 @@ struct grpc_call {
     } full;
     struct {
       uint32_t *length_target;
+      grpc_byte_buffer *pull_target;
+      gpr_slice next_slice;
     } incremental;
   } receiving;
   grpc_closure receiving_next_step;
@@ -1179,9 +1181,36 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
  * STREAM RECEIVE PATH: INCREMENTAL MESSAGES
  */
 
+static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
+                                            grpc_call *call) {
+  if (call->receiving.incremental.length_target == NULL &&
+      call->receiving.incremental.pull_target != NULL) {
+    grpc_closure_init(&call->receiving_next_step, got_next_incr_slice, call);
+    if (grpc_byte_stream_next_slice(exec_ctx, call->receiving_stream,
+                                    &call->receiving.incremental.next_slice,
+                                    remaining, &call->receiving_next_step)) {
+    }
+  }
+}
+
 grpc_call_error grpc_call_incremental_message_reader_pull(
     grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
-  abort();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  gpr_mu_lock(&call->mu);
+  if (call->recv_mode != SENDRECV_INCREMENTAL) {
+    gpr_mu_unlock(&call->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL;
+  }
+  if (call->receiving.incremental.pull_target != NULL) {
+    gpr_mu_unlock(&call->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+  }
+  call->receiving.incremental.pull_target = buffer;
+  maybe_continue_incremental_recv(&exec_ctx, call);
+  gpr_mu_unlock(&call->mu);
+  grpc_exec_ctx_finish(&exec_ctx);
   return GRPC_CALL_OK;
 }
 
@@ -1194,6 +1223,8 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     *call->receiving.incremental.length_target = call->receiving_stream->length;
+    call->receiving.incremental.length_target = NULL;
+    maybe_continue_incremental_recv(exec_ctx, call);
   }
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
