@@ -110,7 +110,8 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 /** construct a subchannel call */
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent, grpc_subchannel_call **subchannel_call);
+    grpc_polling_entity *pollent, gpr_timespec deadline,
+    grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(
@@ -162,6 +163,8 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
+  /** Server name */
+  const char *server_name;
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;

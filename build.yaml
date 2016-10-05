@@ -172,6 +172,7 @@ filegroups:
   - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/deadline_filter.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
@@ -254,6 +255,7 @@ filegroups:
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
+  - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
@@ -349,6 +351,7 @@ filegroups:
   - src/core/ext/client_config/client_channel.h
   - src/core/ext/client_config/client_channel_factory.h
   - src/core/ext/client_config/connector.h
+  - src/core/ext/client_config/http_connect_handshaker.h
   - src/core/ext/client_config/initial_connect_string.h
   - src/core/ext/client_config/lb_policy.h
   - src/core/ext/client_config/lb_policy_factory.h
@@ -368,6 +371,7 @@ filegroups:
   - src/core/ext/client_config/client_config_plugin.c
   - src/core/ext/client_config/connector.c
   - src/core/ext/client_config/default_initial_connect_string.c
+  - src/core/ext/client_config/http_connect_handshaker.c
   - src/core/ext/client_config/initial_connect_string.c
   - src/core/ext/client_config/lb_policy.c
   - src/core/ext/client_config/lb_policy_factory.c
@@ -503,6 +507,8 @@ filegroups:
   build: test
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/end2end/fake_resolver.h
+  - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/grpc_profiler.h
@@ -515,6 +521,8 @@ filegroups:
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
+  - test/core/end2end/fake_resolver.c
+  - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/grpc_profiler.c
@@ -734,7 +742,6 @@ filegroups:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   uses:
-  - grpc_base
   - grpc++_codegen_base
 - name: grpc++_codegen_base
   language: c++
@@ -1079,16 +1086,17 @@ libs:
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
   deps:
   - grpc++_reflection
   - grpc++
-  - grpc++_test_config
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -1103,6 +1111,8 @@ libs:
   - src/compiler/node_generator_helpers.h
   - src/compiler/objective_c_generator.h
   - src/compiler/objective_c_generator_helpers.h
+  - src/compiler/php_generator.h
+  - src/compiler/php_generator_helpers.h
   - src/compiler/python_generator.h
   - src/compiler/ruby_generator.h
   - src/compiler/ruby_generator_helpers-inl.h
@@ -1113,6 +1123,7 @@ libs:
   - src/compiler/csharp_generator.cc
   - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
+  - src/compiler/php_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   filegroups:
@@ -1449,6 +1460,17 @@ targets:
   language: c
   src:
   - test/core/surface/concurrent_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: connection_refused_test
+  cpu_cost: 0.1
+  build: test
+  language: c
+  src:
+  - test/core/end2end/connection_refused_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2852,6 +2874,15 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
+- name: grpc_php_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/php_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
 - name: grpc_python_plugin
   build: protoc
   language: c++

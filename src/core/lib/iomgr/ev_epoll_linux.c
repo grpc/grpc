@@ -1897,7 +1897,7 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    grpc_use_signal(SIGRTMIN + 2);
+    grpc_use_signal(SIGRTMIN + 6);
   }
 
   fd_global_init();

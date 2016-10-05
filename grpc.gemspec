@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0'
+  s.add_dependency 'google-protobuf', '~> 3.0.2'
   s.add_dependency 'googleauth',      '~> 0.5.1'
   s.add_dependency 'concurrent-ruby'
 
@@ -175,6 +175,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/compress_filter.h )
   s.files += %w( src/core/lib/channel/connected_channel.h )
   s.files += %w( src/core/lib/channel/context.h )
+  s.files += %w( src/core/lib/channel/deadline_filter.h )
   s.files += %w( src/core/lib/channel/handshaker.h )
   s.files += %w( src/core/lib/channel/http_client_filter.h )
   s.files += %w( src/core/lib/channel/http_server_filter.h )
@@ -299,6 +300,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/client_channel.h )
   s.files += %w( src/core/ext/client_config/client_channel_factory.h )
   s.files += %w( src/core/ext/client_config/connector.h )
+  s.files += %w( src/core/ext/client_config/http_connect_handshaker.h )
   s.files += %w( src/core/ext/client_config/initial_connect_string.h )
   s.files += %w( src/core/ext/client_config/lb_policy.h )
   s.files += %w( src/core/ext/client_config/lb_policy_factory.h )
@@ -337,6 +339,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/channel_stack_builder.c )
   s.files += %w( src/core/lib/channel/compress_filter.c )
   s.files += %w( src/core/lib/channel/connected_channel.c )
+  s.files += %w( src/core/lib/channel/deadline_filter.c )
   s.files += %w( src/core/lib/channel/handshaker.c )
   s.files += %w( src/core/lib/channel/http_client_filter.c )
   s.files += %w( src/core/lib/channel/http_server_filter.c )
@@ -481,6 +484,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/client_config_plugin.c )
   s.files += %w( src/core/ext/client_config/connector.c )
   s.files += %w( src/core/ext/client_config/default_initial_connect_string.c )
+  s.files += %w( src/core/ext/client_config/http_connect_handshaker.c )
   s.files += %w( src/core/ext/client_config/initial_connect_string.c )
   s.files += %w( src/core/ext/client_config/lb_policy.c )
   s.files += %w( src/core/ext/client_config/lb_policy_factory.c )

@@ -74,8 +74,8 @@ print yaml.dump({
       'name': 'json_run_localhost',
       'shortname': 'json_run_localhost:%s' % scenario_json['name'],
       'args': ['--scenarios_json', _scenario_json_string(scenario_json)],
-      'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
-      'platforms': ['linux', 'mac', 'posix', 'windows'],
+      'ci_platforms': ['linux'],
+      'platforms': ['linux'],
       'flaky': False,
       'language': 'c++',
       'boringssl': True,
@@ -85,5 +85,6 @@ print yaml.dump({
       'timeout_seconds': 3*60
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
+    if 'scalable' in scenario_json.get('CATEGORIES', [])
   ]
 })
