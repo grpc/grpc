@@ -33,7 +33,7 @@
 
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-#ifndef GPR_HAVE_UNIX_SOCKET
+#ifndef GRPC_HAVE_UNIX_SOCKET
 
 #include <grpc/support/log.h>
 

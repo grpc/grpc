@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_FILE
+#ifdef GRPC_WINDOWS_SOCKETUTILS
 
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-
-char *grpc_get_well_known_google_credentials_file_path_impl(void) {
-  char *result = NULL;
-  char *home = gpr_getenv("HOME");
-  if (home == NULL) {
-    gpr_log(GPR_ERROR, "Could not get HOME environment variable.");
-    return NULL;
-  }
-  gpr_asprintf(&result, "%s/.config/%s/%s", home,
-               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
-               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free(home);
-  return result;
+const char *grpc_inet_ntop(int af, const void *src, char *dst, socklen_t size) {
+  GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
+  /* Windows InetNtopA wants a mutable ip pointer */
+  return InetNtopA(af, (void *)src, dst, (size_t)size);
 }
 
-#endif /* GPR_POSIX_FILE */
+#endif /* GRPC_WINDOWS_SOCKETUTILS */

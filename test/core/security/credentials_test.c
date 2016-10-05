@@ -1124,28 +1124,19 @@ static void test_metadata_plugin_failure(void) {
 }
 
 static void test_get_well_known_google_credentials_file_path(void) {
-#ifdef GPR_POSIX_FILE
   char *path;
-  char *old_home = gpr_getenv("HOME");
-  gpr_setenv("HOME", "/tmp");
+  char *home = gpr_getenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != NULL);
-  GPR_ASSERT(0 == strcmp("/tmp/.config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY
-                         "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE,
-                         path));
   gpr_free(path);
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
   unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == NULL);
-#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
-  gpr_setenv("HOME", old_home);
-  gpr_free(old_home);
-#else /* GPR_POSIX_FILE */
-  char *path = grpc_get_well_known_google_credentials_file_path();
-  GPR_ASSERT(path != NULL);
+  gpr_setenv("HOME", home);
   gpr_free(path);
-#endif
+#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  gpr_free(home);
 }
 
 int main(int argc, char **argv) {
