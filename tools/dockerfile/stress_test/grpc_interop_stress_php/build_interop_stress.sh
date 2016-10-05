@@ -42,7 +42,6 @@ ${name}')
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
-rvm --default use ruby-2.1
 
 make install-certs
 
@@ -55,4 +54,4 @@ make install
 
 (cd src/php && composer install)
 
-(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
+(cd src/php && ./bin/generate_proto_php.sh)

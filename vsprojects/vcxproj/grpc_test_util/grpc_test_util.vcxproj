@@ -176,6 +176,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\data\ssl_test_data.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
@@ -193,6 +194,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
@@ -283,6 +285,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
@@ -316,6 +320,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
     </ClCompile>
