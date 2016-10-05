@@ -47,6 +47,7 @@
 
 NSString * const kGRPCHeadersKey = @"io.grpc.HeadersKey";
 NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
+static NSMutableDictionary *callFlags;
 
 @interface GRPCCall () <GRXWriteable>
 // Make them read-write.
@@ -106,6 +107,29 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 // TODO(jcanizales): If grpc_init is idempotent, this should be changed from load to initialize.
 + (void)load {
   grpc_init();
+  callFlags = [NSMutableDictionary dictionary];
+}
+
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path {
+  NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
+  switch (callSafety) {
+    case GRPCCallSafetyDefault:
+      callFlags[hostAndPath] = @0;
+      break;
+    case GRPCCallSafetyIdempotentRequest:
+      callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+      break;
+    case GRPCCallSafetyCacheableRequest:
+      callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+      break;
+    default:
+      break;
+  }
+}
+
++ (uint32_t)callFlagsForHost:(NSString *)host path:(NSString *)path {
+  NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
+  return [callFlags[hostAndPath] intValue];
 }
 
 - (instancetype)init {
@@ -231,6 +255,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 - (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
+                                                                                  flags:[GRPCCall callFlagsForHost:_host path:_path]
                                                                                 handler:nil]]];
 }
 
