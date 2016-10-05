@@ -228,7 +228,7 @@ struct grpc_call {
     } full;
     struct {
       uint32_t *length_target;
-      uint32_t length;
+      uint32_t remaining;
       grpc_byte_buffer *pull_target;
       void *pull_tag;
       next_slice_state next_slice_state;
@@ -1206,17 +1206,16 @@ static void got_next_incr_slice(grpc_exec_ctx *exec_ctx, void *callp,
   gpr_mu_unlock(&call->mu);
 }
 
-static uint32_t incrcv_remaining(grpc_call *call) {
-  return call->receiving.incremental.length -
-         (uint32_t)call->receiving.incremental.pull_target->data.raw
-             .slice_buffer.length;
-}
-
 static void pull_reaped(grpc_exec_ctx *exec_ctx, void *callp,
                         grpc_cq_completion *completion) {}
 
 static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
                                             grpc_call *call) {
+  if (0)
+    gpr_log(GPR_DEBUG, "mcir: lt=%p pt=%p nss=%d",
+            call->receiving.incremental.length_target,
+            call->receiving.incremental.pull_target,
+            call->receiving.incremental.next_slice_state);
   if (call->receiving.incremental.length_target == NULL &&
       call->receiving.incremental.pull_target != NULL) {
     switch (call->receiving.incremental.pull_target->type) {
@@ -1228,19 +1227,25 @@ static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
             gpr_slice_buffer_add(
                 &call->receiving.incremental.pull_target->data.raw.slice_buffer,
                 call->receiving.incremental.next_slice);
+            call->receiving.incremental.remaining -= (uint32_t)GPR_SLICE_LENGTH(
+                call->receiving.incremental.next_slice);
             call->receiving.incremental.next_slice_state = NEXT_SLICE_EMPTY;
           /* fall through */
           case NEXT_SLICE_EMPTY:
             grpc_closure_init(&call->receiving_next_step, got_next_incr_slice,
                               call);
-            while (incrcv_remaining(call) > 0) {
+            while (call->receiving.incremental.remaining != 0) {
               if (grpc_byte_stream_next_slice(
                       exec_ctx, call->receiving_stream,
                       &call->receiving.incremental.next_slice,
-                      incrcv_remaining(call), &call->receiving_next_step)) {
+                      call->receiving.incremental.remaining,
+                      &call->receiving_next_step)) {
                 gpr_slice_buffer_add(&call->receiving.incremental.pull_target
                                           ->data.raw.slice_buffer,
                                      call->receiving.incremental.next_slice);
+                call->receiving.incremental.remaining -=
+                    (uint32_t)GPR_SLICE_LENGTH(
+                        call->receiving.incremental.next_slice);
               } else {
                 call->receiving.incremental.next_slice_state =
                     NEXT_SLICE_REQUESTED;
@@ -1254,6 +1259,12 @@ static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
                              call->receiving.incremental.pull_tag,
                              GRPC_ERROR_NONE, pull_reaped, call,
                              &call->receiving.incremental.cq_completion);
+              if (call->receiving.incremental.remaining == 0) {
+                call->recv_mode = SENDRECV_IDLE;
+                grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
+                call->receiving_stream = NULL;
+                return;
+              }
             }
             break;
         }
@@ -1298,7 +1309,7 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     *call->receiving.incremental.length_target =
-        call->receiving.incremental.length = call->receiving_stream->length;
+        call->receiving.incremental.remaining = call->receiving_stream->length;
     call->receiving.incremental.length_target = NULL;
     maybe_continue_incremental_recv(exec_ctx, call);
   }
