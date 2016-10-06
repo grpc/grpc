@@ -65,7 +65,6 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
   'GRPC_VERBOSITY': 'DEBUG',
 }
 
-
 _POLLING_STRATEGIES = {
   'linux': ['epoll', 'poll', 'legacy']
 }
@@ -76,6 +75,14 @@ def platform_string():
 
 
 _DEFAULT_TIMEOUT_SECONDS = 5 * 60
+
+
+# TODO (https://github./grpc/grpc/issues/7934): An object which when passed
+# as a compiler option to the script along with the travis flag, ensures that
+# the tests pass on any language. This approach will no longer be necessary
+# when the testing infrastructure would be able to support different testing
+# configurations for different branches of the repository.
+_UNSUPPORTED_COMPILER_SKIP_TESTS = object()
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -155,6 +162,8 @@ class CLanguage(object):
                                                                        self.args.compiler)
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     out = []
     binaries = get_c_tests(self.args.travis, self.test_lang)
     for target in binaries:
@@ -217,6 +226,8 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
@@ -226,6 +237,8 @@ class CLanguage(object):
     return self._make_options;
 
   def pre_build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_c.bat']]
     else:
@@ -235,6 +248,8 @@ class CLanguage(object):
     return []
 
   def post_tests_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return []
     else:
@@ -244,12 +259,16 @@ class CLanguage(object):
     return 'Makefile'
 
   def _clang_make_options(self, version_suffix=''):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['CC=clang%s' % version_suffix,
             'CXX=clang++%s' % version_suffix,
             'LD=clang%s' % version_suffix,
             'LDXX=clang++%s' % version_suffix]
 
   def _gcc_make_options(self, version_suffix):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['CC=gcc%s' % version_suffix,
             'CXX=g++%s' % version_suffix,
             'LD=gcc%s' % version_suffix,
@@ -257,6 +276,9 @@ class CLanguage(object):
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and args.travis:
+      return (), ()
+
     if not use_docker and not _is_use_docker_child():
       _check_compiler(compiler, ['default'])
 
@@ -297,14 +319,19 @@ class NodeLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6'])
+                                         'node4', 'node5', 'node6',
+                                         _UNSUPPORTED_COMPILER_SKIP_TESTS])
     if self.args.compiler == 'default':
       self.node_version = '4'
+    elif self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS:
+      self.node_version = _UNSUPPORTED_COMPILER_SKIP_TESTS
     else:
       # Take off the word "node"
       self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return [self.config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
     else:
@@ -313,6 +340,8 @@ class NodeLanguage(object):
                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_node.bat']]
     else:
@@ -325,6 +354,8 @@ class NodeLanguage(object):
     return []
 
   def build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\build_node.bat']]
     else:
@@ -348,9 +379,11 @@ class PhpLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -358,15 +391,21 @@ class PhpLanguage(object):
     return []
 
   def make_targets(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['static_c', 'shared_c']
 
   def make_options(self):
     return []
 
   def build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/build_php.sh']]
 
   def post_tests_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/post_tests_php.sh']]
 
   def makefile_name(self):
@@ -384,9 +423,11 @@ class Php7Language(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -394,15 +435,21 @@ class Php7Language(object):
     return []
 
   def make_targets(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['static_c', 'shared_c']
 
   def make_options(self):
     return []
 
   def build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/build_php.sh']]
 
   def post_tests_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/post_tests_php.sh']]
 
   def makefile_name(self):
@@ -504,6 +551,8 @@ class PythonLanguage(object):
     elif args.compiler == 'python3.4':
       return (python34_config,)
     else:
+      if args.travis:
+        return ()
       raise Exception('Compiler %s not supported.' % args.compiler)
 
   def __str__(self):
@@ -515,14 +564,18 @@ class RubyLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/pre_build_ruby.sh']]
 
   def make_targets(self):
@@ -532,9 +585,13 @@ class RubyLanguage(object):
     return []
 
   def build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/build_ruby.sh']]
 
   def post_tests_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['tools/run_tests/post_tests_ruby.sh']]
 
   def makefile_name(self):
@@ -563,7 +620,7 @@ class CSharpLanguage(object):
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(arch_option)]
     else:
-      _check_compiler(self.args.compiler, ['default', 'coreclr'])
+      _check_compiler(self.args.compiler, ['default', 'coreclr', _UNSUPPORTED_COMPILER_SKIP_TESTS])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
         self._docker_distro = 'coreclr'
       else:
@@ -579,6 +636,8 @@ class CSharpLanguage(object):
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     with open('src/csharp/tests.json') as f:
       tests_by_assembly = json.load(f)
 
@@ -634,18 +693,26 @@ class CSharpLanguage(object):
     return specs
 
   def pre_build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_csharp.bat']]
     else:
       return [['tools/run_tests/pre_build_csharp.sh']]
 
   def make_targets(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['grpc_csharp_ext']
 
   def make_options(self):
-    return self._make_options;
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
+    return self._make_options
 
   def build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.args.compiler == 'coreclr':
       if self.platform == 'windows':
         return [['tools\\run_tests\\build_csharp_coreclr.bat']]
@@ -660,6 +727,8 @@ class CSharpLanguage(object):
         return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     if self.platform == 'windows':
       return [['tools\\run_tests\\post_tests_csharp.bat']]
     else:
@@ -681,9 +750,11 @@ class ObjCLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [
         self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
                               timeout_seconds=None,
@@ -699,12 +770,16 @@ class ObjCLanguage(object):
     return []
 
   def make_targets(self):
+    if self.args.compiler == _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['interop_server']
 
   def make_options(self):
     return []
 
   def build_steps(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return [['src/objective-c/tests/build_tests.sh']]
 
   def post_tests_steps(self):
@@ -725,10 +800,12 @@ class Sanity(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', _UNSUPPORTED_COMPILER_SKIP_TESTS])
 
   def test_specs(self):
     import yaml
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
       return [self.config.job_spec(cmd['script'].split(),
                                    timeout_seconds=None, environ={'TEST': 'true'},
@@ -739,6 +816,8 @@ class Sanity(object):
     return []
 
   def make_targets(self):
+    if self.args.compiler is _UNSUPPORTED_COMPILER_SKIP_TESTS and self.args.travis:
+      return ()
     return ['run_dep_checks']
 
   def make_options(self):
@@ -878,6 +957,43 @@ def runs_per_test_type(arg_str):
         msg = '\'{}\' is not a positive integer or \'inf\''.format(arg_str)
         raise argparse.ArgumentTypeError(msg)
 
+_COMPILER_CHOICES = ('default',
+                     'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
+                     'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
+                     'vs2010', 'vs2013', 'vs2015',
+                     'python2.7', 'python3.4',
+                     'node0.12', 'node4', 'node5',
+                     'coreclr',
+                     _UNSUPPORTED_COMPILER_SKIP_TESTS,)
+
+
+def _is_travis_enabled():
+  for arg in sys.argv:
+    if arg == "--travis" or arg == "-t":
+      return True
+  return False
+
+
+# TODO (https://github./grpc/grpc/issues/7934): This workaround would not
+# have been necessary if the testing infrastructure provided provisions for
+# supporting different configurations for different branches on the repository.
+# Remove this workaround once test infrastructure supports configurations for
+# different branches.
+def _compiler_choices(compiler):
+  if _is_travis_enabled():
+    if compiler in _COMPILER_CHOICES:
+      return compiler
+    else:
+      return _UNSUPPORTED_COMPILER_SKIP_TESTS
+  else:
+    if compiler in _COMPILER_CHOICES:
+      return compiler
+    else:
+      raise argparse.ArgumentTypeError(
+        "{} is not a valid compiler option; please use one from {}.".format(
+          compiler, _COMPILER_CHOICES))
+
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
@@ -927,14 +1043,8 @@ argp.add_argument('--arch',
                   default='default',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
-                  choices=['default',
-                           'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
-                           'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'vs2010', 'vs2013', 'vs2015',
-                           'python2.7', 'python3.4',
-                           'node0.12', 'node4', 'node5', 'node6',
-                           'coreclr'],
                   default='default',
+                  type=_compiler_choices,
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
                   default=False,
