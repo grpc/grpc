@@ -49,11 +49,13 @@ DEFINE_string(scenarios_file, "",
 DEFINE_string(scenarios_json, "",
               "JSON string containing an array of Scenario objects");
 DEFINE_bool(quit, false, "Quit the workers");
-DEFINE_bool(search, false,
-            "Search for offered load setting that achieves targeted cpu load");
-DEFINE_double(initial_offered_load, 1000.0, "Set up for intial offered load");
-DEFINE_double(targeted_cpu_load, 99.0, "targeted cpu load");
-DEFINE_double(precision, 500, "final search result precision");
+DEFINE_bool(
+    search, false,
+    "Search for the offered_load value that achieves targeted cpu load");
+DEFINE_double(initial_offered_load, 1000.0,
+              "Set up for intial offered load to start the search");
+DEFINE_double(targeted_cpu_load, 99.0, "Targeted cpu load");
+DEFINE_double(precision, 500, "Final search result precision");
 
 namespace grpc {
 namespace testing {
@@ -102,7 +104,7 @@ static double BinarySearch(Scenario* scenario, double targeted_cpu_load,
   while (low <= high - FLAGS_precision) {
     double mid = low + (high - low) / 2;
     double current_cpu_load = GetCpuLoad(scenario, mid, success);
-    gpr_log(GPR_INFO, "binary search: current_offered_load %.0f", mid);
+    gpr_log(GPR_DEBUG, "Binary Search: current_offered_load %.0f", mid);
     if (!*success) {
       gpr_log(GPR_ERROR, "Client/Server Failure");
       break;
@@ -133,7 +135,7 @@ static double SearchOfferedLoad(double initial_offered_load,
   while (*success && (current_cpu_load < targeted_cpu_load)) {
     current_offered_load *= 2;
     current_cpu_load = GetCpuLoad(scenario, current_offered_load, success);
-    gpr_log(GPR_INFO, "do while: current_offered_load %f",
+    gpr_log(GPR_DEBUG, "Binary Search: current_offered_load  %.0f",
             current_offered_load);
   }
 
