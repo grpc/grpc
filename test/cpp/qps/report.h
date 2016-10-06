@@ -106,7 +106,6 @@ class GprLogReporter : public Reporter {
   void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportCpuUsage(const ScenarioResult& result) GRPC_OVERRIDE;
-
 };
 
 /** Dumps the report to a JSON file. */
@@ -121,7 +120,7 @@ class JsonReporter : public Reporter {
   void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportCpuUsage(const ScenarioResult& result) GRPC_OVERRIDE;
-  
+
   const string report_file_;
 };
 
