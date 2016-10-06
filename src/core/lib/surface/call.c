@@ -1210,11 +1210,6 @@ static void pull_reaped(grpc_exec_ctx *exec_ctx, void *callp,
 
 static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
                                             grpc_call *call) {
-  if (0)
-    gpr_log(GPR_DEBUG, "mcir: lt=%p pt=%p nss=%d",
-            call->receiving.incremental.length_target,
-            call->receiving.incremental.pull_target,
-            call->receiving.incremental.next_slice_state);
   if (call->receiving.incremental.length_target == NULL &&
       call->receiving.incremental.pull_target != NULL) {
     switch (call->receiving.incremental.pull_target->type) {
@@ -1347,9 +1342,9 @@ static void incwr_complete_slice(grpc_exec_ctx *exec_ctx, grpc_call *call,
   switch (call->sending.incremental.buffer->type) {
     case GRPC_BB_RAW:
       GPR_ASSERT(!incwr_at_end_of_slice_buffer(call));
-      *slice = call->sending.incremental.buffer->data.raw.slice_buffer
-                   .slices[call->sending.incremental.buffer_progress.raw
-                               .slice_index++];
+      *slice = gpr_slice_ref(
+          call->sending.incremental.buffer->data.raw.slice_buffer.slices
+              [call->sending.incremental.buffer_progress.raw.slice_index++]);
       if (incwr_at_end_of_slice_buffer(call)) {
         call->sending.incremental.buffer = NULL;
         grpc_cq_end_op(exec_ctx, call->cq, call->sending.incremental.tag,
