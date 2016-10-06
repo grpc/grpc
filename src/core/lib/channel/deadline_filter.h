@@ -35,8 +35,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
 
-#include "src/core/ext/client_config/method_config.h"
-
 // State used for filters that enforce call deadlines.
 // Must be the first field in the filter's call_data.
 typedef struct grpc_deadline_state {
