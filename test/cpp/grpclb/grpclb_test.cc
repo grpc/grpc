@@ -720,6 +720,7 @@ int main(int argc, char **argv) {
   grpc_fake_resolver_init();
   grpc_init();
   const auto result = RUN_ALL_TESTS();
+  grpc_test_shutdown();
   grpc_shutdown();
   return result;
 }

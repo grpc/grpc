@@ -222,6 +222,7 @@ int main(int argc, char **argv) {
   grpc_init();
   test_vectors(GRPC_SLICE_SPLIT_MERGE_ALL);
   test_vectors(GRPC_SLICE_SPLIT_ONE_BYTE);
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

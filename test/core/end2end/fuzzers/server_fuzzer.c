@@ -37,6 +37,7 @@
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
+#include "test/core/util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -120,6 +121,7 @@ done:
   }
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
+  grpc_test_shutdown();
   grpc_shutdown();
   if (leak_check) {
     counters = grpc_memory_counters_snapshot();

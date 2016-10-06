@@ -194,5 +194,6 @@ void grpc_run_bad_client_test(
   gpr_slice_buffer_destroy(&outgoing);
 
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_test_shutdown();
   grpc_shutdown();
 }

@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
                                 grpc_error *error) {
@@ -119,5 +120,6 @@ void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_destroy(server->pollset);
   gpr_free(server->pollset);
+  grpc_test_shutdown();
   grpc_shutdown();
 }

@@ -1182,6 +1182,7 @@ int main(int argc, char **argv) {
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

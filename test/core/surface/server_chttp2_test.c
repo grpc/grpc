@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
   grpc_init();
   test_unparsable_target();
   test_add_same_port_twice();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

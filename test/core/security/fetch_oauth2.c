@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/security/oauth2_utils.h"
+#include "test/core/util/test_config.h"
 
 static grpc_call_credentials *create_refresh_token_creds(
     const char *json_refresh_token_file_path) {
@@ -114,6 +115,7 @@ int main(int argc, char **argv) {
   }
   grpc_call_credentials_release(creds);
   gpr_cmdline_destroy(cl);
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

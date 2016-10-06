@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
   gpr_free(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

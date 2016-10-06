@@ -250,6 +250,7 @@ int main(int argc, char **argv) {
           gpr_histogram_percentile(histogram, 99.9));
   gpr_histogram_destroy(histogram);
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

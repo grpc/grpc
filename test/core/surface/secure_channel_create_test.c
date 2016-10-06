@@ -90,6 +90,7 @@ int main(int argc, char **argv) {
   test_security_connector_already_in_arg();
   test_null_creds();
   test_unknown_scheme_target();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

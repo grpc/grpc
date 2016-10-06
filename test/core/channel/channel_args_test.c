@@ -140,6 +140,7 @@ int main(int argc, char **argv) {
   test_create();
   test_set_compression_algorithm();
   test_compression_algorithm_states();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

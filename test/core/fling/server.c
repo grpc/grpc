@@ -325,6 +325,7 @@ int main(int argc, char **argv) {
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

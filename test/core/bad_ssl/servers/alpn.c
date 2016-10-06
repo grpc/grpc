@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
   grpc_server_credentials_release(ssl_creds);
 
   bad_ssl_run(server);
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

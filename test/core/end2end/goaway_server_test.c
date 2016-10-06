@@ -301,6 +301,7 @@ int main(int argc, char **argv) {
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
+  grpc_test_shutdown();
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);
 

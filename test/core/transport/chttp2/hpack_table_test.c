@@ -276,6 +276,7 @@ int main(int argc, char **argv) {
   test_static_lookup();
   test_many_additions();
   test_find();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

@@ -126,6 +126,7 @@ int main(int argc, char **argv) {
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");
   grpc_exec_ctx_finish(&exec_ctx);
 
+  grpc_test_shutdown();
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);
 }

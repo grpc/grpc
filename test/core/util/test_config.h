@@ -72,6 +72,13 @@ extern double g_fixture_slowdown_factor;
 
 void grpc_test_init(int argc, char **argv);
 
+/* Register a function to be called before grpc_shutdown. This is intended to be
+   a drop-in replacement for atexit. */
+void grpc_test_before_shutdown(void (*function)(void));
+
+/* This should be called before grpc_shutdown in tests. */
+void grpc_test_shutdown();
+
 #ifdef __cplusplus
 }
 #endif /*  __cplusplus */

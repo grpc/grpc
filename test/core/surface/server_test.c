@@ -175,6 +175,7 @@ int main(int argc, char **argv) {
     test_bind_server_to_addrs(dns_addrs, GPR_ARRAY_SIZE(dns_addrs));
   }
 
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

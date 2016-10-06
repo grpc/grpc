@@ -935,6 +935,7 @@ int main(int argc, char **argv) {
   test_ping();
 
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

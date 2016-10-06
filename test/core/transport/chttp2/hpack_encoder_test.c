@@ -231,6 +231,7 @@ int main(int argc, char **argv) {
   TEST(test_basic_headers);
   TEST(test_decode_table_overflow);
   TEST(test_encode_header_size);
+  grpc_test_shutdown();
   grpc_shutdown();
   for (i = 0; i < num_to_delete; i++) {
     gpr_free(to_delete[i]);

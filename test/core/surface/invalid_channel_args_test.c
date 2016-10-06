@@ -146,6 +146,7 @@ int main(int argc, char **argv) {
   test_ssl_name_override_type();
   test_ssl_name_override_failed();
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

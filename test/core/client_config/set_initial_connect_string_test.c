@@ -252,6 +252,7 @@ int main(int argc, char **argv) {
   run_test(test_initial_string_with_redirect, 0);
   run_test(test_initial_string_with_redirect, 1);
 
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

@@ -127,6 +127,7 @@ static void run_test(const test_fixture *fixture) {
   grpc_completion_queue_destroy(server_cq);
   grpc_completion_queue_destroy(cq);
 
+  grpc_test_shutdown();
   grpc_shutdown();
   gpr_free(addr);
 }
