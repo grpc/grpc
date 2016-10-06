@@ -46,19 +46,13 @@
 
 DEFINE_string(scenarios_file, "",
               "JSON file containing an array of Scenario objects");
-
 DEFINE_string(scenarios_json, "",
               "JSON string containing an array of Scenario objects");
-
 DEFINE_bool(quit, false, "Quit the workers");
-
 DEFINE_bool(search, false,
             "Search for offered load setting that achieves targeted cpu load");
-
 DEFINE_double(initial_offered_load, 1000.0, "Set up for intial offered load");
-
 DEFINE_double(targeted_cpu_load, 99.0, "targeted cpu load");
-
 DEFINE_double(precision, 500, "final search result precision");
 
 namespace grpc {
