@@ -30,13 +30,12 @@
 
 require 'rbconfig'
 
-require_relative '../os_check'
-require_relative '../cpu_check'
+require_relative '../platform_check'
 
 plugin_name = 'grpc_ruby_plugin' + RbConfig::CONFIG['EXEEXT']
 
 plugin_path = File.join(File.dirname(__FILE__),
-                        CPU.arch + '-' + OS.os_name,
+                        PLATFORM.architecture + '-' + PLATFORM.os_name,
                         plugin_name)
 
 exec([ plugin_path, plugin_path ], *ARGV)
