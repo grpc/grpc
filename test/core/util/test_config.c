@@ -311,13 +311,19 @@ void grpc_test_before_shutdown(void (*function)(void)) {
 }
 
 void grpc_test_shutdown() {
+  shutdown_handler_list_elem *prev = NULL;
   for (shutdown_handler_list_elem *handler = shutdown_handlers.head;
        handler != NULL; handler = handler->next) {
+    // Free handler from the previous iteration
+    gpr_free(prev);
+    // Remove handler from the list
     shutdown_handlers.head = handler->next;
     if (shutdown_handlers.head == NULL) {
       shutdown_handlers.tail = NULL;
     }
     handler->function();
-    gpr_free(handler);
+    prev = handler;
   }
+  // Free last handler
+  gpr_free(prev);
 }
