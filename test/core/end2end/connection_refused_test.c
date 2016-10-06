@@ -44,7 +44,7 @@
 
 static void *tag(intptr_t i) { return (void *)i; }
 
-static void run_test(bool fail_fast) {
+static void run_test(bool wait_for_ready) {
   grpc_channel *chan;
   grpc_call *call;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
@@ -57,7 +57,7 @@ static void run_test(bool fail_fast) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  gpr_log(GPR_INFO, "TEST: fail_fast=%d", fail_fast);
+  gpr_log(GPR_INFO, "TEST: wait_for_ready=%d", wait_for_ready);
 
   grpc_init();
 
@@ -81,7 +81,7 @@ static void run_test(bool fail_fast) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = fail_fast ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY;
+  op->flags = wait_for_ready ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -98,10 +98,10 @@ static void run_test(bool fail_fast) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  if (fail_fast) {
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  } else {
+  if (wait_for_ready) {
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_completion_queue_shutdown(cq);
@@ -122,7 +122,7 @@ static void run_test(bool fail_fast) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  run_test(true);
   run_test(false);
+  run_test(true);
   return 0;
 }
