@@ -104,7 +104,6 @@ typedef struct batch_control {
 
   bool send_initial_metadata;
   bool send_message;
-  bool send_message_incremental_start;
   bool send_final_op;
   bool recv_initial_metadata;
   bool recv_message;
@@ -1838,7 +1837,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        bctl->send_message_incremental_start = 1;
+        bctl->send_message = 1;
         call->send_mode = SENDRECV_INCREMENTAL;
         call->sending.incremental.stream.length =
             op->data.send_message_incremental_start.message_length;
