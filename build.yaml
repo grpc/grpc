@@ -3032,6 +3032,21 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: latency_vs_load
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/cpp/qps/latency_vs_load.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: metrics_client
   build: test
   run: false
