@@ -1103,8 +1103,8 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
-static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
-                                  bool success) {
+static void process_data_after_md(grpc_exec_ctx *exec_ctx,
+                                  batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
     *call->receiving_buffer = NULL;
@@ -1124,8 +1124,6 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
     grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready,
                       bctl);
     continue_receiving_slices(exec_ctx, bctl);
-    /* early out */
-    return;
   }
 }
 
@@ -1133,12 +1131,17 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                    grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
-
+  if (error != GRPC_ERROR_NONE) {
+    grpc_status_code status;
+    const char *msg;
+    grpc_error_get_status(error, &status, &msg);
+    close_with_status(exec_ctx, call, status, msg);
+  }
   gpr_mu_lock(&bctl->call->mu);
   if (bctl->call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
     gpr_mu_unlock(&bctl->call->mu);
-    process_data_after_md(exec_ctx, bctlp, error);
+    process_data_after_md(exec_ctx, bctlp);
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
     gpr_mu_unlock(&bctl->call->mu);

@@ -280,7 +280,7 @@ def create_qpsworkers(languages, worker_hosts):
           for worker_idx, worker in enumerate(workers)]
 
 
-Scenario = collections.namedtuple('Scenario', 'jobspec workers')
+Scenario = collections.namedtuple('Scenario', 'jobspec workers name')
 
 
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
@@ -307,7 +307,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
         create_netperf_jobspec(server_host=netperf_server,
                                client_host=netperf_client,
                                bq_result_table=bq_result_table),
-        _NO_WORKERS))
+        _NO_WORKERS, 'netperf'))
 
   for language in languages:
     for scenario_json in language.scenarios():
@@ -347,7 +347,8 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
                                       [w.host_and_port for w in workers],
                                       remote_host=remote_host,
                                       bq_result_table=bq_result_table),
-              workers)
+              workers,
+              scenario_json['name'])
           scenarios.append(scenario)
 
   return scenarios
@@ -382,6 +383,11 @@ argp.add_argument('--remote_worker_host',
                   nargs='+',
                   default=[],
                   help='Worker hosts where to start QPS workers.')
+argp.add_argument('--dry_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Just list scenarios to be run, but don\'t run them.')
 argp.add_argument('-r', '--regex', default='.*', type=str,
                   help='Regex to select scenarios to run.')
 argp.add_argument('--bq_result_table', default=None, type=str,
@@ -412,16 +418,18 @@ if args.remote_worker_host:
 if args.remote_driver_host:
   remote_hosts.add(args.remote_driver_host)
 
-if remote_hosts:
-  archive_repo(languages=[str(l) for l in languages])
-  prepare_remote_hosts(remote_hosts, prepare_local=True)
-else:
-  prepare_remote_hosts([], prepare_local=True)
+if not args.dry_run:
+  if remote_hosts:
+    archive_repo(languages=[str(l) for l in languages])
+    prepare_remote_hosts(remote_hosts, prepare_local=True)
+  else:
+    prepare_remote_hosts([], prepare_local=True)
 
 build_local = False
 if not args.remote_driver_host:
   build_local = True
-build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build_local=build_local)
+if not args.dry_run:
+  build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build_local=build_local)
 
 qpsworker_jobs = create_qpsworkers(languages, args.remote_worker_host)
 
@@ -443,11 +451,14 @@ if not scenarios:
   raise Exception('No scenarios to run')
 
 for scenario in scenarios:
-  try:
-    for worker in scenario.workers:
-      worker.start()
-    jobset.run([scenario.jobspec,
-                create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
-               newline_on_success=True, maxjobs=1)
-  finally:
-    finish_qps_workers(scenario.workers)
+  if args.dry_run:
+    print(scenario.name)
+  else:
+    try:
+      for worker in scenario.workers:
+        worker.start()
+      jobset.run([scenario.jobspec,
+                  create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
+                 newline_on_success=True, maxjobs=1)
+    finally:
+      finish_qps_workers(scenario.workers)
