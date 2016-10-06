@@ -2713,26 +2713,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "latency_vs_load", 
-    "src": [
-      "test/cpp/qps/latency_vs_load.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config"
@@ -3127,26 +3107,6 @@
       "test/cpp/interop/stress_test.cc", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "test_qps", 
-    "src": [
-      "test/cpp/qps/test_qps.cc"
     ], 
     "third_party": false, 
     "type": "target"
