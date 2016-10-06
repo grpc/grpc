@@ -5050,8 +5050,7 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_reflection", 
-      "grpc++_test_config"
+      "grpc++_reflection"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 

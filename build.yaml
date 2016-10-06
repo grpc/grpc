@@ -1097,7 +1097,6 @@ libs:
   deps:
   - grpc++_reflection
   - grpc++
-  - grpc++_test_config
 - name: grpc_plugin_support
   build: protoc
   language: c++
