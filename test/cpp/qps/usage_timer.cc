@@ -34,8 +34,8 @@
 #include "test/cpp/qps/usage_timer.h"
 
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <grpc/support/time.h>
 #include <sys/resource.h>
@@ -52,20 +52,20 @@ static double time_double(struct timeval* tv) {
 }
 
 static void get_cpu_usage(unsigned long long* total_cpu_time,
-                         unsigned long long* idle_cpu_time) {
-   std::ifstream proc_stat("/proc/stat");
-   proc_stat.ignore(5);
-   std::string cpu_time_str;
-   std::string first_line;
-   std::getline(proc_stat, first_line);
-   std::stringstream first_line_s(first_line);
-   for(int i = 0; i < 10; ++i) {
-     std::getline(first_line_s, cpu_time_str, ' ');
-     *total_cpu_time += std::stoi(cpu_time_str);
-     if (i == 3) {
-       *idle_cpu_time = std::stoi(cpu_time_str);
-     }
-   }
+                          unsigned long long* idle_cpu_time) {
+  std::ifstream proc_stat("/proc/stat");
+  proc_stat.ignore(5);
+  std::string cpu_time_str;
+  std::string first_line;
+  std::getline(proc_stat, first_line);
+  std::stringstream first_line_s(first_line);
+  for (int i = 0; i < 10; ++i) {
+    std::getline(first_line_s, cpu_time_str, ' ');
+    *total_cpu_time += std::stoi(cpu_time_str);
+    if (i == 3) {
+      *idle_cpu_time = std::stoi(cpu_time_str);
+    }
+  }
 }
 
 UsageTimer::Result UsageTimer::Sample() {
