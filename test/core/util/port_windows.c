@@ -110,7 +110,7 @@ static void free_chosen_ports(void) {
 
 static void chose_port(int port) {
   if (chosen_ports == NULL) {
-    atexit(free_chosen_ports);
+    grpc_test_before_shutdown(free_chosen_ports);
   }
   num_chosen_ports++;
   chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);

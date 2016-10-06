@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
   test_execute_one();
   test_execute_finally();
   test_execute_many();
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

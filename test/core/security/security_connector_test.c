@@ -414,6 +414,7 @@ int main(int argc, char **argv) {
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_default_ssl_roots();
 
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

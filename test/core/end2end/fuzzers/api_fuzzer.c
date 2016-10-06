@@ -46,6 +46,7 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/util/passthru_endpoint.h"
+#include "test/core/util/test_config.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -954,6 +955,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

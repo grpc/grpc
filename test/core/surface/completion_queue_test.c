@@ -427,6 +427,7 @@ int main(int argc, char **argv) {
   test_threading(1, 10);
   test_threading(10, 1);
   test_threading(10, 10);
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

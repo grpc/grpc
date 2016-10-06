@@ -40,6 +40,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
+#include "test/core/util/test_config.h"
+
 bool squelch = true;
 bool leak_check = true;
 
@@ -55,6 +57,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   parser.on_header = onhdr;
   GRPC_ERROR_UNREF(grpc_chttp2_hpack_parser_parse(&parser, data, data + size));
   grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

@@ -160,6 +160,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_create_channel_stack();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

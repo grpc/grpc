@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
   test_algorithm_mesh();
   test_algorithm_failure();
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

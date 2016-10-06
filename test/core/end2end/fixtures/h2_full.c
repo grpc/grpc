@@ -112,6 +112,7 @@ int main(int argc, char **argv) {
     grpc_end2end_tests(argc, argv, configs[i]);
   }
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

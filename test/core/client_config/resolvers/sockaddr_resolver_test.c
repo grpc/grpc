@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
 
   grpc_resolver_factory_unref(ipv4);
   grpc_resolver_factory_unref(ipv6);
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

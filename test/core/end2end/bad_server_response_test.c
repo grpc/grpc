@@ -295,6 +295,7 @@ static void run_test(const char *response_payload,
   cleanup_rpc();
   test_tcp_server_destroy(&test_server);
 
+  grpc_test_shutdown();
   grpc_shutdown();
 }
 

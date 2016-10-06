@@ -223,6 +223,7 @@ int main(int argc, char **argv) {
   test_compression_algorithm_name();
   test_compression_algorithm_for_level();
   test_compression_enable_disable_algorithm();
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

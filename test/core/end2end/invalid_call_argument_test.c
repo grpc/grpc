@@ -594,6 +594,7 @@ int main(int argc, char **argv) {
   test_send_server_status_twice();
   test_recv_close_on_server_with_invalid_flags();
   test_recv_close_on_server_twice();
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

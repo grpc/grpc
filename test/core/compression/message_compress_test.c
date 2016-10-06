@@ -302,6 +302,7 @@ int main(int argc, char **argv) {
   test_bad_decompression_data_trailing_garbage();
   test_bad_compression_algorithm();
   test_bad_decompression_algorithm();
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

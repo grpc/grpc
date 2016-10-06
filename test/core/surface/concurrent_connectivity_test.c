@@ -228,6 +228,7 @@ int main(int argc, char **argv) {
       grpc_closure_create(done_pollset_shutdown, args.pollset));
   grpc_exec_ctx_finish(&exec_ctx);
 
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

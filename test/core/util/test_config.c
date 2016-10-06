@@ -33,6 +33,7 @@
 
 #include "test/core/util/test_config.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -272,6 +273,18 @@ static void install_crash_handler() {
 static void install_crash_handler() {}
 #endif
 
+typedef struct shutdown_handler_list_elem {
+  void (*function)(void);
+  struct shutdown_handler_list_elem *next;
+} shutdown_handler_list_elem;
+
+typedef struct shutdown_handler_list {
+  shutdown_handler_list_elem *head;
+  shutdown_handler_list_elem *tail;
+} shutdown_handler_list;
+
+static shutdown_handler_list shutdown_handlers;
+
 void grpc_test_init(int argc, char **argv) {
   install_crash_handler();
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
@@ -281,4 +294,36 @@ void grpc_test_init(int argc, char **argv) {
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());
+  shutdown_handlers.head = shutdown_handlers.tail = NULL;
+}
+
+void grpc_test_before_shutdown(void (*function)(void)) {
+  shutdown_handler_list_elem *elem =
+      gpr_malloc(sizeof(shutdown_handler_list_elem));
+  elem->function = function;
+  elem->next = NULL;
+  if (shutdown_handlers.head == NULL) {
+    shutdown_handlers.head = shutdown_handlers.tail = elem;
+  } else {
+    shutdown_handlers.tail->next = elem;
+    shutdown_handlers.tail = elem;
+  }
+}
+
+void grpc_test_shutdown() {
+  shutdown_handler_list_elem *prev = NULL;
+  for (shutdown_handler_list_elem *handler = shutdown_handlers.head;
+       handler != NULL; handler = handler->next) {
+    // Free handler from the previous iteration
+    gpr_free(prev);
+    // Remove handler from the list
+    shutdown_handlers.head = handler->next;
+    if (shutdown_handlers.head == NULL) {
+      shutdown_handlers.tail = NULL;
+    }
+    handler->function();
+    prev = handler;
+  }
+  // Free last handler
+  gpr_free(prev);
 }

@@ -40,6 +40,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
+#include "test/core/util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -156,6 +157,7 @@ done:
   if (response_payload_recv != NULL) {
     grpc_byte_buffer_destroy(response_payload_recv);
   }
+  grpc_test_shutdown();
   grpc_shutdown();
   if (leak_check) {
     counters = grpc_memory_counters_snapshot();

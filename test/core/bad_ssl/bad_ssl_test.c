@@ -165,6 +165,7 @@ int main(int argc, char **argv) {
   for (i = 3; i <= 4; i++) {
     grpc_init();
     run_test(args[2], i);
+    grpc_test_shutdown();
     grpc_shutdown();
   }
   gpr_free(args[2]);

@@ -574,6 +574,7 @@ int main(int argc, char **argv) {
   test_jwt_verifier_bad_json_key();
   test_jwt_verifier_bad_signature();
   test_jwt_verifier_bad_format();
+  grpc_test_shutdown();
   grpc_shutdown();
   return 0;
 }

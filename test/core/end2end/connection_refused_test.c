@@ -117,6 +117,7 @@ static void run_test(bool fail_fast) {
   gpr_free(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
+  grpc_test_shutdown();
   grpc_shutdown();
 }
 

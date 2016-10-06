@@ -42,6 +42,7 @@
 
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/test_config.h"
 
 /* This server will present an untrusted cert to the connecting client,
  * causing the SSL handshake to fail */
@@ -74,6 +75,7 @@ int main(int argc, char **argv) {
   gpr_slice_unref(key_slice);
 
   bad_ssl_run(server);
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

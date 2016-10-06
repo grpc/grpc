@@ -543,7 +543,7 @@ static void create_grpc_frame(gpr_slice_buffer *write_slice_buffer,
 static void convert_metadata_to_cronet_headers(
     grpc_linked_mdelem *head, const char *host, char **pp_url,
     cronet_bidirectional_stream_header **pp_headers, size_t *p_num_headers,
-    const char ** method) {
+    const char **method) {
   grpc_linked_mdelem *curr = head;
   /* Walk the linked list and get number of header fields */
   size_t num_headers_available = 0;

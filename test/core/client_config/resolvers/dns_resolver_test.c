@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
   test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
 
   grpc_resolver_factory_unref(dns);
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;

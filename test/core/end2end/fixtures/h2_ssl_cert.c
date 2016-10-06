@@ -367,6 +367,7 @@ int main(int argc, char **argv) {
     configs[i].config.tear_down_data(&f);
   }
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   /* Cleanup. */

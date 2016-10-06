@@ -191,6 +191,7 @@ int main(int argc, char **argv) {
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_test_shutdown();
   grpc_shutdown();
 
   gpr_free(g_pollset);

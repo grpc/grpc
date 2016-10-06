@@ -349,6 +349,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  grpc_test_shutdown();
   grpc_shutdown();
 
   return 0;
