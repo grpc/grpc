@@ -153,9 +153,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
       100 -
       100 * average(result->server_stats(), ServerIdleCpuTime) /
           average(result->server_stats(), ServerTotalCpuTime);
-  gpr_log(GPR_INFO, "total cpu: %.1f, idle cpu: %.1f",
-          average(result->server_stats(), ServerTotalCpuTime),
-          average(result->server_stats(), ServerIdleCpuTime));
+
   auto client_system_time = 100.0 * sum(result->client_stats(), SystemTime) /
                             sum(result->client_stats(), WallTime);
   auto client_user_time = 100.0 * sum(result->client_stats(), UserTime) /
