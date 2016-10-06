@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -30,19 +29,15 @@
 
 require 'rbconfig'
 
-require_relative '../os_check'
-require_relative '../cpu_check'
-
-ext = RbConfig::CONFIG['EXEEXT']
-
-protoc_name = 'protoc' + ext
-
-plugin_name = 'grpc_ruby_plugin' + ext
-
-protoc_dir = File.join(File.dirname(__FILE__), CPU.arch + '-' + OS.os_name)
-
-protoc_path = File.join(protoc_dir, protoc_name)
-
-plugin_path = File.join(protoc_dir, plugin_name)
-
-exec([ protoc_path, protoc_path ], "--plugin=protoc-gen-grpc=#{plugin_path}", *ARGV)
+module CPU
+  def CPU.arch
+    case RbConfig::CONFIG['host_cpu']
+      when /x86_64/
+        'x86_64'
+      when /x86|i686/
+        'x86'
+      else
+        fail 'cpu architecture detection failed'
+    end
+  end
+end
