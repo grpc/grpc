@@ -780,7 +780,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     s->cbs = cronet_bidirectional_stream_create(s->curr_ct.engine, s->curr_gs,
                                                 &cronet_callbacks);
     CRONET_LOG(GPR_DEBUG, "%p = cronet_bidirectional_stream_create()", s->cbs);
-    char *url;
+    char *url = NULL;
     const char *method = "POST";
     s->header_array.headers = NULL;
     convert_metadata_to_cronet_headers(
