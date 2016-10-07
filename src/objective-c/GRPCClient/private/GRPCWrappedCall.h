@@ -45,6 +45,10 @@
 @interface GRPCOpSendMetadata : GRPCOperation
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
+                         handler:(void(^)())handler;
+
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
+                           flags:(uint32_t)flags
                          handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end

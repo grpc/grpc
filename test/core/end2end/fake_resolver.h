@@ -1,5 +1,5 @@
-
-// Copyright 2015, Google Inc.
+//
+// Copyright 2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,13 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-syntax = "proto2";
-
-package grpc.testing;
-
-// An empty message that you can re-use to avoid defining duplicated empty
-// messages in your project. A typical example is to use it as argument or the
-// return value of a service API. For instance:
 //
-//   service Foo {
-//     rpc Bar (grpc.testing.EmptyMessage) returns (grpc.testing.EmptyMessage) { };
-//   };
-//
-message EmptyMessage {}
+
+#ifndef GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H
+#define GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H
+
+#include "test/core/util/test_config.h"
+
+void grpc_fake_resolver_init();
+
+#endif /* GRPC_TEST_CORE_END2END_FAKE_RESOLVER_H */
