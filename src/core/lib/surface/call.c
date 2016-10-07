@@ -1581,8 +1581,10 @@ static void add_batch_error(batch_control *bctl, grpc_error *error) {
     return;
   }
   if (!bctl->is_composite_error) {
+    grpc_error *old_error = bctl->error;
     bctl->error = GRPC_ERROR_CREATE_REFERENCING("Call batch operation failed",
-                                                &bctl->error, 1);
+                                                &old_error, 1);
+    grpc_error_unref(old_error);
   }
   bctl->error = grpc_error_add_child(bctl->error, error);
 }
