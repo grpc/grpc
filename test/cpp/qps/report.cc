@@ -76,6 +76,7 @@ void CompositeReporter::ReportCpuUsage(const ScenarioResult& result) {
     reporters_[i]->ReportCpuUsage(result);
   }
 }
+
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
 }

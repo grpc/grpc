@@ -49,13 +49,13 @@ DEFINE_string(scenarios_file, "",
 DEFINE_string(scenarios_json, "",
               "JSON string containing an array of Scenario objects");
 DEFINE_bool(quit, false, "Quit the workers");
-DEFINE_bool(
-    search, false,
-    "Search for the offered_load value that achieves targeted cpu load");
-DEFINE_double(initial_offered_load, 1000.0,
-              "Set up for intial offered load to start the search");
-DEFINE_double(targeted_cpu_load, 99.0, "Targeted cpu load");
-DEFINE_double(precision, 500, "Final search result precision");
+DEFINE_string(
+    search_param, "",
+    "The parameter, whose value is to be searched for to achieve targeted cpu load");
+DEFINE_double(initial_search_value, 1000.0,
+              "initial parameter value to start the search with (i.e. lower bound)");
+DEFINE_double(targeted_cpu_load, 99.0, "Targeted cpu load (unit: %, range [0,100])");
+DEFINE_double(precision, 500, "Threshold for the search range, below which will end the search.");
 
 namespace grpc {
 namespace testing {
@@ -110,11 +110,11 @@ static double BinarySearch(Scenario* scenario, double targeted_cpu_load,
       break;
     }
     if (targeted_cpu_load < current_cpu_load) {
-      high = mid - 1;
+      high = mid - FLAGS_precision;
     } else if (targeted_cpu_load > current_cpu_load) {
-      low = mid + 1;
+      low = mid + FLAGS_precision;
     } else {
-      high = mid - 1;
+      high = mid - FLAGS_precision;
     }
   }
 
@@ -186,15 +186,20 @@ static bool QpsDriver() {
   GPR_ASSERT(scenarios.scenarios_size() > 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
-    if (!FLAGS_search) {
+    if (FLAGS_search_param == "") {
       const Scenario& scenario = scenarios.scenarios(i);
       RunAndReport(scenario, &success);
     } else {
-      Scenario* scenario = scenarios.mutable_scenarios(i);
-      double targeted_offered_load =
-          SearchOfferedLoad(FLAGS_initial_offered_load, FLAGS_targeted_cpu_load,
-                            scenario, &success);
-      gpr_log(GPR_INFO, "targeted_offered_load %f", targeted_offered_load);
+      if (FLAGS_search_param == "offered_load") {
+        Scenario* scenario = scenarios.mutable_scenarios(i);
+        double targeted_offered_load =
+            SearchOfferedLoad(FLAGS_initial_search_value, FLAGS_targeted_cpu_load,
+                              scenario, &success);
+        gpr_log(GPR_INFO, "targeted_offered_load %f", targeted_offered_load);
+      }
+      else {
+        gpr_log(GPR_ERROR, "Unimplemented search param");
+      }
     }
   }
   return success;
