@@ -607,11 +607,16 @@ static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg,
     /* cancelled, do nothing */
   } else if (error != GRPC_ERROR_NONE) {
     grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error), NULL);
-  } else if (pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
-                             cpa->initial_metadata_flags,
-                             cpa->connected_subchannel, cpa->on_ready,
-                             GRPC_ERROR_NONE)) {
-    grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE, NULL);
+  } else {
+    call_data *calld = cpa->elem->call_data;
+    gpr_mu_lock(&calld->mu);
+    if (pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
+                        cpa->initial_metadata_flags,
+                        cpa->connected_subchannel, cpa->on_ready,
+                        GRPC_ERROR_NONE)) {
+      grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE, NULL);
+    }
+    gpr_mu_unlock(&calld->mu);
   }
   gpr_free(cpa);
 }
@@ -654,13 +659,11 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (chand->lb_policy != NULL) {
     grpc_lb_policy *lb_policy = chand->lb_policy;
-    int r;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel");
     gpr_mu_unlock(&chand->mu);
     // If the application explicitly set wait_for_ready, use that.
     // Otherwise, if the service config specified a value for this
     // method, use that.
-    gpr_mu_lock(&calld->mu);
     if ((initial_metadata_flags &
          GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) == 0 &&
         calld->wait_for_ready_from_service_config != WAIT_FOR_READY_UNSET) {
@@ -670,16 +673,15 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
       }
     }
-    gpr_mu_unlock(&calld->mu);
     // TODO(dgq): make this deadline configurable somehow.
     const grpc_lb_policy_pick_args inputs = {
         calld->pollent, initial_metadata, initial_metadata_flags,
         &calld->lb_token_mdelem, gpr_inf_future(GPR_CLOCK_MONOTONIC)};
-    r = grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs, connected_subchannel,
-                            NULL, on_ready);
+    bool result = grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs,
+                                      connected_subchannel, NULL, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
     GPR_TIMER_END("pick_subchannel", 0);
-    return r;
+    return result;
   }
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = true;
