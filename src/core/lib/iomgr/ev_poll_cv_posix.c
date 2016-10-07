@@ -259,10 +259,10 @@ const grpc_event_engine_vtable* grpc_init_poll_cv_posix(void) {
   int allow_specialized_wakeup_fd = grpc_allow_specialized_wakeup_fd;
   int allow_pipe_wakeup_fd = grpc_allow_pipe_wakeup_fd;
   grpc_global_cv_fd_table_init();
-  grpc_has_wakeup_fd = 1;
   grpc_allow_specialized_wakeup_fd = 0;
   grpc_allow_pipe_wakeup_fd = 0;
   grpc_wakeup_fd_global_init();
+  grpc_has_wakeup_fd = 1;
   ev_poll_vtable = grpc_init_poll_posix();
   if (!ev_poll_vtable) {
     grpc_global_cv_fd_table_shutdown();
@@ -272,7 +272,6 @@ const grpc_event_engine_vtable* grpc_init_poll_cv_posix(void) {
     grpc_global_cv_fd_table_init();
     return NULL;
   }
-
   vtable = *ev_poll_vtable;
   vtable.shutdown_engine = shutdown_engine;
   return &vtable;
