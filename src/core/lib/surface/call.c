@@ -1404,8 +1404,10 @@ static void incwr_bs_destroy(grpc_exec_ctx *exec_ctx,
 grpc_call_error grpc_call_incremental_message_writer_push(
     grpc_call *call, grpc_byte_buffer *buffer, void *tag) {
   GRPC_API_TRACE(
-      "grpc_call_incremental_message_writer_push(call=%p, buffer=%p, tag=%p)",
-      3, (call, buffer, tag));
+      "grpc_call_incremental_message_writer_push(call=%p, buffer=%p[len=%d], "
+      "tag=%p)",
+      4,
+      (call, buffer, buffer ? (int)grpc_byte_buffer_length(buffer) : -1, tag));
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&call->mu);
