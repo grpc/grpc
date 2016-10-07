@@ -47,11 +47,10 @@
 
 static grpc_error* pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
-  /* TODO(klempner): Make this nonfatal */
   int r = pipe(pipefd);
   if (0 != r) {
     gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
-    abort();
+    return GRPC_OS_ERROR(errno, "pipe");
   }
   grpc_error* err;
   err = grpc_set_socket_nonblocking(pipefd[0], 1);
