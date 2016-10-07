@@ -82,6 +82,8 @@ const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
 const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
+namespace {
+
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
   GPR_ASSERT(client_metadata.count(kEchoInitialMetadataKey) <= 1);
@@ -145,6 +147,28 @@ bool CheckExpectedCompression(const ServerContext& context,
   return true;
 }
 
+Status RequestedStatusOrOk(const SimpleRequest* request) {
+  if (request->has_response_status()) {
+    return Status(
+      static_cast<grpc::StatusCode>(request->response_status().code()),
+      request->response_status().message());
+  } else {
+    return Status::OK;
+  }
+}
+
+Status RequestedStatusOrOk(const StreamingOutputCallRequest* request) {
+  if (request->has_response_status()) {
+    return Status(
+      static_cast<grpc::StatusCode>(request->response_status().code()),
+      request->response_status().message());
+  } else {
+    return Status::OK;
+  }
+}
+
+} // anonomous namespace
+
 class TestServiceImpl : public TestService::Service {
  public:
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
@@ -179,13 +203,7 @@ class TestServiceImpl : public TestService::Service {
       }
     }
 
-    if (request->has_response_status()) {
-      return Status(
-          static_cast<grpc::StatusCode>(request->response_status().code()),
-          request->response_status().message());
-    }
-
-    return Status::OK;
+    return RequestedStatusOrOk(request);
   }
 
   Status StreamingOutputCall(
@@ -223,7 +241,7 @@ class TestServiceImpl : public TestService::Service {
       write_success = writer->Write(response, wopts);
     }
     if (write_success) {
-      return Status::OK;
+      return RequestedStatusOrOk(request);
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
@@ -273,7 +291,7 @@ class TestServiceImpl : public TestService::Service {
       }
     }
     if (write_success) {
-      return Status::OK;
+      return RequestedStatusOrOk(&request);
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
@@ -302,7 +320,7 @@ class TestServiceImpl : public TestService::Service {
       write_success = stream->Write(response);
     }
     if (write_success) {
-      return Status::OK;
+      return RequestedStatusOrOk(&request);
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
