@@ -4,6 +4,12 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.c">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClCompile>
@@ -41,6 +47,12 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h">
       <Filter>test\core\end2end</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fake_resolver.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\http_proxy.h">
+      <Filter>test\core\end2end\fixtures</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h">
       <Filter>test\core\end2end\fixtures</Filter>

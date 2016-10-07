@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
+#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H
+#define GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H
 
 #include <grpc/support/slice.h>
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -47,4 +47,4 @@ void grpc_test_set_initial_connect_string_function(
 void grpc_set_initial_connect_string(struct sockaddr **addr, size_t *addr_len,
                                      gpr_slice *connect_string);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_INITIAL_CONNECT_STRING_H */

@@ -46,7 +46,7 @@ void test_unknown_scheme_target(void) {
   grpc_channel *chan;
   grpc_channel_credentials *creds;
   grpc_resolver_registry_shutdown();
-  grpc_resolver_registry_init("");
+  grpc_resolver_registry_init();
 
   creds = grpc_fake_transport_security_credentials_create();
   chan = grpc_secure_channel_create(creds, "blah://blah", NULL, NULL);

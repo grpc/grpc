@@ -37,4 +37,4 @@ mkdir -p artifacts
 
 pear package
 
-cp -r grpc-*.tgz artifacts/grpc-php.tgz
+cp -r grpc-*.tgz artifacts/

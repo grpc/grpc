@@ -38,7 +38,7 @@ cd $(dirname $0)/../..
 tools/run_tests/run_performance_tests.py \
     -l c++ csharp node ruby java python go \
     --netperf \
-    --category all \
+    --category scalable \
     --bq_result_table performance_test.performance_experiment \
     --remote_worker_host grpc-performance-server-8core grpc-performance-client-8core grpc-performance-client2-8core \
     || EXIT_CODE=1
@@ -53,4 +53,3 @@ tools/run_tests/run_performance_tests.py \
     || EXIT_CODE=1
 
 exit $EXIT_CODE
-

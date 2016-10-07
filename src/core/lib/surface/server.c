@@ -273,23 +273,20 @@ static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
-                          bool send_goaway, grpc_error *send_disconnect) {
-  grpc_transport_op op;
-  struct shutdown_cleanup_args *sc;
+                          int send_goaway, grpc_error *send_disconnect) {
+  struct shutdown_cleanup_args *sc = gpr_malloc(sizeof(*sc));
+  grpc_closure_init(&sc->closure, shutdown_cleanup, sc);
+  grpc_transport_op *op = grpc_make_transport_op(&sc->closure);
   grpc_channel_element *elem;
 
-  memset(&op, 0, sizeof(op));
-  op.send_goaway = send_goaway;
-  sc = gpr_malloc(sizeof(*sc));
+  op->send_goaway = send_goaway;
   sc->slice = gpr_slice_from_copied_string("Server shutdown");
-  op.goaway_message = &sc->slice;
-  op.goaway_status = GRPC_STATUS_OK;
-  op.disconnect_with_error = send_disconnect;
-  grpc_closure_init(&sc->closure, shutdown_cleanup, sc);
-  op.on_consumed = &sc->closure;
+  op->goaway_message = &sc->slice;
+  op->goaway_status = GRPC_STATUS_OK;
+  op->disconnect_with_error = send_disconnect;
 
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
-  elem->filter->start_transport_op(exec_ctx, elem, &op);
+  elem->filter->start_transport_op(exec_ctx, elem, op);
 }
 
 static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
@@ -432,7 +429,8 @@ static void finish_destroy_channel(grpc_exec_ctx *exec_ctx, void *cd,
   server_unref(exec_ctx, server);
 }
 
-static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
+static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
+                            grpc_error *error) {
   if (is_channel_orphaned(chand)) return;
   GPR_ASSERT(chand->server != NULL);
   orphan_channel(chand);
@@ -441,14 +439,20 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
 
-  grpc_transport_op op;
-  memset(&op, 0, sizeof(op));
-  op.set_accept_stream = true;
-  op.on_consumed = &chand->finish_destroy_channel_closure;
+  grpc_transport_op *op =
+      grpc_make_transport_op(&chand->finish_destroy_channel_closure);
+  op->set_accept_stream = true;
   grpc_channel_next_op(exec_ctx,
                        grpc_channel_stack_element(
                            grpc_channel_get_channel_stack(chand->channel), 0),
-                       &op);
+                       op);
+
+  if (error != GRPC_ERROR_NONE) {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_INFO, "Disconnected client: %s", msg);
+    grpc_error_free_string(msg);
+  }
+  GRPC_ERROR_UNREF(error);
 }
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
@@ -845,17 +849,16 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
   channel_data *chand = cd;
   grpc_server *server = chand->server;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
-    grpc_transport_op op;
-    memset(&op, 0, sizeof(op));
-    op.on_connectivity_state_change = &chand->channel_connectivity_changed,
-    op.connectivity_state = &chand->connectivity_state;
+    grpc_transport_op *op = grpc_make_transport_op(NULL);
+    op->on_connectivity_state_change = &chand->channel_connectivity_changed,
+    op->connectivity_state = &chand->connectivity_state;
     grpc_channel_next_op(exec_ctx,
                          grpc_channel_stack_element(
                              grpc_channel_get_channel_stack(chand->channel), 0),
-                         &op);
+                         op);
   } else {
     gpr_mu_lock(&server->mu_global);
-    destroy_channel(exec_ctx, chand);
+    destroy_channel(exec_ctx, chand, GRPC_ERROR_REF(error));
     gpr_mu_unlock(&server->mu_global);
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, chand->channel, "connectivity");
   }
@@ -1103,6 +1106,12 @@ void grpc_server_start(grpc_server *server) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+void grpc_server_get_pollsets(grpc_server *server, grpc_pollset ***pollsets,
+                              size_t *pollset_count) {
+  *pollset_count = server->cq_count;
+  *pollsets = server->pollsets;
+}
+
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
                                  grpc_transport *transport,
                                  grpc_pollset *accepting_pollset,
@@ -1119,7 +1128,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   size_t slots;
   uint32_t probes;
   uint32_t max_probes = 0;
-  grpc_transport_op op;
+  grpc_transport_op *op = NULL;
 
   channel =
       grpc_channel_create(exec_ctx, NULL, args, GRPC_SERVER_CHANNEL, transport);
@@ -1179,16 +1188,16 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   gpr_mu_unlock(&s->mu_global);
 
   GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
-  memset(&op, 0, sizeof(op));
-  op.set_accept_stream = true;
-  op.set_accept_stream_fn = accept_stream;
-  op.set_accept_stream_user_data = chand;
-  op.on_connectivity_state_change = &chand->channel_connectivity_changed;
-  op.connectivity_state = &chand->connectivity_state;
+  op = grpc_make_transport_op(NULL);
+  op->set_accept_stream = true;
+  op->set_accept_stream_fn = accept_stream;
+  op->set_accept_stream_user_data = chand;
+  op->on_connectivity_state_change = &chand->channel_connectivity_changed;
+  op->connectivity_state = &chand->connectivity_state;
   if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
-    op.disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
+    op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
   }
-  grpc_transport_perform_op(exec_ctx, transport, &op);
+  grpc_transport_perform_op(exec_ctx, transport, op);
 }
 
 void done_published_shutdown(grpc_exec_ctx *exec_ctx, void *done_arg,

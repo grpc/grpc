@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_H
+#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H
+#define GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H
 
 #include "src/core/ext/client_channel/resolver_result.h"
 #include "src/core/ext/client_channel/subchannel.h"
@@ -91,4 +91,4 @@ void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                         grpc_resolver_result **result,
                         grpc_closure *on_complete);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H */

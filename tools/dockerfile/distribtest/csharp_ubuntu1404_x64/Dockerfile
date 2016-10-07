@@ -54,7 +54,3 @@ RUN mkdir warmup \
     && dotnet new \
     && cd .. \
     && rm -rf warmup
-
-# TODO(jtattermusch): without libc-dev, netcoreapp1.0 targets fail with
-# System.DllNotFoundException: Unable to load DLL 'libdl.so'
-RUN apt-get install -y libc-dev

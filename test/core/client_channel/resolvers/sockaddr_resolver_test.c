@@ -33,33 +33,27 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/client_channel/resolver_result.h"
+
 #include "test/core/util/test_config.h"
 
-static void client_channel_factory_ref(grpc_client_channel_factory *scv) {}
-static void client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                         grpc_client_channel_factory *scv) {}
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
-    grpc_subchannel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
+typedef struct on_resolution_arg {
+  char *expected_server_name;
+  grpc_resolver_result *resolver_result;
+} on_resolution_arg;
+
+void on_resolution_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  on_resolution_arg *res = arg;
+  const char *server_name =
+      grpc_resolver_result_get_server_name(res->resolver_result);
+  GPR_ASSERT(strcmp(res->expected_server_name, server_name) == 0);
+  grpc_resolver_result_unref(exec_ctx, res->resolver_result);
 }
-
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_client_channel_type type,
-    grpc_channel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
-}
-
-static const grpc_client_channel_factory_vtable sc_vtable = {
-    client_channel_factory_ref, client_channel_factory_unref,
-    client_channel_factory_create_subchannel,
-    client_channel_factory_create_channel};
-
-static grpc_client_channel_factory cc_factory = {&sc_vtable};
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -71,12 +65,20 @@ static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  args.client_channel_factory = &cc_factory;
   resolver = grpc_resolver_factory_create_resolver(factory, &args);
   GPR_ASSERT(resolver != NULL);
+
+  on_resolution_arg on_res_arg;
+  memset(&on_res_arg, 0, sizeof(on_res_arg));
+  on_res_arg.expected_server_name = uri->path;
+  grpc_closure *on_resolution =
+      grpc_closure_create(on_resolution_cb, &on_res_arg);
+
+  grpc_resolver_next(&exec_ctx, resolver, &on_res_arg.resolver_result,
+                     on_resolution);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_succeeds");
-  grpc_uri_destroy(uri);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_uri_destroy(uri);
 }
 
 static void test_fails(grpc_resolver_factory *factory, const char *string) {

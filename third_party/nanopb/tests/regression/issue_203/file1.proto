@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+message SubMessage1 {
+	required int32 foo = 1;
+}
+
+message Message1 {
+	required SubMessage1 bar = 1;
+}
+

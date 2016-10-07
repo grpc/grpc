@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H
-#define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H
+#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H
+#define GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H
 
 #include "src/core/ext/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -110,7 +110,8 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 /** construct a subchannel call */
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent, grpc_subchannel_call **subchannel_call);
+    grpc_polling_entity *pollent, gpr_timespec deadline,
+    grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(
@@ -162,6 +163,8 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
+  /** Server name */
+  const char *server_name;
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
@@ -172,4 +175,4 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         grpc_subchannel_args *args);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */
