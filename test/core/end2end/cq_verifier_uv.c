@@ -38,6 +38,7 @@
 #include <uv.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "test/core/end2end/cq_verifier_internal.h"
 
@@ -65,7 +66,7 @@ cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
   return v;
 }
 
-void timer_close_cb(uv_handle_t *handle) {
+static void timer_close_cb(uv_handle_t *handle) {
   handle->data = (void *)TIMER_CLOSED;
 }
 
@@ -86,12 +87,12 @@ void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e) {
   v->first_expectation = e;
 }
 
-void timer_run_cb(uv_timer_t *timer) {
+static void timer_run_cb(uv_timer_t *timer) {
   timer->data = (void *)TIMER_TRIGGERED;
 }
 
 grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds) {
-uint64_t timeout_ms = timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
+  uint64_t timeout_ms = timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
   grpc_event ev;
   v->timer.data = (void *)TIMER_STARTED;
   uv_timer_start(&v->timer, timer_run_cb, timeout_ms, 0);

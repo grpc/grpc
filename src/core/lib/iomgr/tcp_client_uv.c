@@ -61,7 +61,6 @@ static void uv_tcp_connect_cleanup(grpc_uv_tcp_connect *connect) {
 }
 
 static void tcp_close_callback(uv_handle_t *handle) {
-  gpr_log(GPR_DEBUG, "Freeing uv_tcp_t handle %p", handle);
   gpr_free(handle);
 }
 
@@ -73,7 +72,6 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
        it was cancelled, then the handler that cancelled it also should close
        the handle, if applicable */
-    gpr_log(GPR_DEBUG, "Closing uv_tcp_t handle %p", connect->tcp_handle);
     uv_close((uv_handle_t *)connect->tcp_handle, tcp_close_callback);
   }
   done = (--connect->refs == 0);
@@ -104,7 +102,6 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
     } else {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
                                  uv_strerror(status));
-      gpr_log(GPR_DEBUG, "Closing uv_tcp_t handle %p", connect->tcp_handle);
       uv_close((uv_handle_t *)connect->tcp_handle, tcp_close_callback);
     }
   }
@@ -128,7 +125,6 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   connect->closure = closure;
   connect->endpoint = ep;
   connect->tcp_handle = gpr_malloc(sizeof(uv_tcp_t));
-  gpr_log(GPR_DEBUG, "Allocated uv_tcp_t handle %p", connect->tcp_handle);
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;

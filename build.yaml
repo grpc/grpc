@@ -525,7 +525,6 @@ filegroups:
   build: test
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/end2end/cq_verifier_internal.h
   - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
@@ -539,8 +538,6 @@ filegroups:
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
-  - test/core/end2end/cq_verifier_native.c
-  - test/core/end2end/cq_verifier_uv.c
   - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
@@ -1344,6 +1341,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: bin_decoder_test
   build: test
   language: c
@@ -1485,6 +1484,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: dns_resolver_connectivity_test
   cpu_cost: 0.1
   build: test
@@ -1496,6 +1497,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: dns_resolver_test
   build: test
   language: c
@@ -1533,6 +1536,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: ev_epoll_linux_test
   build: test
   language: c
@@ -1543,6 +1548,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - linux
 - name: fd_conservation_posix_test
@@ -1555,6 +1562,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1569,6 +1578,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1656,6 +1667,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1876,6 +1889,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: grpc_create_jwt
   build: tool
   language: c
@@ -2338,6 +2353,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: secure_channel_create_test
   build: test
   language: c
@@ -2358,6 +2375,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sequential_connectivity_test
   build: test
   language: c
@@ -2368,6 +2387,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: server_chttp2_test
   build: test
   language: c
@@ -2414,6 +2435,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sockaddr_resolver_test
   build: test
   language: c
@@ -2444,6 +2467,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux

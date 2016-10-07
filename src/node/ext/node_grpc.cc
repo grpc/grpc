@@ -42,6 +42,10 @@
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
 
+#ifdef GRPC_UV
+#include "src/core/lib/iomgr/pollset_uv.h"
+#endif
+
 #include "call.h"
 #include "call_credentials.h"
 #include "channel.h"
@@ -439,6 +443,9 @@ void init(Local<Object> exports) {
   uv_signal_start(&signal_handle, signal_callback, SIGUSR2);
   uv_unref((uv_handle_t *)&signal_handle);
 
+#ifdef GRPC_UV
+  grpc_pollset_work_run_loop = 0;
+#endif
 
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);

@@ -44,14 +44,15 @@ default_unsecure_fixture_options = FixtureOptions(
     True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [])
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
-uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
+uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
 fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
-    dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'])
+    dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
 
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
+
     'h2_census': default_unsecure_fixture_options,
     'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
@@ -60,26 +61,29 @@ END2END_FIXTURES = {
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux'], exclude_iomgrs=['uv']),
     'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),
-    'h2_http_proxy': default_unsecure_fixture_options._replace(ci_mac=False),
-    'h2_oauth2': default_secure_fixture_options._replace(ci_mac=False),
-    'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
-                                                          ci_mac=False),
+    'h2_http_proxy': default_unsecure_fixture_options._replace(
+        ci_mac=False, exclude_iomgrs=['uv']),
+    'h2_oauth2': default_secure_fixture_options._replace(
+        ci_mac=False, exclude_iomgrs=['uv']),
+    'h2_proxy': default_unsecure_fixture_options._replace(
+        includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(
-        ci_mac=False, exclude_configs=['msan']),
-    'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
+        ci_mac=False, exclude_configs=['msan'], exclude_iomgrs=['uv']),
+    'h2_sockpair': socketpair_unsecure_fixture_options._replace(
+        ci_mac=False, exclude_iomgrs=['uv']),
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
-        ci_mac=False, tracing=True),
+        ci_mac=False, tracing=True, exclude_iomgrs=['uv']),
     'h2_ssl': default_secure_fixture_options,
     'h2_ssl_cert': default_secure_fixture_options,
-    'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
-                                                            ci_mac=False),
+    'h2_ssl_proxy': default_secure_fixture_options._replace(
+        includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_uds': uds_fixture_options,
 }
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
-default_test_options = TestOptions(False, False, True, False, True, 1.0)
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs')
+default_test_options = TestOptions(False, False, True, False, True, 1.0, [])
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -96,8 +100,8 @@ END2END_TESTS = {
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
     'compressed_payload': default_test_options._replace(proxyable=False),
-    'connectivity': connectivity_test_options._replace(proxyable=False,
-                                                       cpu_cost=LOWCPU),
+    'connectivity': connectivity_test_options._replace(
+        proxyable=False, cpu_cost=LOWCPU, exclude_iomgrs=['uv']),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
@@ -246,6 +250,8 @@ def main():
               'name': '%s_test' % f,
               'args': [t],
               'exclude_configs': [],
+              'exclude_iomgrs': list(set(END2END_FIXTURES[f].exclude_iomgrs) |
+                                     set(END2END_TESTS[t].exclude_iomgrs)),
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
@@ -261,6 +267,8 @@ def main():
               'name': '%s_nosec_test' % f,
               'args': [t],
               'exclude_configs': END2END_FIXTURES[f].exclude_configs,
+              'exclude_iomgrs': list(set(END2END_FIXTURES[f].exclude_iomgrs) |
+                                     set(END2END_TESTS[t].exclude_iomgrs)),
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(

@@ -64,13 +64,12 @@ typedef struct {
   gpr_slice_buffer *write_slices;
   uv_buf_t *write_buffers;
 
-  int shutting_down;
+  bool shutting_down;
   char *peer_string;
   grpc_pollset *pollset;
 } grpc_tcp;
 
 static void uv_close_callback(uv_handle_t *handle) {
-  gpr_log(GPR_DEBUG, "Freeing uv_tcp_t handle %p", handle);
   gpr_free(handle);
 }
 
@@ -281,14 +280,16 @@ static void shutdown_callback(uv_shutdown_t *req, int status) { gpr_free(req); }
 
 static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  uv_shutdown_t *req = gpr_malloc(sizeof(uv_shutdown_t));
-  uv_shutdown(req, (uv_stream_t *)tcp->handle, shutdown_callback);
+  if (!tcp->shutting_down) {
+    tcp->shutting_down = true;
+    uv_shutdown_t *req = gpr_malloc(sizeof(uv_shutdown_t));
+    uv_shutdown(req, (uv_stream_t *)tcp->handle, shutdown_callback);
+  }
 }
 
 static void uv_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  gpr_log(GPR_DEBUG, "Closing uv_tcp_t handle %p", tcp->handle);
   uv_close((uv_handle_t *)tcp->handle, uv_close_callback);
   TCP_UNREF(tcp, "destroy");
 }
@@ -322,6 +323,7 @@ grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle, char *peer_string) {
   handle->data = tcp;
   gpr_ref_init(&tcp->refcount, 1);
   tcp->peer_string = gpr_strdup(peer_string);
+  tcp->shutting_down = false;
   /* Tell network status tracking code about the new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
 

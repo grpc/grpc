@@ -143,6 +143,8 @@ static grpc_error *blocking_resolve_address_impl(
   int s;
   grpc_error *err;
 
+  req.addrinfo = NULL;
+
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     goto done;

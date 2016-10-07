@@ -6906,7 +6906,6 @@
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/cq_verifier_internal.h", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
@@ -6925,9 +6924,6 @@
     "src": [
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/cq_verifier_internal.h", 
-      "test/core/end2end/cq_verifier_native.c", 
-      "test/core/end2end/cq_verifier_uv.c", 
       "test/core/end2end/fixtures/http_proxy.c", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.c", 

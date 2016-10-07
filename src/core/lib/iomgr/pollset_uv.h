@@ -31,5 +31,7 @@
  *
  */
 
+extern int grpc_pollset_work_run_loop;
+
 void grpc_pollset_global_init(void);
 void grpc_pollset_global_shutdown(void);

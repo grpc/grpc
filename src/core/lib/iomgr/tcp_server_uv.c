@@ -116,7 +116,6 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     grpc_tcp_listener *sp = s->head;
     s->head = sp->next;
     sp->next = NULL;
-    gpr_log(GPR_DEBUG, "Freeing uv_tcp_t handle %p", sp->handle);
     gpr_free(sp->handle);
     gpr_free(sp);
   }
@@ -141,7 +140,6 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     immediately_done = 1;
   }
   for (sp = s->head; sp; sp = sp->next) {
-    gpr_log(GPR_DEBUG, "Closing uv_tcp_t handle %p", sp->handle);
     uv_close((uv_handle_t *)sp->handle, handle_close_callback);
   }
 
@@ -166,6 +164,10 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   }
 }
 
+static void accepted_connection_close_cb(uv_handle_t *handle) {
+  gpr_free(handle);
+}
+
 static void on_connect(uv_stream_t *server, int status) {
   grpc_tcp_listener *sp = (grpc_tcp_listener *)server->data;
   grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
@@ -176,7 +178,6 @@ static void on_connect(uv_stream_t *server, int status) {
   char *peer_name_string;
   int err;
 
-  gpr_log(GPR_DEBUG, "Server %p received a connection", sp->server);
 
   if (status < 0) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
@@ -184,25 +185,28 @@ static void on_connect(uv_stream_t *server, int status) {
     return;
   }
   client = gpr_malloc(sizeof(uv_tcp_t));
-  gpr_log(GPR_DEBUG, "Allocated uv_tcp_t handle %p", client);
   uv_tcp_init(uv_default_loop(), client);
   // UV documentation says this is guaranteed to succeed
   uv_accept((uv_stream_t *)server, (uv_stream_t *)client);
-  peer_name_string = NULL;
-  memset(&peer_name, 0, sizeof(grpc_resolved_address));
-  peer_name.len = sizeof(struct sockaddr_storage);
-  err = uv_tcp_getpeername(client, (struct sockaddr *)&peer_name.addr,
-                           (int *)&peer_name.len);
-  if (err == 0) {
-    peer_name_string = grpc_sockaddr_to_uri(&peer_name);
+  // If the server has not been started, we discard incoming connections
+  if (sp->server->on_accept_cb == NULL) {
+    uv_close((uv_handle_t *)client, accepted_connection_close_cb);
   } else {
-    gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s", uv_strerror(status));
+    peer_name_string = NULL;
+    memset(&peer_name, 0, sizeof(grpc_resolved_address));
+    peer_name.len = sizeof(struct sockaddr_storage);
+    err = uv_tcp_getpeername(client, (struct sockaddr *)&peer_name.addr,
+                             (int *)&peer_name.len);
+    if (err == 0) {
+      peer_name_string = grpc_sockaddr_to_uri(&peer_name);
+    } else {
+      gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s", uv_strerror(status));
+    }
+    ep = grpc_tcp_create(client, peer_name_string);
+    sp->server->on_accept_cb(&exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
+                             &acceptor);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
-  ep = grpc_tcp_create(client, peer_name_string);
-  gpr_log(GPR_DEBUG, "Calling on_accept_cb for server %p", sp->server);
-  sp->server->on_accept_cb(&exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                           &acceptor);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
@@ -219,6 +223,14 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
   status = uv_tcp_bind(handle, (struct sockaddr *)addr->addr, 0);
   if (status != 0) {
     error = GRPC_ERROR_CREATE("Failed to bind to port");
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
+    return error;
+  }
+
+  status = uv_listen((uv_stream_t *)handle, SOMAXCONN, on_connect);
+  if (status != 0) {
+    error = GRPC_ERROR_CREATE("Failed to listen to port");
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, uv_strerror(status));
     return error;
@@ -308,7 +320,6 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   }
 
   handle = gpr_malloc(sizeof(uv_tcp_t));
-  gpr_log(GPR_DEBUG, "Allocating uv_tcp_t handle %p", handle);
   status = uv_tcp_init(uv_default_loop(), handle);
   if (status == 0) {
     error = add_socket_to_server(s, handle, addr, port_index, &sp);

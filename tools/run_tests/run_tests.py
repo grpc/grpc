@@ -223,6 +223,8 @@ class CLanguage(object):
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
                             else ['all'])
+      if self.args.iomgr_platform == 'uv':
+        polling_strategies = ['all']
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                  _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
