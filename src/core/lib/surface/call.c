@@ -314,7 +314,6 @@ grpc_error *grpc_call_create(const grpc_call_create_args *args,
     const char *error_str;
     grpc_error_get_status(error, &status, &error_str);
     close_with_status(&exec_ctx, call, status, error_str);
-    GRPC_ERROR_UNREF(error);
   }
   if (args->cq != NULL) {
     GPR_ASSERT(
