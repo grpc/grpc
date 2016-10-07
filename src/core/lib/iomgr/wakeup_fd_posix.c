@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_POSIX_WAKEUP_FD
 
 #include <stddef.h>
 #include "src/core/lib/iomgr/wakeup_fd_cv.h"
