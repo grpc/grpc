@@ -222,13 +222,17 @@ static const grpc_hash_table_vtable method_config_table_vtable = {
 
 grpc_method_config_table* grpc_method_config_table_create(
     size_t num_entries, grpc_method_config_table_entry* entries) {
-  grpc_hash_table_entry hash_table_entries[num_entries];
+  grpc_hash_table_entry* hash_table_entries =
+      gpr_malloc(sizeof(grpc_hash_table_entry) * num_entries);
   for (size_t i = 0; i < num_entries; ++i) {
     hash_table_entries[i].key = entries[i].method_name;
     hash_table_entries[i].value = entries[i].method_config;
     hash_table_entries[i].vtable = &method_config_table_vtable;
   }
-  return grpc_hash_table_create(num_entries, hash_table_entries);
+  grpc_method_config_table* method_config_table =
+      grpc_hash_table_create(num_entries, hash_table_entries);
+  gpr_free(hash_table_entries);
+  return method_config_table;
 }
 
 grpc_method_config_table* grpc_method_config_table_ref(
@@ -254,11 +258,12 @@ grpc_method_config* grpc_method_config_table_get_method_config(
     const char* path_str = grpc_mdstr_as_c_string(path);
     const char* sep = strrchr(path_str, '/') + 1;
     const size_t len = (size_t)(sep - path_str);
-    char buf[len + 2];  // '*' and NUL
+    char* buf = gpr_malloc(len + 2);  // '*' and NUL
     memcpy(buf, path_str, len);
     buf[len] = '*';
     buf[len + 1] = '\0';
     grpc_mdstr* wildcard_path = grpc_mdstr_from_string(buf);
+    gpr_free(buf);
     method_config = grpc_hash_table_get(table, wildcard_path);
     GRPC_MDSTR_UNREF(wildcard_path);
   }
