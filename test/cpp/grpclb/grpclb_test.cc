@@ -59,6 +59,7 @@ extern "C" {
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 }
@@ -460,7 +461,7 @@ static void perform_request(client_fixture *cf) {
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
-                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1000), NULL);
+                               GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL);
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char *peer;
@@ -633,7 +634,7 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
 
   char *server_uri;
-  gpr_asprintf(&server_uri, "ipv4:%s?lb_policy=grpclb&lb_enabled=1",
+  gpr_asprintf(&server_uri, "test:%s?lb_policy=grpclb&lb_enabled=1",
                tf.lb_server.servers_hostport);
   setup_client(server_uri, &tf.client);
   gpr_free(server_uri);
@@ -716,6 +717,7 @@ TEST(GrpclbTest, InvalidAddressInServerlist) {}
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
+  grpc_fake_resolver_init();
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

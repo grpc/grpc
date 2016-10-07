@@ -48,6 +48,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -508,7 +509,7 @@ void run_spec(const test_spec *spec) {
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+  gpr_asprintf(&client_hostport, "test:%s?lb_policy=round_robin",
                servers_hostports_str);
 
   arg.type = GRPC_ARG_INTEGER;
@@ -544,7 +545,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+  gpr_asprintf(&client_hostport, "test:%s?lb_policy=round_robin",
                servers_hostports_str);
 
   arg.type = GRPC_ARG_INTEGER;
@@ -874,6 +875,7 @@ int main(int argc, char **argv) {
   const size_t NUM_SERVERS = 4;
 
   grpc_test_init(argc, argv);
+  grpc_fake_resolver_init();
   grpc_init();
   grpc_tracer_set_enabled("round_robin", 1);
 

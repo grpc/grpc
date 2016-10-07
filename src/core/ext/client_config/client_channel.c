@@ -111,10 +111,10 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
   if ((state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
        state == GRPC_CHANNEL_SHUTDOWN) &&
       chand->lb_policy != NULL) {
-    /* cancel fail-fast picks */
+    /* cancel picks with wait_for_ready=false */
     grpc_lb_policy_cancel_picks(
         exec_ctx, chand->lb_policy,
-        /* mask= */ GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY,
+        /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
         /* check= */ 0, GRPC_ERROR_REF(error));
   }
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,
@@ -185,10 +185,35 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     lb_policy_args.additional_args =
         grpc_resolver_result_get_lb_policy_args(chand->resolver_result);
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
-    lb_policy = grpc_lb_policy_create(
-        exec_ctx,
-        grpc_resolver_result_get_lb_policy_name(chand->resolver_result),
-        &lb_policy_args);
+
+    // Special case: If all of the addresses are balancer addresses,
+    // assume that we should use the grpclb policy, regardless of what the
+    // resolver actually specified.
+    const char *lb_policy_name =
+        grpc_resolver_result_get_lb_policy_name(chand->resolver_result);
+    bool found_backend_address = false;
+    for (size_t i = 0; i < lb_policy_args.addresses->num_addresses; ++i) {
+      if (!lb_policy_args.addresses->addresses[i].is_balancer) {
+        found_backend_address = true;
+        break;
+      }
+    }
+    if (!found_backend_address) {
+      if (lb_policy_name != NULL && strcmp(lb_policy_name, "grpclb") != 0) {
+        gpr_log(GPR_INFO,
+                "resolver requested LB policy %s but provided only balancer "
+                "addresses, no backend addresses -- forcing use of grpclb LB "
+                "policy",
+                (lb_policy_name == NULL ? "(none)" : lb_policy_name));
+      }
+      lb_policy_name = "grpclb";
+    }
+    // Use pick_first if nothing was specified and we didn't select grpclb
+    // above.
+    if (lb_policy_name == NULL) lb_policy_name = "pick_first";
+
+    lb_policy =
+        grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
     if (lb_policy != NULL) {
       GRPC_LB_POLICY_REF(lb_policy, "config_change");
       GRPC_ERROR_UNREF(state_error);
@@ -602,9 +627,10 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     int r;
     GRPC_LB_POLICY_REF(lb_policy, "pick_subchannel");
     gpr_mu_unlock(&chand->mu);
-    const grpc_lb_policy_pick_args inputs = {calld->pollent, initial_metadata,
-                                             initial_metadata_flags,
-                                             &calld->lb_token_mdelem};
+    // TODO(dgq): make this deadline configurable somehow.
+    const grpc_lb_policy_pick_args inputs = {
+        calld->pollent, initial_metadata, initial_metadata_flags,
+        &calld->lb_token_mdelem, gpr_inf_future(GPR_CLOCK_MONOTONIC)};
     r = grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs, connected_subchannel,
                             NULL, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
