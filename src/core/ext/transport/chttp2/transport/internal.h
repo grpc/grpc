@@ -147,7 +147,7 @@ typedef struct grpc_chttp2_outstanding_ping {
 } grpc_chttp2_outstanding_ping;
 
 typedef struct grpc_chttp2_write_cb {
-  size_t call_at_byte;
+  int64_t call_at_byte;
   grpc_closure *closure;
   struct grpc_chttp2_write_cb *next;
 } grpc_chttp2_write_cb;
@@ -353,7 +353,8 @@ struct grpc_chttp2_stream {
   grpc_byte_stream *fetching_send_message;
   uint32_t fetched_send_message_length;
   gpr_slice fetching_slice;
-  int64_t fetching_slice_end_offset;
+  int64_t next_message_end_offset;
+  int64_t flow_controlled_bytes_written;
   bool complete_fetch_covered_by_poller;
   grpc_closure complete_fetch;
   grpc_closure complete_fetch_locked;

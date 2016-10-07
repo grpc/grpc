@@ -836,8 +836,8 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
     return;
   }
   if (s->fetched_send_message_length == s->fetching_send_message->length) {
-    ssize_t notify_offset = s->fetching_slice_end_offset;
-    if (notify_offset <= 0) {
+    int64_t notify_offset = s->next_message_end_offset;
+    if (notify_offset <= s->flow_controlled_bytes_written) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
           "fetching_send_message_finished");
@@ -848,7 +848,7 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       } else {
         t->write_cb_pool = cb->next;
       }
-      cb->call_at_byte = (size_t)notify_offset;
+      cb->call_at_byte = notify_offset;
       cb->closure = s->fetching_send_message_finished;
       s->fetching_send_message_finished = NULL;
       cb->next = s->on_write_finished_cbs;
@@ -1005,13 +1005,14 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       frame_hdr[4] = (uint8_t)(len);
       s->fetching_send_message = op->send_message;
       s->fetched_send_message_length = 0;
-      s->fetching_slice_end_offset =
-          (ssize_t)s->flow_controlled_buffer.length + (ssize_t)len;
+      s->next_message_end_offset = s->flow_controlled_bytes_written +
+                                   (int64_t)s->flow_controlled_buffer.length +
+                                   (int64_t)len;
       s->complete_fetch_covered_by_poller = op->covered_by_poller;
       if (flags & GRPC_WRITE_BUFFER_HINT) {
         /* allow up to 64kb to be buffered */
         /* TODO(ctiller): make this configurable */
-        s->fetching_slice_end_offset -= 65536;
+        s->next_message_end_offset -= 65536;
       }
       continue_fetching_send_locked(exec_ctx, t, s);
       if (s->id != 0) {
