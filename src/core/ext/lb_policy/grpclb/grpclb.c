@@ -761,7 +761,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         GRPC_ERROR_CREATE("No mdelem storage for the LB token. Load reporting "
                           "won't work without it. Failing"),
         NULL);
-    return 1;
+    return 0;
   }
 
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
