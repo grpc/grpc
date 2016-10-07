@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-source ~/.rvm/scripts/rvm
+#source ~/.rvm/scripts/rvm
 set -ex
 
 cd $(dirname $0)/../../..
@@ -55,7 +55,7 @@ do
     tools/run_tests/performance/build_performance_go.sh
     ;;
   *)
-    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
+    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
     ;;
   esac
 done
