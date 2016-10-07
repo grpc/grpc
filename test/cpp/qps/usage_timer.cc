@@ -61,9 +61,9 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
   std::stringstream first_line_s(first_line);
   for (int i = 0; i < 10; ++i) {
     std::getline(first_line_s, cpu_time_str, ' ');
-    *total_cpu_time += std::stoi(cpu_time_str);
+    *total_cpu_time += std::stol(cpu_time_str);
     if (i == 3) {
-      *idle_cpu_time = std::stoi(cpu_time_str);
+      *idle_cpu_time = std::stol(cpu_time_str);
     }
   }
 }
