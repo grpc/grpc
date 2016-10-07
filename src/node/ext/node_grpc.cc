@@ -42,8 +42,11 @@
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
 
+// TODO(murgatroid99): Remove this when the endpoint API becomes public
 #ifdef GRPC_UV
+extern "C" {
 #include "src/core/lib/iomgr/pollset_uv.h"
+}
 #endif
 
 #include "call.h"
@@ -419,12 +422,6 @@ NAN_METHOD(SetLogVerbosity) {
   gpr_set_log_verbosity(severity);
 }
 
-uv_signal_t signal_handle;
-
-void signal_callback(uv_signal_t *handle, int signum) {
-  uv_print_all_handles(uv_default_loop(), stderr);
-}
-
 void init(Local<Object> exports) {
   Nan::HandleScope scope;
   grpc_init();
@@ -438,10 +435,6 @@ void init(Local<Object> exports) {
   InitConnectivityStateConstants(exports);
   InitWriteFlags(exports);
   InitLogConstants(exports);
-
-  uv_signal_init(uv_default_loop(), &signal_handle);
-  uv_signal_start(&signal_handle, signal_callback, SIGUSR2);
-  uv_unref((uv_handle_t *)&signal_handle);
 
 #ifdef GRPC_UV
   grpc_pollset_work_run_loop = 0;
