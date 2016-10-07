@@ -428,17 +428,18 @@ static void add_to_free(call_state *call, void *p) {
 }
 
 static void read_metadata(input_stream *inp, size_t *count,
-                          grpc_mdelem **metadata, call_state *cs) {
+                          grpc_linked_mdelem **metadata, call_state *cs) {
   *count = next_byte(inp);
   if (*count > 0) {
-    memset(*metadata, 0, *count * sizeof(grpc_mdelem *));
+    *metadata = gpr_malloc(*count * sizeof(**metadata));
+    memset(*metadata, 0, *count * sizeof(**metadata));
     for (size_t i = 0; i < *count; i++) {
       char *key = read_string(inp);
       char *value;
       size_t value_length;
       read_buffer(inp, &value, &value_length);
-      metadata[i] = grpc_mdelem_from_string_and_buffer(key, (uint8_t *)value,
-                                                       value_length);
+      metadata[i]->md = grpc_mdelem_from_string_and_buffer(
+          key, (uint8_t *)value, value_length);
       add_to_free(cs, key);
       add_to_free(cs, value);
     }
@@ -764,7 +765,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
               has_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
               read_metadata(&inp, &op->data.send_initial_metadata.count,
-                            op->data.send_initial_metadata.metadata,
+                            &op->data.send_initial_metadata.metadata,
                             g_active_call);
               break;
             case GRPC_OP_SEND_MESSAGE:
@@ -788,7 +789,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               read_metadata(
                   &inp,
                   &op->data.send_status_from_server.trailing_metadata_count,
-                  op->data.send_status_from_server.trailing_metadata,
+                  &op->data.send_status_from_server.trailing_metadata,
                   g_active_call);
               op->data.send_status_from_server.status = next_byte(&inp);
               op->data.send_status_from_server.status_details =

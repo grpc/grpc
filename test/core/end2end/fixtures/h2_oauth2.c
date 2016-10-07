@@ -59,8 +59,8 @@ static const grpc_mdelem *find_metadata(const grpc_metadata_array *md_arr,
   grpc_mdelem *res = NULL;
   grpc_mdelem *needle = grpc_mdelem_from_strings(key, value);
   for (size_t i = 0; i < md_arr->count; i++) {
-    if (md_arr->metadata[i] == needle) {
-      res = md_arr->metadata[i];
+    if (md_arr->metadata[i].md == needle) {
+      res = md_arr->metadata[i].md;
       break;
     }
   }

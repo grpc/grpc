@@ -256,13 +256,13 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  grpc_mdelem *extra_metadata[3] = {
-      grpc_mdelem_from_strings("hobbit-first-name",
-                               hobbits[index % GPR_ARRAY_SIZE(hobbits)][0]),
-      grpc_mdelem_from_strings("hobbit-second-name",
-                               hobbits[index % GPR_ARRAY_SIZE(hobbits)][1]),
-      grpc_mdelem_from_strings("dragon",
-                               dragons[index % GPR_ARRAY_SIZE(dragons)])};
+  grpc_linked_mdelem extra_metadata[3] = {
+      grpc_linked_mdelem_from_strings(
+          "hobbit-first-name", hobbits[index % GPR_ARRAY_SIZE(hobbits)][0]),
+      grpc_linked_mdelem_from_strings(
+          "hobbit-second-name", hobbits[index % GPR_ARRAY_SIZE(hobbits)][1]),
+      grpc_linked_mdelem_from_strings(
+          "dragon", dragons[index % GPR_ARRAY_SIZE(dragons)])};
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234", deadline,
@@ -274,15 +274,11 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  grpc_linked_mdelem extra_metadata_storage[3];
-  memset(&extra_metadata_storage, 0, sizeof(grpc_linked_mdelem) * 3);
-
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 3;
   op->data.send_initial_metadata.metadata = extra_metadata;
-  op->data.send_initial_metadata.metadata_storage = extra_metadata_storage;
   op->flags = 0;
   op->reserved = NULL;
   op++;

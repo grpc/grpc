@@ -121,12 +121,11 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void request_response_with_payload(grpc_end2end_test_fixture f,
-                                          const char *method_name,
-                                          const char *request_msg,
-                                          const char *response_msg,
-                                          grpc_mdelem *initial_lr_metadata,
-                                          grpc_mdelem *trailing_lr_metadata) {
+static void request_response_with_payload(
+    grpc_end2end_test_fixture f, const char *method_name,
+    const char *request_msg, const char *response_msg,
+    grpc_linked_mdelem *initial_lr_metadata,
+    grpc_linked_mdelem *trailing_lr_metadata) {
   gpr_slice request_payload_slice = gpr_slice_from_static_string(request_msg);
   gpr_slice response_payload_slice = gpr_slice_from_static_string(response_msg);
   grpc_call *c;
@@ -161,17 +160,12 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  grpc_linked_mdelem initial_lr_metadata_storage;
-  memset(&initial_lr_metadata_storage, 0, sizeof(grpc_linked_mdelem));
-
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   GPR_ASSERT(initial_lr_metadata != NULL);
   op->data.send_initial_metadata.count = 1;
-  op->data.send_initial_metadata.metadata = &initial_lr_metadata;
-  op->data.send_initial_metadata.metadata_storage =
-      &initial_lr_metadata_storage;
+  op->data.send_initial_metadata.metadata = initial_lr_metadata;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -212,9 +206,6 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  grpc_linked_mdelem trailing_lr_metadata_storage;
-  memset(&trailing_lr_metadata_storage, 0, sizeof(grpc_linked_mdelem));
-
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -248,9 +239,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   GPR_ASSERT(trailing_lr_metadata != NULL);
   op->data.send_status_from_server.trailing_metadata_count = 1;
-  op->data.send_status_from_server.metadata_storage =
-      &trailing_lr_metadata_storage;
-  op->data.send_status_from_server.trailing_metadata = &trailing_lr_metadata;
+  op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
@@ -302,13 +291,13 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   const char *request_msg = "the msg from the client";
   const char *response_msg = "... and the response from the server";
 
-  grpc_mdelem *initial_lr_metadata = grpc_mdelem_from_strings(
+  grpc_linked_mdelem initial_lr_metadata = grpc_linked_mdelem_from_strings(
       GRPC_LOAD_REPORTING_INITIAL_MD_KEY, "client-token");
-  grpc_mdelem *trailing_lr_metadata = grpc_mdelem_from_strings(
+  grpc_linked_mdelem trailing_lr_metadata = grpc_linked_mdelem_from_strings(
       GRPC_LOAD_REPORTING_TRAILING_MD_KEY, "server-token");
 
   request_response_with_payload(f, method_name, request_msg, response_msg,
-                                initial_lr_metadata, trailing_lr_metadata);
+                                &initial_lr_metadata, &trailing_lr_metadata);
   end_test(&f);
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);

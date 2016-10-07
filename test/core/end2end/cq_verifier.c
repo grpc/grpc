@@ -92,7 +92,7 @@ void cq_verifier_destroy(cq_verifier *v) {
 bool contains_metadata(const grpc_metadata_array *haystack,
                        const grpc_mdelem *needle) {
   for (size_t i = 0; i < haystack->count; i++) {
-    if (haystack->metadata[i] == needle) return true;
+    if (haystack->metadata[i].md == needle) return true;
   }
   return false;
 }

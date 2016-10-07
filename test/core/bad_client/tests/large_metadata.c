@@ -160,17 +160,15 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   memset((char *)md_value, 'a', metadata_value_size);
   ((char *)md_value)[metadata_value_size] = 0;
 
-  grpc_mdelem *meta = grpc_mdelem_from_string_and_buffer(
+  grpc_linked_mdelem meta = grpc_linked_mdelem_from_string_and_buffer(
       "key", (const uint8_t *)md_value, metadata_value_size);
   gpr_free(md_value);
-  grpc_linked_mdelem meta_storage;
 
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_INITIAL_METADATA;
   op.data.send_initial_metadata.count = 1;
   op.data.send_initial_metadata.metadata = &meta;
-  op.data.send_initial_metadata.metadata_storage = &meta_storage;
   op.flags = 0;
   op.reserved = NULL;
   error = grpc_call_start_batch(s, &op, 1, tag(102), NULL);

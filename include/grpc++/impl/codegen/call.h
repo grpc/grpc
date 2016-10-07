@@ -71,13 +71,15 @@ inline void FillMetadataMap(
   for (size_t i = 0; i < arr->count; i++) {
     // TODO(yangg) handle duplicates?
     const grpc::string_ref key(
-        g_core_codegen_interface->grpc_mdstr_as_c_string(arr->metadata[i]->key),
-        g_core_codegen_interface->grpc_mdstr_length(arr->metadata[i]->key));
+        g_core_codegen_interface->grpc_mdstr_as_c_string(
+            arr->metadata[i].md->key),
+        g_core_codegen_interface->grpc_mdstr_length(arr->metadata[i].md->key));
 
     const grpc::string_ref value(
         g_core_codegen_interface->grpc_mdstr_as_c_string(
-            arr->metadata[i]->value),
-        g_core_codegen_interface->grpc_mdstr_length(arr->metadata[i]->value));
+            arr->metadata[i].md->value),
+        g_core_codegen_interface->grpc_mdstr_length(
+            arr->metadata[i].md->value));
     metadata->insert(std::make_pair(key, value));
   }
   g_core_codegen_interface->grpc_metadata_array_destroy(arr);

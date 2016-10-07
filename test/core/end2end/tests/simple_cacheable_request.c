@@ -110,11 +110,13 @@ static void test_cacheable_request_response_with_metadata_and_payload(
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
 
-  grpc_mdelem *meta_c[2] = {grpc_mdelem_from_strings("key1", "val1"),
-                            grpc_mdelem_from_strings("key2", "val2")};
+  grpc_linked_mdelem meta_c[2] = {
+      grpc_linked_mdelem_from_strings("key1", "val1"),
+      grpc_linked_mdelem_from_strings("key2", "val2")};
 
-  grpc_mdelem *meta_s[2] = {grpc_mdelem_from_strings("key3", "val3"),
-                            grpc_mdelem_from_strings("key4", "val4")};
+  grpc_linked_mdelem meta_s[2] = {
+      grpc_linked_mdelem_from_strings("key3", "val3"),
+      grpc_linked_mdelem_from_strings("key4", "val4")};
 
   grpc_end2end_test_fixture f = begin_test(
       config, "test_cacheable_request_response_with_metadata_and_payload", NULL,
@@ -143,18 +145,11 @@ static void test_cacheable_request_response_with_metadata_and_payload(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  grpc_linked_mdelem meta_c_storage[2];
-  memset(&meta_c_storage, 0, sizeof(grpc_linked_mdelem) * 2);
-
-  grpc_linked_mdelem meta_s_storage[2];
-  memset(&meta_s_storage, 0, sizeof(grpc_linked_mdelem) * 2);
-
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_c;
-  op->data.send_initial_metadata.metadata_storage = meta_c_storage;
   op->flags = GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
   op->reserved = NULL;
   op++;
@@ -200,7 +195,6 @@ static void test_cacheable_request_response_with_metadata_and_payload(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_s;
-  op->data.send_initial_metadata.metadata_storage = meta_s_storage;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -253,10 +247,10 @@ static void test_cacheable_request_response_with_metadata_and_payload(
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[0]));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[1]));
-  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[0]));
-  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[1]));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[0].md));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[1].md));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[0].md));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[1].md));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

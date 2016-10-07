@@ -104,7 +104,7 @@ class CoreCodegenInterface {
 
   virtual const char* grpc_mdstr_as_c_string(const grpc_mdstr* s) = 0;
   virtual size_t grpc_mdstr_length(const grpc_mdstr* s) = 0;
-  virtual grpc_mdelem* grpc_mdelem_from_string_and_buffer(
+  virtual grpc_mdelem* grpc_linked_mdelem_from_string_and_buffer(
       const char* key, const uint8_t* value, size_t value_length) = 0;
 
   virtual const Status& ok() = 0;

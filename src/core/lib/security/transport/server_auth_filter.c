@@ -71,7 +71,7 @@ static grpc_metadata_array metadata_batch_to_md_array(
       result.metadata =
           gpr_realloc(result.metadata, result.capacity * sizeof(grpc_mdelem *));
     }
-    result.metadata[result.count++] = l->md;
+    result.metadata[result.count++] = *l;
   }
   return result;
 }
