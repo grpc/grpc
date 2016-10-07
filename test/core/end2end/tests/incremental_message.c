@@ -258,6 +258,7 @@ void incremental_message(grpc_end2end_test_config config) {
   grpc_call_destroy(s);
 
   cq_verifier_destroy(cqv);
+  gpr_slice_unref(request_payload_slice);
 
   end_test(&f);
   config.tear_down_data(&f);
