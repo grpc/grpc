@@ -611,9 +611,8 @@ static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg,
     call_data *calld = cpa->elem->call_data;
     gpr_mu_lock(&calld->mu);
     if (pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
-                        cpa->initial_metadata_flags,
-                        cpa->connected_subchannel, cpa->on_ready,
-                        GRPC_ERROR_NONE)) {
+                        cpa->initial_metadata_flags, cpa->connected_subchannel,
+                        cpa->on_ready, GRPC_ERROR_NONE)) {
       grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE, NULL);
     }
     gpr_mu_unlock(&calld->mu);

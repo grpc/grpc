@@ -118,7 +118,7 @@ static void test_create_channel_stack(void) {
   int *channel_data;
   int *call_data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_mdstr* path = grpc_mdstr_from_string("/service/method");
+  grpc_mdstr *path = grpc_mdstr_from_string("/service/method");
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "test_key";
@@ -137,8 +137,8 @@ static void test_create_channel_stack(void) {
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
   grpc_error *error = grpc_call_stack_init(
-      &exec_ctx, channel_stack, 1, free_call, call_stack, NULL, NULL,
-      path, gpr_inf_future(GPR_CLOCK_MONOTONIC), call_stack);
+      &exec_ctx, channel_stack, 1, free_call, call_stack, NULL, NULL, path,
+      gpr_inf_future(GPR_CLOCK_MONOTONIC), call_stack);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);

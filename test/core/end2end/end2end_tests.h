@@ -60,8 +60,7 @@ struct grpc_end2end_test_config {
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
                                               grpc_channel_args *server_args);
   void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args,
-                      const char *query_args);
+                      grpc_channel_args *client_args, const char *query_args);
   void (*init_server)(grpc_end2end_test_fixture *f,
                       grpc_channel_args *server_args);
   void (*tear_down_data)(grpc_end2end_test_fixture *f);

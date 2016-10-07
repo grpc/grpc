@@ -136,8 +136,9 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(send_limit);
-    query_args = "method_name=/service/method"
-                 "&max_request_message_bytes=5";
+    query_args =
+        "method_name=/service/method"
+        "&max_request_message_bytes=5";
   } else {
     // Set limit via channel args.
     channel_arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
@@ -297,8 +298,9 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(!send_limit);
-    query_args = "method_name=/service/method"
-                 "&max_response_message_bytes=5";
+    query_args =
+        "method_name=/service/method"
+        "&max_response_message_bytes=5";
   } else {
     // Set limit via channel args.
     channel_arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
