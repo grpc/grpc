@@ -237,6 +237,10 @@ argp.add_argument('--filter_pr_tests',
 		  action='store_const',	
 		  const=True,	  
 		  help='Filters out tests irrelavant to pull request changes.')
+argp.add_argument('--base_branch',
+                  default='origin/master',
+                  type=str,
+                  help='Branch that pull request is requesting to merge into')
 args = argp.parse_args()
 
 extra_args = []
@@ -272,12 +276,12 @@ print
 
 if args.filter_pr_tests:
   print 'IMPORTANT: Test filtering is not active; this is only for testing.'
-  relevant_jobs = filter_tests(jobs)
+  relevant_jobs = filter_tests(jobs, args.base_branch)
   print
   if len(relevant_jobs) == len(jobs):
-    print 'No tests were filtered.'
+    print '(TESTING) No tests will be skipped.'
   else:
-    print 'These tests were filtered:'
+    print '(TESTING) These tests will be skipped:'
     for job in list(set(jobs) - set(relevant_jobs)):
       print '  %s' % job.shortname
   print
