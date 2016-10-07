@@ -171,7 +171,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = expect_ok ? GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY : 0;
+  op->flags = expect_ok ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
