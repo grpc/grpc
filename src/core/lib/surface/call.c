@@ -100,6 +100,7 @@ typedef struct batch_control {
   grpc_closure finish_batch;
   void *notify_tag;
   gpr_refcount steps_to_complete;
+  bool is_composite_error;
   grpc_error *error;
 
   bool send_initial_metadata;
@@ -285,6 +286,7 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
                                               batch_control *bctl,
                                               bool success);
 static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
+static void add_batch_error(batch_control *bctl, grpc_error *error);
 
 /*******************************************************************************
  * OVERALL CALL CONSTRUCTION/DESTRUCTION
@@ -1300,6 +1302,7 @@ static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
     call->recv_mode = SENDRECV_IDLE;
+    add_batch_error(bctl, GRPC_ERROR_END_OF_STREAM);
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     *call->receiving.incremental.length_target =
@@ -1574,7 +1577,12 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 static void add_batch_error(batch_control *bctl, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
   if (bctl->error == GRPC_ERROR_NONE) {
-    bctl->error = GRPC_ERROR_CREATE("Call batch operation failed");
+    bctl->error = error;
+    return;
+  }
+  if (!bctl->is_composite_error) {
+    bctl->error = GRPC_ERROR_CREATE_REFERENCING("Call batch operation failed",
+                                                &bctl->error, 1);
   }
   bctl->error = grpc_error_add_child(bctl->error, error);
 }
