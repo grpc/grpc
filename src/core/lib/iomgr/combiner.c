@@ -266,28 +266,34 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       gpr_atm_full_fetch_add(&lock->state, -STATE_ELEM_COUNT_LOW_BIT);
   GRPC_COMBINER_TRACE(
       gpr_log(GPR_DEBUG, "C:%p finish old_state=%" PRIdPTR, lock, old_state));
+// Define a macro to ease readability of the following switch statement.
+#define OLD_STATE_WAS(orphaned, elem_count) \
+  (((orphaned) ? 0 : STATE_UNORPHANED) |    \
+   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
+  // Depending on what the previous state was, we need to perform different
+  // actions.
   switch (old_state) {
     default:
       // we have multiple queued work items: just continue executing them
       break;
-    case STATE_UNORPHANED | (2 * STATE_ELEM_COUNT_LOW_BIT):
-    case 0 | (2 * STATE_ELEM_COUNT_LOW_BIT):
+    case OLD_STATE_WAS(false, 2):
+    case OLD_STATE_WAS(true, 2):
       // we're down to one queued item: if it's the final list we should do that
       if (!grpc_closure_list_empty(lock->final_list)) {
         lock->time_to_execute_final_list = true;
       }
       break;
-    case STATE_UNORPHANED | STATE_ELEM_COUNT_LOW_BIT:
+    case OLD_STATE_WAS(false, 1):
       // had one count, one unorphaned --> unlocked unorphaned
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);
       return true;
-    case 0 | STATE_ELEM_COUNT_LOW_BIT:
+    case OLD_STATE_WAS(true, 1):
       // and one count, one orphaned --> unlocked and orphaned
       really_destroy(exec_ctx, lock);
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);
       return true;
-    case STATE_UNORPHANED:
-    case 0:
+    case OLD_STATE_WAS(false, 0):
+    case OLD_STATE_WAS(true, 0):
       // these values are illegal - representing an already unlocked or
       // deleted lock
       GPR_TIMER_END("combiner.continue_exec_ctx", 0);
