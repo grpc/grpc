@@ -280,11 +280,9 @@ static void get_final_status(grpc_call *call,
 static void set_status_value_directly(grpc_status_code status, void *dest);
 static void set_status_from_error(grpc_call *call, status_source source,
                                   grpc_error *error);
-static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
-                                  bool success);
+static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl);
 static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
-                                              batch_control *bctl,
-                                              bool success);
+                                              batch_control *bctl);
 static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
 static void add_batch_error(batch_control *bctl, grpc_error *error);
 
@@ -383,7 +381,6 @@ grpc_error *grpc_call_create(const grpc_call_create_args *args,
     const char *error_str;
     grpc_error_get_status(error, &status, &error_str);
     close_with_status(&exec_ctx, call, status, error_str);
-    GRPC_ERROR_UNREF(error);
   }
   if (args->cq != NULL) {
     GPR_ASSERT(
@@ -1090,6 +1087,12 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
 
   gpr_mu_lock(&call->mu);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_status_code status;
+    const char *msg;
+    grpc_error_get_status(error, &status, &msg);
+    close_with_status(exec_ctx, call, status, msg);
+  }
   if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
     gpr_mu_unlock(&call->mu);
@@ -1097,10 +1100,10 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
       case SENDRECV_IDLE:
         GPR_UNREACHABLE_CODE(return );
       case SENDRECV_FULL_MESSAGE:
-        process_data_after_md(exec_ctx, bctlp, error);
+        process_data_after_md(exec_ctx, bctlp);
         break;
       case SENDRECV_INCREMENTAL:
-        process_incremental_data_after_md(exec_ctx, bctlp, error);
+        process_incremental_data_after_md(exec_ctx, bctlp);
         break;
     }
   } else {
@@ -1165,8 +1168,8 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
-static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
-                                  bool success) {
+static void process_data_after_md(grpc_exec_ctx *exec_ctx,
+                                  batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
     *call->receiving.full.buffer = NULL;
@@ -1297,8 +1300,7 @@ grpc_call_error grpc_call_incremental_message_reader_pull(
 }
 
 static void process_incremental_data_after_md(grpc_exec_ctx *exec_ctx,
-                                              batch_control *bctl,
-                                              bool success) {
+                                              batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (call->receiving_stream == NULL) {
     call->recv_mode = SENDRECV_IDLE;

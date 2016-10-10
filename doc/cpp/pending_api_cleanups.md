@@ -11,9 +11,5 @@ This file lists all pending backward-compatibility changes that should
 be cleaned up the next time we are going to bump the major version
 number:
 
-- remove `GRPC_ARG_MAX_MESSAGE_LENGTH` channel arg from
-  `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
-- remove `ServerBuilder::SetMaxMessageSize()` method from
-  `include/grpc++/server_builder.h` (commit `6980362`)
-- remove `GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY` macro from
-  `include/grpc/impl/codegen/grpc_types.h` (commit `59c9f90`)
+- remove `ClientContext::set_fail_fast()` method from
+  `include/grpc++/impl/codegen/client_context.h` (commit `9477724`)

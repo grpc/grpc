@@ -261,7 +261,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
-    cli_ctx.set_fail_fast(false);
+    cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
     Status recv_status = stub_->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message(), recv_response.message());
@@ -275,7 +275,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
-    cli_ctx.set_fail_fast(false);
+    cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
     Status recv_status = stub->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message() + "_dup", recv_response.message());
@@ -287,7 +287,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoResponse recv_response;
     grpc::string expected_message;
     ClientContext cli_ctx;
-    cli_ctx.set_fail_fast(false);
+    cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
     auto stream = stub_->RequestStream(&cli_ctx, &recv_response);
     for (int i = 0; i < 5; i++) {
@@ -304,7 +304,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    context.set_fail_fast(false);
+    context.set_wait_for_ready(true);
     request.set_message("hello");
 
     auto stream = stub_->ResponseStream(&context, request);
@@ -324,7 +324,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    context.set_fail_fast(false);
+    context.set_wait_for_ready(true);
     grpc::string msg("hello");
 
     auto stream = stub_->BidiStream(&context);

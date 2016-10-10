@@ -28,24 +28,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds PHP interop server and client in a base image.
+# Create a workspace in a subdirectory to allow running multiple builds in isolation.
+# WORKSPACE_NAME env variable needs to contain name of the workspace to create.
+# All cmdline args will be passed to run_tests.py script (executed in the 
+# newly created workspace)
 set -ex
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+cd $(dirname $0)/../..
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+rm -rf "${WORKSPACE_NAME}"
+# TODO(jtattermusch): clone --recursive fetches the submodules from github.
+# Try avoiding that to save time and network capacity.
+git clone --recursive . "${WORKSPACE_NAME}"
 
-cd /var/local/git/grpc
+echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
+python "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" $@
 
-# gRPC core and protobuf need to be installed
-make install
-
-(cd src/php/ext/grpc && phpize && ./configure && make)
-
-(cd third_party/protobuf && make install)
-
-(cd src/php && php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install)
-
-(cd src/php && ./bin/generate_proto_php.sh)

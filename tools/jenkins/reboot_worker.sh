@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+#!/usr/bin/env bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,24 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds PHP interop server and client in a base image.
-set -ex
+# Reboots Jenkins worker
+#
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
-
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
-
-cd /var/local/git/grpc
-
-# gRPC core and protobuf need to be installed
-make install
-
-(cd src/php/ext/grpc && phpize && ./configure && make)
-
-(cd third_party/protobuf && make install)
-
-(cd src/php && php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install)
-
-(cd src/php && ./bin/generate_proto_php.sh)
+# Give 5 seconds to finish the current job, then kill the jenkins slave process
+# to avoid running any other jobs on the worker and restart the worker.
+nohup sh -c 'sleep 5; killall java; sudo reboot' &
