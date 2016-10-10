@@ -22,7 +22,6 @@ class CronetChannelCredentialsImpl GRPC_FINAL : public ChannelCredentials {
             engine_, target.c_str(), &channel_args, nullptr));
   }
 
-  // TODO(gcasto): Should this derive from SecureChannelCredentials?
   SecureChannelCredentials* AsSecureCredentials() GRPC_OVERRIDE {
     return nullptr;
   }
