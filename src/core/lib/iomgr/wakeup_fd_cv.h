@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,49 +31,25 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+/*
+ * wakeup_fd_cv uses condition variables to implement wakeup fds.
+ *
+ * It is intended for use only in cases when eventfd() and pipe() are not
+ * available.  It can only be used with the "poll" engine.
+ *
+ * Implementation:
+ * A global table of cv wakeup fds is mantained.  A cv wakeup fd is a negative
+ * file descriptor.  poll() is then run in a background thread with only the
+ * real socket fds while we wait on a condition variable trigged by either the
+ * poll() completion or a wakeup_fd() call.
+ *
+ */
 
-#ifdef GPR_POSIX_WAKEUP_FD
+#ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
+#define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 
-#include <stddef.h>
-#include "src/core/lib/iomgr/wakeup_fd_cv.h"
-#include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
-int grpc_allow_specialized_wakeup_fd = 1;
-int grpc_allow_pipe_wakeup_fd = 1;
-int grpc_has_wakeup_fd = 1;
+extern grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
 
-void grpc_wakeup_fd_global_init(void) {
-  if (grpc_allow_specialized_wakeup_fd &&
-      grpc_specialized_wakeup_fd_vtable.check_availability()) {
-    wakeup_fd_vtable = &grpc_specialized_wakeup_fd_vtable;
-  } else if (grpc_allow_pipe_wakeup_fd &&
-             grpc_pipe_wakeup_fd_vtable.check_availability()) {
-    wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
-  } else {
-    grpc_has_wakeup_fd = 0;
-    wakeup_fd_vtable = &grpc_cv_wakeup_fd_vtable;
-  }
-}
-
-void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
-
-grpc_error *grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
-  return wakeup_fd_vtable->init(fd_info);
-}
-
-grpc_error *grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info) {
-  return wakeup_fd_vtable->consume(fd_info);
-}
-
-grpc_error *grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
-  return wakeup_fd_vtable->wakeup(fd_info);
-}
-
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info) {
-  wakeup_fd_vtable->destroy(fd_info);
-}
-
-#endif /* GPR_POSIX_WAKEUP_FD */
+#endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */

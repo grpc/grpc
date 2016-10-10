@@ -1277,6 +1277,9 @@ static const grpc_event_engine_vtable vtable = {
 };
 
 const grpc_event_engine_vtable *grpc_init_poll_posix(void) {
+  if (!grpc_has_wakeup_fd) {
+    return NULL;
+  }
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
     return NULL;
   }

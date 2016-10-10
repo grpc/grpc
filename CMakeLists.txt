@@ -314,6 +314,7 @@ add_library(grpc
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
   src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_poll_cv_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -346,6 +347,7 @@ add_library(grpc
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -573,6 +575,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
   src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_poll_cv_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -605,6 +608,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -804,6 +808,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
   src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_poll_cv_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -836,6 +841,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
