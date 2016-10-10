@@ -48,6 +48,6 @@ make install
 
 (cd third_party/protobuf && make install)
 
-(cd src/php && composer install)
+(cd src/php && php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install)
 
 (cd src/php && ./bin/generate_proto_php.sh)
