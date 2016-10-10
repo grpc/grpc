@@ -71,7 +71,8 @@ typedef struct {
   grpc_closure *closure;
 } async_connect;
 
-static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
+static grpc_error *prepare_socket(const struct sockaddr *addr, int fd,
+                                  const grpc_channel_args *channel_args) {
   grpc_error *err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
@@ -86,6 +87,15 @@ static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
+  if (channel_args) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_TOS)) {
+        err = grpc_set_socket_tos(fd, &channel_args->args[i]);
+        if (err != GRPC_ERROR_NONE) goto error;
+        break;
+      }
+    }
+  }
   goto done;
 
 error:
@@ -222,9 +232,7 @@ finish:
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *closure, grpc_endpoint **ep,
-                                    grpc_pollset_set *interested_parties,
-                                    const struct sockaddr *addr,
-                                    size_t addr_len, gpr_timespec deadline) {
+                                    const grpc_tcp_client_connect_args *args) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
@@ -235,6 +243,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   char *name;
   char *addr_str;
   grpc_error *error;
+  const struct sockaddr *addr = args->addr;
+  size_t addr_len = args->addr_len;
 
   *ep = NULL;
 
@@ -255,7 +265,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr = (struct sockaddr *)&addr4_copy;
     addr_len = sizeof(addr4_copy);
   }
-  if ((error = prepare_socket(addr, fd)) != GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(addr, fd, args->channel_args)) !=
+      GRPC_ERROR_NONE) {
     grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
     return;
   }
@@ -283,13 +294,13 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     goto done;
   }
 
-  grpc_pollset_set_add_fd(exec_ctx, interested_parties, fdobj);
+  grpc_pollset_set_add_fd(exec_ctx, args->interested_parties, fdobj);
 
   ac = gpr_malloc(sizeof(async_connect));
   ac->closure = closure;
   ac->ep = ep;
   ac->fd = fdobj;
-  ac->interested_parties = interested_parties;
+  ac->interested_parties = args->interested_parties;
   ac->addr_str = addr_str;
   addr_str = NULL;
   gpr_mu_init(&ac->mu);
@@ -304,7 +315,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&ac->mu);
   grpc_timer_init(exec_ctx, &ac->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                  gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC),
                   tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
@@ -316,17 +327,13 @@ done:
 
 // overridden by api_fuzzer.c
 void (*grpc_tcp_client_connect_impl)(
-    grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
-    size_t addr_len, gpr_timespec deadline) = tcp_client_connect_impl;
+    grpc_exec_ctx *exec_ctx, grpc_closure *on_connect, grpc_endpoint **endpoint,
+    const grpc_tcp_client_connect_args *args) = tcp_client_connect_impl;
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_endpoint **ep,
-                             grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
-                             gpr_timespec deadline) {
-  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties, addr,
-                               addr_len, deadline);
+                             const grpc_tcp_client_connect_args *args) {
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, args);
 }
 
 #endif

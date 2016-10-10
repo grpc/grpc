@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include "src/core/lib/iomgr/error.h"
 
 /* a wrapper for accept or accept4 */
@@ -85,6 +86,9 @@ grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket's receive buffer to given size. */
 grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
+
+/* Tries to set the socket's type to service */
+grpc_error *grpc_set_socket_tos(int fd, grpc_arg *arg);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

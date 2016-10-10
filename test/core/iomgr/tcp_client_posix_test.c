@@ -92,6 +92,7 @@ void test_succeeds(void) {
   int connections_complete_before;
   grpc_closure done;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_tcp_client_connect_args tcp_client_connect_args;
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
@@ -111,9 +112,13 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
   grpc_closure_init(&done, must_succeed, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
-                          (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future(GPR_CLOCK_REALTIME));
+  tcp_client_connect_args.interested_parties = g_pollset_set;
+  tcp_client_connect_args.addr = (struct sockaddr *)&addr;
+  tcp_client_connect_args.addr_len = addr_len;
+  tcp_client_connect_args.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  tcp_client_connect_args.channel_args = NULL;
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting,
+                          &tcp_client_connect_args);
 
   /* await the connection */
   do {
@@ -148,6 +153,7 @@ void test_fails(void) {
   int connections_complete_before;
   grpc_closure done;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_tcp_client_connect_args tcp_client_connect_args;
 
   gpr_log(GPR_DEBUG, "test_fails");
 
@@ -160,9 +166,13 @@ void test_fails(void) {
 
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
-                          (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future(GPR_CLOCK_REALTIME));
+  tcp_client_connect_args.interested_parties = g_pollset_set;
+  tcp_client_connect_args.addr = (struct sockaddr *)&addr;
+  tcp_client_connect_args.addr_len = addr_len;
+  tcp_client_connect_args.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  tcp_client_connect_args.channel_args = NULL;
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting,
+                          &tcp_client_connect_args);
 
   gpr_mu_lock(g_mu);
 

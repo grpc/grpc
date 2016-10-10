@@ -201,6 +201,8 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** The Type-Of-Service (TOS), in bytes. */
+#define GRPC_ARG_TOS "grpc.tos"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

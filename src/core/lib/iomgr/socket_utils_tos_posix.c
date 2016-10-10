@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,35 +31,38 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
+
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+
+#include <errno.h>
+#include <netinet/in.h>
+#include <string.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/time.h>
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include <grpc/support/log.h>
 
-/** arguments for a tcp client connection */
-typedef struct {
-  /** set of pollsets interested in this connection */
-  grpc_pollset_set *interested_parties;
-  /** address to connect to */
-  const struct sockaddr *addr;
-  size_t addr_len;
-  /** deadline for connection */
-  gpr_timespec deadline;
-  /** channel arguments */
-  const grpc_channel_args *channel_args;
-} grpc_tcp_client_connect_args;
+grpc_error* grpc_set_socket_tos(int fd, grpc_arg* arg) {
+  int newval;
+  socklen_t intlen = sizeof(newval);
 
-/* Asynchronously connect to an address (specified as (addr, len)), and call
-   cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure).
-   interested_parties points to a set of pollsets that would be interested
-   in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
-                             grpc_endpoint **endpoint,
-                             const grpc_tcp_client_connect_args *args);
+  GPR_ASSERT(0 == strcmp(arg->key, GRPC_ARG_TOS));
+  GPR_ASSERT(arg->type == GRPC_ARG_INTEGER);
 
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */
+  if (0 != setsockopt(fd, IPPROTO_IP, IP_TOS, &arg->value.integer,
+                      sizeof(arg->value.integer))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(IP_TOS)");
+  }
+  if (0 != getsockopt(fd, IPPROTO_IP, IP_TOS, &newval, &intlen)) {
+    return GRPC_OS_ERROR(errno, "getsockopt(IP_TOS)");
+  }
+  if (newval != arg->value.integer) {
+    return GRPC_ERROR_CREATE("Failed to set IP_TOS");
+  }
+
+  return GRPC_ERROR_NONE;
+}
+
+#endif

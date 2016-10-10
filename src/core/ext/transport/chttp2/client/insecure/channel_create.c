@@ -142,6 +142,7 @@ static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
                               grpc_connect_out_args *result,
                               grpc_closure *notify) {
   connector *c = (connector *)con;
+  grpc_tcp_client_connect_args tcp_client_connect_args;
   GPR_ASSERT(c->notify == NULL);
   GPR_ASSERT(notify->cb);
   c->notify = notify;
@@ -149,9 +150,13 @@ static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
   c->result = result;
   c->tcp = NULL;
   grpc_closure_init(&c->connected, connected, c);
+  tcp_client_connect_args.interested_parties = args->interested_parties;
+  tcp_client_connect_args.addr = args->addr;
+  tcp_client_connect_args.addr_len = args->addr_len;
+  tcp_client_connect_args.deadline = args->deadline;
+  tcp_client_connect_args.channel_args = args->channel_args;
   grpc_tcp_client_connect(exec_ctx, &c->connected, &c->tcp,
-                          args->interested_parties, args->addr, args->addr_len,
-                          args->deadline);
+                          &tcp_client_connect_args);
 }
 
 static const grpc_connector_vtable connector_vtable = {

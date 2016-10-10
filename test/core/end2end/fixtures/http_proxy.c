@@ -356,10 +356,15 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // The connection callback inherits our reference to conn.
   const gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(10, GPR_TIMESPAN));
+  grpc_tcp_client_connect_args tcp_client_connect_args;
+  tcp_client_connect_args.interested_parties = conn->pollset_set;
+  tcp_client_connect_args.addr =
+      (struct sockaddr*)&resolved_addresses->addrs[0].addr;
+  tcp_client_connect_args.addr_len = resolved_addresses->addrs[0].len;
+  tcp_client_connect_args.deadline = deadline;
+  tcp_client_connect_args.channel_args = NULL;
   grpc_tcp_client_connect(exec_ctx, &conn->on_server_connect_done,
-                          &conn->server_endpoint, conn->pollset_set,
-                          (struct sockaddr*)&resolved_addresses->addrs[0].addr,
-                          resolved_addresses->addrs[0].len, deadline);
+                          &conn->server_endpoint, &tcp_client_connect_args);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 

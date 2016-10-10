@@ -333,6 +333,7 @@ add_library(grpc
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_tos_posix.c
   src/core/lib/iomgr/socket_windows.c
   src/core/lib/iomgr/tcp_client_posix.c
   src/core/lib/iomgr/tcp_client_windows.c
@@ -592,6 +593,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_tos_posix.c
   src/core/lib/iomgr/socket_windows.c
   src/core/lib/iomgr/tcp_client_posix.c
   src/core/lib/iomgr/tcp_client_windows.c
@@ -823,6 +825,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_tos_posix.c
   src/core/lib/iomgr/socket_windows.c
   src/core/lib/iomgr/tcp_client_posix.c
   src/core/lib/iomgr/tcp_client_windows.c

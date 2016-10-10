@@ -128,9 +128,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
    notification request for the connection, and one timeout alert. */
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
                              grpc_endpoint **endpoint,
-                             grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
-                             gpr_timespec deadline) {
+                             const grpc_tcp_client_connect_args *args) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -143,6 +141,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info *info;
   grpc_error *error = GRPC_ERROR_NONE;
+  const struct sockaddr *addr = args->addr;
+  size_t addr_len = args->addr_len;
 
   *endpoint = NULL;
 
@@ -208,7 +208,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   ac->endpoint = endpoint;
   grpc_closure_init(&ac->on_connect, on_connect, ac);
 
-  grpc_timer_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
+  grpc_timer_init(exec_ctx, &ac->alarm, args->deadline, on_alarm, ac,
                   gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
   return;

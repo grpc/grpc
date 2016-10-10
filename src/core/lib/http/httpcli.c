@@ -213,6 +213,7 @@ static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
                          grpc_error *error) {
   grpc_resolved_address *addr;
+  grpc_tcp_client_connect_args tcp_client_connect_args;
   if (error != GRPC_ERROR_NONE) {
     append_error(req, error);
   }
@@ -224,9 +225,13 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   }
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
-  grpc_tcp_client_connect(
-      exec_ctx, &req->connected, &req->ep, req->context->pollset_set,
-      (struct sockaddr *)&addr->addr, addr->len, req->deadline);
+  tcp_client_connect_args.interested_parties = req->context->pollset_set;
+  tcp_client_connect_args.addr = (struct sockaddr *)&addr->addr;
+  tcp_client_connect_args.addr_len = addr->len;
+  tcp_client_connect_args.deadline = req->deadline;
+  tcp_client_connect_args.channel_args = NULL;
+  grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
+                          &tcp_client_connect_args);
 }
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
