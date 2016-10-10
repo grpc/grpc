@@ -323,8 +323,6 @@ int main(int argc, char **argv) {
 
 #else /* GRPC_TIMER_USE_GENERIC */
 
-int main(int argc, char **argv) {
-  return 1;
-}
+int main(int argc, char **argv) { return 1; }
 
 #endif /* GRPC_TIMER_USE_GENERIC */

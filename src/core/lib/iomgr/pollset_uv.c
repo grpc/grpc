@@ -73,9 +73,7 @@ void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->shutting_down = 0;
 }
 
-static void timer_close_cb(uv_handle_t *handle) {
-  handle->data = (void *)1;
-}
+static void timer_close_cb(uv_handle_t *handle) { handle->data = (void *)1; }
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure) {
@@ -89,7 +87,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {
-  uv_close((uv_handle_t*)&pollset->timer, timer_close_cb);
+  uv_close((uv_handle_t *)&pollset->timer, timer_close_cb);
   // timer.data is a boolean indicating that the timer has finished closing
   pollset->timer.data = (void *)0;
   if (grpc_pollset_work_run_loop) {
@@ -104,8 +102,7 @@ void grpc_pollset_reset(grpc_pollset *pollset) {
   pollset->shutting_down = 0;
 }
 
-static void timer_run_cb(uv_timer_t *timer) {
-}
+static void timer_run_cb(uv_timer_t *timer) {}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,

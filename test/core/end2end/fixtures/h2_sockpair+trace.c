@@ -31,9 +31,14 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <string.h>
+#ifdef GRPC_POSIX_SOCKET
+#include <unistd.h>
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -48,7 +53,6 @@
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"

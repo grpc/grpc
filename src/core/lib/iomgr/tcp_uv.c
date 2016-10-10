@@ -69,9 +69,7 @@ typedef struct {
   grpc_pollset *pollset;
 } grpc_tcp;
 
-static void uv_close_callback(uv_handle_t *handle) {
-  gpr_free(handle);
-}
+static void uv_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
 static void tcp_free(grpc_tcp *tcp) { gpr_free(tcp); }
 

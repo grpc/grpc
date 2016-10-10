@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include "src/core/lib/iomgr/udp_server.h"
 
 #include <netinet/in.h>
@@ -98,13 +103,15 @@ static void test_no_op_with_start(void) {
 static void test_no_op_with_port(void) {
   g_number_of_orphan_calls = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_in addr;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_port");
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_in);
+  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr,
                                       on_read, on_fd_orphaned));
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
@@ -117,13 +124,15 @@ static void test_no_op_with_port(void) {
 static void test_no_op_with_port_and_start(void) {
   g_number_of_orphan_calls = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_in addr;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_port_and_start");
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_in);
+  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr,
                                       on_read, on_fd_orphaned));
 
   grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
@@ -137,8 +146,8 @@ static void test_no_op_with_port_and_start(void) {
 
 static void test_receive(int number_of_clients) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  struct sockaddr_storage addr;
-  socklen_t addr_len = sizeof(addr);
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_storage *addr = (struct sockaddr_storage *)resolved_addr.addr;
   int clifd, svrfd;
   grpc_udp_server *s = grpc_udp_server_create();
   int i;
@@ -151,15 +160,16 @@ static void test_receive(int number_of_clients) {
   g_number_of_bytes_read = 0;
   g_number_of_orphan_calls = 0;
 
-  memset(&addr, 0, sizeof(addr));
-  addr.ss_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len,
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(struct sockaddr_storage);
+  addr->ss_family = AF_INET;
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr,
                                       on_read, on_fd_orphaned));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
-  GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
-  GPR_ASSERT(addr_len <= sizeof(addr));
+  GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len) == 0);
+  GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
   pollsets[0] = g_pollset;
   grpc_udp_server_start(&exec_ctx, s, pollsets, 1, NULL);
@@ -171,9 +181,9 @@ static void test_receive(int number_of_clients) {
 
     number_of_reads_before = g_number_of_reads;
     /* Create a socket, send a packet to the UDP server. */
-    clifd = socket(addr.ss_family, SOCK_DGRAM, 0);
+    clifd = socket(addr->ss_family, SOCK_DGRAM, 0);
     GPR_ASSERT(clifd >= 0);
-    GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, addr_len) == 0);
+    GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
@@ -227,3 +237,9 @@ int main(int argc, char **argv) {
   grpc_iomgr_shutdown();
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

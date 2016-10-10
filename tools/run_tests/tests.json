@@ -411,9 +411,7 @@
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
+    "exclude_iomgrs": [], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -435,6 +433,9 @@
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -2167,7 +2168,9 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 

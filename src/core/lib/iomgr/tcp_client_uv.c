@@ -60,9 +60,7 @@ static void uv_tcp_connect_cleanup(grpc_uv_tcp_connect *connect) {
   gpr_free(connect);
 }
 
-static void tcp_close_callback(uv_handle_t *handle) {
-  gpr_free(handle);
-}
+static void tcp_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
 static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
                            grpc_error *error) {

@@ -178,7 +178,6 @@ static void on_connect(uv_stream_t *server, int status) {
   char *peer_name_string;
   int err;
 
-
   if (status < 0) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
             uv_strerror(status));

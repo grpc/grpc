@@ -92,16 +92,19 @@ static void timer_run_cb(uv_timer_t *timer) {
 }
 
 grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds) {
-  uint64_t timeout_ms = timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
+  uint64_t timeout_ms =
+      timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
   grpc_event ev;
   v->timer.data = (void *)TIMER_STARTED;
   uv_timer_start(&v->timer, timer_run_cb, timeout_ms, 0);
-  ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
+  ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
+                                  NULL);
   // Stop the loop if the timer goes off or we get a non-timeout event
   while (((timer_state)v->timer.data != TIMER_TRIGGERED) &&
-         ev.type == GRPC_QUEUE_TIMEOUT){
+         ev.type == GRPC_QUEUE_TIMEOUT) {
     uv_run(uv_default_loop(), UV_RUN_ONCE);
-    ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
+    ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
+                                    NULL);
   }
   return ev;
 }

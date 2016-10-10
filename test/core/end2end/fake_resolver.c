@@ -165,10 +165,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
     grpc_uri ith_uri = *args->uri;
     char* part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse_ipv4(
-            &ith_uri,
-            (struct sockaddr_storage*)(&addresses->addresses[i].address.addr),
-            &addresses->addresses[i].address.len)) {
+    if (!parse_ipv4(&ith_uri, &addresses->addresses[i].address)) {
       errors_found = true;
     }
     gpr_free(part_str);
