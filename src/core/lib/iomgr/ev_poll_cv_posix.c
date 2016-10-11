@@ -255,21 +255,12 @@ static void shutdown_engine(void) {
 }
 
 const grpc_event_engine_vtable* grpc_init_poll_cv_posix(void) {
-  int has_wakeup_fd = grpc_has_wakeup_fd;
-  int allow_specialized_wakeup_fd = grpc_allow_specialized_wakeup_fd;
-  int allow_pipe_wakeup_fd = grpc_allow_pipe_wakeup_fd;
   grpc_global_cv_fd_table_init();
-  grpc_allow_specialized_wakeup_fd = 0;
-  grpc_allow_pipe_wakeup_fd = 0;
-  grpc_wakeup_fd_global_init();
-  grpc_has_wakeup_fd = 1;
+  grpc_enable_cv_wakeup_fds(1);
   ev_poll_vtable = grpc_init_poll_posix();
   if (!ev_poll_vtable) {
     grpc_global_cv_fd_table_shutdown();
-    grpc_has_wakeup_fd = has_wakeup_fd;
-    grpc_allow_specialized_wakeup_fd = allow_specialized_wakeup_fd;
-    grpc_allow_pipe_wakeup_fd = allow_pipe_wakeup_fd;
-    grpc_global_cv_fd_table_init();
+    grpc_enable_cv_wakeup_fds(0);
     return NULL;
   }
   vtable = *ev_poll_vtable;

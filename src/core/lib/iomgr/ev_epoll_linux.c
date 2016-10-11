@@ -1892,7 +1892,7 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
     return NULL;
   }
 
-  if (!grpc_has_wakeup_fd) {
+  if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
 
