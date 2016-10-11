@@ -44,6 +44,8 @@
 
 #include "test/core/util/port.h"
 
+#include "src/core/lib/transport/metadata.h"  // XXX: remove!!
+
 struct grpc_end2end_proxy {
   gpr_thd_id thd;
   char *proxy_port;
@@ -177,6 +179,10 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
     op.reserved = NULL;
     op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
+    for (size_t i = 0; i < pc->p2s_initial_metadata.count; i++) {
+      GRPC_MDSTR_REF(pc->p2s_initial_metadata.metadata[i].key);
+      GRPC_MDSTR_REF(pc->p2s_initial_metadata.metadata[i].value);
+    }
     refpc(pc, "on_c2p_sent_initial_metadata");
     err = grpc_call_start_batch(
         pc->c2p, &op, 1, new_closure(on_c2p_sent_initial_metadata, pc), NULL);
@@ -301,6 +307,10 @@ static void on_p2s_status(void *arg, int success) {
 
   if (!pc->proxy->shutdown) {
     GPR_ASSERT(success);
+    for (size_t i = 0; i < pc->p2s_trailing_metadata.count; ++i) {
+      GRPC_MDSTR_REF(pc->p2s_trailing_metadata.metadata[i].key);
+      GRPC_MDSTR_REF(pc->p2s_trailing_metadata.metadata[i].value);
+    }
     op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op.flags = 0;
     op.reserved = NULL;
@@ -336,6 +346,12 @@ static void on_new_call(void *arg, int success) {
     pc->proxy = proxy;
     GPR_SWAP(grpc_metadata_array, pc->c2p_initial_metadata,
              proxy->new_call_metadata);
+
+    for (size_t i = 0; i < pc->c2p_initial_metadata.count; ++i) {
+      GRPC_MDSTR_REF(pc->c2p_initial_metadata.metadata[i].key);
+      GRPC_MDSTR_REF(pc->c2p_initial_metadata.metadata[i].value);
+    }
+
     pc->c2p = proxy->new_call;
     pc->p2s = grpc_channel_create_call(
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,

@@ -107,15 +107,12 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {
-      {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {
-      {"key3", "val3", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key4", "val4", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_t[2] = {
-      {"key5", "val5", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key6", "val6", 4, 0, {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_c[2] = {grpc_metadata_from_strings("key1", "val1"),
+                             grpc_metadata_from_strings("key2", "val2")};
+  grpc_metadata meta_s[2] = {grpc_metadata_from_strings("key3", "val3"),
+                             grpc_metadata_from_strings("key4", "val4")};
+  grpc_metadata meta_t[2] = {grpc_metadata_from_strings("key5", "val5"),
+                             grpc_metadata_from_strings("key6", "val6")};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);

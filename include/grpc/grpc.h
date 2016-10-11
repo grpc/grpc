@@ -58,6 +58,16 @@ extern "C" {
 GRPCAPI void grpc_metadata_array_init(grpc_metadata_array *array);
 GRPCAPI void grpc_metadata_array_destroy(grpc_metadata_array *array);
 
+/** Create a metadata entry from C-string \a key and buffer \a value of length
+ * \a value_length */
+GRPCAPI grpc_metadata grpc_metadata_from_string_and_buffer(const char *key,
+                                                           const uint8_t *value,
+                                                           size_t value_length);
+
+/** Create a metadata entry from C-strings \a key and \a value.  */
+GRPCAPI grpc_metadata grpc_metadata_from_strings(const char *key,
+                                                 const char *value);
+
 GRPCAPI void grpc_call_details_init(grpc_call_details *details);
 GRPCAPI void grpc_call_details_destroy(grpc_call_details *details);
 

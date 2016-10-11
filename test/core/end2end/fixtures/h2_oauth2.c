@@ -57,10 +57,12 @@ typedef struct fullstack_secure_fixture_data {
 static const grpc_metadata *find_metadata(const grpc_metadata *md,
                                           size_t md_count, const char *key,
                                           const char *value) {
-  size_t i;
-  for (i = 0; i < md_count; i++) {
-    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
-        memcmp(md[i].value, value, md[i].value_length) == 0) {
+  for (size_t i = 0; i < md_count; i++) {
+    const char *md_key_str = grpc_mdstr_as_c_string(md[i].key);
+    const char *md_value_str = grpc_mdstr_as_c_string(md[i].value);
+    const size_t md_value_length = strlen(md_value_str);
+    if (strcmp(key, md_key_str) == 0 && strlen(value) == md_value_length &&
+        memcmp(md_value_str, value, md_value_length) == 0) {
       return &md[i];
     }
   }

@@ -258,15 +258,12 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   int was_cancelled = 2;
 
   memset(extra_metadata, 0, sizeof(extra_metadata));
-  extra_metadata[0].key = "hobbit-first-name";
-  extra_metadata[0].value = hobbits[index % GPR_ARRAY_SIZE(hobbits)][0];
-  extra_metadata[0].value_length = strlen(extra_metadata[0].value);
-  extra_metadata[1].key = "hobbit-second-name";
-  extra_metadata[1].value = hobbits[index % GPR_ARRAY_SIZE(hobbits)][1];
-  extra_metadata[1].value_length = strlen(extra_metadata[1].value);
-  extra_metadata[2].key = "dragon";
-  extra_metadata[2].value = dragons[index % GPR_ARRAY_SIZE(dragons)];
-  extra_metadata[2].value_length = strlen(extra_metadata[2].value);
+  extra_metadata[0] = grpc_metadata_from_strings(
+      "hobbit-first-name", hobbits[index % GPR_ARRAY_SIZE(hobbits)][0]);
+  extra_metadata[1] = grpc_metadata_from_strings(
+      "hobbit-second-name", hobbits[index % GPR_ARRAY_SIZE(hobbits)][1]);
+  extra_metadata[2] = grpc_metadata_from_strings(
+      "dragon", dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234", deadline,

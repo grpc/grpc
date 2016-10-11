@@ -203,6 +203,12 @@ extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 typedef void(*grpc_metadata_array_destroy_type)(grpc_metadata_array *array);
 extern grpc_metadata_array_destroy_type grpc_metadata_array_destroy_import;
 #define grpc_metadata_array_destroy grpc_metadata_array_destroy_import
+typedef grpc_metadata(*grpc_metadata_from_string_and_buffer_type)(const char *key, const uint8_t *value, size_t value_length);
+extern grpc_metadata_from_string_and_buffer_type grpc_metadata_from_string_and_buffer_import;
+#define grpc_metadata_from_string_and_buffer grpc_metadata_from_string_and_buffer_import
+typedef grpc_metadata(*grpc_metadata_from_strings_type)(const char *key, const char *value);
+extern grpc_metadata_from_strings_type grpc_metadata_from_strings_import;
+#define grpc_metadata_from_strings grpc_metadata_from_strings_import
 typedef void(*grpc_call_details_init_type)(grpc_call_details *details);
 extern grpc_call_details_init_type grpc_call_details_init_import;
 #define grpc_call_details_init grpc_call_details_init_import

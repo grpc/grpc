@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
 
@@ -72,7 +73,6 @@ extern "C" {
    declared here - in which case those functions are effectively no-ops. */
 
 /* Forward declarations */
-typedef struct grpc_mdstr grpc_mdstr;
 typedef struct grpc_mdelem grpc_mdelem;
 
 /* if changing this, make identical changes in internal_string in metadata.c */

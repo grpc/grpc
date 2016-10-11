@@ -274,11 +274,12 @@ typedef enum grpc_call_error {
    GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
    GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
 
+typedef struct grpc_mdstr grpc_mdstr;
+
 /** A single metadata element */
 typedef struct grpc_metadata {
-  const char *key;
-  const char *value;
-  size_t value_length;
+  grpc_mdstr *key;
+  grpc_mdstr *value;
   uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.

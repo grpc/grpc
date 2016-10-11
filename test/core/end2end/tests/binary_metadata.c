@@ -108,27 +108,26 @@ static void test_request_response_with_metadata_and_payload(
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta_c[2] = {
-      {"key1-bin",
-       "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
-       13,
-       0,
-       {{NULL, NULL, NULL, NULL}}},
-      {"key2-bin",
-       "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-       14,
-       0,
-       {{NULL, NULL, NULL, NULL}}}};
+      grpc_metadata_from_string_and_buffer(
+          "key1-bin",
+          (const uint8_t
+               *)"\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
+          13),
+      grpc_metadata_from_string_and_buffer(
+          "key2-bin",
+          (const uint8_t
+               *)"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
+          14)};
   grpc_metadata meta_s[2] = {
-      {"key3-bin",
-       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
-       15,
-       0,
-       {{NULL, NULL, NULL, NULL}}},
-      {"key4-bin",
-       "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff",
-       16,
-       0,
-       {{NULL, NULL, NULL, NULL}}}};
+      grpc_metadata_from_string_and_buffer(
+          "key3-bin",
+          (const uint8_t
+               *)"\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
+          15),
+      grpc_metadata_from_string_and_buffer(
+          "key4-bin", (const uint8_t *)"\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8"
+                                       "\xf9\xfa\xfb\xfc\xfd\xfe\xff",
+          16)};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);

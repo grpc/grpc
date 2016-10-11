@@ -156,11 +156,12 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
 
   const size_t metadata_value_size = 16 * 1024;
   grpc_metadata meta;
-  meta.key = "key";
-  meta.value = gpr_malloc(metadata_value_size + 1);
-  memset((char *)meta.value, 'a', metadata_value_size);
-  ((char *)meta.value)[metadata_value_size] = 0;
-  meta.value_length = metadata_value_size;
+  meta.key = grpc_mdstr_from_string("key");
+  uint8_t *value_data = gpr_malloc(metadata_value_size + 1);
+  memset(value_data, 'a', metadata_value_size);
+  value_data[metadata_value_size] = 0;
+  meta.value = grpc_mdstr_from_buffer(value_data, metadata_value_size);
+  gpr_free(value_data);
 
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -174,7 +175,6 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   CQ_EXPECT_COMPLETION(cqv, tag(102), 0);  // Operation fails.
   cq_verify(cqv);
 
-  gpr_free((char *)meta.value);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_destroy(s);

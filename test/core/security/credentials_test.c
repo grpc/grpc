@@ -1008,9 +1008,10 @@ typedef enum {
 typedef struct {
   const char *key;
   const char *value;
-} plugin_metadata;
+} plugin_metadata_data;
 
-static const plugin_metadata plugin_md[] = {{"foo", "bar"}, {"hi", "there"}};
+static const plugin_metadata_data plugin_md[] = {{"foo", "bar"},
+                                                 {"hi", "there"}};
 
 static void plugin_get_metadata_success(void *state,
                                         grpc_auth_metadata_context context,
@@ -1025,12 +1026,14 @@ static void plugin_get_metadata_success(void *state,
   GPR_ASSERT(context.reserved == NULL);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
-    memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = plugin_md[i].key;
-    md[i].value = plugin_md[i].value;
-    md[i].value_length = strlen(plugin_md[i].value);
+    md[i] = grpc_metadata_from_strings(plugin_md[i].key, plugin_md[i].value);
   }
   cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
+
+  for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
+    GRPC_MDSTR_UNREF(md[i].key);
+    GRPC_MDSTR_UNREF(md[i].value);
+  }
 }
 
 static const char *plugin_error_details = "Could not get metadata for plugin.";
