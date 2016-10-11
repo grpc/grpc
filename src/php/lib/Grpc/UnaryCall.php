@@ -50,7 +50,7 @@ class UnaryCall extends AbstractCall
      */
     public function start($data, $metadata = [], $options = [])
     {
-        $message_array = ['message' => $data->serialize()];
+        $message_array = ['message' => $this->serializeMessage($data)];
         if (isset($options['flags'])) {
             $message_array['flags'] = $options['flags'];
         }

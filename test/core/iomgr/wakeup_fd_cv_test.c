@@ -236,11 +236,5 @@ int main(int argc, char **argv) {
   grpc_iomgr_platform_init();
   test_poll_cv_trigger();
   grpc_iomgr_platform_shutdown();
-
-  // Make sure detached polling threads have chance
-  // to exit and clean up memory.  pthread_exit() causes tsan/msan
-  // issues, so we just wait an ample amount of time
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
   return 0;
 }

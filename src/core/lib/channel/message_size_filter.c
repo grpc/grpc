@@ -73,16 +73,22 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     gpr_asprintf(&message_string,
                  "Received message larger than max (%u vs. %d)",
                  (*calld->recv_message)->length, chand->max_recv_size);
-    gpr_slice message = gpr_slice_from_copied_string(message_string);
+    grpc_error* new_error = grpc_error_set_int(
+        GRPC_ERROR_CREATE(message_string), GRPC_ERROR_INT_GRPC_STATUS,
+        GRPC_STATUS_INVALID_ARGUMENT);
+    if (error == GRPC_ERROR_NONE) {
+      error = new_error;
+    } else {
+      error = grpc_error_add_child(error, new_error);
+      GRPC_ERROR_UNREF(new_error);
+    }
     gpr_free(message_string);
-    grpc_call_element_send_close_with_message(
-        exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, &message);
   }
   // Invoke the next callback.
   grpc_exec_ctx_sched(exec_ctx, calld->next_recv_message_ready, error, NULL);
 }
 
-// Start transport op.
+// Start transport stream op.
 static void start_transport_stream_op(grpc_exec_ctx* exec_ctx,
                                       grpc_call_element* elem,
                                       grpc_transport_stream_op* op) {
