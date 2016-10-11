@@ -54,12 +54,9 @@ typedef struct fd_node {
 
 typedef struct cv_fd_table {
   gpr_mu mu;
-<<<<<<< HEAD
-=======
   int pollcount;
   int shutdown;
   gpr_cv shutdown_complete;
->>>>>>> d195cf589d3f03b4f08017f3e2885c2c2fff125b
   fd_node* cvfds;
   fd_node* free_fds;
   unsigned int size;
