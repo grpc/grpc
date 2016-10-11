@@ -337,7 +337,7 @@ static void on_p2s_recv_bytes(void *arg, int success) {
   proxy_call *pc = arg;
   grpc_call_error err;
 
-  if (success) {
+  if (!pc->proxy->shutdown && success) {
     pc->p2s_recv_length -=
         (uint32_t)grpc_byte_buffer_length(pc->p2s_recv_buffer);
     refpc(pc, "on_c2p_sent_bytes");
