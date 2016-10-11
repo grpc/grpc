@@ -1968,6 +1968,28 @@ targets:
   deps:
   - grpc
   - gpr
+- name: handshake_client
+  build: tool
+  language: c
+  src:
+  - test/core/handshake/client_ssl.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  secure: true
+- name: handshake_server
+  build: tool
+  language: c
+  src:
+  - test/core/handshake/server_ssl.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  secure: true
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c
