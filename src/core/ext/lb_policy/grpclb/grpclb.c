@@ -399,14 +399,14 @@ static grpc_lb_addresses *process_serverlist(
           GPR_ARRAY_SIZE(server->load_balance_token) - 1;
       grpc_mdstr *lb_token_mdstr = grpc_mdstr_from_buffer(
           (uint8_t *)server->load_balance_token, lb_token_size);
-      user_data = grpc_mdelem_from_metadata_strings(
-          GRPC_MDSTR_LOAD_REPORTING_INITIAL, lb_token_mdstr);
+      user_data = grpc_mdelem_from_metadata_strings(GRPC_MDSTR_LB_TOKEN,
+                                                    lb_token_mdstr);
     } else {
       gpr_log(GPR_ERROR,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
               grpc_sockaddr_to_uri((struct sockaddr *)&addr.addr));
-      user_data = GRPC_MDELEM_LOAD_REPORTING_INITIAL_EMPTY;
+      user_data = GRPC_MDELEM_LB_TOKEN_EMPTY;
     }
 
     grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr, addr.len,

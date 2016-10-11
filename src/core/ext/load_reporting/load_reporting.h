@@ -39,11 +39,11 @@
 
 /** Metadata key for initial metadata coming from clients */
 /* TODO(dgq): change to the final value TBD */
-#define GRPC_LOAD_REPORTING_INITIAL_MD_KEY "load-reporting-initial"
+#define GRPC_LB_TOKEN_MD_KEY "lb-token"
 
 /** Metadata key for trailing metadata from servers */
 /* TODO(dgq): change to the final value TBD */
-#define GRPC_LOAD_REPORTING_TRAILING_MD_KEY "load-reporting-trailing"
+#define GRPC_LB_COST_MD_KEY "lb-cost"
 
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {
