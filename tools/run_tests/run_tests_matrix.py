@@ -111,28 +111,28 @@ def _create_test_jobs(extra_args=[]):
                              platforms=['linux'],
                              labels=['basictests'],
                              extra_args=extra_args)
-  
+
   # supported on all platforms.
   test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
                              configs=['dbg', 'opt'],
                              platforms=['linux', 'macos', 'windows'],
                              labels=['basictests'],
                              extra_args=extra_args)
-  
+
   # supported on linux and mac.
   test_jobs += _generate_jobs(languages=['c++', 'ruby', 'php'],
                               configs=['dbg', 'opt'],
                               platforms=['linux', 'macos'],
                               labels=['basictests'],
                               extra_args=extra_args)
-  
+
   # supported on mac only.
   test_jobs += _generate_jobs(languages=['objc'],
                               configs=['dbg', 'opt'],
                               platforms=['macos'],
                               labels=['basictests'],
                               extra_args=extra_args)
-  
+
   # sanitizers
   test_jobs += _generate_jobs(languages=['c'],
                               configs=['msan', 'asan', 'tsan'],
@@ -144,9 +144,17 @@ def _create_test_jobs(extra_args=[]):
                               platforms=['linux'],
                               labels=['sanitizers'],
                               extra_args=extra_args)
+
+  # libuv tests
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg', 'opt'],
+                              platforms=['linux'],
+                              labels=['libuv'],
+                              extra_args=extra_args + ['--iomgr_platform=uv'])
+
   return test_jobs
 
-  
+
 def _create_portability_test_jobs(extra_args=[]):
   test_jobs = []
   # portability C x86
@@ -157,7 +165,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='default',
                               labels=['portability'],
                               extra_args=extra_args)
-  
+
   # portability C and C++ on x64
   for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3',
                    'clang3.5', 'clang3.6', 'clang3.7']:
@@ -168,7 +176,7 @@ def _create_portability_test_jobs(extra_args=[]):
                                 compiler=compiler,
                                 labels=['portability'],
                                 extra_args=extra_args)
-  
+
   # portability C on Windows
   for arch in ['x86', 'x64']:
     for compiler in ['vs2013', 'vs2015']:
@@ -179,7 +187,7 @@ def _create_portability_test_jobs(extra_args=[]):
                                   compiler=compiler,
                                   labels=['portability'],
                                   extra_args=extra_args)
-  
+
   test_jobs += _generate_jobs(languages=['python'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -187,7 +195,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='python3.4',
                               labels=['portability'],
                               extra_args=extra_args)
-  
+
   test_jobs += _generate_jobs(languages=['csharp'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -195,7 +203,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='coreclr',
                               labels=['portability'],
                               extra_args=extra_args)
-  return test_jobs  
+  return test_jobs
 
 
 def _allowed_labels():
@@ -248,12 +256,12 @@ if not jobs:
   jobset.message('FAILED', 'No test suites match given criteria.',
                  do_newline=True)
   sys.exit(1)
-  
+
 print('IMPORTANT: The changes you are testing need to be locally committed')
 print('because only the committed changes in the current branch will be')
 print('copied to the docker environment or into subworkspaces.')
 
-print 
+print
 print 'Will run these tests:'
 for job in jobs:
   if args.dry_run:

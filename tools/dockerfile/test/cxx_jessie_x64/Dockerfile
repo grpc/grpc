@@ -115,6 +115,14 @@ RUN cd llvm-build && cmake \
   ../llvm
 RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
 
+#================
+# libuv
+RUN cd /tmp \
+    && wget http://dist.libuv.org/dist/v1.9.1/libuv-v1.9.1.tar.gz \
+    && tar -xf libuv-v1.9.1.tar.gz \
+    && cd libuv-v1.9.1 \
+    && sh autogen.sh && ./configure --prefix=/usr && make && make install
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++

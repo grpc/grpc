@@ -207,11 +207,11 @@ class CLanguage(object):
       cflags = '-DGRPC_UV '
       try:
         cflags += subprocess.check_output(['pkg-config', '--cflags', 'libuv']).strip() + ' '
-      except subprocess.CalledProcessError:
+      except (subprocess.CalledProcessError, OSError):
         pass
       try:
         ldflags = subprocess.check_output(['pkg-config', '--libs', 'libuv']).strip() + ' '
-      except subprocess.CalledProcessError:
+      except (subprocess.CalledProcessError, OSError):
         ldflags = '-luv '
       self._make_options += ['EXTRA_CPPFLAGS={}'.format(cflags),
                              'EXTRA_LDLIBS={}'.format(ldflags)]
