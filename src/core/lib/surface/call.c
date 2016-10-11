@@ -59,7 +59,7 @@
 
 /** The maximum number of concurrent batches possible.
     Based upon the maximum number of individually queueable ops in the batch
-   api:
+    api:
       - initial metadata send
       - message send
       - status/close send (depending on client/server)
@@ -94,14 +94,17 @@ typedef struct {
   grpc_mdstr *details;
 } received_status;
 
+#define MAX_ERRORS_PER_BATCH 3
+
 typedef struct batch_control {
   grpc_call *call;
   grpc_cq_completion cq_completion;
   grpc_closure finish_batch;
   void *notify_tag;
   gpr_refcount steps_to_complete;
-  bool is_composite_error;
-  grpc_error *error;
+
+  grpc_error *errors[MAX_ERRORS_PER_BATCH];
+  gpr_atm num_errors;
 
   bool send_initial_metadata;
   bool send_message;
@@ -209,6 +212,8 @@ struct grpc_call {
       grpc_closure *on_next;
       bool next_is_buffer;
       grpc_cq_completion cq_completion;
+      batch_control *bctl;
+      uint32_t awaiting_bytes;
       union {
         struct {
           gpr_slice *slice;
@@ -1423,6 +1428,14 @@ grpc_call_error grpc_call_incremental_message_writer_push(
     grpc_exec_ctx_finish(&exec_ctx);
     return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
   }
+  size_t bb_len = grpc_byte_buffer_length(buffer);
+  if (bb_len > call->sending.incremental.awaiting_bytes) {
+    gpr_mu_unlock(&call->mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return GRPC_CALL_ERROR_INVALID_MESSAGE;
+  }
+  call->sending.incremental.awaiting_bytes -= (uint32_t)bb_len;
+  bool send_done = call->sending.incremental.awaiting_bytes == 0;
   grpc_cq_begin_op(call->cq, tag);
   call->sending.incremental.buffer = buffer;
   call->sending.incremental.tag = tag;
@@ -1449,6 +1462,10 @@ grpc_call_error grpc_call_incremental_message_writer_push(
     }
   }
   gpr_mu_unlock(&call->mu);
+  if (send_done &&
+      gpr_unref(&call->sending.incremental.bctl->steps_to_complete)) {
+    post_batch_completion(&exec_ctx, call->sending.incremental.bctl);
+  }
   grpc_exec_ctx_finish(&exec_ctx);
   return GRPC_CALL_OK;
 }
@@ -1504,14 +1521,76 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
 }
 
+static grpc_error *consolidate_batch_errors(batch_control *bctl) {
+  size_t n = (size_t)gpr_atm_no_barrier_load(&bctl->num_errors);
+  if (n == 0) {
+    return GRPC_ERROR_NONE;
+  } else if (n == 1) {
+    return GRPC_ERROR_REF(bctl->errors[0]);
+  } else {
+    return GRPC_ERROR_CREATE_REFERENCING("Call batch failed", bctl->errors, n);
+  }
+}
+
 static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
+  grpc_call *child_call;
+  grpc_call *next_child_call;
   grpc_call *call = bctl->call;
-  grpc_error *error = bctl->error;
+  grpc_error *error = consolidate_batch_errors(bctl);
+
+  gpr_mu_lock(&call->mu);
+
+  if (error != GRPC_ERROR_NONE) {
+    set_status_from_error(call, STATUS_FROM_CORE, error);
+  }
+
+  if (bctl->send_initial_metadata) {
+    grpc_metadata_batch_destroy(
+        &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
+  }
+  if (bctl->send_message) {
+    call->send_mode = SENDRECV_IDLE;
+  }
+  if (bctl->send_final_op) {
+    grpc_metadata_batch_destroy(
+        &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */]);
+  }
   if (bctl->recv_final_op) {
+    grpc_metadata_batch *md =
+        &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+    grpc_metadata_batch_filter(md, recv_trailing_filter, call);
+
+    call->received_final_op = true;
+    /* propagate cancellation to any interested children */
+    child_call = call->first_child;
+    if (child_call != NULL) {
+      do {
+        next_child_call = child_call->sibling_next;
+        if (child_call->cancellation_is_inherited) {
+          GRPC_CALL_INTERNAL_REF(child_call, "propagate_cancel");
+          grpc_call_cancel(child_call, NULL);
+          GRPC_CALL_INTERNAL_UNREF(exec_ctx, child_call, "propagate_cancel");
+        }
+        child_call = next_child_call;
+      } while (child_call != call->first_child);
+    }
+
+    if (call->is_client) {
+      get_final_status(call, set_status_value_directly,
+                       call->final_op.client.status);
+      get_final_details(call, call->final_op.client.status_details,
+                        call->final_op.client.status_details_capacity);
+    } else {
+      get_final_status(call, set_cancelled_value,
+                       call->final_op.server.cancelled);
+    }
+
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
+  gpr_mu_unlock(&call->mu);
+
   if (bctl->is_notify_tag_closure) {
     /* unrefs bctl->error */
     grpc_closure_run(exec_ctx, bctl->notify_tag, error);
@@ -1580,17 +1659,8 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 
 static void add_batch_error(batch_control *bctl, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) return;
-  if (bctl->error == GRPC_ERROR_NONE) {
-    bctl->error = error;
-    return;
-  }
-  if (!bctl->is_composite_error) {
-    grpc_error *old_error = bctl->error;
-    bctl->error = GRPC_ERROR_CREATE_REFERENCING("Call batch operation failed",
-                                                &old_error, 1);
-    grpc_error_unref(old_error);
-  }
-  bctl->error = grpc_error_add_child(bctl->error, error);
+  int idx = (int)gpr_atm_no_barrier_fetch_add(&bctl->num_errors, 1);
+  bctl->errors[idx] = error;
 }
 
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
@@ -1636,75 +1706,12 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
                          grpc_error *error) {
   batch_control *bctl = bctlp;
-  grpc_call *call = bctl->call;
-  grpc_call *child_call;
-  grpc_call *next_child_call;
 
-  GRPC_ERROR_REF(error);
-
-  gpr_mu_lock(&call->mu);
-
-  // If the error has an associated status code, set the call's status.
-  intptr_t status;
-  if (error != GRPC_ERROR_NONE &&
-      grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status)) {
-    set_status_from_error(call, STATUS_FROM_CORE, error);
-  }
-
-  if (bctl->send_initial_metadata) {
-    if (error != GRPC_ERROR_NONE) {
-      set_status_from_error(call, STATUS_FROM_CORE, error);
-    }
-    grpc_metadata_batch_destroy(
-        &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
-  }
-  if (bctl->send_message) {
-    call->send_mode = SENDRECV_IDLE;
-  }
-  if (bctl->send_final_op) {
-    grpc_metadata_batch_destroy(
-        &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */]);
-  }
-  if (bctl->recv_final_op) {
-    grpc_metadata_batch *md =
-        &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-    grpc_metadata_batch_filter(md, recv_trailing_filter, call);
-
-    call->received_final_op = true;
-    /* propagate cancellation to any interested children */
-    child_call = call->first_child;
-    if (child_call != NULL) {
-      do {
-        next_child_call = child_call->sibling_next;
-        if (child_call->cancellation_is_inherited) {
-          GRPC_CALL_INTERNAL_REF(child_call, "propagate_cancel");
-          grpc_call_cancel(child_call, NULL);
-          GRPC_CALL_INTERNAL_UNREF(exec_ctx, child_call, "propagate_cancel");
-        }
-        child_call = next_child_call;
-      } while (child_call != call->first_child);
-    }
-
-    if (call->is_client) {
-      get_final_status(call, set_status_value_directly,
-                       call->final_op.client.status);
-      get_final_details(call, call->final_op.client.status_details,
-                        call->final_op.client.status_details_capacity);
-    } else {
-      get_final_status(call, set_cancelled_value,
-                       call->final_op.server.cancelled);
-    }
-
-    GRPC_ERROR_UNREF(error);
-    error = GRPC_ERROR_NONE;
-  }
   add_batch_error(bctl, GRPC_ERROR_REF(error));
-  gpr_mu_unlock(&call->mu);
+
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
   }
-
-  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
@@ -1738,7 +1745,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   if (nops == 0) {
     GRPC_CALL_INTERNAL_REF(call, "completion");
-    bctl->error = GRPC_ERROR_NONE;
     if (!is_notify_tag_closure) {
       grpc_cq_begin_op(call->cq, notify_tag);
     }
@@ -1850,11 +1856,15 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->send_mode = SENDRECV_INCREMENTAL;
         call->sending.incremental.stream.length =
             op->data.send_message_incremental_start.message_length;
+        call->sending.incremental.awaiting_bytes =
+            op->data.send_message_incremental_start.message_length;
         call->sending.incremental.stream.flags = op->flags;
         call->sending.incremental.stream.next_slice = incwr_bs_next_slice;
         call->sending.incremental.stream.next_buffer = incwr_bs_next_buffer;
         call->sending.incremental.stream.destroy = incwr_bs_destroy;
+        call->sending.incremental.bctl = bctl;
         stream_op->send_message = &call->sending.incremental.stream;
+        num_completion_callbacks_needed++;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         /* Flag validation: currently allow no flags */
