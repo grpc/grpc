@@ -349,6 +349,7 @@ static grpc_error *recursively_find_error_with_status(grpc_error *error,
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, status)) {
     return error;
   }
+  if (is_special(error)) return NULL;
   // Otherwise, search through its children.
   intptr_t key = 0;
   while (true) {
