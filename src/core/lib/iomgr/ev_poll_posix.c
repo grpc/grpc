@@ -968,8 +968,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
           } else {
             // Wake up all the file descriptors, if we have an invalid one
             // we can identify it on the next pollset_work()
-            fd_end_poll(exec_ctx, &watchers[i], POLLIN_CHECK, POLLOUT_CHECK,
-                        pollset);
+            fd_end_poll(exec_ctx, &watchers[i], 1, 1, pollset);
           }
         }
       } else if (r == 0) {
