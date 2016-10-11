@@ -7,6 +7,7 @@
   "license": "BSD-3-Clause",
   "require": {
     "php": ">=5.5.0",
+    "ext-grpc": "*",
     "google/protobuf": "v3.1.0-alpha-1"
   },
   "require-dev": {

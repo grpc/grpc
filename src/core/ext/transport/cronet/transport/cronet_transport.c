@@ -543,7 +543,7 @@ static void create_grpc_frame(gpr_slice_buffer *write_slice_buffer,
 static void convert_metadata_to_cronet_headers(
     grpc_linked_mdelem *head, const char *host, char **pp_url,
     cronet_bidirectional_stream_header **pp_headers, size_t *p_num_headers,
-    const char ** method) {
+    const char **method) {
   grpc_linked_mdelem *curr = head;
   /* Walk the linked list and get number of header fields */
   size_t num_headers_available = 0;
@@ -780,8 +780,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     s->cbs = cronet_bidirectional_stream_create(s->curr_ct.engine, s->curr_gs,
                                                 &cronet_callbacks);
     CRONET_LOG(GPR_DEBUG, "%p = cronet_bidirectional_stream_create()", s->cbs);
-    char *url;
-    const char *method;
+    char *url = NULL;
+    const char *method = "POST";
     s->header_array.headers = NULL;
     convert_metadata_to_cronet_headers(
         stream_op->send_initial_metadata->list.head, s->curr_ct.host, &url,
