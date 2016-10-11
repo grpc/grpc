@@ -106,7 +106,7 @@ void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
 }
 
 // Search fd in the fd_node list head. This is an O(n) search, the max possible
-// value of n is ARES_GETSOCK_MAXNUM (16).
+// value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 3 in our tests.
 static fd_node *get_fd(fd_node **head, int fd) {
   fd_node dummy_head;
   fd_node *node;

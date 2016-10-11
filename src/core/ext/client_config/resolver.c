@@ -81,6 +81,5 @@ void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                         grpc_polling_entity *pollent,
                         grpc_resolver_result **result,
                         grpc_closure *on_complete) {
-  resolver->vtable->next(exec_ctx, resolver, pollent, result,
-                         on_complete);
+  resolver->vtable->next(exec_ctx, resolver, pollent, result, on_complete);
 }
