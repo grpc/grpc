@@ -116,6 +116,7 @@ static void fake_resolver_channel_saw_error(grpc_exec_ctx* exec_ctx,
 }
 
 static void fake_resolver_next(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
+                               grpc_polling_entity* pollent,
                                grpc_resolver_result** target_result,
                                grpc_closure* on_complete) {
   fake_resolver* r = (fake_resolver*)resolver;
