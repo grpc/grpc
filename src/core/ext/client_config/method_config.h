@@ -51,17 +51,19 @@ grpc_method_config* grpc_method_config_create(
 grpc_method_config* grpc_method_config_ref(grpc_method_config* method_config);
 void grpc_method_config_unref(grpc_method_config* method_config);
 
-int grpc_method_config_cmp(grpc_method_config* method_config1,
-                           grpc_method_config* method_config2);
+int grpc_method_config_cmp(const grpc_method_config* method_config1,
+                           const grpc_method_config* method_config2);
 
 /// These methods return NULL if the requested field is unset.
 /// The caller does NOT take ownership of the result.
-bool* grpc_method_config_get_wait_for_ready(grpc_method_config* method_config);
-gpr_timespec* grpc_method_config_get_timeout(grpc_method_config* method_config);
-int32_t* grpc_method_config_get_max_request_message_bytes(
-    grpc_method_config* method_config);
-int32_t* grpc_method_config_get_max_response_message_bytes(
-    grpc_method_config* method_config);
+const bool* grpc_method_config_get_wait_for_ready(
+    const grpc_method_config* method_config);
+const gpr_timespec* grpc_method_config_get_timeout(
+    const grpc_method_config* method_config);
+const int32_t* grpc_method_config_get_max_request_message_bytes(
+    const grpc_method_config* method_config);
+const int32_t* grpc_method_config_get_max_response_message_bytes(
+    const grpc_method_config* method_config);
 
 /// A table of method configs.
 typedef grpc_hash_table grpc_method_config_table;
@@ -82,13 +84,13 @@ grpc_method_config_table* grpc_method_config_table_ref(
     grpc_method_config_table* table);
 void grpc_method_config_table_unref(grpc_method_config_table* table);
 
-int grpc_method_config_table_cmp(grpc_method_config_table* table1,
-                                 grpc_method_config_table* table2);
+int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
+                                 const grpc_method_config_table* table2);
 
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
 grpc_method_config* grpc_method_config_table_get_method_config(
-    grpc_method_config_table* table, grpc_mdstr* path);
+    const grpc_method_config_table* table, const grpc_mdstr* path);
 
 /// Returns a channel arg containing \a table.
 grpc_arg grpc_method_config_table_create_channel_arg(

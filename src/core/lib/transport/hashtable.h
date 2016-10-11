@@ -74,9 +74,10 @@ int grpc_hash_table_unref(grpc_hash_table* table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
-void* grpc_hash_table_get(grpc_hash_table* table, grpc_mdstr* key);
+void* grpc_hash_table_get(const grpc_hash_table* table, const grpc_mdstr* key);
 
 /** Compares two hash tables. */
-int grpc_hash_table_cmp(grpc_hash_table* table1, grpc_hash_table* table2);
+int grpc_hash_table_cmp(const grpc_hash_table* table1,
+                        const grpc_hash_table* table2);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_HASHTABLE_H */

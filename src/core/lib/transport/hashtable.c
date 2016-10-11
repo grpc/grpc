@@ -47,8 +47,8 @@ struct grpc_hash_table {
 
 // Helper function for insert and get operations that performs quadratic
 // probing (https://en.wikipedia.org/wiki/Quadratic_probing).
-static size_t grpc_hash_table_find_index(grpc_hash_table* table,
-                                         grpc_mdstr* key, bool find_empty) {
+static size_t grpc_hash_table_find_index(
+    const grpc_hash_table* table, const grpc_mdstr* key, bool find_empty) {
   for (size_t i = 0; i < table->num_entries; ++i) {
     const size_t idx = (key->hash + i * i) % table->num_entries;
     if (table->entries[idx].key == NULL)
@@ -111,14 +111,15 @@ int grpc_hash_table_unref(grpc_hash_table* table) {
   return 0;
 }
 
-void* grpc_hash_table_get(grpc_hash_table* table, grpc_mdstr* key) {
+void* grpc_hash_table_get(const grpc_hash_table* table, const grpc_mdstr* key) {
   const size_t idx =
       grpc_hash_table_find_index(table, key, false /* find_empty */);
   if (idx == table->num_entries) return NULL;  // Not found.
   return table->entries[idx].value;
 }
 
-int grpc_hash_table_cmp(grpc_hash_table* table1, grpc_hash_table* table2) {
+int grpc_hash_table_cmp(const grpc_hash_table* table1,
+                        const grpc_hash_table* table2) {
   // Compare by num_entries.
   if (table1->num_entries < table2->num_entries) return -1;
   if (table1->num_entries > table2->num_entries) return 1;

@@ -137,14 +137,14 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
         grpc_method_config_table_get_method_config(chand->method_config_table,
                                                    args->path);
     if (method_config != NULL) {
-      int32_t* max_request_message_bytes =
+      const int32_t* max_request_message_bytes =
           grpc_method_config_get_max_request_message_bytes(method_config);
       if (max_request_message_bytes != NULL &&
           (*max_request_message_bytes < calld->max_send_size ||
            calld->max_send_size < 0)) {
         calld->max_send_size = *max_request_message_bytes;
       }
-      int32_t* max_response_message_bytes =
+      const int32_t* max_response_message_bytes =
           grpc_method_config_get_max_response_message_bytes(method_config);
       if (max_response_message_bytes != NULL &&
           (*max_response_message_bytes < calld->max_recv_size ||

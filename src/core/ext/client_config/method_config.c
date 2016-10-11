@@ -174,29 +174,30 @@ void grpc_method_config_unref(grpc_method_config* method_config) {
   }
 }
 
-int grpc_method_config_cmp(grpc_method_config* method_config1,
-                           grpc_method_config* method_config2) {
+int grpc_method_config_cmp(const grpc_method_config* method_config1,
+                           const grpc_method_config* method_config2) {
   return grpc_hash_table_cmp(method_config1->table, method_config2->table);
 }
 
-bool* grpc_method_config_get_wait_for_ready(grpc_method_config* method_config) {
+const bool* grpc_method_config_get_wait_for_ready(
+    const grpc_method_config* method_config) {
   return grpc_hash_table_get(method_config->table,
                              method_config->wait_for_ready_key);
 }
 
-gpr_timespec* grpc_method_config_get_timeout(
-    grpc_method_config* method_config) {
+const gpr_timespec* grpc_method_config_get_timeout(
+    const grpc_method_config* method_config) {
   return grpc_hash_table_get(method_config->table, method_config->timeout_key);
 }
 
-int32_t* grpc_method_config_get_max_request_message_bytes(
-    grpc_method_config* method_config) {
+const int32_t* grpc_method_config_get_max_request_message_bytes(
+    const grpc_method_config* method_config) {
   return grpc_hash_table_get(method_config->table,
                              method_config->max_request_message_bytes_key);
 }
 
-int32_t* grpc_method_config_get_max_response_message_bytes(
-    grpc_method_config* method_config) {
+const int32_t* grpc_method_config_get_max_response_message_bytes(
+    const grpc_method_config* method_config) {
   return grpc_hash_table_get(method_config->table,
                              method_config->max_response_message_bytes_key);
 }
@@ -244,13 +245,13 @@ void grpc_method_config_table_unref(grpc_method_config_table* table) {
   grpc_hash_table_unref(table);
 }
 
-int grpc_method_config_table_cmp(grpc_method_config_table* table1,
-                                 grpc_method_config_table* table2) {
+int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
+                                 const grpc_method_config_table* table2) {
   return grpc_hash_table_cmp(table1, table2);
 }
 
 grpc_method_config* grpc_method_config_table_get_method_config(
-    grpc_method_config_table* table, grpc_mdstr* path) {
+    const grpc_method_config_table* table, const grpc_mdstr* path) {
   grpc_method_config* method_config = grpc_hash_table_get(table, path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
