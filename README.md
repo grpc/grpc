@@ -9,7 +9,7 @@ Copyright 2015 Google Inc.
 
 #Documentation
 
-You can find more detailed documentation and examples in the [doc](doc) and [examples](examples) directories respectively.
+More detailed documentation and examples can be found in the [doc](doc) and [examples](examples) directories respectively.
 
 #Installation & Testing
 
@@ -21,7 +21,7 @@ See [tools/run_tests](tools/run_tests) for more guidance on how to run various t
 
 This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
 
-Libraries in different languages are in different states of development. We are seeking contributions for all of these libraries.
+Libraries in different languages are in different states of development. Contributions to any of these libraries are welcome!
 
 | Language                | Source                              | Status  |
 |-------------------------|-------------------------------------|---------|
