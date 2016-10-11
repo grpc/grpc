@@ -44,7 +44,7 @@
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
-/* Strat \a ev_driver. It will keep working until all IO on its ares_channel is
+/* Start \a ev_driver. It will keep working until all IO on its ares_channel is
    done, or grpc_ares_ev_driver_destroy() is called. It may notify the callbacks
    bound to its ares_channel when necessary. */
 void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
