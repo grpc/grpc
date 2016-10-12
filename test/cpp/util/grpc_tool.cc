@@ -52,7 +52,6 @@
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "test/cpp/util/service_describer.h"
-#include "test/cpp/util/test_config.h"
 
 namespace grpc {
 namespace testing {

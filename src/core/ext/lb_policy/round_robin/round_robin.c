@@ -308,7 +308,8 @@ static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                           grpc_connected_subchannel **target) {
+                           grpc_connected_subchannel **target,
+                           grpc_error *error) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
@@ -320,8 +321,9 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
                                                p->base.interested_parties);
       *target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED,
-                          NULL);
+      grpc_exec_ctx_sched(
+          exec_ctx, pp->on_complete,
+          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -330,11 +332,13 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&p->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                             uint32_t initial_metadata_flags_mask,
-                            uint32_t initial_metadata_flags_eq) {
+                            uint32_t initial_metadata_flags_eq,
+                            grpc_error *error) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
@@ -347,8 +351,9 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
                                                p->base.interested_parties);
       *pp->target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED,
-                          NULL);
+      grpc_exec_ctx_sched(
+          exec_ctx, pp->on_complete,
+          GRPC_ERROR_CREATE_REFERENCING("Pick cancelled", &error, 1), NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -357,6 +362,7 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp = next;
   }
   gpr_mu_unlock(&p->mu);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
@@ -629,6 +635,8 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     if (args->addresses->addresses[i].is_balancer) continue;
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    /* server_name will be copied as part of the subchannel creation. This makes
+     * the copying of args->server_name (a borrowed pointer) OK. */
     sc_args.server_name = args->server_name;
     sc_args.addr =
         (struct sockaddr *)(&args->addresses->addresses[i].address.addr);

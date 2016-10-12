@@ -29,7 +29,7 @@
     s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
     s.platform      = Gem::Platform::RUBY
 
-    s.add_dependency 'google-protobuf', '~> 3.0'
+    s.add_dependency 'google-protobuf', '~> 3.0.2'
     s.add_dependency 'googleauth',      '~> 0.5.1'
     s.add_dependency 'concurrent-ruby'
 

@@ -36,7 +36,11 @@ mkdir -p /var/local/git
 git clone --recursive --depth 1 /var/local/jenkins/grpc-java /var/local/git/grpc-java
 
 # grpc repo (for metrics client and for the stress test wrapper scripts)
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+git clone /var/local/jenkins/grpc /var/local/git/grpc
+# clone gRPC submodules, use data from locally cloned submodules where possible
+(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+${name}')
 
 # Copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
