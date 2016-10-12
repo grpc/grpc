@@ -64,8 +64,7 @@ static void grpc_hash_table_add(grpc_hash_table* table, grpc_mdstr* key,
   GPR_ASSERT(value != NULL);
   const size_t idx =
       grpc_hash_table_find_index(table, key, true /* find_empty */);
-  // This can happen if the table is full.
-  GPR_ASSERT(idx != table->num_entries);
+  GPR_ASSERT(idx != table->num_entries);  // Table should never be full.
   grpc_hash_table_entry* entry = &table->entries[idx];
   entry->key = GRPC_MDSTR_REF(key);
   entry->value = vtable->copy_value(value);

@@ -39,10 +39,8 @@
  * This implementation uses open addressing
  * (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
  * probing (https://en.wikipedia.org/wiki/Quadratic_probing).
- * This means that the hash table is of fixed size and cannot contain
- * more than that number of elements.
  *
- * The keys are grpc_mdstr objects.  The values are arbitrary pointers
+ * The keys are \a grpc_mdstr objects.  The values are arbitrary pointers
  * with a common vtable.
  *
  * Hash tables are intentionally immutable, to avoid the need for locking.
@@ -76,7 +74,8 @@ int grpc_hash_table_unref(grpc_hash_table* table);
     Returns NULL if \a key is not found. */
 void* grpc_hash_table_get(const grpc_hash_table* table, const grpc_mdstr* key);
 
-/** Compares two hash tables. */
+/** Compares two hash tables.
+    The sort order is stable but undefined. */
 int grpc_hash_table_cmp(const grpc_hash_table* table1,
                         const grpc_hash_table* table2);
 
