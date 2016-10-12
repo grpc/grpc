@@ -156,8 +156,8 @@ class TestServiceImpl : public TestService::Service {
 
   // Response contains current timestamp. We ignore everything in the request.
   Status CacheableUnaryCall(ServerContext* context,
-                          const SimpleRequest* request,
-                          SimpleResponse* response) {
+                            const SimpleRequest* request,
+                            SimpleResponse* response) {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
     std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
