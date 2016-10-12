@@ -50,7 +50,7 @@ typedef struct call_data {
   grpc_closure auth_on_recv;
   grpc_transport_stream_op *transport_op;
   grpc_metadata_array md;
-  const grpc_metadata *consumed_md;
+  const grpc_mdelem *consumed_md;
   size_t num_consumed_md;
   grpc_auth_context *auth_context;
 } call_data;
@@ -66,19 +66,12 @@ static grpc_metadata_array metadata_batch_to_md_array(
   grpc_metadata_array result;
   grpc_metadata_array_init(&result);
   for (l = batch->list.head; l != NULL; l = l->next) {
-    grpc_metadata *usr_md = NULL;
-    grpc_mdelem *md = l->md;
-    grpc_mdstr *key = md->key;
-    grpc_mdstr *value = md->value;
     if (result.count == result.capacity) {
       result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
       result.metadata =
-          gpr_realloc(result.metadata, result.capacity * sizeof(grpc_metadata));
+          gpr_realloc(result.metadata, result.capacity * sizeof(grpc_mdelem *));
     }
-    usr_md = &result.metadata[result.count++];
-    usr_md->key = grpc_mdstr_as_c_string(key);
-    usr_md->value = grpc_mdstr_as_c_string(value);
-    usr_md->value_length = GPR_SLICE_LENGTH(value->slice);
+    result.metadata[result.count++] = *l;
   }
   return result;
 }
@@ -88,19 +81,9 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
   call_data *calld = elem->call_data;
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
-    const grpc_metadata *consumed_md = &calld->consumed_md[i];
-    /* Maybe we could do a pointer comparison but we do not have any guarantee
-       that the metadata processor used the same pointers for consumed_md in the
-       callback. */
-    if (GPR_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
-        GPR_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
-      continue;
-    }
-    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), consumed_md->key,
-               GPR_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GPR_SLICE_START_PTR(md->value->slice), consumed_md->value,
-               GPR_SLICE_LENGTH(md->value->slice)) == 0) {
-      return NULL; /* Delete. */
+    const grpc_mdelem *consumed_md = &calld->consumed_md[i];
+    if (md == consumed_md) {
+      return NULL; /* Delete */
     }
   }
   return md;
@@ -112,8 +95,8 @@ static void destroy_op(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 /* called from application code */
 static void on_md_processing_done(
-    void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
-    const grpc_metadata *response_md, size_t num_response_md,
+    void *user_data, const grpc_mdelem *consumed_md, size_t num_consumed_md,
+    const grpc_mdelem *response_md, size_t num_response_md,
     grpc_status_code status, const char *error_details) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
@@ -168,9 +151,9 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds->processor.process != NULL) {
       calld->md = metadata_batch_to_md_array(calld->recv_initial_metadata);
-      chand->creds->processor.process(
-          chand->creds->processor.state, calld->auth_context,
-          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
+      chand->creds->processor.process(chand->creds->processor.state,
+                                      calld->auth_context, &calld->md,
+                                      on_md_processing_done, elem);
       return;
     }
   }

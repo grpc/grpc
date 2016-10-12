@@ -121,12 +121,11 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void request_response_with_payload(grpc_end2end_test_fixture f,
-                                          const char *method_name,
-                                          const char *request_msg,
-                                          const char *response_msg,
-                                          grpc_metadata *initial_lr_metadata,
-                                          grpc_metadata *trailing_lr_metadata) {
+static void request_response_with_payload(
+    grpc_end2end_test_fixture f, const char *method_name,
+    const char *request_msg, const char *response_msg,
+    grpc_linked_mdelem *initial_lr_metadata,
+    grpc_linked_mdelem *trailing_lr_metadata) {
   gpr_slice request_payload_slice = gpr_slice_from_static_string(request_msg);
   gpr_slice response_payload_slice = gpr_slice_from_static_string(response_msg);
   grpc_call *c;
@@ -292,20 +291,10 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   const char *request_msg = "the msg from the client";
   const char *response_msg = "... and the response from the server";
 
-  grpc_metadata initial_lr_metadata;
-  grpc_metadata trailing_lr_metadata;
-
-  initial_lr_metadata.key = GRPC_LOAD_REPORTING_INITIAL_MD_KEY;
-  initial_lr_metadata.value = "client-token";
-  initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
-  memset(&initial_lr_metadata.internal_data, 0,
-         sizeof(initial_lr_metadata.internal_data));
-
-  trailing_lr_metadata.key = GRPC_LOAD_REPORTING_TRAILING_MD_KEY;
-  trailing_lr_metadata.value = "server-token";
-  trailing_lr_metadata.value_length = strlen(trailing_lr_metadata.value);
-  memset(&trailing_lr_metadata.internal_data, 0,
-         sizeof(trailing_lr_metadata.internal_data));
+  grpc_linked_mdelem initial_lr_metadata = grpc_linked_mdelem_from_strings(
+      GRPC_LOAD_REPORTING_INITIAL_MD_KEY, "client-token");
+  grpc_linked_mdelem trailing_lr_metadata = grpc_linked_mdelem_from_strings(
+      GRPC_LOAD_REPORTING_TRAILING_MD_KEY, "server-token");
 
   request_response_with_payload(f, method_name, request_msg, response_msg,
                                 &initial_lr_metadata, &trailing_lr_metadata);

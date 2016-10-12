@@ -88,6 +88,11 @@ class CoreCodegen : public CoreCodegenInterface {
   void grpc_metadata_array_init(grpc_metadata_array* array) GRPC_OVERRIDE;
   void grpc_metadata_array_destroy(grpc_metadata_array* array) GRPC_OVERRIDE;
 
+  const char* grpc_mdstr_as_c_string(const grpc_mdstr* s) GRPC_OVERRIDE;
+  size_t grpc_mdstr_length(const grpc_mdstr* s) GRPC_OVERRIDE;
+  grpc_mdelem* grpc_mdelem_from_string_and_buffer(
+      const char* key, const uint8_t* value, size_t value_length) GRPC_OVERRIDE;
+
   gpr_timespec gpr_inf_future(gpr_clock_type type) GRPC_OVERRIDE;
   gpr_timespec gpr_time_0(gpr_clock_type type) GRPC_OVERRIDE;
 

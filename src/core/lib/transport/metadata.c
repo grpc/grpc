@@ -584,6 +584,21 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *mkey,
   return (grpc_mdelem *)md;
 }
 
+grpc_linked_mdelem grpc_linked_mdelem_from_strings(const char *key,
+                                                   const char *value) {
+  const grpc_linked_mdelem res = {grpc_mdelem_from_strings(key, value), NULL,
+                                  NULL, NULL};
+  return res;
+}
+
+grpc_linked_mdelem grpc_linked_mdelem_from_string_and_buffer(
+    const char *key, const uint8_t *value, size_t value_length) {
+  grpc_linked_mdelem res;
+  memset(&res, 0, sizeof(res));
+  res.md = grpc_mdelem_from_string_and_buffer(key, value, value_length);
+  return res;
+}
+
 grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value) {
   return grpc_mdelem_from_metadata_strings(grpc_mdstr_from_string(key),
                                            grpc_mdstr_from_string(value));

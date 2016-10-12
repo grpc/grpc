@@ -107,7 +107,6 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
    clients may have handy */
 grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
                                                grpc_mdstr *value);
-grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
 /* Unrefs the slices. */
 grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,

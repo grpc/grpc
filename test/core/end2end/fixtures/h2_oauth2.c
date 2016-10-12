@@ -54,27 +54,27 @@ typedef struct fullstack_secure_fixture_data {
   char *localaddr;
 } fullstack_secure_fixture_data;
 
-static const grpc_metadata *find_metadata(const grpc_metadata *md,
-                                          size_t md_count, const char *key,
-                                          const char *value) {
-  size_t i;
-  for (i = 0; i < md_count; i++) {
-    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
-        memcmp(md[i].value, value, md[i].value_length) == 0) {
-      return &md[i];
+static const grpc_mdelem *find_metadata(const grpc_metadata_array *md_arr,
+                                        const char *key, const char *value) {
+  grpc_mdelem *res = NULL;
+  grpc_mdelem *needle = grpc_mdelem_from_strings(key, value);
+  for (size_t i = 0; i < md_arr->count; i++) {
+    if (md_arr->metadata[i].md == needle) {
+      res = md_arr->metadata[i].md;
+      break;
     }
   }
-  return NULL;
+  GRPC_MDELEM_UNREF(needle);
+  return res;
 }
 
 typedef struct { size_t pseudo_refcount; } test_processor_state;
 
 static void process_oauth2_success(void *state, grpc_auth_context *ctx,
-                                   const grpc_metadata *md, size_t md_count,
+                                   const grpc_metadata_array *md_arr,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void *user_data) {
-  const grpc_metadata *oauth2 =
-      find_metadata(md, md_count, "Authorization", oauth2_md);
+  const grpc_mdelem *oauth2 = find_metadata(md_arr, "Authorization", oauth2_md);
   test_processor_state *s;
 
   GPR_ASSERT(state != NULL);
@@ -89,11 +89,10 @@ static void process_oauth2_success(void *state, grpc_auth_context *ctx,
 }
 
 static void process_oauth2_failure(void *state, grpc_auth_context *ctx,
-                                   const grpc_metadata *md, size_t md_count,
+                                   const grpc_metadata_array *md_arr,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void *user_data) {
-  const grpc_metadata *oauth2 =
-      find_metadata(md, md_count, "Authorization", oauth2_md);
+  const grpc_mdelem *oauth2 = find_metadata(md_arr, "Authorization", oauth2_md);
   test_processor_state *s;
   GPR_ASSERT(state != NULL);
   s = (test_processor_state *)state;

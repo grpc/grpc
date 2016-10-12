@@ -243,7 +243,7 @@ GRPCAPI grpc_call_credentials *grpc_google_iam_credentials_create(
    - error_details contains details about the error if any. In case of success
      it should be NULL and will be otherwise ignored. */
 typedef void (*grpc_credentials_plugin_metadata_cb)(
-    void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
+    void *user_data, const grpc_mdelem **creds_md, size_t num_creds_md,
     grpc_status_code status, const char *error_details);
 
 /* Context that can be used by metadata credentials plugin in order to create
@@ -363,8 +363,8 @@ GRPCAPI grpc_call_error grpc_call_set_credentials(grpc_call *call,
      GRPC_STATUS PERMISSION_DENIED in case of an authorization failure.
    - error_details gives details about the error. May be NULL. */
 typedef void (*grpc_process_auth_metadata_done_cb)(
-    void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
-    const grpc_metadata *response_md, size_t num_response_md,
+    void *user_data, const grpc_mdelem *consumed_md, size_t num_consumed_md,
+    const grpc_mdelem *response_md, size_t num_response_md,
     grpc_status_code status, const char *error_details);
 
 /* Pluggable server-side metadata processor object. */
@@ -374,7 +374,7 @@ typedef struct {
      properties derived from the passed-in metadata.
      The lifetime of these objects is guaranteed until cb is invoked. */
   void (*process)(void *state, grpc_auth_context *context,
-                  const grpc_metadata *md, size_t num_md,
+                  const grpc_metadata_array *md_array,
                   grpc_process_auth_metadata_done_cb cb, void *user_data);
   void (*destroy)(void *state);
   void *state;

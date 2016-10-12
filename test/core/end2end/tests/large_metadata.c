@@ -103,7 +103,6 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta;
   const size_t large_size = 64 * 1024;
   grpc_arg arg = {GRPC_ARG_INTEGER,
                   GRPC_ARG_MAX_METADATA_SIZE,
@@ -129,11 +128,13 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
                                "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
-  meta.key = "key";
-  meta.value = gpr_malloc(large_size + 1);
-  memset((char *)meta.value, 'a', large_size);
-  ((char *)meta.value)[large_size] = 0;
-  meta.value_length = large_size;
+  char *md_value = gpr_malloc(large_size + 1);
+  memset((char *)md_value, 'a', large_size);
+  ((char *)md_value)[large_size] = 0;
+
+  grpc_linked_mdelem meta = grpc_linked_mdelem_from_string_and_buffer(
+      "key", (const uint8_t *)md_value, large_size);
+  gpr_free(md_value);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -230,7 +231,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "key", meta.value));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta.md));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -245,8 +246,6 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-
-  gpr_free((char *)meta.value);
 
   end_test(&f);
   config.tear_down_data(&f);

@@ -1018,7 +1018,7 @@ static void plugin_get_metadata_success(void *state,
                                         grpc_credentials_plugin_metadata_cb cb,
                                         void *user_data) {
   size_t i;
-  grpc_metadata md[GPR_ARRAY_SIZE(plugin_md)];
+  grpc_mdelem *md[GPR_ARRAY_SIZE(plugin_md)];
   plugin_state *s = (plugin_state *)state;
   GPR_ASSERT(strcmp(context.service_url, test_service_url) == 0);
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
@@ -1026,12 +1026,11 @@ static void plugin_get_metadata_success(void *state,
   GPR_ASSERT(context.reserved == NULL);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
-    memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = plugin_md[i].key;
-    md[i].value = plugin_md[i].value;
-    md[i].value_length = strlen(plugin_md[i].value);
+    memset(md[i], 0, sizeof(grpc_mdelem));
+    md[i] = grpc_mdelem_from_strings(plugin_md[i].key, plugin_md[i].value);
   }
-  cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
+  cb(user_data, (const grpc_mdelem **)md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK,
+     NULL);
 }
 
 static const char *plugin_error_details = "Could not get metadata for plugin.";

@@ -301,34 +301,34 @@ static void request_response_with_payload_and_call_creds(
 
   switch (mode) {
     case NONE:
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                   iam_token));
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                   iam_selector));
+      GPR_ASSERT(contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+          iam_token));
+      GPR_ASSERT(contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+          iam_selector));
       break;
     case OVERRIDE:
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                   overridden_iam_token));
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                   overridden_iam_selector));
+      GPR_ASSERT(contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+          overridden_iam_token));
+      GPR_ASSERT(contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+          overridden_iam_selector));
       break;
     case DESTROY:
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                    iam_token));
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                    iam_selector));
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                    overridden_iam_token));
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                    overridden_iam_selector));
+      GPR_ASSERT(!contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+          iam_token));
+      GPR_ASSERT(!contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+          iam_selector));
+      GPR_ASSERT(!contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+          overridden_iam_token));
+      GPR_ASSERT(!contains_metadata_strings(
+          &request_metadata_recv, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+          overridden_iam_selector));
       break;
   }
 

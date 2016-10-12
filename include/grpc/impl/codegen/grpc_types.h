@@ -274,21 +274,6 @@ typedef enum grpc_call_error {
    GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
    GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
 
-/** A single metadata element */
-typedef struct grpc_metadata {
-  const char *key;
-  const char *value;
-  size_t value_length;
-  uint32_t flags;
-
-  /** The following fields are reserved for grpc internal use.
-      There is no need to initialize them, and they will be set to garbage
-      during calls to grpc. */
-  struct {
-    void *obfuscated[4];
-  } internal_data;
-} grpc_metadata;
-
 /** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
   /** Shutting down */
@@ -313,10 +298,20 @@ typedef struct grpc_event {
   void *tag;
 } grpc_event;
 
+typedef struct grpc_mdelem grpc_mdelem;
+typedef struct grpc_mdstr grpc_mdstr;
+
+typedef struct grpc_linked_mdelem {
+  struct grpc_mdelem *md;
+  struct grpc_linked_mdelem *next;
+  struct grpc_linked_mdelem *prev;
+  void *reserved;
+} grpc_linked_mdelem;
+
 typedef struct {
   size_t count;
   size_t capacity;
-  grpc_metadata *metadata;
+  grpc_linked_mdelem *metadata;
 } grpc_metadata_array;
 
 typedef struct {
@@ -392,7 +387,7 @@ typedef struct grpc_op {
     } reserved;
     struct {
       size_t count;
-      grpc_metadata *metadata;
+      grpc_linked_mdelem *metadata;
       /** If \a is_set, \a compression_level will be used for the call.
        * Otherwise, \a compression_level won't be considered */
       struct {
@@ -403,7 +398,7 @@ typedef struct grpc_op {
     struct grpc_byte_buffer *send_message;
     struct {
       size_t trailing_metadata_count;
-      grpc_metadata *trailing_metadata;
+      grpc_linked_mdelem *trailing_metadata;
       grpc_status_code status;
       const char *status_details;
     } send_status_from_server;

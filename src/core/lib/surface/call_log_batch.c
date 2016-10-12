@@ -37,15 +37,15 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/support/string.h"
 
-static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
+static void add_metadata(gpr_strvec *b, const grpc_mdelem **md, size_t count) {
   size_t i;
   for (i = 0; i < count; i++) {
     gpr_strvec_add(b, gpr_strdup("\nkey="));
-    gpr_strvec_add(b, gpr_strdup(md[i].key));
+    gpr_strvec_add(b, gpr_dump_slice(md[i]->key->slice, GPR_DUMP_ASCII));
 
     gpr_strvec_add(b, gpr_strdup(" value="));
-    gpr_strvec_add(b, gpr_dump(md[i].value, md[i].value_length,
-                               GPR_DUMP_HEX | GPR_DUMP_ASCII));
+    gpr_strvec_add(
+        b, gpr_dump_slice(md[i]->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
   }
 }
 
@@ -59,11 +59,12 @@ char *grpc_op_string(const grpc_op *op) {
   switch (op->op) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA"));
-      add_metadata(&b, op->data.send_initial_metadata.metadata,
-                   op->data.send_initial_metadata.count);
+      add_metadata(
+          &b, (const grpc_mdelem **)op->data.send_initial_metadata.metadata,
+          op->data.send_initial_metadata.count);
       break;
     case GRPC_OP_SEND_MESSAGE:
-      gpr_asprintf(&tmp, "SEND_MESSAGE ptr=%p", op->data.send_message);
+      gpr_asprintf(&tmp, "SEND_MESSAGE ptr=%p", (void *)op->data.send_message);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -74,29 +75,30 @@ char *grpc_op_string(const grpc_op *op) {
                    op->data.send_status_from_server.status,
                    op->data.send_status_from_server.status_details);
       gpr_strvec_add(&b, tmp);
-      add_metadata(&b, op->data.send_status_from_server.trailing_metadata,
+      add_metadata(&b, (const grpc_mdelem **)
+                           op->data.send_status_from_server.trailing_metadata,
                    op->data.send_status_from_server.trailing_metadata_count);
       break;
     case GRPC_OP_RECV_INITIAL_METADATA:
       gpr_asprintf(&tmp, "RECV_INITIAL_METADATA ptr=%p",
-                   op->data.recv_initial_metadata);
+                   (void *)op->data.recv_initial_metadata);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_RECV_MESSAGE:
-      gpr_asprintf(&tmp, "RECV_MESSAGE ptr=%p", op->data.recv_message);
+      gpr_asprintf(&tmp, "RECV_MESSAGE ptr=%p", (void *)op->data.recv_message);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
       gpr_asprintf(&tmp,
                    "RECV_STATUS_ON_CLIENT metadata=%p status=%p details=%p",
-                   op->data.recv_status_on_client.trailing_metadata,
-                   op->data.recv_status_on_client.status,
-                   op->data.recv_status_on_client.status_details);
+                   (void *)op->data.recv_status_on_client.trailing_metadata,
+                   (void *)op->data.recv_status_on_client.status,
+                   (void *)op->data.recv_status_on_client.status_details);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       gpr_asprintf(&tmp, "RECV_CLOSE_ON_SERVER cancelled=%p",
-                   op->data.recv_close_on_server.cancelled);
+                   (void *)op->data.recv_close_on_server.cancelled);
       gpr_strvec_add(&b, tmp);
   }
   out = gpr_strvec_flatten(&b, NULL);

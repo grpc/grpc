@@ -107,15 +107,17 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {
-      {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {
-      {"key3", "val3", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key4", "val4", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_metadata meta_t[2] = {
-      {"key5", "val5", 4, 0, {{NULL, NULL, NULL, NULL}}},
-      {"key6", "val6", 4, 0, {{NULL, NULL, NULL, NULL}}}};
+
+  grpc_linked_mdelem meta_c[2] = {
+      grpc_linked_mdelem_from_strings("key1", "val1"),
+      grpc_linked_mdelem_from_strings("key2", "val2")};
+  grpc_linked_mdelem meta_s[2] = {
+      grpc_linked_mdelem_from_strings("key3", "val3"),
+      grpc_linked_mdelem_from_strings("key4", "val4")};
+  grpc_linked_mdelem meta_t[2] = {
+      grpc_linked_mdelem_from_strings("key5", "val5"),
+      grpc_linked_mdelem_from_strings("key6", "val6")};
+
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -239,12 +241,12 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "key2", "val2"));
-  GPR_ASSERT(contains_metadata(&initial_metadata_recv, "key3", "val3"));
-  GPR_ASSERT(contains_metadata(&initial_metadata_recv, "key4", "val4"));
-  GPR_ASSERT(contains_metadata(&trailing_metadata_recv, "key5", "val5"));
-  GPR_ASSERT(contains_metadata(&trailing_metadata_recv, "key6", "val6"));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[0].md));
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, meta_c[1].md));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[0].md));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, meta_s[1].md));
+  GPR_ASSERT(contains_metadata(&trailing_metadata_recv, meta_t[0].md));
+  GPR_ASSERT(contains_metadata(&trailing_metadata_recv, meta_t[1].md));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

@@ -137,6 +137,19 @@ void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
   ::grpc_metadata_array_destroy(array);
 }
 
+const char* CoreCodegen::grpc_mdstr_as_c_string(const grpc_mdstr* s) {
+  return ::grpc_mdstr_as_c_string(s);
+}
+
+size_t CoreCodegen::grpc_mdstr_length(const grpc_mdstr* s) {
+  return ::grpc_mdstr_length(s);
+}
+
+grpc_mdelem* CoreCodegen::grpc_mdelem_from_string_and_buffer(
+    const char* key, const uint8_t* value, size_t value_length) {
+  return ::grpc_mdelem_from_string_and_buffer(key, value, value_length);
+}
+
 const Status& CoreCodegen::ok() { return grpc::Status::OK; }
 
 const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
