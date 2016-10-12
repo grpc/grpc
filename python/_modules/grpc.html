@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc &mdash; grpcio 1.0.0 documentation</title>
+  <title>grpc &mdash; grpcio 1.0.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,10 @@
   
 
   
-    <link rel="top" title="grpcio 1.0.0 documentation" href="../index.html"/>
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="grpcio 1.0.1rc1 documentation" href="../index.html"/>
         <link rel="up" title="Module code" href="index.html"/> 
 
   
@@ -60,7 +63,7 @@
             
             
               <div class="version">
-                1.0.0
+                1.0.1rc1
               </div>
             
           
@@ -81,7 +84,8 @@
           
             
             
-                <ul>
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../grpc.html">grpc package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc.html#glossary">Glossary</a></li>
 </ul>
@@ -784,6 +788,10 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
+<span class="sd">      request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">        message. Request goes unserialized in case None is passed.</span>
+<span class="sd">      response_deserializer: Optional behaviour for deserializing the response</span>
+<span class="sd">        message. Response goes undeserialized in case None is passed.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A UnaryUnaryMultiCallable value for the named unary-unary method.</span>
@@ -797,6 +805,10 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
+<span class="sd">      request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">        message. Request goes unserialized in case None is passed.</span>
+<span class="sd">      response_deserializer: Optional behaviour for deserializing the response</span>
+<span class="sd">        message. Response goes undeserialized in case None is passed.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A UnaryStreamMultiCallable value for the name unary-stream method.</span>
@@ -810,6 +822,10 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
+<span class="sd">      request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">        message. Request goes unserialized in case None is passed.</span>
+<span class="sd">      response_deserializer: Optional behaviour for deserializing the response</span>
+<span class="sd">        message. Response goes undeserialized in case None is passed.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A StreamUnaryMultiCallable value for the named stream-unary method.</span>
@@ -823,6 +839,10 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">      method: The name of the RPC method.</span>
+<span class="sd">      request_serializer: Optional behaviour for serializing the request</span>
+<span class="sd">        message. Request goes unserialized in case None is passed.</span>
+<span class="sd">      response_deserializer: Optional behaviour for deserializing the response</span>
+<span class="sd">        message. Response goes undeserialized in case None is passed.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A StreamStreamMultiCallable value for the named stream-stream method.</span>
@@ -1213,7 +1233,7 @@
 
 <span class="sd">  Args:</span>
 <span class="sd">    access_token: A string to place directly in the http request</span>
-<span class="sd">      authorization header, ie &quot;Authorization: Bearer &lt;access_token&gt;&quot;.</span>
+<span class="sd">      authorization header, ie &quot;authorization: Bearer &lt;access_token&gt;&quot;.</span>
 
 <span class="sd">  Returns:</span>
 <span class="sd">    A CallCredentials.</span>
@@ -1328,7 +1348,7 @@
 
 
 <div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../grpc.html#grpc.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates an insecure Channel to a server.</span>
+  <span class="sd">&quot;&quot;&quot;Creates a secure Channel to a server.</span>
 
 <span class="sd">  Args:</span>
 <span class="sd">    target: The target to which to connect.</span>
@@ -1439,7 +1459,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'1.0.0',
+            VERSION:'1.0.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -149,9 +149,14 @@ table.indextable td {
     vertical-align: top;
 }
 
-table.indextable dl, table.indextable dd {
+table.indextable ul {
     margin-top: 0;
     margin-bottom: 0;
+    list-style-type: none;
+}
+
+table.indextable > tbody > tr > td > ul {
+    padding-left: 0em;
 }
 
 table.indextable tr.pcap {
@@ -181,6 +186,13 @@ div.genindex-jumpbox {
     border-bottom: 1px solid #ddd;
     margin: 1em 0 1em 0;
     padding: 0.4em;
+}
+
+/* -- domain module index --------------------------------------------------- */
+
+table.modindextable td {
+    padding: 2px;
+    border-collapse: collapse;
 }
 
 /* -- general body styles --------------------------------------------------- */
@@ -215,10 +227,6 @@ div.body p.caption {
 
 div.body td {
     text-align: left;
-}
-
-.field-list ul {
-    padding-left: 1em;
 }
 
 .first {
@@ -337,10 +345,6 @@ table.docutils td, table.docutils th {
     border-bottom: 1px solid #aaa;
 }
 
-table.field-list td, table.field-list th {
-    border: 0 !important;
-}
-
 table.footnote td, table.footnote th {
     border: 0 !important;
 }
@@ -377,6 +381,20 @@ div.figure p.caption span.caption-number {
 div.figure p.caption span.caption-text {
 }
 
+/* -- field list styles ----------------------------------------------------- */
+
+table.field-list td, table.field-list th {
+    border: 0 !important;
+}
+
+.field-list ul {
+    margin: 0;
+    padding-left: 1em;
+}
+
+.field-list p {
+    margin: 0;
+}
 
 /* -- other body styles ----------------------------------------------------- */
 
@@ -425,15 +443,6 @@ dt:target, .highlighted {
 dl.glossary dt {
     font-weight: bold;
     font-size: 1.1em;
-}
-
-.field-list ul {
-    margin: 0;
-    padding-left: 1em;
-}
-
-.field-list p {
-    margin: 0;
 }
 
 .optional {
@@ -492,6 +501,13 @@ abbr, acronym {
 pre {
     overflow: auto;
     overflow-y: hidden;  /* fixes display issues on Chrome browsers */
+}
+
+span.pre {
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    -webkit-hyphens: none;
+    hyphens: none;
 }
 
 td.linenos pre {
@@ -583,6 +599,16 @@ div.body div.math p {
 
 span.eqno {
     float: right;
+}
+
+span.eqno a.headerlink {
+    position: relative;
+    left: 0px;
+    z-index: 1;
+}
+
+div.math:hover a.headerlink {
+    visibility: visible;
 }
 
 /* -- printout stylesheet --------------------------------------------------- */
