@@ -170,7 +170,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->head) {
     grpc_udp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      // grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
+      grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
 
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
