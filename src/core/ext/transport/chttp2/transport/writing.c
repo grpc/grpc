@@ -56,16 +56,16 @@ static void finish_write_cb(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 }
 
 static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                        grpc_chttp2_stream *s, size_t send_bytes,
+                        grpc_chttp2_stream *s, int64_t send_bytes,
                         grpc_chttp2_write_cb **list, grpc_error *error) {
   grpc_chttp2_write_cb *cb = *list;
   *list = NULL;
+  s->flow_controlled_bytes_written += send_bytes;
   while (cb) {
     grpc_chttp2_write_cb *next = cb->next;
-    if (cb->call_at_byte <= send_bytes) {
+    if (cb->call_at_byte <= s->flow_controlled_bytes_written) {
       finish_write_cb(exec_ctx, t, s, cb, GRPC_ERROR_REF(error));
     } else {
-      cb->call_at_byte -= send_bytes;
       add_to_write_list(list, cb);
     }
     cb = next;
@@ -236,8 +236,8 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           GRPC_ERROR_REF(error), "send_initial_metadata_finished");
     }
     if (s->sending_bytes != 0) {
-      update_list(exec_ctx, t, s, s->sending_bytes, &s->on_write_finished_cbs,
-                  GRPC_ERROR_REF(error));
+      update_list(exec_ctx, t, s, (int64_t)s->sending_bytes,
+                  &s->on_write_finished_cbs, GRPC_ERROR_REF(error));
       s->sending_bytes = 0;
     }
     if (s->sent_trailing_metadata) {
