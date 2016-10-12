@@ -120,7 +120,8 @@ void test_succeeds(void) {
   /* await the connection */
   do {
     resolved_addr.len = sizeof(addr);
-    r = accept(svr_fd, addr, (socklen_t *)&resolved_addr.len);
+    r = accept(svr_fd, (struct sockaddr *)addr,
+               (socklen_t *)&resolved_addr.len);
   } while (r == -1 && errno == EINTR);
   GPR_ASSERT(r >= 0);
   close(r);
