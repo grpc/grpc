@@ -277,6 +277,8 @@ static bool append_error(grpc_error **composite, grpc_error *error,
    threads that woke up MUST NOT call grpc_wakeup_fd_consume_wakeup() */
 static grpc_wakeup_fd polling_island_wakeup_fd;
 
+/* The polling island being polled right now.
+   See comments in workqueue_maybe_wakeup for why this is tracked. */
 static __thread polling_island *g_current_thread_polling_island;
 
 /* Forward declaration */
@@ -703,11 +705,16 @@ static void polling_island_unlock_pair(polling_island *p, polling_island *q) {
 }
 
 static void workqueue_maybe_wakeup(polling_island *pi) {
-  bool force_wakeup = false;
+  /* If this thread is the current poller, then it may be that it's about to
+     decrement the current poller count, so we need to look past this thread */
   bool is_current_poller = (g_current_thread_polling_island == pi);
   gpr_atm min_current_pollers_for_wakeup = is_current_poller ? 1 : 0;
   gpr_atm current_pollers = gpr_atm_no_barrier_load(&pi->poller_count);
-  if (force_wakeup || current_pollers > min_current_pollers_for_wakeup) {
+  /* Only issue a wakeup if it's likely that some poller could come in and take
+     it right now. Note that since we do an anticipatory mpscq_pop every poll
+     loop, it's ok if we miss the wakeup here, as we'll get the work item when
+     the next poller enters anyway. */
+  if (current_pollers > min_current_pollers_for_wakeup) {
     GRPC_LOG_IF_ERROR("workqueue_wakeup_fd",
                       grpc_wakeup_fd_wakeup(&pi->workqueue_wakeup_fd));
   }
