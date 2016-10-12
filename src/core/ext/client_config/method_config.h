@@ -43,7 +43,18 @@
 /// Per-method configuration.
 typedef struct grpc_method_config grpc_method_config;
 
+/// Creates a grpc_method_config with the specified parameters.
 /// Any parameter may be NULL to indicate that the value is unset.
+///
+/// \a wait_for_ready indicates whether the client should wait until the
+/// request deadline for the channel to become ready, even if there is a
+/// temporary failure before the deadline while attempting to connect.
+///
+/// \a timeout indicates the timeout for calls.
+///
+/// \a max_request_message_bytes and \a max_response_message_bytes
+/// indicate the maximum sizes of the request (checked when sending) and
+/// response (checked when receiving) messages.
 grpc_method_config* grpc_method_config_create(
     bool* wait_for_ready, gpr_timespec* timeout,
     int32_t* max_request_message_bytes, int32_t* max_response_message_bytes);
@@ -51,6 +62,8 @@ grpc_method_config* grpc_method_config_create(
 grpc_method_config* grpc_method_config_ref(grpc_method_config* method_config);
 void grpc_method_config_unref(grpc_method_config* method_config);
 
+/// Compares two grpc_method_configs.
+/// The sort order is stable but undefined.
 int grpc_method_config_cmp(const grpc_method_config* method_config1,
                            const grpc_method_config* method_config2);
 
@@ -84,9 +97,13 @@ grpc_method_config_table* grpc_method_config_table_ref(
     grpc_method_config_table* table);
 void grpc_method_config_table_unref(grpc_method_config_table* table);
 
+/// Compares two grpc_method_config_tables.
+/// The sort order is stable but undefined.
 int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
                                  const grpc_method_config_table* table2);
 
+/// Gets the method config for the specified \a path, which should be of
+/// the form "/service/method".
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
 grpc_method_config* grpc_method_config_table_get_method_config(
