@@ -1072,7 +1072,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
         gpr_malloc(sizeof(cronet_bidirectional_stream_header));
     header = (cronet_bidirectional_stream_header*) header_array.headers;
     header->key = "grpc-status";
-    header->value = "12";
+    header->value = "1"; /* Return status GRPC_STATUS_CANCELLED */
     cbs.annotation = (void*)s;
     s->state.state_op_done[OP_CANCEL_ERROR] = true;
     on_response_trailers_received(&cbs, &header_array);
