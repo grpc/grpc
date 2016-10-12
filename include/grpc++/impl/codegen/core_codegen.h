@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
+#define GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H
+
 // This file should be compiled as part of grpc++.
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
@@ -51,6 +54,17 @@ class CoreCodegen : public CoreCodegenInterface {
 
   void* gpr_malloc(size_t size) GRPC_OVERRIDE;
   void gpr_free(void* p) GRPC_OVERRIDE;
+
+  void gpr_mu_init(gpr_mu* mu) GRPC_OVERRIDE;
+  void gpr_mu_destroy(gpr_mu* mu) GRPC_OVERRIDE;
+  void gpr_mu_lock(gpr_mu* mu) GRPC_OVERRIDE;
+  void gpr_mu_unlock(gpr_mu* mu) GRPC_OVERRIDE;
+  void gpr_cv_init(gpr_cv* cv) GRPC_OVERRIDE;
+  void gpr_cv_destroy(gpr_cv* cv) GRPC_OVERRIDE;
+  int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
+                  gpr_timespec abs_deadline) GRPC_OVERRIDE;
+  void gpr_cv_signal(gpr_cv* cv) GRPC_OVERRIDE;
+  void gpr_cv_broadcast(gpr_cv* cv) GRPC_OVERRIDE;
 
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) GRPC_OVERRIDE;
 
@@ -75,6 +89,7 @@ class CoreCodegen : public CoreCodegenInterface {
   void grpc_metadata_array_destroy(grpc_metadata_array* array) GRPC_OVERRIDE;
 
   gpr_timespec gpr_inf_future(gpr_clock_type type) GRPC_OVERRIDE;
+  gpr_timespec gpr_time_0(gpr_clock_type type) GRPC_OVERRIDE;
 
   virtual const Status& ok() GRPC_OVERRIDE;
   virtual const Status& cancelled() GRPC_OVERRIDE;
@@ -83,3 +98,5 @@ class CoreCodegen : public CoreCodegenInterface {
 };
 
 }  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_H

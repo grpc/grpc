@@ -38,6 +38,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
@@ -88,7 +89,7 @@ TEST_F(CrashTest, KillBeforeWrite) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  context.set_fail_fast(false);
+  context.set_wait_for_ready(true);
 
   auto stream = stub->BidiStream(&context);
 
@@ -114,7 +115,7 @@ TEST_F(CrashTest, KillAfterWrite) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  context.set_fail_fast(false);
+  context.set_wait_for_ready(true);
 
   auto stream = stub->BidiStream(&context);
 

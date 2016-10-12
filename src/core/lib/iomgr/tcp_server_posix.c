@@ -90,10 +90,12 @@ struct grpc_tcp_listener {
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   struct grpc_tcp_listener *next;
-  /* When we add a listener, more than one can be created, mainly because of
-     IPv6. A sibling will still be in the normal list, but will be flagged
-     as such. Any action, such as ref or unref, will affect all of the
-     siblings in the list. */
+  /* sibling is a linked list of all listeners for a given port. add_port and
+     clone_port place all new listeners in the same sibling list. A member of
+     the 'sibling' list is also a member of the 'next' list. The head of each
+     sibling list has is_sibling==0, and subsequent members of sibling lists
+     have is_sibling==1. is_sibling allows separate sibling lists to be
+     identified while iterating through 'next'. */
   struct grpc_tcp_listener *sibling;
   int is_sibling;
 };
@@ -138,15 +140,17 @@ struct grpc_tcp_server {
 };
 
 static gpr_once check_init = GPR_ONCE_INIT;
-static bool has_so_reuseport;
+static bool has_so_reuseport = false;
 
 static void init(void) {
+#ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s >= 0) {
     has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
                                          grpc_set_socket_reuse_port(s, 1));
     close(s);
   }
+#endif
 }
 
 grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
@@ -187,6 +191,9 @@ grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
+  gpr_mu_lock(&s->mu);
+  GPR_ASSERT(s->shutdown);
+  gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != NULL) {
     grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
   }
@@ -306,7 +313,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
 
   GPR_ASSERT(fd >= 0);
 
-  if (so_reuseport) {
+  if (so_reuseport && !grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_reuse_port(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
   }
@@ -480,6 +487,9 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
   return err;
 }
 
+/* Insert count new listeners after listener. Every new listener will have the
+   same listen address as listener (SO_REUSEPORT must be enabled). Every new
+   listener is a sibling of listener. */
 static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
   grpc_tcp_listener *sp = NULL;
   char *addr_str;
@@ -506,6 +516,11 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     sp = gpr_malloc(sizeof(grpc_tcp_listener));
     sp->next = listener->next;
     listener->next = sp;
+    /* sp (the new listener) is a sibling of 'listener' (the original
+       listener). */
+    sp->is_sibling = 1;
+    sp->sibling = listener->sibling;
+    listener->sibling = sp;
     sp->server = listener->server;
     sp->fd = fd;
     sp->emfd = grpc_fd_create(fd, name);
@@ -514,8 +529,6 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     sp->port = port;
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
-    sp->is_sibling = 1;
-    sp->sibling = listener->is_sibling ? listener->sibling : listener;
     GPR_ASSERT(sp->emfd);
     while (listener->server->tail->next != NULL) {
       listener->server->tail = listener->server->tail->next;
@@ -642,6 +655,7 @@ unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
                                        unsigned port_index) {
   unsigned num_fds = 0;
   grpc_tcp_listener *sp;
+  gpr_mu_lock(&s->mu);
   for (sp = s->head; sp && port_index != 0; sp = sp->next) {
     if (!sp->is_sibling) {
       --port_index;
@@ -649,12 +663,15 @@ unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
   }
   for (; sp; sp = sp->sibling, ++num_fds)
     ;
+  gpr_mu_unlock(&s->mu);
   return num_fds;
 }
 
 int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
                             unsigned fd_index) {
   grpc_tcp_listener *sp;
+  int fd;
+  gpr_mu_lock(&s->mu);
   for (sp = s->head; sp && port_index != 0; sp = sp->next) {
     if (!sp->is_sibling) {
       --port_index;
@@ -663,10 +680,12 @@ int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
   for (; sp && fd_index != 0; sp = sp->sibling, --fd_index)
     ;
   if (sp) {
-    return sp->fd;
+    fd = sp->fd;
   } else {
-    return -1;
+    fd = -1;
   }
+  gpr_mu_unlock(&s->mu);
+  return fd;
 }
 
 void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
@@ -685,7 +704,8 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
   s->pollset_count = pollset_count;
   sp = s->head;
   while (sp != NULL) {
-    if (s->so_reuseport && pollset_count > 1) {
+    if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr.sockaddr) &&
+        pollset_count > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
       for (i = 0; i < pollset_count; i++) {
@@ -711,7 +731,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
-  gpr_ref(&s->refs);
+  gpr_ref_non_zero(&s->refs);
   return s;
 }
 
@@ -725,19 +745,11 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
-    /* Complete shutdown_starting work before destroying. */
-    grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting, NULL);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
     gpr_mu_unlock(&s->mu);
-    if (exec_ctx == NULL) {
-      grpc_exec_ctx_flush(&local_exec_ctx);
-      tcp_server_destroy(&local_exec_ctx, s);
-      grpc_exec_ctx_finish(&local_exec_ctx);
-    } else {
-      grpc_exec_ctx_finish(&local_exec_ctx);
-      tcp_server_destroy(exec_ctx, s);
-    }
+    tcp_server_destroy(exec_ctx, s);
   }
 }
 

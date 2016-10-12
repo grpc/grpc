@@ -48,6 +48,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -351,9 +352,9 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
                                                        ops, (size_t)(op - ops),
                                                        tag(102), NULL));
 
-      cq_expect_completion(cqv, tag(102), 1);
+      CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
       if (!completed_client) {
-        cq_expect_completion(cqv, tag(1), 1);
+        CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
       }
       cq_verify(cqv);
 
@@ -376,7 +377,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
     } else { /* no response from server */
       grpc_call_cancel(c, NULL);
       if (!completed_client) {
-        cq_expect_completion(cqv, tag(1), 1);
+        CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
         cq_verify(cqv);
       }
     }
@@ -508,7 +509,7 @@ void run_spec(const test_spec *spec) {
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+  gpr_asprintf(&client_hostport, "test:%s?lb_policy=round_robin",
                servers_hostports_str);
 
   arg.type = GRPC_ARG_INTEGER;
@@ -544,7 +545,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+  gpr_asprintf(&client_hostport, "test:%s?lb_policy=round_robin",
                servers_hostports_str);
 
   arg.type = GRPC_ARG_INTEGER;
@@ -576,7 +577,7 @@ static void test_ping() {
   client = create_client(f);
 
   grpc_channel_ping(client, f->cq, tag(0), NULL);
-  cq_expect_completion(cqv, tag(0), 0);
+  CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
 
   /* check that we're still in idle, and start connecting */
   GPR_ASSERT(grpc_channel_check_connectivity_state(client, 1) ==
@@ -586,7 +587,7 @@ static void test_ping() {
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f->cq, tag(99));
-    cq_expect_completion(cqv, tag(99), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -596,7 +597,7 @@ static void test_ping() {
 
   for (i = 1; i <= 5; i++) {
     grpc_channel_ping(client, f->cq, tag(i), NULL);
-    cq_expect_completion(cqv, tag(i), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
     cq_verify(cqv);
   }
   gpr_free(rdata.call_details);
@@ -874,6 +875,7 @@ int main(int argc, char **argv) {
   const size_t NUM_SERVERS = 4;
 
   grpc_test_init(argc, argv);
+  grpc_fake_resolver_init();
   grpc_init();
   grpc_tracer_set_enabled("round_robin", 1);
 

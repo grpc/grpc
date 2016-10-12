@@ -43,7 +43,6 @@
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/time.h>
 
 struct gpr_timespec;
 struct grpc_metadata;
@@ -65,8 +64,10 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+namespace internal {
 template <class W, class R>
-class ServerReaderWriter;
+class ServerReaderWriterBody;
+}
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -166,6 +167,10 @@ class ServerContext {
     async_notify_when_done_tag_ = tag;
   }
 
+  // Should be used for framework-level extensions only.
+  // Applications never need to call this method.
+  grpc_call* c_call() { return call_; }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::ServerInterface;
@@ -183,15 +188,15 @@ class ServerContext {
   template <class W>
   friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::ServerReaderWriter;
+  friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class BidiStreamingHandler;
+  template <class Streamer, bool WriteNeeded>
+  friend class TemplatedBidiStreamingHandler;
   friend class UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 

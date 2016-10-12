@@ -37,6 +37,10 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
 
@@ -143,7 +147,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
-const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
+const char *grpc_mdstr_as_c_string(const grpc_mdstr *s);
 
 #define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
 
@@ -163,5 +167,9 @@ void grpc_mdctx_global_shutdown(void);
 /* Implementation provided by chttp2_transport */
 extern gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
     gpr_slice input);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

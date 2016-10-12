@@ -14,3 +14,5 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y ${'\\'}
     ca-certificates-mono ${'\\'}
     nuget ${'\\'}
     && apt-get clean
+
+RUN nuget update -self

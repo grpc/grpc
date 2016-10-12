@@ -29,9 +29,10 @@
 
 """Insecure client-server interoperability as a unit test."""
 
+from concurrent import futures
 import unittest
 
-from grpc.beta import implementations
+import grpc
 from src.proto.grpc.testing import test_pb2
 
 from tests.interop import _interop_test_case
@@ -44,14 +45,13 @@ class InsecureInteropTest(
     unittest.TestCase):
 
   def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
+    self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    test_pb2.add_TestServiceServicer_to_server(
+        methods.TestService(), self.server)
     port = self.server.add_insecure_port('[::]:0')
     self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        implementations.insecure_channel('localhost', port))
-
-  def tearDown(self):
-    self.server.stop(0)
+    self.stub = test_pb2.TestServiceStub(
+        grpc.insecure_channel('localhost:{}'.format(port)))
 
 
 if __name__ == '__main__':

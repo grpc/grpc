@@ -47,7 +47,7 @@
 #endif
 #import "GRPCCompletionQueue.h"
 
-void freeChannelArgs(grpc_channel_args *channel_args) {
+static void FreeChannelArgs(grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; ++i) {
     grpc_arg *arg = &channel_args->args[i];
     gpr_free(arg->key);
@@ -65,7 +65,7 @@ void freeChannelArgs(grpc_channel_args *channel_args) {
  * value responds to @c @selector(intValue). Otherwise, an exception will be raised. The caller of
  * this function is responsible for calling @c freeChannelArgs on a non-NULL returned value.
  */
-grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
+static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (!dictionary) {
     return NULL;
   }
@@ -115,10 +115,12 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   }
 
   if (self = [super init]) {
-    _channelArgs = buildChannelArgs(channelArgs);
+    _channelArgs = BuildChannelArgs(channelArgs);
     _host = [host copy];
-    _unmanagedChannel = grpc_cronet_secure_channel_create(cronetEngine, _host.UTF8String, _channelArgs,
-                                                     NULL);
+    _unmanagedChannel = grpc_cronet_secure_channel_create(cronetEngine,
+                                                          _host.UTF8String,
+                                                          _channelArgs,
+                                                          NULL);
   }
 
   return self;
@@ -138,7 +140,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   }
 
   if (self = [super init]) {
-    _channelArgs = buildChannelArgs(channelArgs);
+    _channelArgs = BuildChannelArgs(channelArgs);
     _host = [host copy];
     if (secure) {
       _unmanagedChannel = grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs,
@@ -155,7 +157,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
   // as in the past that made this call to crash.
   grpc_channel_destroy(_unmanagedChannel);
-  freeChannelArgs(_channelArgs);
+  FreeChannelArgs(_channelArgs);
 }
 
 #ifdef GRPC_COMPILE_WITH_CRONET

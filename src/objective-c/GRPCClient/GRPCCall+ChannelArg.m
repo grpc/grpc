@@ -37,13 +37,14 @@
 
 @implementation GRPCCall (ChannelArg)
 
-+ (void)setUserAgentPrefix:(NSString *)userAgentPrefix forHost:(NSString *)host {
-  if (!host) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"host and userAgentPrefix must be provided."];
-  }
++ (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   hostConfig.userAgentPrefix = userAgentPrefix;
+}
+
++ (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.responseSizeLimitOverride = @(limit);
 }
 
 + (void)closeOpenConnections {

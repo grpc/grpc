@@ -107,7 +107,7 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
       grpc_create_chttp2_transport(&exec_ctx, client_args, sfd->client, 1);
   client_setup_transport(&exec_ctx, &cs, transport);
   GPR_ASSERT(f->client);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -123,7 +123,7 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
   transport =
       grpc_create_chttp2_transport(&exec_ctx, server_args, sfd->server, 0);
   server_setup_transport(f, transport);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

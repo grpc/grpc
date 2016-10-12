@@ -95,6 +95,8 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     nuget \
     && apt-get clean
 
+RUN nuget update -self
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++

@@ -1,0 +1,4 @@
+# The minimal good Resource without a name.
+unit {
+  numerator : SECS
+}

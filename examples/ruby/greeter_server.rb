@@ -38,7 +38,7 @@ lib_dir = File.join(this_dir, 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
-require 'helloworld_services'
+require 'helloworld_services_pb'
 
 # GreeterServer is simple server that implements the Helloworld Greeter server.
 class GreeterServer < Helloworld::Greeter::Service

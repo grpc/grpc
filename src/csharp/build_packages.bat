@@ -29,12 +29,13 @@
 
 @rem Builds gRPC NuGet packages
 
+@rem This way of building nuget packages is now obsolete. C# nuget packages
+@rem with CoreCLR support are now being built using the dotnet cli
+@rem in build_packages_dotnetcli.sh
+
 @rem Current package versions
 set VERSION=1.1.0-dev
-set PROTOBUF_VERSION=3.0.0-beta3
-
-@rem Packages that depend on prerelease packages (like Google.Protobuf) need to have prerelease suffix as well.
-set VERSION_WITH_BETA=%VERSION%-beta
+set PROTOBUF_VERSION=3.0.0
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
@@ -58,7 +59,6 @@ xcopy /Y /I ..\..\architecture=x64,language=protoc,platform=macos\artifacts\* pr
 
 @rem Fetch all dependencies
 %NUGET% restore ..\..\vsprojects\grpc_csharp_ext.sln || goto :error
-%NUGET% restore Grpc.sln || goto :error
 
 setlocal
 
@@ -73,7 +73,7 @@ endlocal
 
 %NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% || goto :error
-%NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION_WITH_BETA% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
+%NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
 %NUGET% pack Grpc.nuspec -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% || goto :error
 
@@ -81,8 +81,8 @@ endlocal
 xcopy /Y /I *.nupkg ..\..\artifacts\
 
 @rem create a zipfile with the artifacts as well
-powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('..\..\artifacts', 'csharp_nugets.zip');"
-xcopy /Y /I csharp_nugets.zip ..\..\artifacts\
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('..\..\artifacts', 'csharp_nugets_obsolete.zip');"
+xcopy /Y /I csharp_nugets_obsolete.zip ..\..\artifacts\
 
 goto :EOF
 

@@ -40,10 +40,9 @@
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
-struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
+typedef struct grpc_combiner grpc_combiner;
 
-#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  Generally created at public API entry points, and passed down as
@@ -58,21 +57,24 @@ typedef struct grpc_workqueue grpc_workqueue;
  *    should actively try to finish up and get this thread back to its owner
  *
  *  CONVENTIONS:
- *  Instance of this must ALWAYS be constructed on the stack, never
- *  heap allocated. Instances and pointers to them must always be called
- *  exec_ctx. Instances are always passed as the first argument
- *  to a function that takes it, and always as a pointer (grpc_exec_ctx
- *  is never copied).
+ *  - Instance of this must ALWAYS be constructed on the stack, never
+ *    heap allocated.
+ *  - Instances and pointers to them must always be called exec_ctx.
+ *  - Instances are always passed as the first argument to a function that
+ *    takes it, and always as a pointer (grpc_exec_ctx is never copied).
  */
+#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  /** currently active combiner: updated only via combiner.c */
+  grpc_combiner *active_combiner;
   bool cached_ready_to_finish;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 };
 
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, false, finish_check_arg, finish_check }
+  { GRPC_CLOSURE_LIST_INIT, NULL, false, finish_check_arg, finish_check }
 #else
 struct grpc_exec_ctx {
   bool cached_ready_to_finish;

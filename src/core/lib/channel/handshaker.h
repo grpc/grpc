@@ -35,7 +35,6 @@
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/time.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -56,10 +55,11 @@
 typedef struct grpc_handshaker grpc_handshaker;
 
 /// Callback type invoked when a handshaker is done.
-/// Takes ownership of \a args.
+/// Takes ownership of \a args and \a read_buffer.
 typedef void (*grpc_handshaker_done_cb)(grpc_exec_ctx* exec_ctx,
                                         grpc_endpoint* endpoint,
                                         grpc_channel_args* args,
+                                        gpr_slice_buffer* read_buffer,
                                         void* user_data, grpc_error* error);
 
 struct grpc_handshaker_vtable {
@@ -72,10 +72,12 @@ struct grpc_handshaker_vtable {
 
   /// Performs handshaking.  When finished, calls \a cb with \a user_data.
   /// Takes ownership of \a args.
+  /// Takes ownership of \a read_buffer, which contains leftover bytes read
+  /// from the endpoint by the previous handshaker.
   /// \a acceptor will be NULL for client-side handshakers.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
                        grpc_endpoint* endpoint, grpc_channel_args* args,
-                       gpr_timespec deadline,
+                       gpr_slice_buffer* read_buffer, gpr_timespec deadline,
                        grpc_tcp_server_acceptor* acceptor,
                        grpc_handshaker_done_cb cb, void* user_data);
 };
@@ -101,6 +103,7 @@ void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_handshaker* handshaker,
                                   grpc_endpoint* endpoint,
                                   grpc_channel_args* args,
+                                  gpr_slice_buffer* read_buffer,
                                   gpr_timespec deadline,
                                   grpc_tcp_server_acceptor* acceptor,
                                   grpc_handshaker_done_cb cb, void* user_data);

@@ -31,7 +31,6 @@
  *
  */
 
-#include <signal.h>
 #include <unistd.h>
 
 #include <fstream>
@@ -57,6 +56,7 @@
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -77,8 +77,6 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
-
-static bool got_sigint = false;
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
@@ -311,7 +309,9 @@ class TestServiceImpl : public TestService::Service {
   }
 };
 
-void RunServer() {
+void grpc::testing::interop::RunServer(
+    std::shared_ptr<ServerCredentials> creds) {
+  GPR_ASSERT(FLAGS_port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << FLAGS_port;
   TestServiceImpl service;
@@ -321,24 +321,13 @@ void RunServer() {
 
   ServerBuilder builder;
   builder.RegisterService(&service);
-  std::shared_ptr<ServerCredentials> creds =
-      grpc::testing::CreateInteropServerCredentials();
   builder.AddListeningPort(server_address.str(), creds);
+  if (FLAGS_max_send_message_size >= 0) {
+    builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
+  }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (!got_sigint) {
+  while (!g_got_sigint) {
     sleep(5);
   }
-}
-
-static void sigint_handler(int x) { got_sigint = true; }
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  signal(SIGINT, sigint_handler);
-
-  GPR_ASSERT(FLAGS_port != 0);
-  RunServer();
-
-  return 0;
 }

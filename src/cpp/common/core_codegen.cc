@@ -39,14 +39,18 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/profiling/timers.h"
+
+extern "C" {
+struct grpc_byte_buffer;
+}
 
 namespace grpc {
 
@@ -69,6 +73,19 @@ grpc_event CoreCodegen::grpc_completion_queue_pluck(grpc_completion_queue* cq,
 void* CoreCodegen::gpr_malloc(size_t size) { return ::gpr_malloc(size); }
 
 void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }
+
+void CoreCodegen::gpr_mu_init(gpr_mu* mu) { ::gpr_mu_init(mu); };
+void CoreCodegen::gpr_mu_destroy(gpr_mu* mu) { ::gpr_mu_destroy(mu); }
+void CoreCodegen::gpr_mu_lock(gpr_mu* mu) { ::gpr_mu_lock(mu); }
+void CoreCodegen::gpr_mu_unlock(gpr_mu* mu) { ::gpr_mu_unlock(mu); }
+void CoreCodegen::gpr_cv_init(gpr_cv* cv) { ::gpr_cv_init(cv); }
+void CoreCodegen::gpr_cv_destroy(gpr_cv* cv) { ::gpr_cv_destroy(cv); }
+int CoreCodegen::gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
+                             gpr_timespec abs_deadline) {
+  return ::gpr_cv_wait(cv, mu, abs_deadline);
+}
+void CoreCodegen::gpr_cv_signal(gpr_cv* cv) { ::gpr_cv_signal(cv); }
+void CoreCodegen::gpr_cv_broadcast(gpr_cv* cv) { ::gpr_cv_broadcast(cv); }
 
 void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
@@ -126,6 +143,10 @@ const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
 
 gpr_timespec CoreCodegen::gpr_inf_future(gpr_clock_type type) {
   return ::gpr_inf_future(type);
+}
+
+gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
+  return ::gpr_time_0(type);
 }
 
 void CoreCodegen::assert_fail(const char* failed_assertion) {
