@@ -47,7 +47,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
@@ -82,8 +81,6 @@ using grpc::Status;
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
 const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
-
-namespace {
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
@@ -148,44 +145,11 @@ bool CheckExpectedCompression(const ServerContext& context,
   return true;
 }
 
-Status RequestedStatusOrOk(const SimpleRequest* request) {
-  if (request->has_response_status()) {
-    return Status(
-      static_cast<grpc::StatusCode>(request->response_status().code()),
-      request->response_status().message());
-  } else {
-    return Status::OK;
-  }
-}
-
-Status RequestedStatusOrOk(const StreamingOutputCallRequest* request) {
-  if (request->has_response_status()) {
-    return Status(
-      static_cast<grpc::StatusCode>(request->response_status().code()),
-      request->response_status().message());
-  } else {
-    return Status::OK;
-  }
-}
-
-} // anonomous namespace
-
 class TestServiceImpl : public TestService::Service {
  public:
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
     MaybeEchoMetadata(context);
-    return Status::OK;
-  }
-
-  // Response contains current timestamp. We ignore everything in the request.
-  Status CacheableUnaryCall(ServerContext* context,
-                            const SimpleRequest* request,
-                            SimpleResponse* response) {
-    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
-    response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
-    context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
 
@@ -215,7 +179,13 @@ class TestServiceImpl : public TestService::Service {
       }
     }
 
-    return RequestedStatusOrOk(request);
+    if (request->has_response_status()) {
+      return Status(
+          static_cast<grpc::StatusCode>(request->response_status().code()),
+          request->response_status().message());
+    }
+
+    return Status::OK;
   }
 
   Status StreamingOutputCall(
@@ -253,7 +223,7 @@ class TestServiceImpl : public TestService::Service {
       write_success = writer->Write(response, wopts);
     }
     if (write_success) {
-      return RequestedStatusOrOk(request);
+      return Status::OK;
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
@@ -303,7 +273,7 @@ class TestServiceImpl : public TestService::Service {
       }
     }
     if (write_success) {
-      return RequestedStatusOrOk(&request);
+      return Status::OK;
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
@@ -332,7 +302,7 @@ class TestServiceImpl : public TestService::Service {
       write_success = stream->Write(response);
     }
     if (write_success) {
-      return RequestedStatusOrOk(&request);
+      return Status::OK;
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
