@@ -89,6 +89,11 @@ RUN apt-get update && apt-get install -y \
   g++-4.4 \
   g++-4.4-multilib
 
+# set up backport to allow installation of Git version > 1.7
+RUN echo "deb http://http.debian.net/debian wheezy-backports main"   >/etc/apt/sources.list.d/wheezy-backports.list
+RUN apt-get update -qq
+RUN apt-get -t wheezy-backports install -qq git
+
 RUN wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz
 
 ENV POST_GIT_STEP tools/dockerfile/test/cxx_wheezy_x64/post-git-setup.sh
