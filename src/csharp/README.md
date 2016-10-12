@@ -4,11 +4,6 @@ gRPC C#
 
 A C# implementation of gRPC.
 
-Status
-------
-
-Beta
-
 PREREQUISITES
 --------------
 
