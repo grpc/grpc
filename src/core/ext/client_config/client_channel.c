@@ -830,44 +830,45 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   // If this is an error, there's no point in looking at the service config.
-  if (error != GRPC_ERROR_NONE) return;
-  // Get the method config table from channel data.
-  gpr_mu_lock(&chand->mu);
-  grpc_method_config_table *method_config_table = NULL;
-  if (chand->method_config_table != NULL) {
-    method_config_table =
-        grpc_method_config_table_ref(chand->method_config_table);
-  }
-  gpr_mu_unlock(&chand->mu);
-  // If the method config table was present, use it.
-  if (method_config_table != NULL) {
-    const grpc_method_config *method_config =
-        grpc_method_config_table_get_method_config(method_config_table,
-                                                   calld->path);
-    if (method_config != NULL) {
-      const gpr_timespec *per_method_timeout =
-          grpc_method_config_get_timeout(method_config);
-      const bool *wait_for_ready =
-          grpc_method_config_get_wait_for_ready(method_config);
-      if (per_method_timeout != NULL || wait_for_ready != NULL) {
-        gpr_mu_lock(&calld->mu);
-        if (per_method_timeout != NULL) {
-          gpr_timespec per_method_deadline =
-              gpr_time_add(calld->call_start_time, *per_method_timeout);
-          if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
-            calld->deadline = per_method_deadline;
-            // Reset deadline timer.
-            grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
-          }
-        }
-        if (wait_for_ready != NULL) {
-          calld->wait_for_ready_from_service_config =
-              *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
-        }
-        gpr_mu_unlock(&calld->mu);
-      }
+  if (error == GRPC_ERROR_NONE) {
+    // Get the method config table from channel data.
+    gpr_mu_lock(&chand->mu);
+    grpc_method_config_table *method_config_table = NULL;
+    if (chand->method_config_table != NULL) {
+      method_config_table =
+          grpc_method_config_table_ref(chand->method_config_table);
     }
-    grpc_method_config_table_unref(method_config_table);
+    gpr_mu_unlock(&chand->mu);
+    // If the method config table was present, use it.
+    if (method_config_table != NULL) {
+      const grpc_method_config *method_config =
+          grpc_method_config_table_get_method_config(method_config_table,
+                                                     calld->path);
+      if (method_config != NULL) {
+        const gpr_timespec *per_method_timeout =
+            grpc_method_config_get_timeout(method_config);
+        const bool *wait_for_ready =
+            grpc_method_config_get_wait_for_ready(method_config);
+        if (per_method_timeout != NULL || wait_for_ready != NULL) {
+          gpr_mu_lock(&calld->mu);
+          if (per_method_timeout != NULL) {
+            gpr_timespec per_method_deadline =
+                gpr_time_add(calld->call_start_time, *per_method_timeout);
+            if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
+              calld->deadline = per_method_deadline;
+              // Reset deadline timer.
+              grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
+            }
+          }
+          if (wait_for_ready != NULL) {
+            calld->wait_for_ready_from_service_config =
+                *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
+          }
+          gpr_mu_unlock(&calld->mu);
+        }
+      }
+      grpc_method_config_table_unref(method_config_table);
+    }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
 }
