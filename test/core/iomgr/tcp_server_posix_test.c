@@ -314,11 +314,10 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 0) >= 0);
 
   grpc_tcp_server_unref(&exec_ctx, s);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   /* Weak ref lost. */
   GPR_ASSERT(weak_ref.server == NULL);
-
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
