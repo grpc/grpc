@@ -64,7 +64,7 @@ ensure that the proto serialized to zero bytes.*
 
 This test verifies that gRPC requests marked as cacheable use GET verb instead
 of POST, and that server sets appropriate cache control headers for the response
-to be cached by a proxy. This interop test requires that the server is behind
+to be cached by a proxy. This test requires that the server is behind
 a caching proxy. Use of current timestamp in the request prevents accidental
 cache matches left over from previous tests.
 
