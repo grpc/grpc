@@ -869,6 +869,7 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
     }
     grpc_method_config_table_unref(method_config_table);
   }
+  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
 }
 
 /* Constructor for call_data */
@@ -933,6 +934,8 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   } else {
     // We don't yet have a resolver result, so register a callback to
     // get the service config data once the resolver returns.
+    // Take a reference to the call stack to be owned by the callback.
+    GRPC_CALL_STACK_REF(calld->owning_call, "read_service_config");
     grpc_closure_init(&calld->read_service_config, read_service_config, elem);
     grpc_closure_list_append(&chand->waiting_for_config_closures,
                              &calld->read_service_config, GRPC_ERROR_NONE);
