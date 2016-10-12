@@ -87,8 +87,8 @@ grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
 /* Tries to set the socket's receive buffer to given size. */
 grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
-/* Tries to set the socket's type to service */
-grpc_error *grpc_set_socket_tos(int fd, grpc_arg *arg);
+/* Tries to set the socket using a grpc_socket_mutator */
+grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

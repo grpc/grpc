@@ -35,10 +35,36 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <errno.h>
+#include <netinet/ip.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
+
+struct test_socket_mutator {
+  grpc_socket_mutator base;
+  int option_value;
+};
+
+static bool mutate_fd(int fd, grpc_socket_mutator* mutator) {
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  struct test_socket_mutator* m = (struct test_socket_mutator*)mutator;
+
+  if (0 != setsockopt(fd, IPPROTO_IP, IP_TOS, &m->option_value,
+                      sizeof(m->option_value))) {
+    return false;
+  }
+  if (0 != getsockopt(fd, IPPROTO_IP, IP_TOS, &newval, &intlen)) {
+    return false;
+  }
+  if (newval != m->option_value) {
+    return false;
+  }
+  return true;
+}
+
+static const grpc_socket_mutator_vtable mutator_vtable = {mutate_fd};
 
 int main(int argc, char **argv) {
   int sock;
@@ -63,6 +89,28 @@ int main(int argc, char **argv) {
                                grpc_set_socket_low_latency(sock, 1)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
                                grpc_set_socket_low_latency(sock, 0)));
+
+  struct test_socket_mutator mutator;
+  mutator.base.vtable = &mutator_vtable;
+
+  mutator.option_value = IPTOS_LOWDELAY;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "set_socket_with_mutator",
+      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+
+  mutator.option_value = IPTOS_THROUGHPUT;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "set_socket_with_mutator",
+      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+
+  mutator.option_value = IPTOS_RELIABILITY;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "set_socket_with_mutator",
+      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+
+  mutator.option_value = -1;
+  GPR_ASSERT(GRPC_ERROR_NONE != grpc_set_socket_with_mutator(
+                                    sock, (grpc_socket_mutator*)&mutator));
 
   close(sock);
 

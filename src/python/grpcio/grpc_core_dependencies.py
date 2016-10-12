@@ -121,7 +121,6 @@ CORE_SOURCE_FILES = [
   'src/core/lib/iomgr/socket_utils_common_posix.c',
   'src/core/lib/iomgr/socket_utils_linux.c',
   'src/core/lib/iomgr/socket_utils_posix.c',
-  'src/core/lib/iomgr/socket_utils_tos_posix.c',
   'src/core/lib/iomgr/socket_windows.c',
   'src/core/lib/iomgr/tcp_client_posix.c',
   'src/core/lib/iomgr/tcp_client_windows.c',

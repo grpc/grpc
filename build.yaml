@@ -293,7 +293,6 @@ filegroups:
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
   - src/core/lib/iomgr/socket_utils_posix.c
-  - src/core/lib/iomgr/socket_utils_tos_posix.c
   - src/core/lib/iomgr/socket_windows.c
   - src/core/lib/iomgr/tcp_client_posix.c
   - src/core/lib/iomgr/tcp_client_windows.c
@@ -2429,20 +2428,6 @@ targets:
   language: c
   src:
   - test/core/iomgr/socket_utils_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: socket_utils_tos_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/socket_utils_tos_test.c
   deps:
   - grpc_test_util
   - grpc

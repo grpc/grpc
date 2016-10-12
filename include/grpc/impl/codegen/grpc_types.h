@@ -201,9 +201,19 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
-/** The Type-Of-Service (TOS), in bytes. */
-#define GRPC_ARG_TOS "grpc.tos"
+/** The grpc_socket_mutator instance that set the socket options. A pointer. */
+#define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
+
+typedef struct grpc_socket_mutator grpc_socket_mutator;
+
+typedef struct grpc_socket_mutator_vtable {
+  bool (*mutate_fd)(int fd, grpc_socket_mutator *mutator);
+} grpc_socket_mutator_vtable;
+
+struct grpc_socket_mutator {
+  const grpc_socket_mutator_vtable *vtable;
+};
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.
