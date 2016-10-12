@@ -46,7 +46,7 @@ module PLATFORM
     case RbConfig::CONFIG['host_cpu']
       when /x86_64/
         'x86_64'
-      when /x86|i686/
+      when /x86|i686|i386/
         'x86'
       else
         fail 'cpu architecture detection failed'
