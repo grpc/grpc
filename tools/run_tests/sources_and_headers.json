@@ -346,6 +346,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "connection_refused_test", 
+    "src": [
+      "test/core/end2end/connection_refused_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "dns_resolver_connectivity_test", 
     "src": [
       "test/core/client_config/resolvers/dns_resolver_connectivity_test.c"
@@ -2478,6 +2495,20 @@
     "name": "grpc_objective_c_plugin", 
     "src": [
       "src/compiler/objective_c_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc_plugin_support"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_php_plugin", 
+    "src": [
+      "src/compiler/php_plugin.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4979,8 +5010,7 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_reflection", 
-      "grpc++_test_config"
+      "grpc++_reflection"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
@@ -5027,6 +5057,8 @@
       "src/compiler/node_generator_helpers.h", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
+      "src/compiler/php_generator.h", 
+      "src/compiler/php_generator_helpers.h", 
       "src/compiler/python_generator.h", 
       "src/compiler/ruby_generator.h", 
       "src/compiler/ruby_generator_helpers-inl.h", 
@@ -5051,6 +5083,9 @@
       "src/compiler/objective_c_generator.cc", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
+      "src/compiler/php_generator.cc", 
+      "src/compiler/php_generator.h", 
+      "src/compiler/php_generator_helpers.h", 
       "src/compiler/python_generator.cc", 
       "src/compiler/python_generator.h", 
       "src/compiler/ruby_generator.cc", 
@@ -6881,6 +6916,7 @@
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
@@ -6899,6 +6935,8 @@
     "src": [
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/fake_resolver.c", 
+      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy.c", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.c", 

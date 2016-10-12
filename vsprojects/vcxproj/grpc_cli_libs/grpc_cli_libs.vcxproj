@@ -176,9 +176,6 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_config\grpc++_test_config.vcxproj">
-      <Project>{3F7D093D-11F9-C4BC-BEB7-18EB28E3F290}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

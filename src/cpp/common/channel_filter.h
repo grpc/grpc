@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -53,11 +54,6 @@
 ///   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
 ///       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
 /// \endcode
-
-/// Forward declaration to avoid including the file
-/// "src/core/lib/security/context/security_context.h"
-struct grpc_client_security_context;
-struct grpc_server_security_context;
 
 namespace grpc {
 
