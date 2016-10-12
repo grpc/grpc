@@ -129,6 +129,8 @@ gem install bundler
 
 # Go dependencies
 # Currently, the golang package available via apt-get doesn't have the latest go.
+# Significant performance improvements with grpc-go have been observed after
+# upgrading from go 1.5 to a later version, so a later go version is preferred.
 # Following go install instructions from https://golang.org/doc/install
 GO_VERSION=1.7.1
 OS=linux
