@@ -42,11 +42,15 @@ module PLATFORM
         'linux'
     end
   end
+  
+  # The 'host_cpu' value on x86, 32-bit rubies, appears to turn out to
+  # be the name of the cpu. Only need to know the architecture, 
+  # so enumerating x86 cpu's here.
   def PLATFORM.architecture
     case RbConfig::CONFIG['host_cpu']
       when /x86_64/
         'x86_64'
-      when /x86|i686|i386/
+      when /x86|i386|i486|i586|i686|i786/
         'x86'
       else
         fail 'cpu architecture detection failed'
