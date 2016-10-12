@@ -5,7 +5,7 @@ This directory contains source code for C++ implementation of gRPC.
 
 #Status
 
-Beta
+GA
 
 #Pre-requisites
 
