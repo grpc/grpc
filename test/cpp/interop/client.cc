@@ -149,6 +149,8 @@ int main(int argc, char** argv) {
     client.DoStatusWithMessage();
   } else if (FLAGS_test_case == "custom_metadata") {
     client.DoCustomMetadata();
+  } else if (FLAGS_test_case == "cacheable_unary") {
+    client.DoCacheableUnary();
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
@@ -166,6 +168,7 @@ int main(int argc, char** argv) {
     client.DoEmptyStream();
     client.DoStatusWithMessage();
     client.DoCustomMetadata();
+    client.DoCacheableUnary();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_use_tls) {
       grpc::string json_key = GetServiceAccountJsonKey();
@@ -177,6 +180,7 @@ int main(int argc, char** argv) {
     // compute_engine_creds only runs in GCE.
   } else {
     const char* testcases[] = {"all",
+                               "cacheable_unary",
                                "cancel_after_begin",
                                "cancel_after_first_response",
                                "client_compressed_streaming",

@@ -242,8 +242,17 @@ static grpc_security_status composite_channel_create_security_connector(
   return status;
 }
 
+static grpc_channel_credentials *
+composite_channel_duplicate_without_call_credentials(
+    grpc_channel_credentials *creds) {
+  grpc_composite_channel_credentials *c =
+      (grpc_composite_channel_credentials *)creds;
+  return grpc_channel_credentials_ref(c->inner_creds);
+}
+
 static grpc_channel_credentials_vtable composite_channel_credentials_vtable = {
-    composite_channel_destruct, composite_channel_create_security_connector};
+    composite_channel_destruct, composite_channel_create_security_connector,
+    composite_channel_duplicate_without_call_credentials};
 
 grpc_channel_credentials *grpc_composite_channel_credentials_create(
     grpc_channel_credentials *channel_creds, grpc_call_credentials *call_creds,
