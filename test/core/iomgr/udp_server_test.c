@@ -197,7 +197,6 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD, which should have been orphaned. */
   /* The server had a single FD, which is orphaned once in *
    * deactivated_all_ports, and once in grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 2);
