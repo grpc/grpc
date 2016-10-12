@@ -919,8 +919,6 @@ add_library(grpc_unsecure
   src/core/ext/client_config/uri_parser.c
   src/core/ext/resolver/dns/native/dns_resolver.c
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
-  src/core/ext/load_reporting/load_reporting.c
-  src/core/ext/load_reporting/load_reporting_filter.c
   src/core/ext/lb_policy/grpclb/grpclb.c
   src/core/ext/lb_policy/grpclb/load_balancer_api.c
   src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c

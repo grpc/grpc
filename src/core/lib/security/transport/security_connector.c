@@ -298,6 +298,12 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
       auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 
+  const char FAKE_PEER_ID_PROPERTY_NAME[] = "fake_peer_id_property_name";
+  grpc_auth_context_add_cstring_property(
+      auth_context, FAKE_PEER_ID_PROPERTY_NAME, GRPC_FAKE_PEER_ID);
+  grpc_auth_context_set_peer_identity_property_name(auth_context,
+                                                    FAKE_PEER_ID_PROPERTY_NAME);
+
 end:
   cb(exec_ctx, user_data, status, auth_context);
   grpc_auth_context_unref(auth_context);

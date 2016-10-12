@@ -125,8 +125,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
                                           const char *method_name,
                                           const char *request_msg,
                                           const char *response_msg,
-                                          grpc_metadata *initial_lr_metadata,
-                                          grpc_metadata *trailing_lr_metadata) {
+                                          grpc_metadata *initial_lr_metadata) {
   gpr_slice request_payload_slice = gpr_slice_from_static_string(request_msg);
   gpr_slice response_payload_slice = gpr_slice_from_static_string(response_msg);
   grpc_call *c;
@@ -238,9 +237,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  GPR_ASSERT(trailing_lr_metadata != NULL);
-  op->data.send_status_from_server.trailing_metadata_count = 1;
-  op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
@@ -272,14 +269,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-/* override the default for testing purposes */
-extern void (*g_load_reporting_fn)(
-    const grpc_load_reporting_call_data *call_data);
-
 static void test_load_reporting_hook(grpc_end2end_test_config config) {
-  /* TODO(dgq): this test is currently a noop until LR is fully defined.
-   * Leaving the rest here, as it'll likely be reusable. */
-
   /* Introduce load reporting for the server through its arguments */
   grpc_arg arg = grpc_load_reporting_enable_arg();
   grpc_channel_args *lr_server_args =
@@ -288,30 +278,28 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_load_reporting_hook", NULL, lr_server_args);
 
+  const char *client_token = "client_token123";
   const char *method_name = "/gRPCFTW";
   const char *request_msg = "the msg from the client";
   const char *response_msg = "... and the response from the server";
 
   grpc_metadata initial_lr_metadata;
-  grpc_metadata trailing_lr_metadata;
 
-  initial_lr_metadata.key = GRPC_LOAD_REPORTING_INITIAL_MD_KEY;
-  initial_lr_metadata.value = "client-token";
+  initial_lr_metadata.key =
+      grpc_mdstr_as_c_string(GRPC_MDSTR_LOAD_REPORTING_INITIAL);
+  initial_lr_metadata.value = client_token;
   initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
   memset(&initial_lr_metadata.internal_data, 0,
          sizeof(initial_lr_metadata.internal_data));
 
-  trailing_lr_metadata.key = GRPC_LOAD_REPORTING_TRAILING_MD_KEY;
-  trailing_lr_metadata.value = "server-token";
-  trailing_lr_metadata.value_length = strlen(trailing_lr_metadata.value);
-  memset(&trailing_lr_metadata.internal_data, 0,
-         sizeof(trailing_lr_metadata.internal_data));
-
   request_response_with_payload(f, method_name, request_msg, response_msg,
-                                &initial_lr_metadata, &trailing_lr_metadata);
+                                &initial_lr_metadata);
   end_test(&f);
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);
+
+  /* TODO(dgq): here we should be checking all the values captured by the LR
+   * filter and propagated by census */
 }
 
 void load_reporting_hook(grpc_end2end_test_config config) {

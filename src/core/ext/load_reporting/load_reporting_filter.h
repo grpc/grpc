@@ -37,6 +37,8 @@
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/lib/channel/channel_stack.h"
 
+extern int grpc_load_reporting_trace;
+
 extern const grpc_channel_filter grpc_load_reporting_filter;
 
 #endif /* GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_FILTER_H */

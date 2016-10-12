@@ -54,6 +54,7 @@ typedef enum {
 } grpc_credentials_status;
 
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
+#define GRPC_FAKE_PEER_ID "fake_peer_id"
 
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
