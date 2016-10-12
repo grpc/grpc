@@ -111,8 +111,8 @@ static void test_no_op_with_port(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr,
-                                      on_read, on_fd_orphaned));
+  GPR_ASSERT(
+      grpc_udp_server_add_port(s, &resolved_addr, on_read, on_fd_orphaned));
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -132,8 +132,8 @@ static void test_no_op_with_port_and_start(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr,
-                                      on_read, on_fd_orphaned));
+  GPR_ASSERT(
+      grpc_udp_server_add_port(s, &resolved_addr, on_read, on_fd_orphaned));
 
   grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
 
@@ -163,12 +163,13 @@ static void test_receive(int number_of_clients) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_storage);
   addr->ss_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr,
-                                      on_read, on_fd_orphaned));
+  GPR_ASSERT(
+      grpc_udp_server_add_port(s, &resolved_addr, on_read, on_fd_orphaned));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
-  GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len) == 0);
+  GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)addr,
+                         (socklen_t *)&resolved_addr.len) == 0);
   GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
   pollsets[0] = g_pollset;
@@ -183,7 +184,8 @@ static void test_receive(int number_of_clients) {
     /* Create a socket, send a packet to the UDP server. */
     clifd = socket(addr->ss_family, SOCK_DGRAM, 0);
     GPR_ASSERT(clifd >= 0);
-    GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, (socklen_t)resolved_addr.len) == 0);
+    GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr,
+                       (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {

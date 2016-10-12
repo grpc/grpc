@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H
-#define GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H
+#ifndef GRPC_CORE_LIB_IOMGR_TIMER_UV_H
+#define GRPC_CORE_LIB_IOMGR_TIMER_UV_H
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -44,4 +44,4 @@ struct grpc_timer {
   int triggered;
 };
 
-#endif /* GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H */
+#endif /* GRPC_CORE_LIB_IOMGR_TIMER_UV_H */

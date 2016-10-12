@@ -357,7 +357,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (i = 0; i < s->nports; i++) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
-      if (0 == getsockname(s->ports[i].fd, (struct sockaddr *)sockname_temp.addr,
+      if (0 == getsockname(s->ports[i].fd,
+                           (struct sockaddr *)sockname_temp.addr,
                            (socklen_t *)&sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
@@ -383,8 +384,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
     addr = &wild6;
     // TODO(rjshade): Test and propagate the returned grpc_error*:
     grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
-    allocated_port1 =
-        add_socket_to_server(s, fd, addr, read_cb, orphan_cb);
+    allocated_port1 = add_socket_to_server(s, fd, addr, read_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
