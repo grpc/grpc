@@ -47,8 +47,9 @@ struct grpc_hash_table {
 
 // Helper function for insert and get operations that performs quadratic
 // probing (https://en.wikipedia.org/wiki/Quadratic_probing).
-static size_t grpc_hash_table_find_index(
-    const grpc_hash_table* table, const grpc_mdstr* key, bool find_empty) {
+static size_t grpc_hash_table_find_index(const grpc_hash_table* table,
+                                         const grpc_mdstr* key,
+                                         bool find_empty) {
   for (size_t i = 0; i < table->num_entries; ++i) {
     const size_t idx = (key->hash + i * i) % table->num_entries;
     if (table->entries[idx].key == NULL)

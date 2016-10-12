@@ -680,9 +680,8 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     const grpc_lb_policy_pick_args inputs = {
         calld->pollent, initial_metadata, initial_metadata_flags,
         &calld->lb_token_mdelem, gpr_inf_future(GPR_CLOCK_MONOTONIC)};
-    const bool result =
-        grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs,
-                            connected_subchannel, NULL, on_ready);
+    const bool result = grpc_lb_policy_pick(
+        exec_ctx, lb_policy, &inputs, connected_subchannel, NULL, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
     GPR_TIMER_END("pick_subchannel", 0);
     return result;
