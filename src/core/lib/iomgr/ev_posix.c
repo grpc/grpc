@@ -46,7 +46,6 @@
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
-#include "src/core/lib/iomgr/ev_poll_cv_posix.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 

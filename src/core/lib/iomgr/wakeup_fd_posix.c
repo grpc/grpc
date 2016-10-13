@@ -40,12 +40,14 @@
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
+extern grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
 static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
 
 int grpc_allow_specialized_wakeup_fd = 1;
 int grpc_allow_pipe_wakeup_fd = 1;
-int grpc_has_real_wakeup_fd = 1;
-int grpc_cv_wakeup_fds_enabled = 0;
+
+int has_real_wakeup_fd = 1;
+int cv_wakeup_fds_enabled = 0;
 
 void grpc_wakeup_fd_global_init(void) {
   if (grpc_allow_specialized_wakeup_fd &&
@@ -55,43 +57,41 @@ void grpc_wakeup_fd_global_init(void) {
              grpc_pipe_wakeup_fd_vtable.check_availability()) {
     wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
   } else {
-    grpc_has_real_wakeup_fd = 0;
+    has_real_wakeup_fd = 0;
   }
 }
 
 void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
 
-int grpc_has_wakeup_fd(void) {
-  return grpc_has_real_wakeup_fd || grpc_cv_wakeup_fds_enabled;
-}
+int grpc_has_wakeup_fd(void) { return has_real_wakeup_fd; }
 
-void grpc_enable_cv_wakeup_fds(int enable) {
-  grpc_cv_wakeup_fds_enabled = enable;
-}
+int grpc_cv_wakeup_fds_enabled(void) { return cv_wakeup_fds_enabled; }
+
+void grpc_enable_cv_wakeup_fds(int enable) { cv_wakeup_fds_enabled = enable; }
 
 grpc_error *grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
-  if (grpc_cv_wakeup_fds_enabled) {
+  if (cv_wakeup_fds_enabled) {
     return grpc_cv_wakeup_fd_vtable.init(fd_info);
   }
   return wakeup_fd_vtable->init(fd_info);
 }
 
 grpc_error *grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info) {
-  if (grpc_cv_wakeup_fds_enabled) {
+  if (cv_wakeup_fds_enabled) {
     return grpc_cv_wakeup_fd_vtable.consume(fd_info);
   }
   return wakeup_fd_vtable->consume(fd_info);
 }
 
 grpc_error *grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
-  if (grpc_cv_wakeup_fds_enabled) {
+  if (cv_wakeup_fds_enabled) {
     return grpc_cv_wakeup_fd_vtable.wakeup(fd_info);
   }
   return wakeup_fd_vtable->wakeup(fd_info);
 }
 
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info) {
-  if (grpc_cv_wakeup_fds_enabled) {
+  if (cv_wakeup_fds_enabled) {
     grpc_cv_wakeup_fd_vtable.destroy(fd_info);
   } else {
     wakeup_fd_vtable->destroy(fd_info);

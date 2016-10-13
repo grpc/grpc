@@ -35,6 +35,8 @@
 
 #ifdef GPR_POSIX_WAKEUP_FD
 
+#include "src/core/lib/iomgr/wakeup_fd_cv.h"
+
 #include <errno.h>
 #include <string.h>
 
@@ -44,8 +46,6 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-
-#include "src/core/lib/iomgr/ev_poll_cv_posix.h"
 
 #define MAX_TABLE_RESIZE 256
 

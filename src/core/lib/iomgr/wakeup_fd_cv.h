@@ -48,8 +48,33 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include <grpc/support/sync.h>
 
-extern grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
+#include "src/core/lib/iomgr/ev_posix.h"
+
+#define FD_TO_IDX(fd) (-(fd)-1)
+#define IDX_TO_FD(idx) (-(idx)-1)
+
+typedef struct cv_node {
+  gpr_cv* cv;
+  struct cv_node* next;
+} cv_node;
+
+typedef struct fd_node {
+  int is_set;
+  cv_node* cvs;
+  struct fd_node* next_free;
+} fd_node;
+
+typedef struct cv_fd_table {
+  gpr_mu mu;
+  int pollcount;
+  int shutdown;
+  gpr_cv shutdown_complete;
+  fd_node* cvfds;
+  fd_node* free_fds;
+  unsigned int size;
+  grpc_poll_function_type poll;
+} cv_fd_table;
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */
