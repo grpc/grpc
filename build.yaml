@@ -1022,6 +1022,15 @@ libs:
   language: c++
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+- name: grpc++_test
+  build: test
+  language: c++
+  headers:
+  - include/grpc++/test/server_context_test_spouse.h
+  src:
+  - src/cpp/test/server_context_test_spouse.cc
+  deps:
+  - grpc++
 - name: grpc++_test_config
   build: private
   language: c++

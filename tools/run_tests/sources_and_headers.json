@@ -4929,6 +4929,23 @@
     "type": "lib"
   }, 
   {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_test", 
+    "src": [
+      "include/grpc++/test/server_context_test_spouse.h", 
+      "src/cpp/test/server_context_test_spouse.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "test/cpp/util/test_config.h"
