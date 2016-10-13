@@ -321,13 +321,16 @@ class HybridEnd2endTest : public ::testing::Test {
   }
 
   void SendSimpleServerStreamingToDupService() {
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
     context.set_wait_for_ready(true);
     request.set_message("hello");
 
-    auto stream = stub_->ResponseStream(&context, request);
+    auto stream = stub->ResponseStream(&context, request);
     EXPECT_TRUE(stream->Read(&response));
     EXPECT_EQ(response.message(), request.message() + "0_dup");
     EXPECT_TRUE(stream->Read(&response));
