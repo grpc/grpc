@@ -52,8 +52,6 @@ struct grpc_byte_stream {
   bool (*next_slice)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
                      gpr_slice *slice, size_t max_size_hint,
                      grpc_closure *on_complete);
-  bool (*next_buffer)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                      void *buffer, size_t size, grpc_closure *on_complete);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
 
@@ -70,11 +68,6 @@ bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
                                  grpc_byte_stream *byte_stream,
                                  gpr_slice *slice, size_t max_size_hint,
                                  grpc_closure *on_complete);
-
-/* like grpc_byte_stream_next, but fills \a buffer with exactly \a size bytes */
-bool grpc_byte_stream_next_buffer(grpc_exec_ctx *exec_ctx,
-                                  grpc_byte_stream *byte_stream, void *buffer,
-                                  size_t size, grpc_closure *on_complete);
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream);

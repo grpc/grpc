@@ -49,8 +49,7 @@ grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
   bb->data.raw.compression = compression;
   gpr_slice_buffer_init(&bb->data.raw.slice_buffer);
   for (i = 0; i < nslices; i++) {
-    gpr_slice_ref(slices[i]);
-    gpr_slice_buffer_add(&bb->data.raw.slice_buffer, slices[i]);
+    gpr_slice_buffer_add(&bb->data.raw.slice_buffer, gpr_slice_ref(slices[i]));
   }
   return bb;
 }
@@ -75,6 +74,15 @@ grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
       return grpc_raw_compressed_byte_buffer_create(
           bb->data.raw.slice_buffer.slices, bb->data.raw.slice_buffer.count,
           bb->data.raw.compression);
+    case GRPC_BB_IOVEC: {
+      grpc_byte_buffer *r = grpc_raw_byte_buffer_create(NULL, 0);
+      for (size_t i = 0; i < bb->data.iovec.elem_count; i++) {
+        gpr_slice_buffer_add(
+            &r->data.raw.slice_buffer,
+            gpr_slice_from_copied_buffer(bb->data.iovec.elems[i].base,
+                                         bb->data.iovec.elems[i].len));
+      }
+    }
   }
   GPR_UNREACHABLE_CODE(return NULL);
 }
@@ -85,6 +93,8 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
     case GRPC_BB_RAW:
       gpr_slice_buffer_destroy(&bb->data.raw.slice_buffer);
       break;
+    case GRPC_BB_IOVEC:
+      break;
   }
   gpr_free(bb);
 }
@@ -93,6 +103,13 @@ size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) {
   switch (bb->type) {
     case GRPC_BB_RAW:
       return bb->data.raw.slice_buffer.length;
+    case GRPC_BB_IOVEC: {
+      size_t len = 0;
+      for (size_t i = 0; i < bb->data.iovec.elem_count; i++) {
+        len += bb->data.iovec.elems[i].len;
+      }
+      return len;
+    }
   }
   GPR_UNREACHABLE_CODE(return 0);
 }

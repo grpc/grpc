@@ -47,9 +47,17 @@ extern "C" {
 #endif
 
 typedef enum {
-  GRPC_BB_RAW
+  /* A set of slices */
+  GRPC_BB_RAW,
+  /* A set of pointers to application owned memory: "like an iovec" */
+  GRPC_BB_IOVEC
   /* Future types may include GRPC_BB_PROTOBUF, etc. */
 } grpc_byte_buffer_type;
+
+typedef struct grpc_bb_iovec_elem {
+  void *base;
+  size_t len;
+} grpc_bb_iovec_elem;
 
 typedef struct grpc_byte_buffer {
   void *reserved;
@@ -62,6 +70,10 @@ typedef struct grpc_byte_buffer {
       grpc_compression_algorithm compression;
       gpr_slice_buffer slice_buffer;
     } raw;
+    struct {
+      grpc_bb_iovec_elem *elems;
+      size_t elem_count;
+    } iovec;
   } data;
 } grpc_byte_buffer;
 

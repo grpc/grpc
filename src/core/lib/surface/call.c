@@ -207,6 +207,9 @@ struct grpc_call {
         struct {
           size_t slice_index;
         } raw;
+        struct {
+          size_t elem_index;
+        } iovec;
       } buffer_progress;
       void *tag;
       grpc_closure *on_next;
@@ -1273,6 +1276,9 @@ static void maybe_continue_incremental_recv(grpc_exec_ctx *exec_ctx,
             break;
         }
       }
+      case GRPC_BB_IOVEC: {
+        abort();
+      }
     }
   }
 }
@@ -1344,6 +1350,11 @@ static bool incwr_at_end_of_slice_buffer(grpc_call *call) {
          call->sending.incremental.buffer->data.raw.slice_buffer.count;
 }
 
+static bool incwr_at_end_of_iovec(grpc_call *call) {
+  return call->sending.incremental.buffer_progress.iovec.elem_index ==
+         call->sending.incremental.buffer->data.iovec.elem_count;
+}
+
 static void incwr_published_send(grpc_exec_ctx *exec_ctx, void *callp,
                                  grpc_cq_completion *unused) {}
 
@@ -1362,6 +1373,9 @@ static void incwr_complete_slice(grpc_exec_ctx *exec_ctx, grpc_call *call,
                        &call->sending.incremental.cq_completion);
       }
       break;
+    case GRPC_BB_IOVEC:
+      GPR_ASSERT(!incwr_at_end_of_iovec(call));
+      *slice = break;
   }
 }
 
@@ -1387,20 +1401,7 @@ static bool incwr_bs_next_slice(grpc_exec_ctx *exec_ctx,
 static bool incwr_bs_next_buffer(grpc_exec_ctx *exec_ctx,
                                  grpc_byte_stream *byte_stream, void *buffer,
                                  size_t size, grpc_closure *on_complete) {
-  grpc_call *call = incwr_call_from_stream(byte_stream);
-  gpr_mu_lock(&call->mu);
-  GPR_ASSERT(call->sending.incremental.on_next == NULL);
-  if (call->sending.incremental.buffer != NULL) {
-    if (incwr_maybe_complete_buffer(exec_ctx, call, &buffer, &size)) {
-      gpr_mu_unlock(&call->mu);
-      return true;
-    }
-  }
-  call->sending.incremental.next_is_buffer = true;
-  call->sending.incremental.next.buffer.buffer = buffer;
-  call->sending.incremental.next.buffer.size = size;
-  gpr_mu_unlock(&call->mu);
-  return false;
+  abort(); /* not implemented */
 }
 
 static void incwr_bs_destroy(grpc_exec_ctx *exec_ctx,
@@ -1442,6 +1443,9 @@ grpc_call_error grpc_call_incremental_message_writer_push(
   switch (buffer->type) {
     case GRPC_BB_RAW:
       call->sending.incremental.buffer_progress.raw.slice_index = 0;
+      break;
+    case GRPC_BB_IOVEC:
+      call->sending.incremental.buffer_progress.iovec.elem_index = 0;
       break;
   }
   if (call->sending.incremental.on_next != NULL) {
@@ -1860,7 +1864,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             op->data.send_message_incremental_start.message_length;
         call->sending.incremental.stream.flags = op->flags;
         call->sending.incremental.stream.next_slice = incwr_bs_next_slice;
-        call->sending.incremental.stream.next_buffer = incwr_bs_next_buffer;
         call->sending.incremental.stream.destroy = incwr_bs_destroy;
         call->sending.incremental.bctl = bctl;
         stream_op->send_message = &call->sending.incremental.stream;

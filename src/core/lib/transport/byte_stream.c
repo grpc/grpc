@@ -46,13 +46,6 @@ bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
                                  on_complete);
 }
 
-bool grpc_byte_stream_next_buffer(grpc_exec_ctx *exec_ctx,
-                                  grpc_byte_stream *byte_stream, void *buffer,
-                                  size_t size, grpc_closure *on_complete) {
-  return byte_stream->next_buffer(exec_ctx, byte_stream, buffer, size,
-                                  on_complete);
-}
-
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream) {
   byte_stream->destroy(exec_ctx, byte_stream);
