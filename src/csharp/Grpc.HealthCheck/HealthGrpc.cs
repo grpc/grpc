@@ -107,6 +107,7 @@ namespace Grpc.Health.V1 {
       {
         return CallInvoker.AsyncUnaryCall(__Method_Check, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override HealthClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new HealthClient(configuration);

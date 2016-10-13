@@ -48,8 +48,6 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_NEED_UDP
-
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
 static grpc_pollset *g_pollset;
@@ -133,8 +131,9 @@ static void test_no_op_with_port_and_start(void) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD, which should have been orphaned. */
-  GPR_ASSERT(g_number_of_orphan_calls == 1);
+  /* The server had a single FD, which is orphaned once in *
+   * deactivated_all_ports, and once in grpc_udp_server_destroy. */
+  GPR_ASSERT(g_number_of_orphan_calls == 2);
 }
 
 static void test_receive(int number_of_clients) {
@@ -198,8 +197,9 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD, which should have been orphaned. */
-  GPR_ASSERT(g_number_of_orphan_calls == 1);
+  /* The server had a single FD, which is orphaned once in *
+   * deactivated_all_ports, and once in grpc_udp_server_destroy. */
+  GPR_ASSERT(g_number_of_orphan_calls == 2);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
@@ -229,9 +229,3 @@ int main(int argc, char **argv) {
   grpc_iomgr_shutdown();
   return 0;
 }
-
-#else
-
-int main(int argc, char **argv) { return 0; }
-
-#endif

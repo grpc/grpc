@@ -161,6 +161,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetGauge, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override MetricsServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new MetricsServiceClient(configuration);

@@ -49,10 +49,6 @@
 typedef struct {
   /** base class: must be first */
   grpc_resolver base;
-  /** refcount */
-  gpr_refcount refs;
-  /** load balancing policy name */
-  char *lb_policy_name;
   /** the path component of the uri passed in */
   char *target_name;
   /** the addresses that we've 'resolved' */
@@ -123,7 +119,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     *r->target_result = grpc_resolver_result_create(
         r->target_name,
         grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        r->lb_policy_name, NULL);
+        NULL /* lb_policy_name */, NULL);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -133,7 +129,6 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
-  gpr_free(r->lb_policy_name);
   gpr_free(r->target_name);
   gpr_free(r);
 }
@@ -163,80 +158,49 @@ char *unix_get_default_authority(grpc_resolver_factory *factory,
 
 static void do_nothing(void *ignored) {}
 
-static grpc_resolver *sockaddr_create(
-    grpc_resolver_args *args, const char *default_lb_policy_name,
-    int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
-  bool errors_found = false;
-  sockaddr_resolver *r;
-  gpr_slice path_slice;
-  gpr_slice_buffer path_parts;
-
+static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
+                                      int parse(grpc_uri *uri,
+                                                struct sockaddr_storage *dst,
+                                                size_t *len)) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
             args->uri->scheme);
     return NULL;
   }
-
-  r = gpr_malloc(sizeof(sockaddr_resolver));
-  memset(r, 0, sizeof(*r));
-
-  r->lb_policy_name =
-      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
-  const char *lb_enabled_qpart =
-      grpc_uri_get_query_arg(args->uri, "lb_enabled");
-  /* anything other than "0" is interpreted as true */
-  const bool lb_enabled =
-      (lb_enabled_qpart != NULL && (strcmp("0", lb_enabled_qpart) != 0));
-
-  if (r->lb_policy_name != NULL && strcmp("grpclb", r->lb_policy_name) == 0 &&
-      !lb_enabled) {
-    /* we want grpclb but the "resolved" addresses aren't LB enabled. Bail
-     * out, as this is meant mostly for tests. */
-    gpr_log(GPR_ERROR,
-            "Requested 'grpclb' LB policy but resolved addresses don't "
-            "support load balancing.");
-    abort();
-  }
-
-  if (r->lb_policy_name == NULL) {
-    r->lb_policy_name = gpr_strdup(default_lb_policy_name);
-  }
-
-  path_slice =
+  /* Construct addresses. */
+  gpr_slice path_slice =
       gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
+  gpr_slice_buffer path_parts;
   gpr_slice_buffer_init(&path_parts);
-
   gpr_slice_split(path_slice, ",", &path_parts);
-  r->addresses = grpc_lb_addresses_create(path_parts.count);
-  for (size_t i = 0; i < r->addresses->num_addresses; i++) {
+  grpc_lb_addresses *addresses = grpc_lb_addresses_create(path_parts.count);
+  bool errors_found = false;
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri, (struct sockaddr_storage *)(&r->addresses->addresses[i]
-                                                          .address.addr),
-               &r->addresses->addresses[i].address.len)) {
+    if (!parse(
+            &ith_uri,
+            (struct sockaddr_storage *)(&addresses->addresses[i].address.addr),
+            &addresses->addresses[i].address.len)) {
       errors_found = true;
     }
     gpr_free(part_str);
-    r->addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
-
-  r->target_name = gpr_strdup(args->uri->path);
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
-    gpr_free(r->lb_policy_name);
-    gpr_free(r->target_name);
-    grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
-    gpr_free(r);
+    grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
     return NULL;
   }
-
-  gpr_ref_init(&r->refs, 1);
+  /* Instantiate resolver. */
+  sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
+  memset(r, 0, sizeof(*r));
+  r->target_name = gpr_strdup(args->uri->path);
+  r->addresses = addresses;
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
-
   return &r->base;
 }
 
@@ -251,7 +215,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 #define DECL_FACTORY(name)                                                  \
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
-    return sockaddr_create(args, "pick_first", parse_##name);               \
+    return sockaddr_create(args, parse_##name);                             \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
