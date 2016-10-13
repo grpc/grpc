@@ -43,7 +43,6 @@
 typedef struct grpc_workqueue grpc_workqueue;
 typedef struct grpc_combiner grpc_combiner;
 
-#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  Generally created at public API entry points, and passed down as
@@ -58,12 +57,13 @@ typedef struct grpc_combiner grpc_combiner;
  *    should actively try to finish up and get this thread back to its owner
  *
  *  CONVENTIONS:
- *  Instance of this must ALWAYS be constructed on the stack, never
- *  heap allocated. Instances and pointers to them must always be called
- *  exec_ctx. Instances are always passed as the first argument
- *  to a function that takes it, and always as a pointer (grpc_exec_ctx
- *  is never copied).
+ *  - Instance of this must ALWAYS be constructed on the stack, never
+ *    heap allocated.
+ *  - Instances and pointers to them must always be called exec_ctx.
+ *  - Instances are always passed as the first argument to a function that
+ *    takes it, and always as a pointer (grpc_exec_ctx is never copied).
  */
+#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
   /** currently active combiner: updated only via combiner.c */

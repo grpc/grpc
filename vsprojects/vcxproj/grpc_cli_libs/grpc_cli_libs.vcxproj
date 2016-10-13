@@ -153,6 +153,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\service_describer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
@@ -165,6 +166,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\service_describer.cc">
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj">
@@ -172,9 +175,6 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_config\grpc++_test_config.vcxproj">
-      <Project>{3F7D093D-11F9-C4BC-BEB7-18EB28E3F290}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

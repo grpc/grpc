@@ -243,6 +243,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         // this thread isn't supposed to shut down
         std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
         if (shutdown_state_[thread_idx]->shutdown) {
+          delete ctx;
           return true;
         } else if (!ctx->RunNextState(ok, entry)) {
           // The RPC and callback are done, so clone the ctx

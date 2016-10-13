@@ -182,6 +182,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
@@ -306,6 +307,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.h" role="src" />
@@ -344,6 +346,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/deadline_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
@@ -488,6 +491,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/client_config_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/default_initial_connect_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/http_connect_handshaker.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.c" role="src" />

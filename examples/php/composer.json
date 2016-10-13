@@ -2,6 +2,7 @@
   "name": "grpc/grpc-demo",
   "description": "gRPC example for PHP",
   "require": {
+    "ext-grpc": "*",
     "grpc/grpc": "v1.0.0"
   }
 }

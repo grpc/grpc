@@ -30,7 +30,12 @@
 
 set -ex
 
-git clone --recursive $EXTERNAL_GIT_ROOT
+git clone $EXTERNAL_GIT_ROOT
+# clone gRPC submodules, use data from locally cloned submodules where possible
+(cd ${EXTERNAL_GIT_ROOT} && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference ${EXTERNAL_GIT_ROOT}/${name} \
+${name}')
+
 cd grpc
 
 cd third_party/protobuf && ./autogen.sh && \
