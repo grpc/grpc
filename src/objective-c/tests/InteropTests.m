@@ -92,20 +92,21 @@
   return 0;
 }
 
++ (void)setUp {
+#ifdef GRPC_COMPILE_WITH_CRONET
+  // Cronet setup
+  [Cronet setHttp2Enabled:YES];
+  [Cronet start];
+  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+#endif
+}
+
 - (void)setUp {
   self.continueAfterFailure = NO;
 
   [GRPCCall resetHostSettings];
 
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
-#ifdef GRPC_COMPILE_WITH_CRONET
-  if (cronetEngine == NULL) {
-    // Cronet setup
-    [Cronet setHttp2Enabled:YES];
-    [Cronet start];
-    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-  }
-#endif
 }
 
 - (void)testEmptyUnaryRPC {
