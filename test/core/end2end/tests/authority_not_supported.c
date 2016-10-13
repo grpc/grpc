@@ -96,8 +96,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 /* Request/response with metadata and payload.*/
-static void test_with_authority_header(
-    grpc_end2end_test_config config) {
+static void test_with_authority_header(grpc_end2end_test_config config) {
   grpc_call *c;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
@@ -106,8 +105,8 @@ static void test_with_authority_header(
   grpc_metadata meta_c[2] = {
       {"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
       {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_with_authority_header", NULL, NULL);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_with_authority_header", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -163,7 +162,6 @@ static void test_with_authority_header(
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);

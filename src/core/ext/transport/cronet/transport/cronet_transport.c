@@ -994,10 +994,11 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
         stream_state->state_callback_received[OP_FAILED]) {
-      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_CANCELLED,
-                          NULL);
+      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete,
+                          GRPC_ERROR_CANCELLED, NULL);
     } else {
-      /* All actions in this stream_op are complete. Call the on_complete callback
+      /* All actions in this stream_op are complete. Call the on_complete
+       * callback
        */
       grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
                           NULL);
@@ -1063,17 +1064,18 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     cronet_bidirectional_stream_header_array header_array;
     cronet_bidirectional_stream_header *header;
     cronet_bidirectional_stream cbs;
-    CRONET_LOG(GPR_DEBUG, ":authority header is provided but not supported;"
+    CRONET_LOG(GPR_DEBUG,
+               ":authority header is provided but not supported;"
                " cancel operations");
     /* Notify application that operation is cancelled by forging trailers */
     header_array.count = 1;
     header_array.capacity = 1;
     header_array.headers =
         gpr_malloc(sizeof(cronet_bidirectional_stream_header));
-    header = (cronet_bidirectional_stream_header*) header_array.headers;
+    header = (cronet_bidirectional_stream_header *)header_array.headers;
     header->key = "grpc-status";
     header->value = "1"; /* Return status GRPC_STATUS_CANCELLED */
-    cbs.annotation = (void*)s;
+    cbs.annotation = (void *)s;
     s->state.state_op_done[OP_CANCEL_ERROR] = true;
     on_response_trailers_received(&cbs, &header_array);
     gpr_free(header_array.headers);
