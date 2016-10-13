@@ -30,85 +30,76 @@
 
 """Filter out tests based on file differences compared to merge target branch"""
 
+import re
 from subprocess import call, check_output
 
-# Whitelist for all tests
-# If whitelist item should only trigger some tests, the item should be
-# added to this list and the trigger list of tests that should be run
-starts_with_whitelist = ['templates/',
-                         'doc/',
-                         'examples/',
-                         'summerofcode/',
-                         'src/cpp',
-                         'src/csharp',
-                         'src/node',
-                         'src/objective-c',
-                         'src/php',
-                         'src/python',
-                         'src/ruby',
-                         'test/core',
-                         'test/cpp',
-                         'test/distrib/cpp',
-                         'test/distrib/csharp',
-                         'test/distrib/node',
-                         'test/distrib/php',
-                         'test/distrib/python',
-                         'test/distrib/ruby']
-				   
-ends_with_whitelist = ['README.md',
-                       'LICENSE']
 
-# Triggers for core tests
-core_starts_with_triggers = ['test/core']
-
-# Triggers for c++ tests
-cpp_starts_with_triggers = ['src/cpp',
-                            'test/cpp',
-                            'test/distrib/cpp']
-
-# Triggers for c# tests
-csharp_starts_with_triggers = ['src/csharp',
-                               'test/distrib/csharp']
-
-# Triggers for node tests
-node_starts_with_triggers = ['src/node',
-                             'test/distrib/node']
-
-# Triggers for objective-c tests
-objc_starts_with_triggers = ['src/objective-c']
-
-# Triggers for php tests
-php_starts_with_triggers = ['src/php',
-                            'test/distrib/php']
-
-# Triggers for python tests
-python_starts_with_triggers = ['src/python',
-                               'test/distrib/python']
-
-# Triggers for ruby tests
-ruby_starts_with_triggers = ['src/ruby',
-                            'test/distrib/ruby']
-
-
-def _filter_whitelist(whitelist, triggers):
+class TestSuite:
   """
-  Removes triggers from whitelist
-  :param whitelist: list to remove values from
-  :param triggers: list of values to remove from whitelist
-  :return: filtered whitelist
+  Contains tag to identify job as belonging to this test suite and
+  triggers to identify if changed files are relevant
   """
-  filtered_whitelist = list(whitelist)
-  for trigger in triggers:
-    if trigger in filtered_whitelist:
-      filtered_whitelist.remove(trigger)
-    else:
-      """
-      If the trigger is not found in the whitelist, then there is likely
-      a mistake in the whitelist or trigger list, which needs to be addressed
-      to not wrongly skip tests
-      """
-      print("ERROR: '%s' trigger not in whitelist. Please fix this!" % trigger)
-  return filtered_whitelist
+  def __init__(self, tags):
+    """
+    Build TestSuite to group tests by their tags
+    :param tag: string used to identify if a job belongs to this TestSuite
+    todo(mattkwong): Change the use of tag because do not want to depend on
+    job.shortname to identify what suite a test belongs to
+    """
+    self.triggers = []
+    self.tags = tags
+
+  def add_trigger(self, trigger):
+    """
+    Add a regex to list of triggers that determine if a changed file should run tests
+    :param trigger: regex matching file relevant to tests
+    """
+    self.triggers.append(trigger)
+
+# Create test suites
+_core_test_suite = TestSuite(['_c_'])
+_cpp_test_suite = TestSuite(['_c++_'])
+_csharp_test_suite = TestSuite(['_csharp_'])
+_node_test_suite = TestSuite(['_node_'])
+_objc_test_suite = TestSuite(['_objc_'])
+_php_test_suite = TestSuite(['_php_', '_php7_'])
+_python_test_suite = TestSuite(['_python_'])
+_ruby_test_suite = TestSuite(['_ruby'])
+_all_test_suites = [_core_test_suite, _cpp_test_suite, _csharp_test_suite,
+                    _node_test_suite, _objc_test_suite, _php_test_suite,
+                    _python_test_suite, _ruby_test_suite]
+
+# Dictionary of whitelistable files where the key is a regex matching changed files
+# and the value is a list of tests that should be run. An empty list means that
+# the changed files should not trigger any tests. Any changed file that does not
+# match any of these regexes will trigger all tests
+_WHITELIST_DICT = {
+  '^templates/.*': [],
+  '^doc/.*': [],
+  '^examples/.*': [],
+  '^summerofcode/.*': [],
+  '.*README.md$': [],
+  '.*LICENSE$': [],
+  '^src/cpp.*': [_cpp_test_suite],
+  '^src/csharp.*': [_csharp_test_suite],
+  '^src/node.*': [_node_test_suite],
+  '^src/objective-c.*': [_objc_test_suite],
+  '^src/php.*': [_php_test_suite],
+  '^src/python.*': [_python_test_suite],
+  '^src/ruby.*': [_ruby_test_suite],
+  '^test/core.*': [_core_test_suite],
+  '^test/cpp.*': [_cpp_test_suite],
+  '^test/distrib/cpp.*': [_cpp_test_suite],
+  '^test/distrib/csharp.*': [_csharp_test_suite],
+  '^test/distrib/node.*': [_node_test_suite],
+  '^test/distrib/php.*': [_php_test_suite],
+  '^test/distrib/python.*': [_python_test_suite],
+  '^test/distrib/ruby.*': [_ruby_test_suite]
+}
+# Add all triggers to their respective test suites
+for trigger, test_suites in _WHITELIST_DICT.iteritems():
+  for test_suite in test_suites:
+    test_suite.add_trigger(trigger)
 
 
 def _get_changed_files(base_branch):
@@ -119,28 +110,22 @@ def _get_changed_files(base_branch):
   # todo(mattkwong): remove or uncomment below after seeing if Jenkins needs this
   # call(['git', 'fetch'])
 
-  # get file changes between branch and merge-base of specified branch
-  # not combined to be Windows friendly
+  # Get file changes between branch and merge-base of specified branch
+  # Not combined to be Windows friendly
   base_commit = check_output(["git", "merge-base", base_branch, "HEAD"]).rstrip()
   return check_output(["git", "diff", base_commit, "--name-only"]).splitlines()
 
 
-def _can_skip_tests(file_names, starts_with_whitelist=[], ends_with_whitelist=[]):
+def _can_skip_tests(file_names, triggers):
   """
-  Determines if tests are skippable based on if all file names do not match
-  any begin or end triggers
+  Determines if tests are skippable based on if all files do not match list of regexes
   :param file_names: list of changed files generated by _get_changed_files()
-  :param starts_with_triggers: tuple of strings to match with beginning of file names
-  :param ends_with_triggers: tuple of strings to match with end of file names
+  :param triggers: list of regexes matching file name that indicates tests should be run
   :return: safe to skip tests
   """
-  # convert lists to tuple to pass into str.startswith() and str.endswith()
-  starts_with_whitelist = tuple(starts_with_whitelist)
-  ends_with_whitelist = tuple(ends_with_whitelist)
   for file_name in file_names:
-    if starts_with_whitelist and not file_name.startswith(starts_with_whitelist) and \
-       ends_with_whitelist and not file_name.endswith(ends_with_whitelist):
-         return False
+    if any(re.match(trigger, file_name) for trigger in triggers):
+      return False
   return True
 
 
@@ -152,30 +137,20 @@ def _remove_irrelevant_tests(tests, tag):
   :return: list of relevant tests
   """
   # todo(mattkwong): find a more reliable way to filter tests - don't use shortname
-  return [test for test in tests if
-          tag not in test.shortname or
-          '_msan' in test.shortname or
-          '_asan' in test.shortname or
-          '_tsan' in test.shortname]
+  return [test for test in tests if tag not in test.shortname or
+          any(san_tag in test.shortname for san_tag in ['_asan', '_tsan', '_msan'])]
 
 
-def _remove_irrelevant_sanitizer_tests(tests, language_tag=""):
+def _remove_sanitizer_tests(tests):
   """
-  Filters out sanitizer tests - can specify a language to filter - this should be c++ only
+  Filters out sanitizer tests
   :param tests: list of all tests generated by run_tests_matrix.py
-  :param language_tag: string specifying a language from which to filter sanitizer tests - "_(language)_"
   :return: list of relevant tests
   """
-  if language_tag:
-    return [test for test in tests if not language_tag in test.shortname and
-            not '_asan' in test.shortname and
-            not '_msan' in test.shortname and
-            not '_tsan' in test.shortname]
-  else:
-    return [test for test in tests if
-            '_asan' not in test.shortname and
-            '_msan' not in test.shortname and
-            '_tsan' not in test.shortname]
+  # todo(mattkwong): find a more reliable way to filter tests - don't use shortname
+  return [test for test in tests if
+          all(san_tag not in test.shortname for san_tag in ['_asan', '_tsan', '_msan'])]
+
 
 def filter_tests(tests, base_branch):
   """
@@ -183,71 +158,27 @@ def filter_tests(tests, base_branch):
   :param tests: list of all tests generated by run_tests_matrix.py
   :return: list of relevant tests
   """
-  print("Finding file differences between %s repo and current branch..." % base_branch)
+  print("Finding file differences between %s repo and current branch...\n" % base_branch)
   changed_files = _get_changed_files(base_branch)
   for changed_file in changed_files:
     print(changed_file)
+  print
 
-  # Filter core tests
-  skip_core = _can_skip_tests(changed_files,
-                              starts_with_whitelist=_filter_whitelist(starts_with_whitelist, core_starts_with_triggers),
-                              ends_with_whitelist=ends_with_whitelist)
-  if skip_core:
-    tests = _remove_irrelevant_tests(tests, '_c_')
-
-  # Filter c++ tests
-  skip_cpp = _can_skip_tests(changed_files,
-                             starts_with_whitelist=_filter_whitelist(starts_with_whitelist, cpp_starts_with_triggers),
-                             ends_with_whitelist=ends_with_whitelist)
-  if skip_cpp:
-    tests = _remove_irrelevant_tests(tests, '_c++_')
-    tests = _remove_irrelevant_sanitizer_tests(tests, language_tag='_c++_')
-
+  # Regex that combines all keys in _WHITELIST_DICT
+  all_triggers = "(" + ")|(".join(_WHITELIST_DICT.keys()) + ")"
+  # Check if all tests have to be run
+  for changed_file in changed_files:
+    if not re.match(all_triggers, changed_file):
+      return(tests)
+  # Filter out tests by language
+  for test_suite in _all_test_suites:
+    if _can_skip_tests(changed_files, test_suite.triggers):
+      for tag in test_suite.tags:
+        print("  Filtering %s tests" % tag)
+        tests = _remove_irrelevant_tests(tests, tag)
   # Sanitizer tests skipped if core and c++ are skipped
-  if skip_core and skip_cpp:
-    tests = _remove_irrelevant_sanitizer_tests(tests)
-
-  # Filter c# tests
-  skip_csharp = _can_skip_tests(changed_files,
-                                starts_with_whitelist=_filter_whitelist(starts_with_whitelist, csharp_starts_with_triggers),
-                                ends_with_whitelist=ends_with_whitelist)
-  if skip_csharp:
-    tests = _remove_irrelevant_tests(tests, '_csharp_')
-
-  # Filter node tests
-  skip_node = _can_skip_tests(changed_files,
-                              starts_with_whitelist=_filter_whitelist(starts_with_whitelist, node_starts_with_triggers),
-                              ends_with_whitelist=ends_with_whitelist)
-  if skip_node:
-    tests = _remove_irrelevant_tests(tests, '_node_')
-
-  # Filter objc tests
-  skip_objc = _can_skip_tests(changed_files,
-                              starts_with_whitelist=_filter_whitelist(starts_with_whitelist, objc_starts_with_triggers),
-                              ends_with_whitelist=ends_with_whitelist)
-  if skip_objc:
-    tests = _remove_irrelevant_tests(tests, '_objc_')
-
-  # Filter php tests
-  skip_php = _can_skip_tests(changed_files,
-                             starts_with_whitelist=_filter_whitelist(starts_with_whitelist, php_starts_with_triggers),
-                             ends_with_whitelist=ends_with_whitelist)
-  if skip_php:
-    tests = _remove_irrelevant_tests(tests, '_php_')
-    tests = _remove_irrelevant_tests(tests, '_php7_')
-
-  # Filter python tests
-  skip_python = _can_skip_tests(changed_files,
-                                starts_with_whitelist=_filter_whitelist(starts_with_whitelist, python_starts_with_triggers),
-                                ends_with_whitelist=ends_with_whitelist)
-  if skip_python:
-    tests = _remove_irrelevant_tests(tests, '_python_')
-
-  # Filter ruby tests
-  skip_ruby = _can_skip_tests(changed_files,
-                              starts_with_whitelist=_filter_whitelist(starts_with_whitelist, ruby_starts_with_triggers),
-                              ends_with_whitelist=ends_with_whitelist)
-  if skip_ruby:
-    tests = _remove_irrelevant_tests(tests, '_ruby_')
+  if _can_skip_tests(changed_files, _cpp_test_suite.triggers + _core_test_suite.triggers):
+    print("  Filtering Sanitizer tests")
+    tests = _remove_sanitizer_tests(tests)
 
   return tests
