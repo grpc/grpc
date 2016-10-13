@@ -1025,7 +1025,6 @@ add_library(grpc++
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/rpcmanager/grpc_rpc_manager.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1034,6 +1033,7 @@ add_library(grpc++
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
   src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
@@ -1280,7 +1280,6 @@ add_library(grpc++_unsecure
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/rpcmanager/grpc_rpc_manager.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1289,6 +1288,7 @@ add_library(grpc++_unsecure
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
   src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc

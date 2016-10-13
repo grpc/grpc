@@ -242,12 +242,16 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-class Server::SyncRequestManager : public GrpcRpcManager {
+// Implementation of ThreadManager. Each instance of SyncRequestThreadManager
+// manages a pool of threads that poll for incoming Sync RPCs and call the
+// appropriate RPC handlers
+class Server::SyncRequestThreadManager : public ThreadManager {
  public:
-  SyncRequestManager(Server* server, CompletionQueue* server_cq,
-                     std::shared_ptr<GlobalCallbacks> global_callbacks,
-                     int min_pollers, int max_pollers, int cq_timeout_msec)
-      : GrpcRpcManager(min_pollers, max_pollers),
+  SyncRequestThreadManager(Server* server, CompletionQueue* server_cq,
+                           std::shared_ptr<GlobalCallbacks> global_callbacks,
+                           int min_pollers, int max_pollers,
+                           int cq_timeout_msec)
+      : ThreadManager(min_pollers, max_pollers),
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
@@ -333,7 +337,7 @@ class Server::SyncRequestManager : public GrpcRpcManager {
         m->Request(server_->c_server(), server_cq_->cq());
       }
 
-      GrpcRpcManager::Initialize();
+      ThreadManager::Initialize();
     }
   }
 
@@ -367,9 +371,9 @@ Server::Server(
 
   for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
        it++) {
-    sync_req_mgrs_.emplace_back(
-        new SyncRequestManager(this, (*it).get(), global_callbacks_,
-                               min_pollers, max_pollers, sync_cq_timeout_msec));
+    sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
+        this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
+        sync_cq_timeout_msec));
   }
 
   grpc_channel_args channel_args;
@@ -509,10 +513,10 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     ShutdownTag shutdown_tag;  // Dummy shutdown tag
     grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
 
-    // Shutdown all RpcManagers. This will try to gracefully stop all the
-    // threads in the RpcManagers (once they process any inflight requests)
+    // Shutdown all ThreadManagers. This will try to gracefully stop all the
+    // threads in the ThreadManagers (once they process any inflight requests)
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->ShutdownRpcManager();
+      (*it)->Shutdown();
     }
 
     shutdown_cq.Shutdown();
@@ -530,7 +534,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
     // successfully shutdown
 
-    // Wait for threads in all RpcManagers to terminate
+    // Wait for threads in all ThreadManagers to terminate
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->Wait();
       (*it)->ShutdownAndDrainCompletionQueue();

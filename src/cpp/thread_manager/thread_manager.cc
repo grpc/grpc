@@ -40,29 +40,28 @@
 
 namespace grpc {
 
-GrpcRpcManager::GrpcRpcManagerThread::GrpcRpcManagerThread(
-    GrpcRpcManager* rpc_mgr)
-    : rpc_mgr_(rpc_mgr),
-      thd_(new std::thread(&GrpcRpcManager::GrpcRpcManagerThread::Run, this)) {}
+ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
+    : thd_mgr_(thd_mgr),
+      thd_(new std::thread(&ThreadManager::WorkerThread::Run, this)) {}
 
-void GrpcRpcManager::GrpcRpcManagerThread::Run() {
-  rpc_mgr_->MainWorkLoop();
-  rpc_mgr_->MarkAsCompleted(this);
+void ThreadManager::WorkerThread::Run() {
+  thd_mgr_->MainWorkLoop();
+  thd_mgr_->MarkAsCompleted(this);
 }
 
-GrpcRpcManager::GrpcRpcManagerThread::~GrpcRpcManagerThread() {
+ThreadManager::WorkerThread::~WorkerThread() {
   thd_->join();
   thd_.reset();
 }
 
-GrpcRpcManager::GrpcRpcManager(int min_pollers, int max_pollers)
+ThreadManager::ThreadManager(int min_pollers, int max_pollers)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
       num_threads_(0) {}
 
-GrpcRpcManager::~GrpcRpcManager() {
+ThreadManager::~ThreadManager() {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     GPR_ASSERT(num_threads_ == 0);
@@ -71,24 +70,24 @@ GrpcRpcManager::~GrpcRpcManager() {
   CleanupCompletedThreads();
 }
 
-void GrpcRpcManager::Wait() {
+void ThreadManager::Wait() {
   std::unique_lock<grpc::mutex> lock(mu_);
   while (num_threads_ != 0) {
     shutdown_cv_.wait(lock);
   }
 }
 
-void GrpcRpcManager::ShutdownRpcManager() {
+void ThreadManager::Shutdown() {
   std::unique_lock<grpc::mutex> lock(mu_);
   shutdown_ = true;
 }
 
-bool GrpcRpcManager::IsShutdown() {
+bool ThreadManager::IsShutdown() {
   std::unique_lock<grpc::mutex> lock(mu_);
   return shutdown_;
 }
 
-void GrpcRpcManager::MarkAsCompleted(GrpcRpcManagerThread* thd) {
+void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   {
     std::unique_lock<grpc::mutex> list_lock(list_mu_);
     completed_threads_.push_back(thd);
@@ -101,7 +100,7 @@ void GrpcRpcManager::MarkAsCompleted(GrpcRpcManagerThread* thd) {
   }
 }
 
-void GrpcRpcManager::CleanupCompletedThreads() {
+void ThreadManager::CleanupCompletedThreads() {
   std::unique_lock<grpc::mutex> lock(list_mu_);
   for (auto thd = completed_threads_.begin(); thd != completed_threads_.end();
        thd = completed_threads_.erase(thd)) {
@@ -109,7 +108,7 @@ void GrpcRpcManager::CleanupCompletedThreads() {
   }
 }
 
-void GrpcRpcManager::Initialize() {
+void ThreadManager::Initialize() {
   for (int i = 0; i < min_pollers_; i++) {
     MaybeCreatePoller();
   }
@@ -118,7 +117,7 @@ void GrpcRpcManager::Initialize() {
 // If the number of pollers (i.e threads currently blocked in PollForWork()) is
 // less than max threshold (i.e max_pollers_) and the total number of threads is
 // below the maximum threshold, we can let the current thread continue as poller
-bool GrpcRpcManager::MaybeContinueAsPoller() {
+bool ThreadManager::MaybeContinueAsPoller() {
   std::unique_lock<grpc::mutex> lock(mu_);
   if (shutdown_ || num_pollers_ > max_pollers_) {
     return false;
@@ -131,18 +130,18 @@ bool GrpcRpcManager::MaybeContinueAsPoller() {
 // Create a new poller if the current number of pollers i.e num_pollers_ (i.e
 // threads currently blocked in PollForWork()) is below the threshold (i.e
 // min_pollers_) and the total number of threads is below the maximum threshold
-void GrpcRpcManager::MaybeCreatePoller() {
+void ThreadManager::MaybeCreatePoller() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (!shutdown_ && num_pollers_ < min_pollers_) {
     num_pollers_++;
     num_threads_++;
 
     // Create a new thread (which ends up calling the MainWorkLoop() function
-    new GrpcRpcManagerThread(this);
+    new WorkerThread(this);
   }
 }
 
-void GrpcRpcManager::MainWorkLoop() {
+void ThreadManager::MainWorkLoop() {
   void* tag;
   bool ok;
 
@@ -170,7 +169,7 @@ void GrpcRpcManager::MainWorkLoop() {
     }
 
     // Note that MaybeCreatePoller does check for shutdown and creates a new
-    // thread only if GrpcRpcManager is not shutdown
+    // thread only if ThreadManager is not shutdown
     if (work_status == WORK_FOUND) {
       MaybeCreatePoller();
       DoWork(tag, ok);
@@ -179,7 +178,7 @@ void GrpcRpcManager::MainWorkLoop() {
 
   CleanupCompletedThreads();
 
-  // If we are here, either GrpcRpcManager is shutting down or it already has
+  // If we are here, either ThreadManager is shutting down or it already has
   // enough threads.
 }
 

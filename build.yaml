@@ -713,9 +713,9 @@ filegroups:
   headers:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/rpcmanager/grpc_rpc_manager.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_context.cc
@@ -729,7 +729,6 @@ filegroups:
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/rpcmanager/grpc_rpc_manager.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
@@ -738,6 +737,7 @@ filegroups:
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
   - src/cpp/util/slice_cc.cc
   - src/cpp/util/status.cc
@@ -2895,18 +2895,6 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
-- name: grpc_rpc_manager_test
-  build: test
-  language: c++
-  headers:
-  - test/cpp/rpcmanager/grpc_rpc_manager_test.h
-  src:
-  - test/cpp/rpcmanager/grpc_rpc_manager_test.cc
-  deps:
-  - grpc++
-  - grpc
-  - gpr
-  - grpc++_test_config
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
@@ -3335,6 +3323,18 @@ targets:
   - grpc++
   - grpc
   - gpr_test_util
+  - gpr
+  - grpc++_test_config
+- name: thread_manager_test
+  build: test
+  language: c++
+  headers:
+  - test/cpp/thread_manager/thread_manager_test.h
+  src:
+  - test/cpp/thread_manager/thread_manager_test.cc
+  deps:
+  - grpc++
+  - grpc
   - gpr
   - grpc++_test_config
 - name: thread_stress_test

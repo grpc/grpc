@@ -42,7 +42,7 @@
 #include "test/cpp/rpcmanager/grpc_rpc_manager_test.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc::testing::GrpcRpcManagerTest;
+using grpc::testing::ThreadManagerTest;
 
 static const int kMinPollers = 2;
 static const int kMaxPollers = 10;
@@ -52,8 +52,8 @@ static const int kDoWorkDurationMsec = 1;
 
 static const int kNumDoWorkIterations = 10;
 
-grpc::GrpcRpcManager::WorkStatus GrpcRpcManagerTest::PollForWork(void **tag,
-                                                                 bool *ok) {
+grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
+                                                               bool *ok) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     gpr_log(GPR_INFO, "PollForWork: Entered");
@@ -72,14 +72,14 @@ grpc::GrpcRpcManager::WorkStatus GrpcRpcManagerTest::PollForWork(void **tag,
     if (num_calls_ > kNumDoWorkIterations) {
       gpr_log(GPR_DEBUG, "PollForWork: Returning shutdown");
       work_status = SHUTDOWN;
-      ShutdownRpcManager();
+      ThreadManager::Shutdown();
     }
   }
 
   return work_status;
 }
 
-void GrpcRpcManagerTest::DoWork(void *tag, bool ok) {
+void ThreadManagerTest::DoWork(void *tag, bool ok) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     gpr_log(GPR_DEBUG, "DoWork()");
@@ -91,7 +91,7 @@ void GrpcRpcManagerTest::DoWork(void *tag, bool ok) {
 
 int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  GrpcRpcManagerTest test_rpc_manager(kMinPollers, kMaxPollers);
+  ThreadManagerTest test_rpc_manager(kMinPollers, kMaxPollers);
   test_rpc_manager.Initialize();
   test_rpc_manager.Wait();
 

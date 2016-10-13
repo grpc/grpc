@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A4F24E89-1766-2FAA-9058-1094EAA018A8}</ProjectGuid>
+    <ProjectGuid>{08C611E4-7F87-73BE-76CE-C158A4CC05A3}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -62,14 +62,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>grpc_rpc_manager_test</TargetName>
+    <TargetName>thread_manager_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>grpc_rpc_manager_test</TargetName>
+    <TargetName>thread_manager_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -160,10 +160,10 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\rpcmanager\grpc_rpc_manager_test.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\thread_manager\thread_manager_test.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\rpcmanager\grpc_rpc_manager_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\thread_manager\thread_manager_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

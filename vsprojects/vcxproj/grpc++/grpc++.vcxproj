@@ -361,9 +361,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\channel_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\rpcmanager\grpc_rpc_manager.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
@@ -406,8 +406,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\rpcmanager\grpc_rpc_manager.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
@@ -423,6 +421,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_posix.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\thread_manager\thread_manager.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer_cc.cc">
     </ClCompile>

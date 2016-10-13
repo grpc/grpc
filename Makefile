@@ -1050,7 +1050,6 @@ grpc_node_plugin: $(BINDIR)/$(CONFIG)/grpc_node_plugin
 grpc_objective_c_plugin: $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin
 grpc_php_plugin: $(BINDIR)/$(CONFIG)/grpc_php_plugin
 grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
-grpc_rpc_manager_test: $(BINDIR)/$(CONFIG)/grpc_rpc_manager_test
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
@@ -1078,6 +1077,7 @@ shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 status_test: $(BINDIR)/$(CONFIG)/status_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
+thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
@@ -1420,7 +1420,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
-  $(BINDIR)/$(CONFIG)/grpc_rpc_manager_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
@@ -1447,6 +1446,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
+  $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1508,7 +1508,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
-  $(BINDIR)/$(CONFIG)/grpc_rpc_manager_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_test \
@@ -1535,6 +1534,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
+  $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
 
 endif
@@ -1809,8 +1809,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpc_rpc_manager_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpc_rpc_manager_test || ( echo test grpc_rpc_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_tool_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
@@ -1841,6 +1839,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
+	$(E) "[RUN]     Testing thread_manager_test"
+	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
 
@@ -3605,7 +3605,6 @@ LIBGRPC++_SRC = \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
-    src/cpp/rpcmanager/grpc_rpc_manager.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3614,6 +3613,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
+    src/cpp/thread_manager/thread_manager.cc \
     src/cpp/util/byte_buffer_cc.cc \
     src/cpp/util/slice_cc.cc \
     src/cpp/util/status.cc \
@@ -4136,7 +4136,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
-    src/cpp/rpcmanager/grpc_rpc_manager.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -4145,6 +4144,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
+    src/cpp/thread_manager/thread_manager.cc \
     src/cpp/util/byte_buffer_cc.cc \
     src/cpp/util/slice_cc.cc \
     src/cpp/util/status.cc \
@@ -11807,49 +11807,6 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-GRPC_RPC_MANAGER_TEST_SRC = \
-    test/cpp/rpcmanager/grpc_rpc_manager_test.cc \
-
-GRPC_RPC_MANAGER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_RPC_MANAGER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/grpc_rpc_manager_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/grpc_rpc_manager_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/grpc_rpc_manager_test: $(PROTOBUF_DEP) $(GRPC_RPC_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_RPC_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_rpc_manager_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/rpcmanager/grpc_rpc_manager_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-
-deps_grpc_rpc_manager_test: $(GRPC_RPC_MANAGER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GRPC_RPC_MANAGER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GRPC_RUBY_PLUGIN_SRC = \
     src/compiler/ruby_plugin.cc \
 
@@ -13044,6 +13001,49 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+
+THREAD_MANAGER_TEST_SRC = \
+    test/cpp/thread_manager/thread_manager_test.cc \
+
+THREAD_MANAGER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(THREAD_MANAGER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/thread_manager_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/thread_manager_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/thread_manager_test: $(PROTOBUF_DEP) $(THREAD_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/thread_manager_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/thread_manager/thread_manager_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_thread_manager_test: $(THREAD_MANAGER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(THREAD_MANAGER_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 THREAD_STRESS_TEST_SRC = \

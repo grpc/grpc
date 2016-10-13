@@ -30,21 +30,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *is % allowed in string
  */
-#ifndef GRPC_TEST_CPP_GRPC_RPC_MANAGER_TEST_H
-#define GRPC_TEST_CPP_GRPC_RPC_MANAGER_TEST_H
+#ifndef GRPC_TEST_CPP_THREAD_MANAGER_TEST_H
+#define GRPC_TEST_CPP_THREAD_MANAGER_TEST_H
 
 #include "src/cpp/rpcmanager/grpc_rpc_manager.h"
 
 namespace grpc {
 namespace testing {
 
-class GrpcRpcManagerTest GRPC_FINAL : public GrpcRpcManager {
+class ThreadManagerTest GRPC_FINAL : public ThreadManager {
  public:
-  GrpcRpcManagerTest(int min_pollers, int max_pollers)
-      : GrpcRpcManager(min_pollers, max_pollers), num_calls_(0){};
+  ThreadManagerTest(int min_pollers, int max_pollers)
+      : ThreadManager(min_pollers, max_pollers), num_calls_(0){};
 
-  grpc::GrpcRpcManager::WorkStatus PollForWork(void **tag,
-                                               bool *ok) GRPC_OVERRIDE;
+  grpc::ThreadManager::WorkStatus PollForWork(void **tag,
+                                              bool *ok) GRPC_OVERRIDE;
   void DoWork(void *tag, bool ok) GRPC_OVERRIDE;
 
  private:
@@ -55,4 +55,4 @@ class GrpcRpcManagerTest GRPC_FINAL : public GrpcRpcManager {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_GRPC_RPC_MANAGER_TEST_H
+#endif  // GRPC_TEST_CPP_THREAD_MANAGER_TEST_H

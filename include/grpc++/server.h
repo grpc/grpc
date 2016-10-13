@@ -107,11 +107,11 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   class AsyncRequest;
   class ShutdownRequest;
 
-  /// SyncRequestManager is an implementation of GrpcRpcManager. This class is
-  /// responsible for polling for incoming RPCs and calling the RPC handlers.
+  /// SyncRequestThreadManager is an implementation of ThreadManager. This class
+  /// is responsible for polling for incoming RPCs and calling the RPC handlers.
   /// This is only used in case of a Sync server (i.e a server exposing a sync
   /// interface)
-  class SyncRequestManager;
+  class SyncRequestThreadManager;
 
   class UnimplementedAsyncRequestContext;
   class UnimplementedAsyncRequest;
@@ -196,19 +196,14 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
       sync_server_cqs_;
 
-  /// List of GrpcRpcManager instances (one for each cq in the sync_server_cqs)
-  std::vector<std::unique_ptr<SyncRequestManager>> sync_req_mgrs_;
+  /// List of ThreadManager instances (one for each cq in the sync_server_cqs)
+  std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
   // Sever status
   grpc::mutex mu_;
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;
-
-  // TODO (sreek) : Remove num_running_cb_ and callback_cv_;
-  // The number of threads which are running callbacks.
-  // int num_running_cb_;
-  // grpc::condition_variable callback_cv_;
 
   grpc::condition_variable shutdown_cv_;
 

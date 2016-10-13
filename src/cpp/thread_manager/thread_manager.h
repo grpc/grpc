@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_GRPC_RPC_MANAGER_H
-#define GRPC_INTERNAL_CPP_GRPC_RPC_MANAGER_H
+#ifndef GRPC_INTERNAL_CPP_THREAD_MANAGER_H
+#define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
 #include <list>
 #include <memory>
@@ -42,10 +42,10 @@
 
 namespace grpc {
 
-class GrpcRpcManager {
+class ThreadManager {
  public:
-  explicit GrpcRpcManager(int min_pollers, int max_pollers);
-  virtual ~GrpcRpcManager();
+  explicit ThreadManager(int min_pollers, int max_pollers);
+  virtual ~ThreadManager();
 
   // Initializes and Starts the Rpc Manager threads
   void Initialize();
@@ -60,17 +60,17 @@ class GrpcRpcManager {
   //  - The implementaion MUST set the value of 'ok' to 'true' or 'false'. A
   //    value of 'false' indicates some implemenation specific error (that is
   //    neither SHUTDOWN nor TIMEOUT)
-  //  - GrpcRpcManager does not interpret the values of 'tag' and 'ok'
-  //  - GrpcRpcManager WILL call DoWork() and pass '*tag' and 'ok' as input to
+  //  - ThreadManager does not interpret the values of 'tag' and 'ok'
+  //  - ThreadManager WILL call DoWork() and pass '*tag' and 'ok' as input to
   //    DoWork()
   //
   // If the return value is SHUTDOWN:,
-  //  - GrpcManager WILL NOT call DoWork() and terminates the thead
+  //  - ThreadManager WILL NOT call DoWork() and terminates the thead
   //
   // If the return value is TIMEOUT:,
-  //  - GrpcManager WILL NOT call DoWork()
-  //  - GrpcManager MAY terminate the thread depending on the current number of
-  //    active poller threads and mix_pollers/max_pollers settings
+  //  - ThreadManager WILL NOT call DoWork()
+  //  - ThreadManager MAY terminate the thread depending on the current number
+  //    of active poller threads and mix_pollers/max_pollers settings
   //  - Also, the value of timeout is specific to the derived class
   //    implementation
   virtual WorkStatus PollForWork(void** tag, bool* ok) = 0;
@@ -84,40 +84,40 @@ class GrpcRpcManager {
   // actually finds some work
   virtual void DoWork(void* tag, bool ok) = 0;
 
-  // Mark the GrpcRpcManager as shutdown and begin draining the work.
-  // This is a non-blocking call and the caller should call Wait(), a blocking
-  // call which returns only once the shutdown is complete
-  void ShutdownRpcManager();
+  // Mark the ThreadManager as shutdown and begin draining the work. This is a
+  // non-blocking call and the caller should call Wait(), a blocking call which
+  // returns only once the shutdown is complete
+  void Shutdown();
 
-  // Has ShutdownRpcManager() been called
+  // Has Shutdown() been called
   bool IsShutdown();
 
-  // A blocking call that returns only after the GrpcRpcManager has shutdown and
+  // A blocking call that returns only after the ThreadManager has shutdown and
   // all the threads have drained all the outstanding work
   void Wait();
 
  private:
-  // Helper wrapper class around std::thread. This takes a GrpcRpcManager object
+  // Helper wrapper class around std::thread. This takes a ThreadManager object
   // and starts a new std::thread to calls the Run() function.
   //
-  // The Run() function calls GrpcManager::MainWorkLoop() function and once that
-  // completes, it marks the GrpcRpcManagerThread completed by calling
-  // GrpcRpcManager::MarkAsCompleted()
-  class GrpcRpcManagerThread {
+  // The Run() function calls ThreadManager::MainWorkLoop() function and once
+  // that completes, it marks the WorkerThread completed by calling
+  // ThreadManager::MarkAsCompleted()
+  class WorkerThread {
    public:
-    GrpcRpcManagerThread(GrpcRpcManager* rpc_mgr);
-    ~GrpcRpcManagerThread();
+    WorkerThread(ThreadManager* thd_mgr);
+    ~WorkerThread();
 
    private:
-    // Calls rpc_mgr_->MainWorkLoop() and once that completes, calls
-    // rpc_mgr_>MarkAsCompleted(this) to mark the thread as completed
+    // Calls thd_mgr_->MainWorkLoop() and once that completes, calls
+    // thd_mgr_>MarkAsCompleted(this) to mark the thread as completed
     void Run();
 
-    GrpcRpcManager* rpc_mgr_;
+    ThreadManager* thd_mgr_;
     std::unique_ptr<grpc::thread> thd_;
   };
 
-  // The main funtion in GrpcRpcManager
+  // The main funtion in ThreadManager
   void MainWorkLoop();
 
   // Create a new poller if the number of current pollers is less than the
@@ -128,7 +128,7 @@ class GrpcRpcManager {
   // current number of pollers is less than the max_pollers.
   bool MaybeContinueAsPoller();
 
-  void MarkAsCompleted(GrpcRpcManagerThread* thd);
+  void MarkAsCompleted(WorkerThread* thd);
   void CleanupCompletedThreads();
 
   // Protects shutdown_, num_pollers_ and num_threads_
@@ -150,9 +150,9 @@ class GrpcRpcManager {
   int num_threads_;
 
   grpc::mutex list_mu_;
-  std::list<GrpcRpcManagerThread*> completed_threads_;
+  std::list<WorkerThread*> completed_threads_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_GRPC_RPC_MANAGER_H
+#endif  // GRPC_INTERNAL_CPP_THREAD_MANAGER_H
