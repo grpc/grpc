@@ -275,6 +275,7 @@ print
 if args.filter_pr_tests:
   print 'IMPORTANT: Test filtering is not active; this is only for testing.'
   relevant_jobs = filter_tests(jobs, args.base_branch)
+  # todo(mattkwong): add skipped tests to report.xml
   print
   if len(relevant_jobs) == len(jobs):
     print '(TESTING) No tests will be skipped.'
