@@ -243,8 +243,7 @@ class SplitServerStreamingHandler
  public:
   explicit SplitServerStreamingHandler(
       std::function<Status(ServerContext*,
-                           SplitServerStreamingHandler<RequestType,
-			   ResponseType>*)>
+                           ServerSplitStreamer<RequestType, ResponseType>*)>
           func)
       : TemplatedBidiStreamingHandler<
             ServerSplitStreamer<RequestType, ResponseType>, false>(func) {}

@@ -691,7 +691,7 @@ void PrintHeaderServerMethodSplitStreaming(
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
