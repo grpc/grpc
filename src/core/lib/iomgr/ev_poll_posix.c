@@ -254,7 +254,7 @@ struct grpc_pollset_set {
 #define CV_POLL_PERIOD_MS 1000
 #define CV_DEFAULT_TABLE_SIZE 16
 
-typedef enum status_t { INPROGRESS, COMPLETED, CANCELLED } status_t;
+typedef enum poll_status_t { INPROGRESS, COMPLETED, CANCELLED } poll_status_t;
 
 typedef struct poll_args {
   gpr_refcount refcount;
@@ -264,7 +264,7 @@ typedef struct poll_args {
   int timeout;
   int retval;
   int err;
-  status_t status;
+  gpr_atm status;
 } poll_args;
 
 cv_fd_table g_cvfds;
@@ -1276,7 +1276,7 @@ static void decref_poll_args(poll_args *args) {
 static void run_poll(void *arg) {
   int timeout, retval;
   poll_args *pargs = (poll_args *)arg;
-  while (pargs->status == INPROGRESS) {
+  while (gpr_atm_no_barrier_load(&pargs->status) == INPROGRESS) {
     if (pargs->timeout < 0) {
       timeout = CV_POLL_PERIOD_MS;
     } else {
@@ -1291,9 +1291,9 @@ static void run_poll(void *arg) {
     }
   }
   gpr_mu_lock(&g_cvfds.mu);
-  if (pargs->status == INPROGRESS) {
+  if (gpr_atm_no_barrier_load(&pargs->status) == INPROGRESS) {
     // Signal main thread that the poll completed
-    pargs->status = COMPLETED;
+    gpr_atm_no_barrier_store(&pargs->status, COMPLETED);
     gpr_cv_signal(pargs->cv);
   }
   decref_poll_args(pargs);
@@ -1345,7 +1345,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     pargs->timeout = timeout;
     pargs->retval = 0;
     pargs->err = 0;
-    pargs->status = INPROGRESS;
+    gpr_atm_no_barrier_store(&pargs->status, INPROGRESS);
     idx = 0;
     for (i = 0; i < nfds; i++) {
       if (fds[i].fd >= 0) {
@@ -1361,13 +1361,13 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     gpr_thd_new(&t_id, &run_poll, pargs, &opt);
     // We want the poll() thread to trigger the deadline, so wait forever here
     gpr_cv_wait(pollcv, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    if (pargs->status == COMPLETED) {
+    if (gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {
       res = pargs->retval;
       errno = pargs->err;
     } else {
       res = 0;
       errno = 0;
-      pargs->status = CANCELLED;
+      gpr_atm_no_barrier_store(&pargs->status, CANCELLED);
     }
   } else {
     gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
@@ -1398,7 +1398,8 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
         fds[i].revents = POLLIN;
         if (res >= 0) res++;
       }
-    } else if (fds[i].fd >= 0 && pargs->status == COMPLETED) {
+    } else if (fds[i].fd >= 0 &&
+               gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {
       fds[i].revents = pargs->fds[idx].revents;
       idx++;
     }
