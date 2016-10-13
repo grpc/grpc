@@ -3234,6 +3234,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_context_test_spouse_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/test/server_context_test_spouse_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1
