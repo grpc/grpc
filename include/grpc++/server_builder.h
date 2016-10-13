@@ -34,6 +34,7 @@
 #ifndef GRPCXX_SERVER_BUILDER_H
 #define GRPCXX_SERVER_BUILDER_H
 
+#include <climits>
 #include <map>
 #include <memory>
 #include <vector>
@@ -42,6 +43,8 @@
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/useful.h>
 
 namespace grpc {
 
@@ -62,21 +65,7 @@ class ServerBuilder {
  public:
   ServerBuilder();
 
-  struct SyncServerSettings {
-    // Number of server completion queues to create to listen to incoming RPCs.
-    int num_cqs;
-
-    // Minimum number of threads per completion queue that should be listening
-    // to incoming RPCs.
-    int min_pollers;
-
-    // Maximum number of threads per completion queue that can be listening to
-    // incoming RPCs.
-    int max_pollers;
-
-    // The timeout for server completion queue's AsyncNext call.
-    int cq_timeout_msec;
-  };
+  enum SyncServerOption { NUM_CQS, MIN_POLLERS, MAX_POLLERS, CQ_TIMEOUT_MSEC };
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
@@ -131,8 +120,8 @@ class ServerBuilder {
 
   ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
-  /// Note: Only useful if this is a Synchronous server.
-  void SetSyncServerSettings(SyncServerSettings settings);
+  /// Only useful if this is a Synchronous server.
+  ServerBuilder& SetSyncServerOption(SyncServerOption option, int value);
 
   /// Tries to bind \a server to the given \a addr.
   ///
@@ -189,13 +178,27 @@ class ServerBuilder {
     int* selected_port;
   };
 
-  // Sync server settings. If this is not set via SetSyncServerSettings(), the
-  // following default values are used:
-  //    sync_server_settings_.num_cqs = Number of CPUs
-  //    sync_server_settings_.min_pollers = 1
-  //    sync_server_settings_.max_pollers = INT_MAX
-  //    sync_server_settings_.cq_timeout_msec = 1000
-  struct SyncServerSettings sync_server_settings_;
+  struct SyncServerSettings {
+    SyncServerSettings()
+        : num_cqs(GPR_MAX(gpr_cpu_num_cores(), 4)),
+          min_pollers(1),
+          max_pollers(INT_MAX),
+          cq_timeout_msec(100) {}
+
+    // Number of server completion queues to create to listen to incoming RPCs.
+    int num_cqs;
+
+    // Minimum number of threads per completion queue that should be listening
+    // to incoming RPCs.
+    int min_pollers;
+
+    // Maximum number of threads per completion queue that can be listening to
+    // incoming RPCs.
+    int max_pollers;
+
+    // The timeout for server completion queue's AsyncNext call.
+    int cq_timeout_msec;
+  };
 
   typedef std::unique_ptr<grpc::string> HostString;
   struct NamedService {
@@ -211,6 +214,8 @@ class ServerBuilder {
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+
+  SyncServerSettings sync_server_settings_;
 
   /* List of completion queues added via AddCompletionQueue() method */
   std::vector<ServerCompletionQueue*> cqs_;

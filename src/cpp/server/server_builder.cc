@@ -55,6 +55,7 @@ static void do_plugin_list_init(void) {
 ServerBuilder::ServerBuilder()
     : max_receive_message_size_(-1),
       max_send_message_size_(-1),
+      sync_server_settings_(SyncServerSettings()),
       generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
@@ -70,16 +71,6 @@ ServerBuilder::ServerBuilder()
          sizeof(maybe_default_compression_level_));
   memset(&maybe_default_compression_algorithm_, 0,
          sizeof(maybe_default_compression_algorithm_));
-
-  // Sync server setting defaults
-  sync_server_settings_.min_pollers = 1;
-  sync_server_settings_.max_pollers = INT_MAX;
-
-  int num_cpus = gpr_cpu_num_cores();
-  num_cpus = GPR_MAX(num_cpus, 4);
-  sync_server_settings_.num_cqs = num_cpus;
-
-  sync_server_settings_.cq_timeout_msec = 1000;
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
@@ -119,6 +110,26 @@ ServerBuilder& ServerBuilder::SetOption(
   return *this;
 }
 
+ServerBuilder& ServerBuilder::SetSyncServerOption(
+    ServerBuilder::SyncServerOption option, int val) {
+  switch (option) {
+    case NUM_CQS:
+      sync_server_settings_.num_cqs = val;
+      break;
+
+    case MIN_POLLERS:
+      sync_server_settings_.min_pollers = val;
+      break;
+    case MAX_POLLERS:
+      sync_server_settings_.max_pollers = val;
+      break;
+    case CQ_TIMEOUT_MSEC:
+      sync_server_settings_.cq_timeout_msec = val;
+      break;
+  }
+  return *this;
+}
+
 ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
     grpc_compression_algorithm algorithm, bool enabled) {
   if (enabled) {
@@ -140,10 +151,6 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
   maybe_default_compression_algorithm_.is_set = true;
   maybe_default_compression_algorithm_.algorithm = algorithm;
   return *this;
-}
-
-void ServerBuilder::SetSyncServerSettings(SyncServerSettings settings) {
-  sync_server_settings_ = settings;  // copy the settings
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
