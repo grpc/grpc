@@ -66,10 +66,20 @@ typedef struct grpc_combiner grpc_combiner;
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  /** The workqueue we're stealing work from.
+      As items are queued to the execution context, we try to steal one
+      workqueue item and execute it inline (assuming the exec_ctx is not
+      finished) - doing so does not invalidate the workqueue's contract, and
+      provides a small latency win in cases where we get a hit */
   grpc_workqueue *stealing_from_workqueue;
+  /** The workqueue item that was stolen from the workqueue above. When new
+      items are scheduled to be offloaded to that workqueue, we need to update
+      this like a 1-deep fifo to maintain the invariant that workqueue items
+      queued by one thread are started in order */
   grpc_closure *stolen_closure;
   /** currently active combiner: updated only via combiner.c */
   grpc_combiner *active_combiner;
+  /** last active combiner in the active combiner list */
   grpc_combiner *last_combiner;
   bool cached_ready_to_finish;
   void *check_ready_to_finish_arg;
