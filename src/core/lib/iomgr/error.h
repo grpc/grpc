@@ -37,7 +37,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <grpc/status.h>
 #include <grpc/support/time.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// Opaque representation of an error.
 /// Errors are refcounted objects that represent the result of an operation.
@@ -175,6 +180,13 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
 /// Returns NULL if the specified string is not set.
 /// Caller does NOT own return value.
 const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
+
+/// A utility function to get the status code and message to be returned
+/// to the application.  If not set in the top-level message, looks
+/// through child errors until it finds the first one with these attributes.
+void grpc_error_get_status(grpc_error *error, grpc_status_code *code,
+                           const char **msg);
+
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
 /// errors that contributed to them.
@@ -195,5 +207,9 @@ bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
                        int line);
 #define GRPC_LOG_IF_ERROR(what, error) \
   grpc_log_if_error((what), (error), __FILE__, __LINE__)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

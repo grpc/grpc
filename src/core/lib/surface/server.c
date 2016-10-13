@@ -1106,6 +1106,12 @@ void grpc_server_start(grpc_server *server) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+void grpc_server_get_pollsets(grpc_server *server, grpc_pollset ***pollsets,
+                              size_t *pollset_count) {
+  *pollset_count = server->cq_count;
+  *pollsets = server->pollsets;
+}
+
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
                                  grpc_transport *transport,
                                  grpc_pollset *accepting_pollset,
