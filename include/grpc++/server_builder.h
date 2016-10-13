@@ -183,7 +183,7 @@ class ServerBuilder {
         : num_cqs(GPR_MAX(gpr_cpu_num_cores(), 4)),
           min_pollers(1),
           max_pollers(INT_MAX),
-          cq_timeout_msec(100) {}
+          cq_timeout_msec(1000) {}
 
     // Number of server completion queues to create to listen to incoming RPCs.
     int num_cqs;
