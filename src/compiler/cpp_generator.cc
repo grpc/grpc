@@ -605,7 +605,7 @@ void PrintHeaderServerMethodAsync(Printer *printer, const Method *method,
   printer->Print(*vars, "};\n");
 }
 
- void PrintHeaderServerMethodStreamedUnary(
+void PrintHeaderServerMethodStreamedUnary(
     Printer *printer, const Method *method,
     std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Method"] = method->name();
@@ -691,7 +691,8 @@ void PrintHeaderServerMethodSplitStreaming(
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE "
+        "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -899,7 +900,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
     PrintHeaderServerMethodSplitStreaming(printer, service->method(i).get(),
-					  vars);
+                                          vars);
   }
 
   printer->Print("typedef ");
@@ -931,7 +932,7 @@ void PrintHeaderService(Printer *printer, const Service *service,
   printer->Print("Service");
   for (int i = 0; i < service->method_count(); ++i) {
     if (service->method(i)->NoStreaming() ||
-	service->method(i)->ServerOnlyStreaming()) {
+        service->method(i)->ServerOnlyStreaming()) {
       printer->Print(" >");
     }
   }

@@ -523,12 +523,12 @@ TEST_F(HybridEnd2endTest,
 
 // Add a second service with one sync split server streaming method.
 class SplitResponseStreamDupPkg
-    : public duplicate::EchoTestService::WithSplitStreamingMethod_ResponseStream<
-          TestServiceImplDupPkg> {
+    : public duplicate::EchoTestService::
+          WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
  public:
-  Status StreamedResponseStream(ServerContext* context,
-                      ServerSplitStreamer<EchoRequest, EchoResponse>* stream)
-      GRPC_OVERRIDE {
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -566,9 +566,9 @@ TEST_F(HybridEnd2endTest,
 class FullySplitStreamedDupPkg
     : public duplicate::EchoTestService::SplitStreamedService {
  public:
-  Status StreamedResponseStream(ServerContext* context,
-                      ServerSplitStreamer<EchoRequest, EchoResponse>* stream)
-      GRPC_OVERRIDE {
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -603,8 +603,7 @@ TEST_F(HybridEnd2endTest,
 }
 
 // Add a second service that is fully server streamed
-class FullyStreamedDupPkg
-    : public duplicate::EchoTestService::StreamedService {
+class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
  public:
   Status StreamedEcho(ServerContext* context,
                       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
@@ -619,9 +618,9 @@ class FullyStreamedDupPkg
     GPR_ASSERT(stream->Write(resp));
     return Status::OK;
   }
-  Status StreamedResponseStream(ServerContext* context,
-                      ServerSplitStreamer<EchoRequest, EchoResponse>* stream)
-      GRPC_OVERRIDE {
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;

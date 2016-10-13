@@ -147,8 +147,7 @@ class Service {
     methods_[index].reset();
   }
 
-  void MarkMethodStreamed(int index,
-			  MethodHandler* streamed_method) {
+  void MarkMethodStreamed(int index, MethodHandler* streamed_method) {
     GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
                        "Cannot mark an async or generic method Streamed");
     methods_[index]->SetHandler(streamed_method);
