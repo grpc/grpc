@@ -154,8 +154,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               method_name, authority, deadline,
-                               NULL);
+                               method_name, authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

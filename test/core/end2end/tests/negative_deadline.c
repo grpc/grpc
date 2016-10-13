@@ -115,8 +115,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline,
-                               NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

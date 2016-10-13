@@ -126,8 +126,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline,
-                               NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

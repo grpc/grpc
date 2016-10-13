@@ -146,8 +146,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   char *peer;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline,
-                               NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);

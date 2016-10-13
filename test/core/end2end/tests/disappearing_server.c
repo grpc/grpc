@@ -99,8 +99,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                               "/foo", authority, deadline,
-                               NULL);
+                               "/foo", authority, deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
