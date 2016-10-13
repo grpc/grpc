@@ -50,7 +50,7 @@
 #include <grpc++/support/status.h>
 #include <grpc/compression.h>
 
-#include "src/cpp/rpcmanager/grpc_rpc_manager.h"
+#include "src/cpp/thread_manager/thread_manager.h"
 
 struct grpc_server;
 

@@ -36,7 +36,7 @@
 #include <grpc/support/log.h>
 #include <climits>
 
-#include "src/cpp/rpcmanager/grpc_rpc_manager.h"
+#include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
 

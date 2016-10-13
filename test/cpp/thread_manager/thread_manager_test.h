@@ -33,7 +33,7 @@
 #ifndef GRPC_TEST_CPP_THREAD_MANAGER_TEST_H
 #define GRPC_TEST_CPP_THREAD_MANAGER_TEST_H
 
-#include "src/cpp/rpcmanager/grpc_rpc_manager.h"
+#include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
 namespace testing {
