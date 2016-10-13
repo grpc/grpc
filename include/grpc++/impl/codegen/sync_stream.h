@@ -606,7 +606,7 @@ class ServerSplitStreamer GRPC_FINAL
   using WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response,
              const WriteOptions& options) GRPC_OVERRIDE {
-    return !read_done_ && body_.Write(response, options);
+    return read_done_ && body_.Write(response, options);
   }
 
  private:
