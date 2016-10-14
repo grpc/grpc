@@ -118,6 +118,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/iomgr/resolve_address_posix.c',
   'src/core/lib/iomgr/resolve_address_windows.c',
   'src/core/lib/iomgr/sockaddr_utils.c',
+  'src/core/lib/iomgr/socket_mutator.c',
   'src/core/lib/iomgr/socket_utils_common_posix.c',
   'src/core/lib/iomgr/socket_utils_linux.c',
   'src/core/lib/iomgr/socket_utils_posix.c',

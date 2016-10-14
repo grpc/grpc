@@ -23,8 +23,8 @@
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -36,6 +36,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
 
@@ -88,6 +89,13 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
 
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
+
+/** Returns a channel arg instance with socket mutator added. The socket mutator
+ * will perform its mutate_fd method on all file descriptors used by the
+ * channel.
+ * If \a a is non-MULL, its args are copied. */
+grpc_channel_args *grpc_channel_args_set_socket_mutator(
+    grpc_channel_args *a, grpc_socket_mutator *mutator);
 
 typedef struct grpc_integer_options {
   int default_value;  // Return this if value is outside of expected bounds.

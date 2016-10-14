@@ -34,10 +34,52 @@
 #include <grpc++/support/channel_arguments.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <gtest/gtest.h>
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc {
 namespace testing {
+
+namespace {
+
+// A simple grpc_socket_mutator to be used to test SetSocketMutator
+class TestSocketMutator : public grpc_socket_mutator {
+ public:
+  TestSocketMutator();
+
+  bool MutateFd(int fd) {
+    // Do nothing on the fd
+    return true;
+  }
+};
+
+//
+// C API for TestSocketMutator
+//
+
+bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
+  TestSocketMutator* tsm = (TestSocketMutator*)mutator;
+  return tsm->MutateFd(fd);
+}
+
+void test_mutator_destroy(grpc_socket_mutator* mutator) {
+  TestSocketMutator* tsm = (TestSocketMutator*)mutator;
+  gpr_log(GPR_ERROR, "destroy is called");
+  delete tsm;
+}
+
+grpc_socket_mutator_vtable test_mutator_vtable = {test_mutator_mutate_fd,
+                                                  test_mutator_destroy};
+
+//
+// TestSocketMutator implementation
+//
+
+TestSocketMutator::TestSocketMutator() {
+  grpc_socket_mutator_init(this, &test_mutator_vtable);
+}
+}
 
 class ChannelArgumentsTest : public ::testing::Test {
  protected:
@@ -163,6 +205,26 @@ TEST_F(ChannelArgumentsTest, SetPointer) {
   grpc::string key(key0);
   channel_args_.SetPointer(key, arg0.value.pointer.p);
   EXPECT_TRUE(HasArg(arg0));
+}
+
+TEST_F(ChannelArgumentsTest, SetSocketMutator) {
+  VerifyDefaultChannelArgs();
+  grpc_arg arg0, arg1;
+  TestSocketMutator* mutator0 = new TestSocketMutator();
+  TestSocketMutator* mutator1 = new TestSocketMutator();
+  arg0 = grpc_socket_mutator_to_arg(mutator0);
+  arg1 = grpc_socket_mutator_to_arg(mutator1);
+
+  channel_args_.SetSocketMutator(mutator0);
+  EXPECT_TRUE(HasArg(arg0));
+
+  channel_args_.SetSocketMutator(mutator1);
+  EXPECT_TRUE(HasArg(arg1));
+  // arg0 is replaced by arg1
+  EXPECT_FALSE(HasArg(arg0));
+
+  // arg0 is destroyed by grpc_socket_mutator_to_arg(mutator1)
+  arg1.value.pointer.vtable->destroy(arg1.value.pointer.p);
 }
 
 TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {

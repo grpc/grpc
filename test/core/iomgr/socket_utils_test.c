@@ -38,7 +38,10 @@
 #include <netinet/ip.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include "src/core/lib/iomgr/socket_mutator.h"
 #include "test/core/util/test_config.h"
 
 struct test_socket_mutator {
@@ -46,7 +49,7 @@ struct test_socket_mutator {
   int option_value;
 };
 
-static bool mutate_fd(int fd, grpc_socket_mutator* mutator) {
+static bool mutate_fd(int fd, grpc_socket_mutator *mutator) {
   int newval;
   socklen_t intlen = sizeof(newval);
   struct test_socket_mutator* m = (struct test_socket_mutator*)mutator;
@@ -64,7 +67,13 @@ static bool mutate_fd(int fd, grpc_socket_mutator* mutator) {
   return true;
 }
 
-static const grpc_socket_mutator_vtable mutator_vtable = {mutate_fd};
+static void destroy_test_mutator(grpc_socket_mutator *mutator) {
+  struct test_socket_mutator *m = (struct test_socket_mutator *)mutator;
+  gpr_free(m);
+}
+
+static const grpc_socket_mutator_vtable mutator_vtable = {mutate_fd,
+                                                          destroy_test_mutator};
 
 int main(int argc, char **argv) {
   int sock;
@@ -91,7 +100,7 @@ int main(int argc, char **argv) {
                                grpc_set_socket_low_latency(sock, 0)));
 
   struct test_socket_mutator mutator;
-  mutator.base.vtable = &mutator_vtable;
+  grpc_socket_mutator_init(&mutator.base, &mutator_vtable);
 
   mutator.option_value = IPTOS_LOWDELAY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(

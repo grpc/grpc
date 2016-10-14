@@ -39,6 +39,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,

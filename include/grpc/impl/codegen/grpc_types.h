@@ -83,6 +83,9 @@ typedef struct grpc_server grpc_server;
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
 
+/** The Socket Mutator interface allows changes on socket options */
+typedef struct grpc_socket_mutator grpc_socket_mutator;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -204,16 +207,6 @@ typedef struct {
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
-
-typedef struct grpc_socket_mutator grpc_socket_mutator;
-
-typedef struct grpc_socket_mutator_vtable {
-  bool (*mutate_fd)(int fd, grpc_socket_mutator *mutator);
-} grpc_socket_mutator_vtable;
-
-struct grpc_socket_mutator {
-  const grpc_socket_mutator_vtable *vtable;
-};
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.
