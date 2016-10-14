@@ -403,7 +403,6 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_lock(&p->mu);
   if ((selected = peek_next_connected_locked(p))) {
     /* readily available, report right away */
-    gpr_mu_unlock(&p->mu);
     *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
 
     if (user_data != NULL) {
@@ -416,6 +415,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     /* only advance the last picked pointer if the selection was used */
     advance_last_picked_locked(p);
+    gpr_mu_unlock(&p->mu);
     return 1;
   } else {
     /* no pick currently available. Save for later in list of pending picks */
