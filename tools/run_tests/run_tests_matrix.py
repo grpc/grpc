@@ -55,7 +55,8 @@ def _docker_jobspec(name, runtests_args=[]):
                    '--use_docker',
                    '-t',
                    '-j', str(_INNER_JOBS),
-                   '-x', 'report_%s.xml' % name] + runtests_args,
+                   '-x', 'report_%s.xml' % name,
+                   '--report_suite_name', '%s' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
   return test_job
@@ -70,7 +71,8 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None):
           cmdline=['tools/run_tests/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(_INNER_JOBS),
-                   '-x', '../report_%s.xml' % name] + runtests_args,
+                   '-x', '../report_%s.xml' % name,
+                   '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
@@ -271,7 +273,8 @@ num_failures, resultset = jobset.run(jobs,
                                      newline_on_success=True,
                                      travis=True,
                                      maxjobs=args.jobs)
-report_utils.render_junit_xml_report(resultset, 'report.xml')
+report_utils.render_junit_xml_report(resultset, 'report.xml',
+                                     suite_name='aggregate_tests')
 
 if num_failures == 0:
   jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',
