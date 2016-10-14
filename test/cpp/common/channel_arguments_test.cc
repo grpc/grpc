@@ -34,7 +34,6 @@
 #include <grpc++/support/channel_arguments.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <gtest/gtest.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
 
@@ -65,7 +64,6 @@ bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
 
 void test_mutator_destroy(grpc_socket_mutator* mutator) {
   TestSocketMutator* tsm = (TestSocketMutator*)mutator;
-  gpr_log(GPR_ERROR, "destroy is called");
   delete tsm;
 }
 

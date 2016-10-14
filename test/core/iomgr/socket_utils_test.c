@@ -77,6 +77,7 @@ static const grpc_socket_mutator_vtable mutator_vtable = {mutate_fd,
 
 int main(int argc, char **argv) {
   int sock;
+  grpc_error *err;
   grpc_test_init(argc, argv);
 
   sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -118,8 +119,9 @@ int main(int argc, char **argv) {
       grpc_set_socket_with_mutator(sock, (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = -1;
-  GPR_ASSERT(GRPC_ERROR_NONE != grpc_set_socket_with_mutator(
-                                    sock, (grpc_socket_mutator *)&mutator));
+  err = grpc_set_socket_with_mutator(sock, (grpc_socket_mutator *)&mutator);
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(err);
 
   close(sock);
 
