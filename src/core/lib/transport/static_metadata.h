@@ -175,12 +175,12 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_IF_UNMODIFIED_SINCE (&grpc_static_mdstr_table[62])
 /* "last-modified" */
 #define GRPC_MDSTR_LAST_MODIFIED (&grpc_static_mdstr_table[63])
+/* "lb-cost" */
+#define GRPC_MDSTR_LB_COST (&grpc_static_mdstr_table[64])
+/* "lb-token" */
+#define GRPC_MDSTR_LB_TOKEN (&grpc_static_mdstr_table[65])
 /* "link" */
-#define GRPC_MDSTR_LINK (&grpc_static_mdstr_table[64])
-/* "load-reporting-initial" */
-#define GRPC_MDSTR_LOAD_REPORTING_INITIAL (&grpc_static_mdstr_table[65])
-/* "load-reporting-trailing" */
-#define GRPC_MDSTR_LOAD_REPORTING_TRAILING (&grpc_static_mdstr_table[66])
+#define GRPC_MDSTR_LINK (&grpc_static_mdstr_table[66])
 /* "location" */
 #define GRPC_MDSTR_LOCATION (&grpc_static_mdstr_table[67])
 /* "max-forwards" */
@@ -337,13 +337,12 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 #define GRPC_MDELEM_IF_UNMODIFIED_SINCE_EMPTY (&grpc_static_mdelem_table[44])
 /* "last-modified": "" */
 #define GRPC_MDELEM_LAST_MODIFIED_EMPTY (&grpc_static_mdelem_table[45])
+/* "lb-cost": "" */
+#define GRPC_MDELEM_LB_COST_EMPTY (&grpc_static_mdelem_table[46])
+/* "lb-token": "" */
+#define GRPC_MDELEM_LB_TOKEN_EMPTY (&grpc_static_mdelem_table[47])
 /* "link": "" */
-#define GRPC_MDELEM_LINK_EMPTY (&grpc_static_mdelem_table[46])
-/* "load-reporting-initial": "" */
-#define GRPC_MDELEM_LOAD_REPORTING_INITIAL_EMPTY (&grpc_static_mdelem_table[47])
-/* "load-reporting-trailing": "" */
-#define GRPC_MDELEM_LOAD_REPORTING_TRAILING_EMPTY \
-  (&grpc_static_mdelem_table[48])
+#define GRPC_MDELEM_LINK_EMPTY (&grpc_static_mdelem_table[48])
 /* "location": "" */
 #define GRPC_MDELEM_LOCATION_EMPTY (&grpc_static_mdelem_table[49])
 /* "max-forwards": "" */
