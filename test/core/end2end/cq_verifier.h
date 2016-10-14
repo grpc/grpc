@@ -68,7 +68,7 @@ void cq_expect_completion(cq_verifier *v, const char *file, int line, void *tag,
   cq_expect_completion(v, __FILE__, __LINE__, tag, success)
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value);
+bool contains_metadata(grpc_metadata_array *array, const char *key,
+                       const char *value);
 
 #endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */

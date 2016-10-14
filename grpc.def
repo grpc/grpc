@@ -46,6 +46,8 @@ EXPORTS
     grpc_compression_options_is_algorithm_enabled
     grpc_metadata_array_init
     grpc_metadata_array_destroy
+    grpc_metadata_from_string_and_buffer
+    grpc_metadata_from_strings
     grpc_call_details_init
     grpc_call_details_destroy
     grpc_register_plugin

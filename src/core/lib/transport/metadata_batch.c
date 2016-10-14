@@ -188,7 +188,7 @@ void grpc_metadata_batch_clear(grpc_metadata_batch *batch) {
   grpc_metadata_batch_filter(batch, no_metadata_for_you, NULL);
 }
 
-bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch) {
+bool grpc_metadata_batch_is_empty(const grpc_metadata_batch *batch) {
   return batch->list.head == NULL &&
          gpr_time_cmp(gpr_inf_future(batch->deadline.clock_type),
                       batch->deadline) == 0;

@@ -573,81 +573,94 @@ static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
 
 static grpc_metadata *get_md_elem(grpc_metadata *metadata,
                                   grpc_metadata *additional_metadata, int i,
-                                  int count) {
+                                  int md_count) {
   grpc_metadata *res =
-      i < count ? &metadata[i] : &additional_metadata[i - count];
+      i < md_count ? &metadata[i] : &additional_metadata[i - md_count];
   GPR_ASSERT(res);
   return res;
 }
 
-static int prepare_application_metadata(grpc_call *call, int count,
-                                        grpc_metadata *metadata,
-                                        int is_trailing,
-                                        int prepend_extra_metadata,
-                                        grpc_metadata *additional_metadata,
-                                        int additional_metadata_count) {
-  int total_count = count + additional_metadata_count;
-  int i;
-  grpc_metadata_batch *batch =
-      &call->metadata_batch[0 /* is_receiving */][is_trailing];
-  for (i = 0; i < total_count; i++) {
+static bool is_metadata_valid(const grpc_metadata *metadata, size_t count) {
+  for (size_t i = 0; i < count; i++) {
+    if (metadata == NULL) {
+      gpr_log(GPR_ERROR, "no metadata elements despite expecting %lu of them",
+              (unsigned long)count);
+      return false;
+    }
+    const grpc_mdstr *key = metadata->key;
+    const grpc_mdstr *value = metadata->value;
+    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(key),
+                                  GRPC_MDSTR_LENGTH(key))) {
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
+              grpc_mdstr_as_c_string(key));
+      return false;
+    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(key),
+                                      GRPC_MDSTR_LENGTH(key)) &&
+               !grpc_header_nonbin_value_is_legal(grpc_mdstr_as_c_string(value),
+                                                  GRPC_MDSTR_LENGTH(value))) {
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
+      return false;
+    }
+  }
+  return true;
+}
+
+/* Both \a metadata and \a additional_metadata must be valid (see \a
+ * is_metadata_valid) and \a count + \a additional_metadata must be < `INT_MAX`
+ * */
+static void prepare_application_metadata(grpc_call *call,
+                                         grpc_metadata *metadata, int md_count,
+                                         bool is_trailing,
+                                         bool prepend_extra_metadata,
+                                         grpc_metadata *additional_metadata,
+                                         int additional_metadata_count) {
+  int total_count = md_count + additional_metadata_count;
+
+  /* Instantiate the \a grpc_linked_mdelem instances in the private area of the
+   * \a grpc_metadata entries */
+  for (int i = 0; i < total_count; i++) {
     const grpc_metadata *md =
-        get_md_elem(metadata, additional_metadata, i, count);
+        get_md_elem(metadata, additional_metadata, i, md_count);
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(
-        md->key, (const uint8_t *)md->value, md->value_length);
-    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
-                                  GRPC_MDSTR_LENGTH(l->md->key))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
-              grpc_mdstr_as_c_string(l->md->key));
-      break;
-    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
-                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
-               !grpc_header_nonbin_value_is_legal(
-                   grpc_mdstr_as_c_string(l->md->value),
-                   GRPC_MDSTR_LENGTH(l->md->value))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
-      break;
-    }
-  }
-  if (i != total_count) {
-    for (int j = 0; j <= i; j++) {
-      const grpc_metadata *md =
-          get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-      GRPC_MDELEM_UNREF(l->md);
-    }
-    return 0;
-  }
-  if (prepend_extra_metadata) {
-    if (call->send_extra_metadata_count == 0) {
-      prepend_extra_metadata = 0;
-    } else {
-      for (i = 0; i < call->send_extra_metadata_count; i++) {
-        GRPC_MDELEM_REF(call->send_extra_metadata[i].md);
-      }
-      for (i = 1; i < call->send_extra_metadata_count; i++) {
-        call->send_extra_metadata[i].prev = &call->send_extra_metadata[i - 1];
-      }
-      for (i = 0; i < call->send_extra_metadata_count - 1; i++) {
-        call->send_extra_metadata[i].next = &call->send_extra_metadata[i + 1];
-      }
-    }
-  }
-  for (i = 1; i < total_count; i++) {
-    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_metadata *prev_md =
-        get_md_elem(metadata, additional_metadata, i - 1, count);
-    linked_from_md(md)->prev = linked_from_md(prev_md);
-  }
-  for (i = 0; i < total_count - 1; i++) {
-    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_metadata *next_md =
-        get_md_elem(metadata, additional_metadata, i + 1, count);
-    linked_from_md(md)->next = linked_from_md(next_md);
+    l->md = grpc_mdelem_from_metadata_strings(md->key, md->value);
   }
 
+  if (prepend_extra_metadata) {
+    if (call->send_extra_metadata_count == 0) {
+      prepend_extra_metadata = false;
+    } else {
+      for (int i = 0; i < call->send_extra_metadata_count; i++) {
+        GRPC_MDELEM_REF(call->send_extra_metadata[i].md);
+        if (i >= 1) {
+          call->send_extra_metadata[i].prev = &call->send_extra_metadata[i - 1];
+        }
+        if (i < call->send_extra_metadata_count - 1) {
+          call->send_extra_metadata[i].next = &call->send_extra_metadata[i + 1];
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < total_count; i++) {
+    if (i >= 1) {
+      grpc_metadata *md =
+          get_md_elem(metadata, additional_metadata, i, md_count);
+      grpc_metadata *prev_md =
+          get_md_elem(metadata, additional_metadata, i - 1, md_count);
+      linked_from_md(md)->prev = linked_from_md(prev_md);
+    }
+    if (i < total_count - 1) {
+      grpc_metadata *md =
+          get_md_elem(metadata, additional_metadata, i, md_count);
+      grpc_metadata *next_md =
+          get_md_elem(metadata, additional_metadata, i + 1, md_count);
+      linked_from_md(md)->next = linked_from_md(next_md);
+    }
+  }
+
+  grpc_metadata_batch *batch =
+      &call->metadata_batch[0 /* is_receiving */][is_trailing];
   switch (prepend_extra_metadata * 2 + (total_count != 0)) {
     case 0:
       /* no prepend, no metadata => nothing to do */
@@ -656,9 +669,9 @@ static int prepare_application_metadata(grpc_call *call, int count,
     case 1: {
       /* metadata, but no prepend */
       grpc_metadata *first_md =
-          get_md_elem(metadata, additional_metadata, 0, count);
+          get_md_elem(metadata, additional_metadata, 0, md_count);
       grpc_metadata *last_md =
-          get_md_elem(metadata, additional_metadata, total_count - 1, count);
+          get_md_elem(metadata, additional_metadata, total_count - 1, md_count);
       batch->list.head = linked_from_md(first_md);
       batch->list.tail = linked_from_md(last_md);
       batch->list.head->prev = NULL;
@@ -676,9 +689,9 @@ static int prepare_application_metadata(grpc_call *call, int count,
     case 3: {
       /* prepend AND md */
       grpc_metadata *first_md =
-          get_md_elem(metadata, additional_metadata, 0, count);
+          get_md_elem(metadata, additional_metadata, 0, md_count);
       grpc_metadata *last_md =
-          get_md_elem(metadata, additional_metadata, total_count - 1, count);
+          get_md_elem(metadata, additional_metadata, total_count - 1, md_count);
       batch->list.head = &call->send_extra_metadata[0];
       call->send_extra_metadata[call->send_extra_metadata_count - 1].next =
           linked_from_md(first_md);
@@ -690,10 +703,8 @@ static int prepare_application_metadata(grpc_call *call, int count,
       break;
     }
     default:
-      GPR_UNREACHABLE_CODE(return 0);
+      GPR_UNREACHABLE_CODE();
   }
-
-  return 1;
 }
 
 void grpc_call_destroy(grpc_call *c) {
@@ -933,19 +944,16 @@ static grpc_mdelem *recv_common_filter(grpc_call *call, grpc_mdelem *elem) {
 
 static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
                                          int is_trailing) {
-  grpc_metadata_array *dest;
-  grpc_metadata *mdusr;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
-  dest = call->buffered_metadata[is_trailing];
+  grpc_metadata_array *dest = call->buffered_metadata[is_trailing];
   if (dest->count == dest->capacity) {
     dest->capacity = GPR_MAX(dest->capacity + 8, dest->capacity * 2);
     dest->metadata =
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
   }
-  mdusr = &dest->metadata[dest->count++];
-  mdusr->key = grpc_mdstr_as_c_string(elem->key);
-  mdusr->value = grpc_mdstr_as_c_string(elem->value);
-  mdusr->value_length = GPR_SLICE_LENGTH(elem->value->slice);
+  grpc_metadata *mdusr = &dest->metadata[dest->count++];
+  mdusr->key = elem->key;
+  mdusr->value = elem->value;
   GPR_TIMER_END("publish_app_metadata", 0);
   return elem;
 }
@@ -1363,6 +1371,12 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
     }
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
+        /* Metadata validation */
+        if (!is_metadata_valid(op->data.send_initial_metadata.metadata,
+                               op->data.send_initial_metadata.count)) {
+          error = GRPC_CALL_ERROR_INVALID_METADATA;
+          goto done_with_error;
+        }
         /* Flag validation: currently allow no flags */
         if (!are_initial_metadata_flags_valid(op->flags, call->is_client)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1372,9 +1386,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        /* process compression level */
+        /* assemble additiona metadata for the compression level */
         memset(&compression_md, 0, sizeof(compression_md));
-        size_t additional_metadata_count = 0;
+        int additional_metadata_count = 0;
         grpc_compression_level effective_compression_level;
         bool level_set = false;
         if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
@@ -1393,30 +1407,24 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
-          char *calgo_name = NULL;
-          grpc_compression_algorithm_name(calgo, &calgo_name);
-          // the following will be picked up by the compress filter and used as
-          // the call's compression algorithm.
-          compression_md.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
-          compression_md.value = calgo_name;
-          compression_md.value_length = strlen(calgo_name);
+          /* make sure the additional metadata fits */
+          if (op->data.send_initial_metadata.count > INT_MAX - 1) {
+            error = GRPC_CALL_ERROR_INVALID_METADATA;
+            goto done_with_error;
+          }
+          /* the following will be picked up by the compress filter and used as
+           * the call's compression algorithm. */
+          compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+          compression_md.value = grpc_compression_algorithm_mdstr(calgo);
           additional_metadata_count++;
-        }
-
-        if (op->data.send_initial_metadata.count + additional_metadata_count >
-            INT_MAX) {
-          error = GRPC_CALL_ERROR_INVALID_METADATA;
-          goto done_with_error;
         }
         bctl->send_initial_metadata = 1;
         call->sent_initial_metadata = 1;
-        if (!prepare_application_metadata(
-                call, (int)op->data.send_initial_metadata.count,
-                op->data.send_initial_metadata.metadata, 0, call->is_client,
-                &compression_md, (int)additional_metadata_count)) {
-          error = GRPC_CALL_ERROR_INVALID_METADATA;
-          goto done_with_error;
-        }
+        prepare_application_metadata(
+            call, op->data.send_initial_metadata.metadata,
+            (int)op->data.send_initial_metadata.count, false /* is trailing */,
+            call->is_client /* prepend md */,
+            &compression_md /* additional md */, additional_metadata_count);
         /* TODO(ctiller): just make these the same variable? */
         call->metadata_batch[0][0].deadline = call->send_deadline;
         stream_op->send_initial_metadata =
@@ -1463,6 +1471,13 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        /* Metadata validation */
+        if (!is_metadata_valid(
+                op->data.send_status_from_server.trailing_metadata,
+                op->data.send_status_from_server.trailing_metadata_count)) {
+          error = GRPC_CALL_ERROR_INVALID_METADATA;
+          goto done_with_error;
+        }
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1498,14 +1513,11 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         set_status_code(call, STATUS_FROM_API_OVERRIDE,
                         (uint32_t)op->data.send_status_from_server.status);
-        if (!prepare_application_metadata(
-                call,
-                (int)op->data.send_status_from_server.trailing_metadata_count,
-                op->data.send_status_from_server.trailing_metadata, 1, 1, NULL,
-                0)) {
-          error = GRPC_CALL_ERROR_INVALID_METADATA;
-          goto done_with_error;
-        }
+        prepare_application_metadata(
+            call, op->data.send_status_from_server.trailing_metadata,
+            (int)op->data.send_status_from_server.trailing_metadata_count,
+            true /* is trailing */, true /* prepend extra metadata */,
+            NULL /* additional md */, 0 /* additional md count */);
         stream_op->send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
@@ -1621,6 +1633,32 @@ done:
   return error;
 
 done_with_error:
+  /* unref metadata for any SEND_INITIAL_METADATA or SEND_STATUS_FROM_SERVER
+   * ops found from the current ops index i */
+  for (; i < nops; i++) {
+    op = &ops[i];
+    grpc_metadata *metadata = NULL;
+    size_t md_count = 0;
+    switch (op->op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        metadata = op->data.send_initial_metadata.metadata;
+        md_count = op->data.send_initial_metadata.count;
+        break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        metadata = op->data.send_status_from_server.trailing_metadata;
+        md_count = op->data.send_status_from_server.trailing_metadata_count;
+        break;
+      default:
+        continue;
+    }
+    if (md_count > 0 && metadata != NULL) {
+      /* Unref all keys and values. */
+      for (i = 0; i < md_count; i++) {
+        GRPC_MDSTR_UNREF(metadata[i].key);
+        GRPC_MDSTR_UNREF(metadata[i].value);
+      }
+    }
+  }
   /* reverse any mutations that occured */
   if (bctl->send_initial_metadata) {
     call->sent_initial_metadata = 0;

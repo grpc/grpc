@@ -84,6 +84,8 @@ grpc_compression_options_disable_algorithm_type grpc_compression_options_disable
 grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 grpc_metadata_array_init_type grpc_metadata_array_init_import;
 grpc_metadata_array_destroy_type grpc_metadata_array_destroy_import;
+grpc_metadata_from_string_and_buffer_type grpc_metadata_from_string_and_buffer_import;
+grpc_metadata_from_strings_type grpc_metadata_from_strings_import;
 grpc_call_details_init_type grpc_call_details_init_import;
 grpc_call_details_destroy_type grpc_call_details_destroy_import;
 grpc_register_plugin_type grpc_register_plugin_import;
@@ -353,6 +355,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_compression_options_is_algorithm_enabled_import = (grpc_compression_options_is_algorithm_enabled_type) GetProcAddress(library, "grpc_compression_options_is_algorithm_enabled");
   grpc_metadata_array_init_import = (grpc_metadata_array_init_type) GetProcAddress(library, "grpc_metadata_array_init");
   grpc_metadata_array_destroy_import = (grpc_metadata_array_destroy_type) GetProcAddress(library, "grpc_metadata_array_destroy");
+  grpc_metadata_from_string_and_buffer_import = (grpc_metadata_from_string_and_buffer_type) GetProcAddress(library, "grpc_metadata_from_string_and_buffer");
+  grpc_metadata_from_strings_import = (grpc_metadata_from_strings_type) GetProcAddress(library, "grpc_metadata_from_strings");
   grpc_call_details_init_import = (grpc_call_details_init_type) GetProcAddress(library, "grpc_call_details_init");
   grpc_call_details_destroy_import = (grpc_call_details_destroy_type) GetProcAddress(library, "grpc_call_details_destroy");
   grpc_register_plugin_import = (grpc_register_plugin_type) GetProcAddress(library, "grpc_register_plugin");

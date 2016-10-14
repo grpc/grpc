@@ -70,7 +70,7 @@ typedef struct grpc_metadata_batch {
 void grpc_metadata_batch_init(grpc_metadata_batch *batch);
 void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_clear(grpc_metadata_batch *batch);
-bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
+bool grpc_metadata_batch_is_empty(const grpc_metadata_batch *batch);
 
 /* Returns the transport size of the batch. */
 size_t grpc_metadata_batch_size(grpc_metadata_batch *batch);

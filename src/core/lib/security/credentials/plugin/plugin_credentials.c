@@ -75,13 +75,18 @@ static void plugin_md_request_metadata_ready(void *request,
     bool seen_illegal_header = false;
     grpc_credentials_md *md_array = NULL;
     for (i = 0; i < num_md; i++) {
-      if (!grpc_header_key_is_legal(md[i].key, strlen(md[i].key))) {
-        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", md[i].key);
+      const char *key_str = (const char *)GPR_SLICE_START_PTR(md[i].key->slice);
+      const size_t key_len = GPR_SLICE_LENGTH(md[i].key->slice);
+      const char *value_str =
+          (const char *)GPR_SLICE_START_PTR(md[i].value->slice);
+      const size_t value_len = GPR_SLICE_LENGTH(md[i].value->slice);
+
+      if (!grpc_header_key_is_legal(key_str, key_len)) {
+        gpr_log(GPR_ERROR, "Plugin added invalid metadata key: %s", key_str);
         seen_illegal_header = true;
         break;
-      } else if (!grpc_is_binary_header(md[i].key, strlen(md[i].key)) &&
-                 !grpc_header_nonbin_value_is_legal(md[i].value,
-                                                    md[i].value_length)) {
+      } else if (!grpc_is_binary_header(key_str, key_len) &&
+                 !grpc_header_nonbin_value_is_legal(value_str, value_len)) {
         gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
         seen_illegal_header = true;
         break;
@@ -93,9 +98,8 @@ static void plugin_md_request_metadata_ready(void *request,
     } else if (num_md > 0) {
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
-        md_array[i].key = gpr_slice_from_copied_string(md[i].key);
-        md_array[i].value =
-            gpr_slice_from_copied_buffer(md[i].value, md[i].value_length);
+        md_array[i].key = gpr_slice_ref(md[i].key->slice);
+        md_array[i].value = gpr_slice_ref(md[i].value->slice);
       }
       r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
             NULL);

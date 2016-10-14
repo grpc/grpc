@@ -46,6 +46,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/event_string.h"
+#include "src/core/lib/transport/metadata.h"
 
 #define ROOT_EXPECTATION 1000
 
@@ -88,20 +89,22 @@ void cq_verifier_destroy(cq_verifier *v) {
   gpr_free(v);
 }
 
-static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
-                        const char *value) {
-  size_t i;
-  for (i = 0; i < count; i++) {
-    if (0 == strcmp(key, md[i].key) && strlen(value) == md[i].value_length &&
-        0 == memcmp(md[i].value, value, md[i].value_length)) {
-      return 1;
+static bool has_metadata(const grpc_metadata *md, size_t count, const char *key,
+                         const char *value) {
+  for (size_t i = 0; i < count; i++) {
+    const char *md_key_str = grpc_mdstr_as_c_string(md[i].key);
+    const char *md_value_str = grpc_mdstr_as_c_string(md[i].value);
+    const size_t md_value_length = strlen(md_value_str);
+    if (0 == strcmp(key, md_key_str) && strlen(value) == md_value_length &&
+        0 == memcmp(md_value_str, value, md_value_length)) {
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value) {
+bool contains_metadata(grpc_metadata_array *array, const char *key,
+                       const char *value) {
   return has_metadata(array->metadata, array->count, key, value);
 }
 

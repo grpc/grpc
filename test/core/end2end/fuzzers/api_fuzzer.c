@@ -89,11 +89,11 @@ static char *read_string(input_stream *inp) {
   return str;
 }
 
-static void read_buffer(input_stream *inp, char **buffer, size_t *length) {
+static void read_buffer(input_stream *inp, uint8_t **buffer, size_t *length) {
   *length = next_byte(inp);
   *buffer = gpr_malloc(*length);
   for (size_t i = 0; i < *length; i++) {
-    (*buffer)[i] = (char)next_byte(inp);
+    (*buffer)[i] = next_byte(inp);
   }
 }
 
@@ -434,12 +434,15 @@ static void read_metadata(input_stream *inp, size_t *count,
     *metadata = gpr_malloc(*count * sizeof(**metadata));
     memset(*metadata, 0, *count * sizeof(**metadata));
     for (size_t i = 0; i < *count; i++) {
-      (*metadata)[i].key = read_string(inp);
-      read_buffer(inp, (char **)&(*metadata)[i].value,
-                  &(*metadata)[i].value_length);
+      char *key = read_string(inp);
+      uint8_t *value;
+      size_t value_length;
+      read_buffer(inp, &value, &value_length);
+      (*metadata)[i] =
+          grpc_metadata_from_string_and_buffer(key, value, value_length);
       (*metadata)[i].flags = read_uint32(inp);
-      add_to_free(cs, (void *)(*metadata)[i].key);
-      add_to_free(cs, (void *)(*metadata)[i].value);
+      add_to_free(cs, key);
+      add_to_free(cs, value);
     }
   } else {
     *metadata = gpr_malloc(1);
@@ -843,9 +846,29 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           switch (op->op) {
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
               gpr_free((void *)op->data.send_status_from_server.status_details);
+              if (!ok) {
+                const size_t md_count =
+                    op->data.send_status_from_server.trailing_metadata_count;
+                const grpc_metadata *metadata =
+                    op->data.send_status_from_server.trailing_metadata;
+                for (size_t j = 0; j < md_count && metadata != NULL; ++j) {
+                  GRPC_MDSTR_UNREF(metadata[j].key);
+                  GRPC_MDSTR_UNREF(metadata[j].value);
+                }
+              }
+              break;
+            case GRPC_OP_SEND_INITIAL_METADATA:
+              if (!ok) {
+                const size_t md_count = op->data.send_initial_metadata.count;
+                const grpc_metadata *metadata =
+                    op->data.send_initial_metadata.metadata;
+                for (size_t j = 0; j < md_count && metadata != NULL; ++j) {
+                  GRPC_MDSTR_UNREF(metadata[j].key);
+                  GRPC_MDSTR_UNREF(metadata[j].value);
+                }
+              }
               break;
             case GRPC_OP_SEND_MESSAGE:
-            case GRPC_OP_SEND_INITIAL_METADATA:
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
             case GRPC_OP_RECV_INITIAL_METADATA:
             case GRPC_OP_RECV_MESSAGE:
