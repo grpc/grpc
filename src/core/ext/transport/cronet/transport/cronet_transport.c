@@ -1061,6 +1061,8 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   add_to_storage(s, op);
   if (op->send_initial_metadata &&
       header_has_authority(op->send_initial_metadata->list.head)) {
+    /* Cronet does not support :authority header field. We cancel the call when
+       this field is present in metadata */
     cronet_bidirectional_stream_header_array header_array;
     cronet_bidirectional_stream_header *header;
     cronet_bidirectional_stream cbs;
