@@ -881,9 +881,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   // Initialize data members.
   grpc_deadline_state_init(exec_ctx, elem, args->call_stack);
   calld->path = GRPC_MDSTR_REF(args->path);
-  // TODO(roth): Is there a better value to use here for the actual start
-  // time of the call (i.e., something initialized at the surface layer)?
-  calld->call_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->wait_for_ready_from_service_config = WAIT_FOR_READY_UNSET;
   calld->cancel_error = GRPC_ERROR_NONE;

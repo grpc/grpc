@@ -179,6 +179,7 @@ grpc_error *grpc_call_stack_init(
 
   /* init per-filter data */
   grpc_error *first_error = GRPC_ERROR_NONE;
+  args.start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   for (i = 0; i < count; i++) {
     args.call_stack = call_stack;
     args.server_transport_data = transport_server_data;
