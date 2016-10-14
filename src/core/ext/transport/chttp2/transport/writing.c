@@ -151,8 +151,6 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           bool is_last_frame =
               is_last_data_frame && s->send_trailing_metadata != NULL &&
               grpc_metadata_batch_is_empty(s->send_trailing_metadata);
-          gpr_log(GPR_DEBUG, "sb:%d ldf:%d ilf:%d", send_bytes,
-                  is_last_data_frame, is_last_frame);
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, send_bytes,
                                   is_last_frame, &s->stats.outgoing,
                                   &t->outbuf);
