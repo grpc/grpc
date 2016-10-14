@@ -196,8 +196,7 @@ bool GetModuleAndMessagePath(const Descriptor* type,
        ++path_iter) {
     message_type += (*path_iter)->name() + ".";
   }
-  // no pop_back prior to C++11
-  message_type.resize(message_type.size() - 1);
+  message_type.pop_back();
   *out = module + message_type;
   return true;
 }
