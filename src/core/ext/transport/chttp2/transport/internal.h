@@ -513,7 +513,7 @@ extern int grpc_flowctl_trace;
   if (!(grpc_http_trace))            \
     ;                                \
   else                               \
-    stmt
+  stmt
 
 typedef enum {
   GRPC_CHTTP2_FLOWCTL_MOVE,
