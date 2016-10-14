@@ -52,7 +52,7 @@ struct test_socket_mutator {
 static bool mutate_fd(int fd, grpc_socket_mutator *mutator) {
   int newval;
   socklen_t intlen = sizeof(newval);
-  struct test_socket_mutator* m = (struct test_socket_mutator*)mutator;
+  struct test_socket_mutator *m = (struct test_socket_mutator *)mutator;
 
   if (0 != setsockopt(fd, IPPROTO_IP, IP_TOS, &m->option_value,
                       sizeof(m->option_value))) {
@@ -105,21 +105,21 @@ int main(int argc, char **argv) {
   mutator.option_value = IPTOS_LOWDELAY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = IPTOS_THROUGHPUT;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = IPTOS_RELIABILITY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = -1;
   GPR_ASSERT(GRPC_ERROR_NONE != grpc_set_socket_with_mutator(
-                                    sock, (grpc_socket_mutator*)&mutator));
+                                    sock, (grpc_socket_mutator *)&mutator));
 
   close(sock);
 
