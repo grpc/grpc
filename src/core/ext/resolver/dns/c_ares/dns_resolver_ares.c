@@ -103,7 +103,7 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
                           grpc_resolver_result **target_result,
                           grpc_closure *on_complete);
 
-static const grpc_resolver_vtable dns_resolver_vtable = {
+static const grpc_resolver_vtable dns_ares_resolver_vtable = {
     dns_ares_destroy, dns_ares_shutdown, dns_ares_channel_saw_error,
     dns_ares_next};
 
@@ -298,7 +298,7 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
   r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_mu_init(&r->mu);
-  grpc_resolver_init(&r->base, &dns_resolver_vtable);
+  grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
   r->target_name = gpr_strdup(path);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
