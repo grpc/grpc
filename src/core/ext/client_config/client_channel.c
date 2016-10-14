@@ -513,10 +513,14 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx, call_data *calld) {
 
 static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
-  call_data *calld = arg;
+  grpc_call_element *elem = arg;
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   gpr_mu_lock(&calld->mu);
   GPR_ASSERT(calld->creation_phase ==
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
+  grpc_polling_entity_del_from_pollset_set(exec_ctx, calld->pollent,
+                                           chand->interested_parties);
   calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (calld->connected_subchannel == NULL) {
     gpr_atm_no_barrier_store(&calld->subchannel_call, 1);
@@ -564,6 +568,9 @@ typedef struct {
   grpc_closure closure;
 } continue_picking_args;
 
+/** Return true if subchannel is available immediately (in which case on_ready
+    should not be called), or false otherwise (in which case on_ready should be
+    called when the subchannel is available). */
 static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             grpc_metadata_batch *initial_metadata,
                             uint32_t initial_metadata_flags,
@@ -629,8 +636,8 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     gpr_mu_unlock(&chand->mu);
     // TODO(dgq): make this deadline configurable somehow.
     const grpc_lb_policy_pick_args inputs = {
-        calld->pollent, initial_metadata, initial_metadata_flags,
-        &calld->lb_token_mdelem, gpr_inf_future(GPR_CLOCK_MONOTONIC)};
+        initial_metadata, initial_metadata_flags, &calld->lb_token_mdelem,
+        gpr_inf_future(GPR_CLOCK_MONOTONIC)};
     r = grpc_lb_policy_pick(exec_ctx, lb_policy, &inputs, connected_subchannel,
                             NULL, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "pick_subchannel");
@@ -672,6 +679,7 @@ static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_deadline_state_client_start_transport_stream_op(exec_ctx, elem, op);
   /* try to (atomically) get the call */
@@ -739,14 +747,20 @@ retry:
       calld->connected_subchannel == NULL &&
       op->send_initial_metadata != NULL) {
     calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
-    grpc_closure_init(&calld->next_step, subchannel_ready, calld);
+    grpc_closure_init(&calld->next_step, subchannel_ready, elem);
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
+    /* If a subchannel is not available immediately, the polling entity from
+       call_data should be provided to channel_data's interested_parties, so
+       that IO of the lb_policy and resolver could be done under it. */
     if (pick_subchannel(exec_ctx, elem, op->send_initial_metadata,
                         op->send_initial_metadata_flags,
                         &calld->connected_subchannel, &calld->next_step,
                         GRPC_ERROR_NONE)) {
       calld->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
+    } else {
+      grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
+                                             chand->interested_parties);
     }
   }
   /* if we've got a subchannel, then let's ask it to create a call */

@@ -388,14 +388,14 @@ static grpc_lb_addresses *process_serverlist(
           GPR_ARRAY_SIZE(server->load_balance_token) - 1;
       grpc_mdstr *lb_token_mdstr = grpc_mdstr_from_buffer(
           (uint8_t *)server->load_balance_token, lb_token_size);
-      user_data = grpc_mdelem_from_metadata_strings(
-          GRPC_MDSTR_LOAD_REPORTING_INITIAL, lb_token_mdstr);
+      user_data = grpc_mdelem_from_metadata_strings(GRPC_MDSTR_LB_TOKEN,
+                                                    lb_token_mdstr);
     } else {
       gpr_log(GPR_ERROR,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
               grpc_sockaddr_to_uri((struct sockaddr *)&addr.addr));
-      user_data = GRPC_MDELEM_LOAD_REPORTING_INITIAL_EMPTY;
+      user_data = GRPC_MDELEM_LB_TOKEN_EMPTY;
     }
 
     grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr, addr.len,
@@ -447,6 +447,9 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
             (intptr_t)glb_policy->rr_policy);
   }
   GPR_ASSERT(glb_policy->rr_policy != NULL);
+  grpc_pollset_set_add_pollset_set(exec_ctx,
+                                   glb_policy->rr_policy->interested_parties,
+                                   glb_policy->base.interested_parties);
   glb_policy->rr_connectivity->state = grpc_lb_policy_check_connectivity(
       exec_ctx, glb_policy->rr_policy, &error);
   grpc_lb_policy_notify_on_state_change(
@@ -677,8 +680,6 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   while (pp != NULL) {
     pending_pick *next = pp->next;
     if (pp->target == target) {
-      grpc_polling_entity_del_from_pollset_set(
-          exec_ctx, pp->pick_args.pollent, glb_policy->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
@@ -710,8 +711,6 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->pick_args.initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_polling_entity_del_from_pollset_set(
-          exec_ctx, pp->pick_args.pollent, glb_policy->base.interested_parties);
       grpc_exec_ctx_sched(
           exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
           GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
@@ -801,8 +800,6 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
      * Eventually, wrapped_on_complete will be called, which will -among other
      * things- add the LB token to the call's initial metadata */
   } else {
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
-                                           glb_policy->base.interested_parties);
     add_pending_pick(&glb_policy->pending_picks, pick_args, target,
                      on_complete);
 
@@ -926,7 +923,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
 
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling
-   * entities passed to glb_pick(). */
+   * entities from \a client_channel. */
   lb_client->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,
