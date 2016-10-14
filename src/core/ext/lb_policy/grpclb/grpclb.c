@@ -187,6 +187,7 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
   grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error),
                       NULL);
+  GPR_ASSERT(wc_arg->free_when_done != NULL);
   gpr_free(wc_arg->free_when_done);
 }
 
@@ -227,6 +228,7 @@ static void add_pending_pick(pending_pick **root,
   pp->wrapped_on_complete_arg.initial_metadata = pick_args->initial_metadata;
   pp->wrapped_on_complete_arg.lb_token_mdelem_storage =
       pick_args->lb_token_mdelem_storage;
+  pp->wrapped_on_complete_arg.free_when_done = pp;
   grpc_closure_init(&pp->wrapped_on_complete_arg.wrapper_closure,
                     wrapped_rr_closure, &pp->wrapped_on_complete_arg);
   *root = pp;
@@ -244,10 +246,11 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   pending_ping *pping = gpr_malloc(sizeof(*pping));
   memset(pping, 0, sizeof(pending_ping));
   memset(&pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
+  pping->wrapped_notify_arg.wrapped_closure = notify;
+  pping->wrapped_notify_arg.free_when_done = pping;
   pping->next = *root;
   grpc_closure_init(&pping->wrapped_notify_arg.wrapper_closure,
                     wrapped_rr_closure, &pping->wrapped_notify_arg);
-  pping->wrapped_notify_arg.wrapped_closure = notify;
   *root = pping;
 }
 
@@ -460,7 +463,6 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
     glb_policy->pending_picks = pp->next;
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_pick");
     pp->wrapped_on_complete_arg.rr_policy = glb_policy->rr_policy;
-    pp->wrapped_on_complete_arg.free_when_done = pp;
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
@@ -476,7 +478,6 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
     glb_policy->pending_pings = pping->next;
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_ping");
     pping->wrapped_notify_arg.rr_policy = glb_policy->rr_policy;
-    pping->wrapped_notify_arg.free_when_done = pping;
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Pending ping about to PING from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
