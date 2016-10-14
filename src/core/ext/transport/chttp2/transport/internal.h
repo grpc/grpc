@@ -316,6 +316,10 @@ struct grpc_chttp2_transport {
   gpr_slice goaway_text;
 
   grpc_chttp2_write_cb *write_cb_pool;
+
+  /* if non-NULL, close the transport with this error when writes are finished
+   */
+  grpc_error *close_transport_on_writes_finished;
 };
 
 typedef enum {
@@ -509,7 +513,7 @@ extern int grpc_flowctl_trace;
   if (!(grpc_http_trace))            \
     ;                                \
   else                               \
-  stmt
+    stmt
 
 typedef enum {
   GRPC_CHTTP2_FLOWCTL_MOVE,
