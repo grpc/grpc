@@ -134,6 +134,9 @@ static void initial_metadata_add_lb_token(
 }
 
 typedef struct wrapped_rr_closure_arg {
+  /* the closure instance using this struct as argument */
+  grpc_closure wrapper_closure;
+
   /* the original closure. Usually a on_complete/notify cb for pick() and ping()
    * calls against the internal RR instance, respectively. */
   grpc_closure *wrapped_closure;
@@ -155,15 +158,8 @@ typedef struct wrapped_rr_closure_arg {
   /* The RR instance related to the closure */
   grpc_lb_policy *rr_policy;
 
-  /* when not NULL, represents a pending_{pick,ping} node to be freed upon
-   * closure execution */
-  void *owning_pending_node; /* to be freed if not NULL */
-
-  /* Pointer ot heap memory if the closure and its argument were allocated
-   * dynamically outside of a pending pick. It'll be NULL otherwise.
-   *
-   * TODO(dgq): This is by no means pretty. */
-  void *closure_mem_or_null;
+  /* heap memory to be freed upon closure execution. */
+  void *free_when_done;
 } wrapped_rr_closure_arg;
 
 /* The \a on_complete closure passed as part of the pick requires keeping a
@@ -189,20 +185,9 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
     }
   }
   GPR_ASSERT(wc_arg->wrapped_closure != NULL);
-
   grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, GRPC_ERROR_REF(error),
                       NULL);
-
-  /* Make sure this closure and its arg are EITHER on the heap on their oen OR
-   * part of a pending pick (thus part of the pending pick's memory) */
-  GPR_ASSERT((wc_arg->closure_mem_or_null != NULL) +
-                 (wc_arg->owning_pending_node != NULL) ==
-             1);
-  if (wc_arg->closure_mem_or_null) {
-    gpr_free(wc_arg->closure_mem_or_null);
-  } else {
-    gpr_free(wc_arg->owning_pending_node);
-  }
+  gpr_free(wc_arg->free_when_done);
 }
 
 /* Linked list of pending pick requests. It stores all information needed to
@@ -223,10 +208,6 @@ typedef struct pending_pick {
    * upon error. */
   grpc_connected_subchannel **target;
 
-  /* a closure wrapping the original on_complete one to be invoked once the
-   * pick() has completed (regardless of success) */
-  grpc_closure wrapped_on_complete;
-
   /* args for wrapped_on_complete */
   wrapped_rr_closure_arg wrapped_on_complete_arg;
 } pending_pick;
@@ -246,18 +227,14 @@ static void add_pending_pick(pending_pick **root,
   pp->wrapped_on_complete_arg.initial_metadata = pick_args->initial_metadata;
   pp->wrapped_on_complete_arg.lb_token_mdelem_storage =
       pick_args->lb_token_mdelem_storage;
-  grpc_closure_init(&pp->wrapped_on_complete, wrapped_rr_closure,
-                    &pp->wrapped_on_complete_arg);
+  grpc_closure_init(&pp->wrapped_on_complete_arg.wrapper_closure,
+                    wrapped_rr_closure, &pp->wrapped_on_complete_arg);
   *root = pp;
 }
 
 /* Same as the \a pending_pick struct but for ping operations */
 typedef struct pending_ping {
   struct pending_ping *next;
-
-  /* a closure wrapping the original on_complete one to be invoked once the
-   * ping() has completed (regardless of success) */
-  grpc_closure wrapped_notify;
 
   /* args for wrapped_notify */
   wrapped_rr_closure_arg wrapped_notify_arg;
@@ -268,8 +245,8 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   memset(pping, 0, sizeof(pending_ping));
   memset(&pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
   pping->next = *root;
-  grpc_closure_init(&pping->wrapped_notify, wrapped_rr_closure,
-                    &pping->wrapped_notify_arg);
+  grpc_closure_init(&pping->wrapped_notify_arg.wrapper_closure,
+                    wrapped_rr_closure, &pping->wrapped_notify_arg);
   pping->wrapped_notify_arg.wrapped_closure = notify;
   *root = pping;
 }
@@ -483,7 +460,7 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
     glb_policy->pending_picks = pp->next;
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_pick");
     pp->wrapped_on_complete_arg.rr_policy = glb_policy->rr_policy;
-    pp->wrapped_on_complete_arg.owning_pending_node = pp;
+    pp->wrapped_on_complete_arg.free_when_done = pp;
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
@@ -491,7 +468,7 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
     grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, &pp->pick_args,
                         pp->target,
                         (void **)&pp->wrapped_on_complete_arg.lb_token,
-                        &pp->wrapped_on_complete);
+                        &pp->wrapped_on_complete_arg.wrapper_closure);
   }
 
   pending_ping *pping;
@@ -499,13 +476,13 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
     glb_policy->pending_pings = pping->next;
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_ping");
     pping->wrapped_notify_arg.rr_policy = glb_policy->rr_policy;
-    pping->wrapped_notify_arg.owning_pending_node = pping;
+    pping->wrapped_notify_arg.free_when_done = pping;
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Pending ping about to PING from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
     }
     grpc_lb_policy_ping_one(exec_ctx, glb_policy->rr_policy,
-                            &pping->wrapped_notify);
+                            &pping->wrapped_notify_arg.wrapper_closure);
   }
 }
 
@@ -661,15 +638,15 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete, GRPC_ERROR_NONE,
-                        NULL);
+    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+                        GRPC_ERROR_NONE, NULL);
     pp = next;
   }
 
   while (pping != NULL) {
     pending_ping *next = pping->next;
-    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify, GRPC_ERROR_NONE,
-                        NULL);
+    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
+                        GRPC_ERROR_NONE, NULL);
     pping = next;
   }
 
@@ -703,7 +680,7 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
           exec_ctx, pp->pick_args.pollent, glb_policy->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_sched(
-          exec_ctx, &pp->wrapped_on_complete,
+          exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
           GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
     } else {
       pp->next = glb_policy->pending_picks;
@@ -735,7 +712,7 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(
           exec_ctx, pp->pick_args.pollent, glb_policy->base.interested_parties);
       grpc_exec_ctx_sched(
-          exec_ctx, &pp->wrapped_on_complete,
+          exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
           GRPC_ERROR_CREATE_REFERENCING("Pick Cancelled", &error, 1), NULL);
     } else {
       pp->next = glb_policy->pending_picks;
@@ -789,29 +766,20 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
 
-    /* we need to allocate the closure on the stack because we may be serving
-     * concurrent picks: a single field in glb_policy isn't good enough */
-    void *closure_mem =
-        gpr_malloc(sizeof(grpc_closure) + sizeof(wrapped_rr_closure_arg));
-    grpc_closure *wrapped_on_complete = closure_mem;
-    memset(wrapped_on_complete, 0, sizeof(grpc_closure));
-
-    wrapped_rr_closure_arg *wc_arg = closure_mem + sizeof(grpc_closure);
+    wrapped_rr_closure_arg *wc_arg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
     memset(wc_arg, 0, sizeof(wrapped_rr_closure_arg));
 
-    grpc_closure_init(wrapped_on_complete, wrapped_rr_closure, wc_arg);
-
+    grpc_closure_init(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg);
     wc_arg->rr_policy = glb_policy->rr_policy;
     wc_arg->target = target;
     wc_arg->wrapped_closure = on_complete;
     wc_arg->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
     wc_arg->initial_metadata = pick_args->initial_metadata;
-    wc_arg->owning_pending_node = NULL;
-    wc_arg->closure_mem_or_null = closure_mem;
+    wc_arg->free_when_done = wc_arg;
 
-    pick_done =
-        grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pick_args, target,
-                            (void **)&wc_arg->lb_token, wrapped_on_complete);
+    pick_done = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pick_args,
+                                    target, (void **)&wc_arg->lb_token,
+                                    &wc_arg->wrapper_closure);
     if (pick_done) {
       /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
       if (grpc_lb_glb_trace) {
@@ -825,7 +793,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                     pick_args->lb_token_mdelem_storage,
                                     GRPC_MDELEM_REF(wc_arg->lb_token));
 
-      gpr_free(closure_mem);
+      gpr_free(wc_arg);
     }
     /* else, !pick_done, the pending pick will be registered and taken care of
      * by the pending pick list inside the RR policy (glb_policy->rr_policy).
