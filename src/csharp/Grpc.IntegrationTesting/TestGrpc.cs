@@ -314,6 +314,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_HalfDuplexCall, null, options);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override TestServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new TestServiceClient(configuration);
@@ -420,6 +421,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override UnimplementedServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new UnimplementedServiceClient(configuration);
@@ -535,6 +537,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_Stop, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override ReconnectServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new ReconnectServiceClient(configuration);
