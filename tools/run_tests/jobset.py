@@ -228,14 +228,10 @@ class Job(object):
     env.update(self._spec.environ)
     env.update(self._add_env)
     env = sanitized_environment(env)
-    penv = {}
-    penv.update(self._spec.environ)
-    penv.update(self._add_env)
     self._start = time.time()
     cmdline = self._spec.cmdline
     if measure_cpu_costs:
       cmdline = ['time', '--portability'] + cmdline
-    print('\n\ncmdline: %s\nenv: %s\n' % (cmdline, penv))
     try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
