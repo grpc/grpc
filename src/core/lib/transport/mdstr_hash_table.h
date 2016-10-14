@@ -29,8 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_HASHTABLE_H
-#define GRPC_CORE_LIB_TRANSPORT_HASHTABLE_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H
+#define GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -46,37 +46,38 @@
  * Hash tables are intentionally immutable, to avoid the need for locking.
  */
 
-typedef struct grpc_hash_table grpc_hash_table;
+typedef struct grpc_mdstr_hash_table grpc_mdstr_hash_table;
 
-typedef struct grpc_hash_table_vtable {
+typedef struct grpc_mdstr_hash_table_vtable {
   void (*destroy_value)(void* value);
   void* (*copy_value)(void* value);
   int (*compare_value)(void* value1, void* value2);
-} grpc_hash_table_vtable;
+} grpc_mdstr_hash_table_vtable;
 
-typedef struct grpc_hash_table_entry {
+typedef struct grpc_mdstr_hash_table_entry {
   grpc_mdstr* key;
   void* value; /* Must not be NULL. */
-  const grpc_hash_table_vtable* vtable;
-} grpc_hash_table_entry;
+  const grpc_mdstr_hash_table_vtable* vtable;
+} grpc_mdstr_hash_table_entry;
 
 /** Creates a new hash table of containing \a entries, which is an array
     of length \a num_entries.
     Creates its own copy of all keys and values from \a entries. */
-grpc_hash_table* grpc_hash_table_create(size_t num_entries,
-                                        grpc_hash_table_entry* entries);
+grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
+    size_t num_entries, grpc_mdstr_hash_table_entry* entries);
 
-grpc_hash_table* grpc_hash_table_ref(grpc_hash_table* table);
+grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table);
 /** Returns 1 when \a table is destroyed. */
-int grpc_hash_table_unref(grpc_hash_table* table);
+int grpc_mdstr_hash_table_unref(grpc_mdstr_hash_table* table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
-void* grpc_hash_table_get(const grpc_hash_table* table, const grpc_mdstr* key);
+void* grpc_mdstr_hash_table_get(const grpc_mdstr_hash_table* table,
+                                const grpc_mdstr* key);
 
 /** Compares two hash tables.
     The sort order is stable but undefined. */
-int grpc_hash_table_cmp(const grpc_hash_table* table1,
-                        const grpc_hash_table* table2);
+int grpc_mdstr_hash_table_cmp(const grpc_mdstr_hash_table* table1,
+                              const grpc_mdstr_hash_table* table2);
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_HASHTABLE_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H */

@@ -262,7 +262,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\hashtable.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
@@ -905,7 +905,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\hashtable.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h">

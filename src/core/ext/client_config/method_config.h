@@ -37,7 +37,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/transport/hashtable.h"
+#include "src/core/lib/transport/mdstr_hash_table.h"
 #include "src/core/lib/transport/metadata.h"
 
 /// Per-method configuration.
@@ -79,7 +79,7 @@ const int32_t* grpc_method_config_get_max_response_message_bytes(
     const grpc_method_config* method_config);
 
 /// A table of method configs.
-typedef grpc_hash_table grpc_method_config_table;
+typedef grpc_mdstr_hash_table grpc_method_config_table;
 
 typedef struct grpc_method_config_table_entry {
   /// The name is of one of the following forms:
