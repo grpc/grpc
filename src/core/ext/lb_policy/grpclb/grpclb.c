@@ -413,6 +413,40 @@ static void lb_token_destroy(void *token) {
   if (token != NULL) GRPC_MDELEM_UNREF(token);
 }
 
+/* perform a pick over \a rr_policy. Given that a pick can return immediately
+ * (ignoring its completion callback) we need to perform the cleanups this
+ * callback would be otherwise resposible for */
+static bool pick_from_internal_rr_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy* rr_policy,
+                                  const grpc_lb_policy_pick_args *pick_args,
+                                  grpc_connected_subchannel **target,
+                                  wrapped_rr_closure_arg *wc_arg) {
+    GPR_ASSERT(rr_policy != NULL);
+    const bool pick_done = grpc_lb_policy_pick(exec_ctx, rr_policy, pick_args,
+                                    target, (void **)&wc_arg->lb_token,
+                                    &wc_arg->wrapper_closure);
+    if (pick_done) {
+      /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
+      if (grpc_lb_glb_trace) {
+        gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
+                (intptr_t)wc_arg->rr_policy);
+      }
+      GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "glb_pick");
+
+      /* add the load reporting initial metadata */
+      initial_metadata_add_lb_token(pick_args->initial_metadata,
+                                    pick_args->lb_token_mdelem_storage,
+                                    GRPC_MDELEM_REF(wc_arg->lb_token));
+
+      gpr_free(wc_arg);
+    }
+    /* else, the pending pick will be registered and taken care of by the
+     * pending pick list inside the RR policy (glb_policy->rr_policy).
+     * Eventually, wrapped_on_complete will be called, which will -among other
+     * things- add the LB token to the call's initial metadata */
+
+    return pick_done;
+}
+
 static grpc_lb_policy *create_rr_locked(
     grpc_exec_ctx *exec_ctx, const grpc_grpclb_serverlist *serverlist,
     glb_lb_policy *glb_policy) {
@@ -470,10 +504,9 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
               (intptr_t)glb_policy->rr_policy);
     }
-    grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, &pp->pick_args,
-                        pp->target,
-                        (void **)&pp->wrapped_on_complete_arg.lb_token,
-                        &pp->wrapped_on_complete_arg.wrapper_closure);
+    pick_from_internal_rr_locked(exec_ctx, glb_policy->rr_policy,
+                                 &pp->pick_args, pp->target,
+                                 &pp->wrapped_on_complete_arg);
   }
 
   pending_ping *pping;
@@ -776,29 +809,8 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     wc_arg->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
     wc_arg->initial_metadata = pick_args->initial_metadata;
     wc_arg->free_when_done = wc_arg;
-
-    pick_done = grpc_lb_policy_pick(exec_ctx, glb_policy->rr_policy, pick_args,
-                                    target, (void **)&wc_arg->lb_token,
-                                    &wc_arg->wrapper_closure);
-    if (pick_done) {
-      /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
-      if (grpc_lb_glb_trace) {
-        gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
-                (intptr_t)wc_arg->rr_policy);
-      }
-      GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "glb_pick");
-
-      /* add the load reporting initial metadata */
-      initial_metadata_add_lb_token(pick_args->initial_metadata,
-                                    pick_args->lb_token_mdelem_storage,
-                                    GRPC_MDELEM_REF(wc_arg->lb_token));
-
-      gpr_free(wc_arg);
-    }
-    /* else, !pick_done, the pending pick will be registered and taken care of
-     * by the pending pick list inside the RR policy (glb_policy->rr_policy).
-     * Eventually, wrapped_on_complete will be called, which will -among other
-     * things- add the LB token to the call's initial metadata */
+    pick_done = pick_from_internal_rr_locked(exec_ctx, glb_policy->rr_policy,
+                                      pick_args, target, wc_arg);
   } else {
     add_pending_pick(&glb_policy->pending_picks, pick_args, target,
                      on_complete);
