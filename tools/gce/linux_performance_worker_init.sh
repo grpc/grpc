@@ -105,17 +105,17 @@ nvm install 4 && npm config set cache /tmp/npm-cache
 nvm install 5 && npm config set cache /tmp/npm-cache
 nvm alias default 4
 
-# C# dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
-
+# C# mono dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
 sudo apt-get update
 sudo apt-get install -y mono-devel nuget
 
-# The version of nuget that is installed using apt-get is too old to download
-# the System.Interactive.Async.3.0.0 C# dependency. Update to the latest version
-# in order to be able download it.
-sudo nuget update -self
+# C# .NET Core dependencies (https://www.microsoft.com/net/core#ubuntu)
+sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ xenial main" > /etc/apt/sources.list.d/dotnetdev.list'
+sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+sudo apt-get update
+sudo apt-get install -y dotnet-dev-1.0.0-preview2-003131
 
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
