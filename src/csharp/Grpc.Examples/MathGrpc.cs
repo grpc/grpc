@@ -234,6 +234,7 @@ namespace Math {
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_Sum, null, options);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override MathClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new MathClient(configuration);

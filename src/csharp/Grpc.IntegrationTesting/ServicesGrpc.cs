@@ -161,6 +161,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_StreamingCall, null, options);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override BenchmarkServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new BenchmarkServiceClient(configuration);
@@ -396,6 +397,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_QuitWorker, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override WorkerServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new WorkerServiceClient(configuration);
