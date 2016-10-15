@@ -988,8 +988,8 @@ bool InteropClient::DoUnimplementedMethod() {
   Empty response = Empty::default_instance();
   ClientContext context;
 
-  Status s = serviceStub_.Get()->UnimplementedMethod(
-    &context, request, &response);
+  Status s =
+      serviceStub_.Get()->UnimplementedMethod(&context, request, &response);
 
   if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
     return false;
