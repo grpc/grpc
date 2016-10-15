@@ -90,6 +90,16 @@ sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 # Python dependencies
 sudo pip install tabulate
 sudo pip install google-api-python-client
+sudo pip install virtualenv
+
+# TODO(jtattermusch): For some reason, building gRPC Python depends on python3.4
+# being installed, but python3.4 is not available on Ubuntu 16.04.
+# Temporarily fixing this by adding a PPA with python3.4, but we should
+# really remove this hack once possible.
+sudo add-apt-repository -y ppa:fkrull/deadsnakes
+sudo apt-get update
+sudo apt-get install -y python3.4 python3.4-dev
+python3.4 -m pip install virtualenv
 
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
