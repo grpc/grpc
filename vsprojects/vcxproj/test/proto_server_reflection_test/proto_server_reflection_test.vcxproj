@@ -160,73 +160,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_unary_call.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call_hook.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_context.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_unary_call.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_method.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_service_method.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\security\auth_context.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\serialization_traits.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_no_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\proto_server_reflection_test.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.grpc.pb.h">
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_proto_reflection_desc_db\grpc++_proto_reflection_desc_db.vcxproj">
+      <Project>{7B95AF96-915A-7132-AE45-9FA37769FACE}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj">
       <Project>{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}</Project>
     </ProjectReference>

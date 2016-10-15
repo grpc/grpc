@@ -2429,7 +2429,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_reflection", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_test_config", 
       "grpc_cli_libs"
     ], 
@@ -2548,7 +2548,6 @@
       "grpc", 
       "grpc++", 
       "grpc++_codegen_proto", 
-      "grpc++_config_proto", 
       "grpc++_reflection", 
       "grpc++_test_util", 
       "grpc_cli_libs", 
@@ -4895,6 +4894,24 @@
       "grpc++_reflection_proto"
     ], 
     "headers": [
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_proto_reflection_desc_db", 
+    "src": [
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++", 
+      "grpc++_reflection_proto"
+    ], 
+    "headers": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
       "src/cpp/ext/proto_server_reflection.h"
     ], 
@@ -4992,9 +5009,8 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_config_proto", 
       "grpc++_proto_reflection_desc_db", 
-      "grpc++_reflection"
+      "grpc++_reflection_proto"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
@@ -7434,24 +7450,6 @@
     "name": "grpc++_config_proto", 
     "src": [
       "include/grpc++/impl/codegen/config_protobuf.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "grpc++_codegen_base", 
-      "grpc++_reflection_proto"
-    ], 
-    "headers": [
-      "test/cpp/util/proto_reflection_descriptor_database.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c++", 
-    "name": "grpc++_proto_reflection_desc_db", 
-    "src": [
-      "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

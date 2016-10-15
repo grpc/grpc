@@ -796,15 +796,6 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/config_protobuf.h
-- name: grpc++_proto_reflection_desc_db
-  language: c++
-  headers:
-  - test/cpp/util/proto_reflection_descriptor_database.h
-  src:
-  - test/cpp/util/proto_reflection_descriptor_database.cc
-  uses:
-  - grpc++_reflection_proto
-  - grpc++_codegen_base
 - name: grpc++_reflection_proto
   language: c++
   src:
@@ -1006,6 +997,17 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_proto_reflection_desc_db
+  build: private
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++
+  filegroups:
+  - grpc++_reflection_proto
 - name: grpc++_reflection
   build: all
   language: c++
@@ -1091,11 +1093,10 @@ libs:
   - test/cpp/util/proto_file_parser.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
   filegroups:
-  - grpc++_proto_reflection_desc_db
-  - grpc++_config_proto
+  - grpc++_reflection_proto
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -2829,7 +2830,7 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
   - grpc
   - gpr
@@ -2921,7 +2922,6 @@ targets:
   - gpr
   filegroups:
   - grpc++_codegen_proto
-  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -3063,6 +3063,7 @@ targets:
   src:
   - test/cpp/end2end/proto_server_reflection_test.cc
   deps:
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
@@ -3070,8 +3071,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  filegroups:
-  - grpc++_proto_reflection_desc_db
 - name: qps_interarrival_test
   build: test
   run: false
