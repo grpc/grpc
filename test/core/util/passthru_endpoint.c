@@ -46,7 +46,7 @@ typedef struct {
   gpr_slice_buffer read_buffer;
   gpr_slice_buffer *on_read_out;
   grpc_closure *on_read;
-  grpc_buffer_user buffer_user;
+  grpc_resource_user resource_user;
 } half;
 
 struct passthru_endpoint {
@@ -142,7 +142,7 @@ static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   half *m = (half *)ep;
-  grpc_buffer_user_shutdown(exec_ctx, &m->buffer_user,
+  grpc_resource_user_shutdown(exec_ctx, &m->resource_user,
                             grpc_closure_create(me_really_destroy, m));
 }
 
@@ -152,9 +152,9 @@ static char *me_get_peer(grpc_endpoint *ep) {
 
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
-static grpc_buffer_user *me_get_buffer_user(grpc_endpoint *ep) {
+static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
   half *m = (half *)ep;
-  return &m->buffer_user;
+  return &m->resource_user;
 }
 
 static const grpc_endpoint_vtable vtable = {
@@ -165,12 +165,12 @@ static const grpc_endpoint_vtable vtable = {
     me_add_to_pollset_set,
     me_shutdown,
     me_destroy,
-    me_get_buffer_user,
+    me_get_resource_user,
     me_get_peer,
 };
 
 static void half_init(half *m, passthru_endpoint *parent,
-                      grpc_buffer_pool *buffer_pool, const char *half_name) {
+                      grpc_resource_quota *resource_quota, const char *half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
   gpr_slice_buffer_init(&m->read_buffer);
@@ -178,18 +178,18 @@ static void half_init(half *m, passthru_endpoint *parent,
   char *name;
   gpr_asprintf(&name, "passthru_endpoint_%s_%" PRIxPTR, half_name,
                (intptr_t)parent);
-  grpc_buffer_user_init(&m->buffer_user, buffer_pool, name);
+  grpc_resource_user_init(&m->resource_user, resource_quota, name);
   gpr_free(name);
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
                                    grpc_endpoint **server,
-                                   grpc_buffer_pool *buffer_pool) {
+                                   grpc_resource_quota *resource_quota) {
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
-  half_init(&m->client, m, buffer_pool, "client");
-  half_init(&m->server, m, buffer_pool, "server");
+  half_init(&m->client, m, resource_quota, "client");
+  half_init(&m->server, m, resource_quota, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

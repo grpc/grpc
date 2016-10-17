@@ -70,6 +70,6 @@ grpc_workqueue* grpc_endpoint_get_workqueue(grpc_endpoint* ep) {
   return ep->vtable->get_workqueue(ep);
 }
 
-grpc_buffer_user* grpc_endpoint_get_buffer_user(grpc_endpoint* ep) {
-  return ep->vtable->get_buffer_user(ep);
+grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* ep) {
+  return ep->vtable->get_resource_user(ep);
 }

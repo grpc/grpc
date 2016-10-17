@@ -347,21 +347,21 @@ extern grpc_is_binary_header_type grpc_is_binary_header_import;
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
-typedef grpc_buffer_pool *(*grpc_buffer_pool_create_type)(const char *trace_name);
-extern grpc_buffer_pool_create_type grpc_buffer_pool_create_import;
-#define grpc_buffer_pool_create grpc_buffer_pool_create_import
-typedef void(*grpc_buffer_pool_ref_type)(grpc_buffer_pool *buffer_pool);
-extern grpc_buffer_pool_ref_type grpc_buffer_pool_ref_import;
-#define grpc_buffer_pool_ref grpc_buffer_pool_ref_import
-typedef void(*grpc_buffer_pool_unref_type)(grpc_buffer_pool *buffer_pool);
-extern grpc_buffer_pool_unref_type grpc_buffer_pool_unref_import;
-#define grpc_buffer_pool_unref grpc_buffer_pool_unref_import
-typedef void(*grpc_buffer_pool_resize_type)(grpc_buffer_pool *buffer_pool, size_t new_size);
-extern grpc_buffer_pool_resize_type grpc_buffer_pool_resize_import;
-#define grpc_buffer_pool_resize grpc_buffer_pool_resize_import
-typedef const grpc_arg_pointer_vtable *(*grpc_buffer_pool_arg_vtable_type)(void);
-extern grpc_buffer_pool_arg_vtable_type grpc_buffer_pool_arg_vtable_import;
-#define grpc_buffer_pool_arg_vtable grpc_buffer_pool_arg_vtable_import
+typedef grpc_resource_quota *(*grpc_resource_quota_create_type)(const char *trace_name);
+extern grpc_resource_quota_create_type grpc_resource_quota_create_import;
+#define grpc_resource_quota_create grpc_resource_quota_create_import
+typedef void(*grpc_resource_quota_ref_type)(grpc_resource_quota *resource_quota);
+extern grpc_resource_quota_ref_type grpc_resource_quota_ref_import;
+#define grpc_resource_quota_ref grpc_resource_quota_ref_import
+typedef void(*grpc_resource_quota_unref_type)(grpc_resource_quota *resource_quota);
+extern grpc_resource_quota_unref_type grpc_resource_quota_unref_import;
+#define grpc_resource_quota_unref grpc_resource_quota_unref_import
+typedef void(*grpc_resource_quota_resize_type)(grpc_resource_quota *resource_quota, size_t new_size);
+extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
+#define grpc_resource_quota_resize grpc_resource_quota_resize_import
+typedef const grpc_arg_pointer_vtable *(*grpc_resource_quota_arg_vtable_type)(void);
+extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
+#define grpc_resource_quota_arg_vtable grpc_resource_quota_arg_vtable_import
 typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import

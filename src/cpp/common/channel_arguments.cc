@@ -34,7 +34,7 @@
 
 #include <sstream>
 
-#include <grpc++/buffer_pool.h>
+#include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/channel/channel_args.h"
@@ -114,9 +114,9 @@ void ChannelArguments::SetUserAgentPrefix(
   }
 }
 
-void ChannelArguments::SetBufferPool(const grpc::BufferPool& buffer_pool) {
-  SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, buffer_pool.c_buffer_pool(),
-                       grpc_buffer_pool_arg_vtable());
+void ChannelArguments::SetResourceQuota(const grpc::ResourceQuota& resource_quota) {
+  SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, resource_quota.c_resource_quota(),
+                       grpc_resource_quota_arg_vtable());
 }
 
 void ChannelArguments::SetInt(const grpc::string& key, int value) {

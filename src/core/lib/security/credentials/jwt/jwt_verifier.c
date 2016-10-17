@@ -657,16 +657,16 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
 
-  /* TODO(ctiller): Carry the buffer_pool in ctx and share it with the host
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("jwt_verifier");
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, buffer_pool, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       grpc_closure_create(on_keys_retrieved, ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
-  grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   grpc_json_destroy(json);
   gpr_free(req.host);
   return;
@@ -769,15 +769,15 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
     rsp_idx = HTTP_RESPONSE_OPENID;
   }
 
-  /* TODO(ctiller): Carry the buffer_pool in ctx and share it with the host
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("jwt_verifier");
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, buffer_pool, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, &ctx->responses[rsp_idx]);
-  grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

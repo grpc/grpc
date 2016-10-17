@@ -43,12 +43,12 @@
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
 
-struct grpc_buffer_pool;
+struct grpc_resource_quota;
 
 namespace grpc {
 
 class AsyncGenericService;
-class BufferPool;
+class ResourceQuota;
 class CompletionQueue;
 class RpcService;
 class Server;
@@ -118,7 +118,7 @@ class ServerBuilder {
       grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
-  ServerBuilder& SetBufferPool(const BufferPool& buffer_pool);
+  ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
@@ -194,7 +194,7 @@ class ServerBuilder {
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
-  grpc_buffer_pool* buffer_pool_;
+  grpc_resource_quota* resource_quota_;
   AsyncGenericService* generic_service_;
   struct {
     bool is_set;

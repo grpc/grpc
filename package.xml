@@ -193,7 +193,6 @@
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/buffer_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
@@ -217,6 +216,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
@@ -359,7 +359,6 @@
     <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/buffer_pool.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
@@ -383,6 +382,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />

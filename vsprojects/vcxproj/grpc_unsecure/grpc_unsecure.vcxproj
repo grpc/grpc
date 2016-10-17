@@ -302,7 +302,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\buffer_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
@@ -326,6 +325,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
@@ -465,8 +465,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\buffer_pool.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.c">
@@ -512,6 +510,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
     </ClCompile>

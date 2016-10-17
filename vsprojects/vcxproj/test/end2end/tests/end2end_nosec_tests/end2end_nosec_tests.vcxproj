@@ -157,8 +157,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\binary_metadata.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\buffer_pool_server.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_accept.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_after_client_done.c">
@@ -222,6 +220,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\request_with_flags.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\request_with_payload.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\resource_quota_server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\server_finishes_request.c">
     </ClCompile>

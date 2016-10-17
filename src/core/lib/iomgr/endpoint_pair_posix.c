@@ -63,18 +63,18 @@ static void create_sockets(int sv[2]) {
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char *name, grpc_buffer_pool *buffer_pool, size_t read_slice_size) {
+    const char *name, grpc_resource_quota *resource_quota, size_t read_slice_size) {
   int sv[2];
   grpc_endpoint_pair p;
   char *final_name;
   create_sockets(sv);
 
   gpr_asprintf(&final_name, "%s:client", name);
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), buffer_pool,
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), resource_quota,
                              read_slice_size, "socketpair-server");
   gpr_free(final_name);
   gpr_asprintf(&final_name, "%s:server", name);
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name), buffer_pool,
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name), resource_quota,
                              read_slice_size, "socketpair-client");
   gpr_free(final_name);
   return p;

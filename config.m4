@@ -100,7 +100,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
-    src/core/lib/iomgr/buffer_pool.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -124,6 +123,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \

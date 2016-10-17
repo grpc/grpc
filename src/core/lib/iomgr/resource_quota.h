@@ -38,12 +38,13 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-extern int grpc_buffer_pool_trace;
+extern int grpc_resource_quota_trace;
 
-grpc_buffer_pool *grpc_buffer_pool_internal_ref(grpc_buffer_pool *buffer_pool);
-void grpc_buffer_pool_internal_unref(grpc_exec_ctx *exec_ctx,
-                                     grpc_buffer_pool *buffer_pool);
-grpc_buffer_pool *grpc_buffer_pool_from_channel_args(
+grpc_resource_quota *grpc_resource_quota_internal_ref(
+    grpc_resource_quota *resource_quota);
+void grpc_resource_quota_internal_unref(grpc_exec_ctx *exec_ctx,
+                                        grpc_resource_quota *resource_quota);
+grpc_resource_quota *grpc_resource_quota_from_channel_args(
     const grpc_channel_args *channel_args);
 
 typedef enum {
@@ -54,15 +55,15 @@ typedef enum {
   GRPC_BULIST_COUNT
 } grpc_bulist;
 
-typedef struct grpc_buffer_user grpc_buffer_user;
+typedef struct grpc_resource_user grpc_resource_user;
 
 typedef struct {
-  grpc_buffer_user *next;
-  grpc_buffer_user *prev;
-} grpc_buffer_user_link;
+  grpc_resource_user *next;
+  grpc_resource_user *prev;
+} grpc_resource_user_link;
 
-struct grpc_buffer_user {
-  grpc_buffer_pool *buffer_pool;
+struct grpc_resource_user {
+  grpc_resource_quota *resource_quota;
 
   grpc_closure allocate_closure;
   grpc_closure add_to_free_pool_closure;
@@ -84,45 +85,47 @@ struct grpc_buffer_user {
   grpc_closure destroy_closure;
   gpr_atm on_done_destroy_closure;
 
-  grpc_buffer_user_link links[GRPC_BULIST_COUNT];
+  grpc_resource_user_link links[GRPC_BULIST_COUNT];
 
   char *name;
 };
 
-void grpc_buffer_user_init(grpc_buffer_user *buffer_user,
-                           grpc_buffer_pool *buffer_pool, const char *name);
-void grpc_buffer_user_shutdown(grpc_exec_ctx *exec_ctx,
-                               grpc_buffer_user *buffer_user,
-                               grpc_closure *on_done);
-void grpc_buffer_user_destroy(grpc_exec_ctx *exec_ctx,
-                              grpc_buffer_user *buffer_user);
+void grpc_resource_user_init(grpc_resource_user *resource_user,
+                             grpc_resource_quota *resource_quota,
+                             const char *name);
+void grpc_resource_user_shutdown(grpc_exec_ctx *exec_ctx,
+                                 grpc_resource_user *resource_user,
+                                 grpc_closure *on_done);
+void grpc_resource_user_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_resource_user *resource_user);
 
-void grpc_buffer_user_alloc(grpc_exec_ctx *exec_ctx,
-                            grpc_buffer_user *buffer_user, size_t size,
-                            grpc_closure *optional_on_done);
-void grpc_buffer_user_free(grpc_exec_ctx *exec_ctx,
-                           grpc_buffer_user *buffer_user, size_t size);
-void grpc_buffer_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
-                                     grpc_buffer_user *buffer_user,
-                                     bool destructive, grpc_closure *closure);
-void grpc_buffer_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
-                                          grpc_buffer_user *buffer_user);
+void grpc_resource_user_alloc(grpc_exec_ctx *exec_ctx,
+                              grpc_resource_user *resource_user, size_t size,
+                              grpc_closure *optional_on_done);
+void grpc_resource_user_free(grpc_exec_ctx *exec_ctx,
+                             grpc_resource_user *resource_user, size_t size);
+void grpc_resource_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
+                                       grpc_resource_user *resource_user,
+                                       bool destructive, grpc_closure *closure);
+void grpc_resource_user_finish_reclaimation(grpc_exec_ctx *exec_ctx,
+                                            grpc_resource_user *resource_user);
 
-typedef struct grpc_buffer_user_slice_allocator {
+typedef struct grpc_resource_user_slice_allocator {
   grpc_closure on_allocated;
   grpc_closure on_done;
   size_t length;
   size_t count;
   gpr_slice_buffer *dest;
-  grpc_buffer_user *buffer_user;
-} grpc_buffer_user_slice_allocator;
+  grpc_resource_user *resource_user;
+} grpc_resource_user_slice_allocator;
 
-void grpc_buffer_user_slice_allocator_init(
-    grpc_buffer_user_slice_allocator *slice_allocator,
-    grpc_buffer_user *buffer_user, grpc_iomgr_cb_func cb, void *p);
+void grpc_resource_user_slice_allocator_init(
+    grpc_resource_user_slice_allocator *slice_allocator,
+    grpc_resource_user *resource_user, grpc_iomgr_cb_func cb, void *p);
 
-void grpc_buffer_user_alloc_slices(
-    grpc_exec_ctx *exec_ctx, grpc_buffer_user_slice_allocator *slice_allocator,
-    size_t length, size_t count, gpr_slice_buffer *dest);
+void grpc_resource_user_alloc_slices(
+    grpc_exec_ctx *exec_ctx,
+    grpc_resource_user_slice_allocator *slice_allocator, size_t length,
+    size_t count, gpr_slice_buffer *dest);
 
 #endif /* GRPC_CORE_LIB_IOMGR_BUFFER_POOL_H */

@@ -803,7 +803,6 @@ src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.h \
 src/core/lib/http/parser.h \
-src/core/lib/iomgr/buffer_pool.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
 src/core/lib/iomgr/endpoint.h \
@@ -827,6 +826,7 @@ src/core/lib/iomgr/pollset_set.h \
 src/core/lib/iomgr/pollset_set_windows.h \
 src/core/lib/iomgr/pollset_windows.h \
 src/core/lib/iomgr/resolve_address.h \
+src/core/lib/iomgr/resource_quota.h \
 src/core/lib/iomgr/sockaddr.h \
 src/core/lib/iomgr/sockaddr_posix.h \
 src/core/lib/iomgr/sockaddr_utils.h \
@@ -969,7 +969,6 @@ src/core/lib/debug/trace.c \
 src/core/lib/http/format_request.c \
 src/core/lib/http/httpcli.c \
 src/core/lib/http/parser.c \
-src/core/lib/iomgr/buffer_pool.c \
 src/core/lib/iomgr/closure.c \
 src/core/lib/iomgr/combiner.c \
 src/core/lib/iomgr/endpoint.c \
@@ -993,6 +992,7 @@ src/core/lib/iomgr/pollset_set_windows.c \
 src/core/lib/iomgr/pollset_windows.c \
 src/core/lib/iomgr/resolve_address_posix.c \
 src/core/lib/iomgr/resolve_address_windows.c \
+src/core/lib/iomgr/resource_quota.c \
 src/core/lib/iomgr/sockaddr_utils.c \
 src/core/lib/iomgr/socket_utils_common_posix.c \
 src/core/lib/iomgr/socket_utils_linux.c \

@@ -108,8 +108,7 @@ static gpr_slice generate_random_slice() {
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
-  grpc_resource_quota *resource_quota =
-      grpc_resource_quota_create("test_server");
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
 
 #define NUM_CALLS 100

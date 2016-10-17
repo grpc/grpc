@@ -46,9 +46,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\buffer_pool_cc.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -59,6 +56,9 @@
       <Filter>src\cpp\common</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\resource_quota_cc.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
@@ -109,9 +109,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\buffer_pool.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h">
@@ -191,6 +188,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\thd_no_cxx11.h">
       <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\resource_quota.h">
+      <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\security\auth_context.h">
       <Filter>include\grpc++\security</Filter>

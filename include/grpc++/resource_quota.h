@@ -31,21 +31,40 @@
  *
  */
 
-#include <grpc++/buffer_pool.h>
-#include <grpc/grpc.h>
+#ifndef GRPCXX_BUFFER_POOL_H
+#define GRPCXX_BUFFER_POOL_H
+
+struct grpc_resource_quota;
+
+#include <grpc++/impl/codegen/config.h>
 
 namespace grpc {
 
-BufferPool::BufferPool() : impl_(grpc_buffer_pool_create(nullptr)) {}
+/// ResourceQuota represents a bound on memory usage by the gRPC library.
+/// A ResourceQuota can be attached to a server (via ServerBuilder), or a client
+/// channel (via ChannelArguments). gRPC will attempt to keep memory used by
+/// all attached entities below the ResourceQuota bound.
+class ResourceQuota GRPC_FINAL {
+ public:
+  explicit ResourceQuota(const grpc::string& name);
+  ResourceQuota();
+  ~ResourceQuota();
 
-BufferPool::BufferPool(const grpc::string& name)
-    : impl_(grpc_buffer_pool_create(name.c_str())) {}
+  /// Resize this ResourceQuota to a new size. If new_size is smaller than the
+  /// current size of the pool, memory usage will be monotonically decreased
+  /// until it falls under new_size. No time bound is given for this to occur
+  /// however.
+  ResourceQuota& Resize(size_t new_size);
 
-BufferPool::~BufferPool() { grpc_buffer_pool_unref(impl_); }
+  grpc_resource_quota* c_resource_quota() const { return impl_; }
 
-BufferPool& BufferPool::Resize(size_t new_size) {
-  grpc_buffer_pool_resize(impl_, new_size);
-  return *this;
-}
+ private:
+  ResourceQuota(const ResourceQuota& rhs);
+  ResourceQuota& operator=(const ResourceQuota& rhs);
+
+  grpc_resource_quota* const impl_;
+};
 
 }  // namespace grpc
+
+#endif

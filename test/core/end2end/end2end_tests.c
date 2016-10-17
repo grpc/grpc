@@ -47,8 +47,6 @@ extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
-extern void buffer_pool_server(grpc_end2end_test_config config);
-extern void buffer_pool_server_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
 extern void call_creds_pre_init(void);
 extern void cancel_after_accept(grpc_end2end_test_config config);
@@ -115,6 +113,8 @@ extern void request_with_flags(grpc_end2end_test_config config);
 extern void request_with_flags_pre_init(void);
 extern void request_with_payload(grpc_end2end_test_config config);
 extern void request_with_payload_pre_init(void);
+extern void resource_quota_server(grpc_end2end_test_config config);
+extern void resource_quota_server_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
@@ -139,7 +139,6 @@ void grpc_end2end_tests_pre_init(void) {
   g_pre_init_called = true;
   bad_hostname_pre_init();
   binary_metadata_pre_init();
-  buffer_pool_server_pre_init();
   call_creds_pre_init();
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
@@ -173,6 +172,7 @@ void grpc_end2end_tests_pre_init(void) {
   registered_call_pre_init();
   request_with_flags_pre_init();
   request_with_payload_pre_init();
+  resource_quota_server_pre_init();
   server_finishes_request_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
@@ -193,7 +193,6 @@ void grpc_end2end_tests(int argc, char **argv,
   if (argc <= 1) {
     bad_hostname(config);
     binary_metadata(config);
-    buffer_pool_server(config);
     call_creds(config);
     cancel_after_accept(config);
     cancel_after_client_done(config);
@@ -227,6 +226,7 @@ void grpc_end2end_tests(int argc, char **argv,
     registered_call(config);
     request_with_flags(config);
     request_with_payload(config);
+    resource_quota_server(config);
     server_finishes_request(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
@@ -246,10 +246,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("binary_metadata", argv[i])) {
       binary_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("buffer_pool_server", argv[i])) {
-      buffer_pool_server(config);
       continue;
     }
     if (0 == strcmp("call_creds", argv[i])) {
@@ -382,6 +378,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("request_with_payload", argv[i])) {
       request_with_payload(config);
+      continue;
+    }
+    if (0 == strcmp("resource_quota_server", argv[i])) {
+      resource_quota_server(config);
       continue;
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {

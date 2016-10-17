@@ -46,7 +46,7 @@ namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
-class BufferPool;
+class ResourceQuota;
 
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to c channel creation code. For grpc related options,
@@ -83,7 +83,7 @@ class ChannelArguments {
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
   /// The given buffer pool will be attached to the constructed channel
-  void SetBufferPool(const BufferPool& buffer_pool);
+  void SetResourceQuota(const ResourceQuota& resource_quota);
 
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
