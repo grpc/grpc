@@ -73,56 +73,51 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   char *tmp;
   char *out;
-  bool first = true;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
 
+  gpr_strvec_add(
+      &b, gpr_strdup(op->covered_by_poller ? "[COVERED]" : "[UNCOVERED]"));
+
   if (op->send_initial_metadata != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA{"));
     put_metadata_list(&b, *op->send_initial_metadata);
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
   if (op->send_message != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_asprintf(&tmp, "SEND_MESSAGE:flags=0x%08x:len=%d",
                  op->send_message->flags, op->send_message->length);
     gpr_strvec_add(&b, tmp);
   }
 
   if (op->send_trailing_metadata != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_TRAILING_METADATA{"));
     put_metadata_list(&b, *op->send_trailing_metadata);
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
   if (op->recv_initial_metadata != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA"));
   }
 
   if (op->recv_message != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
   }
 
   if (op->recv_trailing_metadata != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
   if (op->cancel_error != GRPC_ERROR_NONE) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     const char *msg = grpc_error_string(op->cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
     grpc_error_free_string(msg);
@@ -130,8 +125,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   }
 
   if (op->close_error != GRPC_ERROR_NONE) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    gpr_strvec_add(&b, gpr_strdup(" "));
     const char *msg = grpc_error_string(op->close_error);
     gpr_asprintf(&tmp, "CLOSE:%s", msg);
     grpc_error_free_string(msg);
