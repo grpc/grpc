@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,24 +28,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds PHP interop server and client in a base image.
-set -ex
+# This script is invoked by Jenkins and triggers a test run, bypassing
+# all args to the test script.
+#
+# Setting up rvm environment BEFORE we set -ex.
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
+# To prevent cygwin bash complaining about empty lines ending with \r
+# we set the igncr option. The option doesn't exist on Linux, so we fallback
+# to just 'set -ex' there.
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
-
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
-
-cd /var/local/git/grpc
-
-# gRPC core and protobuf need to be installed
-make install
-
-(cd src/php/ext/grpc && phpize && ./configure && make)
-
-(cd third_party/protobuf && make install)
-
-(cd src/php && php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install)
-
-(cd src/php && ./bin/generate_proto_php.sh)
+python tools/run_tests/run_tests_matrix.py $@

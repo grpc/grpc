@@ -507,6 +507,7 @@ filegroups:
   build: test
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/end2end/fake_resolver.h
   - test/core/end2end/fixtures/http_proxy.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
@@ -520,6 +521,7 @@ filegroups:
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
+  - test/core/end2end/fake_resolver.c
   - test/core/end2end/fixtures/http_proxy.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
@@ -1115,7 +1117,6 @@ libs:
   deps:
   - grpc++_reflection
   - grpc++
-  - grpc++_test_config
 - name: grpc_plugin_support
   build: protoc
   language: c++

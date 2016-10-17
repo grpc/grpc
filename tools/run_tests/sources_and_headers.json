@@ -5031,8 +5031,7 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_reflection", 
-      "grpc++_test_config"
+      "grpc++_reflection"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
@@ -6938,6 +6937,7 @@
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
@@ -6956,6 +6956,8 @@
     "src": [
       "test/core/end2end/cq_verifier.c", 
       "test/core/end2end/cq_verifier.h", 
+      "test/core/end2end/fake_resolver.c", 
+      "test/core/end2end/fake_resolver.h", 
       "test/core/end2end/fixtures/http_proxy.c", 
       "test/core/end2end/fixtures/http_proxy.h", 
       "test/core/end2end/fixtures/proxy.c", 

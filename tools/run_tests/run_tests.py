@@ -1423,7 +1423,7 @@ else:
   exit_code = 0
   if BuildAndRunError.BUILD in errors:
     exit_code |= 1
-  if BuildAndRunError.TEST in errors and not args.travis:
+  if BuildAndRunError.TEST in errors:
     exit_code |= 2
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4
