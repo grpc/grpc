@@ -78,9 +78,6 @@ int grpc_lb_round_robin_trace = 0;
 typedef struct pending_pick {
   struct pending_pick *next;
 
-  /* polling entity for the pick()'s async notification */
-  grpc_polling_entity *pollent;
-
   /* output argument where to store the pick()ed user_data. It'll be NULL if no
    * such data is present or there's an error (the definite test for errors is
    * \a target being NULL). */
@@ -318,8 +315,6 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   while (pp != NULL) {
     pending_pick *next = pp->next;
     if (pp->target == target) {
-      grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                               p->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_sched(
           exec_ctx, pp->on_complete,
@@ -348,8 +343,6 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                               p->base.interested_parties);
       *pp->target = NULL;
       grpc_exec_ctx_sched(
           exec_ctx, pp->on_complete,
@@ -403,7 +396,6 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_lock(&p->mu);
   if ((selected = peek_next_connected_locked(p))) {
     /* readily available, report right away */
-    gpr_mu_unlock(&p->mu);
     *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
 
     if (user_data != NULL) {
@@ -416,17 +408,15 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     /* only advance the last picked pointer if the selection was used */
     advance_last_picked_locked(p);
+    gpr_mu_unlock(&p->mu);
     return 1;
   } else {
     /* no pick currently available. Save for later in list of pending picks */
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pick_args->pollent,
-                                           p->base.interested_parties);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
-    pp->pollent = pick_args->pollent;
     pp->target = target;
     pp->on_complete = on_complete;
     pp->initial_metadata_flags = pick_args->initial_metadata_flags;
@@ -482,8 +472,6 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                     (void *)selected->subchannel, (void *)selected);
           }
-          grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                                   p->base.interested_parties);
           grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
           gpr_free(pp);
         }

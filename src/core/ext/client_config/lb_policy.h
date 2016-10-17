@@ -35,7 +35,6 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_LB_POLICY_H
 
 #include "src/core/ext/client_config/subchannel.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
@@ -55,8 +54,6 @@ struct grpc_lb_policy {
 
 /** Extra arguments for an LB pick */
 typedef struct grpc_lb_policy_pick_args {
-  /** Parties interested in the pick's progress */
-  grpc_polling_entity *pollent;
   /** Initial metadata associated with the picking call. */
   grpc_metadata_batch *initial_metadata;
   /** Bitmask used for selective cancelling. See \a
@@ -153,7 +150,8 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
     once the pick is complete with its error argument set to indicate
     success or failure.
 
-    Any I/O should be done under \a pick_args->pollent. */
+    Any IO should be done under the \a interested_parties \a grpc_pollset_set
+    in the \a grpc_lb_policy struct. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         const grpc_lb_policy_pick_args *pick_args,
                         grpc_connected_subchannel **target, void **user_data,
