@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
   EchoRequest request;
   EchoResponse response;
   grpc::ClientContext context;
-  context.set_fail_fast(false);
+  context.set_wait_for_ready(true);
 
   if (FLAGS_mode == "bidi") {
     auto stream = stub->BidiStream(&context);

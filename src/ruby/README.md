@@ -4,11 +4,6 @@ gRPC Ruby
 
 A Ruby implementation of gRPC.
 
-Status
-------
-
-Beta
-
 PREREQUISITES
 -------------
 

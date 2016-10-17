@@ -47,6 +47,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
@@ -150,6 +151,17 @@ class TestServiceImpl : public TestService::Service {
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
     MaybeEchoMetadata(context);
+    return Status::OK;
+  }
+
+  // Response contains current timestamp. We ignore everything in the request.
+  Status CacheableUnaryCall(ServerContext* context,
+                            const SimpleRequest* request,
+                            SimpleResponse* response) {
+    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
+    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+    response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
+    context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
 

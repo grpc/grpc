@@ -59,7 +59,8 @@ static ClientContext::GlobalCallbacks* g_client_callbacks =
 
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
-      fail_fast_(true),
+      wait_for_ready_(false),
+      wait_for_ready_explicitly_set_(false),
       idempotent_(false),
       cacheable_(false),
       call_(nullptr),

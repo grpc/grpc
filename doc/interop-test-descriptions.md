@@ -60,6 +60,35 @@ Client asserts:
 *It may be possible to use UnaryCall instead of EmptyCall, but it is harder to
 ensure that the proto serialized to zero bytes.*
 
+### cacheable_unary
+
+This test verifies that gRPC requests marked as cacheable use GET verb instead
+of POST, and that server sets appropriate cache control headers for the response
+to be cached by a proxy. This test requires that the server is behind
+a caching proxy. Use of current timestamp in the request prevents accidental
+cache matches left over from previous tests.
+
+Server features:
+* [CacheableUnaryCall][]
+
+Procedure:
+ 1. Client calls CacheableUnaryCall with `SimpleRequest` request with payload
+    set to current timestamp. Timestamp format is irrelevant, and resolution is
+    in nanoseconds.
+    Client adds a `x-user-ip` header with value `1.2.3.4` to the request.
+    This is done since some proxys such as GFE will not cache requests from
+    localhost.
+    Client marks the request as cacheable by setting the cacheable flag in the
+    request context. Longer term this should be driven by the method option
+    specified in the proto file itself.
+ 2. Client calls CacheableUnaryCall with `SimpleRequest` request again
+    immediately with the same payload as the previous request. Cacheable flag is
+    also set for this request's context.
+
+Client asserts:
+* Both calls were successful
+* The payload body of both responses is the same.
+
 ### large_unary
 
 This test verifies unary calls succeed in sending messages, and touches on flow
@@ -750,25 +779,38 @@ Client asserts:
 
 ### unimplemented_method
 
-Status: Ready for implementation. Blocking beta.
+This test verifies that calling an unimplemented RPC method returns the 
+UNIMPLEMENTED status code.
 
-This test verifies calling unimplemented RPC method returns the UNIMPLEMENTED status code.
+Server features:
+N/A
+
+Procedure:
+* Client calls `grpc.testing.TestService/UnimplementedMethod` with an empty
+  request (defined as `grpc.testing.Empty`):
+
+    ```
+    {
+    }
+    ```
+   
+Client asserts:
+* received status code is 12 (UNIMPLEMENTED)
+
+### unimplemented_service
+
+This test verifies calling an unimplemented server returns the UNIMPLEMENTED
+status code.
 
 Server features:
 N/A
 
 Procedure:
 * Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an
-  empty request (defined as `grpc.testing.Empty`):
-
-    ```
-    {
-    }
-    ```
+  empty request (defined as `grpc.testing.Empty`)
 
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
-* received status message is empty or null/unset
 
 ### cancel_after_begin
 
@@ -940,6 +982,18 @@ Server implements UnaryCall which immediately returns a SimpleResponse with a
 payload body of size `SimpleRequest.response_size` bytes and type as appropriate
 for the `SimpleRequest.response_type`. If the server does not support the
 `response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
+
+### CacheableUnaryCall
+
+Server gets the default SimpleRequest proto as the request. The content of the
+request is ignored. It returns the SimpleResponse proto with the payload set
+to current timestamp.  The timestamp is an integer representing current time
+with nanosecond resolution. This integer is formated as ASCII decimal in the
+response. The format is not really important as long as the response payload
+is different for each request. In addition it adds
+  1. cache control headers such that the response can be cached by proxies in
+     the response path. Server should be behind a caching proxy for this test
+     to pass. Currently we set the max-age to 60 seconds.
 
 ### CompressedResponse
 [CompressedResponse]: #compressedresponse

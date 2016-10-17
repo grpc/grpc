@@ -128,4 +128,15 @@ gem install bundler
 # Java dependencies - nothing as we already have Java JDK 8
 
 # Go dependencies
-sudo apt-get install -y golang-go
+# Currently, the golang package available via apt-get doesn't have the latest go.
+# Significant performance improvements with grpc-go have been observed after
+# upgrading from go 1.5 to a later version, so a later go version is preferred.
+# Following go install instructions from https://golang.org/doc/install
+GO_VERSION=1.7.1
+OS=linux
+ARCH=amd64
+curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz
+sudo tar -C /usr/local -xzf go$GO_VERSION.$OS-$ARCH.tar.gz
+# Put go on the PATH, keep the usual installation dir
+sudo ln -s /usr/local/go/bin/go /usr/bin/go
+rm go$GO_VERSION.$OS-$ARCH.tar.gz

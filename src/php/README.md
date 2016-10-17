@@ -4,10 +4,6 @@
 This directory contains source code for PHP implementation of gRPC layered on
 shared C library.
 
-#Status
-
-GA
-
 ## Environment
 
 **Prerequisite:**
