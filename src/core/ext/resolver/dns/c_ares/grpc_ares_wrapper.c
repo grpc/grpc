@@ -307,6 +307,4 @@ void grpc_ares_cleanup(void) {
   gpr_mu_unlock(&g_init_mu);
 }
 
-bool grpc_ares_need_poll_entity(void) { return true; }
-
 #endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

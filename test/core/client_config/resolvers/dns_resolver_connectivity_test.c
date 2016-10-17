@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_event ev1;
   gpr_event_init(&ev1);
-  grpc_resolver_next(&exec_ctx, resolver, NULL, &result,
+  grpc_resolver_next(&exec_ctx, resolver, &result,
                      grpc_closure_create(on_done, &ev1));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(5, &ev1));
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 
   gpr_event ev2;
   gpr_event_init(&ev2);
-  grpc_resolver_next(&exec_ctx, resolver, NULL, &result,
+  grpc_resolver_next(&exec_ctx, resolver, &result,
                      grpc_closure_create(on_done, &ev2));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(30, &ev2));

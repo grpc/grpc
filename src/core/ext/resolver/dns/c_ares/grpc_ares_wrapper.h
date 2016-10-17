@@ -61,9 +61,4 @@ grpc_error *grpc_ares_init(void);
    wrapper. */
 void grpc_ares_cleanup(void);
 
-/* Returns true if the gRPC ares wrapper implementation needs a polling entity,
-   false otherwise. */
-/* TODO(zyc): remove this temporary hack after we can build c-ares on windows */
-bool grpc_ares_need_poll_entity(void);
-
 #endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */

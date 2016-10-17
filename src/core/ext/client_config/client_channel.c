@@ -255,7 +255,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver, NULL, &chand->resolver_result,
+    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
     gpr_mu_unlock(&chand->mu);
   } else {
@@ -647,8 +647,7 @@ static bool pick_subchannel(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = true;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, chand->resolver, calld->pollent,
-                       &chand->resolver_result,
+    grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
   }
   if (chand->resolver != NULL) {
@@ -862,6 +861,8 @@ void grpc_client_channel_finish_initialization(
   gpr_mu_lock(&chand->mu);
   GPR_ASSERT(!chand->resolver);
   chand->resolver = resolver;
+  grpc_pollset_set_add_pollset_set(exec_ctx, resolver->pollset_set,
+                                   chand->interested_parties);
   GRPC_RESOLVER_REF(resolver, "channel");
 
   GPR_ASSERT(grpc_closure_list_empty(chand->waiting_for_config_closures));
@@ -886,8 +887,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
       if (!chand->started_resolving && chand->resolver != NULL) {
         GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
         chand->started_resolving = true;
-        grpc_resolver_next(exec_ctx, chand->resolver, NULL,
-                           &chand->resolver_result,
+        grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
                            &chand->on_resolver_result_changed);
       }
     }

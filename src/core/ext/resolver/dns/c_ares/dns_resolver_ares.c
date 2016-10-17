@@ -84,8 +84,6 @@ typedef struct {
 
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
-
-  grpc_polling_entity *pollent;
 } dns_resolver;
 
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -99,7 +97,6 @@ static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_ares_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *r);
 static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                          grpc_polling_entity *pollent,
                           grpc_resolver_result **target_result,
                           grpc_closure *on_complete);
 
@@ -167,11 +164,6 @@ static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_resolved_addresses_destroy(r->addresses);
     result = grpc_resolver_result_create(r->target_name, addresses,
                                          NULL /* lb_policy_name */, NULL);
-    if (r->pollent) {
-      grpc_polling_entity_del_from_pollset_set(exec_ctx, r->pollent,
-                                               r->base.pollset_set);
-      r->pollent = NULL;
-    }
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -202,7 +194,6 @@ static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                          grpc_polling_entity *pollent,
                           grpc_resolver_result **target_result,
                           grpc_closure *on_complete) {
   dns_resolver *r = (dns_resolver *)resolver;
@@ -216,14 +207,6 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
     GPR_ASSERT(!r->resolving);
     r->resolving = true;
     r->addresses = NULL;
-    r->pollent = NULL;
-    if (grpc_ares_need_poll_entity() && pollent) {
-      r->pollent = pollent;
-      grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
-                                             r->base.pollset_set);
-    } else {
-      gpr_log(GPR_DEBUG, "dns_ares_next is called without giving a pollent");
-    }
     grpc_resolve_address_ares(
         exec_ctx, r->name_to_resolve, r->default_port, r->base.pollset_set,
         grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);

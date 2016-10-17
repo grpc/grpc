@@ -72,7 +72,6 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *r);
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                          grpc_polling_entity *pollent,
                           grpc_resolver_result **target_result,
                           grpc_closure *on_complete);
 
@@ -102,7 +101,6 @@ static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
 }
 
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                          grpc_polling_entity *pollent,
                           grpc_resolver_result **target_result,
                           grpc_closure *on_complete) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
