@@ -124,20 +124,6 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void cronet_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  static bool done = false;
-  // TODO (makdharma): DO NOT CHECK IN THIS HACK!!!
-  if (!done) {
-    done = true;
-    [Cronet setHttp2Enabled:YES];
-    [Cronet setQuicEnabled:YES];
-    [Cronet enableTestCertVerifierForTesting];
-    NSURL *url = [[[NSFileManager defaultManager]
-        URLsForDirectory:NSDocumentDirectory
-               inDomains:NSUserDomainMask] lastObject];
-    NSLog(@"Documents directory: %@", url);
-    [Cronet start];
-    [Cronet startNetLogToFile:@"Documents/cronet_netlog.json" logBytes:YES];
-  }
   cronet_engine *cronetEngine = [Cronet getGlobalEngine];
 
   grpc_channel_args *new_client_args = grpc_channel_args_copy(client_args);
@@ -210,6 +196,15 @@ static char *roots_filename;
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_filename);
 
   grpc_init();
+
+  [Cronet setHttp2Enabled:YES];
+  [Cronet enableTestCertVerifierForTesting];
+  NSURL *url = [[[NSFileManager defaultManager]
+      URLsForDirectory:NSDocumentDirectory
+             inDomains:NSUserDomainMask] lastObject];
+  NSLog(@"Documents directory: %@", url);
+  [Cronet start];
+  [Cronet startNetLogToFile:@"Documents/cronet_netlog.json" logBytes:YES];
 }
 
 // The tearDown() function is run after all test cases finish running
