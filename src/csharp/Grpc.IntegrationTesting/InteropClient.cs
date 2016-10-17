@@ -520,12 +520,12 @@ namespace Grpc.IntegrationTesting
                 };
 
                 var call = client.FullDuplexCall(headers: CreateTestMetadata());
-                var responseHeaders = await call.ResponseHeadersAsync;
 
                 await call.RequestStream.WriteAsync(request);
                 await call.RequestStream.CompleteAsync();
                 await call.ResponseStream.ToListAsync();
 
+                var responseHeaders = await call.ResponseHeadersAsync;
                 var responseTrailers = call.GetTrailers();
 
                 Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);

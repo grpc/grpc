@@ -136,6 +136,7 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_ENABLE_CENSUS
   const char *GRPC_ARG_MAX_CONCURRENT_STREAMS
   const char *GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  const char *GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
   const char *GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
   const char *GRPC_ARG_DEFAULT_AUTHORITY
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
@@ -172,10 +173,14 @@ cdef extern from "grpc/grpc.h":
     GRPC_ARG_INTEGER
     GRPC_ARG_POINTER
 
-  ctypedef struct grpc_arg_value_pointer:
-    void *address "p"
+  ctypedef struct grpc_arg_pointer_vtable:
     void *(*copy)(void *)
     void (*destroy)(void *)
+    int (*cmp)(void *, void *)
+
+  ctypedef struct grpc_arg_value_pointer:
+    void *address "p"
+    grpc_arg_pointer_vtable *vtable
 
   union grpc_arg_value:
     char *string

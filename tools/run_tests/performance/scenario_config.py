@@ -190,7 +190,7 @@ class CXXLanguage:
     # TODO(ctiller): add 70% load latency test
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = [SMOKETEST] if secure else []
+      smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_ping_pong_%s' % secstr,
@@ -296,7 +296,7 @@ class CSharpLanguage:
         client_type='ASYNC_CLIENT',
         server_type='ASYNC_GENERIC_SERVER',
         use_generic_payload=True,
-        categories=[SMOKETEST])
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_protobuf_async_streaming_ping_pong',
@@ -305,11 +305,9 @@ class CSharpLanguage:
         server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
-        'csharp_protobuf_async_unary_ping_pong',
-        rpc_type='UNARY',
-        client_type='ASYNC_CLIENT',
-        server_type='ASYNC_SERVER',
-        categories=[SMOKETEST])
+        'csharp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_protobuf_sync_to_async_unary_ping_pong',
@@ -334,14 +332,10 @@ class CSharpLanguage:
         categories=[SCALABLE])
 
     yield _ping_pong_scenario(
-        'csharp_to_cpp_protobuf_sync_unary_ping_pong',
-        rpc_type='UNARY',
-        client_type='SYNC_CLIENT',
-        server_type='SYNC_SERVER',
-        server_language='c++',
-        server_core_limit=1,
-        async_server_threads=1,
-        categories=[SMOKETEST])
+        'csharp_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1,
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_async_streaming_ping_pong',
@@ -408,11 +402,9 @@ class NodeLanguage:
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
-        'node_protobuf_unary_ping_pong',
-        rpc_type='UNARY',
-        client_type='ASYNC_CLIENT',
-        server_type='ASYNC_SERVER',
-        categories=[SMOKETEST])
+        'node_protobuf_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SCALABLE, SMOKETEST])
 
     yield _ping_pong_scenario(
         'node_protobuf_async_unary_qps_unconstrained',
@@ -420,7 +412,7 @@ class NodeLanguage:
         client_type='ASYNC_CLIENT',
         server_type='ASYNC_SERVER',
         unconstrained_client='async',
-        categories=[SMOKETEST])
+        categories=[SCALABLE, SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
@@ -462,7 +454,7 @@ class PythonLanguage:
         client_type='SYNC_CLIENT',
         server_type='ASYNC_GENERIC_SERVER',
         use_generic_payload=True,
-        categories=[SMOKETEST])
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_streaming_ping_pong',
@@ -477,11 +469,9 @@ class PythonLanguage:
         server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
-        'python_protobuf_sync_unary_ping_pong',
-        rpc_type='UNARY',
-        client_type='SYNC_CLIENT',
-        server_type='ASYNC_SERVER',
-        categories=[SMOKETEST])
+        'python_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_qps_unconstrained',
@@ -498,14 +488,10 @@ class PythonLanguage:
         unconstrained_client='sync')
 
     yield _ping_pong_scenario(
-        'python_to_cpp_protobuf_sync_unary_ping_pong',
-        rpc_type='UNARY',
-        client_type='SYNC_CLIENT',
-        server_type='ASYNC_SERVER',
-        server_language='c++',
-        server_core_limit=1,
-        async_server_threads=1,
-        categories=[SMOKETEST])
+        'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1,
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_streaming_ping_pong',
@@ -534,18 +520,14 @@ class RubyLanguage:
 
   def scenarios(self):
     yield _ping_pong_scenario(
-        'ruby_protobuf_sync_streaming_ping_pong',
-        rpc_type='STREAMING',
-        client_type='SYNC_CLIENT',
-        server_type='SYNC_SERVER',
-        categories=[SMOKETEST])
+        'ruby_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
-        'ruby_protobuf_unary_ping_pong',
-        rpc_type='UNARY',
-        client_type='SYNC_CLIENT',
-        server_type='SYNC_SERVER',
-        categories=[SMOKETEST])
+        'ruby_protobuf_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'ruby_protobuf_sync_unary_qps_unconstrained',
@@ -598,7 +580,7 @@ class JavaLanguage:
   def scenarios(self):
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = [SMOKETEST] if secure else []
+      smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
 
       yield _ping_pong_scenario(
           'java_generic_async_streaming_ping_pong_%s' % secstr,
@@ -702,7 +684,7 @@ class GoLanguage:
   def scenarios(self):
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = [SMOKETEST] if secure else []
+      smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
 
       # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
       # but that's mostly because of lack of better name of the enum value.

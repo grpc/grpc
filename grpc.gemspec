@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0'
+  s.add_dependency 'google-protobuf', '~> 3.0.2'
   s.add_dependency 'googleauth',      '~> 0.5.1'
   s.add_dependency 'concurrent-ruby'
 
@@ -175,6 +175,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/compress_filter.h )
   s.files += %w( src/core/lib/channel/connected_channel.h )
   s.files += %w( src/core/lib/channel/context.h )
+  s.files += %w( src/core/lib/channel/deadline_filter.h )
   s.files += %w( src/core/lib/channel/handshaker.h )
   s.files += %w( src/core/lib/channel/http_client_filter.h )
   s.files += %w( src/core/lib/channel/http_server_filter.h )
@@ -223,6 +224,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/timer_heap.h )
   s.files += %w( src/core/lib/iomgr/udp_server.h )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.h )
+  s.files += %w( src/core/lib/iomgr/wakeup_fd_cv.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.h )
   s.files += %w( src/core/lib/iomgr/workqueue.h )
@@ -338,6 +340,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/channel_stack_builder.c )
   s.files += %w( src/core/lib/channel/compress_filter.c )
   s.files += %w( src/core/lib/channel/connected_channel.c )
+  s.files += %w( src/core/lib/channel/deadline_filter.c )
   s.files += %w( src/core/lib/channel/handshaker.c )
   s.files += %w( src/core/lib/channel/http_client_filter.c )
   s.files += %w( src/core/lib/channel/http_server_filter.c )
@@ -388,6 +391,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/udp_server.c )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.c )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix_noop.c )
+  s.files += %w( src/core/lib/iomgr/wakeup_fd_cv.c )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_eventfd.c )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_nospecial.c )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.c )

@@ -22,6 +22,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
+      <Filter>src\core\lib\channel</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -170,6 +173,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix_noop.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_eventfd.c">
@@ -593,6 +599,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h">
+      <Filter>src\core\lib\channel</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -735,6 +744,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h">

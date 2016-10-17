@@ -148,11 +148,13 @@ typedef struct {
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
-/** Maximum message length that the channel can receive. Int valued, bytes. */
+/** Maximum message length that the channel can receive. Int valued, bytes.
+    -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
 /** \deprecated For backward compatibility. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
-/** Maximum message length that the channel can send. Int valued, bytes. */
+/** Maximum message length that the channel can send. Int valued, bytes.
+    -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
@@ -184,6 +186,9 @@ typedef struct {
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
+/** The time between the first and second connection attempts, in ms */
+#define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
+  "grpc.initial_reconnect_backoff_ms"
 /* The caller of the secure_channel_create functions may override the target
    name used for SSL host name checking using this channel argument which is of
    type \a GRPC_ARG_STRING. This *should* be used for testing only.
@@ -252,15 +257,22 @@ typedef enum grpc_call_error {
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
-#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
+/** DEPRECATED: for backward compatibility */
+#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY \
+  GRPC_INITIAL_METADATA_WAIT_FOR_READY
 /** Signal that the call is cacheable. GRPC is free to use GET verb */
 #define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+/** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
+    by the calling application. */
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK        \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
+#define GRPC_INITIAL_METADATA_USED_MASK       \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY |     \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

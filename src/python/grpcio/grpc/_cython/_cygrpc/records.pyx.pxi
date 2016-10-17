@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from libc.stdint cimport intptr_t
 
 class ConnectivityState:
   idle = GRPC_CHANNEL_IDLE
@@ -39,7 +40,8 @@ class ConnectivityState:
 class ChannelArgKey:
   enable_census = GRPC_ARG_ENABLE_CENSUS
   max_concurrent_streams = GRPC_ARG_MAX_CONCURRENT_STREAMS
-  max_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  max_receive_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  max_send_message_length = GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
   http2_initial_sequence_number = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
   default_authority = GRPC_ARG_DEFAULT_AUTHORITY
   primary_user_agent_string = GRPC_ARG_PRIMARY_USER_AGENT_STRING
@@ -303,20 +305,49 @@ cdef class SslPemKeyCertPair:
     self.c_pair.certificate_chain = self.certificate_chain
 
 
+
+cdef void* copy_ptr(void* ptr):
+  return ptr
+
+
+cdef void destroy_ptr(void* ptr):
+  pass
+
+
+cdef int compare_ptr(void* ptr1, void* ptr2):
+  if ptr1 < ptr2:
+    return -1
+  elif ptr1 > ptr2:
+    return 1
+  else:
+    return 0
+
+
 cdef class ChannelArg:
 
   def __cinit__(self, bytes key, value):
     self.key = key
+    self.value = value
     self.c_arg.key = self.key
     if isinstance(value, int):
-      self.value = value
       self.c_arg.type = GRPC_ARG_INTEGER
       self.c_arg.value.integer = self.value
     elif isinstance(value, bytes):
-      self.value = value
       self.c_arg.type = GRPC_ARG_STRING
       self.c_arg.value.string = self.value
+    elif hasattr(value, '__int__'):
+      # Pointer objects must override __int__() to return
+      # the underlying C address (Python ints are word size).  The
+      # lifecycle of the pointer is fixed to the lifecycle of the 
+      # python object wrapping it.
+      self.ptr_vtable.copy = &copy_ptr
+      self.ptr_vtable.destroy = &destroy_ptr
+      self.ptr_vtable.cmp = &compare_ptr
+      self.c_arg.type = GRPC_ARG_POINTER
+      self.c_arg.value.pointer.vtable = &self.ptr_vtable
+      self.c_arg.value.pointer.address = <void*>(<intptr_t>int(self.value))
     else:
+      # TODO Add supported pointer types to this message
       raise TypeError('Expected int or bytes, got {}'.format(type(value)))
 
 

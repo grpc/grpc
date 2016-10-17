@@ -301,6 +301,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\compress_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.h" />
@@ -349,6 +350,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
@@ -472,6 +474,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\deadline_filter.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_client_filter.c">
@@ -571,6 +575,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix_noop.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>

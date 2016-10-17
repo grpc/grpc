@@ -4,11 +4,6 @@ gRPC Ruby
 
 A Ruby implementation of gRPC.
 
-Status
-------
-
-Beta
-
 PREREQUISITES
 -------------
 
@@ -73,5 +68,5 @@ Directory structure is the layout for [ruby extensions][]
 
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
-[grpc.io]: http://www.grpc.io/docs/installation/ruby.html
+[grpc.io]: http://www.grpc.io/docs/quickstart/ruby.html
 [Debian jessie-backports]:http://backports.debian.org/Instructions/

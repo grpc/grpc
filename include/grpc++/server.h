@@ -96,9 +96,6 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   // Returns a \em raw pointer to the underlying grpc_server instance.
   grpc_server* c_server();
 
-  // Returns a \em raw pointer to the underlying CompletionQueue.
-  CompletionQueue* completion_queue();
-
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;

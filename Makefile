@@ -732,7 +732,7 @@ PC_LIBS_GRPCXX =
 
 CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
 
-PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+PROTOC_PLUGINS_ALL = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_php_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
 
 ifeq ($(HAS_SYSTEM_PROTOBUF),true)
@@ -919,6 +919,7 @@ client_fuzzer: $(BINDIR)/$(CONFIG)/client_fuzzer
 combiner_test: $(BINDIR)/$(CONFIG)/combiner_test
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
 concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
+connection_refused_test: $(BINDIR)/$(CONFIG)/connection_refused_test
 dns_resolver_connectivity_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test
 dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
@@ -1024,6 +1025,7 @@ transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
+wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
@@ -1047,6 +1049,7 @@ grpc_cpp_plugin: $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
 grpc_csharp_plugin: $(BINDIR)/$(CONFIG)/grpc_csharp_plugin
 grpc_node_plugin: $(BINDIR)/$(CONFIG)/grpc_node_plugin
 grpc_objective_c_plugin: $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin
+grpc_php_plugin: $(BINDIR)/$(CONFIG)/grpc_php_plugin
 grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
@@ -1249,6 +1252,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/combiner_test \
   $(BINDIR)/$(CONFIG)/compression_test \
   $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
+  $(BINDIR)/$(CONFIG)/connection_refused_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_test \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
@@ -1337,6 +1341,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
+  $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test \
   $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
@@ -1575,6 +1580,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
 	$(E) "[RUN]     Testing concurrent_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/concurrent_connectivity_test || ( echo test concurrent_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing connection_refused_test"
+	$(Q) $(BINDIR)/$(CONFIG)/connection_refused_test || ( echo test connection_refused_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test || ( echo test dns_resolver_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_test"
@@ -1733,6 +1740,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/udp_server_test || ( echo test udp_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing uri_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
+	$(E) "[RUN]     Testing wakeup_fd_cv_test"
+	$(Q) $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test || ( echo test wakeup_fd_cv_test failed ; exit 1 )
 	$(E) "[RUN]     Testing public_headers_must_be_c89"
 	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 || ( echo test public_headers_must_be_c89 failed ; exit 1 )
 	$(E) "[RUN]     Testing badreq_bad_client_test"
@@ -2343,6 +2352,8 @@ else
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(prefix)/bin/grpc_objective_c_plugin
 	$(Q) $(INSTALL) -d $(prefix)/bin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_php_plugin $(prefix)/bin/grpc_php_plugin
+	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
@@ -2532,6 +2543,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -2582,6 +2594,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -2808,6 +2821,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -2858,6 +2872,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -3056,6 +3071,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/data/test_root_cert.c \
     test/core/security/oauth2_utils.c \
     test/core/end2end/cq_verifier.c \
+    test/core/end2end/fake_resolver.c \
     test/core/end2end/fixtures/http_proxy.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
@@ -3073,6 +3089,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -3123,6 +3140,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -3222,6 +3240,7 @@ endif
 
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/cq_verifier.c \
+    test/core/end2end/fake_resolver.c \
     test/core/end2end/fixtures/http_proxy.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
@@ -3265,6 +3284,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channel_stack_builder.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/deadline_filter.c \
     src/core/lib/channel/handshaker.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
@@ -3315,6 +3335,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -3600,97 +3621,6 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_posix.c \
-    src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -3741,30 +3671,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
-    include/grpc/byte_buffer.h \
-    include/grpc/byte_buffer_reader.h \
-    include/grpc/compression.h \
-    include/grpc/grpc.h \
-    include/grpc/grpc_posix.h \
-    include/grpc/grpc_security_constants.h \
-    include/grpc/status.h \
-    include/grpc/impl/codegen/byte_buffer_reader.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/atm.h \
-    include/grpc/impl/codegen/atm_gcc_atomic.h \
-    include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_windows.h \
-    include/grpc/impl/codegen/gpr_types.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/sync.h \
-    include/grpc/impl/codegen/sync_generic.h \
-    include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/call.h \
@@ -3796,6 +3702,23 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/status.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -3832,18 +3755,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc-imp -lgpr-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc -lgpr
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc -lgpr
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).so
 endif
@@ -4228,97 +4151,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/message_size_filter.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll_linux.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_posix.c \
-    src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/event_string.c \
-    src/core/lib/surface/lame_client.c \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -4369,30 +4201,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
-    include/grpc/byte_buffer.h \
-    include/grpc/byte_buffer_reader.h \
-    include/grpc/compression.h \
-    include/grpc/grpc.h \
-    include/grpc/grpc_posix.h \
-    include/grpc/grpc_security_constants.h \
-    include/grpc/status.h \
-    include/grpc/impl/codegen/byte_buffer_reader.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/atm.h \
-    include/grpc/impl/codegen/atm_gcc_atomic.h \
-    include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_windows.h \
-    include/grpc/impl/codegen/gpr_types.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/sync.h \
-    include/grpc/impl/codegen/sync_generic.h \
-    include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/call.h \
@@ -4424,6 +4232,23 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/status.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -4533,6 +4358,7 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/csharp_generator.cc \
     src/compiler/node_generator.cc \
     src/compiler/objective_c_generator.cc \
+    src/compiler/php_generator.cc \
     src/compiler/python_generator.cc \
     src/compiler/ruby_generator.cc \
 
@@ -7543,6 +7369,38 @@ deps_concurrent_connectivity_test: $(CONCURRENT_CONNECTIVITY_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CONCURRENT_CONNECTIVITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CONNECTION_REFUSED_TEST_SRC = \
+    test/core/end2end/connection_refused_test.c \
+
+CONNECTION_REFUSED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_REFUSED_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/connection_refused_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/connection_refused_test: $(CONNECTION_REFUSED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CONNECTION_REFUSED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/connection_refused_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/connection_refused_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_connection_refused_test: $(CONNECTION_REFUSED_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CONNECTION_REFUSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10907,6 +10765,38 @@ endif
 endif
 
 
+WAKEUP_FD_CV_TEST_SRC = \
+    test/core/iomgr/wakeup_fd_cv_test.c \
+
+WAKEUP_FD_CV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WAKEUP_FD_CV_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/wakeup_fd_cv_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/wakeup_fd_cv_test: $(WAKEUP_FD_CV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(WAKEUP_FD_CV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/wakeup_fd_cv_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_wakeup_fd_cv_test: $(WAKEUP_FD_CV_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(WAKEUP_FD_CV_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 ALARM_CPP_TEST_SRC = \
     test/cpp/common/alarm_cpp_test.cc \
 
@@ -11885,6 +11775,37 @@ deps_grpc_objective_c_plugin: $(GRPC_OBJECTIVE_C_PLUGIN_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_OBJECTIVE_C_PLUGIN_OBJS:.o=.dep)
+endif
+
+
+GRPC_PHP_PLUGIN_SRC = \
+    src/compiler/php_plugin.cc \
+
+GRPC_PHP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PHP_PLUGIN_SRC))))
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_php_plugin: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_php_plugin: $(PROTOBUF_DEP) $(GRPC_PHP_PLUGIN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
+	$(E) "[HOSTLD]  Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(GRPC_PHP_PLUGIN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/grpc_php_plugin
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/compiler/php_plugin.o:  $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
+
+deps_grpc_php_plugin: $(GRPC_PHP_PLUGIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_PHP_PLUGIN_OBJS:.o=.dep)
 endif
 
 

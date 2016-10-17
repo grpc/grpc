@@ -101,8 +101,8 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s);
 void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
                                            grpc_closure *shutdown_starting);
 
-/* If the refcount drops to zero, delete s, and call (exec_ctx==NULL) or enqueue
-   a call (exec_ctx!=NULL) to shutdown_complete. */
+/* If the refcount drops to zero, enqueue calls on exec_ctx to
+   shutdown_listeners and delete s. */
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s);
 
 /* Shutdown the fds of listeners. */

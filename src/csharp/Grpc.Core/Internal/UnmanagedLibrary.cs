@@ -44,10 +44,9 @@ namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Represents a dynamically loaded unmanaged library in a (partially) platform independent manner.
-    /// An important difference in library loading semantics is that on Windows, once we load a dynamic library using LoadLibrary,
-    /// that library becomes instantly available for <c>DllImport</c> P/Invoke calls referring to the same library name.
-    /// On Unix systems, dlopen has somewhat different semantics, so we need to use dlsym and <c>Marshal.GetDelegateForFunctionPointer</c>
-    /// to obtain delegates to native methods.
+    /// First, the native library is loaded using dlopen (on Unix systems) or using LoadLibrary (on Windows).
+    /// dlsym or GetProcAddress are then used to obtain symbol addresses. <c>Marshal.GetDelegateForFunctionPointer</c>
+    /// transforms the addresses into delegates to native methods.
     /// See http://stackoverflow.com/questions/13461989/p-invoke-to-dynamically-loaded-library-on-mono.
     /// </summary>
     internal class UnmanagedLibrary
@@ -114,6 +113,10 @@ namespace Grpc.Core.Internal
                 {
                     return Mono.dlsym(this.handle, symbolName);
                 }
+                if (PlatformApis.IsNetCore)
+                {
+                    return CoreCLR.dlsym(this.handle, symbolName);
+                }
                 return Linux.dlsym(this.handle, symbolName);
             }
             if (PlatformApis.IsMacOSX)
@@ -148,6 +151,10 @@ namespace Grpc.Core.Internal
                 if (PlatformApis.IsMono)
                 {
                     return Mono.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                }
+                if (PlatformApis.IsNetCore)
+                {
+                    return CoreCLR.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
                 }
                 return Linux.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
             }
@@ -213,6 +220,20 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("__Internal")]
+            internal static extern IntPtr dlsym(IntPtr handle, string symbol);
+        }
+
+        /// <summary>
+        /// Similarly as for Mono on Linux, we load symbols for
+        /// dlopen and dlsym from the "libcoreclr.so",
+        /// to avoid the dependency on libc-dev Linux.
+        /// </summary>
+        private static class CoreCLR
+        {
+            [DllImport("libcoreclr.so")]
+            internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
     }
