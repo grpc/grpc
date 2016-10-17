@@ -33,6 +33,7 @@
 
 #include "src/core/ext/client_config/subchannel.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
