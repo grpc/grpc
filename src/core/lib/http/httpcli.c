@@ -71,7 +71,7 @@ typedef struct {
   grpc_closure done_write;
   grpc_closure connected;
   grpc_error *overall_error;
-  grpc_buffer_pool *buffer_pool;
+  grpc_resource_quota *resource_quota;
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
@@ -119,7 +119,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   gpr_slice_buffer_destroy(&req->incoming);
   gpr_slice_buffer_destroy(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
-  grpc_buffer_pool_internal_unref(exec_ctx, req->buffer_pool);
+  grpc_resource_quota_internal_unref(exec_ctx, req->resource_quota);
   gpr_free(req);
 }
 
@@ -229,8 +229,8 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   grpc_arg arg;
   arg.key = GRPC_ARG_BUFFER_POOL;
   arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = req->buffer_pool;
-  arg.value.pointer.vtable = grpc_buffer_pool_arg_vtable();
+  arg.value.pointer.p = req->resource_quota;
+  arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(
       exec_ctx, &req->connected, &req->ep, req->context->pollset_set, &args,
@@ -250,7 +250,7 @@ static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void internal_request_begin(grpc_exec_ctx *exec_ctx,
                                    grpc_httpcli_context *context,
                                    grpc_polling_entity *pollent,
-                                   grpc_buffer_pool *buffer_pool,
+                                   grpc_resource_quota *resource_quota,
                                    const grpc_httpcli_request *request,
                                    gpr_timespec deadline, grpc_closure *on_done,
                                    grpc_httpcli_response *response,
@@ -266,7 +266,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
-  req->buffer_pool = grpc_buffer_pool_internal_ref(buffer_pool);
+  req->resource_quota = grpc_resource_quota_internal_ref(resource_quota);
   grpc_closure_init(&req->on_read, on_read, req);
   grpc_closure_init(&req->done_write, done_write, req);
   gpr_slice_buffer_init(&req->incoming);
@@ -284,7 +284,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
 
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       grpc_polling_entity *pollent,
-                      grpc_buffer_pool *buffer_pool,
+                      grpc_resource_quota *resource_quota,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline, grpc_closure *on_done,
                       grpc_httpcli_response *response) {
@@ -294,7 +294,7 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
     return;
   }
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(exec_ctx, context, pollent, buffer_pool, request,
+  internal_request_begin(exec_ctx, context, pollent, resource_quota, request,
                          deadline, on_done, response, name,
                          grpc_httpcli_format_get_request(request));
   gpr_free(name);
@@ -302,7 +302,7 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
 
 void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                        grpc_polling_entity *pollent,
-                       grpc_buffer_pool *buffer_pool,
+                       grpc_resource_quota *resource_quota,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline, grpc_closure *on_done,
@@ -315,7 +315,7 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
   }
   gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      exec_ctx, context, pollent, buffer_pool, request, deadline, on_done,
+      exec_ctx, context, pollent, resource_quota, request, deadline, on_done,
       response, name,
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
   gpr_free(name);

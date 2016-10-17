@@ -141,7 +141,7 @@ message ServerConfig {
   // c++-only options (for now) --------------------------------
 
   // Buffer pool size (no buffer pool specified if unset)
-  int32 buffer_pool_size = 1001;
+  int32 resource_quota_size = 1001;
 }
 
 message ServerArgs {

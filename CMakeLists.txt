@@ -306,7 +306,6 @@ add_library(grpc
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
-  src/core/lib/iomgr/buffer_pool.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -330,6 +329,7 @@ add_library(grpc
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -347,6 +347,7 @@ add_library(grpc
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -565,7 +566,6 @@ add_library(grpc_cronet
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
-  src/core/lib/iomgr/buffer_pool.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -589,6 +589,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -606,6 +607,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -796,7 +798,6 @@ add_library(grpc_unsecure
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
-  src/core/lib/iomgr/buffer_pool.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -820,6 +821,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -837,6 +839,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -1020,11 +1023,11 @@ add_library(grpc++
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/common/buffer_pool_cc.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1060,7 +1063,6 @@ target_link_libraries(grpc++
 
 foreach(_hdr
   include/grpc++/alarm.h
-  include/grpc++/buffer_pool.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
   include/grpc++/completion_queue.h
@@ -1087,6 +1089,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h
@@ -1276,11 +1279,11 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/common/buffer_pool_cc.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1316,7 +1319,6 @@ target_link_libraries(grpc++_unsecure
 
 foreach(_hdr
   include/grpc++/alarm.h
-  include/grpc++/buffer_pool.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
   include/grpc++/completion_queue.h
@@ -1343,6 +1345,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h

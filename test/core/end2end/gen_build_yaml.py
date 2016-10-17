@@ -88,7 +88,7 @@ LOWCPU = 0.1
 END2END_TESTS = {
     'bad_hostname': default_test_options,
     'binary_metadata': default_test_options,
-    'buffer_pool_server': default_test_options._replace(large_writes=True,
+    'resource_quota_server': default_test_options._replace(large_writes=True,
                                                         proxyable=False),
     'call_creds': default_test_options._replace(secure=True),
     'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),

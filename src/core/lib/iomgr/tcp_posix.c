@@ -102,8 +102,8 @@ typedef struct {
 
   char *peer_string;
 
-  grpc_buffer_user buffer_user;
-  grpc_buffer_user_slice_allocator slice_allocator;
+  grpc_resource_user resource_user;
+  grpc_resource_user_slice_allocator slice_allocator;
 } grpc_tcp;
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -113,17 +113,17 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 static void tcp_unref_closure(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                               grpc_error *error);
 
-static void tcp_maybe_shutdown_buffer_user(grpc_exec_ctx *exec_ctx,
-                                           grpc_tcp *tcp) {
+static void tcp_maybe_shutdown_resource_user(grpc_exec_ctx *exec_ctx,
+                                             grpc_tcp *tcp) {
   if (gpr_atm_full_fetch_add(&tcp->shutdown_count, 1) == 0) {
-    grpc_buffer_user_shutdown(exec_ctx, &tcp->buffer_user,
-                              grpc_closure_create(tcp_unref_closure, tcp));
+    grpc_resource_user_shutdown(exec_ctx, &tcp->resource_user,
+                                grpc_closure_create(tcp_unref_closure, tcp));
   }
 }
 
 static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  tcp_maybe_shutdown_buffer_user(exec_ctx, tcp);
+  tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
   grpc_fd_shutdown(exec_ctx, tcp->em_fd);
 }
 
@@ -131,7 +131,7 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
-  grpc_buffer_user_destroy(exec_ctx, &tcp->buffer_user);
+  grpc_resource_user_destroy(exec_ctx, &tcp->resource_user);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
 }
@@ -170,13 +170,13 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 
 static void tcp_unref_closure(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  TCP_UNREF(exec_ctx, arg, "buffer_user");
+  TCP_UNREF(exec_ctx, arg, "resource_user");
 }
 
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  tcp_maybe_shutdown_buffer_user(exec_ctx, tcp);
+  tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
   gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
@@ -286,7 +286,7 @@ static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
 
 static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   if (tcp->incoming_buffer->count < (size_t)tcp->iov_size) {
-    grpc_buffer_user_alloc_slices(
+    grpc_resource_user_alloc_slices(
         exec_ctx, &tcp->slice_allocator, tcp->slice_size,
         (size_t)tcp->iov_size - tcp->incoming_buffer->count,
         tcp->incoming_buffer);
@@ -513,9 +513,9 @@ static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
   return grpc_fd_get_workqueue(tcp->em_fd);
 }
 
-static grpc_buffer_user *tcp_get_buffer_user(grpc_endpoint *ep) {
+static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  return &tcp->buffer_user;
+  return &tcp->resource_user;
 }
 
 static const grpc_endpoint_vtable vtable = {tcp_read,
@@ -525,10 +525,11 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_add_to_pollset_set,
                                             tcp_shutdown,
                                             tcp_destroy,
-                                            tcp_get_buffer_user,
+                                            tcp_get_resource_user,
                                             tcp_get_peer};
 
-grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
+grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
+                               grpc_resource_quota *resource_quota,
                                size_t slice_size, const char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
@@ -543,7 +544,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
   tcp->iov_size = 1;
   tcp->finished_edge = true;
   /* paired with unref in grpc_tcp_destroy, and with the shutdown for our
-   * buffer_user */
+   * resource_user */
   gpr_ref_init(&tcp->refcount, 2);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
@@ -552,9 +553,10 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, grpc_buffer_pool *buffer_pool,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_buffer_user_init(&tcp->buffer_user, buffer_pool, peer_string);
-  grpc_buffer_user_slice_allocator_init(
-      &tcp->slice_allocator, &tcp->buffer_user, tcp_read_allocation_done, tcp);
+  grpc_resource_user_init(&tcp->resource_user, resource_quota, peer_string);
+  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
+                                          &tcp->resource_user,
+                                          tcp_read_allocation_done, tcp);
   /* Tell network status tracker about new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
 
@@ -574,7 +576,7 @@ void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;
-  tcp_maybe_shutdown_buffer_user(exec_ctx, tcp);
+  tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
   gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }

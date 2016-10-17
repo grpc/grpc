@@ -111,7 +111,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
     grpc_error *error = GRPC_ERROR_NONE;
     if (reason != GRPC_CHTTP2_NO_ERROR) {
       error = grpc_error_set_int(GRPC_ERROR_CREATE("RST_STREAM"),
-                                 GRPC_ERROR_INT_HTTP2_ERROR, reason);
+                                 GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
       grpc_status_code status_code = grpc_chttp2_http2_error_to_grpc_status(
           (grpc_chttp2_error_code)reason, s->deadline);
       char *status_details;

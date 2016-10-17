@@ -138,7 +138,7 @@ struct grpc_tcp_server {
   /* next pollset to assign a channel to */
   gpr_atm next_pollset_to_assign;
 
-  grpc_buffer_pool *buffer_pool;
+  grpc_resource_quota *resource_quota;
 };
 
 static gpr_once check_init = GPR_ONCE_INIT;
@@ -163,25 +163,25 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
-  s->buffer_pool = grpc_buffer_pool_create(NULL);
+  s->resource_quota = grpc_resource_quota_create(NULL);
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->so_reuseport =
             has_so_reuseport && (args->args[i].value.integer != 0);
       } else {
-        grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
+        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
                                  " must be an integer");
       }
     } else if (0 == strcmp(GRPC_ARG_BUFFER_POOL, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
-        s->buffer_pool =
-            grpc_buffer_pool_internal_ref(args->args[i].value.pointer.p);
+        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+        s->resource_quota =
+            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
       } else {
-        grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
+        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE(GRPC_ARG_BUFFER_POOL
                                  " must be a pointer to a buffer pool");
@@ -222,7 +222,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     gpr_free(sp);
   }
 
-  grpc_buffer_pool_internal_unref(exec_ctx, s->buffer_pool);
+  grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
 
   gpr_free(s);
 }
@@ -440,7 +440,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
 
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->buffer_pool,
+        grpc_tcp_create(fdobj, sp->server->resource_quota,
                         GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
         read_notifier_pollset, &acceptor);
 

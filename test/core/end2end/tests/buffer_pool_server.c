@@ -107,9 +107,10 @@ static gpr_slice generate_random_slice() {
   return gpr_slice_from_copied_string(output);
 }
 
-void buffer_pool_server(grpc_end2end_test_config config) {
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create("test_server");
-  grpc_buffer_pool_resize(buffer_pool, 5 * 1024 * 1024);
+void resource_quota_server(grpc_end2end_test_config config) {
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("test_server");
+  grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
 
 #define NUM_CALLS 100
 #define CLIENT_BASE_TAG 1000
@@ -120,12 +121,12 @@ void buffer_pool_server(grpc_end2end_test_config config) {
   grpc_arg arg;
   arg.key = GRPC_ARG_BUFFER_POOL;
   arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = buffer_pool;
-  arg.value.pointer.vtable = grpc_buffer_pool_arg_vtable();
+  arg.value.pointer.p = resource_quota;
+  arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {1, &arg};
 
   grpc_end2end_test_fixture f =
-      begin_test(config, "buffer_pool_server", NULL, &args);
+      begin_test(config, "resource_quota_server", NULL, &args);
 
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
@@ -343,10 +344,10 @@ void buffer_pool_server(grpc_end2end_test_config config) {
 
   grpc_byte_buffer_destroy(request_payload);
   gpr_slice_unref(request_payload_slice);
-  grpc_buffer_pool_unref(buffer_pool);
+  grpc_resource_quota_unref(resource_quota);
 
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void buffer_pool_server_pre_init(void) {}
+void resource_quota_server_pre_init(void) {}

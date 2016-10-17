@@ -34,10 +34,10 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/buffer_pool.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/auth_metadata_processor.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
@@ -1481,19 +1481,20 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   }
 }
 
-class BufferPoolEnd2endTest : public End2endTest {
+class ResourceQuotaEnd2endTest : public End2endTest {
  public:
-  BufferPoolEnd2endTest() : server_buffer_pool_("server_buffer_pool") {}
+  ResourceQuotaEnd2endTest()
+      : server_resource_quota_("server_resource_quota") {}
 
   virtual void ConfigureServerBuilder(ServerBuilder* builder) GRPC_OVERRIDE {
-    builder->SetBufferPool(server_buffer_pool_);
+    builder->SetResourceQuota(server_resource_quota_);
   }
 
  private:
-  BufferPool server_buffer_pool_;
+  ResourceQuota server_resource_quota_;
 };
 
-TEST_P(BufferPoolEnd2endTest, SimpleRequest) {
+TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
   ResetStub();
 
   EchoRequest request;
@@ -1543,7 +1544,7 @@ INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,
                                                                 true)));
 
-INSTANTIATE_TEST_CASE_P(BufferPoolEnd2end, BufferPoolEnd2endTest,
+INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, true,
                                                                 true)));
 

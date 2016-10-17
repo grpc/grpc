@@ -33,7 +33,7 @@
 
 #include <grpc++/server_builder.h>
 
-#include <grpc++/buffer_pool.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
 #include <grpc/support/log.h>
@@ -55,7 +55,7 @@ static void do_plugin_list_init(void) {
 ServerBuilder::ServerBuilder()
     : max_receive_message_size_(-1),
       max_send_message_size_(-1),
-      buffer_pool_(nullptr),
+      resource_quota_(nullptr),
       generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
@@ -73,8 +73,8 @@ ServerBuilder::ServerBuilder()
 }
 
 ServerBuilder::~ServerBuilder() {
-  if (buffer_pool_ != nullptr) {
-    grpc_buffer_pool_unref(buffer_pool_);
+  if (resource_quota_ != nullptr) {
+    grpc_resource_quota_unref(resource_quota_);
   }
 }
 
@@ -138,13 +138,13 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
   return *this;
 }
 
-ServerBuilder& ServerBuilder::SetBufferPool(
-    const grpc::BufferPool& buffer_pool) {
-  if (buffer_pool_ != nullptr) {
-    grpc_buffer_pool_unref(buffer_pool_);
+ServerBuilder& ServerBuilder::SetResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
+  if (resource_quota_ != nullptr) {
+    grpc_resource_quota_unref(resource_quota_);
   }
-  buffer_pool_ = buffer_pool.c_buffer_pool();
-  grpc_buffer_pool_ref(buffer_pool_);
+  resource_quota_ = resource_quota.c_resource_quota();
+  grpc_resource_quota_ref(resource_quota_);
   return *this;
 }
 
@@ -196,9 +196,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
   }
-  if (buffer_pool_ != nullptr) {
-    args.SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, buffer_pool_,
-                              grpc_buffer_pool_arg_vtable());
+  if (resource_quota_ != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, resource_quota_,
+                              grpc_resource_quota_arg_vtable());
   }
   std::unique_ptr<Server> server(new Server(thread_pool.release(), true,
                                             max_receive_message_size_, &args));

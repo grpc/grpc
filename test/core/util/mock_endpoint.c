@@ -46,7 +46,7 @@ typedef struct grpc_mock_endpoint {
   gpr_slice_buffer read_buffer;
   gpr_slice_buffer *on_read_out;
   grpc_closure *on_read;
-  grpc_buffer_user buffer_user;
+  grpc_resource_user resource_user;
 } grpc_mock_endpoint;
 
 static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -83,7 +83,7 @@ static void unref(grpc_exec_ctx *exec_ctx, grpc_mock_endpoint *m) {
   if (0 == --m->refs) {
     gpr_mu_unlock(&m->mu);
     gpr_slice_buffer_destroy(&m->read_buffer);
-    grpc_buffer_user_destroy(exec_ctx, &m->buffer_user);
+    grpc_resource_user_destroy(exec_ctx, &m->resource_user);
     gpr_free(m);
   } else {
     gpr_mu_unlock(&m->mu);
@@ -104,8 +104,8 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
                         GRPC_ERROR_CREATE("Endpoint Shutdown"), NULL);
     m->on_read = NULL;
   }
-  grpc_buffer_user_shutdown(exec_ctx, &m->buffer_user,
-                            grpc_closure_create(me_finish_shutdown, m));
+  grpc_resource_user_shutdown(exec_ctx, &m->resource_user,
+                              grpc_closure_create(me_finish_shutdown, m));
   gpr_mu_unlock(&m->mu);
 }
 
@@ -118,9 +118,9 @@ static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
 
-static grpc_buffer_user *me_get_buffer_user(grpc_endpoint *ep) {
+static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
-  return &m->buffer_user;
+  return &m->resource_user;
 }
 
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
@@ -133,18 +133,18 @@ static const grpc_endpoint_vtable vtable = {
     me_add_to_pollset_set,
     me_shutdown,
     me_destroy,
-    me_get_buffer_user,
+    me_get_resource_user,
     me_get_peer,
 };
 
 grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
-                                         grpc_buffer_pool *buffer_pool) {
+                                         grpc_resource_quota *resource_quota) {
   grpc_mock_endpoint *m = gpr_malloc(sizeof(*m));
   m->base.vtable = &vtable;
   m->refs = 2;
   char *name;
   gpr_asprintf(&name, "mock_endpoint_%" PRIxPTR, (intptr_t)m);
-  grpc_buffer_user_init(&m->buffer_user, buffer_pool, name);
+  grpc_resource_user_init(&m->resource_user, resource_quota, name);
   gpr_free(name);
   gpr_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);

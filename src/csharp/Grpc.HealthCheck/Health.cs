@@ -10,7 +10,6 @@ using scg = global::System.Collections.Generic;
 namespace Grpc.Health.V1 {
 
   /// <summary>Holder for reflection information generated from health.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class HealthReflection {
 
     #region Descriptor
@@ -42,29 +41,34 @@ namespace Grpc.Health.V1 {
 
   }
   #region Messages
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class HealthCheckRequest : pb::IMessage<HealthCheckRequest> {
     private static readonly pb::MessageParser<HealthCheckRequest> _parser = new pb::MessageParser<HealthCheckRequest>(() => new HealthCheckRequest());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<HealthCheckRequest> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Health.V1.HealthReflection.Descriptor.MessageTypes[0]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HealthCheckRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HealthCheckRequest(HealthCheckRequest other) : this() {
       service_ = other.service_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HealthCheckRequest Clone() {
       return new HealthCheckRequest(this);
     }
@@ -72,6 +76,7 @@ namespace Grpc.Health.V1 {
     /// <summary>Field number for the "service" field.</summary>
     public const int ServiceFieldNumber = 1;
     private string service_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Service {
       get { return service_; }
       set {
@@ -79,10 +84,12 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as HealthCheckRequest);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(HealthCheckRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -94,16 +101,19 @@ namespace Grpc.Health.V1 {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Service.Length != 0) hash ^= Service.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Service.Length != 0) {
         output.WriteRawTag(10);
@@ -111,6 +121,7 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Service.Length != 0) {
@@ -119,6 +130,7 @@ namespace Grpc.Health.V1 {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(HealthCheckRequest other) {
       if (other == null) {
         return;
@@ -128,6 +140,7 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -145,29 +158,34 @@ namespace Grpc.Health.V1 {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class HealthCheckResponse : pb::IMessage<HealthCheckResponse> {
     private static readonly pb::MessageParser<HealthCheckResponse> _parser = new pb::MessageParser<HealthCheckResponse>(() => new HealthCheckResponse());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<HealthCheckResponse> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Health.V1.HealthReflection.Descriptor.MessageTypes[1]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HealthCheckResponse() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HealthCheckResponse(HealthCheckResponse other) : this() {
       status_ = other.status_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HealthCheckResponse Clone() {
       return new HealthCheckResponse(this);
     }
@@ -175,6 +193,7 @@ namespace Grpc.Health.V1 {
     /// <summary>Field number for the "status" field.</summary>
     public const int StatusFieldNumber = 1;
     private global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus status_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus Status {
       get { return status_; }
       set {
@@ -182,10 +201,12 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as HealthCheckResponse);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(HealthCheckResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -197,16 +218,19 @@ namespace Grpc.Health.V1 {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Status != 0) hash ^= Status.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Status != 0) {
         output.WriteRawTag(8);
@@ -214,6 +238,7 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Status != 0) {
@@ -222,6 +247,7 @@ namespace Grpc.Health.V1 {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(HealthCheckResponse other) {
       if (other == null) {
         return;
@@ -231,6 +257,7 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -248,7 +275,7 @@ namespace Grpc.Health.V1 {
 
     #region Nested types
     /// <summary>Container for nested types declared in the HealthCheckResponse message type.</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static partial class Types {
       public enum ServingStatus {
         [pbr::OriginalName("UNKNOWN")] Unknown = 0,

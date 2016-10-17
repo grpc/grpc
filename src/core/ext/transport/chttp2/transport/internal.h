@@ -323,6 +323,10 @@ struct grpc_chttp2_transport {
 
   grpc_chttp2_write_cb *write_cb_pool;
 
+  /* if non-NULL, close the transport with this error when writes are finished
+   */
+  grpc_error *close_transport_on_writes_finished;
+
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
   bool benign_reclaimer_registered;

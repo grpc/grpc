@@ -33,7 +33,7 @@
 
 #include <thread>
 
-#include <grpc++/buffer_pool.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -94,9 +94,9 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
-    if (config.buffer_pool_size() > 0) {
-      builder.SetBufferPool(
-          BufferPool("AsyncQpsServerTest").Resize(config.buffer_pool_size()));
+    if (config.resource_quota_size() > 0) {
+      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                   .Resize(config.resource_quota_size()));
     }
 
     builder.RegisterService(&service_);

@@ -137,6 +137,8 @@ describe GRPC::ActiveCall do
         msg = 'message is a string'
         client_call.write_flag = f
         client_call.remote_send(msg)
+        # flush the message in case writes are set to buffered
+        call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil) if f == 1
 
         # confirm that the message was marshalled
         recvd_rpc =  @server.request_call

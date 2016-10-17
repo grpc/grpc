@@ -125,7 +125,7 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
     grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
     const char *addr_str) {
   size_t tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
-  grpc_buffer_pool *buffer_pool = grpc_buffer_pool_create(NULL);
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 ==
@@ -135,16 +135,16 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
         tcp_read_chunk_size = (size_t)grpc_channel_arg_get_integer(
             &channel_args->args[i], options);
       } else if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_BUFFER_POOL)) {
-        grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
-        buffer_pool = grpc_buffer_pool_internal_ref(
+        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_internal_ref(
             channel_args->args[i].value.pointer.p);
       }
     }
   }
 
   grpc_endpoint *ep =
-      grpc_tcp_create(fd, buffer_pool, tcp_read_chunk_size, addr_str);
-  grpc_buffer_pool_internal_unref(exec_ctx, buffer_pool);
+      grpc_tcp_create(fd, resource_quota, tcp_read_chunk_size, addr_str);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   return ep;
 }
 
