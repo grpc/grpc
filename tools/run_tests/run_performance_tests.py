@@ -91,12 +91,11 @@ def create_qpsworker_job(language, shortname=None,
   else:
     host_and_port='localhost:%s' % port
 
-  # TODO(jtattermusch): with some care, we can calculate the right timeout
-  # of a worker from the sum of warmup + benchmark times for all the scenarios
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=2*60*60)
+      timeout_seconds=5*60,  # workers get restarted after each scenario
+      verbose_success=True)
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
