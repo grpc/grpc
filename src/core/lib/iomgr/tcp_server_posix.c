@@ -191,9 +191,6 @@ grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
-  gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->shutdown);
-  gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != NULL) {
     grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
   }
