@@ -42,7 +42,7 @@ os.chdir(_ROOT)
 
 # Set the timeout high to allow enough time for sanitizers and pre-building
 # clang docker.
-_RUNTESTS_TIMEOUT = 3*60*60
+_RUNTESTS_TIMEOUT = 4*60*60
 
 # Number of jobs assigned to each run_tests.py instance
 _INNER_JOBS = 2

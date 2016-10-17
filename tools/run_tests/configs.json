@@ -66,7 +66,7 @@
     "environ": {
       "TSAN_OPTIONS": "suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
     }, 
-    "timeout_multiplier": 8
+    "timeout_multiplier": 5
   }, 
   {
     "config": "stapprof"
