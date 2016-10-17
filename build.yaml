@@ -1008,6 +1008,7 @@ libs:
   - grpc++
   filegroups:
   - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc++_reflection
   build: all
   language: c++
@@ -1097,6 +1098,7 @@ libs:
   - grpc++
   filegroups:
   - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -2913,6 +2915,7 @@ targets:
   - test/cpp/util/grpc_tool_test.cc
   deps:
   - grpc_cli_libs
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util

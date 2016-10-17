@@ -21,6 +21,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
@@ -42,6 +47,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{09004fab-571d-4499-ea07-ab14a367b0e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{17074550-63b5-b955-9a30-33f983c6933a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl">
+      <UniqueIdentifier>{9d5cca3a-e3da-b197-ba07-8ef7649de092}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl\codegen">
+      <UniqueIdentifier>{12d6b95a-4072-e05e-8de7-79b0c2f7329f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{5cc1b6f3-ef01-62ac-9b0e-1fd776f42182}</UniqueIdentifier>
     </Filter>

@@ -2548,6 +2548,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_codegen_proto", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection", 
       "grpc++_test_util", 
       "grpc_cli_libs", 
@@ -4891,6 +4892,7 @@
   {
     "deps": [
       "grpc++", 
+      "grpc++_config_proto", 
       "grpc++_reflection_proto"
     ], 
     "headers": [
@@ -5009,6 +5011,7 @@
   {
     "deps": [
       "grpc++", 
+      "grpc++_config_proto", 
       "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection_proto"
     ], 

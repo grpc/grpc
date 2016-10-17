@@ -37,8 +37,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #include <grpc++/grpc++.h>
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
 
