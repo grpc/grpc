@@ -42,8 +42,6 @@
 // context, which is at least correct, if not performant or in the spirit of
 // workqueues.
 
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
-
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
                         const char *reason) {}

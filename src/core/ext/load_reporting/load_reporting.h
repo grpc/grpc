@@ -37,13 +37,21 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include "src/core/lib/channel/channel_stack.h"
 
-/** Metadata key for initial metadata coming from clients */
-/* TODO(dgq): change to the final value TBD */
-#define GRPC_LOAD_REPORTING_INITIAL_MD_KEY "load-reporting-initial"
+/** Metadata key for the gRPC LB load balancer token.
+ *
+ * The value corresponding to this key is an opaque token that is given to the
+ * frontend as part of each pick; the frontend sends this token to the backend
+ * in each request it sends when using that pick. The token is used by the
+ * backend to verify the request and to allow the backend to report load to the
+ * gRPC LB system. */
+#define GRPC_LB_TOKEN_MD_KEY "lb-token"
 
-/** Metadata key for trailing metadata from servers */
-/* TODO(dgq): change to the final value TBD */
-#define GRPC_LOAD_REPORTING_TRAILING_MD_KEY "load-reporting-trailing"
+/** Metadata key for gRPC LB cost reporting.
+ *
+ * The value corresponding to this key is an opaque binary blob reported by the
+ * backend as part of its trailing metadata containing cost information for the
+ * call. */
+#define GRPC_LB_COST_MD_KEY "lb-cost"
 
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {

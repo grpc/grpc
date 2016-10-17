@@ -45,6 +45,8 @@
 #include <grpc++/ext/reflection.grpc.pb.h>
 #endif  // GRPC_NO_GENERATED_CODE
 #include <grpc++/grpc++.h>
+#include <grpc++/impl/codegen/config_protobuf.h>
+
 namespace grpc {
 
 // ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and
@@ -93,7 +95,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
                                std::vector<int>* output) GRPC_OVERRIDE;
 
   // Provide a list of full names of registered services
-  bool GetServices(std::vector<std::string>* output);
+  bool GetServices(std::vector<grpc::string>* output);
 
  private:
   typedef ClientReaderWriter<
@@ -102,14 +104,14 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       ClientStream;
 
   const protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
-      const std::string& byte_fd_proto);
+      const grpc::string& byte_fd_proto);
 
   void AddFileFromResponse(
       const grpc::reflection::v1alpha::FileDescriptorResponse& response);
 
   const std::shared_ptr<ClientStream> GetStream();
 
-  void DoOneRequest(
+  bool DoOneRequest(
       const grpc::reflection::v1alpha::ServerReflectionRequest& request,
       grpc::reflection::v1alpha::ServerReflectionResponse& response);
 

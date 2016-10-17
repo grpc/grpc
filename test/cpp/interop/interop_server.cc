@@ -47,6 +47,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
@@ -56,6 +57,7 @@
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -149,6 +151,17 @@ class TestServiceImpl : public TestService::Service {
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
     MaybeEchoMetadata(context);
+    return Status::OK;
+  }
+
+  // Response contains current timestamp. We ignore everything in the request.
+  Status CacheableUnaryCall(ServerContext* context,
+                            const SimpleRequest* request,
+                            SimpleResponse* response) {
+    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
+    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+    response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
+    context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
 
@@ -321,6 +334,9 @@ void grpc::testing::interop::RunServer(
   ServerBuilder builder;
   builder.RegisterService(&service);
   builder.AddListeningPort(server_address.str(), creds);
+  if (FLAGS_max_send_message_size >= 0) {
+    builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
+  }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!g_got_sigint) {

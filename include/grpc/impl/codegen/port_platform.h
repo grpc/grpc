@@ -155,7 +155,7 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
-#define GPR_CPU_LINUX 1
+#define GPR_CPU_POSIX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
@@ -167,7 +167,7 @@
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
-#define GPR_POSIX_LOG
+#define GPR_ANDROID_LOG 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -234,6 +234,7 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__APPLE__)
+#include <Availability.h>
 #include <TargetConditionals.h>
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
@@ -246,8 +247,18 @@
 #define GPR_PTHREAD_TLS 1
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
+#ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7
+#define GPR_CPU_IPHONE 1
+#define GPR_PTHREAD_TLS 1
+#else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_TLS 1
+#endif
+#else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_TLS 1
+#endif
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
 #define GPR_GCC_ATOMIC 1

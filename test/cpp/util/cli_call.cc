@@ -94,7 +94,7 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
 
   if (status.ok()) {
     std::vector<grpc::Slice> slices;
-    recv_buffer.Dump(&slices);
+    (void)recv_buffer.Dump(&slices);
 
     response->clear();
     for (size_t i = 0; i < slices.size(); i++) {
