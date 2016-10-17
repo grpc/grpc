@@ -594,7 +594,8 @@ def server_jobspec(language, docker_image):
           cmdline=docker_cmdline,
           environ=environ,
           shortname='interop_server_%s' % language,
-          timeout_seconds=30*60)
+          timeout_seconds=30*60,
+          verbose_success=True)
   server_job.container_name = container_name
   return server_job
 
