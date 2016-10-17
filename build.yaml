@@ -221,6 +221,7 @@ filegroups:
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/workqueue.h
@@ -306,6 +307,7 @@ filegroups:
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
   - src/core/lib/iomgr/unix_sockets_posix_noop.c
+  - src/core/lib/iomgr/wakeup_fd_cv.c
   - src/core/lib/iomgr/wakeup_fd_eventfd.c
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -2592,6 +2594,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: wakeup_fd_cv_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/wakeup_fd_cv_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test
