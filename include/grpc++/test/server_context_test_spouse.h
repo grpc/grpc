@@ -46,8 +46,8 @@ class ServerContextTestSpouse {
  public:
   explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}
 
-  // Inject fake client metadata to the ServerContext. The test spouse must be
-  // alive when ServerContext::client_metadata is called.
+  // Inject client metadata to the ServerContext for the test. The test spouse
+  // must be alive when ServerContext::client_metadata is called.
   void AddClientMetadata(const grpc::string& key, const grpc::string& value);
   std::multimap<grpc::string, grpc::string> GetInitialMetadata() const {
     return ctx_->initial_metadata_;
