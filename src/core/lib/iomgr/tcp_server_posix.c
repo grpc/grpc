@@ -651,7 +651,8 @@ done:
   }
 }
 
-/* Return listener at port_index or NULL. Should only be called with s->mu locked. */
+/* Return listener at port_index or NULL. Should only be called with s->mu
+   locked. */
 static grpc_tcp_listener *get_port_index(grpc_tcp_server *s,
                                          unsigned port_index) {
   unsigned num_ports = 0;
