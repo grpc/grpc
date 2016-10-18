@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_BUFFER_POOL_H
-#define GRPCXX_BUFFER_POOL_H
+#ifndef GRPCXX_RESOURCE_QUOTA_H
+#define GRPCXX_RESOURCE_QUOTA_H
 
 struct grpc_resource_quota;
 
@@ -67,4 +67,4 @@ class ResourceQuota GRPC_FINAL {
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPCXX_RESOURCE_QUOTA_H
