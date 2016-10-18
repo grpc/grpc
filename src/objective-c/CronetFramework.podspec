@@ -30,7 +30,7 @@
 
 Pod::Spec.new do |s|
   s.name         = "CronetFramework"
-  s.version      = "0.0.2"
+  s.version      = "0.0.3"
   s.summary      = "Cronet, precompiled and used as a framework."
   s.homepage     = "http://chromium.org"
   s.license      = { :type => 'BSD' }
