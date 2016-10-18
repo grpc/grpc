@@ -75,7 +75,7 @@ static grpc_mdelem *recv_md_filter(void *user_data, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_PATH) {
     calld->service_method = grpc_mdstr_as_c_string(md->value);
-  } else if (md->key == GRPC_MDSTR_LOAD_REPORTING_INITIAL) {
+  } else if (md->key == GRPC_MDSTR_LB_TOKEN) {
     calld->initial_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
     return NULL;
   }
@@ -193,7 +193,7 @@ static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
-  if (md->key == GRPC_MDSTR_LOAD_REPORTING_TRAILING) {
+  if (md->key == GRPC_MDSTR_LB_COST) {
     calld->trailing_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
     return NULL;
   }

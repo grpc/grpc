@@ -220,8 +220,8 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "SUBCHANNEL: %p %12s 0x%08d -> 0x%08d [%s]", c, purpose, (int)old_val,
-          (int)(old_val + delta), reason);
+          "SUBCHANNEL: %p %s 0x%08" PRIxPTR " -> 0x%08" PRIxPTR " [%s]", c,
+          purpose, old_val, old_val + delta, reason);
 #endif
   return old_val;
 }

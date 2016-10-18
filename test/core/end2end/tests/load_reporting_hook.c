@@ -295,13 +295,13 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_metadata initial_lr_metadata;
   grpc_metadata trailing_lr_metadata;
 
-  initial_lr_metadata.key = GRPC_LOAD_REPORTING_INITIAL_MD_KEY;
+  initial_lr_metadata.key = GRPC_LB_TOKEN_MD_KEY;
   initial_lr_metadata.value = "client-token";
   initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
   memset(&initial_lr_metadata.internal_data, 0,
          sizeof(initial_lr_metadata.internal_data));
 
-  trailing_lr_metadata.key = GRPC_LOAD_REPORTING_TRAILING_MD_KEY;
+  trailing_lr_metadata.key = GRPC_LB_COST_MD_KEY;
   trailing_lr_metadata.value = "server-token";
   trailing_lr_metadata.value_length = strlen(trailing_lr_metadata.value);
   memset(&trailing_lr_metadata.internal_data, 0,
