@@ -114,7 +114,7 @@ class ThreadManager {
     void Run();
 
     ThreadManager* thd_mgr_;
-    std::unique_ptr<grpc::thread> thd_;
+    grpc::thread thd_;
   };
 
   // The main funtion in ThreadManager

@@ -85,8 +85,10 @@ void ThreadManagerTest::DoWork(void *tag, bool ok) {
     gpr_log(GPR_DEBUG, "DoWork()");
   }
 
-  // Simulate "doing work" by sleeping
-  std::this_thread::sleep_for(std::chrono::milliseconds(kDoWorkDurationMsec));
+  gpr_timespec sleep_time =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_millis(kDoWorkDurationMsec, GPR_TIMESPAN));
+  gpr_sleep_until(sleep_time);
 }
 
 int main(int argc, char **argv) {

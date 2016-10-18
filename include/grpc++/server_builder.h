@@ -217,7 +217,7 @@ class ServerBuilder {
 
   SyncServerSettings sync_server_settings_;
 
-  /* List of completion queues added via AddCompletionQueue() method */
+  // List of completion queues added via AddCompletionQueue() method
   std::vector<ServerCompletionQueue*> cqs_;
 
   std::shared_ptr<ServerCredentials> creds_;

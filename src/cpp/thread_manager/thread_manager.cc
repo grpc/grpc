@@ -42,7 +42,7 @@ namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
     : thd_mgr_(thd_mgr),
-      thd_(new std::thread(&ThreadManager::WorkerThread::Run, this)) {}
+      thd_(&ThreadManager::WorkerThread::Run, this) {}
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
@@ -50,8 +50,7 @@ void ThreadManager::WorkerThread::Run() {
 }
 
 ThreadManager::WorkerThread::~WorkerThread() {
-  thd_->join();
-  thd_.reset();
+  thd_.join();
 }
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)

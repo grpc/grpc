@@ -212,7 +212,7 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   std::vector<grpc::string> services_;
   bool has_generic_service_;
 
-  // Pointer to the c core's grpc server.
+  // Pointer to the wrapped grpc_server.
   grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
