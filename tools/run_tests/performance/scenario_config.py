@@ -338,7 +338,8 @@ class NodeLanguage:
     self.safename = str(self)
 
   def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_node.sh']
+    return ['tools/run_tests/performance/run_worker_node.sh',
+            '--benchmark_impl=grpc']
 
   def worker_port_offset(self):
     return 200
@@ -636,11 +637,69 @@ class GoLanguage:
   def __str__(self):
     return 'go'
 
+class NodeExpressLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_node.sh',
+            '--benchmark_impl=express']
+
+  def worker_port_offset(self):
+    return 700
+
+  def scenarios(self):
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_generic_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+    #    use_generic_payload=True)
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+
+    yield _ping_pong_scenario(
+        'node_protobuf_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SCALABLE, SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async',
+        categories=[SCALABLE, SMOKETEST])
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    unconstrained_client='async')
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+
+  def __str__(self):
+    return 'node_express'
+
 
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
