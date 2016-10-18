@@ -1412,6 +1412,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
   }
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, due_to_error);
 }
