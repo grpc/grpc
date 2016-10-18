@@ -120,6 +120,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "http_status";
     case GRPC_ERROR_INT_LIMIT:
       return "limit";
+    case GRPC_ERROR_INT_OCCURRED_DURING_WRITE:
+      return "occurred_during_write";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -144,6 +146,8 @@ static const char *error_str_name(grpc_error_strs key) {
       return "tsi_error";
     case GRPC_ERROR_STR_FILENAME:
       return "filename";
+    case GRPC_ERROR_STR_QUEUED_BUFFERS:
+      return "queued_buffers";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -265,7 +269,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   } else {
     out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
-    gpr_log(GPR_DEBUG, "%p create copying", out);
+    gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
 #endif
     out->ints = gpr_avl_ref(in->ints);
     out->strs = gpr_avl_ref(in->strs);
@@ -523,21 +527,25 @@ static char *fmt_time(void *p) {
   return out;
 }
 
-static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap) {
+static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap,
+                     bool *first) {
   if (n == NULL) return;
-  add_errs(n->left, s, sz, cap);
+  add_errs(n->left, s, sz, cap, first);
+  if (!*first) append_chr(',', s, sz, cap);
+  *first = false;
   const char *e = grpc_error_string(n->value);
   append_str(e, s, sz, cap);
   grpc_error_free_string(e);
-  add_errs(n->right, s, sz, cap);
+  add_errs(n->right, s, sz, cap, first);
 }
 
 static char *errs_string(grpc_error *err) {
   char *s = NULL;
   size_t sz = 0;
   size_t cap = 0;
+  bool first = true;
   append_chr('[', &s, &sz, &cap);
-  add_errs(err->errs.root, &s, &sz, &cap);
+  add_errs(err->errs.root, &s, &sz, &cap, &first);
   append_chr(']', &s, &sz, &cap);
   append_chr(0, &s, &sz, &cap);
   return s;

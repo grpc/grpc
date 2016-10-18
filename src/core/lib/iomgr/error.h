@@ -100,6 +100,8 @@ typedef enum {
   GRPC_ERROR_INT_HTTP_STATUS,
   /// context sensitive limit associated with the error
   GRPC_ERROR_INT_LIMIT,
+  /// chttp2: did the error occur while a write was in progress
+  GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
 } grpc_error_ints;
 
 typedef enum {
@@ -121,6 +123,8 @@ typedef enum {
   GRPC_ERROR_STR_TSI_ERROR,
   /// filename that we were trying to read/write when this error occurred
   GRPC_ERROR_STR_FILENAME,
+  /// which data was queued for writing when the error occurred
+  GRPC_ERROR_STR_QUEUED_BUFFERS
 } grpc_error_strs;
 
 typedef enum {
@@ -128,9 +132,13 @@ typedef enum {
   GRPC_ERROR_TIME_CREATED,
 } grpc_error_times;
 
+/// The following "special" errors can be propagated without allocating memory.
+/// They are always even so that other code (particularly combiner locks) can
+/// safely use the lower bit for themselves.
+
 #define GRPC_ERROR_NONE ((grpc_error *)NULL)
-#define GRPC_ERROR_OOM ((grpc_error *)1)
-#define GRPC_ERROR_CANCELLED ((grpc_error *)2)
+#define GRPC_ERROR_OOM ((grpc_error *)2)
+#define GRPC_ERROR_CANCELLED ((grpc_error *)4)
 
 const char *grpc_error_string(grpc_error *error);
 void grpc_error_free_string(const char *str);

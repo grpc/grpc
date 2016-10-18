@@ -65,10 +65,6 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
    or NULL otherwise */
 void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map, uint32_t key);
 
-/* Move all elements of src into dst */
-void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
-                                      grpc_chttp2_stream_map *dst);
-
 /* Return an existing key, or NULL if it does not exist */
 void *grpc_chttp2_stream_map_find(grpc_chttp2_stream_map *map, uint32_t key);
 
