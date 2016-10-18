@@ -40,6 +40,7 @@ killall -9 qps_worker || true
 
 # C#
 ps -C mono -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9 || true
+ps -C dotnet -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9 || true
 
 # Ruby
 ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -9 || true

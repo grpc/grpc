@@ -84,6 +84,7 @@ cdef class SslPemKeyCertPair:
 cdef class ChannelArg:
 
   cdef grpc_arg c_arg
+  cdef grpc_arg_pointer_vtable ptr_vtable
   cdef readonly object key, value
 
 

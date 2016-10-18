@@ -69,7 +69,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'legacy']
+  'linux': ['epoll', 'poll', 'poll-cv', 'legacy']
 }
 
 
@@ -1015,6 +1015,8 @@ argp.add_argument('--update_submodules', default=[], nargs='*',
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
+argp.add_argument('--report_suite_name', default='tests', type=str,
+        help='Test suite name to use in generated JUnit XML report')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
 args = argp.parse_args()
@@ -1327,7 +1329,8 @@ def _build_and_run(
 
   if build_only:
     if xml_report:
-      report_utils.render_junit_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report,
+                                           suite_name=args.report_suite_name)
     return []
 
   # start antagonists
@@ -1379,7 +1382,8 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report and resultset:
-      report_utils.render_junit_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report,
+                                           suite_name=args.report_suite_name)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
