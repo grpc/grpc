@@ -92,7 +92,9 @@ function BenchmarkClient(server_targets, channels, histogram_params,
   this.client_options = [];
 
   for (var i = 0; i < channels; i++) {
-    var new_options = _.assign({host: server_targets[i]}, options);
+    var host_port;
+    host_port = server_targets[i % server_targets.length].split(':')
+    var new_options = _.assign({hostname: host_port[0], port: +host_port[1]}, options);
     new_options.agent = new protocol.Agent(new_options);
     this.client_options[i] = new_options;
   }
@@ -172,7 +174,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
     }
   }
 
-  startAllClients(_.assign(options, self.client_options),
+  startAllClients(_.map(self.client_options, _.partial(_.assign, options)),
                   outstanding_rpcs_per_channel, makeCall, self);
 };
 
@@ -236,7 +238,7 @@ BenchmarkClient.prototype.startPoisson = function(
 
   var averageIntervalMs = (1 / offered_load) * 1000;
 
-  startAllClients(_.assign(options, self.client_options),
+  startAllClients(_.map(self.client_options, _.partial(_.assign, options)),
                   outstanding_rpcs_per_channel, function(opts){
                     var p = PoissonProcess.create(averageIntervalMs, function() {
                       makeCall(opts, p);

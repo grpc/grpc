@@ -140,7 +140,6 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
         console.log('ServerConfig %j', request.setup);
         server = new BenchmarkServer('[::]', request.setup.port,
                                      request.setup.security_params);
-        server.start();
         server.on('started', function() {
           stats = server.mark();
           call.write({
@@ -148,6 +147,7 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
             port: server.getPort()
           });
         });
+        server.start();
         break;
         case 'mark':
         if (server) {
