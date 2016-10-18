@@ -132,8 +132,8 @@ static void test_post(int port) {
   grpc_http_response response;
   memset(&response, 0, sizeof(response));
   grpc_resource_quota *resource_quota = grpc_resource_quota_create("test_post");
-  grpc_httpcli_post(&exec_ctx, &g_context, &g_pops, resource_quota, &req, "hello",
-                    5, n_seconds_time(15),
+  grpc_httpcli_post(&exec_ctx, &g_context, &g_pops, resource_quota, &req,
+                    "hello", 5, n_seconds_time(15),
                     grpc_closure_create(on_finish, &response), &response);
   grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   gpr_mu_lock(g_mu);

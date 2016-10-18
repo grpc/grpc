@@ -114,7 +114,8 @@ void ChannelArguments::SetUserAgentPrefix(
   }
 }
 
-void ChannelArguments::SetResourceQuota(const grpc::ResourceQuota& resource_quota) {
+void ChannelArguments::SetResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
   SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, resource_quota.c_resource_quota(),
                        grpc_resource_quota_arg_vtable());
 }

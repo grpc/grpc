@@ -49,7 +49,8 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
     size_t slice_size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_test_fixture f;
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("endpoint_pair_test");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("endpoint_pair_test");
   grpc_endpoint_pair p =
       grpc_iomgr_create_endpoint_pair("test", resource_quota, slice_size);
   grpc_resource_quota_unref(resource_quota);
