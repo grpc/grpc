@@ -90,6 +90,16 @@ sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 # Python dependencies
 sudo pip install tabulate
 sudo pip install google-api-python-client
+sudo pip install virtualenv
+
+# TODO(jtattermusch): For some reason, building gRPC Python depends on python3.4
+# being installed, but python3.4 is not available on Ubuntu 16.04.
+# Temporarily fixing this by adding a PPA with python3.4, but we should
+# really remove this hack once possible.
+sudo add-apt-repository -y ppa:fkrull/deadsnakes
+sudo apt-get update
+sudo apt-get install -y python3.4 python3.4-dev
+python3.4 -m pip install virtualenv
 
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
@@ -105,17 +115,17 @@ nvm install 4 && npm config set cache /tmp/npm-cache
 nvm install 5 && npm config set cache /tmp/npm-cache
 nvm alias default 4
 
-# C# dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
-
+# C# mono dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
 sudo apt-get update
 sudo apt-get install -y mono-devel nuget
 
-# The version of nuget that is installed using apt-get is too old to download
-# the System.Interactive.Async.3.0.0 C# dependency. Update to the latest version
-# in order to be able download it.
-sudo nuget update -self
+# C# .NET Core dependencies (https://www.microsoft.com/net/core#ubuntu)
+sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ xenial main" > /etc/apt/sources.list.d/dotnetdev.list'
+sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+sudo apt-get update
+sudo apt-get install -y dotnet-dev-1.0.0-preview2-003131
 
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
@@ -128,4 +138,15 @@ gem install bundler
 # Java dependencies - nothing as we already have Java JDK 8
 
 # Go dependencies
-sudo apt-get install -y golang-go
+# Currently, the golang package available via apt-get doesn't have the latest go.
+# Significant performance improvements with grpc-go have been observed after
+# upgrading from go 1.5 to a later version, so a later go version is preferred.
+# Following go install instructions from https://golang.org/doc/install
+GO_VERSION=1.7.1
+OS=linux
+ARCH=amd64
+curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz
+sudo tar -C /usr/local -xzf go$GO_VERSION.$OS-$ARCH.tar.gz
+# Put go on the PATH, keep the usual installation dir
+sudo ln -s /usr/local/go/bin/go /usr/bin/go
+rm go$GO_VERSION.$OS-$ARCH.tar.gz

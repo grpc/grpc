@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,50 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+/*
+ * wakeup_fd_cv uses condition variables to implement wakeup fds.
+ *
+ * It is intended for use only in cases when eventfd() and pipe() are not
+ * available.  It can only be used with the "poll" engine.
+ *
+ * Implementation:
+ * A global table of cv wakeup fds is mantained.  A cv wakeup fd is a negative
+ * file descriptor.  poll() is then run in a background thread with only the
+ * real socket fds while we wait on a condition variable trigged by either the
+ * poll() completion or a wakeup_fd() call.
+ *
+ */
+
+#ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
+#define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
+
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-const grpc_event_engine_vtable *grpc_init_poll_posix(void);
-const grpc_event_engine_vtable *grpc_init_poll_cv_posix(void);
+#define FD_TO_IDX(fd) (-(fd)-1)
+#define IDX_TO_FD(idx) (-(idx)-1)
 
-#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */
+typedef struct cv_node {
+  gpr_cv* cv;
+  struct cv_node* next;
+} cv_node;
+
+typedef struct fd_node {
+  int is_set;
+  cv_node* cvs;
+  struct fd_node* next_free;
+} fd_node;
+
+typedef struct cv_fd_table {
+  gpr_mu mu;
+  int pollcount;
+  int shutdown;
+  gpr_cv shutdown_complete;
+  fd_node* cvfds;
+  fd_node* free_fds;
+  unsigned int size;
+  grpc_poll_function_type poll;
+} cv_fd_table;
+
+#endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */

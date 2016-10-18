@@ -350,6 +350,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
@@ -574,6 +575,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix_noop.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>
