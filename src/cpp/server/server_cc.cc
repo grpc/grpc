@@ -352,10 +352,10 @@ class Server::SyncRequestThreadManager : public ThreadManager {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(
+    int max_receive_message_size, ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
-    int max_receive_message_size, ChannelArguments* args, int min_pollers,
-    int max_pollers, int sync_cq_timeout_msec)
+    int min_pollers, int max_pollers, int sync_cq_timeout_msec)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(sync_server_cqs),
       started_(false),
