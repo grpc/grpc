@@ -57,7 +57,7 @@ namespace testing {
 
 template <class RequestType, class ResponseType, class ServiceType,
           class ServerContextType>
-class AsyncQpsServerTest : public Server {
+class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
  public:
   AsyncQpsServerTest(
       const ServerConfig &config,
