@@ -180,7 +180,8 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
     if (grpc_connectivity_state_trace) {
-      gpr_log(GPR_DEBUG, "NOTIFY: %p", w->notify);
+      gpr_log(GPR_DEBUG, "NOTIFY: %p %s: %p", tracker, tracker->name,
+              w->notify);
     }
     grpc_exec_ctx_sched(exec_ctx, w->notify,
                         GRPC_ERROR_REF(tracker->current_error), NULL);

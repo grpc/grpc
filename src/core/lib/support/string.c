@@ -304,3 +304,14 @@ void gpr_strvec_add(gpr_strvec *sv, char *str) {
 char *gpr_strvec_flatten(gpr_strvec *sv, size_t *final_length) {
   return gpr_strjoin((const char **)sv->strs, sv->count, final_length);
 }
+
+int gpr_stricmp(const char *a, const char *b) {
+  int ca, cb;
+  do {
+    ca = tolower(*a);
+    cb = tolower(*b);
+    ++a;
+    ++b;
+  } while (ca == cb && ca && cb);
+  return ca - cb;
+}
