@@ -985,8 +985,15 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         if (errno != EINTR) {
           work_combine_error(&error, GRPC_OS_ERROR(errno, "poll"));
         }
+
         for (i = 2; i < pfd_count; i++) {
-          fd_end_poll(exec_ctx, &watchers[i], 0, 0, NULL);
+          if (watchers[i].fd == NULL) {
+            fd_end_poll(exec_ctx, &watchers[i], 0, 0, NULL);
+          } else {
+            // Wake up all the file descriptors, if we have an invalid one
+            // we can identify it on the next pollset_work()
+            fd_end_poll(exec_ctx, &watchers[i], 1, 1, pollset);
+          }
         }
       } else if (r == 0) {
         for (i = 2; i < pfd_count; i++) {
