@@ -277,20 +277,31 @@ namespace Grpc.Core.Internal
         }
     }
 
-    internal class NoSuchMethodCallHandler : IServerCallHandler
+    internal class UnimplementedMethodCallHandler : IServerCallHandler
     {
-        public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
+        public static readonly UnimplementedMethodCallHandler Instance = new UnimplementedMethodCallHandler();
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        DuplexStreamingServerCallHandler<byte[], byte[]> callHandlerImpl;
+
+        public UnimplementedMethodCallHandler()
         {
-            // We don't care about the payload type here.
-            var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, newRpc.Server);
-            
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty, null).ConfigureAwait(false);
-            await finishedTask.ConfigureAwait(false);
+            var marshaller = new Marshaller<byte[]>((payload) => payload, (payload) => payload);
+            var method = new Method<byte[], byte[]>(MethodType.DuplexStreaming, "", "", marshaller, marshaller);
+            this.callHandlerImpl = new DuplexStreamingServerCallHandler<byte[], byte[]>(method, new DuplexStreamingServerMethod<byte[], byte[]>(UnimplementedMethod));
+        }
+
+        /// <summary>
+        /// Handler used for unimplemented method.
+        /// </summary>
+        private Task UnimplementedMethod(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext ctx)
+        {
+            ctx.Status = new Status(StatusCode.Unimplemented, "");
+            return Task.FromResult<object>(null);
+        }
+
+        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        {
+            return callHandlerImpl.HandleCall(newRpc, cq);
         }
     }
 
