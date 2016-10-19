@@ -36,18 +36,16 @@ from subprocess import call, check_output
 
 class TestSuite:
   """
-  Contains tag to identify job as belonging to this test suite and
+  Contains label to identify job as belonging to this test suite and
   triggers to identify if changed files are relevant
   """
-  def __init__(self, tags):
+  def __init__(self, labels):
     """
-    Build TestSuite to group tests by their tags
-    :param tag: string used to identify if a job belongs to this TestSuite
-    todo(mattkwong): Change the use of tag because do not want to depend on
-    job.shortname to identify what suite a test belongs to
+    Build TestSuite to group tests based on labeling
+    :param label: strings that should match a jobs's platform, config, language, or test group
     """
     self.triggers = []
-    self.tags = tags
+    self.labels = labels
 
   def add_trigger(self, trigger):
     """
@@ -56,51 +54,34 @@ class TestSuite:
     """
     self.triggers.append(trigger)
 
+
 # Create test suites
-_CORE_TEST_SUITE = TestSuite(['_c_'])
-_CPP_TEST_SUITE = TestSuite(['_c++_'])
-_CSHARP_TEST_SUITE = TestSuite(['_csharp_'])
-_NODE_TEST_SUITE = TestSuite(['_node_'])
-_OBJC_TEST_SUITE = TestSuite(['_objc_'])
-_PHP_TEST_SUITE = TestSuite(['_php_', '_php7_'])
-_PYTHON_TEST_SUITE = TestSuite(['_python_'])
-_RUBY_TEST_SUITE = TestSuite(['_ruby'])
-_ALL_TEST_SUITES = [_CORE_TEST_SUITE, _CPP_TEST_SUITE, _CSHARP_TEST_SUITE,
-                    _NODE_TEST_SUITE, _OBJC_TEST_SUITE, _PHP_TEST_SUITE,
-                    _PYTHON_TEST_SUITE, _RUBY_TEST_SUITE]
+_SANITY_TEST_SUITE = TestSuite(['sanity'])
+_CORE_TEST_SUITE = TestSuite(['c'])
+_CPP_TEST_SUITE = TestSuite(['c++'])
+_CSHARP_TEST_SUITE = TestSuite(['csharp'])
+_NODE_TEST_SUITE = TestSuite(['node'])
+_OBJC_TEST_SUITE = TestSuite(['objc'])
+_PHP_TEST_SUITE = TestSuite(['php', 'php7'])
+_PYTHON_TEST_SUITE = TestSuite(['python'])
+_RUBY_TEST_SUITE = TestSuite(['ruby'])
+_LINUX_TEST_SUITE = TestSuite(['linux'])
+_WINDOWS_TEST_SUITE = TestSuite(['windows'])
+_MACOS_TEST_SUITE = TestSuite(['macos'])
+_ALL_TEST_SUITES = [_SANITY_TEST_SUITE, _CORE_TEST_SUITE, _CPP_TEST_SUITE,
+                    _CSHARP_TEST_SUITE, _NODE_TEST_SUITE, _OBJC_TEST_SUITE,
+                    _PHP_TEST_SUITE, _PYTHON_TEST_SUITE, _RUBY_TEST_SUITE,
+                    _LINUX_TEST_SUITE, _WINDOWS_TEST_SUITE, _MACOS_TEST_SUITE]
 
 # Dictionary of whitelistable files where the key is a regex matching changed files
 # and the value is a list of tests that should be run. An empty list means that
 # the changed files should not trigger any tests. Any changed file that does not
 # match any of these regexes will trigger all tests
 _WHITELIST_DICT = {
-  #'^templates/.*': [_sanity_test_suite],
-  # todo(mattkwong): add sanity test suite
   '^doc/': [],
   '^examples/': [],
+  '^include/grpc\+\+/': [_CPP_TEST_SUITE],
   '^summerofcode/': [],
-  'README\.md$': [],
-  'CONTRIBUTING\.md$': [],
-  'LICENSE$': [],
-  'INSTALL\.md$': [],
-  'MANIFEST\.md$': [],
-  'PATENTS$': [],
-  'binding\.grp$': [_NODE_TEST_SUITE],
-  'gRPC\-Core\.podspec$': [_OBJC_TEST_SUITE],
-  'gRPC\-ProtoRPC\.podspec$': [_OBJC_TEST_SUITE],
-  'gRPC\-RxLibrary\.podspec$': [_OBJC_TEST_SUITE],
-  'gRPC\.podspec$': [_OBJC_TEST_SUITE],
-  'composer\.json$': [_PHP_TEST_SUITE],
-  'config\.m4$': [_PHP_TEST_SUITE],
-  'package\.json$': [_PHP_TEST_SUITE],
-  'package\.xml$': [_PHP_TEST_SUITE],
-  'PYTHON\-MANIFEST\.in$': [_PYTHON_TEST_SUITE],
-  'requirements\.txt$': [_PYTHON_TEST_SUITE],
-  'setup\.cfg$': [_PYTHON_TEST_SUITE],
-  'setup\.py$': [_PYTHON_TEST_SUITE],
-  'grpc\.gemspec$': [_RUBY_TEST_SUITE],
-  'Gemfile$': [_RUBY_TEST_SUITE],
-  # 'grpc.def$': [_WINDOWS_TEST_SUITE],
   '^src/cpp/': [_CPP_TEST_SUITE],
   '^src/csharp/': [_CSHARP_TEST_SUITE],
   '^src/node/': [_NODE_TEST_SUITE],
@@ -108,6 +89,7 @@ _WHITELIST_DICT = {
   '^src/php/': [_PHP_TEST_SUITE],
   '^src/python/': [_PYTHON_TEST_SUITE],
   '^src/ruby/': [_RUBY_TEST_SUITE],
+  '^templates/': [_SANITY_TEST_SUITE],
   '^test/core/': [_CORE_TEST_SUITE],
   '^test/cpp/': [_CPP_TEST_SUITE],
   '^test/distrib/cpp/': [_CPP_TEST_SUITE],
@@ -116,10 +98,31 @@ _WHITELIST_DICT = {
   '^test/distrib/php/': [_PHP_TEST_SUITE],
   '^test/distrib/python/': [_PYTHON_TEST_SUITE],
   '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
-  '^include/grpc\+\+/': [_CPP_TEST_SUITE]
-  #'^vsprojects/': [_WINDOWS_TEST_SUITE]
-  # todo(mattkwong): add windows test suite
+  '^vsprojects/': [_WINDOWS_TEST_SUITE],
+  'binding\.gyp$': [_NODE_TEST_SUITE],
+  'composer\.json$': [_PHP_TEST_SUITE],
+  'config\.m4$': [_PHP_TEST_SUITE],
+  'CONTRIBUTING\.md$': [],
+  'Gemfile$': [_RUBY_TEST_SUITE],
+  'grpc.def$': [_WINDOWS_TEST_SUITE],
+  'grpc\.gemspec$': [_RUBY_TEST_SUITE],
+  'gRPC\.podspec$': [_OBJC_TEST_SUITE],
+  'gRPC\-Core\.podspec$': [_OBJC_TEST_SUITE],
+  'gRPC\-ProtoRPC\.podspec$': [_OBJC_TEST_SUITE],
+  'gRPC\-RxLibrary\.podspec$': [_OBJC_TEST_SUITE],
+  'INSTALL\.md$': [],
+  'LICENSE$': [],
+  'MANIFEST\.md$': [],
+  'package\.json$': [_PHP_TEST_SUITE],
+  'package\.xml$': [_PHP_TEST_SUITE],
+  'PATENTS$': [],
+  'PYTHON\-MANIFEST\.in$': [_PYTHON_TEST_SUITE],
+  'README\.md$': [],
+  'requirements\.txt$': [_PYTHON_TEST_SUITE],
+  'setup\.cfg$': [_PYTHON_TEST_SUITE],
+  'setup\.py$': [_PYTHON_TEST_SUITE]
 }
+
 # Add all triggers to their respective test suites
 for trigger, test_suites in _WHITELIST_DICT.iteritems():
   for test_suite in test_suites:
@@ -130,10 +133,6 @@ def _get_changed_files(base_branch):
   """
   Get list of changed files between current branch and base of target merge branch
   """
-  # git fetch might need to be called on Jenkins slave
-  # todo(mattkwong): remove or uncomment below after seeing if Jenkins needs this
-  call(['git', 'fetch'])
-
   # Get file changes between branch and merge-base of specified branch
   # Not combined to be Windows friendly
   base_commit = check_output(["git", "merge-base", base_branch, "HEAD"]).rstrip()
@@ -153,15 +152,17 @@ def _can_skip_tests(file_names, triggers):
   return True
 
 
-def _remove_irrelevant_tests(tests, tag):
+def _remove_irrelevant_tests(tests, skippable_labels):
   """
   Filters out tests by config or language - will not remove sanitizer tests
   :param tests: list of all tests generated by run_tests_matrix.py
-  :param tag: string representing language or config to filter - "_(language)_" or "_(config)"
+  :param skippable_labels: list of languages and platforms with skippable tests
   :return: list of relevant tests
   """
-  # todo(mattkwong): find a more reliable way to filter tests - don't use shortname
-  return [test for test in tests if tag not in test.shortname]
+  # test.labels[0] is platform and test.labels[2] is language
+  # We skip a test if both are considered safe to skip
+  return [test for test in tests if test.labels[0] not in skippable_labels or \
+          test.labels[2] not in skippable_labels]
 
 
 def filter_tests(tests, base_branch):
@@ -170,7 +171,7 @@ def filter_tests(tests, base_branch):
   :param tests: list of all tests generated by run_tests_matrix.py
   :return: list of relevant tests
   """
-  print("Finding file differences between %s repo and current branch...\n" % base_branch)
+  print("Finding file differences between gRPC %s branch and pull request...\n" % base_branch)
   changed_files = _get_changed_files(base_branch)
   for changed_file in changed_files:
     print(changed_file)
@@ -182,11 +183,13 @@ def filter_tests(tests, base_branch):
   for changed_file in changed_files:
     if not re.match(all_triggers, changed_file):
       return(tests)
-  # Filter out tests by language
+  # Figure out which language and platform tests to run
+  skippable_labels = []
   for test_suite in _ALL_TEST_SUITES:
     if _can_skip_tests(changed_files, test_suite.triggers):
-      for tag in test_suite.tags:
-        print("  Filtering %s tests" % tag)
-        tests = _remove_irrelevant_tests(tests, tag)
+      for label in test_suite.labels:
+        print("  Filtering %s tests" % label)
+        skippable_labels.append(label)
 
+  tests = _remove_irrelevant_tests(tests, skippable_labels)
   return tests
