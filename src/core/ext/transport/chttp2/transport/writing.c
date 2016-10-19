@@ -138,10 +138,15 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     if (sent_initial_metadata) {
       /* send any body bytes, if allowed by flow control */
       if (s->flow_controlled_buffer.length > 0) {
-        uint32_t max_outgoing =
-            (uint32_t)GPR_MIN(t->settings[GRPC_ACKED_SETTINGS]
-                                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-                              GPR_MIN(s->outgoing_window, t->outgoing_window));
+        uint32_t stream_outgoing_window = (uint32_t)GPR_MAX(
+            0,
+            s->outgoing_window_delta +
+                (int64_t)t->settings[GRPC_ACKED_SETTINGS]
+                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+        uint32_t max_outgoing = (uint32_t)GPR_MIN(
+            t->settings[GRPC_ACKED_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+            GPR_MIN(stream_outgoing_window, t->outgoing_window));
         if (max_outgoing > 0) {
           uint32_t send_bytes =
               (uint32_t)GPR_MIN(max_outgoing, s->flow_controlled_buffer.length);
@@ -154,7 +159,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, send_bytes,
                                   is_last_frame, &s->stats.outgoing,
                                   &t->outbuf);
-          GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, outgoing_window,
+          GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, outgoing_window_delta,
                                         send_bytes);
           GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, outgoing_window,
                                            send_bytes);
@@ -175,6 +180,9 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
           }
         } else if (t->outgoing_window == 0) {
           grpc_chttp2_list_add_stalled_by_transport(t, s);
+          now_writing = true;
+        } else if (stream_outgoing_window == 0) {
+          grpc_chttp2_list_add_stalled_by_stream(t, s);
           now_writing = true;
         }
       }

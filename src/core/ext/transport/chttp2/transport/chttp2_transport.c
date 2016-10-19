@@ -480,8 +480,6 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   if (server_data) {
     s->id = (uint32_t)(uintptr_t)server_data;
-    s->outgoing_window = t->settings[GRPC_PEER_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     s->incoming_window = s->max_recv_bytes =
         t->settings[GRPC_SENT_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
@@ -513,6 +511,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   }
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
+  grpc_chttp2_list_remove_stalled_by_stream(t, s);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (s->included[i]) {
@@ -801,8 +800,6 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
                              "no_more_stream_ids");
     }
 
-    s->outgoing_window = t->settings[GRPC_PEER_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     s->incoming_window = stream_incoming_window =
         t->settings[GRPC_SENT_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
@@ -1714,36 +1711,6 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
-/** update window from a settings change */
-typedef struct {
-  grpc_chttp2_transport *t;
-  grpc_exec_ctx *exec_ctx;
-} update_global_window_args;
-
-static void update_global_window(void *args, uint32_t id, void *stream) {
-  update_global_window_args *a = args;
-  grpc_chttp2_transport *t = a->t;
-  grpc_chttp2_stream *s = stream;
-  int was_zero;
-  int is_zero;
-  int64_t initial_window_update = t->initial_window_update;
-
-  if (initial_window_update > 0) {
-    was_zero = s->outgoing_window <= 0;
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("settings", t, s, outgoing_window,
-                                   initial_window_update);
-    is_zero = s->outgoing_window <= 0;
-
-    if (was_zero && !is_zero) {
-      grpc_chttp2_become_writable(a->exec_ctx, t, s, true,
-                                  "update_global_window");
-    }
-  } else {
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM("settings", t, s, outgoing_window,
-                                  -initial_window_update);
-  }
-}
-
 /*******************************************************************************
  * INPUT PROCESSING - PARSING
  */
@@ -1827,9 +1794,12 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
     GPR_TIMER_BEGIN("post_parse_locked", 0);
     if (t->initial_window_update != 0) {
-      update_global_window_args args = {t, exec_ctx};
-      grpc_chttp2_stream_map_for_each(&t->stream_map, update_global_window,
-                                      &args);
+      if (t->initial_window_update > 0) {
+        grpc_chttp2_stream *s;
+        while (grpc_chttp2_list_pop_stalled_by_stream(t, &s)) {
+          grpc_chttp2_list_add_writable_stream(t, s);
+        }
+      }
       t->initial_window_update = 0;
     }
     /* handle higher level things */

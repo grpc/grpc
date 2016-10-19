@@ -59,6 +59,7 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
+  GRPC_CHTTP2_LIST_STALLED_BY_STREAM,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
@@ -360,8 +361,10 @@ struct grpc_chttp2_stream {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id;
 
-  /** window available for us to send to peer */
-  int64_t outgoing_window;
+  /** window available for us to send to peer, over or under the initial window
+    * size of the transport... ie:
+    * outgoing_window = outgoing_window_delta + transport.initial_window_size */
+  int64_t outgoing_window_delta;
   /** The number of bytes the upper layers have offered to receive.
       As the upper layer offers more bytes, this value increases.
       As bytes are read, this value decreases. */
@@ -472,33 +475,40 @@ bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s);
 /** Get a writable stream
     returns non-zero if there was a stream available */
-int grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport *t,
-                                         grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream **s);
 bool grpc_chttp2_list_remove_writable_stream(
     grpc_chttp2_transport *t, grpc_chttp2_stream *s) GRPC_MUST_USE_RESULT;
 
 bool grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s);
-int grpc_chttp2_list_have_writing_streams(grpc_chttp2_transport *t);
-int grpc_chttp2_list_pop_writing_stream(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s);
+bool grpc_chttp2_list_have_writing_streams(grpc_chttp2_transport *t);
+bool grpc_chttp2_list_pop_writing_stream(grpc_chttp2_transport *t,
+                                         grpc_chttp2_stream **s);
 
 void grpc_chttp2_list_add_written_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_written_stream(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_written_stream(grpc_chttp2_transport *t,
+                                         grpc_chttp2_stream **s);
 
 void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
-                                                 grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
+                                                  grpc_chttp2_stream **s);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
-                                              grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
+                                               grpc_chttp2_stream **s);
 void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
+
+void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream *s);
+bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream **s);
+bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport *t,
+                                               grpc_chttp2_stream *s);
 
 grpc_chttp2_stream *grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport *t,
                                                       uint32_t id);
