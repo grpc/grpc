@@ -233,7 +233,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
-  t->stream_lookahead = DEFAULT_WINDOW;
   t->connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->ping_counter = 1;
   t->pings.next = t->pings.prev = &t->pings;
@@ -318,14 +317,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           }
         }
       } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
-        const grpc_integer_options options = {-1, 5, INT_MAX};
-        const int value =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-        if (value >= 0) {
-          t->stream_lookahead = (uint32_t)value;
-        }
-      } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
         const grpc_integer_options options = {-1, 0, INT_MAX};
         const int value =
@@ -340,24 +331,26 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           grpc_chttp2_setting_id setting_id;
           grpc_integer_options integer_options;
           bool availability[2] /* server, client */;
-        } settings_map[] = {
-            {GRPC_ARG_MAX_CONCURRENT_STREAMS,
-             GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-             {-1, 0, INT_MAX},
-             {true, false}},
-            {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
-             GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
-             {-1, 0, INT_MAX},
-             {true, true}},
-            {GRPC_ARG_MAX_METADATA_SIZE,
-             GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-             {-1, 0, INT_MAX},
-             {true, true}},
-            {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
-             GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
-             {-1, 16384, 16777215},
-             {true, true}},
-        };
+        } settings_map[] = {{GRPC_ARG_MAX_CONCURRENT_STREAMS,
+                             GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+                             {-1, 0, INT32_MAX},
+                             {true, false}},
+                            {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
+                             GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+                             {-1, 0, INT32_MAX},
+                             {true, true}},
+                            {GRPC_ARG_MAX_METADATA_SIZE,
+                             GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+                             {-1, 0, INT32_MAX},
+                             {true, true}},
+                            {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
+                             GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+                             {-1, 16384, 16777215},
+                             {true, true}},
+                            {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
+                             GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                             {-1, 5, INT32_MAX},
+                             {true, true}}};
         for (j = 0; j < (int)GPR_ARRAY_SIZE(settings_map); j++) {
           if (0 == strcmp(channel_args->args[i].key,
                           settings_map[j].channel_arg_name)) {
@@ -774,7 +767,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
 static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
-  uint32_t stream_incoming_window;
   /* start streams where we have free grpc_chttp2_stream ids and free
    * concurrency */
   while (t->next_stream_id <= MAX_CLIENT_STREAM_ID &&
@@ -797,10 +789,6 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
                              "no_more_stream_ids");
     }
 
-    stream_incoming_window =
-        t->settings[GRPC_SENT_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-    s->max_recv_bytes = GPR_MAX(stream_incoming_window, s->max_recv_bytes);
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     post_destructive_reclaimer(exec_ctx, t);
     grpc_chttp2_become_writable(exec_ctx, t, s, true, "new_stream");
@@ -1127,8 +1115,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     s->recv_message = op->recv_message;
     if (s->id != 0 &&
         (s->incoming_frames.head == NULL || s->incoming_frames.head->is_tail)) {
-      incoming_byte_stream_update_flow_control(exec_ctx, t, s,
-                                               t->stream_lookahead, 0);
+      incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5, 0);
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
@@ -1890,10 +1877,12 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
                                                      size_t max_size_hint,
                                                      size_t have_already) {
   uint32_t max_recv_bytes;
+  uint32_t initial_window_size =
+      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
 
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= UINT32_MAX - t->stream_lookahead) {
-    max_recv_bytes = UINT32_MAX - t->stream_lookahead;
+  if (max_size_hint >= UINT32_MAX - initial_window_size) {
+    max_recv_bytes = UINT32_MAX - initial_window_size;
   } else {
     max_recv_bytes = (uint32_t)max_size_hint;
   }
@@ -1906,14 +1895,12 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_ASSERT(max_recv_bytes <= UINT32_MAX - t->stream_lookahead);
-  max_recv_bytes += t->stream_lookahead;
-  if (s->max_recv_bytes < max_recv_bytes) {
-    uint32_t add_max_recv_bytes = max_recv_bytes - s->max_recv_bytes;
+  GPR_ASSERT(max_recv_bytes <= UINT32_MAX - initial_window_size);
+  if (s->incoming_window_delta < max_recv_bytes) {
+    uint32_t add_max_recv_bytes =
+        (uint32_t)(max_recv_bytes - s->incoming_window_delta);
     bool new_window_write_is_covered_by_poller =
-        s->max_recv_bytes < have_already;
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, max_recv_bytes,
-                                   add_max_recv_bytes);
+        s->incoming_window_delta + initial_window_size < (int64_t)have_already;
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window_delta,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,

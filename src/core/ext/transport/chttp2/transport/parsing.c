@@ -398,8 +398,6 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window_delta,
                                   incoming_frame_size);
     s->received_bytes += incoming_frame_size;
-    s->max_recv_bytes -=
-        (uint32_t)GPR_MIN(s->max_recv_bytes, incoming_frame_size);
   }
 
   return GRPC_ERROR_NONE;

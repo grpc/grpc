@@ -271,9 +271,6 @@ struct grpc_chttp2_transport {
       copied to next_stream_id in parsing when parsing commences */
   uint32_t next_stream_id;
 
-  /** how far to lookahead in a stream? */
-  uint32_t stream_lookahead;
-
   /** last new stream id */
   uint32_t last_new_stream_id;
 
@@ -365,10 +362,6 @@ struct grpc_chttp2_stream {
     * size of the transport... ie:
     * outgoing_window = outgoing_window_delta + transport.initial_window_size */
   int64_t outgoing_window_delta;
-  /** The number of bytes the upper layers have offered to receive.
-      As the upper layer offers more bytes, this value increases.
-      As bytes are read, this value decreases. */
-  uint32_t max_recv_bytes;
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
   grpc_closure *send_initial_metadata_finished;
