@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_BUFFER_POOL_H
-#define GRPC_CORE_LIB_IOMGR_BUFFER_POOL_H
+#ifndef GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H
+#define GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H
 
 #include <grpc/grpc.h>
 
@@ -128,4 +128,4 @@ void grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator *slice_allocator, size_t length,
     size_t count, gpr_slice_buffer *dest);
 
-#endif /* GRPC_CORE_LIB_IOMGR_BUFFER_POOL_H */
+#endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

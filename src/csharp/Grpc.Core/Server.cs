@@ -317,7 +317,7 @@ namespace Grpc.Core
                 IServerCallHandler callHandler;
                 if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
                 {
-                    callHandler = NoSuchMethodCallHandler.Instance;
+                    callHandler = UnimplementedMethodCallHandler.Instance;
                 }
                 await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
             }

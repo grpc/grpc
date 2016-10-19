@@ -114,7 +114,8 @@ void grpc_run_bad_client_test(
   grpc_init();
 
   /* Create endpoints */
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("bad_client_test");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("bad_client_test");
   sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);
   grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
 

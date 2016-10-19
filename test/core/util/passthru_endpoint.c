@@ -143,7 +143,7 @@ static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   half *m = (half *)ep;
   grpc_resource_user_shutdown(exec_ctx, &m->resource_user,
-                            grpc_closure_create(me_really_destroy, m));
+                              grpc_closure_create(me_really_destroy, m));
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
@@ -170,7 +170,8 @@ static const grpc_endpoint_vtable vtable = {
 };
 
 static void half_init(half *m, passthru_endpoint *parent,
-                      grpc_resource_quota *resource_quota, const char *half_name) {
+                      grpc_resource_quota *resource_quota,
+                      const char *half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
   gpr_slice_buffer_init(&m->read_buffer);

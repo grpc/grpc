@@ -660,7 +660,8 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("jwt_verifier");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
@@ -772,7 +773,8 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("jwt_verifier");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),

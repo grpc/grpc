@@ -370,7 +370,8 @@ static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_workqueue(ep->wrapped_ep);
 }
 
-static grpc_resource_user *endpoint_get_resource_user(grpc_endpoint *secure_ep) {
+static grpc_resource_user *endpoint_get_resource_user(
+    grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   return grpc_endpoint_get_resource_user(ep->wrapped_ep);
 }

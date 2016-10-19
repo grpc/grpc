@@ -42,4 +42,4 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
     grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
     const char *addr_str);
 
-#endif
+#endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */
