@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -304,15 +303,14 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void AddSyncMethod(RpcServiceMethod* method, void* tag) {
-    sync_methods_.emplace_back(method, tag);
+    sync_requests_.emplace_back(method, tag);
   }
 
   void AddUnknownSyncMethod() {
-    // TODO (sreek) - Check if !sync_methods_.empty() is really needed here
-    if (!sync_methods_.empty()) {
+    if (!sync_requests_.empty()) {
       unknown_method_.reset(new RpcServiceMethod(
           "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-      sync_methods_.emplace_back(unknown_method_.get(), nullptr);
+      sync_requests_.emplace_back(unknown_method_.get(), nullptr);
     }
   }
 
@@ -328,8 +326,8 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void Start() {
-    if (!sync_methods_.empty()) {
-      for (auto m = sync_methods_.begin(); m != sync_methods_.end(); m++) {
+    if (!sync_requests_.empty()) {
+      for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
         m->SetupRequest();
         m->Request(server_->c_server(), server_cq_->cq());
       }
@@ -342,7 +340,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   Server* server_;
   CompletionQueue* server_cq_;
   int cq_timeout_msec_;
-  std::vector<SyncRequest> sync_methods_;
+  std::vector<SyncRequest> sync_requests_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
@@ -431,6 +429,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
     if (it->get() == nullptr) {  // Handled by generic service if any.
       continue;
     }
+
     RpcServiceMethod* method = it->get();
     void* tag = grpc_server_register_method(
         server_, method->name(), host ? host->c_str() : nullptr,
@@ -440,13 +439,15 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
               method->name());
       return false;
     }
-    if (method->handler() == nullptr) {
+
+    if (method->handler() == nullptr) { // Async method
       method->set_server_tag(tag);
     } else {
       for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
         (*it)->AddSyncMethod(method, tag);
       }
     }
+
     method_name = method->name();
   }
 
@@ -499,7 +500,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   return true;
 }
 
-/* TODO (sreek) check if started_ and shutdown_ are needed anymore */
 void Server::ShutdownInternal(gpr_timespec deadline) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
