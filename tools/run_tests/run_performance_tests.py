@@ -353,6 +353,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
 
   return scenarios
 
+
 def finish_qps_workers(jobs):
   """Waits for given jobs to finish and eventually kills them."""
   retries = 0
@@ -451,7 +452,8 @@ scenarios = create_scenarios(languages,
 if not scenarios:
   raise Exception('No scenarios to run')
 
-num_failures = 0
+total_scenario_failures = 0
+total_jobs_killed = 0
 for scenario in scenarios:
   if args.dry_run:
     print(scenario.name)
@@ -459,13 +461,14 @@ for scenario in scenarios:
     try:
       for worker in scenario.workers:
         worker.start()
-      jobset_failures, _ = jobset.run([scenario.jobspec,
+      scenario_failures, _ = jobset.run([scenario.jobspec,
                                  create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
                                  newline_on_success=True, maxjobs=1)
-      num_failures += jobset_failures
+      total_scenario_failures += scenario_failures
     finally:
       # Consider jobs that need to be killed as failures
-      num_failures += finish_qps_workers(scenario.workers)
+      total_jobs_killed += finish_qps_workers(scenario.workers)
 
 if num_failures > 0:
-  raise Exception('Failures occured')
+  print(str(total_scenario_failures) + " scenarios failed and " + str(total_jobs_killed) + " jobs killed")
+  sys.exit(1)
