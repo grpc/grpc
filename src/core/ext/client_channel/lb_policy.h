@@ -55,8 +55,6 @@ struct grpc_lb_policy {
 
 /** Extra arguments for an LB pick */
 typedef struct grpc_lb_policy_pick_args {
-  /** Parties interested in the pick's progress */
-  grpc_polling_entity *pollent;
   /** Initial metadata associated with the picking call. */
   grpc_metadata_batch *initial_metadata;
   /** Bitmask used for selective cancelling. See \a
@@ -142,15 +140,19 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable);
 
-/** Find an appropriate target for this call, based on \a pick_args.
-    Picking can be synchronous or asynchronous. In the synchronous case, when a
-    pick is readily available, it'll be returned in \a target and a non-zero
-    value will be returned.
-    In the asynchronous case, zero is returned and \a on_complete will be called
-    once \a target and \a user_data have been set. Any IO should be done under
-    \a pick_args->pollent. The opaque \a user_data output argument corresponds
-    to information that may need be propagated from the LB policy. It may be
-    NULL. Errors are signaled by receiving a NULL \a *target. */
+/** Finds an appropriate subchannel for a call, based on \a pick_args.
+
+    \a target will be set to the selected subchannel, or NULL on failure.
+    Upon success, \a user_data will be set to whatever opaque information
+    may need to be propagated from the LB policy, or NULL if not needed.
+
+    If the pick succeeds and a result is known immediately, a non-zero
+    value will be returned.  Otherwise, \a on_complete will be invoked
+    once the pick is complete with its error argument set to indicate
+    success or failure.
+
+    Any IO should be done under the \a interested_parties \a grpc_pollset_set
+    in the \a grpc_lb_policy struct. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         const grpc_lb_policy_pick_args *pick_args,
                         grpc_connected_subchannel **target, void **user_data,

@@ -45,6 +45,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -83,7 +84,7 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
       auto stub = WorkerService::NewStub(
           CreateChannel(*it, InsecureChannelCredentials()));
       grpc::ClientContext ctx;
-      ctx.set_fail_fast(false);
+      ctx.set_wait_for_ready(true);
       CoreRequest dummy;
       CoreResponse cores;
       grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
@@ -167,7 +168,7 @@ namespace runsc {
 static ClientContext* AllocContext(list<ClientContext>* contexts) {
   contexts->emplace_back();
   auto context = &contexts->back();
-  context->set_fail_fast(false);
+  context->set_wait_for_ready(true);
   return context;
 }
 
@@ -438,6 +439,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
       start,
       gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
+  gpr_timer_set_enabled(0);
+
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   Histogram merged_latencies;
@@ -527,7 +530,7 @@ bool RunQuit() {
         CreateChannel(workers[i], InsecureChannelCredentials()));
     Void dummy;
     grpc::ClientContext ctx;
-    ctx.set_fail_fast(false);
+    ctx.set_wait_for_ready(true);
     Status s = stub->QuitWorker(&ctx, dummy, &dummy);
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,

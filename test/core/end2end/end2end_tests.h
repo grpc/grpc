@@ -43,6 +43,7 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 8
+#define FEATURE_MASK_SUPPORTS_QUERY_ARGS 16
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -59,7 +60,7 @@ struct grpc_end2end_test_config {
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
                                               grpc_channel_args *server_args);
   void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
+                      grpc_channel_args *client_args, const char *query_args);
   void (*init_server)(grpc_end2end_test_fixture *f,
                       grpc_channel_args *server_args);
   void (*tear_down_data)(grpc_end2end_test_fixture *f);

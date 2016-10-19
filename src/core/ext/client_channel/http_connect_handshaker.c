@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/ext/client_config/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/http_connect_handshaker.h"
 
 #include <string.h>
 
@@ -40,7 +40,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/uri_parser.h"
+#include "src/core/ext/client_channel/uri_parser.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/timer.h"

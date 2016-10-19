@@ -57,11 +57,12 @@ def _filter_msg(msg, output_format):
     return msg
 
 
-def render_junit_xml_report(resultset, xml_report):
+def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
+                            suite_name='tests'):
   """Generate JUnit-like XML report."""
   root = ET.Element('testsuites')
-  testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', 
-                            name='tests')
+  testsuite = ET.SubElement(root, 'testsuite', id='1', package=suite_package,
+                            name=suite_name)
   for shortname, results in resultset.items():
     for result in results:
       xml_test = ET.SubElement(testsuite, 'testcase', name=shortname) 

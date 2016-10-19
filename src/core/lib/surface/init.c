@@ -184,12 +184,16 @@ void grpc_init(void) {
     grpc_register_tracer("compression", &grpc_compression_trace);
     grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
     grpc_register_tracer("combiner", &grpc_combiner_trace);
+    grpc_register_tracer("server_channel", &grpc_server_channel_trace);
     // Default pluck trace to 1
     grpc_cq_pluck_trace = 1;
     grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);
     // Default timeout trace to 1
     grpc_cq_event_timeout_trace = 1;
     grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
+#ifndef NDEBUG
+    grpc_register_tracer("pending_tags", &grpc_trace_pending_tags);
+#endif
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();

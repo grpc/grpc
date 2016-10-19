@@ -221,10 +221,10 @@ filegroups:
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/workqueue.h
-  - src/core/lib/iomgr/workqueue_posix.h
   - src/core/lib/iomgr/workqueue_windows.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_common.h
@@ -243,6 +243,7 @@ filegroups:
   - src/core/lib/surface/server.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/mdstr_hash_table.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/static_metadata.h
@@ -306,11 +307,11 @@ filegroups:
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
   - src/core/lib/iomgr/unix_sockets_posix_noop.c
+  - src/core/lib/iomgr/wakeup_fd_cv.c
   - src/core/lib/iomgr/wakeup_fd_eventfd.c
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
   - src/core/lib/iomgr/wakeup_fd_posix.c
-  - src/core/lib/iomgr/workqueue_posix.c
   - src/core/lib/iomgr/workqueue_windows.c
   - src/core/lib/json/json.c
   - src/core/lib/json/json_reader.c
@@ -336,6 +337,7 @@ filegroups:
   - src/core/lib/surface/version.c
   - src/core/lib/transport/byte_stream.c
   - src/core/lib/transport/connectivity_state.c
+  - src/core/lib/transport/mdstr_hash_table.c
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
   - src/core/lib/transport/static_metadata.c
@@ -356,6 +358,7 @@ filegroups:
   - src/core/ext/client_channel/lb_policy.h
   - src/core/ext/client_channel/lb_policy_factory.h
   - src/core/ext/client_channel/lb_policy_registry.h
+  - src/core/ext/client_channel/method_config.h
   - src/core/ext/client_channel/parse_address.h
   - src/core/ext/client_channel/resolver.h
   - src/core/ext/client_channel/resolver_factory.h
@@ -376,6 +379,7 @@ filegroups:
   - src/core/ext/client_channel/lb_policy.c
   - src/core/ext/client_channel/lb_policy_factory.c
   - src/core/ext/client_channel/lb_policy_registry.c
+  - src/core/ext/client_channel/method_config.c
   - src/core/ext/client_channel/parse_address.c
   - src/core/ext/client_channel/resolver.c
   - src/core/ext/client_channel/resolver_factory.c
@@ -1022,6 +1026,15 @@ libs:
   language: c++
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+- name: grpc++_test
+  build: test
+  language: c++
+  headers:
+  - include/grpc++/test/server_context_test_spouse.h
+  src:
+  - src/cpp/test/server_context_test_spouse.cc
+  deps:
+  - grpc++
 - name: grpc++_test_config
   build: private
   language: c++
@@ -2592,6 +2605,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: wakeup_fd_cv_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/wakeup_fd_cv_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test
@@ -3221,6 +3248,19 @@ targets:
   deps:
   - grpc++_test_util
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_context_test_spouse_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/test/server_context_test_spouse_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test
   - grpc++
   - grpc
   - gpr_test_util

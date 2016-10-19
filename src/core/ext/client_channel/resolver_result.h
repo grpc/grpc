@@ -51,22 +51,17 @@ typedef struct grpc_resolver_result grpc_resolver_result;
 grpc_resolver_result* grpc_resolver_result_create(
     const char* server_name, grpc_lb_addresses* addresses,
     const char* lb_policy_name, grpc_channel_args* lb_policy_args);
+
 void grpc_resolver_result_ref(grpc_resolver_result* result);
 void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
                                 grpc_resolver_result* result);
 
-/// Caller does NOT take ownership of result.
+/// Accessors.  Caller does NOT take ownership of results.
 const char* grpc_resolver_result_get_server_name(grpc_resolver_result* result);
-
-/// Caller does NOT take ownership of result.
 grpc_lb_addresses* grpc_resolver_result_get_addresses(
     grpc_resolver_result* result);
-
-/// Caller does NOT take ownership of result.
 const char* grpc_resolver_result_get_lb_policy_name(
     grpc_resolver_result* result);
-
-/// Caller does NOT take ownership of result.
 grpc_channel_args* grpc_resolver_result_get_lb_policy_args(
     grpc_resolver_result* result);
 
