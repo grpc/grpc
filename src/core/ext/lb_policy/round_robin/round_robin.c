@@ -627,6 +627,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
      * the copying of args->server_name (a borrowed pointer) OK. */
     sc_args.server_name = args->server_name;
     sc_args.addr = &args->addresses->addresses[i].address;
+    sc_args.args = args->additional_args;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
