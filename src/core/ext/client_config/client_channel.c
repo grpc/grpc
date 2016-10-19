@@ -60,6 +60,50 @@
 
 /* Client channel implementation */
 
+typedef enum {
+  WAIT_FOR_READY_UNSET,
+  WAIT_FOR_READY_FALSE,
+  WAIT_FOR_READY_TRUE
+} wait_for_ready_value;
+
+typedef struct method_parameters {
+  gpr_timespec timeout;
+  wait_for_ready_value wait_for_ready;
+} method_parameters;
+
+static void *method_parameters_copy(void *value) {
+  void *new_value = gpr_malloc(sizeof(method_parameters));
+  memcpy(new_value, value, sizeof(method_parameters));
+  return new_value;
+}
+
+static int method_parameters_cmp(void *value1, void *value2) {
+  const method_parameters *v1 = value1;
+  const method_parameters *v2 = value2;
+  const int retval = gpr_time_cmp(v1->timeout, v2->timeout);
+  if (retval != 0) return retval;
+  if (v1->wait_for_ready > v2->wait_for_ready) return 1;
+  if (v1->wait_for_ready < v2->wait_for_ready) return -1;
+  return 0;
+}
+
+static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
+    gpr_free, method_parameters_copy, method_parameters_cmp};
+
+static void *method_config_convert_value(
+    const grpc_method_config *method_config) {
+  method_parameters *value = gpr_malloc(sizeof(method_parameters));
+  const gpr_timespec *timeout = grpc_method_config_get_timeout(method_config);
+  value->timeout = timeout != NULL ? *timeout : gpr_time_0(GPR_TIMESPAN);
+  const bool *wait_for_ready =
+      grpc_method_config_get_wait_for_ready(method_config);
+  value->wait_for_ready =
+      wait_for_ready == NULL
+          ? WAIT_FOR_READY_UNSET
+          : (wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE);
+  return value;
+}
+
 /*************************************************************************
  * CHANNEL-WIDE FUNCTIONS
  */
@@ -76,8 +120,8 @@ typedef struct client_channel_channel_data {
   gpr_mu mu;
   /** currently active load balancer */
   grpc_lb_policy *lb_policy;
-  /** method config table */
-  grpc_method_config_table *method_config_table;
+  /** maps method names to method_parameters structs */
+  grpc_mdstr_hash_table *method_params_table;
   /** incoming resolver result - set by resolver.next() */
   grpc_resolver_result *resolver_result;
   /** a list of closures that are all waiting for config to come in */
@@ -177,7 +221,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   channel_data *chand = arg;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
-  grpc_method_config_table *method_config_table = NULL;
+  grpc_mdstr_hash_table *method_params_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
@@ -230,8 +274,9 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         lb_policy_args.additional_args, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-      method_config_table = grpc_method_config_table_ref(
-          (grpc_method_config_table *)channel_arg->value.pointer.p);
+      method_params_table = grpc_method_config_table_convert(
+          (grpc_method_config_table *)channel_arg->value.pointer.p,
+          method_config_convert_value, &method_parameters_vtable);
     }
     grpc_resolver_result_unref(exec_ctx, chand->resolver_result);
     chand->resolver_result = NULL;
@@ -245,10 +290,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&chand->mu);
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
-  if (chand->method_config_table != NULL) {
-    grpc_method_config_table_unref(chand->method_config_table);
+  if (chand->method_params_table != NULL) {
+    grpc_mdstr_hash_table_unref(chand->method_params_table);
   }
-  chand->method_config_table = method_config_table;
+  chand->method_params_table = method_params_table;
   if (lb_policy != NULL) {
     grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
                                NULL);
@@ -409,8 +454,8 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
-  if (chand->method_config_table != NULL) {
-    grpc_method_config_table_unref(chand->method_config_table);
+  if (chand->method_params_table != NULL) {
+    grpc_mdstr_hash_table_unref(chand->method_params_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -448,11 +493,7 @@ typedef struct client_channel_call_data {
   grpc_mdstr *path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
-  enum {
-    WAIT_FOR_READY_UNSET,
-    WAIT_FOR_READY_FALSE,
-    WAIT_FOR_READY_TRUE
-  } wait_for_ready_from_service_config;
+  wait_for_ready_value wait_for_ready_from_service_config;
   grpc_closure read_service_config;
 
   grpc_error *cancel_error;
@@ -846,40 +887,39 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
   if (error == GRPC_ERROR_NONE) {
     // Get the method config table from channel data.
     gpr_mu_lock(&chand->mu);
-    grpc_method_config_table *method_config_table = NULL;
-    if (chand->method_config_table != NULL) {
-      method_config_table =
-          grpc_method_config_table_ref(chand->method_config_table);
+    grpc_mdstr_hash_table *method_params_table = NULL;
+    if (chand->method_params_table != NULL) {
+      method_params_table =
+          grpc_mdstr_hash_table_ref(chand->method_params_table);
     }
     gpr_mu_unlock(&chand->mu);
     // If the method config table was present, use it.
-    if (method_config_table != NULL) {
-      const grpc_method_config *method_config =
-          grpc_method_config_table_get(method_config_table, calld->path);
-      if (method_config != NULL) {
-        const gpr_timespec *per_method_timeout =
-            grpc_method_config_get_timeout(method_config);
-        const bool *wait_for_ready =
-            grpc_method_config_get_wait_for_ready(method_config);
-        if (per_method_timeout != NULL || wait_for_ready != NULL) {
+    if (method_params_table != NULL) {
+      const method_parameters *method_params =
+          grpc_method_config_table_get(method_params_table, calld->path);
+      if (method_params != NULL) {
+        const bool have_method_timeout =
+            gpr_time_cmp(method_params->timeout, gpr_time_0(GPR_TIMESPAN)) != 0;
+        if (have_method_timeout ||
+            method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
           gpr_mu_lock(&calld->mu);
-          if (per_method_timeout != NULL) {
-            gpr_timespec per_method_deadline =
-                gpr_time_add(calld->call_start_time, *per_method_timeout);
+          if (have_method_timeout) {
+            const gpr_timespec per_method_deadline =
+                gpr_time_add(calld->call_start_time, method_params->timeout);
             if (gpr_time_cmp(per_method_deadline, calld->deadline) < 0) {
               calld->deadline = per_method_deadline;
               // Reset deadline timer.
               grpc_deadline_state_reset(exec_ctx, elem, calld->deadline);
             }
           }
-          if (wait_for_ready != NULL) {
+          if (method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
             calld->wait_for_ready_from_service_config =
-                *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
+                method_params->wait_for_ready;
           }
           gpr_mu_unlock(&calld->mu);
         }
       }
-      grpc_method_config_table_unref(method_config_table);
+      grpc_mdstr_hash_table_unref(method_params_table);
     }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
@@ -916,28 +956,25 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&chand->mu);
   if (chand->lb_policy != NULL) {
     // We already have a resolver result, so check for service config.
-    if (chand->method_config_table != NULL) {
-      grpc_method_config_table *method_config_table =
-          grpc_method_config_table_ref(chand->method_config_table);
+    if (chand->method_params_table != NULL) {
+      grpc_mdstr_hash_table *method_params_table =
+          grpc_mdstr_hash_table_ref(chand->method_params_table);
       gpr_mu_unlock(&chand->mu);
-      grpc_method_config *method_config =
-          grpc_method_config_table_get(method_config_table, args->path);
-      if (method_config != NULL) {
-        const gpr_timespec *per_method_timeout =
-            grpc_method_config_get_timeout(method_config);
-        if (per_method_timeout != NULL) {
+      method_parameters *method_params =
+          grpc_method_config_table_get(method_params_table, args->path);
+      if (method_params != NULL) {
+        if (gpr_time_cmp(method_params->timeout,
+                         gpr_time_0(GPR_CLOCK_MONOTONIC)) != 0) {
           gpr_timespec per_method_deadline =
-              gpr_time_add(calld->call_start_time, *per_method_timeout);
+              gpr_time_add(calld->call_start_time, method_params->timeout);
           calld->deadline = gpr_time_min(calld->deadline, per_method_deadline);
         }
-        const bool *wait_for_ready =
-            grpc_method_config_get_wait_for_ready(method_config);
-        if (wait_for_ready != NULL) {
+        if (method_params->wait_for_ready != WAIT_FOR_READY_UNSET) {
           calld->wait_for_ready_from_service_config =
-              *wait_for_ready ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
+              method_params->wait_for_ready;
         }
       }
-      grpc_method_config_table_unref(method_config_table);
+      grpc_mdstr_hash_table_unref(method_params_table);
     } else {
       gpr_mu_unlock(&chand->mu);
     }
