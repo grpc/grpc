@@ -89,6 +89,10 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
 
+/** Returns the value of argument \a name from \a args, or NULL if not found. */
+const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
+                                       const char *name);
+
 typedef struct grpc_integer_options {
   int default_value;  // Return this if value is outside of expected bounds.
   int min_value;
