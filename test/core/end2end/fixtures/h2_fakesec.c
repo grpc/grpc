@@ -105,7 +105,9 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 }
 
 static void chttp2_init_client_fake_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
+    const char *query_args) {
+  GPR_ASSERT(query_args == NULL);
   grpc_channel_credentials *fake_ts_creds =
       grpc_fake_transport_security_credentials_create();
   chttp2_init_client_secure_fullstack(f, client_args, fake_ts_creds);
