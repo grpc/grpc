@@ -855,8 +855,7 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
     // If the method config table was present, use it.
     if (method_config_table != NULL) {
       const grpc_method_config *method_config =
-          grpc_method_config_table_get_method_config(method_config_table,
-                                                     calld->path);
+          grpc_method_config_table_get(method_config_table, calld->path);
       if (method_config != NULL) {
         const gpr_timespec *per_method_timeout =
             grpc_method_config_get_timeout(method_config);
@@ -922,8 +921,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
           grpc_method_config_table_ref(chand->method_config_table);
       gpr_mu_unlock(&chand->mu);
       grpc_method_config *method_config =
-          grpc_method_config_table_get_method_config(method_config_table,
-                                                     args->path);
+          grpc_method_config_table_get(method_config_table, args->path);
       if (method_config != NULL) {
         const gpr_timespec *per_method_timeout =
             grpc_method_config_get_timeout(method_config);
