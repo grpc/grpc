@@ -2686,6 +2686,27 @@
     "ci_platforms": [
       "linux", 
       "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "server_context_test_spouse_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
@@ -16264,7 +16285,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16285,7 +16308,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16306,7 +16331,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16327,7 +16354,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16348,7 +16377,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16369,7 +16400,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16390,7 +16423,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16411,7 +16446,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16432,7 +16469,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16453,7 +16492,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16474,7 +16515,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16495,7 +16538,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16516,7 +16561,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16537,7 +16584,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16558,7 +16607,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16579,7 +16630,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16600,7 +16653,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16621,7 +16676,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16642,7 +16699,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16663,7 +16722,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16684,7 +16745,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16705,7 +16768,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16726,7 +16791,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16747,7 +16814,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16768,7 +16837,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16789,7 +16860,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16810,7 +16883,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16831,7 +16906,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16852,7 +16929,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16873,7 +16952,9 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16894,7 +16975,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16915,7 +16998,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16936,7 +17021,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16957,7 +17044,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16978,7 +17067,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -16999,7 +17090,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -17020,7 +17113,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -17041,7 +17136,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
@@ -17062,7 +17159,9 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "msan"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 

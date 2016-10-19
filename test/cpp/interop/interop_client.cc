@@ -827,21 +827,42 @@ bool InteropClient::DoStatusWithMessage() {
   gpr_log(GPR_DEBUG,
           "Sending RPC with a request for status code 2 and message");
 
+  const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
+  const grpc::string test_msg = "This is a test message";
+
+  // Test UnaryCall.
   ClientContext context;
   SimpleRequest request;
   SimpleResponse response;
   EchoStatus* requested_status = request.mutable_response_status();
-  requested_status->set_code(grpc::StatusCode::UNKNOWN);
-  grpc::string test_msg = "This is a test message";
+  requested_status->set_code(test_code);
   requested_status->set_message(test_msg);
-
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-
   if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN)) {
     return false;
   }
-
   GPR_ASSERT(s.error_message() == test_msg);
+
+  // Test FullDuplexCall.
+  ClientContext stream_context;
+  std::shared_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(serviceStub_.Get()->FullDuplexCall(&stream_context));
+  StreamingOutputCallRequest streaming_request;
+  requested_status = streaming_request.mutable_response_status();
+  requested_status->set_code(test_code);
+  requested_status->set_message(test_msg);
+  stream->Write(streaming_request);
+  stream->WritesDone();
+  StreamingOutputCallResponse streaming_response;
+  while (stream->Read(&streaming_response))
+    ;
+  s = stream->Finish();
+  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN)) {
+    return false;
+  }
+  GPR_ASSERT(s.error_message() == test_msg);
+
   gpr_log(GPR_DEBUG, "Done testing Status and Message");
   return true;
 }
