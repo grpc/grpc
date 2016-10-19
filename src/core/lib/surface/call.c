@@ -310,10 +310,10 @@ grpc_error *grpc_call_create(const grpc_call_create_args *args,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_error *error = grpc_call_stack_init(
-      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
-      args->server_transport_data, path, send_deadline,
-      CALL_STACK_FROM_CALL(call));
+  grpc_error *error =
+      grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
+                           call->context, args->server_transport_data, path,
+                           send_deadline, CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code status;
     const char *error_str;
