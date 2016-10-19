@@ -339,7 +339,11 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs) {
     ClientContext context;
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
-    EXPECT_TRUE(s.ok());
+    if (!s.ok()) {
+      gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
+              s.error_message().c_str());
+    }
+    ASSERT_TRUE(s.ok());
   }
 }
 

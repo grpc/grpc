@@ -47,11 +47,10 @@
 
 static grpc_error* pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
-  /* TODO(klempner): Make this nonfatal */
   int r = pipe(pipefd);
   if (0 != r) {
     gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
-    abort();
+    return GRPC_OS_ERROR(errno, "pipe");
   }
   grpc_error* err;
   err = grpc_set_socket_nonblocking(pipefd[0], 1);
@@ -95,8 +94,13 @@ static void pipe_destroy(grpc_wakeup_fd* fd_info) {
 }
 
 static int pipe_check_availability(void) {
-  /* Assume that pipes are always available. */
-  return 1;
+  grpc_wakeup_fd fd;
+  if (pipe_init(&fd) == GRPC_ERROR_NONE) {
+    pipe_destroy(&fd);
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
