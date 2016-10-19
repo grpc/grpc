@@ -33,6 +33,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -42,6 +43,7 @@
 
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
@@ -119,7 +121,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     *r->target_result = grpc_resolver_result_create(
         r->target_name,
         grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        NULL /* lb_policy_name */, NULL);
+        NULL /* lb_policy_name */, NULL /* lb_policy_args */);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -128,8 +130,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r->target_name);
+  grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r);
 }
 

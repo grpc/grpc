@@ -54,18 +54,37 @@ typedef struct grpc_deadline_state {
   grpc_closure* next_on_complete;
 } grpc_deadline_state;
 
-// To be used in a filter's init_call_elem(), destroy_call_elem(), and
-// start_transport_stream_op() methods to enforce call deadlines.
 //
-// REQUIRES: The first field in elem->call_data is a grpc_deadline_state.
+// NOTE: All of these functions require that the first field in
+// elem->call_data is a grpc_deadline_state.
 //
-// For grpc_deadline_state_client_start_transport_stream_op(), it is the
-// caller's responsibility to chain to the next filter if necessary
-// after the function returns.
+
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_element_args* args);
+                              grpc_call_stack* call_stack);
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
+
+// Starts the timer with the specified deadline.
+// Should be called from the filter's init_call_elem() method.
+void grpc_deadline_state_start(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                               gpr_timespec deadline);
+
+// Cancels the existing timer and starts a new one with new_deadline.
+//
+// Note: It is generally safe to call this with an earlier deadline
+// value than the current one, but not the reverse.  No checks are done
+// to ensure that the timer callback is not invoked while it is in the
+// process of being reset, which means that attempting to increase the
+// deadline may result in the timer being called twice.
+void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                               gpr_timespec new_deadline);
+
+// To be called from the client-side filter's start_transport_stream_op()
+// method.  Ensures that the deadline timer is cancelled when the call
+// is completed.
+//
+// Note: It is the caller's responsibility to chain to the next filter if
+// necessary after this function returns.
 void grpc_deadline_state_client_start_transport_stream_op(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op* op);

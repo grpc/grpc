@@ -49,12 +49,13 @@ static void *tag(intptr_t t) { return (void *)t; }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+                                            grpc_channel_args *server_args,
+                                            const char *query_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  config.init_client(&f, client_args, query_args);
   return f;
 }
 
@@ -98,15 +99,15 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after accept, no payload */
 static void test_cancel_after_accept(grpc_end2end_test_config config,
-                                     cancellation_mode mode) {
+                                     cancellation_mode mode,
+                                     bool use_service_config) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
   grpc_call *s;
-  grpc_end2end_test_fixture f =
-      begin_test(config, "cancel_after_accept", NULL, NULL);
-  gpr_timespec deadline = five_seconds_time();
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  gpr_timespec deadline = use_service_config
+                              ? gpr_inf_future(GPR_CLOCK_MONOTONIC)
+                              : five_seconds_time();
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -125,8 +126,19 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
+  const char *query_args = NULL;
+  if (use_service_config) {
+    query_args =
+        "method_name=/service/method"
+        "&timeout_seconds=5";
+  }
+  grpc_end2end_test_fixture f =
+      begin_test(config, "cancel_after_accept", NULL, NULL, query_args);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
+
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+                               "/service/method", "foo.test.google.fr",
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -230,7 +242,18 @@ void cancel_after_accept(grpc_end2end_test_config config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-    test_cancel_after_accept(config, cancellation_modes[i]);
+    test_cancel_after_accept(config, cancellation_modes[i],
+                             false /* use_service_config */);
+  }
+
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_QUERY_ARGS) {
+    for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
+      if (cancellation_modes[i].expect_status ==
+          GRPC_STATUS_DEADLINE_EXCEEDED) {
+        test_cancel_after_accept(config, cancellation_modes[i],
+                                 true /* use_service_config */);
+      }
+    }
   }
 }
 
