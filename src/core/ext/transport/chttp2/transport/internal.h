@@ -426,8 +426,10 @@ struct grpc_chttp2_stream {
   grpc_error *forced_close_error;
   /** how many header frames have we received? */
   uint8_t header_frames_received;
-  /** window available for peer to send to us */
-  int64_t incoming_window;
+  /** window available for peer to send to us (as a delta on
+   * transport.initial_window_size)
+   * incoming_window = incoming_window_delta + transport.initial_window_size */
+  int64_t incoming_window_delta;
   /** parsing state for data frames */
   grpc_chttp2_data_parser data_parser;
   /** number of bytes received - reset at end of parse thread execution */

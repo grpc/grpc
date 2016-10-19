@@ -480,9 +480,6 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   if (server_data) {
     s->id = (uint32_t)(uintptr_t)server_data;
-    s->incoming_window = s->max_recv_bytes =
-        t->settings[GRPC_SENT_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     post_destructive_reclaimer(exec_ctx, t);
@@ -800,7 +797,7 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
                              "no_more_stream_ids");
     }
 
-    s->incoming_window = stream_incoming_window =
+    stream_incoming_window =
         t->settings[GRPC_SENT_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     s->max_recv_bytes = GPR_MAX(stream_incoming_window, s->max_recv_bytes);
@@ -1917,7 +1914,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
         s->max_recv_bytes < have_already;
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, max_recv_bytes,
                                    add_max_recv_bytes);
-    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window,
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, incoming_window_delta,
                                    add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", t, s, announce_window,
                                    add_max_recv_bytes);

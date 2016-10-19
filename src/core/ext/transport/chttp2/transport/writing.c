@@ -141,7 +141,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         uint32_t stream_outgoing_window = (uint32_t)GPR_MAX(
             0,
             s->outgoing_window_delta +
-                (int64_t)t->settings[GRPC_ACKED_SETTINGS]
+                (int64_t)t->settings[GRPC_PEER_SETTINGS]
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
         uint32_t max_outgoing = (uint32_t)GPR_MIN(
             t->settings[GRPC_ACKED_SETTINGS]
