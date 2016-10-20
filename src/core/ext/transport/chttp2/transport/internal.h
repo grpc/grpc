@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -295,6 +296,8 @@ struct grpc_chttp2_transport {
 
   /** initial window change */
   int64_t initial_window_update;
+  /** did the current parse see actual data bytes? */
+  bool parse_saw_data_frames;
 
   /** window available for peer to send to us */
   int64_t incoming_window;
@@ -322,6 +325,12 @@ struct grpc_chttp2_transport {
   gpr_slice goaway_text;
 
   grpc_chttp2_write_cb *write_cb_pool;
+
+  /* bdp estimator */
+  grpc_bdp_estimator bdp_estimator;
+  grpc_closure finish_bdp_ping;
+  grpc_closure finish_bdp_ping_locked;
+  gpr_timespec last_bdp_ping_finished;
 
   /* if non-NULL, close the transport with this error when writes are finished
    */

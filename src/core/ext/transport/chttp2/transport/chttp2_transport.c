@@ -133,6 +133,14 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                               grpc_error *error);
 
+static void finish_bdp_ping(grpc_exec_ctx *exec_ctx, void *tp,
+                            grpc_error *error);
+static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
+                                   grpc_error *error);
+
+static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                         grpc_error *error);
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -164,16 +172,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
 
   grpc_combiner_destroy(exec_ctx, t->combiner);
 
-  /* callback remaining pings: they're not allowed to call into the transpot,
-     and maybe they hold resources that need to be freed */
-  while (t->pings.next != &t->pings) {
-    grpc_chttp2_outstanding_ping *ping = t->pings.next;
-    grpc_exec_ctx_sched(exec_ctx, ping->on_recv,
-                        GRPC_ERROR_CREATE("Transport closed"), NULL);
-    ping->next->prev = ping->prev;
-    ping->prev->next = ping->next;
-    gpr_free(ping);
-  }
+  cancel_pings(exec_ctx, t, GRPC_ERROR_CREATE("Transport destroyed"));
 
   while (t->write_cb_pool) {
     grpc_chttp2_write_cb *next = t->write_cb_pool->next;
@@ -258,6 +257,11 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->benign_reclaimer_locked, benign_reclaimer_locked, t);
   grpc_closure_init(&t->destructive_reclaimer_locked,
                     destructive_reclaimer_locked, t);
+  grpc_closure_init(&t->finish_bdp_ping, finish_bdp_ping, t);
+  grpc_closure_init(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t);
+
+  grpc_bdp_estimator_init(&t->bdp_estimator);
+  t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->hpack_parser);
@@ -422,6 +426,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:close");
     }
     end_all_the_calls(exec_ctx, t, GRPC_ERROR_REF(error));
+    cancel_pings(exec_ctx, t, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1173,6 +1178,20 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_TIMER_END("perform_stream_op", 0);
 }
 
+static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                         grpc_error *error) {
+  /* callback remaining pings: they're not allowed to call into the transpot,
+     and maybe they hold resources that need to be freed */
+  while (t->pings.next != &t->pings) {
+    grpc_chttp2_outstanding_ping *ping = t->pings.next;
+    grpc_exec_ctx_sched(exec_ctx, ping->on_recv, GRPC_ERROR_REF(error), NULL);
+    ping->next->prev = ping->prev;
+    ping->prev->next = ping->next;
+    gpr_free(ping);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
 static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_closure *on_recv) {
   grpc_chttp2_outstanding_ping *p = gpr_malloc(sizeof(*p));
@@ -1761,6 +1780,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_TIMER_BEGIN("reading_action_locked", 0);
 
   grpc_chttp2_transport *t = tp;
+  bool need_bdp_ping = false;
 
   GRPC_ERROR_REF(error);
 
@@ -1778,9 +1798,18 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_error *errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
+      if (grpc_bdp_estimator_add_incoming_bytes(
+              &t->bdp_estimator,
+              (int64_t)GPR_SLICE_LENGTH(t->read_buffer.slices[i]))) {
+        need_bdp_ping = true;
+      }
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
-    };
+    }
+    if (!t->parse_saw_data_frames) {
+      need_bdp_ping = false;
+    }
+    t->parse_saw_data_frames = false;
     if (errors[1] != GRPC_ERROR_NONE) {
       errors[2] = try_http_parsing(exec_ctx, t);
       GRPC_ERROR_UNREF(error);
@@ -1821,6 +1850,16 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer, &t->read_action_begin);
+
+    if (need_bdp_ping &&
+        gpr_time_cmp(gpr_time_add(t->last_bdp_ping_finished,
+                                  gpr_time_from_millis(100, GPR_TIMESPAN)),
+                     gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
+      GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
+      grpc_bdp_estimator_start_ping(&t->bdp_estimator);
+      send_ping_locked(exec_ctx, t, &t->finish_bdp_ping);
+    }
+
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");
@@ -1831,6 +1870,40 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GRPC_ERROR_UNREF(error);
 
   GPR_TIMER_END("reading_action_locked", 0);
+}
+
+static void finish_bdp_ping(grpc_exec_ctx *exec_ctx, void *tp,
+                            grpc_error *error) {
+  grpc_chttp2_transport *t = tp;
+  grpc_combiner_execute(exec_ctx, t->combiner, &t->finish_bdp_ping_locked,
+                        GRPC_ERROR_REF(error), false);
+}
+
+static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
+                                   grpc_error *error) {
+  grpc_chttp2_transport *t = tp;
+  grpc_bdp_estimator_complete_ping(&t->bdp_estimator);
+
+  t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
+
+  int64_t estimate;
+  if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
+    gpr_log(
+        GPR_DEBUG, "%s BDP estimate: %" PRId64
+                   " (%d %d) [%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d]",
+        t->peer_string, estimate, t->bdp_estimator.first_sample_idx,
+        t->bdp_estimator.num_samples, (int)t->bdp_estimator.samples[0],
+        (int)t->bdp_estimator.samples[1], (int)t->bdp_estimator.samples[2],
+        (int)t->bdp_estimator.samples[3], (int)t->bdp_estimator.samples[4],
+        (int)t->bdp_estimator.samples[5], (int)t->bdp_estimator.samples[6],
+        (int)t->bdp_estimator.samples[7], (int)t->bdp_estimator.samples[8],
+        (int)t->bdp_estimator.samples[9], (int)t->bdp_estimator.samples[10],
+        (int)t->bdp_estimator.samples[11], (int)t->bdp_estimator.samples[12],
+        (int)t->bdp_estimator.samples[13], (int)t->bdp_estimator.samples[14],
+        (int)t->bdp_estimator.samples[15]);
+  }
+
+  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }
 
 /*******************************************************************************
