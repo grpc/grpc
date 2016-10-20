@@ -34,6 +34,7 @@ cc_library(
   srcs = ['cq_verifier.c'],
   hdrs = ['cq_verifier.h'],
   deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util'],
+  copts = ['-std=c99'],
   visibility = ["//test:__subpackages__"],
 )
 
@@ -41,6 +42,7 @@ cc_library(
   name = 'ssl_test_data',
   visibility = ["//test:__subpackages__"],
   hdrs = ['data/ssl_test_data.h'],
+  copts = ['-std=c99'],
   srcs = [
     "data/client_certs.c",
     "data/server1_cert.c",
@@ -53,6 +55,7 @@ cc_library(
   name = 'fake_resolver',
   hdrs = ['fake_resolver.h'],
   srcs = ['fake_resolver.c'],
+  copts = ['-std=c99'],
   deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
 )
 
@@ -60,6 +63,7 @@ cc_library(
   name = 'http_proxy',
   hdrs = ['fixtures/http_proxy.h'],
   srcs = ['fixtures/http_proxy.c'],
+  copts = ['-std=c99'],
   deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
 )
 
@@ -67,6 +71,7 @@ cc_library(
   name = 'proxy',
   hdrs = ['fixtures/proxy.h'],
   srcs = ['fixtures/proxy.c'],
+  copts = ['-std=c99'],
   deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
 )
 
