@@ -160,10 +160,9 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
 - (void)handleLossWithHandler:(void (^)())handler
       wifiStatusChangeHandler:(nonnull void (^)())wifiStatusChangeHandler {
   [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
-    if (!flags.reachable && handler) {
+    if (!flags.reachable) {
       handler();
-    } else if (flags.isWWAN ^ _previousReachabilityFlags.isWWAN &&
-               wifiStatusChangeHandler) {
+    } else if (flags.isWWAN ^ _previousReachabilityFlags.isWWAN) {
       wifiStatusChangeHandler();
     }
     _previousReachabilityFlags = flags;
