@@ -37,6 +37,6 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = []):
     native.cc_test(
       name = '%s/one_entry/%s' % (name, entry),
       deps = [':%s/one_entry' % name],
-      args = [entry],
+      args = ['$(location %s)' % entry],
       data = [entry]
     )
