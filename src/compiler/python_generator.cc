@@ -70,6 +70,10 @@ namespace grpc_python_generator {
 
 namespace {
 
+typedef vector<const Descriptor*> DescriptorVector;
+typedef map<grpc::string, grpc::string> StringMap;
+typedef vector<grpc::string> StringVector;
+
 // Provides RAII indentation handling. Use as:
 // {
 //   IndentScope raii_my_indent_var_name_here(my_py_printer);
@@ -168,7 +172,7 @@ PrivateGenerator::PrivateGenerator(const GeneratorConfiguration& config,
 bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
                                                grpc::string* out) {
   const Descriptor* path_elem_type = type;
-  vector<const Descriptor*> message_path;
+  DescriptorVector message_path;
   do {
     message_path.push_back(path_elem_type);
     path_elem_type = path_elem_type->containing_type();
@@ -187,7 +191,8 @@ bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
     module = "";
   }
   grpc::string message_type;
-  for (auto path_iter = message_path.rbegin(); path_iter != message_path.rend();
+  for (DescriptorVector::reverse_iterator path_iter = message_path.rbegin();
+       path_iter != message_path.rend();
        ++path_iter) {
     message_type += (*path_iter)->name() + ".";
   }
@@ -199,7 +204,7 @@ bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
 
 template <typename DescriptorType>
 void PrivateGenerator::PrintAllComments(const DescriptorType* descriptor) {
-  vector<grpc::string> comments;
+  StringVector comments;
   grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
                              &comments);
   grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING,
@@ -210,7 +215,7 @@ void PrivateGenerator::PrintAllComments(const DescriptorType* descriptor) {
     return;
   }
   out->Print("\"\"\"");
-  for (auto it = comments.begin(); it != comments.end(); ++it) {
+  for (StringVector::iterator it = comments.begin(); it != comments.end(); ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
       out->Print(it->c_str() + start_pos);
@@ -235,14 +240,14 @@ bool PrivateGenerator::PrintBetaServicer(const ServiceDescriptor* service) {
         "grpcio>=0.15.0.\"\"\"\n");
     PrintAllComments(service);
     for (int i = 0; i < service->method_count(); ++i) {
-      auto meth = service->method(i);
+      const MethodDescriptor *method = service->method(i);
       grpc::string arg_name =
-          meth->client_streaming() ? "request_iterator" : "request";
+          method->client_streaming() ? "request_iterator" : "request";
       out->Print("def $Method$(self, $ArgName$, context):\n", "Method",
-                 meth->name(), "ArgName", arg_name);
+                 method->name(), "ArgName", arg_name);
       {
         IndentScope raii_method_indent(out);
-        PrintAllComments(meth);
+        PrintAllComments(method);
         out->Print("context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)\n");
       }
     }
@@ -264,22 +269,22 @@ bool PrivateGenerator::PrintBetaStub(const ServiceDescriptor* service) {
         "grpcio>=0.15.0.\"\"\"\n");
     PrintAllComments(service);
     for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor* meth = service->method(i);
+      const MethodDescriptor* method = service->method(i);
       grpc::string arg_name =
-          meth->client_streaming() ? "request_iterator" : "request";
-      auto methdict;
-      methdict["Method"] = meth->name();
-      methdict["ArgName"] = arg_name;
-      out->Print(methdict,
+          method->client_streaming() ? "request_iterator" : "request";
+      StringMap method_dict;
+      method_dict["Method"] = method->name();
+      method_dict["ArgName"] = arg_name;
+      out->Print(method_dict,
                  "def $Method$(self, $ArgName$, timeout, metadata=None, "
                  "with_call=False, protocol_options=None):\n");
       {
         IndentScope raii_method_indent(out);
-        PrintAllComments(meth);
+        PrintAllComments(method);
         out->Print("raise NotImplementedError()\n");
       }
-      if (!meth->server_streaming()) {
-        out->Print(methdict, "$Method$.future = None\n");
+      if (!method->server_streaming()) {
+        out->Print(method_dict, "$Method$.future = None\n");
       }
     }
   }
@@ -302,9 +307,9 @@ bool PrivateGenerator::PrintBetaServerFactory(
         "file not marked beta) for all further purposes. This function was\n"
         "generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"
         "\"\"\"\n");
-    map<grpc::string, grpc::string> method_implementation_constructors;
-    map<grpc::string, grpc::string> input_message_modules_and_classes;
-    map<grpc::string, grpc::string> output_message_modules_and_classes;
+    StringMap method_implementation_constructors;
+    StringMap input_message_modules_and_classes;
+    StringMap output_message_modules_and_classes;
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* method = service->method(i);
       const grpc::string method_implementation_constructor =
@@ -329,7 +334,7 @@ bool PrivateGenerator::PrintBetaServerFactory(
           make_pair(method->name(), output_message_module_and_class));
     }
     out->Print("request_deserializers = {\n");
-    for (auto name_and_input_module_class_pair =
+    for (StringMap::iterator name_and_input_module_class_pair =
              input_message_modules_and_classes.begin();
          name_and_input_module_class_pair !=
          input_message_modules_and_classes.end();
@@ -344,7 +349,7 @@ bool PrivateGenerator::PrintBetaServerFactory(
     }
     out->Print("}\n");
     out->Print("response_serializers = {\n");
-    for (auto name_and_output_module_class_pair =
+    for (StringMap::iterator name_and_output_module_class_pair =
              output_message_modules_and_classes.begin();
          name_and_output_module_class_pair !=
          output_message_modules_and_classes.end();
@@ -360,7 +365,7 @@ bool PrivateGenerator::PrintBetaServerFactory(
     }
     out->Print("}\n");
     out->Print("method_implementations = {\n");
-    for (auto name_and_implementation_constructor =
+    for (StringMap::iterator name_and_implementation_constructor =
              method_implementation_constructors.begin();
          name_and_implementation_constructor !=
          method_implementation_constructors.end();
@@ -393,7 +398,7 @@ bool PrivateGenerator::PrintBetaServerFactory(
 bool PrivateGenerator::PrintBetaStubFactory(
     const grpc::string& package_qualified_service_name,
     const ServiceDescriptor* service) {
-  map<grpc::string, grpc::string> dict;
+  StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
   out->Print(dict,
@@ -407,9 +412,9 @@ bool PrivateGenerator::PrintBetaStubFactory(
         "file not marked beta) for all further purposes. This function was\n"
         "generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"
         "\"\"\"\n");
-    map<grpc::string, grpc::string> method_cardinalities;
-    map<grpc::string, grpc::string> input_message_modules_and_classes;
-    map<grpc::string, grpc::string> output_message_modules_and_classes;
+    StringMap method_cardinalities;
+    StringMap input_message_modules_and_classes;
+    StringMap output_message_modules_and_classes;
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* method = service->method(i);
       const grpc::string method_cardinality =
@@ -433,7 +438,7 @@ bool PrivateGenerator::PrintBetaStubFactory(
           make_pair(method->name(), output_message_module_and_class));
     }
     out->Print("request_serializers = {\n");
-    for (auto name_and_input_module_class_pair =
+    for (StringMap::iterator name_and_input_module_class_pair =
              input_message_modules_and_classes.begin();
          name_and_input_module_class_pair !=
          input_message_modules_and_classes.end();
@@ -448,7 +453,7 @@ bool PrivateGenerator::PrintBetaStubFactory(
     }
     out->Print("}\n");
     out->Print("response_deserializers = {\n");
-    for (auto name_and_output_module_class_pair =
+    for (StringMap::iterator name_and_output_module_class_pair =
              output_message_modules_and_classes.begin();
          name_and_output_module_class_pair !=
          output_message_modules_and_classes.end();
@@ -464,7 +469,7 @@ bool PrivateGenerator::PrintBetaStubFactory(
     }
     out->Print("}\n");
     out->Print("cardinalities = {\n");
-    for (auto name_and_cardinality = method_cardinalities.begin();
+    for (StringMap::iterator name_and_cardinality = method_cardinalities.begin();
          name_and_cardinality != method_cardinalities.end();
          name_and_cardinality++) {
       IndentScope raii_descriptions_indent(out);
@@ -508,8 +513,8 @@ bool PrivateGenerator::PrintStub(const grpc::string& package_qualified_service_n
       }
       out->Print("\"\"\"\n");
       for (int i = 0; i < service->method_count(); ++i) {
-        auto method = service->method(i);
-        auto multi_callable_constructor =
+        const MethodDescriptor *method = service->method(i);
+        grpc::string multi_callable_constructor =
             grpc::string(method->client_streaming() ? "stream" : "unary") +
             "_" + grpc::string(method->server_streaming() ? "stream" : "unary");
         grpc::string request_module_and_class;
@@ -552,7 +557,7 @@ bool PrivateGenerator::PrintServicer(const ServiceDescriptor* service) {
     IndentScope raii_class_indent(out);
     PrintAllComments(service);
     for (int i = 0; i < service->method_count(); ++i) {
-      auto method = service->method(i);
+      const MethodDescriptor *method = service->method(i);
       grpc::string arg_name =
           method->client_streaming() ? "request_iterator" : "request";
       out->Print("\n");
@@ -583,8 +588,8 @@ bool PrivateGenerator::PrintAddServicerToServer(
       IndentScope raii_dict_first_indent(out);
       IndentScope raii_dict_second_indent(out);
       for (int i = 0; i < service->method_count(); ++i) {
-        auto method = service->method(i);
-        auto method_handler_constructor =
+        const MethodDescriptor *method = service->method(i);
+        grpc::string method_handler_constructor =
             grpc::string(method->client_streaming() ? "stream" : "unary") +
             "_" +
             grpc::string(method->server_streaming() ? "stream" : "unary") +
@@ -649,7 +654,7 @@ bool PrivateGenerator::PrintPreamble() {
     for (int i = 0; i < file->service_count(); ++i) {
       const ServiceDescriptor *service = file->service(i);
       for (int j = 0; j < service->method_count(); ++j) {
-        auto method = service->method(j);
+        const MethodDescriptor *method = service->method(j);
         const Descriptor *types[2] = {method->input_type(), method->output_type()};
         for (int k = 0; k < 2; ++k) {
           const Descriptor *type = types[k];
