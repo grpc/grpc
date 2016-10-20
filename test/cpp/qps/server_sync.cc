@@ -31,8 +31,6 @@
  *
  */
 
-#include <thread>
-
 #include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>

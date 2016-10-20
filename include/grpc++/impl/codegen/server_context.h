@@ -44,7 +44,6 @@
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
 
-struct gpr_timespec;
 struct grpc_metadata;
 struct grpc_call;
 struct census_context;

@@ -176,6 +176,8 @@ class ServerReflection GRPC_FINAL {
     }
   };
   typedef Service StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef Service StreamedService;
 };
 
 }  // namespace v1alpha
