@@ -303,14 +303,15 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void AddSyncMethod(RpcServiceMethod* method, void* tag) {
-    sync_requests_.emplace_back(method, tag);
+    sync_requests_.emplace_back(new SyncRequest(method, tag));
   }
 
   void AddUnknownSyncMethod() {
     if (!sync_requests_.empty()) {
       unknown_method_.reset(new RpcServiceMethod(
           "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-      sync_requests_.emplace_back(unknown_method_.get(), nullptr);
+      sync_requests_.emplace_back(
+          new SyncRequest(unknown_method_.get(), nullptr));
     }
   }
 
@@ -328,11 +329,11 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   void Start() {
     if (!sync_requests_.empty()) {
       for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
-        m->SetupRequest();
-        m->Request(server_->c_server(), server_cq_->cq());
+        (*m)->SetupRequest();
+        (*m)->Request(server_->c_server(), server_cq_->cq());
       }
 
-      Initialize(); // ThreadManager's Initialize()
+      Initialize();  // ThreadManager's Initialize()
     }
   }
 
@@ -340,7 +341,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   Server* server_;
   CompletionQueue* server_cq_;
   int cq_timeout_msec_;
-  std::vector<SyncRequest> sync_requests_;
+  std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
@@ -440,7 +441,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       return false;
     }
 
-    if (method->handler() == nullptr) { // Async method
+    if (method->handler() == nullptr) {  // Async method
       method->set_server_tag(tag);
     } else {
       for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
@@ -513,7 +514,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Shutdown all ThreadManagers. This will try to gracefully stop all the
     // threads in the ThreadManagers (once they process any inflight requests)
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown(); // ThreadManager's Shutdown()
+      (*it)->Shutdown();  // ThreadManager's Shutdown()
     }
 
     shutdown_cq.Shutdown();
