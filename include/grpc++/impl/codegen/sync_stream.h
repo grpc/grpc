@@ -60,7 +60,16 @@ class ClientStreamingInterface {
   /// - when all incoming messages have been read and the server has returned
   ///   status.
   /// - OR when the server has returned a non-OK status.
-  virtual Status Finish() = 0;
+  /// - OR with a timeout if the stream ops haven't finished before the deadline
+  ///   specified in FinishOptions
+  virtual Status Finish(const FinishOptions& options, bool* completed) = 0;
+
+  /// A default version of Finish that doesn't set a deadline
+  /// and must return a real Status
+  inline Status Finish() {
+    bool dummy;
+    return Finish(FinishOptions(), &dummy);
+  }
 };
 
 /// Common interface for all synchronous server side streaming.
@@ -174,7 +183,9 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
-  Status Finish() GRPC_OVERRIDE {
+  using ClientStreamingInterface::Finish;
+
+  Status Finish(const FinishOptions& options, bool* completed) GRPC_OVERRIDE {
     CallOpSet<CallOpClientRecvStatus> ops;
     Status status;
     ops.ClientRecvStatus(context_, &status);
@@ -246,8 +257,10 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
+  using ClientStreamingInterface::Finish;
+
   /// Read the final response and wait for the final status.
-  Status Finish() GRPC_OVERRIDE {
+  Status Finish(const FinishOptions& options, bool* completed) GRPC_OVERRIDE {
     Status status;
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -339,7 +352,9 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops);
   }
 
-  Status Finish() GRPC_OVERRIDE {
+  using ClientStreamingInterface::Finish;
+
+  Status Finish(const FinishOptions& options, bool* completed) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
