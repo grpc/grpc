@@ -27,40 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load(":generate_tests.bzl", "grpc_end2end_tests")
+load(":generate_tests.bzl", "grpc_bad_client_tests")
 
-cc_library(
-  name = 'cq_verifier',
-  srcs = ['cq_verifier.c'],
-  hdrs = ['cq_verifier.h'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util'],
-  visibility = ["//test:__subpackages__"],
-)
-
-cc_library(
-  name = 'ssl_test_data',
-  hdrs = ['data/ssl_test_data.h'],
-)
-
-cc_library(
-  name = 'fake_resolver',
-  hdrs = ['fake_resolver.h'],
-  srcs = ['fake_resolver.c'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-cc_library(
-  name = 'http_proxy',
-  hdrs = ['fixtures/http_proxy.h'],
-  srcs = ['fixtures/http_proxy.c'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-cc_library(
-  name = 'proxy',
-  hdrs = ['fixtures/proxy.h'],
-  srcs = ['fixtures/proxy.c'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-grpc_end2end_tests()
+grpc_bad_client_tests()
