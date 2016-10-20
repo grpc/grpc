@@ -193,7 +193,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
                              grpc_closure *on_done) {
-  grpc_udp_listener* sp;
+  grpc_udp_listener *sp;
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(!s->shutdown);
@@ -347,7 +347,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
 int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
                              size_t addr_len, grpc_udp_server_read_cb read_cb,
                              grpc_udp_server_orphan_cb orphan_cb) {
-  grpc_udp_listener* sp;
+  grpc_udp_listener *sp;
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   int fd;
