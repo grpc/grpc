@@ -59,6 +59,7 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
+  GRPC_CHTTP2_LIST_STALLED_BY_STREAM,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
@@ -137,6 +138,12 @@ typedef enum {
   GRPC_ACKED_SETTINGS,
   GRPC_NUM_SETTING_SETS
 } grpc_chttp2_setting_set;
+
+typedef enum {
+  GRPC_CHTTP2_NO_GOAWAY_SEND,
+  GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_GOAWAY_SENT,
+} grpc_chttp2_sent_goaway_state;
 
 /* Outstanding ping request data */
 typedef struct grpc_chttp2_outstanding_ping {
@@ -243,13 +250,15 @@ struct grpc_chttp2_transport {
 
   /** window available to announce to peer */
   int64_t announce_incoming_window;
-  /** how much window would we like to have for incoming_window */
-  uint32_t connection_window_target;
+  /** how many bytes have been given out as transport window that we'd now like
+      to retract? (since we can't retract incoming window, instead we just dont
+      give out any more until this amount goes to zero) */
+  int64_t retract_incoming_window;
 
   /** have we seen a goaway */
   uint8_t seen_goaway;
   /** have we sent a goaway */
-  uint8_t sent_goaway;
+  grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
   uint8_t dirtied_local_settings;
@@ -263,9 +272,6 @@ struct grpc_chttp2_transport {
   /** what is the next stream id to be allocated by this peer?
       copied to next_stream_id in parsing when parsing commences */
   uint32_t next_stream_id;
-
-  /** how far to lookahead in a stream? */
-  uint32_t stream_lookahead;
 
   /** last new stream id */
   uint32_t last_new_stream_id;
@@ -320,6 +326,18 @@ struct grpc_chttp2_transport {
   /* if non-NULL, close the transport with this error when writes are finished
    */
   grpc_error *close_transport_on_writes_finished;
+
+  /* buffer pool state */
+  /** have we scheduled a benign cleanup? */
+  bool benign_reclaimer_registered;
+  /** have we scheduled a destructive cleanup? */
+  bool destructive_reclaimer_registered;
+  /** benign cleanup closure */
+  grpc_closure benign_reclaimer;
+  grpc_closure benign_reclaimer_locked;
+  /** destructive cleanup closure */
+  grpc_closure destructive_reclaimer;
+  grpc_closure destructive_reclaimer_locked;
 };
 
 typedef enum {
@@ -342,12 +360,10 @@ struct grpc_chttp2_stream {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id;
 
-  /** window available for us to send to peer */
-  int64_t outgoing_window;
-  /** The number of bytes the upper layers have offered to receive.
-      As the upper layer offers more bytes, this value increases.
-      As bytes are read, this value decreases. */
-  uint32_t max_recv_bytes;
+  /** window available for us to send to peer, over or under the initial window
+    * size of the transport... ie:
+    * outgoing_window = outgoing_window_delta + transport.initial_window_size */
+  int64_t outgoing_window_delta;
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
   grpc_closure *send_initial_metadata_finished;
@@ -405,8 +421,10 @@ struct grpc_chttp2_stream {
   grpc_error *forced_close_error;
   /** how many header frames have we received? */
   uint8_t header_frames_received;
-  /** window available for peer to send to us */
-  int64_t incoming_window;
+  /** window available for peer to send to us (as a delta on
+   * transport.initial_window_size)
+   * incoming_window = incoming_window_delta + transport.initial_window_size */
+  int64_t incoming_window_delta;
   /** parsing state for data frames */
   grpc_chttp2_data_parser data_parser;
   /** number of bytes received - reset at end of parse thread execution */
@@ -454,33 +472,40 @@ bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s);
 /** Get a writable stream
     returns non-zero if there was a stream available */
-int grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport *t,
-                                         grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream **s);
 bool grpc_chttp2_list_remove_writable_stream(
     grpc_chttp2_transport *t, grpc_chttp2_stream *s) GRPC_MUST_USE_RESULT;
 
 bool grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s);
-int grpc_chttp2_list_have_writing_streams(grpc_chttp2_transport *t);
-int grpc_chttp2_list_pop_writing_stream(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s);
+bool grpc_chttp2_list_have_writing_streams(grpc_chttp2_transport *t);
+bool grpc_chttp2_list_pop_writing_stream(grpc_chttp2_transport *t,
+                                         grpc_chttp2_stream **s);
 
 void grpc_chttp2_list_add_written_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_written_stream(grpc_chttp2_transport *t,
-                                        grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_written_stream(grpc_chttp2_transport *t,
+                                         grpc_chttp2_stream **s);
 
 void grpc_chttp2_list_add_waiting_for_concurrency(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
-                                                 grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_waiting_for_concurrency(grpc_chttp2_transport *t,
+                                                  grpc_chttp2_stream **s);
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s);
-int grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
-                                              grpc_chttp2_stream **s);
+bool grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
+                                               grpc_chttp2_stream **s);
 void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
                                                   grpc_chttp2_stream *s);
+
+void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream *s);
+bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream **s);
+bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport *t,
+                                               grpc_chttp2_stream *s);
 
 grpc_chttp2_stream *grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport *t,
                                                       uint32_t id);

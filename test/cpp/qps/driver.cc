@@ -132,7 +132,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   Histogram histogram;
   histogram.MergeProto(result->latencies());
 
-  auto qps = histogram.Count() / average(result->client_stats(), WallTime);
+  auto time_estimate = average(result->client_stats(), WallTime);
+  auto qps = histogram.Count() / time_estimate;
   auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
 
   result->mutable_summary()->set_qps(qps);
@@ -157,6 +158,23 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   result->mutable_summary()->set_server_user_time(server_user_time);
   result->mutable_summary()->set_client_system_time(client_system_time);
   result->mutable_summary()->set_client_user_time(client_user_time);
+
+  if (result->request_results_size() > 0) {
+    int64_t successes = 0;
+    int64_t failures = 0;
+    for (int i = 0; i < result->request_results_size(); i++) {
+      RequestResultCount rrc = result->request_results(i);
+      if (rrc.status_code() == 0) {
+        successes += rrc.count();
+      } else {
+        failures += rrc.count();
+      }
+    }
+    result->mutable_summary()->set_successful_requests_per_second(
+        successes / time_estimate);
+    result->mutable_summary()->set_failed_requests_per_second(failures /
+                                                              time_estimate);
+  }
 }
 
 // Namespace for classes and functions used only in RunScenario
@@ -444,6 +462,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   Histogram merged_latencies;
+  std::unordered_map<int, int64_t> merged_statuses;
 
   gpr_log(GPR_INFO, "Finishing clients");
   for (size_t i = 0; i < num_clients; i++) {
@@ -462,6 +481,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_INFO, "Received final status from client %zu", i);
       const auto& stats = client_status.stats();
       merged_latencies.MergeProto(stats.latencies());
+      for (int i = 0; i < stats.request_results_size(); i++) {
+        merged_statuses[stats.request_results(i).status_code()] +=
+            stats.request_results(i).count();
+      }
       result->add_client_stats()->CopyFrom(stats);
       // That final status should be the last message on the client stream
       GPR_ASSERT(!client->stream->Read(&client_status));
@@ -481,6 +504,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
   delete[] clients;
 
   merged_latencies.FillProto(result->mutable_latencies());
+  for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
+       it != merged_statuses.end(); ++it) {
+    RequestResultCount* rrc = result->add_request_results();
+    rrc->set_status_code(it->first);
+    rrc->set_count(it->second);
+  }
 
   gpr_log(GPR_INFO, "Finishing servers");
   for (size_t i = 0; i < num_servers; i++) {

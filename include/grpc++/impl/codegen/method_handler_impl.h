@@ -236,6 +236,19 @@ class StreamedUnaryHandler
             ServerUnaryStreamer<RequestType, ResponseType>, true>(func) {}
 };
 
+template <class RequestType, class ResponseType>
+class SplitServerStreamingHandler
+    : public TemplatedBidiStreamingHandler<
+          ServerSplitStreamer<RequestType, ResponseType>, false> {
+ public:
+  explicit SplitServerStreamingHandler(
+      std::function<Status(ServerContext*,
+                           ServerSplitStreamer<RequestType, ResponseType>*)>
+          func)
+      : TemplatedBidiStreamingHandler<
+            ServerSplitStreamer<RequestType, ResponseType>, false>(func) {}
+};
+
 // Handle unknown method by returning UNIMPLEMENTED error.
 class UnknownMethodHandler : public MethodHandler {
  public:

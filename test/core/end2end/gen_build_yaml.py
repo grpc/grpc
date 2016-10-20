@@ -39,9 +39,9 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs')
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs large_writes')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [])
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], True)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
@@ -66,10 +66,10 @@ END2END_FIXTURES = {
     'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
                                                           ci_mac=False),
     'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(
-        ci_mac=False, exclude_configs=['msan']),
+        ci_mac=False, exclude_configs=['msan'], large_writes=False),
     'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
-        ci_mac=False, tracing=True),
+        ci_mac=False, tracing=True, large_writes=False),
     'h2_ssl': default_secure_fixture_options,
     'h2_ssl_cert': default_secure_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
@@ -79,8 +79,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
-default_test_options = TestOptions(False, False, True, False, True, 1.0)
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost large_writes')
+default_test_options = TestOptions(False, False, True, False, True, 1.0, False)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -89,6 +89,8 @@ LOWCPU = 0.1
 END2END_TESTS = {
     'bad_hostname': default_test_options,
     'binary_metadata': default_test_options,
+    'resource_quota_server': default_test_options._replace(large_writes=True,
+                                                        proxyable=False),
     'call_creds': default_test_options._replace(secure=True),
     'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_after_client_done': default_test_options,
@@ -150,6 +152,9 @@ def compatible(f, t):
       return False
   if not END2END_TESTS[t].traceable:
     if END2END_FIXTURES[f].tracing:
+      return False
+  if END2END_TESTS[t].large_writes:
+    if not END2END_FIXTURES[f].large_writes:
       return False
   return True
 

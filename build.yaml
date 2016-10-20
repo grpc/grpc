@@ -206,6 +206,7 @@ filegroups:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
@@ -213,6 +214,7 @@ filegroups:
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_windows.h
@@ -292,6 +294,7 @@ filegroups:
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
   - src/core/lib/iomgr/resolve_address_windows.c
+  - src/core/lib/iomgr/resource_quota.c
   - src/core/lib/iomgr/sockaddr_utils.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
@@ -698,6 +701,7 @@ filegroups:
   - include/grpc++/impl/thd.h
   - include/grpc++/impl/thd_cxx11.h
   - include/grpc++/impl/thd_no_cxx11.h
+  - include/grpc++/resource_quota.h
   - include/grpc++/security/auth_context.h
   - include/grpc++/security/auth_metadata_processor.h
   - include/grpc++/security/credentials.h
@@ -735,6 +739,7 @@ filegroups:
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -2349,6 +2354,17 @@ targets:
   language: c
   src:
   - test/core/iomgr/resolve_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: resource_quota_test
+  cpu_cost: 30
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resource_quota_test.c
   deps:
   - grpc_test_util
   - grpc

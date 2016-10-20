@@ -173,6 +173,7 @@ static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
 static gpr_timespec g_now;
 static grpc_server *g_server;
 static grpc_channel *g_channel;
+static grpc_resource_quota *g_resource_quota;
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -231,8 +232,8 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
 // defined in tcp_client_posix.c
 extern void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
-    size_t addr_len, gpr_timespec deadline);
+    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
+    const struct sockaddr *addr, size_t addr_len, gpr_timespec deadline);
 
 static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline);
@@ -252,7 +253,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
-    grpc_passthru_endpoint_create(&client, &server);
+    grpc_passthru_endpoint_create(&client, &server, g_resource_quota);
     *fc->ep = client;
 
     grpc_transport *transport =
@@ -289,6 +290,7 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *closure, grpc_endpoint **ep,
                                   grpc_pollset_set *interested_parties,
+                                  const grpc_channel_args *channel_args,
                                   const struct sockaddr *addr, size_t addr_len,
                                   gpr_timespec deadline) {
   sched_connect(exec_ctx, closure, ep, deadline);
@@ -520,6 +522,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int pending_pings = 0;
 
   g_active_call = new_call(NULL, ROOT);
+  g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
@@ -939,6 +942,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         break;
       }
+      // resize the buffer pool
+      case 21: {
+        grpc_resource_quota_resize(g_resource_quota, read_uint22(&inp));
+        break;
+      }
     }
   }
 
@@ -953,6 +961,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL)
           .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
+
+  grpc_resource_quota_unref(g_resource_quota);
 
   grpc_shutdown();
   return 0;

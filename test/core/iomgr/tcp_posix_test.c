@@ -176,7 +176,10 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size, "test");
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create("read_test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), resource_quota,
+                       slice_size, "test");
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -223,8 +226,11 @@ static void large_read_test(size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), slice_size,
-                       "test");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("large_read_test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), resource_quota,
+                       slice_size, "test");
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket(sv[0]);
@@ -359,8 +365,11 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"),
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("write_test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"), resource_quota,
                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, "test");
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   state.ep = ep;
@@ -423,8 +432,12 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size, "test");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("release_fd_test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), resource_quota,
+                       slice_size, "test");
   GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -445,8 +458,10 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                           gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+    gpr_log(GPR_DEBUG, "wakeup: read=%" PRIdPTR " target=%" PRIdPTR,
+            state.read_bytes, state.target_read_bytes);
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
@@ -454,6 +469,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   gpr_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(g_mu);
   while (!fd_released_done) {
     grpc_pollset_worker *worker = NULL;
@@ -461,6 +477,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                           gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+    gpr_log(GPR_DEBUG, "wakeup: fd_released_done=%d", fd_released_done);
   }
   gpr_mu_unlock(g_mu);
   GPR_ASSERT(fd_released_done == 1);
@@ -506,10 +523,13 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   create_sockets(sv);
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("tcp_posix_test_socketpair");
   f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client"),
-                                slice_size, "test");
+                                resource_quota, slice_size, "test");
   f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server"),
-                                slice_size, "test");
+                                resource_quota, slice_size, "test");
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(&exec_ctx, f.server_ep, g_pollset);
 
