@@ -246,6 +246,7 @@ filegroups:
   - src/core/lib/transport/mdstr_hash_table.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -340,6 +341,7 @@ filegroups:
   - src/core/lib/transport/mdstr_hash_table.c
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
+  - src/core/lib/transport/pid_controller.c
   - src/core/lib/transport/static_metadata.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
@@ -2549,6 +2551,16 @@ targets:
   language: c
   src:
   - test/core/transport/metadata_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_pid_controller_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/pid_controller_test.c
   deps:
   - grpc_test_util
   - grpc
