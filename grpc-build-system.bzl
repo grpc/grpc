@@ -28,8 +28,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-def grpc_cc_library(name, srcs = [], hdrs = [], deps = [], standalone = False, language = "C++"):
-=======
 #
 # This is for the gRPC build system. This isn't intended to be used outsite of
 # the BUILD file for gRPC. It contains the mapping for the template system we
@@ -37,7 +35,6 @@ def grpc_cc_library(name, srcs = [], hdrs = [], deps = [], standalone = False, l
 #
 
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language = "C++"):
->>>>>>> e8dbd8aaae5d813546abe4956361c4e6512d8c88
   copts = []
   if language == "C":
     copts = ["-std=c99"]
