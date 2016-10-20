@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+
 cc_test(
     name = "alloc_test",
     srcs = ["alloc_test.c"],
@@ -151,4 +153,11 @@ cc_test(
     name = "useful_test",
     srcs = ["useful_test.c"],
     deps = ["//:gpr", "//test/core/util:gpr_test_util"],
+)
+
+grpc_fuzzer(
+  name = "percent_encode_fuzzer",
+  srcs = ["percent_encode_fuzzer.c"],
+  deps = ["//:gpr"],
+  corpus = "percent_encode_corpus"
 )
