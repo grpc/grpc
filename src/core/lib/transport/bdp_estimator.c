@@ -33,6 +33,9 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <stdlib.h>
+
+#include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator) {
@@ -60,6 +63,43 @@ bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
   qsort(samples, estimator->num_samples, sizeof(*samples), compare_samples);
 
   if (estimator->num_samples & 1) {
+    *estimate = samples[estimator->num_samples / 2];
   } else {
+    *estimate = (samples[estimator->num_samples / 2] +
+                 samples[estimator->num_samples / 2 + 1]) /
+                2;
   }
+  return true;
+}
+
+static int64_t *sampling(grpc_bdp_estimator *estimator) {
+  return &estimator
+              ->samples[(estimator->first_sample_idx + estimator->num_samples) %
+                        GRPC_BDP_SAMPLES];
+}
+
+bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
+                                           int64_t num_bytes) {
+  if (estimator->sampling) {
+    *sampling(estimator) += num_bytes;
+    return false;
+  } else {
+    return true;
+  }
+}
+
+void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
+  GPR_ASSERT(!estimator->sampling);
+  estimator->sampling = true;
+  if (estimator->num_samples == GRPC_BDP_SAMPLES) {
+    estimator->first_sample_idx++;
+    estimator->num_samples--;
+  }
+  *sampling(estimator) = 0;
+}
+
+void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
+  GPR_ASSERT(estimator->sampling);
+  estimator->num_samples++;
+  estimator->sampling = false;
 }

@@ -41,10 +41,10 @@
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
 typedef struct grpc_bdp_estimator {
-  int64_t samples[GRPC_BDP_SAMPLES];
   uint8_t num_samples;
   uint8_t first_sample_idx;
   bool sampling;
+  int64_t samples[GRPC_BDP_SAMPLES];
 } grpc_bdp_estimator;
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator);
@@ -56,6 +56,8 @@ bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
 // Returns true if the user should start a ping
 bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
+// Note that a ping is starting
+void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator);
 // Completes a previously started ping
 void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator);
 
