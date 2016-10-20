@@ -48,7 +48,6 @@ typedef struct grpc_bdp_estimator {
 } grpc_bdp_estimator;
 
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator);
-void grpc_bdp_estimator_destroy(grpc_bdp_estimator *estimator);
 
 // Returns true if a reasonable estimate could be obtained
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,

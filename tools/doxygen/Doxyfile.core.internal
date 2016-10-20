@@ -861,6 +861,7 @@ src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.h \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/server.h \
+src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/mdstr_hash_table.h \
@@ -1037,6 +1038,7 @@ src/core/lib/surface/metadata_array.c \
 src/core/lib/surface/server.c \
 src/core/lib/surface/validate_metadata.c \
 src/core/lib/surface/version.c \
+src/core/lib/transport/bdp_estimator.c \
 src/core/lib/transport/byte_stream.c \
 src/core/lib/transport/connectivity_state.c \
 src/core/lib/transport/mdstr_hash_table.c \
