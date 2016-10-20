@@ -120,6 +120,7 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
 
 @implementation GRPCConnectivityMonitor {
   SCNetworkReachabilityRef _reachabilityRef;
+  GRPCReachabilityFlags *_previousReachabilityFlags;
 }
 
 - (nullable instancetype)initWithReachability:(nullable SCNetworkReachabilityRef)reachability {
@@ -129,6 +130,13 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
   if ((self = [super init])) {
     _reachabilityRef = CFRetain(reachability);
     _queue = dispatch_get_main_queue();
+    SCNetworkReachabilityFlags flags;
+    if (SCNetworkReachabilityGetFlags(_reachabilityRef, &flags)) {
+      _previousReachabilityFlags =
+          [[GRPCReachabilityFlags alloc] initWithFlags:flags];
+    } else {
+      _previousReachabilityFlags = 0;
+    }
   }
   return self;
 }
@@ -149,11 +157,16 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
   return returnValue;
 }
 
-- (void)handleLossWithHandler:(void (^)())handler {
+- (void)handleLossWithHandler:(void (^)())handler
+      wifiStatusChangeHandler:(nonnull void (^)())wifiStatusChangeHandler {
   [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
-    if (!flags.isHostReachable) {
+    if (!flags.reachable && handler) {
       handler();
+    } else if (flags.isWWAN ^ _previousReachabilityFlags.isWWAN &&
+               wifiStatusChangeHandler) {
+      wifiStatusChangeHandler();
     }
+    _previousReachabilityFlags = flags;
   }];
 }
 

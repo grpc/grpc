@@ -43,6 +43,7 @@
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
+#import "GRPCConnectivityMonitor.h"
 #import "NSDictionary+GRPC.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -52,6 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 #define GRPC_OBJC_VERSION_STRING @"1.0.0"
 
 static NSMutableDictionary *kHostCache;
+static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 @implementation GRPCHost {
   // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
@@ -98,6 +100,16 @@ static NSMutableDictionary *kHostCache;
       _address = address;
       _secure = YES;
       kHostCache[address] = self;
+
+      if (!connectivityMonitor) {
+        connectivityMonitor =
+            [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
+        void (^handler)() = ^{
+          [GRPCHost flushChannelCache];
+        };
+        [connectivityMonitor handleLossWithHandler:handler
+                           wifiStatusChangeHandler:handler];
+      }
     }
   }
   return self;
@@ -110,6 +122,7 @@ static NSMutableDictionary *kHostCache;
                                                     BOOL * _Nonnull stop) {
       [host disconnect];
     }];
+    connectivityMonitor = nil;
   }
 }
 
