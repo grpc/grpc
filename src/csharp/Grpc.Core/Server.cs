@@ -47,7 +47,7 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
-        const int InitialAllowRpcTokenCountPerCq = 1000;
+        const int DefaultRequestCallTokensPerCq = 2000;
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
@@ -66,7 +66,7 @@ namespace Grpc.Core
 
         bool startRequested;
         volatile bool shutdownRequested;
-
+        int requestCallTokensPerCq = DefaultRequestCallTokensPerCq;
 
         /// <summary>
         /// Creates a new server.
@@ -133,6 +133,27 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Experimental API. Might anytime change without prior notice.
+        /// Number or calls requested via grpc_server_request_call at any given time for each completion queue.
+        /// </summary>
+        public int RequestCallTokensPerCompletionQueue
+        {
+            get
+            {
+                return requestCallTokensPerCq;
+            }
+            set
+            {
+                lock (myLock)
+                {
+                    GrpcPreconditions.CheckState(!startRequested);
+                    GrpcPreconditions.CheckArgument(value > 0);
+                    requestCallTokensPerCq = value;
+                }
+            }
+        }
+
+        /// <summary>
         /// Starts the server.
         /// </summary>
         public void Start()
@@ -145,9 +166,7 @@ namespace Grpc.Core
                 
                 handle.Start();
 
-                // Starting with more than one AllowOneRpc tokens can significantly increase
-                // unary RPC throughput.
-                for (int i = 0; i < InitialAllowRpcTokenCountPerCq; i++)
+                for (int i = 0; i < requestCallTokensPerCq; i++)
                 {
                     foreach (var cq in environment.CompletionQueues)
                     {
