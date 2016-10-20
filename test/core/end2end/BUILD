@@ -40,6 +40,12 @@ cc_library(
 cc_library(
   name = 'ssl_test_data',
   hdrs = ['data/ssl_test_data.h'],
+  srcs = [
+    "data/client_certs.c",
+    "data/server1_cert.c",
+    "data/server1_key.c",
+    "data/test_root_cert.c",
+  ]
 )
 
 cc_library(
