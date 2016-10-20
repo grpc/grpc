@@ -583,7 +583,6 @@ namespace Grpc.IntegrationTesting
             var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));
 
             Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
-            Assert.AreEqual("", e.Status.Detail);
             Console.WriteLine("Passed!");
         }
 
