@@ -68,7 +68,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
 
-  config.init_client(&f, NULL);
+  config.init_client(&f, NULL, NULL);
 
   ce.channel = f.client;
   ce.cq = f.cq;

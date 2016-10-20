@@ -86,6 +86,7 @@ class ServerInterface;
 
 namespace testing {
 class InteropServerContextInspector;
+class ServerContextTestSpouse;
 }  // namespace testing
 
 // Interface of server side rpc context.
@@ -173,6 +174,7 @@ class ServerContext {
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
+  friend class ::grpc::testing::ServerContextTestSpouse;
   friend class ::grpc::ServerInterface;
   friend class ::grpc::Server;
   template <class W, class R>

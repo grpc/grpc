@@ -354,7 +354,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
@@ -373,6 +372,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
@@ -432,6 +432,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\method_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_factory.h" />
@@ -586,8 +587,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
@@ -637,6 +636,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
     </ClCompile>
@@ -775,6 +776,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\method_config.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.c">
     </ClCompile>

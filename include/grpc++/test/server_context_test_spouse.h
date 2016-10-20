@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,37 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
+#ifndef GRPCXX_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
+#define GRPCXX_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
 
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/support/mpscq.h"
+#include <map>
 
-struct grpc_fd;
+#include <grpc++/server_context.h>
 
-struct grpc_workqueue {
-  gpr_refcount refs;
-  gpr_mpscq queue;
-  // state is:
-  // lower bit - zero if orphaned
-  // other bits - number of items enqueued
-  gpr_atm state;
+namespace grpc {
+namespace testing {
 
-  grpc_wakeup_fd wakeup_fd;
-  struct grpc_fd *wakeup_read_fd;
+// A test-only class to access private members and methods of ServerContext.
+class ServerContextTestSpouse {
+ public:
+  explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}
 
-  grpc_closure read_closure;
+  // Inject client metadata to the ServerContext for the test. The test spouse
+  // must be alive when ServerContext::client_metadata is called.
+  void AddClientMetadata(const grpc::string& key, const grpc::string& value);
+  std::multimap<grpc::string, grpc::string> GetInitialMetadata() const {
+    return ctx_->initial_metadata_;
+  }
+  std::multimap<grpc::string, grpc::string> GetTrailingMetadata() const {
+    return ctx_->trailing_metadata_;
+  }
+
+ private:
+  ServerContext* ctx_;  // not owned
+  std::multimap<grpc::string, grpc::string> client_metadata_storage_;
 };
 
-/** Create a work queue. Returns an error if creation fails. If creation
-    succeeds, sets *workqueue to point to it. */
-grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_workqueue **workqueue);
+}  // namespace testing
+}  // namespace grpc
 
-#endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H */
+#endif  // GRPCXX_TEST_SERVER_CONTEXT_TEST_SPOUSE_H

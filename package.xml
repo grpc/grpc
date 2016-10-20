@@ -235,7 +235,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
@@ -254,6 +253,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
@@ -313,6 +313,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/method_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.h" role="src" />
@@ -403,7 +404,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
@@ -429,6 +429,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
@@ -498,6 +499,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/method_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/parse_address.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.c" role="src" />

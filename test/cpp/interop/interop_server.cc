@@ -269,6 +269,11 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
+      if (request.has_response_status()) {
+        return Status(
+            static_cast<grpc::StatusCode>(request.response_status().code()),
+            request.response_status().message());
+      }
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
