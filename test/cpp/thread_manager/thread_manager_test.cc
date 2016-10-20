@@ -31,7 +31,7 @@
  *is % allowed in string
  */
 
-#include <chrono>
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -39,63 +39,93 @@
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 
-#include "test/cpp/thread_manager/thread_manager_test.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc::testing::ThreadManagerTest;
+class ThreadManagerTest GRPC_FINAL : public grpc::ThreadManager {
+ public:
+  ThreadManagerTest()
+      : ThreadManager(kMinPollers, kMaxPollers),
+        num_do_work_(0),
+        num_poll_for_work_(0),
+        num_work_found_(0) {}
 
-static const int kMinPollers = 2;
-static const int kMaxPollers = 10;
+  grpc::ThreadManager::WorkStatus PollForWork(void **tag,
+                                              bool *ok) GRPC_OVERRIDE;
+  void DoWork(void *tag, bool ok) GRPC_OVERRIDE;
+  void PerformTest();
 
-static const int kPollingTimeoutMsec = 10;
-static const int kDoWorkDurationMsec = 1;
+ private:
+  void SleepForMs(int sleep_time_ms);
 
-static const int kNumDoWorkIterations = 10;
+  static const int kMinPollers = 2;
+  static const int kMaxPollers = 10;
 
-grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
-                                                               bool *ok) {
-  {
-    std::unique_lock<grpc::mutex> lock(mu_);
-    gpr_log(GPR_INFO, "PollForWork: Entered");
-  }
+  static const int kPollingTimeoutMsec = 10;
+  static const int kDoWorkDurationMsec = 1;
 
-  WorkStatus work_status = WORK_FOUND;
-  *tag = nullptr;
-  *ok = true;
+  // PollForWork will return SHUTDOWN after these many number of invocations
+  static const int kMaxNumPollForWork = 50;
 
-  // Simulate "polling for work" by sleeping for sometime
-  std::this_thread::sleep_for(std::chrono::milliseconds(kPollingTimeoutMsec));
+  std::atomic_int num_do_work_;        // Number of calls to DoWork
+  std::atomic_int num_poll_for_work_;  // Number of calls to PollForWork
+  std::atomic_int num_work_found_;  // Number of times WORK_FOUND was returned
+};
 
-  {
-    std::unique_lock<grpc::mutex> lock(mu_);
-    num_calls_++;
-    if (num_calls_ > kNumDoWorkIterations) {
-      gpr_log(GPR_DEBUG, "PollForWork: Returning shutdown");
-      work_status = SHUTDOWN;
-      ThreadManager::Shutdown();
-    }
-  }
-
-  return work_status;
-}
-
-void ThreadManagerTest::DoWork(void *tag, bool ok) {
-  {
-    std::unique_lock<grpc::mutex> lock(mu_);
-    gpr_log(GPR_DEBUG, "DoWork()");
-  }
-
+void ThreadManagerTest::SleepForMs(int duration_ms) {
   gpr_timespec sleep_time =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_millis(kDoWorkDurationMsec, GPR_TIMESPAN));
+                   gpr_time_from_millis(duration_ms, GPR_TIMESPAN));
   gpr_sleep_until(sleep_time);
 }
 
+grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
+                                                               bool *ok) {
+  int call_num = num_poll_for_work_.fetch_add(1);
+
+  if (call_num >= kMaxNumPollForWork) {
+    ThreadManager::Shutdown();
+    return SHUTDOWN;
+  }
+
+  // Simulate "polling for work" by sleeping for sometime
+  SleepForMs(kPollingTimeoutMsec);
+
+  *tag = nullptr;
+  *ok = true;
+
+  // Return timeout roughly 1 out of every 3 calls
+  if (call_num % 3 == 0) {
+    return TIMEOUT;
+  } else {
+    num_work_found_++;
+    return WORK_FOUND;
+  }
+}
+
+void ThreadManagerTest::DoWork(void *tag, bool ok) {
+  num_do_work_++;
+  SleepForMs(kDoWorkDurationMsec); // Simulate doing work by sleeping
+}
+
+void ThreadManagerTest::PerformTest() {
+  // Initialize() starts the ThreadManager
+  ThreadManager::Initialize();
+
+  // Wait for all the threads to gracefully terminate
+  ThreadManager::Wait();
+
+  // The number of times DoWork() was called is equal to the number of times
+  // WORK_FOUND was returned
+  gpr_log(GPR_DEBUG, "DoWork() called %d times", num_do_work_.load());
+  GPR_ASSERT(num_do_work_ == num_work_found_);
+}
+
 int main(int argc, char **argv) {
+  std::srand(std::time(NULL));
+
   grpc::testing::InitTest(&argc, &argv, true);
-  ThreadManagerTest test_rpc_manager(kMinPollers, kMaxPollers);
-  test_rpc_manager.Initialize();
-  test_rpc_manager.Wait();
+  ThreadManagerTest test_rpc_manager;
+  test_rpc_manager.PerformTest();
 
   return 0;
 }

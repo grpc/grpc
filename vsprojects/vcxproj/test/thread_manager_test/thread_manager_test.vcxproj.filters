@@ -5,11 +5,6 @@
       <Filter>test\cpp\thread_manager</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\thread_manager\thread_manager_test.h">
-      <Filter>test\cpp\thread_manager</Filter>
-    </ClInclude>
-  </ItemGroup>
 
   <ItemGroup>
     <Filter Include="test">

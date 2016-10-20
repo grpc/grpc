@@ -3154,15 +3154,12 @@
       "grpc++", 
       "grpc++_test_config"
     ], 
-    "headers": [
-      "test/cpp/thread_manager/thread_manager_test.h"
-    ], 
+    "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "thread_manager_test", 
     "src": [
-      "test/cpp/thread_manager/thread_manager_test.cc", 
-      "test/cpp/thread_manager/thread_manager_test.h"
+      "test/cpp/thread_manager/thread_manager_test.cc"
     ], 
     "third_party": false, 
     "type": "target"

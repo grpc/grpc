@@ -3364,8 +3364,6 @@ targets:
 - name: thread_manager_test
   build: test
   language: c++
-  headers:
-  - test/cpp/thread_manager/thread_manager_test.h
   src:
   - test/cpp/thread_manager/thread_manager_test.cc
   deps:
