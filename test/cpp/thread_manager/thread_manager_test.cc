@@ -83,7 +83,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
   int call_num = num_poll_for_work_.fetch_add(1);
 
   if (call_num >= kMaxNumPollForWork) {
-    ThreadManager::Shutdown();
+    Shutdown();
     return SHUTDOWN;
   }
 

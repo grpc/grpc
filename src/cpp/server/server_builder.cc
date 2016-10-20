@@ -216,8 +216,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // ServerBuilder's AddCompletionQueue() method (those completion queues
   // are in 'cqs_' member variable of ServerBuilder object)
   std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
-      sync_server_cqs = std::make_shared<
-          std::vector<std::unique_ptr<ServerCompletionQueue>>>();
+      sync_server_cqs(std::make_shared<
+                      std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
   if (has_sync_methods) {
     // This is a Sync server

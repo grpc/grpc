@@ -332,7 +332,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
         m->Request(server_->c_server(), server_cq_->cq());
       }
 
-      ThreadManager::Initialize();
+      Initialize(); // ThreadManager's Initialize()
     }
   }
 
@@ -513,7 +513,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Shutdown all ThreadManagers. This will try to gracefully stop all the
     // threads in the ThreadManagers (once they process any inflight requests)
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown();
+      (*it)->Shutdown(); // ThreadManager's Shutdown()
     }
 
     shutdown_cq.Shutdown();
