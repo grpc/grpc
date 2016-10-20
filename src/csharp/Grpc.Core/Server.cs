@@ -335,12 +335,12 @@ namespace Grpc.Core
         /// <summary>
         /// Handles the native callback.
         /// </summary>
-        private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx, CompletionQueueSafeHandle cq)
+        private void HandleNewServerRpc(bool success, RequestCallContextSafeHandle ctx, CompletionQueueSafeHandle cq)
         {
             bool nextRpcRequested = false;
             if (success)
             {
-                ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
+                var newRpc = ctx.GetServerRpcNew(this);
 
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
