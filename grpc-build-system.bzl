@@ -8,6 +8,7 @@ def grpc_cc_library(name, srcs = [], hdrs = [], deps = [], standalone = False, l
     hdrs = hdrs,
     deps = deps,
     copts = copts,
+    linkopts = ["-pthread"],
     includes = [
         "include"
     ]
