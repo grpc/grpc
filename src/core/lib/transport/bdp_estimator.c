@@ -44,30 +44,18 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator) {
   estimator->sampling = false;
 }
 
-static int compare_samples(const void *a, const void *b) {
-  return GPR_ICMP(*(int64_t *)a, *(int64_t *)b);
-}
-
 bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
                                      int64_t *estimate) {
   if (estimator->num_samples < GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE) {
     return false;
   }
 
-  int64_t samples[GRPC_BDP_SAMPLES];
+  *estimate = -1;
   for (uint8_t i = 0; i < estimator->num_samples; i++) {
-    samples[i] =
+    *estimate = GPR_MAX(
+        *estimate,
         estimator
-            ->samples[(estimator->first_sample_idx + i) % GRPC_BDP_SAMPLES];
-  }
-  qsort(samples, estimator->num_samples, sizeof(*samples), compare_samples);
-
-  if (estimator->num_samples & 1) {
-    *estimate = samples[estimator->num_samples / 2];
-  } else {
-    *estimate = (samples[estimator->num_samples / 2] +
-                 samples[estimator->num_samples / 2 + 1]) /
-                2;
+            ->samples[(estimator->first_sample_idx + i) % GRPC_BDP_SAMPLES]);
   }
   return true;
 }
