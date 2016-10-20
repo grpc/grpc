@@ -35,7 +35,7 @@ exports_files(["LICENSE"])
 
 package(default_visibility = ["//visibility:public"])
 
-load(":grpc-build-system.bzl", "grpc_cc_library")
+load("//:bazel/grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_plugin")
 
 g_stands_for = "good"
 
@@ -190,12 +190,54 @@ grpc_cc_library(
         "src/compiler/ruby_generator_string-inl.h",
     ],
     external_deps = [
-        "protobuf_compiler",
+        "protobuf_clib",
     ],
     language = "c++",
     deps = [
         "grpc++_config_proto",
     ],
+)
+
+grpc_proto_plugin(
+    name = "grpc_cpp_plugin",
+    srcs = ["src/compiler/cpp_plugin.cc"],
+    deps = [":grpc_plugin_support"],
+)
+
+grpc_proto_plugin(
+    name = "grpc_csharp_plugin",
+    srcs = ["src/compiler/csharp_plugin.cc"],
+    deps = [":grpc_plugin_support"],
+)
+
+grpc_proto_plugin(
+    name = "grpc_node_plugin",
+    srcs = ["src/compiler/node_plugin.cc"],
+    deps = [":grpc_plugin_support"],
+)
+
+grpc_proto_plugin(
+    name = "grpc_objective_c_plugin",
+    srcs = ["src/compiler/objective_c_plugin.cc"],
+    deps = [":grpc_plugin_support"],
+)
+
+grpc_proto_plugin(
+    name = "grpc_php_plugin",
+    srcs = ["src/compiler/php_plugin.cc"],
+    deps = [":grpc_plugin_support"],
+)
+
+grpc_proto_plugin(
+    name = "grpc_python_plugin",
+    srcs = ["src/compiler/python_plugin.cc"],
+    deps = [":grpc_plugin_support"],
+)
+
+grpc_proto_plugin(
+    name = "grpc_ruby_plugin",
+    srcs = ["src/compiler/ruby_plugin.cc"],
+    deps = [":grpc_plugin_support"],
 )
 
 grpc_cc_library(

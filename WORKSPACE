@@ -4,6 +4,16 @@ bind(
 )
 
 bind(
+    name = "grpc_cpp_plugin",
+    actual = "//:grpc_cpp_plugin",
+)
+
+bind(
+    name = "grpc++",
+    actual = "//:grpc++",
+)
+
+bind(
     name = "libssl",
     actual = "@submodule_boringssl//:ssl",
 )
@@ -14,13 +24,18 @@ bind(
 )
 
 bind(
+    name = "protobuf",
+    actual = "@submodule_protobuf//:protobuf",
+)
+
+bind(
     name = "protobuf_clib",
     actual = "@submodule_protobuf//:protoc_lib",
 )
 
 bind(
     name = "protobuf_compiler",
-    actual = "@submodule_protobuf//:protoc_lib",
+    actual = "@submodule_protobuf//:protoc",
 )
 
 new_local_repository(

@@ -48,3 +48,10 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps 
         "include"
     ]
   )
+
+def grpc_proto_plugin(name, srcs = [], deps = []):
+  native.cc_binary(
+    name = name,
+    srcs = srcs,
+    deps = deps,
+  )
