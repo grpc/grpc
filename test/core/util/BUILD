@@ -41,6 +41,7 @@ cc_library(
     ],
     deps = [":gpr_test_util", "//:grpc"],
     visibility = ["//test:__subpackages__"],
+    copts = ["-std=c99"],
 )
 
 cc_library(

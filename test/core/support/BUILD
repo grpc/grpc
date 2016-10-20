@@ -182,3 +182,12 @@ grpc_fuzzer(
   deps = ["//:gpr"],
   corpus = "percent_encode_corpus"
 )
+
+
+grpc_fuzzer(
+    name = "percent_decode_fuzzer",
+    srcs = ["percent_decode_fuzzer.c"],
+    deps = ["//:gpr"],
+    corpus = "percent_decode_corpus"
+)
+

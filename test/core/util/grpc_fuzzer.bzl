@@ -27,16 +27,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-def grpc_fuzzer(name, corpus, srcs = [], deps = []):
+def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
   native.cc_library(
     name = "%s/one_entry" % name,
     srcs = srcs,
     deps = deps + ["//test/core/util:one_corpus_entry_fuzzer"],
+    **kwargs
   )
   for entry in native.glob(['%s/*' % corpus]):
     native.cc_test(
       name = '%s/one_entry/%s' % (name, entry),
       deps = [':%s/one_entry' % name],
       args = ['$(location %s)' % entry],
-      data = [entry]
+      data = [entry],
     )
