@@ -64,9 +64,9 @@ _SKIP_SERVER_COMPRESSION = ['server_compressed_unary',
 
 _SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
-_SKIP_ADVANCED_CXX_AND_GO = ['custom_metadata', 'unimplemented_method']
+_SKIP_ADVANCED_GO = ['custom_metadata', 'unimplemented_method']
 
-_SKIP_ADVANCED = _SKIP_ADVANCED_CXX_AND_GO + ['status_code_and_message']
+_SKIP_ADVANCED = _SKIP_ADVANCED_GO + ['status_code_and_message']
 
 _TEST_TIMEOUT = 3*60
 
@@ -90,10 +90,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED_CXX_AND_GO
+    return []
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED_CXX_AND_GO
+    return []
 
   def __str__(self):
     return 'c++'
@@ -207,10 +207,10 @@ class GoLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED_CXX_AND_GO + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED_GO + _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED_CXX_AND_GO + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED_GO + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'go'
