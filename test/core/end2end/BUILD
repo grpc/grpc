@@ -39,6 +39,7 @@ cc_library(
 
 cc_library(
   name = 'ssl_test_data',
+  visibility = ["//test:__subpackages__"],
   hdrs = ['data/ssl_test_data.h'],
   srcs = [
     "data/client_certs.c",
