@@ -250,8 +250,10 @@ struct grpc_chttp2_transport {
 
   /** window available to announce to peer */
   int64_t announce_incoming_window;
-  /** how much window would we like to have for incoming_window */
-  uint32_t connection_window_target;
+  /** how many bytes have been given out as transport window that we'd now like
+      to retract? (since we can't retract incoming window, instead we just dont
+      give out any more until this amount goes to zero) */
+  int64_t retract_incoming_window;
 
   /** have we seen a goaway */
   uint8_t seen_goaway;
