@@ -1,32 +1,21 @@
-def grpc_cc_library(name, srcs = [], hdrs = [], deps = [], standalone = False, language = "C++"):
+#
+# This is for the gRPC build system. This isn't intended to be used outsite of
+# the BUILD file for gRPC. It contains the mapping for the template system we
+# use to generate other platform's build system files.
+#
+
+def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language = "C++"):
   copts = []
   if language == "C":
     copts = ["-std=c99"]
   native.cc_library(
     name = name,
     srcs = srcs,
-    hdrs = hdrs,
-    deps = deps,
+    hdrs = hdrs + public_hdrs,
+    deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
     linkopts = ["-pthread"],
     includes = [
         "include"
-    ]
-  )
-
-
-def nanopb():
-  native.cc_library(
-    name = "nanopb",
-    srcs = [
-      '//third_party/nanopb/pb_common.c',
-      '//third_party/nanopb/pb_decode.c',
-      '//third_party/nanopb/pb_encode.c',
-    ],
-    hdrs = [
-      '//third_party/nanopb/pb.h',
-      '//third_party/nanopb/pb_common.h',
-      '//third_party/nanopb/pb_decode.h',
-      '//third_party/nanopb/pb_encode.h',
     ]
   )
