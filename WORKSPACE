@@ -4,16 +4,6 @@ bind(
 )
 
 bind(
-    name = "grpc_cpp_plugin",
-    actual = "//:grpc_cpp_plugin",
-)
-
-bind(
-    name = "grpc++",
-    actual = "//:grpc++",
-)
-
-bind(
     name = "libssl",
     actual = "@submodule_boringssl//:ssl",
 )
@@ -34,7 +24,7 @@ bind(
 )
 
 bind(
-    name = "protobuf_compiler",
+    name = "protocol_compiler",
     actual = "@submodule_protobuf//:protoc",
 )
 
