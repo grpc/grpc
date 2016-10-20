@@ -3135,6 +3135,7 @@
     "language": "c++", 
     "name": "stress_test", 
     "src": [
+      "test/cpp/interop/client_helper.cc", 
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.cc", 
       "test/cpp/interop/interop_client.h", 
