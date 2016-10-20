@@ -45,8 +45,8 @@
 void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
-                                   const char *reason) {
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
   return workqueue;
 }
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
