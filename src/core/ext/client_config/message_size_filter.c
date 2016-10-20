@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "src/core/lib/channel/message_size_filter.h"
+#include "src/core/ext/client_config/message_size_filter.h"
 
 #include <limits.h>
 #include <string.h>
