@@ -1133,6 +1133,7 @@ bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
 bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 h2_census_test: $(BINDIR)/$(CONFIG)/h2_census_test
 h2_compress_test: $(BINDIR)/$(CONFIG)/h2_compress_test
+h2_fake_resolver_test: $(BINDIR)/$(CONFIG)/h2_fake_resolver_test
 h2_fakesec_test: $(BINDIR)/$(CONFIG)/h2_fakesec_test
 h2_fd_test: $(BINDIR)/$(CONFIG)/h2_fd_test
 h2_full_test: $(BINDIR)/$(CONFIG)/h2_full_test
@@ -1151,6 +1152,7 @@ h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 h2_census_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_nosec_test
 h2_compress_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_nosec_test
+h2_fake_resolver_nosec_test: $(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test
 h2_fd_nosec_test: $(BINDIR)/$(CONFIG)/h2_fd_nosec_test
 h2_full_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_nosec_test
 h2_full+pipe_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test
@@ -1358,6 +1360,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_census_test \
   $(BINDIR)/$(CONFIG)/h2_compress_test \
+  $(BINDIR)/$(CONFIG)/h2_fake_resolver_test \
   $(BINDIR)/$(CONFIG)/h2_fakesec_test \
   $(BINDIR)/$(CONFIG)/h2_fd_test \
   $(BINDIR)/$(CONFIG)/h2_full_test \
@@ -1376,6 +1379,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/h2_census_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_compress_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_fd_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
@@ -2629,6 +2633,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -2698,6 +2703,7 @@ LIBGRPC_SRC = \
     src/core/ext/client_config/lb_policy.c \
     src/core/ext/client_config/lb_policy_factory.c \
     src/core/ext/client_config/lb_policy_registry.c \
+    src/core/ext/client_config/method_config.c \
     src/core/ext/client_config/parse_address.c \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
@@ -2906,6 +2912,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -2949,6 +2956,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_config/lb_policy.c \
     src/core/ext/client_config/lb_policy_factory.c \
     src/core/ext/client_config/lb_policy_registry.c \
+    src/core/ext/client_config/method_config.c \
     src/core/ext/client_config/parse_address.c \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
@@ -3173,6 +3181,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -3367,6 +3376,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -3410,6 +3420,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_config/lb_policy.c \
     src/core/ext/client_config/lb_policy_factory.c \
     src/core/ext/client_config/lb_policy_registry.c \
+    src/core/ext/client_config/method_config.c \
     src/core/ext/client_config/parse_address.c \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
@@ -14562,6 +14573,38 @@ endif
 endif
 
 
+H2_FAKE_RESOLVER_TEST_SRC = \
+    test/core/end2end/fixtures/h2_fake_resolver.c \
+
+H2_FAKE_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FAKE_RESOLVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_fake_resolver_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_fake_resolver_test: $(H2_FAKE_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FAKE_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_fake_resolver_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_fake_resolver.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_fake_resolver_test: $(H2_FAKE_RESOLVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_FAKE_RESOLVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_FAKESEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_fakesec.c \
 
@@ -15111,6 +15154,26 @@ deps_h2_compress_nosec_test: $(H2_COMPRESS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_COMPRESS_NOSEC_TEST_OBJS:.o=.dep)
+endif
+
+
+H2_FAKE_RESOLVER_NOSEC_TEST_SRC = \
+    test/core/end2end/fixtures/h2_fake_resolver.c \
+
+H2_FAKE_RESOLVER_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FAKE_RESOLVER_NOSEC_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test: $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_fake_resolver.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_fake_resolver_nosec_test: $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 
