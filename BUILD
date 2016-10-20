@@ -537,11 +537,13 @@ grpc_cc_library(
     "include/grpc/grpc_security.h",
     "include/grpc/census.h",
   ],
+  external_deps = [
+    "libssl",
+    "zlib",
+    "nanopb",
+  ],
   deps = [
-    "//external:libssl",
-    "//external:zlib",
     ":gpr",
-    "//external:nanopb",
   ],
   language = "C",
 )
@@ -690,9 +692,11 @@ grpc_cc_library(
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_windows.h",
   ],
+  external_deps = [
+    "libssl",
+    "protobuf_clib",
+  ],
   deps = [
-    "//external:libssl",
-    "//external:protobuf_clib",
     ":grpc",
   ],
 )

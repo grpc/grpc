@@ -18,7 +18,6 @@ cc_library(
         "grpc_profiler.c",
         "memory_counters.c",
         "mock_endpoint.c",
-        "one_corpus_entry_fuzzer.c",
         "parse_hexstring.c",
         "passthru_endpoint.c",
         "port_posix.c",
