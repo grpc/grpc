@@ -33,8 +33,8 @@
 
 #include <grpc++/server_builder.h>
 
-#include <grpc++/resource_quota.h>
 #include <grpc++/impl/service_type.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/server.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>

@@ -53,7 +53,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  config.init_client(&f, client_args, NULL);
   return f;
 }
 
@@ -108,7 +108,8 @@ static gpr_slice generate_random_slice() {
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create("test_server");
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
 
 #define NUM_CALLS 100

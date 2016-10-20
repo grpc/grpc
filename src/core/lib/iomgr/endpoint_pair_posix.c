@@ -63,7 +63,8 @@ static void create_sockets(int sv[2]) {
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char *name, grpc_resource_quota *resource_quota, size_t read_slice_size) {
+    const char *name, grpc_resource_quota *resource_quota,
+    size_t read_slice_size) {
   int sv[2];
   grpc_endpoint_pair p;
   char *final_name;

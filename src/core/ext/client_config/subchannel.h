@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata.h"
 
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
@@ -110,7 +111,7 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 /** construct a subchannel call */
 grpc_error *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_polling_entity *pollent, gpr_timespec deadline,
+    grpc_polling_entity *pollent, grpc_mdstr *path, gpr_timespec deadline,
     grpc_subchannel_call **subchannel_call);
 
 /** process a transport level op */
