@@ -75,7 +75,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
 }
 
 void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
-                                              grpc_channel_args *client_args) {
+                                              grpc_channel_args *client_args,
+                                              const char *query_args) {
+  GPR_ASSERT(query_args == NULL);
   fullstack_compression_fixture_data *ffd = f->fixture_data;
   if (ffd->client_args_compression != NULL) {
     grpc_channel_args_destroy(ffd->client_args_compression);

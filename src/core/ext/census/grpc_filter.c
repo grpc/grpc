@@ -133,7 +133,7 @@ static grpc_error *client_init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   memset(d, 0, sizeof(*d));
-  d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
+  d->start_ts = args->start_time;
   return GRPC_ERROR_NONE;
 }
 
@@ -152,7 +152,7 @@ static grpc_error *server_init_call_elem(grpc_exec_ctx *exec_ctx,
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   memset(d, 0, sizeof(*d));
-  d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
+  d->start_ts = args->start_time;
   /* TODO(hongyu): call census_tracing_start_op here. */
   grpc_closure_init(&d->finish_recv, server_on_done_recv, elem);
   return GRPC_ERROR_NONE;
