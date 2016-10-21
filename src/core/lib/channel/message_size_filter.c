@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/method_config.h"
+#include "src/core/ext/client_channel/method_config.h"
 #include "src/core/lib/channel/channel_args.h"
 
 #define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
