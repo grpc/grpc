@@ -77,6 +77,7 @@ _ALL_TEST_SUITES = [_SANITY_TEST_SUITE, _CORE_TEST_SUITE, _CPP_TEST_SUITE,
 # and the value is a list of tests that should be run. An empty list means that
 # the changed files should not trigger any tests. Any changed file that does not
 # match any of these regexes will trigger all tests
+# DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING (be careful even if you do)
 _WHITELIST_DICT = {
   '^doc/': [],
   '^examples/': [],
@@ -174,8 +175,12 @@ def filter_tests(tests, base_branch):
   print("Finding file differences between gRPC %s branch and pull request...\n" % base_branch)
   changed_files = _get_changed_files(base_branch)
   for changed_file in changed_files:
-    print(changed_file)
+    print("  %s" % changed_file)
   print
+
+  # todo(mattkwong): Remove this
+  # Faking changed files to test test filtering on Jenkins
+  changed_files = ['src/node/something', 'src/python/something']
 
   # Regex that combines all keys in _WHITELIST_DICT
   all_triggers = "(" + ")|(".join(_WHITELIST_DICT.keys()) + ")"
@@ -188,7 +193,7 @@ def filter_tests(tests, base_branch):
   for test_suite in _ALL_TEST_SUITES:
     if _can_skip_tests(changed_files, test_suite.triggers):
       for label in test_suite.labels:
-        print("  Filtering %s tests" % label)
+        print("  %s tests safe to skip" % label)
         skippable_labels.append(label)
 
   tests = _remove_irrelevant_tests(tests, skippable_labels)
