@@ -34,4 +34,9 @@ cd $(dirname $0)/../../..
 
 export GOPATH=$(pwd)/../gopath
 
+// Use a larger heap to reduce frequency of GC mark phases, roughly without increasing their time.
+// See https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs.
+// This value determined experimentally, may have a different ideal in different environments.
+export GOGC=500
+
 ${GOPATH}/bin/worker $@
