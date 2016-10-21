@@ -155,7 +155,7 @@ class WriterInterface {
   /// \param options Options affecting the write operation.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  virtual bool Write(const W& msg, const WriteOptions& options) = 0;
+  virtual StreamOpStatus Write(const W& msg, const WriteOptions& options) = 0;
 
   /// Blocking write \a msg to the stream with default options.
   /// This is thread-safe with respect to \a Read
@@ -163,7 +163,7 @@ class WriterInterface {
   /// \param msg The message to be written to the stream.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
+  inline bool Write(const W& msg) { return Write(msg, WriteOptions()) == StreamOpStatus::SUCCESS; }
 };
 
 /// Client-side interface for streaming reads of message of type \a R.
@@ -296,13 +296,13 @@ class ClientWriter : public ClientWriterInterface<W> {
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return false;
     }
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return (cq_.Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
   bool WritesDone() GRPC_OVERRIDE {
@@ -376,7 +376,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);
   }
 
-  using ClientReaderWriterInterface<R>::WaitForInitialMetadata;
+  using ClientReaderWriterInterface<W, R>::WaitForInitialMetadata;
   StreamOpStatus WaitForInitialMetadata(const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -403,11 +403,11 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) return false;
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return (cq_.Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
   bool WritesDone() GRPC_OVERRIDE {
@@ -503,10 +503,10 @@ class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
   }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_,
@@ -517,7 +517,7 @@ class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops);
+    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
  private:
@@ -565,10 +565,10 @@ class ServerReaderWriterBody GRPC_FINAL {
     return call_->cq()->Pluck(&ops) && ops.got_message;
   }
 
-  bool Write(const W& msg, const WriteOptions& options) {
+  StreamOpStatus Write(const W& msg, const WriteOptions& options) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
-      return false;
+      return StreamOpStatus::FAIL;
     }
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_,
@@ -579,7 +579,7 @@ class ServerReaderWriterBody GRPC_FINAL {
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops);
+    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
   }
 
  private:
@@ -603,7 +603,7 @@ class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
   bool Read(R* msg) GRPC_OVERRIDE { return body_.Read(msg); }
 
   using WriterInterface<W>::Write;
-  bool Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
     return body_.Write(msg, options);
   }
 
@@ -642,7 +642,7 @@ class ServerUnaryStreamer GRPC_FINAL
   }
 
   using WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response,
+  StreamOpStatus Write(const ResponseType& response,
              const WriteOptions& options) GRPC_OVERRIDE {
     if (write_done_ || !read_done_) {
       return false;
@@ -684,7 +684,7 @@ class ServerSplitStreamer GRPC_FINAL
   }
 
   using WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response,
+  StreamOpStatus Write(const ResponseType& response,
              const WriteOptions& options) GRPC_OVERRIDE {
     return read_done_ && body_.Write(response, options);
   }
