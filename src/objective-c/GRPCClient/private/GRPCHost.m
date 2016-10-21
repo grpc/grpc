@@ -125,6 +125,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
                                                     BOOL * _Nonnull stop) {
       [host disconnect];
     }];
+    [kHostCache removeAllObjects];
     connectivityMonitor = nil;
   }
 }
