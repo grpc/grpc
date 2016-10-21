@@ -2160,13 +2160,13 @@ static void benign_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                 gpr_slice_from_static_string("Buffers full"));
   } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace) {
     gpr_log(GPR_DEBUG,
-            "HTTP2: %s - skip benign reclaimation, there are still %" PRIdPTR
+            "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
             t->peer_string, grpc_chttp2_stream_map_size(&t->stream_map));
   }
   t->benign_reclaimer_registered = false;
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_resource_user_finish_reclaimation(
+    grpc_resource_user_finish_reclamation(
         exec_ctx, grpc_endpoint_get_resource_user(t->ep));
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "benign_reclaimer");
@@ -2192,7 +2192,7 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
     }
   }
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_resource_user_finish_reclaimation(
+    grpc_resource_user_finish_reclamation(
         exec_ctx, grpc_endpoint_get_resource_user(t->ep));
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "destructive_reclaimer");
