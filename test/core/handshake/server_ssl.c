@@ -101,6 +101,7 @@ static void server_thread(void *arg) {
   gpr_asprintf(&addr, "127.0.0.1:%d", port);
   grpc_server *server = grpc_server_create(NULL, NULL);
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
+  free(addr);
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
@@ -124,6 +125,7 @@ static void server_thread(void *arg) {
   grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
+  grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_server_credentials_release(ssl_creds);
   gpr_slice_unref(cert_slice);
@@ -225,13 +227,15 @@ static bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
     unsigned int alpn_selected_len;
     SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
     if (strlen(alpn_expected) != alpn_selected_len ||
-        strncmp((const char *)alpn_selected, alpn_expected, alpn_selected_len) != 0) {
+        strncmp((const char *)alpn_selected, alpn_expected,
+                alpn_selected_len) != 0) {
       gpr_log(GPR_ERROR, "Unexpected ALPN protocol preference");
       success = false;
     }
   }
   client_handshake_complete = true;
 
+  SSL_free(ssl);
   gpr_free(alpn_protos);
   SSL_CTX_free(ctx);
   EVP_cleanup();

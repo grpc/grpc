@@ -34,9 +34,9 @@
 #include <arpa/inet.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <grpc/grpc.h>
@@ -50,8 +50,8 @@
 #include "test/core/util/test_config.h"
 
 #define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH  "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH   "src/core/lib/tsi/test_creds/ca.pem"
+#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
+#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
 
 // Arguments for TLS server thread.
 typedef struct {
@@ -185,7 +185,8 @@ static void server_thread(void *arg) {
 
   // Wait until the client drops its connection.
   char buf;
-  while (SSL_read(ssl, &buf, sizeof(buf)) > 0);
+  while (SSL_read(ssl, &buf, sizeof(buf)) > 0)
+    ;
 
   SSL_free(ssl);
   close(client);
@@ -208,7 +209,7 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
   gpr_thd_options_set_joinable(&thdopt);
-  server_args args = { .port = port, .alpn_preferred = server_alpn_preferred };
+  server_args args = {.port = port, .alpn_preferred = server_alpn_preferred};
   GPR_ASSERT(gpr_thd_new(&thdid, server_thread, &args, &thdopt));
 
   // Load key pair and establish client SSL credentials.
@@ -220,7 +221,7 @@ static bool client_ssl_test(char *server_alpn_preferred) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char *ca_cert = (const char*)GPR_SLICE_START_PTR(ca_slice);
+  const char *ca_cert = (const char *)GPR_SLICE_START_PTR(ca_slice);
   pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
   grpc_channel_credentials *ssl_creds =
@@ -236,7 +237,8 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   grpc_channel_args grpc_args;
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
-  grpc_channel *channel = grpc_secure_channel_create(ssl_creds, target, &grpc_args, NULL);
+  grpc_channel *channel =
+      grpc_secure_channel_create(ssl_creds, target, &grpc_args, NULL);
   GPR_ASSERT(channel);
   gpr_free(target);
 
