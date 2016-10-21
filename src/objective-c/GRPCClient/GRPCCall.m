@@ -382,7 +382,7 @@ static NSMutableDictionary *callFlags;
     [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", _host];
   }
   __weak typeof(self) weakSelf = self;
-  _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
+    _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
   void (^handler)() = ^{
     typeof(self) strongSelf = weakSelf;
     if (strongSelf) {

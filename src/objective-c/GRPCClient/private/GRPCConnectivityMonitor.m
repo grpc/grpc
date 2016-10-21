@@ -153,14 +153,18 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
 
 - (void)handleLossWithHandler:(void (^)())handler
       wifiStatusChangeHandler:(nonnull void (^)())wifiStatusChangeHandler {
+  __weak typeof(self) weakSelf = self;
   [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
-    if (!flags.reachable) {
-      handler();
-    } else if (!_previousReachabilityFlags ||
-               (flags.isWWAN ^ _previousReachabilityFlags.isWWAN)) {
-      wifiStatusChangeHandler();
+    typeof(self) strongSelf = weakSelf;
+    if (strongSelf) {
+      if (!flags.reachable) {
+        handler();
+      } else if (strongSelf->_previousReachabilityFlags &&
+                 (flags.isWWAN ^ strongSelf->_previousReachabilityFlags.isWWAN)) {
+        wifiStatusChangeHandler();
+      }
+      strongSelf->_previousReachabilityFlags = flags;
     }
-    _previousReachabilityFlags = flags;
   }];
 }
 
