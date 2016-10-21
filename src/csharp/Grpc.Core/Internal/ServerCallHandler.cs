@@ -296,7 +296,7 @@ namespace Grpc.Core.Internal
         private Task UnimplementedMethod(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext ctx)
         {
             ctx.Status = new Status(StatusCode.Unimplemented, "");
-            return Task.FromResult<object>(null);
+            return TaskUtils.CompletedTask;
         }
 
         public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
