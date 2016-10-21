@@ -192,11 +192,17 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_resolver_result_get_channel_args(chand->resolver_result);
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
 
+    // Find LB policy name.
+    const char *lb_policy_name = NULL;
+    const grpc_arg *lb_policy_name_arg =
+        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_POLICY_NAME);
+    if (lb_policy_name_arg != NULL) {
+      GPR_ASSERT(lb_policy_name_arg->type == GRPC_ARG_STRING);
+      lb_policy_name = lb_policy_name_arg->value.string;
+    }
     // Special case: If all of the addresses are balancer addresses,
     // assume that we should use the grpclb policy, regardless of what the
     // resolver actually specified.
-    const char *lb_policy_name =
-        grpc_resolver_result_get_lb_policy_name(chand->resolver_result);
     bool found_backend_address = false;
     for (size_t i = 0; i < lb_policy_args.addresses->num_addresses; ++i) {
       if (!lb_policy_args.addresses->addresses[i].is_balancer) {

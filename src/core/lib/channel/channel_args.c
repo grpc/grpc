@@ -66,22 +66,59 @@ static grpc_arg copy_arg(const grpc_arg *src) {
 grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
                                                   const grpc_arg *to_add,
                                                   size_t num_to_add) {
+  return grpc_channel_args_copy_and_add_and_remove(src, NULL, 0, to_add,
+                                                   num_to_add);
+}
+
+grpc_channel_args *grpc_channel_args_copy_and_remove(
+    const grpc_channel_args *src, const char** to_remove,
+    size_t num_to_remove) {
+  return grpc_channel_args_copy_and_add_and_remove(src, to_remove,
+                                                   num_to_remove, NULL, 0);
+}
+
+static bool should_remove_arg(const grpc_arg* arg, const char** to_remove,
+                              size_t num_to_remove) {
+  for (size_t i = 0; i < num_to_remove; ++i) {
+    if (strcmp(arg->key, to_remove[i]) == 0) return true;
+  }
+  return false;
+}
+
+grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
+    const grpc_channel_args *src, const char** to_remove, size_t num_to_remove,
+    const grpc_arg *to_add, size_t num_to_add) {
+  // Figure out how many args we'll be copying.
+  size_t num_args_to_copy = 0;
+  if (src != NULL) {
+    for (size_t i = 0; i < src->num_args; ++i) {
+      if (!should_remove_arg(&src->args[i], to_remove, num_to_remove)) {
+        ++num_args_to_copy;
+      }
+    }
+  }
+  // Create result.
   grpc_channel_args *dst = gpr_malloc(sizeof(grpc_channel_args));
-  size_t i;
-  size_t src_num_args = (src == NULL) ? 0 : src->num_args;
-  if (!src && !to_add) {
-    dst->num_args = 0;
+  dst->num_args = num_args_to_copy + num_to_add;
+  if (dst->num_args == 0) {
     dst->args = NULL;
     return dst;
   }
-  dst->num_args = src_num_args + num_to_add;
   dst->args = gpr_malloc(sizeof(grpc_arg) * dst->num_args);
-  for (i = 0; i < src_num_args; i++) {
-    dst->args[i] = copy_arg(&src->args[i]);
+  // Copy args from src that are not being removed.
+  size_t dst_idx = 0;
+  if (src != NULL) {
+    for (size_t i = 0; i < src->num_args; ++i) {
+      if (!should_remove_arg(&src->args[i], to_remove, num_to_remove)) {
+        dst->args[dst_idx++] = copy_arg(&src->args[i]);
+      }
+    }
   }
-  for (i = 0; i < num_to_add; i++) {
-    dst->args[i + src_num_args] = copy_arg(&to_add[i]);
+  // Add args from to_add.
+  for (size_t i = 0; i < num_to_add; ++i) {
+    dst->args[dst_idx++] = copy_arg(&to_add[i]);
   }
+  GPR_ASSERT(dst_idx == dst->num_args);
   return dst;
 }
 
