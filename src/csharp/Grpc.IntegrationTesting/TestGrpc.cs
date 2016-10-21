@@ -71,6 +71,13 @@ namespace Grpc.Testing {
         __Marshaller_SimpleRequest,
         __Marshaller_SimpleResponse);
 
+    static readonly Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_CacheableUnaryCall = new Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
+        MethodType.Unary,
+        __ServiceName,
+        "CacheableUnaryCall",
+        __Marshaller_SimpleRequest,
+        __Marshaller_SimpleResponse);
+
     static readonly Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> __Method_StreamingOutputCall = new Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(
         MethodType.ServerStreaming,
         __ServiceName,
@@ -99,6 +106,13 @@ namespace Grpc.Testing {
         __Marshaller_StreamingOutputCallRequest,
         __Marshaller_StreamingOutputCallResponse);
 
+    static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_UnimplementedCall = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+        MethodType.Unary,
+        __ServiceName,
+        "UnimplementedCall",
+        __Marshaller_Empty,
+        __Marshaller_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -120,6 +134,16 @@ namespace Grpc.Testing {
       ///  One request followed by one response.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -159,6 +183,15 @@ namespace Grpc.Testing {
       ///  first request.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task HalfDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -245,6 +278,42 @@ namespace Grpc.Testing {
         return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual global::Grpc.Testing.SimpleResponse CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CacheableUnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual global::Grpc.Testing.SimpleResponse CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_CacheableUnaryCall, null, options, request);
+      }
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> CacheableUnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CacheableUnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> CacheableUnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_CacheableUnaryCall, null, options, request);
+      }
+      /// <summary>
       ///  One request followed by a sequence of responses (streamed download).
       ///  The server returns the payload with client desired type and sizes.
       /// </summary>
@@ -314,6 +383,38 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_HalfDuplexCall, null, options);
       }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override TestServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
@@ -327,10 +428,12 @@ namespace Grpc.Testing {
       return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_CacheableUnaryCall, serviceImpl.CacheableUnaryCall)
           .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
           .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
           .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
-          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
+          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall)
+          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
   }
