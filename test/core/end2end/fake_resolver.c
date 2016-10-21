@@ -42,6 +42,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_config/lb_policy_factory.h"
 #include "src/core/ext/client_config/method_config.h"
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/client_config/resolver_registry.h"
@@ -59,8 +60,6 @@ typedef struct {
   grpc_resolver base;
 
   // passed-in parameters
-// FIXME: remove target_name once resolver_result is removed
-  char* target_name;  // the path component of the uri passed in
   grpc_channel_args* channel_args;
   grpc_lb_addresses* addresses;
   char* lb_policy_name;
@@ -73,13 +72,12 @@ typedef struct {
   // pending next completion, or NULL
   grpc_closure* next_completion;
   // target result address for next completion
-  grpc_resolver_result** target_result;
+  grpc_channel_args** target_result;
 } fake_resolver;
 
 static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   gpr_mu_destroy(&r->mu);
-  gpr_free(r->target_name);
   grpc_channel_args_destroy(r->channel_args);
   grpc_lb_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
@@ -116,11 +114,8 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
       new_args[num_args].value.string = r->lb_policy_name;
       ++num_args;
     }
-    grpc_channel_args* args =
+    *r->target_result =
         grpc_channel_args_copy_and_add(r->channel_args, new_args, num_args);
-    *r->target_result = grpc_resolver_result_create(
-        r->target_name, grpc_lb_addresses_copy(r->addresses),
-        r->lb_policy_name, args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -136,7 +131,7 @@ static void fake_resolver_channel_saw_error(grpc_exec_ctx* exec_ctx,
 }
 
 static void fake_resolver_next(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
-                               grpc_resolver_result** target_result,
+                               grpc_channel_args** target_result,
                                grpc_closure* on_complete) {
   fake_resolver* r = (fake_resolver*)resolver;
   gpr_mu_lock(&r->mu);
@@ -244,11 +239,10 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   // Instantiate resolver.
   fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
   memset(r, 0, sizeof(*r));
-  r->target_name = gpr_strdup(args->uri->path);
   grpc_arg server_name_arg;
   server_name_arg.type = GRPC_ARG_STRING;
   server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = r->target_name;
+  server_name_arg.value.string = args->uri->path;
   r->channel_args =
       grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   r->addresses = addresses;

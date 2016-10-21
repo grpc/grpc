@@ -465,28 +465,27 @@ static grpc_lb_policy *create_rr_locked(
     glb_lb_policy *glb_policy) {
   GPR_ASSERT(serverlist != NULL && serverlist->num_servers > 0);
 
+  if (glb_policy->addresses != NULL) {
+    /* dispose of the previous version */
+    grpc_lb_addresses_destroy(glb_policy->addresses);
+  }
+  glb_policy->addresses = process_serverlist(serverlist);
+
   grpc_lb_policy_args args;
   memset(&args, 0, sizeof(args));
-  args.server_name = glb_policy->server_name;
   args.client_channel_factory = glb_policy->cc_factory;
-  args.addresses = process_serverlist(serverlist);
 
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
   static const char* keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
-  const grpc_arg arg = grpc_lb_addresses_create_channel_arg(args.addresses);
+  const grpc_arg arg =
+      grpc_lb_addresses_create_channel_arg(glb_policy->addresses);
   args.args = grpc_channel_args_copy_and_add_and_remove(
       glb_policy->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &arg,
       1);
 
   grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
   grpc_channel_args_destroy(args.args);
-
-  if (glb_policy->addresses != NULL) {
-    /* dispose of the previous version */
-    grpc_lb_addresses_destroy(glb_policy->addresses);
-  }
-  glb_policy->addresses = args.addresses;
 
   return rr;
 }

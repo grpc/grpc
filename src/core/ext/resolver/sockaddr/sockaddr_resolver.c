@@ -41,6 +41,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_config/lb_policy_factory.h"
 #include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -51,9 +52,6 @@
 typedef struct {
   /** base class: must be first */
   grpc_resolver base;
-  /** the path component of the uri passed in */
-// FIXME: remove target_name when resolver_result goes away
-  char *target_name;
   /** the addresses that we've 'resolved' */
   grpc_lb_addresses *addresses;
   /** channel args */
@@ -65,7 +63,7 @@ typedef struct {
   /** pending next completion, or NULL */
   grpc_closure *next_completion;
   /** target result address for next completion */
-  grpc_resolver_result **target_result;
+  grpc_channel_args **target_result;
 } sockaddr_resolver;
 
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -77,7 +75,7 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *r);
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                          grpc_resolver_result **target_result,
+                          grpc_channel_args **target_result,
                           grpc_closure *on_complete);
 
 static const grpc_resolver_vtable sockaddr_resolver_vtable = {
@@ -106,7 +104,7 @@ static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
 }
 
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                          grpc_resolver_result **target_result,
+                          grpc_channel_args **target_result,
                           grpc_closure *on_complete) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
@@ -122,11 +120,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
   if (r->next_completion != NULL && !r->published) {
     r->published = true;
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(r->addresses);
-    grpc_channel_args* args =
+    *r->target_result =
         grpc_channel_args_copy_and_add(r->channel_args, &arg, 1);
-    *r->target_result = grpc_resolver_result_create(
-        r->target_name, grpc_lb_addresses_copy(r->addresses),
-        NULL /* lb_policy_name */, args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -135,7 +130,6 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  gpr_free(r->target_name);
   grpc_lb_addresses_destroy(r->addresses);
   grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
@@ -206,7 +200,6 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
   /* Instantiate resolver. */
   sockaddr_resolver *r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
-  r->target_name = gpr_strdup(args->uri->path);
   r->addresses = addresses;
   grpc_arg server_name_arg;
   server_name_arg.type = GRPC_ARG_STRING;

@@ -451,7 +451,6 @@ add_library(grpc
   src/core/ext/client_config/resolver.c
   src/core/ext/client_config/resolver_factory.c
   src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
   src/core/ext/client_config/subchannel.c
   src/core/ext/client_config/subchannel_index.c
   src/core/ext/client_config/uri_parser.c
@@ -686,7 +685,6 @@ add_library(grpc_cronet
   src/core/ext/client_config/resolver.c
   src/core/ext/client_config/resolver_factory.c
   src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
   src/core/ext/client_config/subchannel.c
   src/core/ext/client_config/subchannel_index.c
   src/core/ext/client_config/uri_parser.c
@@ -919,7 +917,6 @@ add_library(grpc_unsecure
   src/core/ext/client_config/resolver.c
   src/core/ext/client_config/resolver_factory.c
   src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
   src/core/ext/client_config/subchannel.c
   src/core/ext/client_config/subchannel_index.c
   src/core/ext/client_config/uri_parser.c

@@ -102,11 +102,7 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
     const grpc_lb_addresses *addresses);
 
 /** Arguments passed to LB policies. */
-/* TODO(roth, ctiller): Consider replacing this struct with
-   grpc_channel_args.  See comment in resolver_result.h for details. */
 typedef struct grpc_lb_policy_args {
-  const char *server_name;
-  grpc_lb_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
   grpc_channel_args *args;
 } grpc_lb_policy_args;

@@ -34,15 +34,13 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_H
 #define GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_H
 
-#include "src/core/ext/client_config/resolver_result.h"
 #include "src/core/ext/client_config/subchannel.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
-/** grpc_resolver provides grpc_resolver_result objects to grpc_channel
-    objects */
+/** grpc_resolver provides grpc_channel_args objects to grpc_channel objects */
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
   gpr_refcount refs;
@@ -53,7 +51,7 @@ struct grpc_resolver_vtable {
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*channel_saw_error)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*next)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-               grpc_resolver_result **result, grpc_closure *on_complete);
+               grpc_channel_args **result, grpc_closure *on_complete);
 };
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
@@ -81,14 +79,13 @@ void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
 void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                      grpc_resolver *resolver);
 
-/** Get the next client config. Called by the channel to fetch a new
-    configuration. Expected to set *result with a new configuration,
-    and then schedule on_complete for execution.
+/** Get the next result from the resolver.  Expected to set *result with
+    new channel args and then schedule on_complete for execution.
 
     If resolution is fatally broken, set *result to NULL and
     schedule on_complete. */
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                        grpc_resolver_result **result,
+                        grpc_channel_args **result,
                         grpc_closure *on_complete);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_H */
