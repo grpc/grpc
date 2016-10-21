@@ -292,7 +292,21 @@ print('IMPORTANT: The changes you are testing need to be locally committed')
 print('because only the committed changes in the current branch will be')
 print('copied to the docker environment or into subworkspaces.')
 
-print
+skipped_jobs = []
+if args.filter_pr_tests:
+  print 'Looking for irrelevant tests to skip...'
+  relevant_jobs = filter_tests(jobs, args.base_branch)
+  print
+  if len(relevant_jobs) == len(jobs):
+    print 'No tests will be skipped.'
+  else:
+    print 'These tests will be skipped:'
+    skipped_jobs = set(jobs) - set(relevant_jobs)
+    for job in list(skipped_jobs):
+      print '  %s' % job.shortname
+  jobs = relevant_jobs
+  print
+
 print 'Will run these tests:'
 for job in jobs:
   if args.dry_run:
@@ -300,19 +314,6 @@ for job in jobs:
   else:
     print '  %s' % job.shortname
 print
-
-if args.filter_pr_tests:
-  print 'IMPORTANT: Test filtering is not active; this is only for testing.'
-  relevant_jobs = filter_tests(jobs, args.base_branch)
-  # todo(mattkwong): add skipped tests to report.xml
-  print
-  if len(relevant_jobs) == len(jobs):
-    print '(TESTING) No tests will be skipped.'
-  else:
-    print '(TESTING) These tests will be skipped:'
-    for job in list(set(jobs) - set(relevant_jobs)):
-      print '  %s' % job.shortname
-  print
 
 if args.dry_run:
   print '--dry_run was used, exiting'
@@ -323,8 +324,14 @@ num_failures, resultset = jobset.run(jobs,
                                      newline_on_success=True,
                                      travis=True,
                                      maxjobs=args.jobs)
+# Merge skipped tests into results to show skipped tests on report.xml
+if skipped_jobs:
+  skipped_results = jobset.run(skipped_jobs,
+                               skip_jobs=True)
+  resultset.update(skipped_results)
 report_utils.render_junit_xml_report(resultset, 'report.xml',
                                      suite_name='aggregate_tests')
+
 
 if num_failures == 0:
   jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',
