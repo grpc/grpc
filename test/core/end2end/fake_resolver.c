@@ -78,7 +78,7 @@ static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   gpr_mu_destroy(&r->mu);
   gpr_free(r->target_name);
-  grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
+  grpc_lb_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
   grpc_method_config_table_unref(r->method_config_table);
   gpr_free(r);
@@ -107,8 +107,7 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
       lb_policy_args = grpc_channel_args_copy_and_add(NULL /* src */, &arg, 1);
     }
     *r->target_result = grpc_resolver_result_create(
-        r->target_name,
-        grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
+        r->target_name, grpc_lb_addresses_copy(r->addresses),
         r->lb_policy_name, lb_policy_args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
@@ -168,7 +167,8 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   gpr_slice_buffer path_parts;
   gpr_slice_buffer_init(&path_parts);
   gpr_slice_split(path_slice, ",", &path_parts);
-  grpc_lb_addresses* addresses = grpc_lb_addresses_create(path_parts.count);
+  grpc_lb_addresses* addresses = grpc_lb_addresses_create(
+      path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
@@ -187,7 +187,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
-    grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
+    grpc_lb_addresses_destroy(addresses);
     return NULL;
   }
   // Construct method config table.

@@ -38,19 +38,20 @@
 
 #include "src/core/ext/client_config/lb_policy_factory.h"
 
-grpc_lb_addresses* grpc_lb_addresses_create(size_t num_addresses) {
+grpc_lb_addresses* grpc_lb_addresses_create(
+    size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable) {
   grpc_lb_addresses* addresses = gpr_malloc(sizeof(grpc_lb_addresses));
   addresses->num_addresses = num_addresses;
+  addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
   addresses->addresses = gpr_malloc(addresses_size);
   memset(addresses->addresses, 0, addresses_size);
   return addresses;
 }
 
-grpc_lb_addresses* grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
-                                          void* (*user_data_copy)(void*)) {
-  grpc_lb_addresses* new_addresses =
-      grpc_lb_addresses_create(addresses->num_addresses);
+grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses) {
+  grpc_lb_addresses* new_addresses = grpc_lb_addresses_create(
+      addresses->num_addresses, addresses->user_data_vtable);
   memcpy(new_addresses->addresses, addresses->addresses,
          sizeof(grpc_lb_address) * addresses->num_addresses);
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
@@ -58,9 +59,10 @@ grpc_lb_addresses* grpc_lb_addresses_copy(grpc_lb_addresses* addresses,
       new_addresses->addresses[i].balancer_name =
           gpr_strdup(new_addresses->addresses[i].balancer_name);
     }
-    if (user_data_copy != NULL) {
+    if (new_addresses->addresses[i].user_data != NULL) {
       new_addresses->addresses[i].user_data =
-          user_data_copy(new_addresses->addresses[i].user_data);
+          addresses->user_data_vtable->copy(
+              new_addresses->addresses[i].user_data);
     }
   }
   return new_addresses;
@@ -71,6 +73,7 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
                                    bool is_balancer, char* balancer_name,
                                    void* user_data) {
   GPR_ASSERT(index < addresses->num_addresses);
+  if (user_data != NULL) GPR_ASSERT(addresses->user_data_vtable != NULL);
   grpc_lb_address* target = &addresses->addresses[index];
   memcpy(target->address.addr, address, address_len);
   target->address.len = address_len;
@@ -79,12 +82,42 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   target->user_data = user_data;
 }
 
-void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses,
-                               void (*user_data_destroy)(void*)) {
+int grpc_lb_addresses_cmp(const grpc_lb_addresses* addresses1,
+                          const grpc_lb_addresses* addresses2) {
+  if (addresses1->num_addresses > addresses2->num_addresses) return 1;
+  if (addresses1->num_addresses < addresses2->num_addresses) return -1;
+  if (addresses1->user_data_vtable > addresses2->user_data_vtable) return 1;
+  if (addresses1->user_data_vtable < addresses2->user_data_vtable) return -1;
+  for (size_t i = 0; i < addresses1->num_addresses; ++i) {
+    const grpc_lb_address* target1 = &addresses1->addresses[i];
+    const grpc_lb_address* target2 = &addresses2->addresses[i];
+    if (target1->address.len > target2->address.len) return 1;
+    if (target1->address.len < target2->address.len) return -1;
+    int retval = memcmp(
+        target1->address.addr, target2->address.addr, target1->address.len);
+    if (retval != 0) return retval;
+    if (target1->is_balancer > target2->is_balancer) return 1;
+    if (target1->is_balancer < target2->is_balancer) return -1;
+    const char* balancer_name1 = target1->balancer_name != NULL
+                                     ? target1->balancer_name : "";
+    const char* balancer_name2 = target2->balancer_name != NULL
+                                     ? target2->balancer_name : "";
+    retval = strcmp(balancer_name1, balancer_name2);
+    if (retval != 0) return retval;
+    if (addresses1->user_data_vtable != NULL) {
+      retval = addresses1->user_data_vtable->cmp(target1->user_data,
+                                                 target2->user_data);
+      if (retval != 0) return retval;
+    }
+  }
+  return 0;
+}
+
+void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses) {
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     gpr_free(addresses->addresses[i].balancer_name);
-    if (user_data_destroy != NULL) {
-      user_data_destroy(addresses->addresses[i].user_data);
+    if (addresses->addresses[i].user_data != NULL) {
+      addresses->user_data_vtable->destroy(addresses->addresses[i].user_data);
     }
   }
   gpr_free(addresses->addresses);

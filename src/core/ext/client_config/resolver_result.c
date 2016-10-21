@@ -67,7 +67,7 @@ void grpc_resolver_result_unref(grpc_exec_ctx* exec_ctx,
                                 grpc_resolver_result* result) {
   if (gpr_unref(&result->refs)) {
     gpr_free(result->server_name);
-    grpc_lb_addresses_destroy(result->addresses, NULL /* user_data_destroy */);
+    grpc_lb_addresses_destroy(result->addresses);
     gpr_free(result->lb_policy_name);
     grpc_channel_args_destroy(result->channel_args);
     gpr_free(result);

@@ -170,8 +170,8 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(r->resolving);
   r->resolving = false;
   if (r->addresses != NULL) {
-    grpc_lb_addresses *addresses =
-        grpc_lb_addresses_create(r->addresses->naddrs);
+    grpc_lb_addresses *addresses = grpc_lb_addresses_create(
+        r->addresses->naddrs, NULL /* user_data_vtable */);
     for (size_t i = 0; i < r->addresses->naddrs; ++i) {
       grpc_lb_addresses_set_address(
           addresses, i, &r->addresses->addrs[i].addr,

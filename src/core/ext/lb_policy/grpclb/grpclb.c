@@ -338,6 +338,21 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
   return true;
 }
 
+/* vtable for LB tokens in grpc_lb_addresses. */
+static void* lb_token_copy(void *token) {
+  return token == NULL ? NULL : GRPC_MDELEM_REF(token);
+}
+static void lb_token_destroy(void *token) {
+  if (token != NULL) GRPC_MDELEM_UNREF(token);
+}
+static int lb_token_cmp(void* token1, void* token2) {
+  if (token1 > token2) return 1;
+  if (token1 < token2) return -1;
+  return 0;
+}
+static const grpc_lb_user_data_vtable lb_token_vtable = {
+    lb_token_copy, lb_token_destroy, lb_token_cmp};
+
 /* Returns addresses extracted from \a serverlist. */
 static grpc_lb_addresses *process_serverlist(
     const grpc_grpclb_serverlist *serverlist) {
@@ -349,7 +364,8 @@ static grpc_lb_addresses *process_serverlist(
   }
   if (num_valid == 0) return NULL;
 
-  grpc_lb_addresses *lb_addresses = grpc_lb_addresses_create(num_valid);
+  grpc_lb_addresses *lb_addresses =
+      grpc_lb_addresses_create(num_valid, &lb_token_vtable);
 
   /* second pass: actually populate the addresses and LB tokens (aka user data
    * to the outside world) to be read by the RR policy during its creation.
@@ -410,11 +426,6 @@ static grpc_lb_addresses *process_serverlist(
   return lb_addresses;
 }
 
-/* A plugin for grpc_lb_addresses_destroy that unrefs the LB token metadata. */
-static void lb_token_destroy(void *token) {
-  if (token != NULL) GRPC_MDELEM_UNREF(token);
-}
-
 /* perform a pick over \a rr_policy. Given that a pick can return immediately
  * (ignoring its completion callback) we need to perform the cleanups this
  * callback would be otherwise resposible for */
@@ -465,7 +476,7 @@ static grpc_lb_policy *create_rr_locked(
 
   if (glb_policy->addresses != NULL) {
     /* dispose of the previous version */
-    grpc_lb_addresses_destroy(glb_policy->addresses, lb_token_destroy);
+    grpc_lb_addresses_destroy(glb_policy->addresses);
   }
   glb_policy->addresses = args.addresses;
 
@@ -662,7 +673,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
   }
   gpr_mu_destroy(&glb_policy->mu);
-  grpc_lb_addresses_destroy(glb_policy->addresses, lb_token_destroy);
+  grpc_lb_addresses_destroy(glb_policy->addresses);
   gpr_free(glb_policy);
 }
 

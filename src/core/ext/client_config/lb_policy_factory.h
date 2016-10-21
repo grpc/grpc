@@ -59,19 +59,27 @@ typedef struct grpc_lb_address {
   void *user_data;
 } grpc_lb_address;
 
+typedef struct grpc_lb_user_data_vtable {
+  void* (*copy)(void*);
+  void (*destroy)(void*);
+  int (*cmp)(void*, void*);
+} grpc_lb_user_data_vtable;
+
 typedef struct grpc_lb_addresses {
   size_t num_addresses;
   grpc_lb_address *addresses;
+  const grpc_lb_user_data_vtable *user_data_vtable;
 } grpc_lb_addresses;
 
 /** Returns a grpc_addresses struct with enough space for
- * \a num_addresses addresses. */
-grpc_lb_addresses *grpc_lb_addresses_create(size_t num_addresses);
+    \a num_addresses addresses.  The \a user_data_vtable argument may be
+    NULL if no user data will be added. */
+grpc_lb_addresses *grpc_lb_addresses_create(
+    size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable);
 
 /** Creates a copy of \a addresses.  If \a user_data_copy is not NULL,
  * it will be invoked to copy the \a user_data field of each address. */
-grpc_lb_addresses *grpc_lb_addresses_copy(grpc_lb_addresses *addresses,
-                                          void *(*user_data_copy)(void *));
+grpc_lb_addresses *grpc_lb_addresses_copy(const grpc_lb_addresses *addresses);
 
 /** Sets the value of the address at index \a index of \a addresses.
  * \a address is a socket address of length \a address_len.
@@ -81,10 +89,13 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
                                    bool is_balancer, char *balancer_name,
                                    void *user_data);
 
+/** Compares \a addresses1 and \a addresses2. */
+int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
+                          const grpc_lb_addresses *addresses2);
+
 /** Destroys \a addresses.  If \a user_data_destroy is not NULL, it will
  * be invoked to destroy the \a user_data field of each address. */
-void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses,
-                               void (*user_data_destroy)(void *));
+void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses);
 
 /** Arguments passed to LB policies. */
 /* TODO(roth, ctiller): Consider replacing this struct with
