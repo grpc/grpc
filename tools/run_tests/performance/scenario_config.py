@@ -219,6 +219,16 @@ class CXXLanguage:
           server_core_limit=1, async_server_threads=1,
           secure=secure)
 
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_sync_server_unary_qps_unconstrained_%s' %
+          (secstr),
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='SYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          categories=smoketest_categories + [SCALABLE])
+
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
