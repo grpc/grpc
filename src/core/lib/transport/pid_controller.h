@@ -34,6 +34,13 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 #define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
+/* \file Simple PID controller.
+   Implements a proportial-integral-derivative controller.
+   Used when we want to iteratively control a variable to converge some other
+   observed value to a 'set-point'.
+   Gains can be set to adjust sensitivity to current error (p), the integral
+   of error (i), and the derivative of error (d). */
+
 typedef struct {
   double gain_p;
   double gain_i;
@@ -42,11 +49,15 @@ typedef struct {
   double error_integral;
 } grpc_pid_controller;
 
+/** Initialize the controller */
 void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
                               double gain_p, double gain_i, double gain_d);
 
+/** Reset the controller: useful when things have changed significantly */
 void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
 
+/** Update the controller: given a current error estimate, and the time since
+    the last update, returns a delta to the control value */
 double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
                                   double error, double dt);
 
