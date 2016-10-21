@@ -346,6 +346,10 @@ static char *roots_filename;
   [self testIndividualCase:"no_op"];
 }
 
+- (void)testPacketCoalescing {
+  [self testIndividualCase:"packet_coalescing"];
+}
+
 - (void)testPayload {
   [self testIndividualCase:"payload"];
 }

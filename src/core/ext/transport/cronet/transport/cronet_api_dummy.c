@@ -77,9 +77,8 @@ int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
   return 0;
 }
 
-int cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
+void cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
   GPR_ASSERT(0);
-  return 0;
 }
 
 #endif /* GRPC_COMPILE_WITH_CRONET */
