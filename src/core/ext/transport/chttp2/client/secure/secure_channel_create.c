@@ -252,12 +252,10 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
   c->handshake_mgr = grpc_handshake_manager_create();
-  char *proxy_name = grpc_get_http_proxy_server();
-  if (proxy_name != NULL) {
-    grpc_handshake_manager_add(
-        c->handshake_mgr,
-        grpc_http_connect_handshaker_create(proxy_name, args->server_name));
-    gpr_free(proxy_name);
+  if (grpc_is_http_proxy_configured(NULL)) {
+    grpc_handshake_manager_add(c->handshake_mgr,
+                               grpc_http_connect_handshaker_create(
+                                   args->server_name, args->server_name));
   }
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
