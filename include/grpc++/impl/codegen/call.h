@@ -97,19 +97,23 @@ inline grpc_metadata* FillMetadataArray(
 
 /// Per-message options for all operation types
 class MessageOptions {
-public:
- MessageOptions() : msg_deadline_(g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME)) {}
- gpr_timespec deadline() const { return msg_deadline_; }
- template <class T> void set_deadline(const TimePoint<T>& deadline) {
-   msg_deadline_ = deadline.raw_time();
- }
-private:
+ public:
+  MessageOptions()
+      : msg_deadline_(
+            g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+  gpr_timespec deadline() const { return msg_deadline_; }
+  template <class T>
+  void set_deadline(const TimePoint<T>& deadline) {
+    msg_deadline_ = deadline.raw_time();
+  }
+
+ private:
   gpr_timespec msg_deadline_;
 };
 
 /// Finish-specific options
 class FinishOptions {
-public:
+ public:
   /// Return the message options structure
   MessageOptions message_options() const { return msg_options_; }
 
@@ -121,8 +125,9 @@ public:
   }
 
   /// Get the deadline value
-  gpr_timespec deadline() const { return msg_options_.deadline(); }  
-private:
+  gpr_timespec deadline() const { return msg_options_.deadline(); }
+
+ private:
   MessageOptions msg_options_;
 };
 
@@ -130,25 +135,25 @@ typedef FinishOptions ReadOptions;
 typedef FinishOptions WritesDoneOptions;
 typedef FinishOptions WaitForInitialMetadataOptions;
 typedef FinishOptions NextMessageSizeOptions;
- 
+
 /// SendInitialMetadata Options
 class SendInitialMetadataOptions {
-public:
+ public:
   /// Return the message options structure
   MessageOptions message_options() const { return msg_options_; }
 
   // Note that this class does not provide any mechanism to set a deadline
   // as this is a sine-qua-non of the RPC.
-private:
+ private:
   MessageOptions msg_options_;
-}
- 
+};
+
 /// Per-message write options.
 class WriteOptions {
  public:
   WriteOptions() : flags_(0) {}
- WriteOptions(const WriteOptions& other) : flags_(other.flags_),
-    msg_options_(other.msg_options_) {}
+  WriteOptions(const WriteOptions& other)
+      : flags_(other.flags_), msg_options_(other.msg_options_) {}
 
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
@@ -222,7 +227,7 @@ class WriteOptions {
 
   /// Get the deadline value
   gpr_timespec deadline() const { return msg_options_.deadline(); }
-  
+
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }
 
