@@ -263,7 +263,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_bdp_estimator_init(&t->bdp_estimator);
   t->last_bdp_ping_finished = gpr_now(GPR_CLOCK_MONOTONIC);
   t->last_pid_update = t->last_bdp_ping_finished;
-  grpc_pid_controller_init(&t->pid_controller, 128, 64, 0);
+  grpc_pid_controller_init(&t->pid_controller, 16, 8, 0);
   t->bdp_guess = DEFAULT_WINDOW;
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
@@ -1904,18 +1904,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       if (dt > 3) {
         grpc_pid_controller_reset(&t->pid_controller);
       }
-      double new_guess = t->bdp_guess + grpc_pid_controller_update(
-                                            &t->pid_controller,
-                                            2.0 * estimate - t->bdp_guess, dt);
-      if (new_guess > t->bdp_guess * 2) {
-        grpc_pid_controller_reset(&t->pid_controller);
-        t->bdp_guess *= 2;
-      } else if (new_guess < t->bdp_guess * 0.5) {
-        grpc_pid_controller_reset(&t->pid_controller);
-        t->bdp_guess *= 0.5;
-      } else {
-        t->bdp_guess = new_guess;
-      }
+      t->bdp_guess += grpc_pid_controller_update(
+          &t->pid_controller, 2.0 * estimate - t->bdp_guess, dt);
       update_bdp(exec_ctx, t, t->bdp_guess);
       if (0)
         gpr_log(GPR_DEBUG, "bdp guess %s: %lf (est=%" PRId64 " dt=%lf int=%lf)",
