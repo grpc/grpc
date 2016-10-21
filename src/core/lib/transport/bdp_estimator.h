@@ -37,7 +37,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/** \file Utilities for estimating BDP (bandwidth-delay-product)
+    Assumes some transport will provide the real machinery.
+    When a ping is initiated, tracks the number of bytes received as a rough
+    estimate of the current BDP. Keeps some history of previous pings in order
+    to not react to changes too quickly. */
+
+/** Amount of history to collect */
 #define GRPC_BDP_SAMPLES 16
+/** Minimum number of samples to collect before the estimate becomes valid */
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
 typedef struct grpc_bdp_estimator {
