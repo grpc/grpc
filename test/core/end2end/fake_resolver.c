@@ -59,7 +59,9 @@ typedef struct {
   grpc_resolver base;
 
   // passed-in parameters
+// FIXME: remove target_name once resolver_result is removed
   char* target_name;  // the path component of the uri passed in
+  grpc_channel_args* channel_args;
   grpc_lb_addresses* addresses;
   char* lb_policy_name;
   grpc_method_config_table* method_config_table;
@@ -78,6 +80,7 @@ static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   gpr_mu_destroy(&r->mu);
   gpr_free(r->target_name);
+  grpc_channel_args_destroy(r->channel_args);
   grpc_lb_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
   grpc_method_config_table_unref(r->method_config_table);
@@ -100,15 +103,24 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
                                                    fake_resolver* r) {
   if (r->next_completion != NULL && !r->published) {
     r->published = true;
-    grpc_channel_args* lb_policy_args = NULL;
+    grpc_arg new_args[3];
+    size_t num_args = 0;
+    new_args[num_args++] = grpc_lb_addresses_create_channel_arg(r->addresses);
     if (r->method_config_table != NULL) {
-      const grpc_arg arg =
+      new_args[num_args++] =
           grpc_method_config_table_create_channel_arg(r->method_config_table);
-      lb_policy_args = grpc_channel_args_copy_and_add(NULL /* src */, &arg, 1);
     }
+    if (r->lb_policy_name != NULL) {
+      new_args[num_args].type = GRPC_ARG_STRING;
+      new_args[num_args].key = GRPC_ARG_LB_POLICY_NAME;
+      new_args[num_args].value.string = r->lb_policy_name;
+      ++num_args;
+    }
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(r->channel_args, new_args, num_args);
     *r->target_result = grpc_resolver_result_create(
         r->target_name, grpc_lb_addresses_copy(r->addresses),
-        r->lb_policy_name, lb_policy_args);
+        r->lb_policy_name, args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -233,6 +245,12 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
   memset(r, 0, sizeof(*r));
   r->target_name = gpr_strdup(args->uri->path);
+  grpc_arg server_name_arg;
+  server_name_arg.type = GRPC_ARG_STRING;
+  server_name_arg.key = GRPC_ARG_SERVER_NAME;
+  server_name_arg.value.string = r->target_name;
+  r->channel_args =
+      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   r->addresses = addresses;
   r->lb_policy_name =
       gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));

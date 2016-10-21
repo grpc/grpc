@@ -55,6 +55,7 @@ typedef struct {
   /** base class: must be first */
   grpc_resolver base;
   /** target name */
+// FIXME: remove target_name when resolver_result goes away
   char *target_name;
   /** name to resolve (usually the same as target_name) */
   char *name_to_resolve;
@@ -178,10 +179,12 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
           r->addresses->addrs[i].len, false /* is_balancer */,
           NULL /* balancer_name */, NULL /* user_data */);
     }
+    grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
     grpc_resolved_addresses_destroy(r->addresses);
     result = grpc_resolver_result_create(
-        r->target_name, addresses, NULL /* lb_policy_name */,
-        grpc_channel_args_copy(r->channel_args));
+        r->target_name, addresses, NULL /* lb_policy_name */, args);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -268,7 +271,12 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   r->target_name = gpr_strdup(path);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
-  r->channel_args = grpc_channel_args_copy(args->args);
+  grpc_arg server_name_arg;
+  server_name_arg.type = GRPC_ARG_STRING;
+  server_name_arg.key = GRPC_ARG_SERVER_NAME;
+  server_name_arg.value.string = (char*)path;
+  r->channel_args =
+      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
   return &r->base;

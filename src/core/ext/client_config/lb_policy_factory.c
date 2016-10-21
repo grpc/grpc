@@ -124,6 +124,28 @@ void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses) {
   gpr_free(addresses);
 }
 
+static void* lb_addresses_copy(void* addresses) {
+  return grpc_lb_addresses_copy(addresses);
+}
+static void lb_addresses_destroy(void* addresses) {
+  grpc_lb_addresses_destroy(addresses);
+}
+static int lb_addresses_cmp(void* addresses1, void* addresses2) {
+  return grpc_lb_addresses_cmp(addresses1, addresses2);
+}
+static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
+    lb_addresses_copy, lb_addresses_destroy, lb_addresses_cmp};
+
+grpc_arg grpc_lb_addresses_create_channel_arg(
+    const grpc_lb_addresses *addresses) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_ARG_LB_ADDRESSES;
+  arg.value.pointer.p = (void*)addresses;
+  arg.value.pointer.vtable = &lb_addresses_arg_vtable;
+  return arg;
+}
+
 void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {
   factory->vtable->ref(factory);
 }

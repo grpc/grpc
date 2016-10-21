@@ -52,6 +52,7 @@ typedef struct {
   /** base class: must be first */
   grpc_resolver base;
   /** the path component of the uri passed in */
+// FIXME: remove target_name when resolver_result goes away
   char *target_name;
   /** the addresses that we've 'resolved' */
   grpc_lb_addresses *addresses;
@@ -120,9 +121,12 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                               sockaddr_resolver *r) {
   if (r->next_completion != NULL && !r->published) {
     r->published = true;
+    grpc_arg arg = grpc_lb_addresses_create_channel_arg(r->addresses);
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(r->channel_args, &arg, 1);
     *r->target_result = grpc_resolver_result_create(
         r->target_name, grpc_lb_addresses_copy(r->addresses),
-        NULL /* lb_policy_name */, grpc_channel_args_copy(r->channel_args));
+        NULL /* lb_policy_name */, args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -204,7 +208,12 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
   memset(r, 0, sizeof(*r));
   r->target_name = gpr_strdup(args->uri->path);
   r->addresses = addresses;
-  r->channel_args = grpc_channel_args_copy(args->args);
+  grpc_arg server_name_arg;
+  server_name_arg.type = GRPC_ARG_STRING;
+  server_name_arg.key = GRPC_ARG_SERVER_NAME;
+  server_name_arg.value.string = args->uri->path;
+  r->channel_args =
+      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
   return &r->base;

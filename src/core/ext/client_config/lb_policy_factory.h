@@ -97,6 +97,10 @@ int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
  * be invoked to destroy the \a user_data field of each address. */
 void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses);
 
+/** Returns a channel arg containing \a addresses. */
+grpc_arg grpc_lb_addresses_create_channel_arg(
+    const grpc_lb_addresses *addresses);
+
 /** Arguments passed to LB policies. */
 /* TODO(roth, ctiller): Consider replacing this struct with
    grpc_channel_args.  See comment in resolver_result.h for details. */
