@@ -339,7 +339,8 @@ int main(int argc, char** argv) {
     // Create channel(s) for each server
     for (int channel_idx = 0; channel_idx < FLAGS_num_channels_per_server;
          channel_idx++) {
-      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(), channel_idx);
+      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
+              channel_idx);
       std::shared_ptr<grpc::Channel> channel;
       if (FLAGS_use_tls) {
         channel = grpc::testing::CreateChannelForTestCase(FLAGS_test_case);
@@ -375,7 +376,6 @@ int main(int argc, char** argv) {
     std::unique_ptr<grpc::Server> metrics_server =
         metrics_service.StartServer(FLAGS_metrics_port);
   }
-
 
   // Wait for the stress test threads to complete
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
