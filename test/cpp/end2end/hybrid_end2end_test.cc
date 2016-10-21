@@ -320,6 +320,29 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(s.ok());
   }
 
+  void SendSimpleServerStreamingToDupService() {
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    context.set_wait_for_ready(true);
+    request.set_message("hello");
+
+    auto stream = stub->ResponseStream(&context, request);
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "0_dup");
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "1_dup");
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "2_dup");
+    EXPECT_FALSE(stream->Read(&response));
+
+    Status s = stream->Finish();
+    EXPECT_TRUE(s.ok());
+  }
+
   void SendBidiStreaming() {
     EchoRequest request;
     EchoResponse response;
@@ -494,6 +517,140 @@ TEST_F(HybridEnd2endTest,
                                             &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service with one sync split server streaming method.
+class SplitResponseStreamDupPkg
+    : public duplicate::EchoTestService::
+          WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
+ public:
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      GPR_ASSERT(stream->Write(resp));
+    }
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncSplitStreamedDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  SplitResponseStreamDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendSimpleServerStreamingToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service that is fully split server streamed
+class FullySplitStreamedDupPkg
+    : public duplicate::EchoTestService::SplitStreamedService {
+ public:
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      GPR_ASSERT(stream->Write(resp));
+    }
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_FullySplitStreamedDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  FullySplitStreamedDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendSimpleServerStreamingToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service that is fully server streamed
+class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
+ public:
+  Status StreamedEcho(ServerContext* context,
+                      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
+      GRPC_OVERRIDE {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    resp.set_message(req.message() + "_dup");
+    GPR_ASSERT(stream->Write(resp));
+    return Status::OK;
+  }
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      GPR_ASSERT(stream->Write(resp));
+    }
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_FullyStreamedDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  FullyStreamedDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendEchoToDupService();
+  SendSimpleServerStreamingToDupService();
   response_stream_handler_thread.join();
   request_stream_handler_thread.join();
 }
