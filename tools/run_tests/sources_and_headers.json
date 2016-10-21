@@ -2695,6 +2695,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++_test_config", 
       "grpc_test_util"
     ], 
     "headers": [], 
