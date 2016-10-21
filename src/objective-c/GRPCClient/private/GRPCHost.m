@@ -101,6 +101,9 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
       _secure = YES;
       kHostCache[address] = self;
 
+      // When there is host in the cache, keep a single monitor to the network
+      // to
+      // flush the cache if the connectivity status changed
       if (!connectivityMonitor) {
         connectivityMonitor =
             [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
