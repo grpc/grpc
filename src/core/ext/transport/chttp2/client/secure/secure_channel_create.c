@@ -290,8 +290,6 @@ static grpc_channel *client_channel_factory_create_channel(
     channel = NULL;
   }
 
-  GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
-                                "client_channel_factory_create_channel");
   return channel;
 }
 
@@ -359,6 +357,9 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
 
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
+
+  GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
+                                "client_channel_factory_create_channel");
 
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);
