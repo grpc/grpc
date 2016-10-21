@@ -4,9 +4,11 @@ cc_library(
     name = "gpr_test_util",
     srcs = [
         "test_config.c",
+        "memory_counters.c",
     ],
     hdrs = [
         "test_config.h",
+        "memory_counters.h",
     ],
     deps = ["//:gpr"],
     visibility = ["//:__subpackages__"],
@@ -16,7 +18,6 @@ cc_library(
     name = "grpc_test_util",
     srcs = [
         "grpc_profiler.c",
-        "memory_counters.c",
         "mock_endpoint.c",
         "parse_hexstring.c",
         "passthru_endpoint.c",
@@ -29,7 +30,6 @@ cc_library(
     ],
     hdrs = [
         "grpc_profiler.h",
-        "memory_counters.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
@@ -40,5 +40,13 @@ cc_library(
         "test_tcp_server.h",
     ],
     deps = [":gpr_test_util", "//:grpc"],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//test:__subpackages__"],
+    copts = ["-std=c99"],
+)
+
+cc_library(
+  name = "one_corpus_entry_fuzzer",
+  srcs = ["one_corpus_entry_fuzzer.c"],
+  deps = [":gpr_test_util", "//:grpc"],
+  visibility = ["//test:__subpackages__"],
 )

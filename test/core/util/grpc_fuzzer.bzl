@@ -27,52 +27,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load(":generate_tests.bzl", "grpc_end2end_tests")
-
-cc_library(
-  name = 'cq_verifier',
-  srcs = ['cq_verifier.c'],
-  hdrs = ['cq_verifier.h'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util'],
-  copts = ['-std=c99'],
-  visibility = ["//test:__subpackages__"],
-)
-
-cc_library(
-  name = 'ssl_test_data',
-  visibility = ["//test:__subpackages__"],
-  hdrs = ['data/ssl_test_data.h'],
-  copts = ['-std=c99'],
-  srcs = [
-    "data/client_certs.c",
-    "data/server1_cert.c",
-    "data/server1_key.c",
-    "data/test_root_cert.c",
-  ]
-)
-
-cc_library(
-  name = 'fake_resolver',
-  hdrs = ['fake_resolver.h'],
-  srcs = ['fake_resolver.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-cc_library(
-  name = 'http_proxy',
-  hdrs = ['fixtures/http_proxy.h'],
-  srcs = ['fixtures/http_proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-cc_library(
-  name = 'proxy',
-  hdrs = ['fixtures/proxy.h'],
-  srcs = ['fixtures/proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-grpc_end2end_tests()
+def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
+  native.cc_library(
+    name = "%s/one_entry" % name,
+    srcs = srcs,
+    deps = deps + ["//test/core/util:one_corpus_entry_fuzzer"],
+    **kwargs
+  )
+  for entry in native.glob(['%s/*' % corpus]):
+    native.cc_test(
+      name = '%s/one_entry/%s' % (name, entry),
+      deps = [':%s/one_entry' % name],
+      args = ['$(location %s)' % entry],
+      data = [entry],
+    )

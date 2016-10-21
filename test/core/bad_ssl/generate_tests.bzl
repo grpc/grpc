@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,52 +28,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load(":generate_tests.bzl", "grpc_end2end_tests")
 
-cc_library(
-  name = 'cq_verifier',
-  srcs = ['cq_verifier.c'],
-  hdrs = ['cq_verifier.h'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util'],
-  copts = ['-std=c99'],
-  visibility = ["//test:__subpackages__"],
-)
+def test_options():
+  return struct()
 
-cc_library(
-  name = 'ssl_test_data',
-  visibility = ["//test:__subpackages__"],
-  hdrs = ['data/ssl_test_data.h'],
-  copts = ['-std=c99'],
-  srcs = [
-    "data/client_certs.c",
-    "data/server1_cert.c",
-    "data/server1_key.c",
-    "data/test_root_cert.c",
-  ]
-)
 
-cc_library(
-  name = 'fake_resolver',
-  hdrs = ['fake_resolver.h'],
-  srcs = ['fake_resolver.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
+# maps test names to options
+BAD_SSL_TESTS = ['cert', 'alpn']
 
-cc_library(
-  name = 'http_proxy',
-  hdrs = ['fixtures/http_proxy.h'],
-  srcs = ['fixtures/http_proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
+def grpc_bad_ssl_tests():
+  native.cc_library(
+      name = 'bad_ssl_test_server',
+      srcs = ['server_common.c'],
+      hdrs = ['server_common.h'],
+      deps = ['//test/core/util:grpc_test_util', '//:grpc', '//test/core/end2end:ssl_test_data']
+  )
+  for t in BAD_SSL_TESTS:
+    native.cc_test(
+        name = 'bad_ssl_%s_server' % t,
+        srcs = ['servers/%s.c' % t],
+        deps = [':bad_ssl_test_server'],
+    )
 
-cc_library(
-  name = 'proxy',
-  hdrs = ['fixtures/proxy.h'],
-  srcs = ['fixtures/proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
-
-grpc_end2end_tests()

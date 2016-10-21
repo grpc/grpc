@@ -158,6 +158,7 @@ def grpc_end2end_tests():
       'tests/cancel_test_helpers.h',
       'end2end_tests.h'
     ],
+    copts = ['-std=c99'],
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
@@ -175,6 +176,7 @@ def grpc_end2end_tests():
     native.cc_library(
       name = '%s_test_lib' % f,
       srcs = ['fixtures/%s.c' % f],
+      copts = ['-std=c99'],
       deps = [':end2end_tests']
     )
     for t, topt in END2END_TESTS.items():
@@ -183,5 +185,5 @@ def grpc_end2end_tests():
       native.cc_test(
         name = '%s_test@%s' % (f, t),
         args = [t],
-        deps = [':%s_test_lib' % f]
+        deps = [':%s_test_lib' % f],
       )

@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,52 +28,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load(":generate_tests.bzl", "grpc_end2end_tests")
 
-cc_library(
-  name = 'cq_verifier',
-  srcs = ['cq_verifier.c'],
-  hdrs = ['cq_verifier.h'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util'],
-  copts = ['-std=c99'],
-  visibility = ["//test:__subpackages__"],
-)
+"""Generates the appropriate build.json data for all the bad_client tests."""
 
-cc_library(
-  name = 'ssl_test_data',
-  visibility = ["//test:__subpackages__"],
-  hdrs = ['data/ssl_test_data.h'],
-  copts = ['-std=c99'],
-  srcs = [
-    "data/client_certs.c",
-    "data/server1_cert.c",
-    "data/server1_key.c",
-    "data/test_root_cert.c",
-  ]
-)
 
-cc_library(
-  name = 'fake_resolver',
-  hdrs = ['fake_resolver.h'],
-  srcs = ['fake_resolver.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
+def test_options():
+  return struct()
 
-cc_library(
-  name = 'http_proxy',
-  hdrs = ['fixtures/http_proxy.h'],
-  srcs = ['fixtures/http_proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
 
-cc_library(
-  name = 'proxy',
-  hdrs = ['fixtures/proxy.h'],
-  srcs = ['fixtures/proxy.c'],
-  copts = ['-std=c99'],
-  deps = ['//:gpr', '//:grpc', '//test/core/util:grpc_test_util']
-)
+# maps test names to options
+BAD_CLIENT_TESTS = {
+    'badreq': test_options(),
+    'connection_prefix': test_options(),
+    'headers': test_options(),
+    'initial_settings_frame': test_options(),
+    'head_of_line_blocking': test_options(),
+    'large_metadata': test_options(),
+    'server_registered_method': test_options(),
+    'simple_request': test_options(),
+    'window_overflow': test_options(),
+    'unknown_frame': test_options(),
+}
 
-grpc_end2end_tests()
+def grpc_bad_client_tests():
+  native.cc_library(
+      name = 'bad_client_test',
+      srcs = ['bad_client.c'],
+      hdrs = ['bad_client.h'],
+      copts = ['-std=c99'],
+      deps = ['//test/core/util:grpc_test_util', '//:grpc', '//:gpr', '//test/core/end2end:cq_verifier']
+  )
+  for t, topt in BAD_CLIENT_TESTS.items():
+    native.cc_test(
+        name = '%s_bad_client_test' % t,
+        srcs = ['tests/%s.c' % t],
+        deps = [':bad_client_test'],
+        copts = ['-std=c99'],
+    )
+

@@ -35,7 +35,7 @@
 
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], external_deps = [], deps = [], standalone = False, language = "C++"):
   copts = []
-  if language == "C":
+  if language.upper() == "C":
     copts = ["-std=c99"]
   native.cc_library(
     name = name,
