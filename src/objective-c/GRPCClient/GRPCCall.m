@@ -392,7 +392,7 @@ static NSMutableDictionary *callFlags;
     }
   };
   [_connectivityMonitor handleLossWithHandler:handler
-                      wifiStatusChangeHandler:handler];
+                      wifiStatusChangeHandler:nil];
 
   // Create a retain cycle so that this instance lives until the RPC finishes
   // (or is cancelled).
