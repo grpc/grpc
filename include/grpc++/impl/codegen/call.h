@@ -125,6 +125,23 @@ public:
 private:
   MessageOptions msg_options_;
 };
+
+typedef FinishOptions ReadOptions;
+typedef FinishOptions WritesDoneOptions;
+typedef FinishOptions WaitForInitialMetadataOptions;
+typedef FinishOptions NextMessageSizeOptions;
+ 
+/// SendInitialMetadata Options
+class SendInitialMetadataOptions {
+public:
+  /// Return the message options structure
+  MessageOptions message_options() const { return msg_options_; }
+
+  // Note that this class does not provide any mechanism to set a deadline
+  // as this is a sine-qua-non of the RPC.
+private:
+  MessageOptions msg_options_;
+}
  
 /// Per-message write options.
 class WriteOptions {
