@@ -157,7 +157,7 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
     if (!flags.reachable) {
       handler();
     } else if (!_previousReachabilityFlags ||
-               (flags.isWWAN ^ _previousReachabilityFlags.isWAAN)) {
+               (flags.isWWAN ^ _previousReachabilityFlags.isWWAN)) {
       wifiStatusChangeHandler();
     }
     _previousReachabilityFlags = flags;
