@@ -43,6 +43,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -53,7 +54,7 @@
 #define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
 
 // Handshake completed signal to server thread.
-static bool client_handshake_complete = false;
+static gpr_event client_handshake_complete;
 
 static int create_socket(int port) {
   int s;
@@ -111,7 +112,7 @@ static void server_thread(void *arg) {
   // Wait a bounded number of time until client_handshake_complete is set,
   // sleeping between polls.
   int retries = 10;
-  while (!client_handshake_complete && retries-- > 0) {
+  while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
     const gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
     GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
@@ -143,7 +144,7 @@ static bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
 
   grpc_init();
   int port = grpc_pick_unused_port_or_die();
-  client_handshake_complete = false;
+  gpr_event_init(&client_handshake_complete);
 
   // Launch the gRPC server thread.
   gpr_thd_options thdopt = gpr_thd_options_default();
@@ -233,7 +234,7 @@ static bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
       success = false;
     }
   }
-  client_handshake_complete = true;
+  gpr_event_set(&client_handshake_complete, &client_handshake_complete);
 
   SSL_free(ssl);
   gpr_free(alpn_protos);
