@@ -1027,7 +1027,7 @@ libs:
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test
-  build: test
+  build: private
   language: c++
   headers:
   - include/grpc++/test/server_context_test_spouse.h
