@@ -459,7 +459,7 @@ static grpc_lb_policy *create_rr_locked(
   args.server_name = glb_policy->server_name;
   args.client_channel_factory = glb_policy->cc_factory;
   args.addresses = process_serverlist(serverlist);
-  args.additional_args = glb_policy->args;
+  args.args = glb_policy->args;
 
   grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
 
@@ -587,7 +587,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * Create a client channel over them to communicate with a LB service */
   glb_policy->server_name = gpr_strdup(args->server_name);
   glb_policy->cc_factory = args->client_channel_factory;
-  glb_policy->args = grpc_channel_args_copy(args->additional_args);
+  glb_policy->args = grpc_channel_args_copy(args->args);
   GPR_ASSERT(glb_policy->cc_factory != NULL);
 
   /* construct a target from the addresses in args, given in the form
@@ -621,7 +621,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   /* will pick using pick_first */
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
       exec_ctx, glb_policy->cc_factory, target_uri_str,
-      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
+      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, args->args);
 
   gpr_free(target_uri_str);
   for (size_t i = 0; i < num_grpclb_addrs; i++) {

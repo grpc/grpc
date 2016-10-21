@@ -93,8 +93,7 @@ typedef struct grpc_lb_policy_args {
   const char *server_name;
   grpc_lb_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
-  /* Can be used to pass implementation-specific parameters to the LB policy. */
-  grpc_channel_args *additional_args;
+  grpc_channel_args *args;
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {

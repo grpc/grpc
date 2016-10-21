@@ -55,6 +55,8 @@ typedef struct {
   char *target_name;
   /** the addresses that we've 'resolved' */
   grpc_lb_addresses *addresses;
+  /** channel args */
+  grpc_channel_args *channel_args;
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** have we published? */
@@ -121,7 +123,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     *r->target_result = grpc_resolver_result_create(
         r->target_name,
         grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        NULL /* lb_policy_name */, NULL /* lb_policy_args */);
+        NULL /* lb_policy_name */, grpc_channel_args_copy(r->channel_args));
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -132,6 +134,7 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_mu_destroy(&r->mu);
   gpr_free(r->target_name);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
+  grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
 }
 
@@ -201,6 +204,7 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
   memset(r, 0, sizeof(*r));
   r->target_name = gpr_strdup(args->uri->path);
   r->addresses = addresses;
+  r->channel_args = grpc_channel_args_copy(args->args);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
   return &r->base;

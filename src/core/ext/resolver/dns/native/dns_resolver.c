@@ -40,6 +40,7 @@
 #include "src/core/ext/client_config/http_connect_handshaker.h"
 #include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
@@ -59,6 +60,8 @@ typedef struct {
   char *name_to_resolve;
   /** default port to use */
   char *default_port;
+  /** channel args. */
+  grpc_channel_args *channel_args;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -176,8 +179,9 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
           NULL /* balancer_name */, NULL /* user_data */);
     }
     grpc_resolved_addresses_destroy(r->addresses);
-    result = grpc_resolver_result_create(r->target_name, addresses,
-                                         NULL /* lb_policy_name */, NULL);
+    result = grpc_resolver_result_create(
+        r->target_name, addresses, NULL /* lb_policy_name */,
+        grpc_channel_args_copy(r->channel_args));
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
@@ -241,6 +245,7 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_free(r->target_name);
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
+  grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
 }
 
@@ -263,6 +268,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   r->target_name = gpr_strdup(path);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
+  r->channel_args = grpc_channel_args_copy(args->args);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
   return &r->base;

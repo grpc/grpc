@@ -188,8 +188,8 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_resolver_result_get_server_name(chand->resolver_result);
     lb_policy_args.addresses =
         grpc_resolver_result_get_addresses(chand->resolver_result);
-    lb_policy_args.additional_args =
-        grpc_resolver_result_get_lb_policy_args(chand->resolver_result);
+    lb_policy_args.args =
+        grpc_resolver_result_get_channel_args(chand->resolver_result);
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
 
     // Special case: If all of the addresses are balancer addresses,
@@ -227,7 +227,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
           grpc_lb_policy_check_connectivity(exec_ctx, lb_policy, &state_error);
     }
     const grpc_arg *channel_arg = grpc_channel_args_find(
-        lb_policy_args.additional_args, GRPC_ARG_SERVICE_CONFIG);
+        lb_policy_args.args, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
       method_config_table = grpc_method_config_table_ref(

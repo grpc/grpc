@@ -47,7 +47,10 @@ struct grpc_resolver_factory {
   const grpc_resolver_factory_vtable *vtable;
 };
 
-typedef struct grpc_resolver_args { grpc_uri *uri; } grpc_resolver_args;
+typedef struct grpc_resolver_args {
+  grpc_uri *uri;
+  const grpc_channel_args *args;
+} grpc_resolver_args;
 
 struct grpc_resolver_factory_vtable {
   void (*ref)(grpc_resolver_factory *factory);
