@@ -100,19 +100,16 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
       _address = address;
       _secure = YES;
       kHostCache[address] = self;
-
-      // When there is host in the cache, keep a single monitor to the network
-      // to
-      // flush the cache if the connectivity status changed
-      if (!connectivityMonitor) {
-        connectivityMonitor =
-            [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
-        void (^handler)() = ^{
-          [GRPCHost flushChannelCache];
-        };
-        [connectivityMonitor handleLossWithHandler:handler
-                           wifiStatusChangeHandler:handler];
-      }
+    }
+    // Keep a single monitor to flush the cache if the connectivity status changed
+    if (!connectivityMonitor) {
+      connectivityMonitor =
+      [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
+      void (^handler)() = ^{
+        [GRPCHost flushChannelCache];
+      };
+      [connectivityMonitor handleLossWithHandler:handler
+                         wifiStatusChangeHandler:handler];
     }
   }
   return self;
@@ -125,8 +122,6 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
                                                     BOOL * _Nonnull stop) {
       [host disconnect];
     }];
-    [kHostCache removeAllObjects];
-    connectivityMonitor = nil;
   }
 }
 
