@@ -535,8 +535,9 @@ static void on_response_trailers_received(
     }
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
-  /* Send a EOS when server terminates the stream to trigger on_succeeded */
-  if (!s->state.state_op_done[OP_SEND_TRAILING_METADATA]) {
+  /* Send a EOS when server terminates the stream (testServerFinishesRequest) to trigger on_succeeded */
+  if (!s->state.state_op_done[OP_SEND_TRAILING_METADATA] &&
+      !(s->state.state_op_done[OP_CANCEL_ERROR] || s->state.state_callback_received[OP_FAILED])) {
     CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_write (%p, 0)", s->cbs);
     s->state.state_callback_received[OP_SEND_MESSAGE] = false;
     cronet_bidirectional_stream_write(s->cbs, "", 0, true);
