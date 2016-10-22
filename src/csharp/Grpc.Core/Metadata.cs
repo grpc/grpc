@@ -95,11 +95,18 @@ namespace Grpc.Core
 
         #region IList members
 
+
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public int IndexOf(Metadata.Entry item)
         {
             return entries.IndexOf(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Insert(int index, Metadata.Entry item)
         {
             GrpcPreconditions.CheckNotNull(item);
@@ -107,12 +114,18 @@ namespace Grpc.Core
             entries.Insert(index, item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void RemoveAt(int index)
         {
             CheckWriteable();
             entries.RemoveAt(index);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public Metadata.Entry this[int index]
         {
             get
@@ -128,6 +141,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Add(Metadata.Entry item)
         {
             GrpcPreconditions.CheckNotNull(item);
@@ -135,48 +151,75 @@ namespace Grpc.Core
             entries.Add(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Add(string key, string value)
         {
             Add(new Entry(key, value));
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Add(string key, byte[] valueBytes)
         {
             Add(new Entry(key, valueBytes));
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Clear()
         {
             CheckWriteable();
             entries.Clear();
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public bool Contains(Metadata.Entry item)
         {
             return entries.Contains(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void CopyTo(Metadata.Entry[] array, int arrayIndex)
         {
             entries.CopyTo(array, arrayIndex);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public int Count
         {
             get { return entries.Count; }
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public bool IsReadOnly
         {
             get { return readOnly; }
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public bool Remove(Metadata.Entry item)
         {
             CheckWriteable();
             return entries.Remove(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public IEnumerator<Metadata.Entry> GetEnumerator()
         {
             return entries.GetEnumerator();
