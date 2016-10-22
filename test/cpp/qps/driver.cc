@@ -149,10 +149,6 @@ static void postprocess_scenario_result(ScenarioResult* result) {
                             sum(result->server_stats(), ServerWallTime);
   auto server_user_time = 100.0 * sum(result->server_stats(), ServerUserTime) /
                           sum(result->server_stats(), ServerWallTime);
-  auto server_cpu_usage =
-      100 -
-      100 * average(result->server_stats(), ServerIdleCpuTime) /
-          average(result->server_stats(), ServerTotalCpuTime);
 
   auto client_system_time = 100.0 * sum(result->client_stats(), SystemTime) /
                             sum(result->client_stats(), WallTime);
@@ -163,7 +159,18 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   result->mutable_summary()->set_server_user_time(server_user_time);
   result->mutable_summary()->set_client_system_time(client_system_time);
   result->mutable_summary()->set_client_user_time(client_user_time);
-  result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
+
+  // For Non-linux platform, get_cpu_usage() is not implemented. Thus,
+  // ServerTotalCpuTime and ServerIdleCpuTime are both 0.
+  if (average(result->server_stats(), ServerTotalCpuTime) == 0) {
+    result->mutable_summary()->set_server_cpu_usage(0);
+  } else {
+    auto server_cpu_usage =
+        100 -
+        100 * average(result->server_stats(), ServerIdleCpuTime) /
+            average(result->server_stats(), ServerTotalCpuTime);
+    result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
+  }
 }
 
 // Namespace for classes and functions used only in RunScenario

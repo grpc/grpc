@@ -53,6 +53,7 @@ static double time_double(struct timeval* tv) {
 
 static void get_cpu_usage(unsigned long long* total_cpu_time,
                           unsigned long long* idle_cpu_time) {
+#ifdef __linux__
   std::ifstream proc_stat("/proc/stat");
   proc_stat.ignore(5);
   std::string cpu_time_str;
@@ -66,6 +67,9 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
       *idle_cpu_time = std::stol(cpu_time_str);
     }
   }
+#else
+  gpr_log(GPR_INFO, "get_cpu_usage(): Non-linux platform is not supported.").
+#endif
 }
 
 UsageTimer::Result UsageTimer::Sample() {
