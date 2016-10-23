@@ -356,6 +356,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
 def finish_qps_workers(jobs):
   """Waits for given jobs to finish and eventually kills them."""
   retries = 0
+  num_killed = 0
   while any(job.is_running() for job in jobs):
     for job in qpsworker_jobs:
       if job.is_running():
@@ -364,10 +365,11 @@ def finish_qps_workers(jobs):
       print('Killing all QPS workers.')
       for job in jobs:
         job.kill()
+        num_killed += 1
     retries += 1
     time.sleep(3)
   print('All QPS workers finished.')
-
+  return num_killed
 
 argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
@@ -449,6 +451,8 @@ scenarios = create_scenarios(languages,
 if not scenarios:
   raise Exception('No scenarios to run')
 
+total_scenario_failures = 0
+qps_workers_killed = 0
 for scenario in scenarios:
   if args.dry_run:
     print(scenario.name)
@@ -456,8 +460,14 @@ for scenario in scenarios:
     try:
       for worker in scenario.workers:
         worker.start()
-      jobset.run([scenario.jobspec,
-                  create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
-                 newline_on_success=True, maxjobs=1)
+      scenario_failures, _ = jobset.run([scenario.jobspec,
+                                 create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
+                                 newline_on_success=True, maxjobs=1)
+      total_scenario_failures += scenario_failures
     finally:
-      finish_qps_workers(scenario.workers)
+      # Consider qps workers that need to be killed as failures
+      qps_workers_killed += finish_qps_workers(scenario.workers)
+
+if total_scenario_failures > 0 or qps_workers_killed > 0:
+  print ("%s scenarios failed and %s qps worker jobs killed" % (total_scenario_failures, qps_workers_killed))
+  sys.exit(1)
