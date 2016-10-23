@@ -60,7 +60,7 @@ namespace Routeguide
                     Log("*** GetFeature: lat={0} lon={1}", lat, lon);
 
                     Point request = new Point { Latitude = lat, Longitude = lon };
-                    
+
                     Feature feature = client.GetFeature(request);
                     if (feature.Exists())
                     {
@@ -80,7 +80,7 @@ namespace Routeguide
                 }
             }
 
-  
+
             /// <summary>
             /// Server-streaming example. Calls listFeatures with a rectangle of interest. Prints each response feature as it arrives.
             /// </summary>
@@ -96,7 +96,7 @@ namespace Routeguide
                         Lo = new Point { Latitude = lowLat, Longitude = lowLon },
                         Hi = new Point { Latitude = hiLat, Longitude = hiLon }
                     };
-                    
+
                     using (var call = client.ListFeatures(request))
                     {
                         var responseStream = call.ResponseStream;
@@ -106,19 +106,21 @@ namespace Routeguide
                         {
                             Feature feature = responseStream.Current;
                             responseLog.Append(feature.ToString());
+              Log("Exiting on first iteration to repro bug #8451");
+              break;
                         }
                         Log(responseLog.ToString());
                     }
                 }
                 catch (RpcException e)
                 {
-                    Log("RPC failed " + e); 
+                    Log("RPC failed " + e);
                     throw;
                 }
             }
 
             /// <summary>
-            /// Client-streaming example. Sends numPoints randomly chosen points from features 
+            /// Client-streaming example. Sends numPoints randomly chosen points from features
             /// with a variable delay in between. Prints the statistics when they are sent from the server.
             /// </summary>
             public async Task RecordRoute(List<Feature> features, int numPoints)
@@ -140,7 +142,7 @@ namespace Routeguide
                             await call.RequestStream.WriteAsync(point);
 
                             // A bit of delay before sending the next one.
-                            await Task.Delay(rand.Next(1000) + 500);    
+                            await Task.Delay(rand.Next(1000) + 500);
                         }
                         await call.RequestStream.CompleteAsync();
 
@@ -183,7 +185,7 @@ namespace Routeguide
                             while (await call.ResponseStream.MoveNext())
                             {
                                 var note = call.ResponseStream.Current;
-                                Log("Got message \"{0}\" at {1}, {2}", note.Message, 
+                                Log("Got message \"{0}\" at {1}, {2}", note.Message,
                                     note.Location.Latitude, note.Location.Longitude);
                             }
                         });
@@ -249,6 +251,7 @@ namespace Routeguide
             client.RouteChat().Wait();
 
             channel.ShutdownAsync().Wait();
+      Console.WriteLine("Before exiting, run command 'netstat -n | findstr 50052' to see a leaked socket.");
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
         }
