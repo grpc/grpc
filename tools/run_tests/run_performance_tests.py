@@ -453,7 +453,7 @@ if not scenarios:
   raise Exception('No scenarios to run')
 
 total_scenario_failures = 0
-total_jobs_killed = 0
+qps_workers_killed = 0
 for scenario in scenarios:
   if args.dry_run:
     print(scenario.name)
@@ -466,9 +466,9 @@ for scenario in scenarios:
                                  newline_on_success=True, maxjobs=1)
       total_scenario_failures += scenario_failures
     finally:
-      # Consider jobs that need to be killed as failures
-      total_jobs_killed += finish_qps_workers(scenario.workers)
+      # Consider qps workers that need to be killed as failures
+      qps_workers_killed += finish_qps_workers(scenario.workers)
 
-if num_failures > 0:
-  print(str(total_scenario_failures) + " scenarios failed and " + str(total_jobs_killed) + " jobs killed")
+if total_scenario_failures > 0 or qps_workers_killed > 0:
+  print ("%s scenarios failed and %s qps worker jobs killed" % (total_scenario_failures, qps_workers_killed))
   sys.exit(1)
