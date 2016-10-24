@@ -233,7 +233,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
-  t->connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->ping_counter = 1;
   t->pings.next = t->pings.prev = &t->pings;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
@@ -508,6 +507,23 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
       gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
               t->is_client ? "client" : "server", s->id, i);
       abort();
+    }
+  }
+
+  if (s->incoming_window_delta > 0) {
+    t->retract_incoming_window += s->incoming_window_delta;
+  } else if (s->incoming_window_delta < 0) {
+    int64_t give_back = -s->incoming_window_delta;
+    if (give_back > t->retract_incoming_window) {
+      give_back -= t->retract_incoming_window;
+      t->retract_incoming_window = 0;
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("destroy", t, announce_incoming_window,
+                                        give_back);
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("destroy", t, incoming_window,
+                                        give_back);
+      grpc_chttp2_initiate_write(exec_ctx, t, false, "destroy_stream");
+    } else {
+      t->retract_incoming_window -= give_back;
     }
   }
 
@@ -1786,16 +1802,6 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       }
       t->initial_window_update = 0;
     }
-    /* handle higher level things */
-    if (t->incoming_window < t->connection_window_target * 3 / 4) {
-      int64_t announce_bytes = t->connection_window_target - t->incoming_window;
-      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parsed", t, announce_incoming_window,
-                                        announce_bytes);
-      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parsed", t, incoming_window,
-                                        announce_bytes);
-      grpc_chttp2_initiate_write(exec_ctx, t, false, "global incoming window");
-    }
-
     GPR_TIMER_END("post_parse_locked", 0);
   }
 
@@ -1908,6 +1914,19 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_become_writable(exec_ctx, t, s,
                                 new_window_write_is_covered_by_poller,
                                 "read_incoming_stream");
+    if (t->retract_incoming_window >= add_max_recv_bytes) {
+      t->retract_incoming_window -= add_max_recv_bytes;
+    } else {
+      add_max_recv_bytes -= t->retract_incoming_window;
+      t->retract_incoming_window = 0;
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("op", t, announce_incoming_window,
+                                        add_max_recv_bytes);
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("op", t, incoming_window,
+                                        add_max_recv_bytes);
+      grpc_chttp2_initiate_write(exec_ctx, t,
+                                 new_window_write_is_covered_by_poller,
+                                 "read_incoming_stream");
+    }
   }
 }
 
