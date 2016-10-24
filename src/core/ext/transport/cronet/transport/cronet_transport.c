@@ -58,7 +58,7 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 1;
+int grpc_cronet_trace = 0;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -535,9 +535,11 @@ static void on_response_trailers_received(
     }
   }
   s->state.state_callback_received[OP_RECV_TRAILING_METADATA] = true;
-  /* Send a EOS when server terminates the stream (testServerFinishesRequest) to trigger on_succeeded */
+  /* Send a EOS when server terminates the stream (testServerFinishesRequest) to
+   * trigger on_succeeded */
   if (!s->state.state_op_done[OP_SEND_TRAILING_METADATA] &&
-      !(s->state.state_op_done[OP_CANCEL_ERROR] || s->state.state_callback_received[OP_FAILED])) {
+      !(s->state.state_op_done[OP_CANCEL_ERROR] ||
+        s->state.state_callback_received[OP_FAILED])) {
     CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_write (%p, 0)", s->cbs);
     s->state.state_callback_received[OP_SEND_MESSAGE] = false;
     cronet_bidirectional_stream_write(s->cbs, "", 0, true);
