@@ -85,7 +85,10 @@ class MockClientReaderWriter GRPC_FINAL
     return StreamOpStatus::SUCCESS;
   }
   Status Finish(const FinishOptions& options,
-                StreamOpStatus* completed) GRPC_OVERRIDE { *completed = StreamOpStatus::SUCCESS; return Status::OK; }
+                StreamOpStatus* completed) GRPC_OVERRIDE {
+    *completed = StreamOpStatus::SUCCESS;
+    return Status::OK;
+  }
 };
 template <>
 class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
@@ -101,7 +104,8 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
     *sz = UINT_MAX;
     return StreamOpStatus::SUCCESS;
   }
-  StreamOpStatus Read(EchoResponse* msg, const ReadOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Read(EchoResponse* msg,
+                      const ReadOptions& options) GRPC_OVERRIDE {
     if (writes_done_) return StreamOpStatus::FAIL;
     msg->set_message(last_message_);
     return StreamOpStatus::SUCCESS;
@@ -118,7 +122,10 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
     return StreamOpStatus::SUCCESS;
   }
   Status Finish(const FinishOptions& options,
-                StreamOpStatus* completed) GRPC_OVERRIDE { *completed = StreamOpStatus::SUCCESS; return Status::OK; }
+                StreamOpStatus* completed) GRPC_OVERRIDE {
+    *completed = StreamOpStatus::SUCCESS;
+    return Status::OK;
+  }
 
  private:
   bool writes_done_;
