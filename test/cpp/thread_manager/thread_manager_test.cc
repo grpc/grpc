@@ -39,6 +39,7 @@
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 
+#include "src/cpp/thread_manager/thread_manager.h"
 #include "test/cpp/util/test_config.h"
 
 class ThreadManagerTest GRPC_FINAL : public grpc::ThreadManager {
