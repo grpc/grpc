@@ -344,8 +344,7 @@ namespace Grpc.Core
             {
                 Logger.Warning(e, "Exception while handling RPC.");
             }
-
-            if (continuation != null)
+            finally
             {
                 continuation();
             }

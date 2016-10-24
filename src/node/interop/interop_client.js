@@ -375,11 +375,21 @@ function statusCodeAndMessage(client, done) {
   duplex.end();
 }
 
-function unimplementedMethod(client, done) {
+// NOTE: the client param to this function is from UnimplementedService
+function unimplementedService(client, done) {
   client.unimplementedCall({}, function(err, resp) {
     assert(err);
     assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
     assert(!err.message);
+    done();
+  });
+}
+
+// NOTE: the client param to this function is from TestService
+function unimplementedMethod(client, done) {
+  client.unimplementedCall({}, function(err, resp) {
+    assert(err);
+    assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
     done();
   });
 }
@@ -527,8 +537,10 @@ var test_cases = {
                     Client: testProto.TestService},
   status_code_and_message: {run: statusCodeAndMessage,
                             Client: testProto.TestService},
-  unimplemented_method: {run: unimplementedMethod,
+  unimplemented_service: {run: unimplementedService,
                          Client: testProto.UnimplementedService},
+  unimplemented_method: {run: unimplementedMethod,
+                         Client: testProto.TestService},
   compute_engine_creds: {run: computeEngineCreds,
                          Client: testProto.TestService,
                          getCreds: getApplicationCreds},

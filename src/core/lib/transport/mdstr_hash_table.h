@@ -70,6 +70,9 @@ grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table);
 /** Returns 1 when \a table is destroyed. */
 int grpc_mdstr_hash_table_unref(grpc_mdstr_hash_table* table);
 
+/** Returns the number of entries in \a table. */
+size_t grpc_mdstr_hash_table_num_entries(const grpc_mdstr_hash_table* table);
+
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
 void* grpc_mdstr_hash_table_get(const grpc_mdstr_hash_table* table,
@@ -79,5 +82,11 @@ void* grpc_mdstr_hash_table_get(const grpc_mdstr_hash_table* table,
     The sort order is stable but undefined. */
 int grpc_mdstr_hash_table_cmp(const grpc_mdstr_hash_table* table1,
                               const grpc_mdstr_hash_table* table2);
+
+/** Iterates over the entries in \a table, calling \a func for each entry. */
+void grpc_mdstr_hash_table_iterate(
+    const grpc_mdstr_hash_table* table,
+    void (*func)(const grpc_mdstr_hash_table_entry* entry, void* user_data),
+    void* user_data);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H */
