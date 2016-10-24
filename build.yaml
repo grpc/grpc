@@ -1978,6 +1978,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  platforms:
+  - linux
   secure: true
 - name: handshake_server
   build: test
@@ -1989,6 +1991,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  platforms:
+  - linux
   secure: true
 - name: hpack_parser_fuzzer_test
   build: fuzzer
