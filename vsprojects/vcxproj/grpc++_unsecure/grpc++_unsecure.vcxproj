@@ -363,9 +363,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\insecure_create_auth_context.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\channel.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\channel_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\client_context.cc">
     </ClCompile>
@@ -375,15 +379,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
     </ClCompile>
@@ -395,11 +397,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_builder.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_context.cc">
     </ClCompile>
@@ -407,15 +407,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer_cc.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\slice.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\slice_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\status.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\string_ref.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
     </ClCompile>
@@ -426,9 +426,6 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj">
       <Project>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
-      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

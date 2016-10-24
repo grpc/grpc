@@ -649,6 +649,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -662,6 +666,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -675,6 +683,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -688,6 +700,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A StreamStreamMultiCallable value for the named stream-stream method.
@@ -1078,7 +1094,7 @@ def access_token_call_credentials(access_token):
 
   Args:
     access_token: A string to place directly in the http request
-      authorization header, ie "Authorization: Bearer <access_token>".
+      authorization header, ie "authorization: Bearer <access_token>".
 
   Returns:
     A CallCredentials.
@@ -1193,7 +1209,7 @@ def insecure_channel(target, options=None):
 
 
 def secure_channel(target, credentials, options=None):
-  """Creates an insecure Channel to a server.
+  """Creates a secure Channel to a server.
 
   Args:
     target: The target to which to connect.

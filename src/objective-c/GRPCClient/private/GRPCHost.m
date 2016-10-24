@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 // TODO(jcanizales): Generate the version in a standalone header, from templates. Like
 // templates/src/core/surface/version.c.template .
-#define GRPC_OBJC_VERSION_STRING @"1.0.0-pre1"
+#define GRPC_OBJC_VERSION_STRING @"1.0.0"
 
 static NSMutableDictionary *kHostCache;
 
@@ -219,6 +219,8 @@ static NSMutableDictionary *kHostCache;
   if (_responseSizeLimitOverride) {
     args[@GRPC_ARG_MAX_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
+  // Use 10000ms initial backoff time for correct behavior on bad/slow networks  
+  args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = @10000;
   return args;
 }
 

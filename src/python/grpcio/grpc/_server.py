@@ -462,7 +462,6 @@ def _unary_response_in_pool(
           rpc_event, state, response, response_serializer)
       if serialized_response is not None:
         _status(rpc_event, state, serialized_response)
-  return
 
 
 def _stream_response_in_pool(

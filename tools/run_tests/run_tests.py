@@ -297,7 +297,7 @@ class NodeLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5'])
+                                         'node4', 'node5', 'node6'])
     if self.args.compiler == 'default':
       self.node_version = '4'
     else:
@@ -588,15 +588,9 @@ class CSharpLanguage(object):
     assembly_extension = '.exe'
 
     if self.args.compiler == 'coreclr':
-      if self.platform == 'linux':
-        assembly_subdir += '/netstandard1.5/debian.8-x64'
-        assembly_extension = ''
-      elif self.platform == 'mac':
-        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
-        assembly_extension = ''
-      else:
-        assembly_subdir += '/netstandard1.5/win7-x64'
-      runtime_cmd = []
+      assembly_subdir += '/netcoreapp1.0'
+      runtime_cmd = ['dotnet', 'exec']
+      assembly_extension = '.dll'
     else:
       nunit_args += ['--noresult', '--workers=1']
       if self.platform == 'windows':
@@ -938,7 +932,7 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4',
-                           'node0.12', 'node4', 'node5',
+                           'node0.12', 'node4', 'node5', 'node6',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
@@ -955,6 +949,8 @@ argp.add_argument('--update_submodules', default=[], nargs='*',
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
+argp.add_argument('--report_suite_name', default='tests', type=str,
+        help='Test suite name to use in generated JUnit XML report')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Dont try to iterate over many polling strategies when they exist')
 args = argp.parse_args()
@@ -1279,7 +1275,8 @@ def _build_and_run(
 
   if build_only:
     if xml_report:
-      report_utils.render_junit_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report,
+                                           suite_name=args.report_suite_name)
     return []
 
   # start antagonists
@@ -1331,7 +1328,8 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report and resultset:
-      report_utils.render_junit_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report,
+                                           suite_name=args.report_suite_name)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
@@ -1375,7 +1373,7 @@ else:
   exit_code = 0
   if BuildAndRunError.BUILD in errors:
     exit_code |= 1
-  if BuildAndRunError.TEST in errors and not args.travis:
+  if BuildAndRunError.TEST in errors:
     exit_code |= 2
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4

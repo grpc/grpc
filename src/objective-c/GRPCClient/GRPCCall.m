@@ -103,6 +103,11 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 @synthesize state = _state;
 
+// TODO(jcanizales): If grpc_init is idempotent, this should be changed from load to initialize.
++ (void)load {
+  grpc_init();
+}
+
 - (instancetype)init {
   return [self initWithHost:nil path:nil requestsWriter:nil];
 }

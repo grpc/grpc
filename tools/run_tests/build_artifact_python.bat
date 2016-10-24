@@ -34,56 +34,45 @@ pip install --upgrade six
 pip install --upgrade setuptools
 pip install -rrequirements.txt
 
-@rem Because this is windows and *everything seems to hate Windows* we have to
-@rem set all of these flags ourselves because Python won't help us (see the
-@rem setup.py of the grpcio_tools project).
-set GRPC_PYTHON_CFLAGS=-fno-wrapv -frtti -std=c++11
-
-@rem See https://sourceforge.net/p/mingw-w64/bugs/363/
-if %2 == 32 (
-  set GRPC_PYTHON_CFLAGS=%GRPC_PYTHON_CFLAGS% -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s
-) else (
-  set GRPC_PYTHON_CFLAGS=%GRPC_PYTHON_CFLAGS% -D_ftime=_ftime64 -D_timeb=__timeb64
-)
-
-@rem Further confusing things, MSYS2's mingw64 tries to dynamically link
-@rem libgcc, libstdc++, and winpthreads. We have to override this or our
-@rem extensions end up linking to MSYS2 DLLs, which the normal Python on
-@rem Windows user won't have... and ON TOP OF THIS, there's MinGW's GCC default
-@rem behavior of linking msvcrt.dll as the C runtime library, which we need to
-@rem override so that Python's distutils doesn't link us against multiple C
-@rem runtimes.
-python -c "from distutils.cygwinccompiler import get_msvcr; print(get_msvcr()[0])" > temp.txt
-set /p PYTHON_MSVCR=<temp.txt
-set GRPC_PYTHON_LDFLAGS=-static-libgcc -static-libstdc++ -mcrtdll=%PYTHON_MSVCR% -static -lpthread
-
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
+@rem Multiple builds are running simultaneously, so to avoid distutils
+@rem file collisions, we build everything in a tmp directory
+if not exist "artifacts" mkdir "artifacts"
+set ARTIFACT_DIR=%cd%\artifacts
+set BUILD_DIR=C:\Windows\Temp\pygrpc-%3\
+mkdir %BUILD_DIR%
+xcopy /s/e/q %cd%\* %BUILD_DIR%
+pushd %BUILD_DIR%
 
 
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build gRPC Python extensions
-python setup.py build_ext -c mingw32
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py build_ext -c mingw32
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
-
 
 @rem Build gRPC Python distributions
-python setup.py bdist_wheel
+python setup.py bdist_wheel || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py bdist_wheel
+python setup.py bdist_wheel || goto :error
 popd
 
 
-mkdir artifacts
-xcopy /Y /I /S dist\* artifacts\ || goto :error
-xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* artifacts\ || goto :error
+xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
+xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
+
+popd
+rmdir /s /q %BUILD_DIR%
 
 goto :EOF
 
 :error
+popd
+rmdir /s /q %BUILD_DIR%
 exit /b 1

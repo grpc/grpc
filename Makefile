@@ -415,7 +415,7 @@ E = @echo
 Q = @
 endif
 
-VERSION = 1.0.0-pre2
+VERSION = 1.0.1-pre1
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -469,7 +469,7 @@ ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
 OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
+PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
 else # HAS_PKG_CONFIG
 
 ifeq ($(SYSTEM),MINGW32)
@@ -765,13 +765,6 @@ GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
-endif
-
-INSTALL_OK = false
-ifeq ($(HAS_VALID_PROTOC),true)
-ifeq ($(HAS_SYSTEM_PROTOBUF_VERIFY),true)
-INSTALL_OK = true
-endif
 endif
 
 .SECONDARY = %.pb.h %.pb.cc
@@ -1089,9 +1082,7 @@ server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
 window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
-bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
 bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
-bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
 bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 h2_census_test: $(BINDIR)/$(CONFIG)/h2_census_test
 h2_compress_test: $(BINDIR)/$(CONFIG)/h2_compress_test
@@ -1305,9 +1296,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
   $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_census_test \
   $(BINDIR)/$(CONFIG)/h2_compress_test \
@@ -1694,8 +1683,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing window_overflow_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bad_ssl_alpn_test"
-	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_cert_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
@@ -2102,7 +2089,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-install: install_c install_cxx install-plugins install-certs verify-install
+install: install_c install_cxx install-plugins install-certs
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -2284,28 +2271,6 @@ install-certs: etc/roots.pem
 	$(E) "[INSTALL] Installing root certificates"
 	$(Q) $(INSTALL) -d $(prefix)/share/grpc
 	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
-
-verify-install:
-ifeq ($(INSTALL_OK),true)
-	@echo "Your system looks ready to go."
-	@echo
-else
-	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
-	@echo "which means that you won't be able to compile .proto files for use"
-	@echo "with gRPC."
-	@echo
-	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
-	@echo "have no need to compile .proto files, you can ignore this."
-	@echo
-	@echo "If you do need protobuf for some reason, you can download and install"
-	@echo "it from:"
-	@echo
-	@echo "   https://github.com/google/protobuf/releases"
-	@echo
-	@echo "Once you've done so, you can re-run this check by doing:"
-	@echo
-	@echo "   make verify-install"
-endif
 
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
@@ -2662,6 +2627,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
+    include/grpc/grpc_security_constants.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -2685,7 +2651,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
     include/grpc/grpc_security.h \
-    include/grpc/grpc_security_constants.h \
     include/grpc/census.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
@@ -2911,6 +2876,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
+    include/grpc/grpc_security_constants.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -2935,7 +2901,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/time.h \
     include/grpc/grpc_cronet.h \
     include/grpc/grpc_security.h \
-    include/grpc/grpc_security_constants.h \
 
 LIBGRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CRONET_SRC))))
 
@@ -3245,6 +3210,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
+    include/grpc/grpc_security_constants.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -3385,38 +3351,38 @@ endif
 
 
 LIBGRPC++_SRC = \
+    src/cpp/client/insecure_credentials.cc \
     src/cpp/client/secure_credentials.cc \
     src/cpp/common/auth_property_iterator.cc \
     src/cpp/common/secure_auth_context.cc \
     src/cpp/common/secure_channel_arguments.cc \
     src/cpp/common/secure_create_auth_context.cc \
+    src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/secure_server_credentials.cc \
-    src/cpp/client/channel.cc \
+    src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
-    src/cpp/client/credentials.cc \
+    src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/client/insecure_credentials.cc \
     src/cpp/common/channel_arguments.cc \
-    src/cpp/common/completion_queue.cc \
+    src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/insecure_server_credentials.cc \
-    src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
-    src/cpp/util/byte_buffer.cc \
-    src/cpp/util/slice.cc \
+    src/cpp/util/byte_buffer_cc.cc \
+    src/cpp/util/slice_cc.cc \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
-    src/cpp/util/time.cc \
+    src/cpp/util/time_cc.cc \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -3710,7 +3676,7 @@ endif
 
 
 LIBGRPC++_TEST_CONFIG_SRC = \
-    test/cpp/util/test_config.cc \
+    test/cpp/util/test_config_cc.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -3877,33 +3843,33 @@ $(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/tes
 
 
 LIBGRPC++_UNSECURE_SRC = \
+    src/cpp/client/insecure_credentials.cc \
     src/cpp/common/insecure_create_auth_context.cc \
-    src/cpp/client/channel.cc \
+    src/cpp/server/insecure_server_credentials.cc \
+    src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
-    src/cpp/client/credentials.cc \
+    src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/client/insecure_credentials.cc \
     src/cpp/common/channel_arguments.cc \
-    src/cpp/common/completion_queue.cc \
+    src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/insecure_server_credentials.cc \
-    src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
-    src/cpp/util/byte_buffer.cc \
-    src/cpp/util/slice.cc \
+    src/cpp/util/byte_buffer_cc.cc \
+    src/cpp/util/slice_cc.cc \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
-    src/cpp/util/time.cc \
+    src/cpp/util/time_cc.cc \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -4031,18 +3997,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp -lgrpc-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so
 endif
@@ -13540,38 +13506,6 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-BAD_SSL_ALPN_SERVER_SRC = \
-    test/core/bad_ssl/servers/alpn.c \
-
-BAD_SSL_ALPN_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_SERVER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/alpn.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
 BAD_SSL_CERT_SERVER_SRC = \
     test/core/bad_ssl/servers/cert.c \
 
@@ -13600,38 +13534,6 @@ deps_bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
-BAD_SSL_ALPN_TEST_SRC = \
-    test/core/bad_ssl/bad_ssl_test.c \
-
-BAD_SSL_ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14890,7 +14792,7 @@ test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 test/cpp/util/proto_file_parser.cc: $(OPENSSL_DEP)
 test/cpp/util/string_ref_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
-test/cpp/util/test_config.cc: $(OPENSSL_DEP)
+test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 

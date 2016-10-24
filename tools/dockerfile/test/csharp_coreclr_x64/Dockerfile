@@ -82,7 +82,6 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
 
 RUN nuget update -self
 
-
 # Install dotnet SDK based on https://www.microsoft.com/net/core#debian
 RUN apt-get update && apt-get install -y curl libunwind8 gettext
 RUN curl -sSL -o dotnet.tar.gz https://go.microsoft.com/fwlink/?LinkID=809130
