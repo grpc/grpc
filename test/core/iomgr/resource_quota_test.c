@@ -57,7 +57,7 @@ static void reclaimer_cb(grpc_exec_ctx *exec_ctx, void *args,
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   reclaimer_args *a = args;
   grpc_resource_user_free(exec_ctx, a->resource_user, a->size);
-  grpc_resource_user_finish_reclaimation(exec_ctx, a->resource_user);
+  grpc_resource_user_finish_reclamation(exec_ctx, a->resource_user);
   grpc_closure_run(exec_ctx, a->then, GRPC_ERROR_NONE);
   gpr_free(a);
 }

@@ -203,7 +203,7 @@ typedef struct {
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
 /** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
    to fetch an appropriate pointer arg vtable */
-#define GRPC_ARG_BUFFER_POOL "grpc.resource_quota"
+#define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** Service config data, to be passed to subchannels.
     Not intended for external use. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
