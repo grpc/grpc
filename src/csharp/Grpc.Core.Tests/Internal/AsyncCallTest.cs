@@ -351,6 +351,35 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ServerStreaming_CallCompletesIfStreamNeverRead()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertCallCompleted();
+            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+        }
+
+        [Test]
+        public void ServerStreaming_CallCompletesIfStreamPartiallyRead()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertCallCompleted();
+            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+        }
+
+        [Test]
         public void ServerStreaming_NoResponse_Success1()
         {
             asyncCall.StartServerStreamingCall("request1");
