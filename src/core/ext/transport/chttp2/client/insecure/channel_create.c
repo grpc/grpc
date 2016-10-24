@@ -40,9 +40,9 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/ext/client_config/client_channel.h"
-#include "src/core/ext/client_config/http_connect_handshaker.h"
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/client_channel.h"
+#include "src/core/ext/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/compress_filter.h"

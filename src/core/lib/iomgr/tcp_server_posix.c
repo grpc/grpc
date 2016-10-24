@@ -175,7 +175,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
         return GRPC_ERROR_CREATE(GRPC_ARG_ALLOW_REUSEPORT
                                  " must be an integer");
       }
-    } else if (0 == strcmp(GRPC_ARG_BUFFER_POOL, args->args[i].key)) {
+    } else if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
         s->resource_quota =
@@ -183,7 +183,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
       } else {
         grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
         gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_BUFFER_POOL
+        return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
                                  " must be a pointer to a buffer pool");
       }
     }

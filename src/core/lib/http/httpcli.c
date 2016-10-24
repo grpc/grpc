@@ -227,7 +227,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
   grpc_arg arg;
-  arg.key = GRPC_ARG_BUFFER_POOL;
+  arg.key = GRPC_ARG_RESOURCE_QUOTA;
   arg.type = GRPC_ARG_POINTER;
   arg.value.pointer.p = req->resource_quota;
   arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
