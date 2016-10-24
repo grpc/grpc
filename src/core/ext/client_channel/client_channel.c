@@ -60,6 +60,10 @@
 
 /* Client channel implementation */
 
+/*************************************************************************
+ * METHOD-CONFIG TABLE
+ */
+
 typedef enum {
   WAIT_FOR_READY_UNSET,
   WAIT_FOR_READY_FALSE,
