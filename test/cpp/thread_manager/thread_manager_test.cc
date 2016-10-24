@@ -104,7 +104,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
 
 void ThreadManagerTest::DoWork(void *tag, bool ok) {
   num_do_work_++;
-  SleepForMs(kDoWorkDurationMsec); // Simulate doing work by sleeping
+  SleepForMs(kDoWorkDurationMsec);  // Simulate doing work by sleeping
 }
 
 void ThreadManagerTest::PerformTest() {
