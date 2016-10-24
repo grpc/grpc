@@ -249,6 +249,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
+    *completed = StreamOpStatus::SUCCESS;
     return status;
   }
 
@@ -339,6 +340,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     finish_ops_.ClientRecvStatus(context_, &status);
     call_.PerformOps(&finish_ops_);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&finish_ops_));
+    *completed = StreamOpStatus::SUCCESS;
     return status;
   }
 
@@ -453,6 +455,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
+    *completed = StreamOpStatus::SUCCESS;
     return status;
   }
 
