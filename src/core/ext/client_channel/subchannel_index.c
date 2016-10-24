@@ -73,7 +73,7 @@ static grpc_exec_ctx *current_ctx() {
 }
 
 static grpc_subchannel_key *create_key(
-    grpc_connector *connector, grpc_subchannel_args *args,
+    grpc_connector *connector, const grpc_subchannel_args *args,
     grpc_channel_args *(*copy_channel_args)(const grpc_channel_args *args)) {
   grpc_subchannel_key *k = gpr_malloc(sizeof(*k));
   k->connector = grpc_connector_ref(connector);
@@ -96,8 +96,8 @@ static grpc_subchannel_key *create_key(
   return k;
 }
 
-grpc_subchannel_key *grpc_subchannel_key_create(grpc_connector *connector,
-                                                grpc_subchannel_args *args) {
+grpc_subchannel_key *grpc_subchannel_key_create(
+    grpc_connector *connector, const grpc_subchannel_args *args) {
   return create_key(connector, args, grpc_channel_args_normalize);
 }
 
