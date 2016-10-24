@@ -126,7 +126,7 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "if-range",
     "if-unmodified-since",
     "last-modified",
-    "lb-cost",
+    "lb-cost-bin",
     "lb-token",
     "link",
     "location",
