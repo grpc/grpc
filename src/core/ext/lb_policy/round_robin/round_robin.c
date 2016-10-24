@@ -63,7 +63,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"

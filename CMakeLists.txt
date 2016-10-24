@@ -435,26 +435,26 @@ add_library(grpc
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
-  src/core/ext/client_config/channel_connectivity.c
-  src/core/ext/client_config/client_channel.c
-  src/core/ext/client_config/client_channel_factory.c
-  src/core/ext/client_config/client_config_plugin.c
-  src/core/ext/client_config/connector.c
-  src/core/ext/client_config/default_initial_connect_string.c
-  src/core/ext/client_config/http_connect_handshaker.c
-  src/core/ext/client_config/initial_connect_string.c
-  src/core/ext/client_config/lb_policy.c
-  src/core/ext/client_config/lb_policy_factory.c
-  src/core/ext/client_config/lb_policy_registry.c
-  src/core/ext/client_config/method_config.c
-  src/core/ext/client_config/parse_address.c
-  src/core/ext/client_config/resolver.c
-  src/core/ext/client_config/resolver_factory.c
-  src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
-  src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_index.c
-  src/core/ext/client_config/uri_parser.c
+  src/core/ext/client_channel/channel_connectivity.c
+  src/core/ext/client_channel/client_channel.c
+  src/core/ext/client_channel/client_channel_factory.c
+  src/core/ext/client_channel/client_channel_plugin.c
+  src/core/ext/client_channel/connector.c
+  src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/initial_connect_string.c
+  src/core/ext/client_channel/lb_policy.c
+  src/core/ext/client_channel/lb_policy_factory.c
+  src/core/ext/client_channel/lb_policy_registry.c
+  src/core/ext/client_channel/method_config.c
+  src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/resolver.c
+  src/core/ext/client_channel/resolver_factory.c
+  src/core/ext/client_channel/resolver_registry.c
+  src/core/ext/client_channel/resolver_result.c
+  src/core/ext/client_channel/subchannel.c
+  src/core/ext/client_channel/subchannel_index.c
+  src/core/ext/client_channel/uri_parser.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -670,26 +670,26 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/client_config/channel_connectivity.c
-  src/core/ext/client_config/client_channel.c
-  src/core/ext/client_config/client_channel_factory.c
-  src/core/ext/client_config/client_config_plugin.c
-  src/core/ext/client_config/connector.c
-  src/core/ext/client_config/default_initial_connect_string.c
-  src/core/ext/client_config/http_connect_handshaker.c
-  src/core/ext/client_config/initial_connect_string.c
-  src/core/ext/client_config/lb_policy.c
-  src/core/ext/client_config/lb_policy_factory.c
-  src/core/ext/client_config/lb_policy_registry.c
-  src/core/ext/client_config/method_config.c
-  src/core/ext/client_config/parse_address.c
-  src/core/ext/client_config/resolver.c
-  src/core/ext/client_config/resolver_factory.c
-  src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
-  src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_index.c
-  src/core/ext/client_config/uri_parser.c
+  src/core/ext/client_channel/channel_connectivity.c
+  src/core/ext/client_channel/client_channel.c
+  src/core/ext/client_channel/client_channel_factory.c
+  src/core/ext/client_channel/client_channel_plugin.c
+  src/core/ext/client_channel/connector.c
+  src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/initial_connect_string.c
+  src/core/ext/client_channel/lb_policy.c
+  src/core/ext/client_channel/lb_policy_factory.c
+  src/core/ext/client_channel/lb_policy_registry.c
+  src/core/ext/client_channel/method_config.c
+  src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/resolver.c
+  src/core/ext/client_channel/resolver_factory.c
+  src/core/ext/client_channel/resolver_registry.c
+  src/core/ext/client_channel/resolver_result.c
+  src/core/ext/client_channel/subchannel.c
+  src/core/ext/client_channel/subchannel_index.c
+  src/core/ext/client_channel/uri_parser.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -903,26 +903,26 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/alpn/alpn.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  src/core/ext/client_config/channel_connectivity.c
-  src/core/ext/client_config/client_channel.c
-  src/core/ext/client_config/client_channel_factory.c
-  src/core/ext/client_config/client_config_plugin.c
-  src/core/ext/client_config/connector.c
-  src/core/ext/client_config/default_initial_connect_string.c
-  src/core/ext/client_config/http_connect_handshaker.c
-  src/core/ext/client_config/initial_connect_string.c
-  src/core/ext/client_config/lb_policy.c
-  src/core/ext/client_config/lb_policy_factory.c
-  src/core/ext/client_config/lb_policy_registry.c
-  src/core/ext/client_config/method_config.c
-  src/core/ext/client_config/parse_address.c
-  src/core/ext/client_config/resolver.c
-  src/core/ext/client_config/resolver_factory.c
-  src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
-  src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_index.c
-  src/core/ext/client_config/uri_parser.c
+  src/core/ext/client_channel/channel_connectivity.c
+  src/core/ext/client_channel/client_channel.c
+  src/core/ext/client_channel/client_channel_factory.c
+  src/core/ext/client_channel/client_channel_plugin.c
+  src/core/ext/client_channel/connector.c
+  src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/initial_connect_string.c
+  src/core/ext/client_channel/lb_policy.c
+  src/core/ext/client_channel/lb_policy_factory.c
+  src/core/ext/client_channel/lb_policy_registry.c
+  src/core/ext/client_channel/method_config.c
+  src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/resolver.c
+  src/core/ext/client_channel/resolver_factory.c
+  src/core/ext/client_channel/resolver_registry.c
+  src/core/ext/client_channel/resolver_result.c
+  src/core/ext/client_channel/subchannel.c
+  src/core/ext/client_channel/subchannel_index.c
+  src/core/ext/client_channel/uri_parser.c
   src/core/ext/resolver/dns/native/dns_resolver.c
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
