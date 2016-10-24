@@ -201,6 +201,9 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 /// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 
+/// Credentials for a channel using Cronet.
+std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
+
 // User defined metadata credentials.
 class MetadataCredentialsPlugin {
  public:
