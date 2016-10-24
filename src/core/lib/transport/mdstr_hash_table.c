@@ -53,8 +53,7 @@ static size_t grpc_mdstr_hash_table_find_index(
     bool find_empty) {
   for (size_t i = 0; i < table->size; ++i) {
     const size_t idx = (key->hash + i * i) % table->size;
-    if (table->entries[idx].key == NULL)
-      return find_empty ? idx : table->size;
+    if (table->entries[idx].key == NULL) return find_empty ? idx : table->size;
     if (table->entries[idx].key == key) return idx;
   }
   return table->size;  // Not found.
@@ -82,8 +81,7 @@ grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
   // Quadratic probing gets best performance when the table is no more
   // than half full.
   table->size = num_entries * 2;
-  const size_t entry_size =
-      sizeof(grpc_mdstr_hash_table_entry) * table->size;
+  const size_t entry_size = sizeof(grpc_mdstr_hash_table_entry) * table->size;
   table->entries = gpr_malloc(entry_size);
   memset(table->entries, 0, entry_size);
   for (size_t i = 0; i < num_entries; ++i) {
