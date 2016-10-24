@@ -305,23 +305,23 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/http_connect_handshaker.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/method_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/parse_address.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/initial_connect_string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/method_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_result.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/grpclb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
@@ -488,26 +488,26 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/channel_connectivity.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/client_config_plugin.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/connector.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/default_initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/http_connect_handshaker.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/method_config.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/parse_address.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_result.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/channel_connectivity.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/client_channel_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/default_initial_connect_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/http_connect_handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/initial_connect_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/method_config.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_result.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />

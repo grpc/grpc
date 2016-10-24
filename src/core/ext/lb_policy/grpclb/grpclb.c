@@ -107,10 +107,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/client_config/client_channel_factory.h"
-#include "src/core/ext/client_config/lb_policy_factory.h"
-#include "src/core/ext/client_config/lb_policy_registry.h"
-#include "src/core/ext/client_config/parse_address.h"
+#include "src/core/ext/client_channel/client_channel_factory.h"
+#include "src/core/ext/client_channel/lb_policy_factory.h"
+#include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/ext/client_channel/parse_address.h"
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/channel/channel_args.h"
