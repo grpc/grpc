@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
 #define GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
 
-#include "src/core/ext/client_config/lb_policy_factory.h"
+#include "src/core/ext/client_channel/lb_policy_factory.h"
 
 /** Returns a load balancing factory for the glb policy, which tries to connect
  * to a load balancing server to decide the next successfully connected
