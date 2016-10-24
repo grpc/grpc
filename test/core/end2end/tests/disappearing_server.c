@@ -193,7 +193,7 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 
   gpr_log(GPR_INFO, "%s/%s", "disappearing_server_test", config.name);
 
-  config.init_client(&f, NULL);
+  config.init_client(&f, NULL, NULL);
   config.init_server(&f, NULL);
 
   do_request_and_shutdown_server(&f, cqv);

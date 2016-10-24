@@ -365,7 +365,7 @@
     "language": "c", 
     "name": "dns_resolver_connectivity_test", 
     "src": [
-      "test/core/client_config/resolvers/dns_resolver_connectivity_test.c"
+      "test/core/client_channel/resolvers/dns_resolver_connectivity_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -382,7 +382,7 @@
     "language": "c", 
     "name": "dns_resolver_test", 
     "src": [
-      "test/core/client_config/resolvers/dns_resolver_test.c"
+      "test/core/client_channel/resolvers/dns_resolver_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1480,7 +1480,7 @@
     "language": "c", 
     "name": "lb_policies_test", 
     "src": [
-      "test/core/client_config/lb_policies_test.c"
+      "test/core/client_channel/lb_policies_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1802,7 +1802,7 @@
     "language": "c", 
     "name": "set_initial_connect_string_test", 
     "src": [
-      "test/core/client_config/set_initial_connect_string_test.c"
+      "test/core/client_channel/set_initial_connect_string_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1819,7 +1819,7 @@
     "language": "c", 
     "name": "sockaddr_resolver_test", 
     "src": [
-      "test/core/client_config/resolvers/sockaddr_resolver_test.c"
+      "test/core/client_channel/resolvers/sockaddr_resolver_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2057,7 +2057,7 @@
     "language": "c", 
     "name": "uri_fuzzer_test", 
     "src": [
-      "test/core/client_config/uri_fuzzer_test.c"
+      "test/core/client_channel/uri_fuzzer_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2074,7 +2074,7 @@
     "language": "c", 
     "name": "uri_parser_test", 
     "src": [
-      "test/core/client_config/uri_parser_test.c"
+      "test/core/client_channel/uri_parser_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2693,6 +2693,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++_test_config", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -3970,6 +3971,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "h2_fake_resolver_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fake_resolver.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "h2_fakesec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_fakesec.c"
@@ -4279,6 +4298,24 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_fake_resolver_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fake_resolver.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4691,7 +4728,7 @@
     "language": "c", 
     "name": "uri_fuzzer_test_one_entry", 
     "src": [
-      "test/core/client_config/uri_fuzzer_test.c", 
+      "test/core/client_channel/uri_fuzzer_test.c", 
       "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
@@ -6480,6 +6517,7 @@
       "src/core/lib/surface/server.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
+      "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/static_metadata.h", 
@@ -6661,6 +6699,8 @@
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.c", 
       "src/core/lib/transport/connectivity_state.h", 
+      "src/core/lib/transport/mdstr_hash_table.c", 
+      "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.c", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
@@ -6683,62 +6723,65 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/client_config/client_channel.h", 
-      "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/connector.h", 
-      "src/core/ext/client_config/http_connect_handshaker.h", 
-      "src/core/ext/client_config/initial_connect_string.h", 
-      "src/core/ext/client_config/lb_policy.h", 
-      "src/core/ext/client_config/lb_policy_factory.h", 
-      "src/core/ext/client_config/lb_policy_registry.h", 
-      "src/core/ext/client_config/parse_address.h", 
-      "src/core/ext/client_config/resolver.h", 
-      "src/core/ext/client_config/resolver_factory.h", 
-      "src/core/ext/client_config/resolver_registry.h", 
-      "src/core/ext/client_config/resolver_result.h", 
-      "src/core/ext/client_config/subchannel.h", 
-      "src/core/ext/client_config/subchannel_index.h", 
-      "src/core/ext/client_config/uri_parser.h"
+      "src/core/ext/client_channel/client_channel.h", 
+      "src/core/ext/client_channel/client_channel_factory.h", 
+      "src/core/ext/client_channel/connector.h", 
+      "src/core/ext/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/client_channel/initial_connect_string.h", 
+      "src/core/ext/client_channel/lb_policy.h", 
+      "src/core/ext/client_channel/lb_policy_factory.h", 
+      "src/core/ext/client_channel/lb_policy_registry.h", 
+      "src/core/ext/client_channel/method_config.h", 
+      "src/core/ext/client_channel/parse_address.h", 
+      "src/core/ext/client_channel/resolver.h", 
+      "src/core/ext/client_channel/resolver_factory.h", 
+      "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/resolver_result.h", 
+      "src/core/ext/client_channel/subchannel.h", 
+      "src/core/ext/client_channel/subchannel_index.h", 
+      "src/core/ext/client_channel/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
-    "name": "grpc_client_config", 
+    "name": "grpc_client_channel", 
     "src": [
-      "src/core/ext/client_config/channel_connectivity.c", 
-      "src/core/ext/client_config/client_channel.c", 
-      "src/core/ext/client_config/client_channel.h", 
-      "src/core/ext/client_config/client_channel_factory.c", 
-      "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/client_config_plugin.c", 
-      "src/core/ext/client_config/connector.c", 
-      "src/core/ext/client_config/connector.h", 
-      "src/core/ext/client_config/default_initial_connect_string.c", 
-      "src/core/ext/client_config/http_connect_handshaker.c", 
-      "src/core/ext/client_config/http_connect_handshaker.h", 
-      "src/core/ext/client_config/initial_connect_string.c", 
-      "src/core/ext/client_config/initial_connect_string.h", 
-      "src/core/ext/client_config/lb_policy.c", 
-      "src/core/ext/client_config/lb_policy.h", 
-      "src/core/ext/client_config/lb_policy_factory.c", 
-      "src/core/ext/client_config/lb_policy_factory.h", 
-      "src/core/ext/client_config/lb_policy_registry.c", 
-      "src/core/ext/client_config/lb_policy_registry.h", 
-      "src/core/ext/client_config/parse_address.c", 
-      "src/core/ext/client_config/parse_address.h", 
-      "src/core/ext/client_config/resolver.c", 
-      "src/core/ext/client_config/resolver.h", 
-      "src/core/ext/client_config/resolver_factory.c", 
-      "src/core/ext/client_config/resolver_factory.h", 
-      "src/core/ext/client_config/resolver_registry.c", 
-      "src/core/ext/client_config/resolver_registry.h", 
-      "src/core/ext/client_config/resolver_result.c", 
-      "src/core/ext/client_config/resolver_result.h", 
-      "src/core/ext/client_config/subchannel.c", 
-      "src/core/ext/client_config/subchannel.h", 
-      "src/core/ext/client_config/subchannel_index.c", 
-      "src/core/ext/client_config/subchannel_index.h", 
-      "src/core/ext/client_config/uri_parser.c", 
-      "src/core/ext/client_config/uri_parser.h"
+      "src/core/ext/client_channel/channel_connectivity.c", 
+      "src/core/ext/client_channel/client_channel.c", 
+      "src/core/ext/client_channel/client_channel.h", 
+      "src/core/ext/client_channel/client_channel_factory.c", 
+      "src/core/ext/client_channel/client_channel_factory.h", 
+      "src/core/ext/client_channel/client_channel_plugin.c", 
+      "src/core/ext/client_channel/connector.c", 
+      "src/core/ext/client_channel/connector.h", 
+      "src/core/ext/client_channel/default_initial_connect_string.c", 
+      "src/core/ext/client_channel/http_connect_handshaker.c", 
+      "src/core/ext/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/client_channel/initial_connect_string.c", 
+      "src/core/ext/client_channel/initial_connect_string.h", 
+      "src/core/ext/client_channel/lb_policy.c", 
+      "src/core/ext/client_channel/lb_policy.h", 
+      "src/core/ext/client_channel/lb_policy_factory.c", 
+      "src/core/ext/client_channel/lb_policy_factory.h", 
+      "src/core/ext/client_channel/lb_policy_registry.c", 
+      "src/core/ext/client_channel/lb_policy_registry.h", 
+      "src/core/ext/client_channel/method_config.c", 
+      "src/core/ext/client_channel/method_config.h", 
+      "src/core/ext/client_channel/parse_address.c", 
+      "src/core/ext/client_channel/parse_address.h", 
+      "src/core/ext/client_channel/resolver.c", 
+      "src/core/ext/client_channel/resolver.h", 
+      "src/core/ext/client_channel/resolver_factory.c", 
+      "src/core/ext/client_channel/resolver_factory.h", 
+      "src/core/ext/client_channel/resolver_registry.c", 
+      "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/resolver_result.c", 
+      "src/core/ext/client_channel/resolver_result.h", 
+      "src/core/ext/client_channel/subchannel.c", 
+      "src/core/ext/client_channel/subchannel.h", 
+      "src/core/ext/client_channel/subchannel_index.c", 
+      "src/core/ext/client_channel/subchannel_index.h", 
+      "src/core/ext/client_channel/uri_parser.c", 
+      "src/core/ext/client_channel/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6773,7 +6816,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
+      "grpc_client_channel", 
       "nanopb"
     ], 
     "headers": [
@@ -6799,7 +6842,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6815,7 +6858,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6852,7 +6895,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6868,7 +6911,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -7115,7 +7158,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
+      "grpc_client_channel", 
       "grpc_transport_chttp2"
     ], 
     "headers": [], 
@@ -7133,7 +7176,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
+      "grpc_client_channel", 
       "grpc_secure", 
       "grpc_transport_chttp2"
     ], 
