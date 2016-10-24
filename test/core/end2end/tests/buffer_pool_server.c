@@ -119,7 +119,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
 #define SERVER_END_BASE_TAG 4000
 
   grpc_arg arg;
-  arg.key = GRPC_ARG_BUFFER_POOL;
+  arg.key = GRPC_ARG_RESOURCE_QUOTA;
   arg.type = GRPC_ARG_POINTER;
   arg.value.pointer.p = resource_quota;
   arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();

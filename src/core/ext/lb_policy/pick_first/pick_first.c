@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct pending_pick {
