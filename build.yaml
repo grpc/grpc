@@ -1007,6 +1007,26 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_cronet
+  build: all
+  language: c++
+  src:
+  - src/cpp/client/cronet_credentials.cc
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/common/insecure_create_auth_context.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  deps:
+  - gpr
+  - grpc_cronet
+  baselib: true
+  dll: true
+  filegroups:
+  - grpc++_base
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  platforms:
+  - linux
+  secure: true
 - name: grpc++_reflection
   build: all
   language: c++
