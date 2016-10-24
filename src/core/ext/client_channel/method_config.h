@@ -120,6 +120,14 @@ grpc_arg grpc_method_config_table_create_channel_arg(
 /// Generates a new table from \a table whose values are converted to a
 /// new form via the \a convert_value function.  The new table will use
 /// \a vtable for its values.
+///
+/// This is generally used to convert the table's value type from
+/// grpc_method_config to a simple struct containing only the parameters
+/// relevant to a particular filter, thus avoiding the need for a hash
+/// table lookup on the fast path.  In that scenario, \a convert_value
+/// will return a new instance of the struct containing the values from
+/// the grpc_method_config, and \a vtable provides the methods for
+/// operating on the struct type.
 grpc_mdstr_hash_table* grpc_method_config_table_convert(
     const grpc_method_config_table* table,
     void* (*convert_value)(const grpc_method_config* method_config),
