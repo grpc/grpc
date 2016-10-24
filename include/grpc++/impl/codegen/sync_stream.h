@@ -65,7 +65,8 @@ class ClientStreamingInterface {
   /// - OR with a timeout if the stream ops haven't finished before the deadline
   ///   specified in FinishOptions. In this case, the Status return value is
   ///   not valid and should not be used
-  virtual Status Finish(const FinishOptions& options, StreamOpStatus* completed) = 0;
+  virtual Status Finish(const FinishOptions& options,
+                        StreamOpStatus* completed) = 0;
 
   /// A default version of Finish that doesn't set a deadline or options
   /// Wait until the stream finishes, and return the final status. When the
@@ -90,7 +91,8 @@ class ServerStreamingInterface {
   virtual ~ServerStreamingInterface() {}
 
   /// Blocking send initial metadata to client with options
-  virtual StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) = 0;
+  virtual StreamOpStatus SendInitialMetadata(
+      const SendInitialMetadataOptions& options) = 0;
 
   /// Default version of SendInitialMetadata that doesn't have options
   inline void SendInitialMetadata() {
@@ -105,12 +107,13 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Upper bound on the next message size available for reading on this stream
-  virtual StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) = 0;
+  virtual StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) = 0;
 
   /// Default version of NextMessageSize with default options
   inline bool NextMessageSize(uint32_t* sz) {
     return NextMessageSize(sz, NextMessageSizeOptions()) ==
-        StreamOpStatus::SUCCESS;
+           StreamOpStatus::SUCCESS;
   }
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
@@ -163,7 +166,9 @@ class WriterInterface {
   /// \param msg The message to be written to the stream.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  inline bool Write(const W& msg) { return Write(msg, WriteOptions()) == StreamOpStatus::SUCCESS; }
+  inline bool Write(const W& msg) {
+    return Write(msg, WriteOptions()) == StreamOpStatus::SUCCESS;
+  }
 };
 
 /// Client-side interface for streaming reads of message of type \a R.
@@ -175,7 +180,8 @@ class ClientReaderInterface : public ClientStreamingInterface,
   /// can only be accessed after this call returns. Should only be called before
   /// the first read. Calling this method is optional, and if it is not called
   /// the metadata will be available in ClientContext after the first read.
-  virtual StreamOpStatus WaitForInitialMetadata(const WaitForInitialMetadataOptions& options) = 0;
+  virtual StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) = 0;
 
   inline void WaitForInitialMetadata() {
     WaitForInitialMetadata(WaitForInitialMetadataOptions());
@@ -204,7 +210,8 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
 
   using ClientReaderInterface<R>::WaitForInitialMetadata;
 
-  StreamOpStatus WaitForInitialMetadata(const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
@@ -215,7 +222,8 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
   }
 
   using ReaderInterface<R>::NextMessageSize;
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
     *sz = call_.max_receive_message_size();
     return StreamOpStatus::SUCCESS;
   }
@@ -228,12 +236,14 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     }
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
-    return (cq_.Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
+    return (cq_.Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS
+                                                : StreamOpStatus::FAIL;
   }
 
   using ClientStreamingInterface::Finish;
 
-  Status Finish(const FinishOptions& options, StreamOpStatus* completed) GRPC_OVERRIDE {
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) GRPC_OVERRIDE {
     CallOpSet<CallOpClientRecvStatus> ops;
     Status status;
     ops.ClientRecvStatus(context_, &status);
@@ -283,7 +293,8 @@ class ClientWriter : public ClientWriterInterface<W> {
     cq_.Pluck(&ops);
   }
 
-  StreamOpStatus WaitForInitialMetadata(const WaitForInitialMetadataOptions& options) {
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
@@ -298,7 +309,8 @@ class ClientWriter : public ClientWriterInterface<W> {
   }
 
   using WriterInterface<W>::Write;
-  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return StreamOpStatus::FAIL;
@@ -318,7 +330,8 @@ class ClientWriter : public ClientWriterInterface<W> {
   using ClientStreamingInterface::Finish;
 
   /// Read the final response and wait for the final status.
-  Status Finish(const FinishOptions& options, StreamOpStatus* completed) GRPC_OVERRIDE {
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) GRPC_OVERRIDE {
     Status status;
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -348,7 +361,8 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   /// can only be accessed after this call returns. Should only be called before
   /// the first read. Calling this method is optional, and if it is not called
   /// the metadata will be available in ClientContext after the first read.
-  virtual StreamOpStatus WaitForInitialMetadata(const WaitForInitialMetadataOptions& options) = 0;
+  virtual StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) = 0;
 
   inline void WaitForInitialMetadata() {
     WaitForInitialMetadata(WaitForInitialMetadataOptions());
@@ -380,7 +394,8 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   }
 
   using ClientReaderWriterInterface<W, R>::WaitForInitialMetadata;
-  StreamOpStatus WaitForInitialMetadata(const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
@@ -391,7 +406,8 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   }
 
   using ReaderInterface<R>::NextMessageSize;
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
     *sz = call_.max_receive_message_size();
     return StreamOpStatus::SUCCESS;
   }
@@ -404,11 +420,13 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     }
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
-    return (cq_.Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
+    return (cq_.Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS
+                                                : StreamOpStatus::FAIL;
   }
 
   using WriterInterface<W>::Write;
-  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) return StreamOpStatus::FAIL;
     call_.PerformOps(&ops);
@@ -425,7 +443,8 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
 
   using ClientStreamingInterface::Finish;
 
-  Status Finish(const FinishOptions& options, StreamOpStatus* completed) GRPC_OVERRIDE {
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -453,7 +472,8 @@ class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
  public:
   ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -469,7 +489,8 @@ class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
   }
 
   using ReaderInterface<R>::NextMessageSize;
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
     *sz = call_->max_receive_message_size();
     return StreamOpStatus::SUCCESS;
   }
@@ -479,7 +500,9 @@ class ServerReader GRPC_FINAL : public ServerReaderInterface<R> {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
-    return (call_->cq()->Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
+    return (call_->cq()->Pluck(&ops) && ops.got_message)
+               ? StreamOpStatus::SUCCESS
+               : StreamOpStatus::FAIL;
   }
 
  private:
@@ -497,7 +520,8 @@ class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
  public:
   ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
-  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -513,7 +537,8 @@ class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
   }
 
   using WriterInterface<W>::Write;
-  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) {
       return StreamOpStatus::FAIL;
@@ -527,7 +552,8 @@ class ServerWriter GRPC_FINAL : public ServerWriterInterface<W> {
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
-    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
+    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS
+                                      : StreamOpStatus::FAIL;
   }
 
  private:
@@ -549,7 +575,8 @@ class ServerReaderWriterBody GRPC_FINAL {
   ServerReaderWriterBody(Call* call, ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 
-  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) {
+  StreamOpStatus SendInitialMetadata(
+      const SendInitialMetadataOptions& options) {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -564,7 +591,8 @@ class ServerReaderWriterBody GRPC_FINAL {
     return StreamOpStatus::SUCCESS;
   }
 
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) {
+  StreamOpStatus NextMessageSize(uint32_t* sz,
+                                 const NextMessageSizeOptions& options) {
     *sz = call_->max_receive_message_size();
     return StreamOpStatus::SUCCESS;
   }
@@ -573,7 +601,9 @@ class ServerReaderWriterBody GRPC_FINAL {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
-    return (call_->cq()->Pluck(&ops) && ops.got_message) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
+    return (call_->cq()->Pluck(&ops) && ops.got_message)
+               ? StreamOpStatus::SUCCESS
+               : StreamOpStatus::FAIL;
   }
 
   StreamOpStatus Write(const W& msg, const WriteOptions& options) {
@@ -590,7 +620,8 @@ class ServerReaderWriterBody GRPC_FINAL {
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
-    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS : StreamOpStatus::FAIL;
+    return (call_->cq()->Pluck(&ops)) ? StreamOpStatus::SUCCESS
+                                      : StreamOpStatus::FAIL;
   }
 
  private:
@@ -605,18 +636,25 @@ class ServerReaderWriter GRPC_FINAL : public ServerReaderWriterInterface<W, R> {
  public:
   ServerReaderWriter(Call* call, ServerContext* ctx) : body_(call, ctx) {}
 
-  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) GRPC_OVERRIDE { return body_.SendInitialMetadata(options); }
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      GRPC_OVERRIDE {
+    return body_.SendInitialMetadata(options);
+  }
 
   using ReaderInterface<R>::NextMessageSize;
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
     return body_.NextMessageSize(sz, options);
   }
 
   using ReaderInterface<R>::Read;
-  StreamOpStatus Read(R* msg, const ReadOptions& options) GRPC_OVERRIDE { return body_.Read(msg, options); }
+  StreamOpStatus Read(R* msg, const ReadOptions& options) GRPC_OVERRIDE {
+    return body_.Read(msg, options);
+  }
 
   using WriterInterface<W>::Write;
-  StreamOpStatus Write(const W& msg, const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) GRPC_OVERRIDE {
     return body_.Write(msg, options);
   }
 
@@ -640,15 +678,20 @@ class ServerUnaryStreamer GRPC_FINAL
   ServerUnaryStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false), write_done_(false) {}
 
-  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) GRPC_OVERRIDE { return body_.SendInitialMetadata(options); }
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      GRPC_OVERRIDE {
+    return body_.SendInitialMetadata(options);
+  }
 
   using ReaderInterface<RequestType>::NextMessageSize;
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
     return body_.NextMessageSize(sz, options);
   }
 
   using ReaderInterface<RequestType>::Read;
-  StreamOpStatus Read(RequestType* request, const ReadOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Read(RequestType* request,
+                      const ReadOptions& options) GRPC_OVERRIDE {
     if (read_done_) {
       return StreamOpStatus::FAIL;
     }
@@ -658,7 +701,7 @@ class ServerUnaryStreamer GRPC_FINAL
 
   using WriterInterface<ResponseType>::Write;
   StreamOpStatus Write(const ResponseType& response,
-             const WriteOptions& options) GRPC_OVERRIDE {
+                       const WriteOptions& options) GRPC_OVERRIDE {
     if (write_done_ || !read_done_) {
       return StreamOpStatus::FAIL;
     }
@@ -684,15 +727,20 @@ class ServerSplitStreamer GRPC_FINAL
   ServerSplitStreamer(Call* call, ServerContext* ctx)
       : body_(call, ctx), read_done_(false) {}
 
-  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options) GRPC_OVERRIDE { return body_.SendInitialMetadata(options); }
+  StreamOpStatus SendInitialMetadata(const SendInitialMetadataOptions& options)
+      GRPC_OVERRIDE {
+    return body_.SendInitialMetadata(options);
+  }
 
   using ReaderInterface<RequestType>::NextMessageSize;
-  StreamOpStatus NextMessageSize(uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
     return body_.NextMessageSize(sz, options);
   }
 
   using ReaderInterface<RequestType>::Read;
-  StreamOpStatus Read(RequestType* request, const ReadOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Read(RequestType* request,
+                      const ReadOptions& options) GRPC_OVERRIDE {
     if (read_done_) {
       return StreamOpStatus::FAIL;
     }
@@ -702,7 +750,7 @@ class ServerSplitStreamer GRPC_FINAL
 
   using WriterInterface<ResponseType>::Write;
   StreamOpStatus Write(const ResponseType& response,
-             const WriteOptions& options) GRPC_OVERRIDE {
+                       const WriteOptions& options) GRPC_OVERRIDE {
     if (!read_done_) {
       return StreamOpStatus::FAIL;
     }
