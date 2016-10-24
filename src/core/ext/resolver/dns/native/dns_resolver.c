@@ -224,7 +224,9 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                          dns_resolver *r) {
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
-    *r->target_result = grpc_channel_args_copy(r->resolved_result);
+    *r->target_result = r->resolved_result == NULL
+                            ? NULL
+                            : grpc_channel_args_copy(r->resolved_result);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
