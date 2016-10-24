@@ -159,6 +159,11 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_peer(exec_ctx, transport);
 }
 
+grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
+                                           grpc_transport *transport) {
+  return transport->vtable->get_endpoint(exec_ctx, transport);
+}
+
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error) {
