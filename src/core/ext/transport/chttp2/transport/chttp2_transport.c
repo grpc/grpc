@@ -1811,6 +1811,11 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
+static double memory_pressure_to_error(double memory_pressure) {
+  if (memory_pressure < 0.8) return 0;
+  return (1.0 - memory_pressure) * 5 * 4096;
+}
+
 static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                grpc_error *error) {
   GPR_TIMER_BEGIN("reading_action_locked", 0);
@@ -1900,12 +1905,16 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
-      double dt = dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
+      double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
       if (dt > 3) {
         grpc_pid_controller_reset(&t->pid_controller);
       }
       t->bdp_guess += grpc_pid_controller_update(
-          &t->pid_controller, 2.0 * estimate - t->bdp_guess, dt);
+          &t->pid_controller,
+          2.0 * (double)estimate - t->bdp_guess -
+              memory_pressure_to_error(grpc_resource_quota_get_memory_pressure(
+                  grpc_endpoint_get_resource_user(t->ep)->resource_quota)),
+          dt);
       update_bdp(exec_ctx, t, t->bdp_guess);
       if (0)
         gpr_log(GPR_DEBUG, "bdp guess %s: %lf (est=%" PRId64 " dt=%lf int=%lf)",
@@ -2050,7 +2059,7 @@ static void incoming_byte_stream_update_flow_control(grpc_exec_ctx *exec_ctx,
     if (t->retract_incoming_window >= add_max_recv_bytes) {
       t->retract_incoming_window -= add_max_recv_bytes;
     } else {
-      add_max_recv_bytes -= t->retract_incoming_window;
+      add_max_recv_bytes -= (uint32_t)t->retract_incoming_window;
       t->retract_incoming_window = 0;
       GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("op", t, announce_incoming_window,
                                         add_max_recv_bytes);
