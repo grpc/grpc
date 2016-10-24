@@ -31,13 +31,13 @@
  *is % allowed in string
  */
 
-#include <atomic>
 #include <memory>
 #include <string>
 
 #include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/cpp/thread_manager/thread_manager.h"
 #include "test/cpp/util/test_config.h"
@@ -67,9 +67,9 @@ class ThreadManagerTest GRPC_FINAL : public grpc::ThreadManager {
   // PollForWork will return SHUTDOWN after these many number of invocations
   static const int kMaxNumPollForWork = 50;
 
-  std::atomic_int num_do_work_;        // Number of calls to DoWork
-  std::atomic_int num_poll_for_work_;  // Number of calls to PollForWork
-  std::atomic_int num_work_found_;  // Number of times WORK_FOUND was returned
+  gpr_atm num_do_work_;        // Number of calls to DoWork
+  gpr_atm num_poll_for_work_;  // Number of calls to PollForWork
+  gpr_atm num_work_found_;     // Number of times WORK_FOUND was returned
 };
 
 void ThreadManagerTest::SleepForMs(int duration_ms) {
@@ -81,7 +81,7 @@ void ThreadManagerTest::SleepForMs(int duration_ms) {
 
 grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
                                                                bool *ok) {
-  int call_num = num_poll_for_work_.fetch_add(1);
+  int call_num = gpr_atm_no_barrier_fetch_add(&num_poll_for_work_, 1);
 
   if (call_num >= kMaxNumPollForWork) {
     Shutdown();
@@ -98,27 +98,29 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
   if (call_num % 3 == 0) {
     return TIMEOUT;
   } else {
-    num_work_found_++;
+    gpr_atm_no_barrier_fetch_add(&num_work_found_, 1);
     return WORK_FOUND;
   }
 }
 
 void ThreadManagerTest::DoWork(void *tag, bool ok) {
-  num_do_work_++;
+  gpr_atm_no_barrier_fetch_add(&num_do_work_, 1);
   SleepForMs(kDoWorkDurationMsec);  // Simulate doing work by sleeping
 }
 
 void ThreadManagerTest::PerformTest() {
   // Initialize() starts the ThreadManager
-  ThreadManager::Initialize();
+  Initialize();
 
   // Wait for all the threads to gracefully terminate
-  ThreadManager::Wait();
+  Wait();
 
   // The number of times DoWork() was called is equal to the number of times
   // WORK_FOUND was returned
-  gpr_log(GPR_DEBUG, "DoWork() called %d times", num_do_work_.load());
-  GPR_ASSERT(num_do_work_ == num_work_found_);
+  gpr_log(GPR_DEBUG, "DoWork() called %ld times",
+          gpr_atm_no_barrier_load(&num_do_work_));
+  GPR_ASSERT(gpr_atm_no_barrier_load(&num_do_work_) ==
+             gpr_atm_no_barrier_load(&num_work_found_));
 }
 
 int main(int argc, char **argv) {
