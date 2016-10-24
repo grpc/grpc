@@ -197,7 +197,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
                 maybe_default_compression_algorithm_.algorithm);
   }
   if (resource_quota_ != nullptr) {
-    args.SetPointerWithVtable(GRPC_ARG_BUFFER_POOL, resource_quota_,
+    args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
   }
   std::unique_ptr<Server> server(new Server(thread_pool.release(), true,

@@ -134,7 +134,8 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
                                         8 * 1024 * 1024};
         tcp_read_chunk_size = (size_t)grpc_channel_arg_get_integer(
             &channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_BUFFER_POOL)) {
+      } else if (0 ==
+                 strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
         resource_quota = grpc_resource_quota_internal_ref(
             channel_args->args[i].value.pointer.p);
