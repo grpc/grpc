@@ -264,7 +264,7 @@ namespace Grpc.Core
             public Entry(string key, byte[] valueBytes)
             {
                 this.key = NormalizeKey(key);
-                GrpcPreconditions.CheckArgument(this.key.EndsWith(BinaryHeaderSuffix),
+                GrpcPreconditions.CheckArgument(HasBinaryHeaderSuffix(this.key),
                     "Key for binary valued metadata entry needs to have suffix indicating binary value.");
                 this.value = null;
                 GrpcPreconditions.CheckNotNull(valueBytes, "valueBytes");
@@ -280,7 +280,7 @@ namespace Grpc.Core
             public Entry(string key, string value)
             {
                 this.key = NormalizeKey(key);
-                GrpcPreconditions.CheckArgument(!this.key.EndsWith(BinaryHeaderSuffix),
+                GrpcPreconditions.CheckArgument(!HasBinaryHeaderSuffix(this.key),
                     "Key for ASCII valued metadata entry cannot have suffix indicating binary value.");
                 this.value = GrpcPreconditions.CheckNotNull(value, "value");
                 this.valueBytes = null;
@@ -367,7 +367,7 @@ namespace Grpc.Core
             /// </summary>
             internal static Entry CreateUnsafe(string key, byte[] valueBytes)
             {
-                if (key.EndsWith(BinaryHeaderSuffix))
+                if (HasBinaryHeaderSuffix(key))
                 {
                     return new Entry(key, null, valueBytes);
                 }
@@ -380,6 +380,27 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
                 return normalized;
+            }
+
+            /// <summary>
+            /// Returns <c>true</c> if the key has "-bin" binary header suffix.
+            /// </summary>
+            private static bool HasBinaryHeaderSuffix(string key)
+            {
+                // We don't use just string.EndsWith because its implementation is extremely slow
+                // on CoreCLR and we've seen significant differences in gRPC benchmarks caused by it.
+                // See https://github.com/dotnet/coreclr/issues/5612
+
+                int len = key.Length;
+                if (len >= 4 &&
+                    key[len - 4] == '-' &&
+                    key[len - 3] == 'b' &&
+                    key[len - 2] == 'i' &&
+                    key[len - 1] == 'n')
+                {
+                    return true;
+                }
+                return false;
             }
         }
     }
