@@ -60,9 +60,9 @@ typedef struct grpc_lb_address {
 } grpc_lb_address;
 
 typedef struct grpc_lb_user_data_vtable {
-  void* (*copy)(void*);
-  void (*destroy)(void*);
-  int (*cmp)(void*, void*);
+  void *(*copy)(void *);
+  void (*destroy)(void *);
+  int (*cmp)(void *, void *);
 } grpc_lb_user_data_vtable;
 
 typedef struct grpc_lb_addresses {
@@ -75,7 +75,7 @@ typedef struct grpc_lb_addresses {
     \a num_addresses addresses.  The \a user_data_vtable argument may be
     NULL if no user data will be added. */
 grpc_lb_addresses *grpc_lb_addresses_create(
-    size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable);
+    size_t num_addresses, const grpc_lb_user_data_vtable *user_data_vtable);
 
 /** Creates a copy of \a addresses.  If \a user_data_copy is not NULL,
  * it will be invoked to copy the \a user_data field of each address. */

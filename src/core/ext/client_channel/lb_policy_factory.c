@@ -60,9 +60,8 @@ grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses) {
           gpr_strdup(new_addresses->addresses[i].balancer_name);
     }
     if (new_addresses->addresses[i].user_data != NULL) {
-      new_addresses->addresses[i].user_data =
-          addresses->user_data_vtable->copy(
-              new_addresses->addresses[i].user_data);
+      new_addresses->addresses[i].user_data = addresses->user_data_vtable->copy(
+          new_addresses->addresses[i].user_data);
     }
   }
   return new_addresses;
@@ -93,15 +92,15 @@ int grpc_lb_addresses_cmp(const grpc_lb_addresses* addresses1,
     const grpc_lb_address* target2 = &addresses2->addresses[i];
     if (target1->address.len > target2->address.len) return 1;
     if (target1->address.len < target2->address.len) return -1;
-    int retval = memcmp(
-        target1->address.addr, target2->address.addr, target1->address.len);
+    int retval = memcmp(target1->address.addr, target2->address.addr,
+                        target1->address.len);
     if (retval != 0) return retval;
     if (target1->is_balancer > target2->is_balancer) return 1;
     if (target1->is_balancer < target2->is_balancer) return -1;
-    const char* balancer_name1 = target1->balancer_name != NULL
-                                     ? target1->balancer_name : "";
-    const char* balancer_name2 = target2->balancer_name != NULL
-                                     ? target2->balancer_name : "";
+    const char* balancer_name1 =
+        target1->balancer_name != NULL ? target1->balancer_name : "";
+    const char* balancer_name2 =
+        target2->balancer_name != NULL ? target2->balancer_name : "";
     retval = strcmp(balancer_name1, balancer_name2);
     if (retval != 0) return retval;
     if (addresses1->user_data_vtable != NULL) {
@@ -137,7 +136,7 @@ static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
     lb_addresses_copy, lb_addresses_destroy, lb_addresses_cmp};
 
 grpc_arg grpc_lb_addresses_create_channel_arg(
-    const grpc_lb_addresses *addresses) {
+    const grpc_lb_addresses* addresses) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   arg.key = GRPC_ARG_LB_ADDRESSES;

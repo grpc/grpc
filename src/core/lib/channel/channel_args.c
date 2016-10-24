@@ -71,13 +71,13 @@ grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
 }
 
 grpc_channel_args *grpc_channel_args_copy_and_remove(
-    const grpc_channel_args *src, const char** to_remove,
+    const grpc_channel_args *src, const char **to_remove,
     size_t num_to_remove) {
   return grpc_channel_args_copy_and_add_and_remove(src, to_remove,
                                                    num_to_remove, NULL, 0);
 }
 
-static bool should_remove_arg(const grpc_arg* arg, const char** to_remove,
+static bool should_remove_arg(const grpc_arg *arg, const char **to_remove,
                               size_t num_to_remove) {
   for (size_t i = 0; i < num_to_remove; ++i) {
     if (strcmp(arg->key, to_remove[i]) == 0) return true;
@@ -86,7 +86,7 @@ static bool should_remove_arg(const grpc_arg* arg, const char** to_remove,
 }
 
 grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
-    const grpc_channel_args *src, const char** to_remove, size_t num_to_remove,
+    const grpc_channel_args *src, const char **to_remove, size_t num_to_remove,
     const grpc_arg *to_add, size_t num_to_add) {
   // Figure out how many args we'll be copying.
   size_t num_args_to_copy = 0;

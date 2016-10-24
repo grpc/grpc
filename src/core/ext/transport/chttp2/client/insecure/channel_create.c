@@ -195,8 +195,8 @@ static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
     grpc_channel_args *args) {
-  grpc_channel *channel = grpc_channel_create(exec_ctx, target, args,
-                                              GRPC_CLIENT_CHANNEL, NULL);
+  grpc_channel *channel =
+      grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
   grpc_resolver *resolver = grpc_resolver_create(target, args);
   if (!resolver) {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
@@ -233,7 +233,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   GPR_ASSERT(!reserved);
 
   grpc_client_channel_factory *factory =
-      (grpc_client_channel_factory*)&client_channel_factory;
+      (grpc_client_channel_factory *)&client_channel_factory;
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
 

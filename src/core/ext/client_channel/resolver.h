@@ -85,7 +85,6 @@ void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
     If resolution is fatally broken, set *result to NULL and
     schedule on_complete. */
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                        grpc_channel_args **result,
-                        grpc_closure *on_complete);
+                        grpc_channel_args **result, grpc_closure *on_complete);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_RESOLVER_H */

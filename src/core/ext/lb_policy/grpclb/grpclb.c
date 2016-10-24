@@ -339,13 +339,13 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
 }
 
 /* vtable for LB tokens in grpc_lb_addresses. */
-static void* lb_token_copy(void *token) {
+static void *lb_token_copy(void *token) {
   return token == NULL ? NULL : GRPC_MDELEM_REF(token);
 }
 static void lb_token_destroy(void *token) {
   if (token != NULL) GRPC_MDELEM_UNREF(token);
 }
-static int lb_token_cmp(void* token1, void* token2) {
+static int lb_token_cmp(void *token1, void *token2) {
   if (token1 > token2) return 1;
   if (token1 < token2) return -1;
   return 0;
@@ -477,7 +477,7 @@ static grpc_lb_policy *create_rr_locked(
 
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
-  static const char* keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
+  static const char *keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
   const grpc_arg arg =
       grpc_lb_addresses_create_channel_arg(glb_policy->addresses);
   args.args = grpc_channel_args_copy_and_add_and_remove(
@@ -582,11 +582,10 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
   /* Get server name. */
-  const grpc_arg* arg =
+  const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
-  const char* server_name =
-      arg != NULL && arg->type == GRPC_ARG_STRING
-          ? arg->value.string : NULL;
+  const char *server_name =
+      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
 
   /* Count the number of gRPC-LB addresses. There must be at least one.
    * TODO(roth): For now, we ignore non-balancer addresses, but in the
@@ -597,7 +596,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * this is the right LB policy to use. */
   arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses* addresses = arg->value.pointer.p;
+  grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_grpclb_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
@@ -631,14 +630,13 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     if (addresses->addresses[i].is_balancer) {
       if (addr_index == 0) {
         addr_strs[addr_index++] = grpc_sockaddr_to_uri(
-            (const struct sockaddr *)&addresses->addresses[i]
-                .address.addr);
+            (const struct sockaddr *)&addresses->addresses[i].address.addr);
       } else {
-        GPR_ASSERT(grpc_sockaddr_to_string(
-                       &addr_strs[addr_index++],
-                       (const struct sockaddr *)&addresses->addresses[i]
-                           .address.addr,
-                       true) > 0);
+        GPR_ASSERT(
+            grpc_sockaddr_to_string(
+                &addr_strs[addr_index++],
+                (const struct sockaddr *)&addresses->addresses[i].address.addr,
+                true) > 0);
       }
     }
   }
@@ -661,8 +659,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * so that it does not wind up recursively using the grpclb LB policy,
    * as per the special case logic in client_channel.c.
    */
-  static const char* keys_to_remove[] = {
-      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES};
+  static const char *keys_to_remove[] = {GRPC_ARG_LB_POLICY_NAME,
+                                         GRPC_ARG_LB_ADDRESSES};
   grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
       args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
