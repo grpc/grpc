@@ -4969,6 +4969,27 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc++_base", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc_cronet"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_cronet", 
+    "src": [
+      "src/cpp/client/cronet_credentials.cc", 
+      "src/cpp/client/insecure_credentials.cc", 
+      "src/cpp/common/insecure_create_auth_context.cc", 
+      "src/cpp/server/insecure_server_credentials.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc++", 
       "grpc++_reflection_proto"
     ], 
