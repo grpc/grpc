@@ -2157,6 +2157,14 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
 }
 
+/*******************************************************************************
+ * MONITORING
+ */
+static grpc_endpoint *chttp2_get_endpoint(grpc_exec_ctx *exec_ctx,
+                                          grpc_transport *t) {
+  return ((grpc_chttp2_transport *)t)->ep;
+}
+
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
@@ -2166,7 +2174,8 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_peer};
+                                             chttp2_get_peer,
+                                             chttp2_get_endpoint};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

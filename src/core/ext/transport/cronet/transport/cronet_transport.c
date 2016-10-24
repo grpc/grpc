@@ -42,6 +42,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
@@ -1054,6 +1055,11 @@ static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   return NULL;
 }
 
+static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx,
+                                   grpc_transport *gt) {
+  return NULL;
+}
+
 static void perform_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_transport_op *op) {}
 
@@ -1066,4 +1072,5 @@ const grpc_transport_vtable grpc_cronet_vtable = {sizeof(stream_obj),
                                                   perform_op,
                                                   destroy_stream,
                                                   destroy_transport,
-                                                  get_peer};
+                                                  get_peer,
+                                                  get_endpoint};
