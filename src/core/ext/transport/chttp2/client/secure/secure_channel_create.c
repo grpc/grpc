@@ -248,7 +248,7 @@ static void client_channel_factory_unref(
 
 static grpc_subchannel *client_channel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    grpc_subchannel_args *args) {
+    const grpc_subchannel_args *args) {
   client_channel_factory *f = (client_channel_factory *)cc_factory;
   connector *c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
@@ -272,7 +272,7 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
 static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
-    grpc_channel_args *args) {
+    const grpc_channel_args *args) {
   client_channel_factory *f = (client_channel_factory *)cc_factory;
   grpc_channel *channel =
       grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
