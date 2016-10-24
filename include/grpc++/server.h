@@ -201,7 +201,7 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   grpc::mutex mu_;
   bool started_;
   bool shutdown_;
-  bool shutdown_notified_; // Was notify called on the shutdown_cv_
+  bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
   grpc::condition_variable shutdown_cv_;
 
