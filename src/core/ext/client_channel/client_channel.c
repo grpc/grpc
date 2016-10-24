@@ -202,7 +202,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_ADDRESSES);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-      grpc_lb_addresses* addresses = channel_arg->value.pointer.p;
+      grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
       bool found_backend_address = false;
       for (size_t i = 0; i < addresses->num_addresses; ++i) {
         if (!addresses->addresses[i].is_balancer) {

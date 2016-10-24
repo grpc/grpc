@@ -174,8 +174,8 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   gpr_slice_buffer path_parts;
   gpr_slice_buffer_init(&path_parts);
   gpr_slice_split(path_slice, ",", &path_parts);
-  grpc_lb_addresses* addresses = grpc_lb_addresses_create(
-      path_parts.count, NULL /* user_data_vtable */);
+  grpc_lb_addresses* addresses =
+      grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;

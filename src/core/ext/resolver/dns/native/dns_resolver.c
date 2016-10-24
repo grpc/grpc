@@ -264,7 +264,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   grpc_arg server_name_arg;
   server_name_arg.type = GRPC_ARG_STRING;
   server_name_arg.key = GRPC_ARG_SERVER_NAME;
-  server_name_arg.value.string = (char*)path;
+  server_name_arg.value.string = (char *)path;
   r->channel_args =
       grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,

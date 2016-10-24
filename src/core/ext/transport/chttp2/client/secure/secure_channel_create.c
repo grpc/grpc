@@ -274,8 +274,8 @@ static grpc_channel *client_channel_factory_create_channel(
     const char *target, grpc_client_channel_type type,
     grpc_channel_args *args) {
   client_channel_factory *f = (client_channel_factory *)cc_factory;
-  grpc_channel *channel = grpc_channel_create(exec_ctx, target, args,
-                                              GRPC_CLIENT_CHANNEL, NULL);
+  grpc_channel *channel =
+      grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
   grpc_resolver *resolver = grpc_resolver_create(target, args);
   if (resolver != NULL) {
     grpc_client_channel_finish_initialization(

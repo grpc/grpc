@@ -602,17 +602,16 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->client_channel_factory != NULL);
 
   /* Get server name. */
-  const grpc_arg* arg =
+  const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
-  const char* server_name =
-      arg != NULL && arg->type == GRPC_ARG_STRING
-          ? arg->value.string : NULL;
+  const char *server_name =
+      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
 
   /* Find the number of backend addresses. We ignore balancer
    * addresses, since we don't know how to handle them. */
   arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses* addresses = arg->value.pointer.p;
+  grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     if (!addresses->addresses[i].is_balancer) ++num_addrs;
@@ -636,8 +635,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     /* server_name will be copied as part of the subchannel creation. This makes
      * the copying of server_name (a borrowed pointer) OK. */
     sc_args.server_name = server_name;
-    sc_args.addr =
-        (struct sockaddr *)(&addresses->addresses[i].address.addr);
+    sc_args.addr = (struct sockaddr *)(&addresses->addresses[i].address.addr);
     sc_args.addr_len = addresses->addresses[i].address.len;
     sc_args.args = args->args;
 
