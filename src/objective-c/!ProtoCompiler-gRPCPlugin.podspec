@@ -81,7 +81,7 @@ Pod::Spec.new do |s|
   }
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  repo = 'grpc/grpc'
+  repo = 'muxi/grpc'
   file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
   s.source = {
     :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
@@ -95,7 +95,7 @@ Pod::Spec.new do |s|
   s.preserve_paths = plugin
 
   # Restrict the protoc version to the one supported by this plugin.
-  s.dependency '!ProtoCompiler', '3.0.0'
+  s.dependency '!ProtoCompiler', '3.0.2'
   # For the Protobuf dependency not to complain:
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
