@@ -42,8 +42,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/parse_address.h"
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/method_config.h"
+#include "src/core/ext/client_channel/parse_address.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -61,6 +62,7 @@ typedef struct {
   char* target_name;  // the path component of the uri passed in
   grpc_lb_addresses* addresses;
   char* lb_policy_name;
+  grpc_method_config_table* method_config_table;
 
   // mutex guarding the rest of the state
   gpr_mu mu;
@@ -78,6 +80,7 @@ static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   gpr_free(r->target_name);
   grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
   gpr_free(r->lb_policy_name);
+  grpc_method_config_table_unref(r->method_config_table);
   gpr_free(r);
 }
 
@@ -97,10 +100,16 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
                                                    fake_resolver* r) {
   if (r->next_completion != NULL && !r->published) {
     r->published = true;
+    grpc_channel_args* lb_policy_args = NULL;
+    if (r->method_config_table != NULL) {
+      const grpc_arg arg =
+          grpc_method_config_table_create_channel_arg(r->method_config_table);
+      lb_policy_args = grpc_channel_args_copy_and_add(NULL /* src */, &arg, 1);
+    }
     *r->target_result = grpc_resolver_result_create(
         r->target_name,
         grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        r->lb_policy_name, NULL /* lb_policy_args */);
+        r->lb_policy_name, lb_policy_args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -181,6 +190,45 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
     grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
     return NULL;
   }
+  // Construct method config table.
+  // We only support parameters for a single method.
+  grpc_method_config_table* method_config_table = NULL;
+  const char* method_name = grpc_uri_get_query_arg(args->uri, "method_name");
+  if (method_name != NULL) {
+    const char* wait_for_ready_str =
+        grpc_uri_get_query_arg(args->uri, "wait_for_ready");
+    // Anything other than "0" is interpreted as true.
+    bool wait_for_ready =
+        wait_for_ready_str != NULL && strcmp("0", wait_for_ready_str) != 0;
+    const char* timeout_str =
+        grpc_uri_get_query_arg(args->uri, "timeout_seconds");
+    gpr_timespec timeout = {timeout_str == NULL ? 0 : atoi(timeout_str), 0,
+                            GPR_TIMESPAN};
+    const char* max_request_message_bytes_str =
+        grpc_uri_get_query_arg(args->uri, "max_request_message_bytes");
+    int32_t max_request_message_bytes =
+        max_request_message_bytes_str == NULL
+            ? 0
+            : atoi(max_request_message_bytes_str);
+    const char* max_response_message_bytes_str =
+        grpc_uri_get_query_arg(args->uri, "max_response_message_bytes");
+    int32_t max_response_message_bytes =
+        max_response_message_bytes_str == NULL
+            ? 0
+            : atoi(max_response_message_bytes_str);
+    grpc_method_config* method_config = grpc_method_config_create(
+        wait_for_ready_str == NULL ? NULL : &wait_for_ready,
+        timeout_str == NULL ? NULL : &timeout,
+        max_request_message_bytes_str == NULL ? NULL
+                                              : &max_request_message_bytes,
+        max_response_message_bytes_str == NULL ? NULL
+                                               : &max_response_message_bytes);
+    grpc_method_config_table_entry entry = {grpc_mdstr_from_string(method_name),
+                                            method_config};
+    method_config_table = grpc_method_config_table_create(1, &entry);
+    GRPC_MDSTR_UNREF(entry.method_name);
+    grpc_method_config_unref(method_config);
+  }
   // Instantiate resolver.
   fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
   memset(r, 0, sizeof(*r));
@@ -188,6 +236,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   r->addresses = addresses;
   r->lb_policy_name =
       gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
+  r->method_config_table = method_config_table;
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &fake_resolver_vtable);
   return &r->base;
