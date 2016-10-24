@@ -81,7 +81,7 @@ Pod::Spec.new do |s|
   }
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  repo = 'muxi/grpc'
+  repo = 'grpc/grpc'
   file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
   s.source = {
     # TODO(mxyan): Reverse this change when v1.0.1 is released
