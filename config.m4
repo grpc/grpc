@@ -229,26 +229,26 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
-    src/core/ext/client_config/channel_connectivity.c \
-    src/core/ext/client_config/client_channel.c \
-    src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config_plugin.c \
-    src/core/ext/client_config/connector.c \
-    src/core/ext/client_config/default_initial_connect_string.c \
-    src/core/ext/client_config/http_connect_handshaker.c \
-    src/core/ext/client_config/initial_connect_string.c \
-    src/core/ext/client_config/lb_policy.c \
-    src/core/ext/client_config/lb_policy_factory.c \
-    src/core/ext/client_config/lb_policy_registry.c \
-    src/core/ext/client_config/method_config.c \
-    src/core/ext/client_config/parse_address.c \
-    src/core/ext/client_config/resolver.c \
-    src/core/ext/client_config/resolver_factory.c \
-    src/core/ext/client_config/resolver_registry.c \
-    src/core/ext/client_config/resolver_result.c \
-    src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_index.c \
-    src/core/ext/client_config/uri_parser.c \
+    src/core/ext/client_channel/channel_connectivity.c \
+    src/core/ext/client_channel/client_channel.c \
+    src/core/ext/client_channel/client_channel_factory.c \
+    src/core/ext/client_channel/client_channel_plugin.c \
+    src/core/ext/client_channel/connector.c \
+    src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/initial_connect_string.c \
+    src/core/ext/client_channel/lb_policy.c \
+    src/core/ext/client_channel/lb_policy_factory.c \
+    src/core/ext/client_channel/lb_policy_registry.c \
+    src/core/ext/client_channel/method_config.c \
+    src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/resolver.c \
+    src/core/ext/client_channel/resolver_factory.c \
+    src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/resolver_result.c \
+    src/core/ext/client_channel/subchannel.c \
+    src/core/ext/client_channel/subchannel_index.c \
+    src/core/ext/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
@@ -587,7 +587,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)

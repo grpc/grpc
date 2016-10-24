@@ -59,7 +59,6 @@ namespace Grpc.Core
 
         static ILogger logger = new NullLogger();
 
-        readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();

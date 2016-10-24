@@ -348,47 +348,47 @@ filegroups:
   - gpr
   uses:
   - grpc_codegen
-- name: grpc_client_config
+- name: grpc_client_channel
   headers:
-  - src/core/ext/client_config/client_channel.h
-  - src/core/ext/client_config/client_channel_factory.h
-  - src/core/ext/client_config/connector.h
-  - src/core/ext/client_config/http_connect_handshaker.h
-  - src/core/ext/client_config/initial_connect_string.h
-  - src/core/ext/client_config/lb_policy.h
-  - src/core/ext/client_config/lb_policy_factory.h
-  - src/core/ext/client_config/lb_policy_registry.h
-  - src/core/ext/client_config/method_config.h
-  - src/core/ext/client_config/parse_address.h
-  - src/core/ext/client_config/resolver.h
-  - src/core/ext/client_config/resolver_factory.h
-  - src/core/ext/client_config/resolver_registry.h
-  - src/core/ext/client_config/resolver_result.h
-  - src/core/ext/client_config/subchannel.h
-  - src/core/ext/client_config/subchannel_index.h
-  - src/core/ext/client_config/uri_parser.h
+  - src/core/ext/client_channel/client_channel.h
+  - src/core/ext/client_channel/client_channel_factory.h
+  - src/core/ext/client_channel/connector.h
+  - src/core/ext/client_channel/http_connect_handshaker.h
+  - src/core/ext/client_channel/initial_connect_string.h
+  - src/core/ext/client_channel/lb_policy.h
+  - src/core/ext/client_channel/lb_policy_factory.h
+  - src/core/ext/client_channel/lb_policy_registry.h
+  - src/core/ext/client_channel/method_config.h
+  - src/core/ext/client_channel/parse_address.h
+  - src/core/ext/client_channel/resolver.h
+  - src/core/ext/client_channel/resolver_factory.h
+  - src/core/ext/client_channel/resolver_registry.h
+  - src/core/ext/client_channel/resolver_result.h
+  - src/core/ext/client_channel/subchannel.h
+  - src/core/ext/client_channel/subchannel_index.h
+  - src/core/ext/client_channel/uri_parser.h
   src:
-  - src/core/ext/client_config/channel_connectivity.c
-  - src/core/ext/client_config/client_channel.c
-  - src/core/ext/client_config/client_channel_factory.c
-  - src/core/ext/client_config/client_config_plugin.c
-  - src/core/ext/client_config/connector.c
-  - src/core/ext/client_config/default_initial_connect_string.c
-  - src/core/ext/client_config/http_connect_handshaker.c
-  - src/core/ext/client_config/initial_connect_string.c
-  - src/core/ext/client_config/lb_policy.c
-  - src/core/ext/client_config/lb_policy_factory.c
-  - src/core/ext/client_config/lb_policy_registry.c
-  - src/core/ext/client_config/method_config.c
-  - src/core/ext/client_config/parse_address.c
-  - src/core/ext/client_config/resolver.c
-  - src/core/ext/client_config/resolver_factory.c
-  - src/core/ext/client_config/resolver_registry.c
-  - src/core/ext/client_config/resolver_result.c
-  - src/core/ext/client_config/subchannel.c
-  - src/core/ext/client_config/subchannel_index.c
-  - src/core/ext/client_config/uri_parser.c
-  plugin: grpc_client_config
+  - src/core/ext/client_channel/channel_connectivity.c
+  - src/core/ext/client_channel/client_channel.c
+  - src/core/ext/client_channel/client_channel_factory.c
+  - src/core/ext/client_channel/client_channel_plugin.c
+  - src/core/ext/client_channel/connector.c
+  - src/core/ext/client_channel/default_initial_connect_string.c
+  - src/core/ext/client_channel/http_connect_handshaker.c
+  - src/core/ext/client_channel/initial_connect_string.c
+  - src/core/ext/client_channel/lb_policy.c
+  - src/core/ext/client_channel/lb_policy_factory.c
+  - src/core/ext/client_channel/lb_policy_registry.c
+  - src/core/ext/client_channel/method_config.c
+  - src/core/ext/client_channel/parse_address.c
+  - src/core/ext/client_channel/resolver.c
+  - src/core/ext/client_channel/resolver_factory.c
+  - src/core/ext/client_channel/resolver_registry.c
+  - src/core/ext/client_channel/resolver_result.c
+  - src/core/ext/client_channel/subchannel.c
+  - src/core/ext/client_channel/subchannel_index.c
+  - src/core/ext/client_channel/uri_parser.c
+  plugin: grpc_client_channel
   uses:
   - grpc_base
 - name: grpc_codegen
@@ -413,7 +413,7 @@ filegroups:
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
   - nanopb
 - name: grpc_lb_policy_pick_first
   src:
@@ -421,14 +421,14 @@ filegroups:
   plugin: grpc_lb_policy_pick_first
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_lb_policy_round_robin
   src:
   - src/core/ext/lb_policy/round_robin/round_robin.c
   plugin: grpc_lb_policy_round_robin
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_load_reporting
   headers:
   - src/core/ext/load_reporting/load_reporting.h
@@ -445,14 +445,14 @@ filegroups:
   plugin: grpc_resolver_dns_native
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_resolver_sockaddr
   src:
   - src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   plugin: grpc_resolver_sockaddr
   uses:
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
@@ -603,14 +603,14 @@ filegroups:
   uses:
   - grpc_transport_chttp2
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
 - name: grpc_transport_chttp2_client_secure
   src:
   - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   uses:
   - grpc_transport_chttp2
   - grpc_base
-  - grpc_client_config
+  - grpc_client_channel
   - grpc_secure
 - name: grpc_transport_chttp2_server_insecure
   src:
@@ -1027,7 +1027,7 @@ libs:
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test
-  build: test
+  build: private
   language: c++
   headers:
   - include/grpc++/test/server_context_test_spouse.h
@@ -1494,7 +1494,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/resolvers/dns_resolver_connectivity_test.c
+  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1504,7 +1504,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/resolvers/dns_resolver_test.c
+  - test/core/client_channel/resolvers/dns_resolver_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2198,7 +2198,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/lb_policies_test.c
+  - test/core/client_channel/lb_policies_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2409,7 +2409,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/set_initial_connect_string_test.c
+  - test/core/client_channel/set_initial_connect_string_test.c
   deps:
   - test_tcp_server
   - grpc_test_util
@@ -2420,7 +2420,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_config/resolvers/sockaddr_resolver_test.c
+  - test/core/client_channel/resolvers/sockaddr_resolver_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2586,20 +2586,20 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/client_config/uri_fuzzer_test.c
+  - test/core/client_channel/uri_fuzzer_test.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/client_config/uri_corpus
+  - test/core/client_channel/uri_corpus
   maxlen: 128
 - name: uri_parser_test
   build: test
   language: c
   src:
-  - test/core/client_config/uri_parser_test.c
+  - test/core/client_channel/uri_parser_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3041,6 +3041,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   platforms:
   - mac
   - linux
