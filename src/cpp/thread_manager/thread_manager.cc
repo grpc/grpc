@@ -41,17 +41,14 @@
 namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr),
-      thd_(&ThreadManager::WorkerThread::Run, this) {}
+    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {}
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
 
-ThreadManager::WorkerThread::~WorkerThread() {
-  thd_.join();
-}
+ThreadManager::WorkerThread::~WorkerThread() { thd_.join(); }
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)
     : shutdown_(false),
