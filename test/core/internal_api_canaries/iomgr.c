@@ -84,7 +84,8 @@ static void test_code(void) {
                                  grpc_endpoint_add_to_pollset_set,
                                  grpc_endpoint_shutdown,
                                  grpc_endpoint_destroy,
-                                 grpc_endpoint_get_peer};
+                                 grpc_endpoint_get_peer,
+                                 grpc_endpoint_get_socket};
   endpoint.vtable = &vtable;
 
   grpc_endpoint_read(&exec_ctx, &endpoint, NULL, NULL);
