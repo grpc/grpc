@@ -81,13 +81,6 @@ struct grpc_tcp_listener {
   grpc_fd *emfd;
   grpc_tcp_server *server;
   grpc_resolved_address addr;
-  /*
-  union {
-    uint8_t untyped[GRPC_MAX_SOCKADDR_SIZE];
-    struct sockaddr sockaddr;
-  } addr;
-  size_t addr_len;
-  */
   int port;
   unsigned port_index;
   unsigned fd_index;
