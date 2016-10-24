@@ -25,9 +25,7 @@
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
     "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build"
   },
-  "bundledDependencies": [
-    "node-pre-gyp"
-  ],
+  "bundledDependencies": ["node-pre-gyp"],
   "dependencies": {
     "arguejs": "^0.2.3",
     "lodash": "^3.9.3",
@@ -54,10 +52,11 @@
   },
   "binary": {
     "module_name": "grpc_node",
-    "module_path": "src/node/extension_binary",
+    "module_path": "./build/Release/",
     "host": "https://storage.googleapis.com/",
     "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
-    "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
+    "package_name": "{node_abi}-{platform}-{arch}.tar.gz",
+    "module_path": "src/node/extension_binary"
   },
   "files": [
     "LICENSE",
@@ -78,7 +77,7 @@
   ],
   "main": "src/node/index.js",
   "license": "BSD-3-Clause",
-  "jshintConfig": {
+  "jshintConfig" : {
     "bitwise": true,
     "curly": true,
     "eqeqeq": true,
