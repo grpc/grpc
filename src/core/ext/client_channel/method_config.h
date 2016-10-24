@@ -106,11 +106,31 @@ int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
 /// the form "/service/method".
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
-grpc_method_config* grpc_method_config_table_get_method_config(
-    const grpc_method_config_table* table, const grpc_mdstr* path);
+///
+/// Note: This returns a void* instead of a grpc_method_config* so that
+/// it can also be used for tables constructed via
+/// grpc_method_config_table_convert().
+void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
+                                   const grpc_mdstr* path);
 
 /// Returns a channel arg containing \a table.
 grpc_arg grpc_method_config_table_create_channel_arg(
     grpc_method_config_table* table);
+
+/// Generates a new table from \a table whose values are converted to a
+/// new form via the \a convert_value function.  The new table will use
+/// \a vtable for its values.
+///
+/// This is generally used to convert the table's value type from
+/// grpc_method_config to a simple struct containing only the parameters
+/// relevant to a particular filter, thus avoiding the need for a hash
+/// table lookup on the fast path.  In that scenario, \a convert_value
+/// will return a new instance of the struct containing the values from
+/// the grpc_method_config, and \a vtable provides the methods for
+/// operating on the struct type.
+grpc_mdstr_hash_table* grpc_method_config_table_convert(
+    const grpc_method_config_table* table,
+    void* (*convert_value)(const grpc_method_config* method_config),
+    const grpc_mdstr_hash_table_vtable* vtable);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_METHOD_CONFIG_H */
