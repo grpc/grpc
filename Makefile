@@ -1301,6 +1301,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
   $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
+  $(BINDIR)/$(CONFIG)/handshake_client \
+  $(BINDIR)/$(CONFIG)/handshake_server \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
   $(BINDIR)/$(CONFIG)/http_parser_test \
@@ -1671,6 +1673,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test || ( echo test grpc_jwt_verifier_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_security_connector_test || ( echo test grpc_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_client"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_server"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
@@ -1866,7 +1872,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt $(BINDIR)/$(CONFIG)/handshake_client $(BINDIR)/$(CONFIG)/handshake_server
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 
 tools_cxx: privatelibs_cxx
 

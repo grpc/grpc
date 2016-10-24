@@ -1969,7 +1969,7 @@ targets:
   - grpc
   - gpr
 - name: handshake_client
-  build: tool
+  build: test
   language: c
   src:
   - test/core/handshake/client_ssl.c
@@ -1980,7 +1980,7 @@ targets:
   - gpr
   secure: true
 - name: handshake_server
-  build: tool
+  build: test
   language: c
   src:
   - test/core/handshake/server_ssl.c

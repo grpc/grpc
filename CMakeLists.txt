@@ -1665,68 +1665,6 @@ if (gRPC_INSTALL)
 endif()
 
 
-add_executable(handshake_client
-  test/core/handshake/client_ssl.c
-)
-
-target_include_directories(handshake_client
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(handshake_client
-  ${_gRPC_SSL_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS handshake_client EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-
-add_executable(handshake_server
-  test/core/handshake/server_ssl.c
-)
-
-target_include_directories(handshake_server
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-target_link_libraries(handshake_server
-  ${_gRPC_SSL_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS handshake_server EXPORT gRPCTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
-
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )

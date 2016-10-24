@@ -55,12 +55,12 @@
 
 // Arguments for TLS server thread.
 typedef struct {
-  int port;
+  int socket;
   char *alpn_preferred;
 } server_args;
 
 // From https://wiki.openssl.org/index.php/Simple_TLS_Server.
-int create_socket(int port) {
+static int create_socket(int port) {
   int s;
   struct sockaddr_in addr;
 
@@ -71,17 +71,20 @@ int create_socket(int port) {
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0) {
     perror("Unable to create socket");
-    abort();
+    return -1;
   }
 
   if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     perror("Unable to bind");
-    abort();
+    gpr_log(GPR_ERROR, "Unable to bind to %d", port);
+    close(s);
+    return -1;
   }
 
   if (listen(s, 1) < 0) {
     perror("Unable to listen");
-    abort();
+    close(s);
+    return -1;
   }
 
   return s;
@@ -161,9 +164,9 @@ static void server_thread(void *arg) {
   // Register the ALPN selection callback.
   SSL_CTX_set_alpn_select_cb(ctx, alpn_select_cb, args->alpn_preferred);
 
-  // bind/list/accept at TCP layer.
-  const int sock = create_socket(args->port);
-  gpr_log(GPR_INFO, "Server listening on port %d", args->port);
+  // bind/listen/accept at TCP layer.
+  const int sock = args->socket;
+  gpr_log(GPR_INFO, "Server listening");
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   const int client = accept(sock, (struct sockaddr *)&addr, &len);
@@ -203,13 +206,27 @@ static bool client_ssl_test(char *server_alpn_preferred) {
   bool success = true;
 
   grpc_init();
-  const int port = grpc_pick_unused_port_or_die();
+
+  // Find a port we can bind to. Retries added to handle flakes in port server
+  // and port picking.
+  int port = -1;
+  int server_socket = -1;
+  int socket_retries = 10;
+  while (server_socket == -1 && socket_retries-- > 0) {
+    port = grpc_pick_unused_port_or_die();
+    server_socket = create_socket(port);
+    if (server_socket == -1) {
+      sleep(1);
+    }
+  }
+  GPR_ASSERT(server_socket > 0);
 
   // Launch the TLS server thread.
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
   gpr_thd_options_set_joinable(&thdopt);
-  server_args args = {.port = port, .alpn_preferred = server_alpn_preferred};
+  server_args args = {.socket = server_socket,
+                      .alpn_preferred = server_alpn_preferred};
   GPR_ASSERT(gpr_thd_new(&thdid, server_thread, &args, &thdopt));
 
   // Load key pair and establish client SSL credentials.

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\handshake\server_ssl.c">
+      <Filter>test\core\handshake</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{1cb218e5-cff0-6347-00f6-5910714d39ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{869e7645-9441-8315-dd44-3ea0d6916adb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\handshake">
+      <UniqueIdentifier>{ba4cba39-097b-d31e-bdfb-13df801b07bf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
