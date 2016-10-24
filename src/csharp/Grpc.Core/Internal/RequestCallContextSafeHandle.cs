@@ -38,19 +38,19 @@ using Grpc.Core;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpcsharp_batch_context
+    /// grpcsharp_request_call_context
     /// </summary>
-    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid
+    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid
     {
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        private BatchContextSafeHandle()
+        private RequestCallContextSafeHandle()
         {
         }
 
-        public static BatchContextSafeHandle Create()
+        public static RequestCallContextSafeHandle Create()
         {
-            return Native.grpcsharp_batch_context_create();
+            return Native.grpcsharp_request_call_context_create();
         }
 
         public IntPtr Handle
@@ -61,47 +61,24 @@ namespace Grpc.Core.Internal
             }
         }
 
-        // Gets data of recv_initial_metadata completion.
-        public Metadata GetReceivedInitialMetadata()
+        // Gets data of server_rpc_new completion.
+        public ServerRpcNew GetServerRpcNew(Server server)
         {
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_initial_metadata(this);
-            return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
-        }
-            
-        // Gets data of recv_status_on_client completion.
-        public ClientSideStatus GetReceivedStatusOnClient()
-        {
-            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
-            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
+            var call = Native.grpcsharp_request_call_context_call(this);
 
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
+            var method = Marshal.PtrToStringAnsi(Native.grpcsharp_request_call_context_method(this));
+            var host = Marshal.PtrToStringAnsi(Native.grpcsharp_request_call_context_host(this));
+            var deadline = Native.grpcsharp_request_call_context_deadline(this);
+
+            IntPtr metadataArrayPtr = Native.grpcsharp_request_call_context_request_metadata(this);
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
 
-            return new ClientSideStatus(status, metadata);
+            return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
-        // Gets data of recv_message completion.
-        public byte[] GetReceivedMessage()
-        {
-            IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
-            if (len == new IntPtr(-1))
-            {
-                return null;
-            }
-            byte[] data = new byte[(int)len];
-            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
-            return data;
-        }
-
-        // Gets data of receive_close_on_server completion.
-        public bool GetReceivedCloseOnServerCancelled()
-        {
-            return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
-        }
-            
         protected override bool ReleaseHandle()
         {
-            Native.grpcsharp_batch_context_destroy(handle);
+            Native.grpcsharp_request_call_context_destroy(handle);
             return true;
         }
     }
