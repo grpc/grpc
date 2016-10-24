@@ -54,8 +54,7 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
 grpc_error *grpc_resolve_unix_domain_address(const char *name,
                                              grpc_resolved_addresses **addrs) {
   struct sockaddr_un *un;
-
-  if (strlen(name) > sizeof(GPR_ARRAY_SIZE(un->sun_path) - 1)) {
+  if (strlen(name) > GPR_ARRAY_SIZE(((struct sockaddr_un *)0)->sun_path) - 1) {
     char *err_msg;
     grpc_error *err;
     gpr_asprintf(&err_msg,
