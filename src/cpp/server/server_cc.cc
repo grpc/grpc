@@ -232,7 +232,6 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
-  uint32_t incoming_flags_;
   grpc_call* call_;
   grpc_call_details* call_details_;
   gpr_timespec deadline_;
