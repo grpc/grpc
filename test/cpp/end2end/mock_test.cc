@@ -64,43 +64,61 @@ template <class W, class R>
 class MockClientReaderWriter GRPC_FINAL
     : public ClientReaderWriterInterface<W, R> {
  public:
-  void WaitForInitialMetadata() GRPC_OVERRIDE {}
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = UINT_MAX;
-    return true;
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
+    return StreamOpStatus::SUCCESS;
   }
-  bool Read(R* msg) GRPC_OVERRIDE { return true; }
-  bool Write(const W& msg) GRPC_OVERRIDE { return true; }
-  bool WritesDone() GRPC_OVERRIDE { return true; }
-  Status Finish() GRPC_OVERRIDE { return Status::OK; }
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+    *sz = UINT_MAX;
+    return StreamOpStatus::SUCCESS;
+  }
+  StreamOpStatus Read(R* msg, const ReadOptions& options) GRPC_OVERRIDE {
+    return StreamOpStatus::SUCCESS;
+  }
+
+  StreamOpStatus Write(const W& msg,
+                       const WriteOptions& options) GRPC_OVERRIDE {
+    return StreamOpStatus::SUCCESS;
+  }
+  StreamOpStatus WritesDone(const WritesDoneOptions& options) GRPC_OVERRIDE {
+    return StreamOpStatus::SUCCESS;
+  }
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) GRPC_OVERRIDE { *completed = StreamOpStatus::SUCCESS; return Status::OK; }
 };
 template <>
 class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
     : public ClientReaderWriterInterface<EchoRequest, EchoResponse> {
  public:
   MockClientReaderWriter() : writes_done_(false) {}
-  void WaitForInitialMetadata() GRPC_OVERRIDE {}
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
-    *sz = UINT_MAX;
-    return true;
+  StreamOpStatus WaitForInitialMetadata(
+      const WaitForInitialMetadataOptions& options) GRPC_OVERRIDE {
+    return StreamOpStatus::SUCCESS;
   }
-  bool Read(EchoResponse* msg) GRPC_OVERRIDE {
-    if (writes_done_) return false;
+  StreamOpStatus NextMessageSize(
+      uint32_t* sz, const NextMessageSizeOptions& options) GRPC_OVERRIDE {
+    *sz = UINT_MAX;
+    return StreamOpStatus::SUCCESS;
+  }
+  StreamOpStatus Read(EchoResponse* msg, const ReadOptions& options) GRPC_OVERRIDE {
+    if (writes_done_) return StreamOpStatus::FAIL;
     msg->set_message(last_message_);
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
 
-  bool Write(const EchoRequest& msg,
-             const WriteOptions& options) GRPC_OVERRIDE {
+  StreamOpStatus Write(const EchoRequest& msg,
+                       const WriteOptions& options) GRPC_OVERRIDE {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
-  bool WritesDone() GRPC_OVERRIDE {
+  StreamOpStatus WritesDone(const WritesDoneOptions& options) GRPC_OVERRIDE {
     writes_done_ = true;
-    return true;
+    return StreamOpStatus::SUCCESS;
   }
-  Status Finish() GRPC_OVERRIDE { return Status::OK; }
+  Status Finish(const FinishOptions& options,
+                StreamOpStatus* completed) GRPC_OVERRIDE { *completed = StreamOpStatus::SUCCESS; return Status::OK; }
 
  private:
   bool writes_done_;
