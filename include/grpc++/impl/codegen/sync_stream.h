@@ -703,7 +703,7 @@ class ServerSplitStreamer GRPC_FINAL
   using WriterInterface<ResponseType>::Write;
   StreamOpStatus Write(const ResponseType& response,
              const WriteOptions& options) GRPC_OVERRIDE {
-    if (read_done_) {
+    if (!read_done_) {
       return StreamOpStatus::FAIL;
     }
     return body_.Write(response, options);
