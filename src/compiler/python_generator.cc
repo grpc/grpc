@@ -122,14 +122,14 @@ grpc::string ModuleAlias(const grpc::string& filename) {
 // only ever used from a single thread.
 struct PrivateGenerator {
   const GeneratorConfiguration& config;
-  const FileDescriptor *file;
+  const FileDescriptor* file;
 
   bool generate_in_pb2_grpc;
 
-  Printer *out;
+  Printer* out;
 
   PrivateGenerator(const GeneratorConfiguration& config,
-                   const FileDescriptor *file);
+                   const FileDescriptor* file);
 
   std::pair<bool, grpc::string> GetGrpcServices();
 
@@ -140,19 +140,19 @@ struct PrivateGenerator {
   bool PrintBetaServices();
 
   bool PrintAddServicerToServer(
-    const grpc::string& package_qualified_service_name,
-    const ServiceDescriptor* service);
+      const grpc::string& package_qualified_service_name,
+      const ServiceDescriptor* service);
   bool PrintServicer(const ServiceDescriptor* service);
   bool PrintStub(const grpc::string& package_qualified_service_name,
                  const ServiceDescriptor* service);
 
   bool PrintBetaServicer(const ServiceDescriptor* service);
-  bool PrintBetaServerFactory(const grpc::string& package_qualified_service_name,
-                              const ServiceDescriptor* service);
-  bool PrintBetaStub(const ServiceDescriptor* service);
-  bool PrintBetaStubFactory(
+  bool PrintBetaServerFactory(
       const grpc::string& package_qualified_service_name,
       const ServiceDescriptor* service);
+  bool PrintBetaStub(const ServiceDescriptor* service);
+  bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
+                            const ServiceDescriptor* service);
 
   // Get all comments (leading, leading_detached, trailing) and print them as a
   // docstring. Any leading space of a line will be removed, but the line
@@ -160,14 +160,12 @@ struct PrivateGenerator {
   template <typename DescriptorType>
   void PrintAllComments(const DescriptorType* descriptor);
 
-  bool GetModuleAndMessagePath(const Descriptor* type,
-                               grpc::string* out);
+  bool GetModuleAndMessagePath(const Descriptor* type, grpc::string* out);
 };
 
-
 PrivateGenerator::PrivateGenerator(const GeneratorConfiguration& config,
-                                   const FileDescriptor *file)
-  : config(config), file(file) {}
+                                   const FileDescriptor* file)
+    : config(config), file(file) {}
 
 bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
                                                grpc::string* out) {
@@ -192,8 +190,7 @@ bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
   }
   grpc::string message_type;
   for (DescriptorVector::reverse_iterator path_iter = message_path.rbegin();
-       path_iter != message_path.rend();
-       ++path_iter) {
+       path_iter != message_path.rend(); ++path_iter) {
     message_type += (*path_iter)->name() + ".";
   }
   // no pop_back prior to C++11
@@ -205,8 +202,8 @@ bool PrivateGenerator::GetModuleAndMessagePath(const Descriptor* type,
 template <typename DescriptorType>
 void PrivateGenerator::PrintAllComments(const DescriptorType* descriptor) {
   StringVector comments;
-  grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
-                             &comments);
+  grpc_generator::GetComment(
+      descriptor, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &comments);
   grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING,
                              &comments);
   grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_TRAILING,
@@ -215,7 +212,8 @@ void PrivateGenerator::PrintAllComments(const DescriptorType* descriptor) {
     return;
   }
   out->Print("\"\"\"");
-  for (StringVector::iterator it = comments.begin(); it != comments.end(); ++it) {
+  for (StringVector::iterator it = comments.begin(); it != comments.end();
+       ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
       out->Print(it->c_str() + start_pos);
@@ -240,7 +238,7 @@ bool PrivateGenerator::PrintBetaServicer(const ServiceDescriptor* service) {
         "grpcio>=0.15.0.\"\"\"\n");
     PrintAllComments(service);
     for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor *method = service->method(i);
+      const MethodDescriptor* method = service->method(i);
       grpc::string arg_name =
           method->client_streaming() ? "request_iterator" : "request";
       out->Print("def $Method$(self, $ArgName$, context):\n", "Method",
@@ -469,7 +467,8 @@ bool PrivateGenerator::PrintBetaStubFactory(
     }
     out->Print("}\n");
     out->Print("cardinalities = {\n");
-    for (StringMap::iterator name_and_cardinality = method_cardinalities.begin();
+    for (StringMap::iterator name_and_cardinality =
+             method_cardinalities.begin();
          name_and_cardinality != method_cardinalities.end();
          name_and_cardinality++) {
       IndentScope raii_descriptions_indent(out);
@@ -493,8 +492,9 @@ bool PrivateGenerator::PrintBetaStubFactory(
   return true;
 }
 
-bool PrivateGenerator::PrintStub(const grpc::string& package_qualified_service_name,
-                                 const ServiceDescriptor* service) {
+bool PrivateGenerator::PrintStub(
+    const grpc::string& package_qualified_service_name,
+    const ServiceDescriptor* service) {
   out->Print("\n\n");
   out->Print("class $Service$Stub(object):\n", "Service", service->name());
   {
@@ -513,7 +513,7 @@ bool PrivateGenerator::PrintStub(const grpc::string& package_qualified_service_n
       }
       out->Print("\"\"\"\n");
       for (int i = 0; i < service->method_count(); ++i) {
-        const MethodDescriptor *method = service->method(i);
+        const MethodDescriptor* method = service->method(i);
         grpc::string multi_callable_constructor =
             grpc::string(method->client_streaming() ? "stream" : "unary") +
             "_" + grpc::string(method->server_streaming() ? "stream" : "unary");
@@ -557,7 +557,7 @@ bool PrivateGenerator::PrintServicer(const ServiceDescriptor* service) {
     IndentScope raii_class_indent(out);
     PrintAllComments(service);
     for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor *method = service->method(i);
+      const MethodDescriptor* method = service->method(i);
       grpc::string arg_name =
           method->client_streaming() ? "request_iterator" : "request";
       out->Print("\n");
@@ -588,7 +588,7 @@ bool PrivateGenerator::PrintAddServicerToServer(
       IndentScope raii_dict_first_indent(out);
       IndentScope raii_dict_second_indent(out);
       for (int i = 0; i < service->method_count(); ++i) {
-        const MethodDescriptor *method = service->method(i);
+        const MethodDescriptor* method = service->method(i);
         grpc::string method_handler_constructor =
             grpc::string(method->client_streaming() ? "stream" : "unary") +
             "_" +
@@ -652,16 +652,18 @@ bool PrivateGenerator::PrintPreamble() {
   if (generate_in_pb2_grpc) {
     out->Print("\n");
     for (int i = 0; i < file->service_count(); ++i) {
-      const ServiceDescriptor *service = file->service(i);
+      const ServiceDescriptor* service = file->service(i);
       for (int j = 0; j < service->method_count(); ++j) {
-        const MethodDescriptor *method = service->method(j);
-        const Descriptor *types[2] = {method->input_type(), method->output_type()};
+        const MethodDescriptor* method = service->method(j);
+        const Descriptor* types[2] = {method->input_type(),
+                                      method->output_type()};
         for (int k = 0; k < 2; ++k) {
-          const Descriptor *type = types[k];
+          const Descriptor* type = types[k];
           grpc::string type_file_name = type->file()->name();
           grpc::string module_name = ModuleName(type_file_name);
           grpc::string module_alias = ModuleAlias(type_file_name);
-          out->Print("import $ModuleName$ as $ModuleAlias$\n", "ModuleName", module_name, "ModuleAlias", module_alias);
+          out->Print("import $ModuleName$ as $ModuleAlias$\n", "ModuleName",
+                     module_name, "ModuleAlias", module_alias);
         }
       }
     }
@@ -675,7 +677,7 @@ bool PrivateGenerator::PrintGAServices() {
     package = package.append(".");
   }
   for (int i = 0; i < file->service_count(); ++i) {
-    const ServiceDescriptor *service = file->service(i);
+    const ServiceDescriptor* service = file->service(i);
     grpc::string package_qualified_service_name = package + service->name();
     if (!(PrintStub(package_qualified_service_name, service) &&
           PrintServicer(service) &&
@@ -692,7 +694,7 @@ bool PrivateGenerator::PrintBetaServices() {
     package = package.append(".");
   }
   for (int i = 0; i < file->service_count(); ++i) {
-    const ServiceDescriptor *service = file->service(i);
+    const ServiceDescriptor* service = file->service(i);
     grpc::string package_qualified_service_name = package + service->name();
     if (!(PrintBetaServicer(service) && PrintBetaStub(service) &&
           PrintBetaServerFactory(package_qualified_service_name, service) &&
@@ -722,8 +724,9 @@ pair<bool, grpc::string> PrivateGenerator::GetGrpcServices() {
       out->Print("try:\n");
       {
         IndentScope raii_dict_try_indent(out);
-        out->Print("# THESE ELEMENTS WILL BE DEPRECATED.\n"
-                   "# Please use the generated *_pb2_grpc.py files instead.\n");
+        out->Print(
+            "# THESE ELEMENTS WILL BE DEPRECATED.\n"
+            "# Please use the generated *_pb2_grpc.py files instead.\n");
         if (!PrintPreamble()) {
           return make_pair(false, "");
         }
@@ -767,8 +770,8 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   static const int proto_suffix_length = strlen(".proto");
   if (file->name().size() > static_cast<size_t>(proto_suffix_length) &&
       file->name().find_last_of(".proto") == file->name().size() - 1) {
-    grpc::string base = file->name().substr(
-        0, file->name().size() - proto_suffix_length);
+    grpc::string base =
+        file->name().substr(0, file->name().size() - proto_suffix_length);
     pb2_file_name = base + "_pb2.py";
     pb2_grpc_file_name = base + "_pb2_grpc.py";
   } else {
