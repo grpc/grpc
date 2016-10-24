@@ -36,13 +36,14 @@ import multiprocessing
 import os
 import report_utils
 import sys
+from filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 # Set the timeout high to allow enough time for sanitizers and pre-building
 # clang docker.
-_RUNTESTS_TIMEOUT = 2*60*60
+_RUNTESTS_TIMEOUT = 4*60*60
 
 # Number of jobs assigned to each run_tests.py instance
 _INNER_JOBS = 2
@@ -55,7 +56,8 @@ def _docker_jobspec(name, runtests_args=[]):
                    '--use_docker',
                    '-t',
                    '-j', str(_INNER_JOBS),
-                   '-x', 'report_%s.xml' % name] + runtests_args,
+                   '-x', 'report_%s.xml' % name,
+                   '--report_suite_name', '%s' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
   return test_job
@@ -70,7 +72,8 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None):
           cmdline=['tools/run_tests/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(_INNER_JOBS),
-                   '-x', '../report_%s.xml' % name] + runtests_args,
+                   '-x', '../report_%s.xml' % name,
+                   '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
@@ -229,6 +232,15 @@ argp.add_argument('--dry_run',
                   action='store_const',
                   const=True,
                   help='Only print what would be run.')
+argp.add_argument('--filter_pr_tests',
+	          default=False,
+		  action='store_const',	
+		  const=True,	  
+		  help='Filters out tests irrelavant to pull request changes.')
+argp.add_argument('--base_branch',
+                  default='origin/master',
+                  type=str,
+                  help='Branch that pull request is requesting to merge into')
 args = argp.parse_args()
 
 extra_args = []
@@ -262,6 +274,19 @@ for job in jobs:
     print '  %s' % job.shortname
 print
 
+if args.filter_pr_tests:
+  print 'IMPORTANT: Test filtering is not active; this is only for testing.'
+  relevant_jobs = filter_tests(jobs, args.base_branch)
+  # todo(mattkwong): add skipped tests to report.xml
+  print
+  if len(relevant_jobs) == len(jobs):
+    print '(TESTING) No tests will be skipped.'
+  else:
+    print '(TESTING) These tests will be skipped:'
+    for job in list(set(jobs) - set(relevant_jobs)):
+      print '  %s' % job.shortname
+  print
+
 if args.dry_run:
   print '--dry_run was used, exiting'
   sys.exit(1)
@@ -271,7 +296,8 @@ num_failures, resultset = jobset.run(jobs,
                                      newline_on_success=True,
                                      travis=True,
                                      maxjobs=args.jobs)
-report_utils.render_junit_xml_report(resultset, 'report.xml')
+report_utils.render_junit_xml_report(resultset, 'report.xml',
+                                     suite_name='aggregate_tests')
 
 if num_failures == 0:
   jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',

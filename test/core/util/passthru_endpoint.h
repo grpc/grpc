@@ -38,6 +38,6 @@
 
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
                                    grpc_endpoint **server,
-                                   grpc_buffer_pool *buffer_pool);
+                                   grpc_resource_quota *resource_quota);
 
 #endif

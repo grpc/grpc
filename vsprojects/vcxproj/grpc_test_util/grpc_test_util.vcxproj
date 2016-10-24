@@ -205,7 +205,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\buffer_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
@@ -229,6 +228,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
@@ -245,6 +245,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
@@ -266,6 +267,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
@@ -344,8 +346,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\buffer_pool.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.c">
@@ -392,6 +392,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_windows.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_common_posix.c">
@@ -425,6 +427,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix_noop.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>
@@ -483,6 +487,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
     </ClCompile>

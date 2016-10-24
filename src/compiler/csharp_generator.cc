@@ -495,6 +495,9 @@ void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
 
   // override NewInstance method
   out->Print(
+      "/// <summary>Creates a new instance of client from given "
+      "<c>ClientBaseConfiguration</c>.</summary>\n");
+  out->Print(
       "protected override $name$ NewInstance(ClientBaseConfiguration "
       "configuration)\n",
       "name", GetClientClassName(service));

@@ -10,7 +10,6 @@ using scg = global::System.Collections.Generic;
 namespace Grpc.Testing {
 
   /// <summary>Holder for reflection information generated from src/proto/grpc/testing/stats.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class StatsReflection {
 
     #region Descriptor
@@ -46,31 +45,36 @@ namespace Grpc.Testing {
 
   }
   #region Messages
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ServerStats : pb::IMessage<ServerStats> {
     private static readonly pb::MessageParser<ServerStats> _parser = new pb::MessageParser<ServerStats>(() => new ServerStats());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ServerStats> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.StatsReflection.Descriptor.MessageTypes[0]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStats() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStats(ServerStats other) : this() {
       timeElapsed_ = other.timeElapsed_;
       timeUser_ = other.timeUser_;
       timeSystem_ = other.timeSystem_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStats Clone() {
       return new ServerStats(this);
     }
@@ -81,6 +85,7 @@ namespace Grpc.Testing {
     /// <summary>
     ///  wall clock time change in seconds since last reset
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeElapsed {
       get { return timeElapsed_; }
       set {
@@ -94,6 +99,7 @@ namespace Grpc.Testing {
     /// <summary>
     ///  change in user time (in seconds) used by the server since last reset
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeUser {
       get { return timeUser_; }
       set {
@@ -108,6 +114,7 @@ namespace Grpc.Testing {
     ///  change in server time (in seconds) used by the server process and all
     ///  threads since last reset
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeSystem {
       get { return timeSystem_; }
       set {
@@ -115,10 +122,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ServerStats);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ServerStats other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -132,6 +141,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (TimeElapsed != 0D) hash ^= TimeElapsed.GetHashCode();
@@ -140,10 +150,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (TimeElapsed != 0D) {
         output.WriteRawTag(9);
@@ -159,6 +171,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (TimeElapsed != 0D) {
@@ -173,6 +186,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ServerStats other) {
       if (other == null) {
         return;
@@ -188,6 +202,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -216,30 +231,35 @@ namespace Grpc.Testing {
   /// <summary>
   ///  Histogram params based on grpc/support/histogram.c
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class HistogramParams : pb::IMessage<HistogramParams> {
     private static readonly pb::MessageParser<HistogramParams> _parser = new pb::MessageParser<HistogramParams>(() => new HistogramParams());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<HistogramParams> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.StatsReflection.Descriptor.MessageTypes[1]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HistogramParams() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HistogramParams(HistogramParams other) : this() {
       resolution_ = other.resolution_;
       maxPossible_ = other.maxPossible_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HistogramParams Clone() {
       return new HistogramParams(this);
     }
@@ -250,6 +270,7 @@ namespace Grpc.Testing {
     /// <summary>
     ///  first bucket is [0, 1 + resolution)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Resolution {
       get { return resolution_; }
       set {
@@ -263,6 +284,7 @@ namespace Grpc.Testing {
     /// <summary>
     ///  use enough buckets to allow this value
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double MaxPossible {
       get { return maxPossible_; }
       set {
@@ -270,10 +292,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as HistogramParams);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(HistogramParams other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -286,6 +310,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Resolution != 0D) hash ^= Resolution.GetHashCode();
@@ -293,10 +318,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Resolution != 0D) {
         output.WriteRawTag(9);
@@ -308,6 +335,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Resolution != 0D) {
@@ -319,6 +347,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(HistogramParams other) {
       if (other == null) {
         return;
@@ -331,6 +360,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -355,25 +385,29 @@ namespace Grpc.Testing {
   /// <summary>
   ///  Histogram data based on grpc/support/histogram.c
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class HistogramData : pb::IMessage<HistogramData> {
     private static readonly pb::MessageParser<HistogramData> _parser = new pb::MessageParser<HistogramData>(() => new HistogramData());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<HistogramData> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.StatsReflection.Descriptor.MessageTypes[2]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HistogramData() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HistogramData(HistogramData other) : this() {
       bucket_ = other.bucket_.Clone();
       minSeen_ = other.minSeen_;
@@ -383,6 +417,7 @@ namespace Grpc.Testing {
       count_ = other.count_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public HistogramData Clone() {
       return new HistogramData(this);
     }
@@ -392,6 +427,7 @@ namespace Grpc.Testing {
     private static readonly pb::FieldCodec<uint> _repeated_bucket_codec
         = pb::FieldCodec.ForUInt32(10);
     private readonly pbc::RepeatedField<uint> bucket_ = new pbc::RepeatedField<uint>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<uint> Bucket {
       get { return bucket_; }
     }
@@ -399,6 +435,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "min_seen" field.</summary>
     public const int MinSeenFieldNumber = 2;
     private double minSeen_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double MinSeen {
       get { return minSeen_; }
       set {
@@ -409,6 +446,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "max_seen" field.</summary>
     public const int MaxSeenFieldNumber = 3;
     private double maxSeen_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double MaxSeen {
       get { return maxSeen_; }
       set {
@@ -419,6 +457,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "sum" field.</summary>
     public const int SumFieldNumber = 4;
     private double sum_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Sum {
       get { return sum_; }
       set {
@@ -429,6 +468,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "sum_of_squares" field.</summary>
     public const int SumOfSquaresFieldNumber = 5;
     private double sumOfSquares_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double SumOfSquares {
       get { return sumOfSquares_; }
       set {
@@ -439,6 +479,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "count" field.</summary>
     public const int CountFieldNumber = 6;
     private double count_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Count {
       get { return count_; }
       set {
@@ -446,10 +487,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as HistogramData);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(HistogramData other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -466,6 +509,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       hash ^= bucket_.GetHashCode();
@@ -477,10 +521,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       bucket_.WriteTo(output, _repeated_bucket_codec);
       if (MinSeen != 0D) {
@@ -505,6 +551,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       size += bucket_.CalculateSize(_repeated_bucket_codec);
@@ -526,6 +573,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(HistogramData other) {
       if (other == null) {
         return;
@@ -548,6 +596,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -586,25 +635,29 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ClientStats : pb::IMessage<ClientStats> {
     private static readonly pb::MessageParser<ClientStats> _parser = new pb::MessageParser<ClientStats>(() => new ClientStats());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ClientStats> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.StatsReflection.Descriptor.MessageTypes[3]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStats() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStats(ClientStats other) : this() {
       Latencies = other.latencies_ != null ? other.Latencies.Clone() : null;
       timeElapsed_ = other.timeElapsed_;
@@ -612,6 +665,7 @@ namespace Grpc.Testing {
       timeSystem_ = other.timeSystem_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStats Clone() {
       return new ClientStats(this);
     }
@@ -622,6 +676,7 @@ namespace Grpc.Testing {
     /// <summary>
     ///  Latency histogram. Data points are in nanoseconds.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.HistogramData Latencies {
       get { return latencies_; }
       set {
@@ -635,6 +690,7 @@ namespace Grpc.Testing {
     /// <summary>
     ///  See ServerStats for details.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeElapsed {
       get { return timeElapsed_; }
       set {
@@ -645,6 +701,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "time_user" field.</summary>
     public const int TimeUserFieldNumber = 3;
     private double timeUser_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeUser {
       get { return timeUser_; }
       set {
@@ -655,6 +712,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "time_system" field.</summary>
     public const int TimeSystemFieldNumber = 4;
     private double timeSystem_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double TimeSystem {
       get { return timeSystem_; }
       set {
@@ -662,10 +720,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientStats);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ClientStats other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -680,6 +740,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (latencies_ != null) hash ^= Latencies.GetHashCode();
@@ -689,10 +750,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (latencies_ != null) {
         output.WriteRawTag(10);
@@ -712,6 +775,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (latencies_ != null) {
@@ -729,6 +793,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ClientStats other) {
       if (other == null) {
         return;
@@ -750,6 +815,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {

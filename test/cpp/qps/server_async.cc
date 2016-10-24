@@ -37,8 +37,8 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/buffer_pool.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -58,7 +58,7 @@ namespace testing {
 
 template <class RequestType, class ResponseType, class ServiceType,
           class ServerContextType>
-class AsyncQpsServerTest : public Server {
+class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
  public:
   AsyncQpsServerTest(
       const ServerConfig &config,
@@ -96,9 +96,9 @@ class AsyncQpsServerTest : public Server {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
-    if (config.buffer_pool_size() > 0) {
-      builder.SetBufferPool(
-          BufferPool("AsyncQpsServerTest").Resize(config.buffer_pool_size()));
+    if (config.resource_quota_size() > 0) {
+      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                   .Resize(config.resource_quota_size()));
     }
 
     server_ = builder.BuildAndStart();
@@ -137,9 +137,7 @@ class AsyncQpsServerTest : public Server {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
     }
-    // TODO (vpai): Remove this deadline and allow Shutdown to finish properly
-    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(3);
-    server_->Shutdown(deadline);
+    std::thread shutdown_thread(&AsyncQpsServerTest::ShutdownThreadFunc, this);
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       (*cq)->Shutdown();
     }
@@ -152,9 +150,16 @@ class AsyncQpsServerTest : public Server {
       while ((*cq)->Next(&got_tag, &ok))
         ;
     }
+    shutdown_thread.join();
   }
 
  private:
+  void ShutdownThreadFunc() {
+    // TODO (vpai): Remove this deadline and allow Shutdown to finish properly
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(3);
+    server_->Shutdown(deadline);
+  }
+
   void ThreadFunc(int thread_idx) {
     // Wait until work is available or we are shutting down
     bool ok;

@@ -306,7 +306,6 @@ add_library(grpc
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
-  src/core/lib/iomgr/buffer_pool.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -330,6 +329,7 @@ add_library(grpc
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -347,6 +347,7 @@ add_library(grpc
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -376,6 +377,7 @@ add_library(grpc
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
@@ -434,25 +436,26 @@ add_library(grpc
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
-  src/core/ext/client_config/channel_connectivity.c
-  src/core/ext/client_config/client_channel.c
-  src/core/ext/client_config/client_channel_factory.c
-  src/core/ext/client_config/client_config_plugin.c
-  src/core/ext/client_config/connector.c
-  src/core/ext/client_config/default_initial_connect_string.c
-  src/core/ext/client_config/http_connect_handshaker.c
-  src/core/ext/client_config/initial_connect_string.c
-  src/core/ext/client_config/lb_policy.c
-  src/core/ext/client_config/lb_policy_factory.c
-  src/core/ext/client_config/lb_policy_registry.c
-  src/core/ext/client_config/parse_address.c
-  src/core/ext/client_config/resolver.c
-  src/core/ext/client_config/resolver_factory.c
-  src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
-  src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_index.c
-  src/core/ext/client_config/uri_parser.c
+  src/core/ext/client_channel/channel_connectivity.c
+  src/core/ext/client_channel/client_channel.c
+  src/core/ext/client_channel/client_channel_factory.c
+  src/core/ext/client_channel/client_channel_plugin.c
+  src/core/ext/client_channel/connector.c
+  src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/initial_connect_string.c
+  src/core/ext/client_channel/lb_policy.c
+  src/core/ext/client_channel/lb_policy_factory.c
+  src/core/ext/client_channel/lb_policy_registry.c
+  src/core/ext/client_channel/method_config.c
+  src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/resolver.c
+  src/core/ext/client_channel/resolver_factory.c
+  src/core/ext/client_channel/resolver_registry.c
+  src/core/ext/client_channel/resolver_result.c
+  src/core/ext/client_channel/subchannel.c
+  src/core/ext/client_channel/subchannel_index.c
+  src/core/ext/client_channel/uri_parser.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -565,7 +568,6 @@ add_library(grpc_cronet
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
-  src/core/lib/iomgr/buffer_pool.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -589,6 +591,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -606,6 +609,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -635,6 +639,7 @@ add_library(grpc_cronet
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
@@ -667,25 +672,26 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
-  src/core/ext/client_config/channel_connectivity.c
-  src/core/ext/client_config/client_channel.c
-  src/core/ext/client_config/client_channel_factory.c
-  src/core/ext/client_config/client_config_plugin.c
-  src/core/ext/client_config/connector.c
-  src/core/ext/client_config/default_initial_connect_string.c
-  src/core/ext/client_config/http_connect_handshaker.c
-  src/core/ext/client_config/initial_connect_string.c
-  src/core/ext/client_config/lb_policy.c
-  src/core/ext/client_config/lb_policy_factory.c
-  src/core/ext/client_config/lb_policy_registry.c
-  src/core/ext/client_config/parse_address.c
-  src/core/ext/client_config/resolver.c
-  src/core/ext/client_config/resolver_factory.c
-  src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
-  src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_index.c
-  src/core/ext/client_config/uri_parser.c
+  src/core/ext/client_channel/channel_connectivity.c
+  src/core/ext/client_channel/client_channel.c
+  src/core/ext/client_channel/client_channel_factory.c
+  src/core/ext/client_channel/client_channel_plugin.c
+  src/core/ext/client_channel/connector.c
+  src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/initial_connect_string.c
+  src/core/ext/client_channel/lb_policy.c
+  src/core/ext/client_channel/lb_policy_factory.c
+  src/core/ext/client_channel/lb_policy_registry.c
+  src/core/ext/client_channel/method_config.c
+  src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/resolver.c
+  src/core/ext/client_channel/resolver_factory.c
+  src/core/ext/client_channel/resolver_registry.c
+  src/core/ext/client_channel/resolver_result.c
+  src/core/ext/client_channel/subchannel.c
+  src/core/ext/client_channel/subchannel_index.c
+  src/core/ext/client_channel/uri_parser.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -796,7 +802,6 @@ add_library(grpc_unsecure
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
-  src/core/lib/iomgr/buffer_pool.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -820,6 +825,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -837,6 +843,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_cv.c
   src/core/lib/iomgr/wakeup_fd_eventfd.c
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
@@ -866,6 +873,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
   src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
@@ -898,25 +906,26 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/alpn/alpn.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
-  src/core/ext/client_config/channel_connectivity.c
-  src/core/ext/client_config/client_channel.c
-  src/core/ext/client_config/client_channel_factory.c
-  src/core/ext/client_config/client_config_plugin.c
-  src/core/ext/client_config/connector.c
-  src/core/ext/client_config/default_initial_connect_string.c
-  src/core/ext/client_config/http_connect_handshaker.c
-  src/core/ext/client_config/initial_connect_string.c
-  src/core/ext/client_config/lb_policy.c
-  src/core/ext/client_config/lb_policy_factory.c
-  src/core/ext/client_config/lb_policy_registry.c
-  src/core/ext/client_config/parse_address.c
-  src/core/ext/client_config/resolver.c
-  src/core/ext/client_config/resolver_factory.c
-  src/core/ext/client_config/resolver_registry.c
-  src/core/ext/client_config/resolver_result.c
-  src/core/ext/client_config/subchannel.c
-  src/core/ext/client_config/subchannel_index.c
-  src/core/ext/client_config/uri_parser.c
+  src/core/ext/client_channel/channel_connectivity.c
+  src/core/ext/client_channel/client_channel.c
+  src/core/ext/client_channel/client_channel_factory.c
+  src/core/ext/client_channel/client_channel_plugin.c
+  src/core/ext/client_channel/connector.c
+  src/core/ext/client_channel/default_initial_connect_string.c
+  src/core/ext/client_channel/http_connect_handshaker.c
+  src/core/ext/client_channel/initial_connect_string.c
+  src/core/ext/client_channel/lb_policy.c
+  src/core/ext/client_channel/lb_policy_factory.c
+  src/core/ext/client_channel/lb_policy_registry.c
+  src/core/ext/client_channel/method_config.c
+  src/core/ext/client_channel/parse_address.c
+  src/core/ext/client_channel/resolver.c
+  src/core/ext/client_channel/resolver_factory.c
+  src/core/ext/client_channel/resolver_registry.c
+  src/core/ext/client_channel/resolver_result.c
+  src/core/ext/client_channel/subchannel.c
+  src/core/ext/client_channel/subchannel_index.c
+  src/core/ext/client_channel/uri_parser.c
   src/core/ext/resolver/dns/native/dns_resolver.c
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
@@ -1020,11 +1029,11 @@ add_library(grpc++
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/common/buffer_pool_cc.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1060,7 +1069,6 @@ target_link_libraries(grpc++
 
 foreach(_hdr
   include/grpc++/alarm.h
-  include/grpc++/buffer_pool.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
   include/grpc++/completion_queue.h
@@ -1087,6 +1095,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h
@@ -1276,11 +1285,11 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
-  src/cpp/common/buffer_pool_cc.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1316,7 +1325,6 @@ target_link_libraries(grpc++_unsecure
 
 foreach(_hdr
   include/grpc++/alarm.h
-  include/grpc++/buffer_pool.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
   include/grpc++/completion_queue.h
@@ -1343,6 +1351,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h

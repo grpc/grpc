@@ -116,7 +116,9 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {
 void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
                       grpc_error *error) {
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
-  c->cb(exec_ctx, c->cb_arg, error);
+  if (c != NULL) {
+    c->cb(exec_ctx, c->cb_arg, error);
+  }
   GRPC_ERROR_UNREF(error);
   GPR_TIMER_END("grpc_closure_run", 0);
 }

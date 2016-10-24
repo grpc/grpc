@@ -53,7 +53,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  config.init_client(&f, client_args, NULL);
   return f;
 }
 
@@ -99,12 +99,16 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static gpr_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char output[1024 * 1024];
-  for (i = 0; i < GPR_ARRAY_SIZE(output) - 1; ++i) {
+  char *output;
+  const size_t output_size = 1024 * 1024;
+  output = gpr_malloc(output_size);
+  for (i = 0; i < output_size - 1; ++i) {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
-  output[GPR_ARRAY_SIZE(output) - 1] = '\0';
-  return gpr_slice_from_copied_string(output);
+  output[output_size - 1] = '\0';
+  gpr_slice out = gpr_slice_from_copied_string(output);
+  gpr_free(output);
+  return out;
 }
 
 static void request_response_with_payload(grpc_end2end_test_fixture f) {

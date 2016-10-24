@@ -907,7 +907,6 @@ api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
-buffer_pool_test: $(BINDIR)/$(CONFIG)/buffer_pool_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 census_resource_test: $(BINDIR)/$(CONFIG)/census_resource_test
 census_trace_context_test: $(BINDIR)/$(CONFIG)/census_trace_context_test
@@ -1003,6 +1002,7 @@ no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
 percent_decode_fuzzer: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
 percent_encode_fuzzer: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
+resource_quota_test: $(BINDIR)/$(CONFIG)/resource_quota_test
 secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
 secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
 sequential_connectivity_test: $(BINDIR)/$(CONFIG)/sequential_connectivity_test
@@ -1026,6 +1026,7 @@ transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
+wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
@@ -1072,6 +1073,7 @@ reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
+server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
@@ -1132,6 +1134,7 @@ bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
 bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 h2_census_test: $(BINDIR)/$(CONFIG)/h2_census_test
 h2_compress_test: $(BINDIR)/$(CONFIG)/h2_compress_test
+h2_fake_resolver_test: $(BINDIR)/$(CONFIG)/h2_fake_resolver_test
 h2_fakesec_test: $(BINDIR)/$(CONFIG)/h2_fakesec_test
 h2_fd_test: $(BINDIR)/$(CONFIG)/h2_fd_test
 h2_full_test: $(BINDIR)/$(CONFIG)/h2_full_test
@@ -1150,6 +1153,7 @@ h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 h2_census_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_nosec_test
 h2_compress_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_nosec_test
+h2_fake_resolver_nosec_test: $(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test
 h2_fd_nosec_test: $(BINDIR)/$(CONFIG)/h2_fd_nosec_test
 h2_full_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_nosec_test
 h2_full+pipe_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test
@@ -1225,9 +1229,9 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
 else
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a
 endif
 
 
@@ -1241,7 +1245,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
-  $(BINDIR)/$(CONFIG)/buffer_pool_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
   $(BINDIR)/$(CONFIG)/census_resource_test \
   $(BINDIR)/$(CONFIG)/census_trace_context_test \
@@ -1321,6 +1324,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
   $(BINDIR)/$(CONFIG)/resolve_address_test \
+  $(BINDIR)/$(CONFIG)/resource_quota_test \
   $(BINDIR)/$(CONFIG)/secure_channel_create_test \
   $(BINDIR)/$(CONFIG)/secure_endpoint_test \
   $(BINDIR)/$(CONFIG)/sequential_connectivity_test \
@@ -1342,6 +1346,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
+  $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test \
   $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
@@ -1357,6 +1362,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_census_test \
   $(BINDIR)/$(CONFIG)/h2_compress_test \
+  $(BINDIR)/$(CONFIG)/h2_fake_resolver_test \
   $(BINDIR)/$(CONFIG)/h2_fakesec_test \
   $(BINDIR)/$(CONFIG)/h2_fd_test \
   $(BINDIR)/$(CONFIG)/h2_full_test \
@@ -1375,6 +1381,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/h2_census_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_compress_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_fd_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
@@ -1441,6 +1448,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
+  $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/shutdown_test \
@@ -1528,6 +1536,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
+  $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/shutdown_test \
@@ -1558,8 +1567,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
-	$(E) "[RUN]     Testing buffer_pool_test"
-	$(Q) $(BINDIR)/$(CONFIG)/buffer_pool_test || ( echo test buffer_pool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_context_test || ( echo test census_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_resource_test"
@@ -1700,6 +1707,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_test"
 	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
+	$(E) "[RUN]     Testing resource_quota_test"
+	$(Q) $(BINDIR)/$(CONFIG)/resource_quota_test || ( echo test resource_quota_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_channel_create_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_channel_create_test || ( echo test secure_channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_endpoint_test"
@@ -1742,6 +1751,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/udp_server_test || ( echo test udp_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing uri_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
+	$(E) "[RUN]     Testing wakeup_fd_cv_test"
+	$(Q) $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test || ( echo test wakeup_fd_cv_test failed ; exit 1 )
 	$(E) "[RUN]     Testing public_headers_must_be_c89"
 	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 || ( echo test public_headers_must_be_c89 failed ; exit 1 )
 	$(E) "[RUN]     Testing badreq_bad_client_test"
@@ -1832,6 +1843,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test || ( echo test secure_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_builder_plugin_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_builder_plugin_test || ( echo test server_builder_plugin_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_context_test_spouse_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_context_test_spouse_test || ( echo test server_context_test_spouse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
@@ -2554,7 +2567,6 @@ LIBGRPC_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
-    src/core/lib/iomgr/buffer_pool.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -2578,6 +2590,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -2595,6 +2608,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -2624,6 +2638,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -2682,25 +2697,26 @@ LIBGRPC_SRC = \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
-    src/core/ext/client_config/channel_connectivity.c \
-    src/core/ext/client_config/client_channel.c \
-    src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config_plugin.c \
-    src/core/ext/client_config/connector.c \
-    src/core/ext/client_config/default_initial_connect_string.c \
-    src/core/ext/client_config/http_connect_handshaker.c \
-    src/core/ext/client_config/initial_connect_string.c \
-    src/core/ext/client_config/lb_policy.c \
-    src/core/ext/client_config/lb_policy_factory.c \
-    src/core/ext/client_config/lb_policy_registry.c \
-    src/core/ext/client_config/parse_address.c \
-    src/core/ext/client_config/resolver.c \
-    src/core/ext/client_config/resolver_factory.c \
-    src/core/ext/client_config/resolver_registry.c \
-    src/core/ext/client_config/resolver_result.c \
-    src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_index.c \
-    src/core/ext/client_config/uri_parser.c \
+    src/core/ext/client_channel/channel_connectivity.c \
+    src/core/ext/client_channel/client_channel.c \
+    src/core/ext/client_channel/client_channel_factory.c \
+    src/core/ext/client_channel/client_channel_plugin.c \
+    src/core/ext/client_channel/connector.c \
+    src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/initial_connect_string.c \
+    src/core/ext/client_channel/lb_policy.c \
+    src/core/ext/client_channel/lb_policy_factory.c \
+    src/core/ext/client_channel/lb_policy_registry.c \
+    src/core/ext/client_channel/method_config.c \
+    src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/resolver.c \
+    src/core/ext/client_channel/resolver_factory.c \
+    src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/resolver_result.c \
+    src/core/ext/client_channel/subchannel.c \
+    src/core/ext/client_channel/subchannel_index.c \
+    src/core/ext/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
@@ -2831,7 +2847,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
-    src/core/lib/iomgr/buffer_pool.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -2855,6 +2870,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -2872,6 +2888,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -2901,6 +2918,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -2933,25 +2951,26 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/client_config/channel_connectivity.c \
-    src/core/ext/client_config/client_channel.c \
-    src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config_plugin.c \
-    src/core/ext/client_config/connector.c \
-    src/core/ext/client_config/default_initial_connect_string.c \
-    src/core/ext/client_config/http_connect_handshaker.c \
-    src/core/ext/client_config/initial_connect_string.c \
-    src/core/ext/client_config/lb_policy.c \
-    src/core/ext/client_config/lb_policy_factory.c \
-    src/core/ext/client_config/lb_policy_registry.c \
-    src/core/ext/client_config/parse_address.c \
-    src/core/ext/client_config/resolver.c \
-    src/core/ext/client_config/resolver_factory.c \
-    src/core/ext/client_config/resolver_registry.c \
-    src/core/ext/client_config/resolver_result.c \
-    src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_index.c \
-    src/core/ext/client_config/uri_parser.c \
+    src/core/ext/client_channel/channel_connectivity.c \
+    src/core/ext/client_channel/client_channel.c \
+    src/core/ext/client_channel/client_channel_factory.c \
+    src/core/ext/client_channel/client_channel_plugin.c \
+    src/core/ext/client_channel/connector.c \
+    src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/initial_connect_string.c \
+    src/core/ext/client_channel/lb_policy.c \
+    src/core/ext/client_channel/lb_policy_factory.c \
+    src/core/ext/client_channel/lb_policy_registry.c \
+    src/core/ext/client_channel/method_config.c \
+    src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/resolver.c \
+    src/core/ext/client_channel/resolver_factory.c \
+    src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/resolver_result.c \
+    src/core/ext/client_channel/subchannel.c \
+    src/core/ext/client_channel/subchannel_index.c \
+    src/core/ext/client_channel/uri_parser.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/context/security_context.c \
     src/core/lib/security/credentials/composite/composite_credentials.c \
@@ -3098,7 +3117,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
-    src/core/lib/iomgr/buffer_pool.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3122,6 +3140,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -3139,6 +3158,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -3168,6 +3188,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -3292,7 +3313,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
-    src/core/lib/iomgr/buffer_pool.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3316,6 +3336,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
@@ -3333,6 +3354,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_cv.c \
     src/core/lib/iomgr/wakeup_fd_eventfd.c \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
@@ -3362,6 +3384,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
     src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
@@ -3394,25 +3417,26 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
-    src/core/ext/client_config/channel_connectivity.c \
-    src/core/ext/client_config/client_channel.c \
-    src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config_plugin.c \
-    src/core/ext/client_config/connector.c \
-    src/core/ext/client_config/default_initial_connect_string.c \
-    src/core/ext/client_config/http_connect_handshaker.c \
-    src/core/ext/client_config/initial_connect_string.c \
-    src/core/ext/client_config/lb_policy.c \
-    src/core/ext/client_config/lb_policy_factory.c \
-    src/core/ext/client_config/lb_policy_registry.c \
-    src/core/ext/client_config/parse_address.c \
-    src/core/ext/client_config/resolver.c \
-    src/core/ext/client_config/resolver_factory.c \
-    src/core/ext/client_config/resolver_registry.c \
-    src/core/ext/client_config/resolver_result.c \
-    src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_index.c \
-    src/core/ext/client_config/uri_parser.c \
+    src/core/ext/client_channel/channel_connectivity.c \
+    src/core/ext/client_channel/client_channel.c \
+    src/core/ext/client_channel/client_channel_factory.c \
+    src/core/ext/client_channel/client_channel_plugin.c \
+    src/core/ext/client_channel/connector.c \
+    src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/http_connect_handshaker.c \
+    src/core/ext/client_channel/initial_connect_string.c \
+    src/core/ext/client_channel/lb_policy.c \
+    src/core/ext/client_channel/lb_policy_factory.c \
+    src/core/ext/client_channel/lb_policy_registry.c \
+    src/core/ext/client_channel/method_config.c \
+    src/core/ext/client_channel/parse_address.c \
+    src/core/ext/client_channel/resolver.c \
+    src/core/ext/client_channel/resolver_factory.c \
+    src/core/ext/client_channel/resolver_registry.c \
+    src/core/ext/client_channel/resolver_result.c \
+    src/core/ext/client_channel/subchannel.c \
+    src/core/ext/client_channel/subchannel_index.c \
+    src/core/ext/client_channel/uri_parser.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/load_reporting/load_reporting.c \
@@ -3599,11 +3623,11 @@ LIBGRPC++_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/common/buffer_pool_cc.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
+    src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
@@ -3622,7 +3646,6 @@ LIBGRPC++_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
-    include/grpc++/buffer_pool.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
@@ -3649,6 +3672,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/thd.h \
     include/grpc++/impl/thd_cxx11.h \
     include/grpc++/impl/thd_no_cxx11.h \
+    include/grpc++/resource_quota.h \
     include/grpc++/security/auth_context.h \
     include/grpc++/security/auth_metadata_processor.h \
     include/grpc++/security/credentials.h \
@@ -3954,6 +3978,55 @@ endif
 endif
 
 
+LIBGRPC++_TEST_SRC = \
+    src/cpp/test/server_context_test_spouse.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBGRPC++_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_test.a: openssl_dep_error
+
+
+else
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_test.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_TEST_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBGRPC++_TEST_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_test.a
+endif
+
+
+
+
+endif
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC++_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 LIBGRPC++_TEST_CONFIG_SRC = \
     test/cpp/util/test_config_cc.cc \
 
@@ -4131,11 +4204,11 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
-    src/cpp/common/buffer_pool_cc.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
+    src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
@@ -4154,7 +4227,6 @@ LIBGRPC++_UNSECURE_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
-    include/grpc++/buffer_pool.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
@@ -4181,6 +4253,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/thd.h \
     include/grpc++/impl/thd_cxx11.h \
     include/grpc++/impl/thd_no_cxx11.h \
+    include/grpc++/resource_quota.h \
     include/grpc++/security/auth_context.h \
     include/grpc++/security/auth_metadata_processor.h \
     include/grpc++/security/credentials.h \
@@ -6582,7 +6655,6 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
-    test/core/end2end/tests/buffer_pool_server.c \
     test/core/end2end/tests/call_creds.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
@@ -6618,6 +6690,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/registered_call.c \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
+    test/core/end2end/tests/resource_quota_server.c \
     test/core/end2end/tests/server_finishes_request.c \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
@@ -6668,7 +6741,6 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
-    test/core/end2end/tests/buffer_pool_server.c \
     test/core/end2end/tests/cancel_after_accept.c \
     test/core/end2end/tests/cancel_after_client_done.c \
     test/core/end2end/tests/cancel_after_invoke.c \
@@ -6703,6 +6775,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/registered_call.c \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
+    test/core/end2end/tests/resource_quota_server.c \
     test/core/end2end/tests/server_finishes_request.c \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
@@ -6991,38 +7064,6 @@ deps_bin_encoder_test: $(BIN_ENCODER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BIN_ENCODER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-BUFFER_POOL_TEST_SRC = \
-    test/core/iomgr/buffer_pool_test.c \
-
-BUFFER_POOL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BUFFER_POOL_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/buffer_pool_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/buffer_pool_test: $(BUFFER_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BUFFER_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/buffer_pool_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/buffer_pool_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_buffer_pool_test: $(BUFFER_POOL_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BUFFER_POOL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7444,7 +7485,7 @@ endif
 
 
 DNS_RESOLVER_CONNECTIVITY_TEST_SRC = \
-    test/core/client_config/resolvers/dns_resolver_connectivity_test.c \
+    test/core/client_channel/resolvers/dns_resolver_connectivity_test.c \
 
 DNS_RESOLVER_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_CONNECTIVITY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -7464,7 +7505,7 @@ $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test: $(DNS_RESOLVER_CONNECTIVITY_
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/resolvers/dns_resolver_connectivity_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/dns_resolver_connectivity_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_dns_resolver_connectivity_test: $(DNS_RESOLVER_CONNECTIVITY_TEST_OBJS:.o=.dep)
 
@@ -7476,7 +7517,7 @@ endif
 
 
 DNS_RESOLVER_TEST_SRC = \
-    test/core/client_config/resolvers/dns_resolver_test.c \
+    test/core/client_channel/resolvers/dns_resolver_test.c \
 
 DNS_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -7496,7 +7537,7 @@ $(BINDIR)/$(CONFIG)/dns_resolver_test: $(DNS_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CON
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/resolvers/dns_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/dns_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_dns_resolver_test: $(DNS_RESOLVER_TEST_OBJS:.o=.dep)
 
@@ -9652,7 +9693,7 @@ endif
 
 
 LB_POLICIES_TEST_SRC = \
-    test/core/client_config/lb_policies_test.c \
+    test/core/client_channel/lb_policies_test.c \
 
 LB_POLICIES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LB_POLICIES_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9672,7 +9713,7 @@ $(BINDIR)/$(CONFIG)/lb_policies_test: $(LB_POLICIES_TEST_OBJS) $(LIBDIR)/$(CONFI
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/lb_policies_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/lb_policies_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_lb_policies_test: $(LB_POLICIES_TEST_OBJS:.o=.dep)
 
@@ -10067,6 +10108,38 @@ endif
 endif
 
 
+RESOURCE_QUOTA_TEST_SRC = \
+    test/core/iomgr/resource_quota_test.c \
+
+RESOURCE_QUOTA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOURCE_QUOTA_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/resource_quota_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/resource_quota_test: $(RESOURCE_QUOTA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(RESOURCE_QUOTA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/resource_quota_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/resource_quota_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_resource_quota_test: $(RESOURCE_QUOTA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RESOURCE_QUOTA_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SECURE_CHANNEL_CREATE_TEST_SRC = \
     test/core/surface/secure_channel_create_test.c \
 
@@ -10260,7 +10333,7 @@ endif
 
 
 SET_INITIAL_CONNECT_STRING_TEST_SRC = \
-    test/core/client_config/set_initial_connect_string_test.c \
+    test/core/client_channel/set_initial_connect_string_test.c \
 
 SET_INITIAL_CONNECT_STRING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SET_INITIAL_CONNECT_STRING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10280,7 +10353,7 @@ $(BINDIR)/$(CONFIG)/set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRIN
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/set_initial_connect_string_test.o:  $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/set_initial_connect_string_test.o:  $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=.dep)
 
@@ -10292,7 +10365,7 @@ endif
 
 
 SOCKADDR_RESOLVER_TEST_SRC = \
-    test/core/client_config/resolvers/sockaddr_resolver_test.c \
+    test/core/client_channel/resolvers/sockaddr_resolver_test.c \
 
 SOCKADDR_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKADDR_RESOLVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10312,7 +10385,7 @@ $(BINDIR)/$(CONFIG)/sockaddr_resolver_test: $(SOCKADDR_RESOLVER_TEST_OBJS) $(LIB
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/resolvers/sockaddr_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/sockaddr_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_sockaddr_resolver_test: $(SOCKADDR_RESOLVER_TEST_OBJS:.o=.dep)
 
@@ -10740,7 +10813,7 @@ endif
 
 
 URI_FUZZER_TEST_SRC = \
-    test/core/client_config/uri_fuzzer_test.c \
+    test/core/client_channel/uri_fuzzer_test.c \
 
 URI_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_FUZZER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10760,7 +10833,7 @@ $(BINDIR)/$(CONFIG)/uri_fuzzer_test: $(URI_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/uri_fuzzer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/uri_fuzzer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_uri_fuzzer_test: $(URI_FUZZER_TEST_OBJS:.o=.dep)
 
@@ -10772,7 +10845,7 @@ endif
 
 
 URI_PARSER_TEST_SRC = \
-    test/core/client_config/uri_parser_test.c \
+    test/core/client_channel/uri_parser_test.c \
 
 URI_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_PARSER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10792,13 +10865,45 @@ $(BINDIR)/$(CONFIG)/uri_parser_test: $(URI_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/uri_parser_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/uri_parser_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_uri_parser_test: $(URI_PARSER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(URI_PARSER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+WAKEUP_FD_CV_TEST_SRC = \
+    test/core/iomgr/wakeup_fd_cv_test.c \
+
+WAKEUP_FD_CV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WAKEUP_FD_CV_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/wakeup_fd_cv_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/wakeup_fd_cv_test: $(WAKEUP_FD_CV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(WAKEUP_FD_CV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/wakeup_fd_cv_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_wakeup_fd_cv_test: $(WAKEUP_FD_CV_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(WAKEUP_FD_CV_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -12153,16 +12258,16 @@ $(BINDIR)/$(CONFIG)/interop_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/interop_test: $(PROTOBUF_DEP) $(INTEROP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/interop_test: $(PROTOBUF_DEP) $(INTEROP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/interop_test
+	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/interop_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_interop_test: $(INTEROP_TEST_OBJS:.o=.dep)
 
@@ -12755,6 +12860,49 @@ deps_server_builder_plugin_test: $(SERVER_BUILDER_PLUGIN_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_BUILDER_PLUGIN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_CONTEXT_TEST_SPOUSE_TEST_SRC = \
+    test/cpp/test/server_context_test_spouse_test.cc \
+
+SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CONTEXT_TEST_SPOUSE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_context_test_spouse_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/server_context_test_spouse_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_context_test_spouse_test: $(PROTOBUF_DEP) $(SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/test/server_context_test_spouse_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_context_test_spouse_test: $(SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_CONTEXT_TEST_SPOUSE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14475,6 +14623,38 @@ endif
 endif
 
 
+H2_FAKE_RESOLVER_TEST_SRC = \
+    test/core/end2end/fixtures/h2_fake_resolver.c \
+
+H2_FAKE_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FAKE_RESOLVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_fake_resolver_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_fake_resolver_test: $(H2_FAKE_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FAKE_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_fake_resolver_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_fake_resolver.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_fake_resolver_test: $(H2_FAKE_RESOLVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_FAKE_RESOLVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_FAKESEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_fakesec.c \
 
@@ -15024,6 +15204,26 @@ deps_h2_compress_nosec_test: $(H2_COMPRESS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_COMPRESS_NOSEC_TEST_OBJS:.o=.dep)
+endif
+
+
+H2_FAKE_RESOLVER_NOSEC_TEST_SRC = \
+    test/core/end2end/fixtures/h2_fake_resolver.c \
+
+H2_FAKE_RESOLVER_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FAKE_RESOLVER_NOSEC_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test: $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_fake_resolver_nosec_test
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_fake_resolver.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_fake_resolver_nosec_test: $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(H2_FAKE_RESOLVER_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 
@@ -15633,7 +15833,7 @@ endif
 
 
 URI_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/client_config/uri_fuzzer_test.c \
+    test/core/client_channel/uri_fuzzer_test.c \
     test/core/util/one_corpus_entry_fuzzer.c \
 
 URI_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_FUZZER_TEST_ONE_ENTRY_SRC))))
@@ -15654,7 +15854,7 @@ $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry: $(URI_FUZZER_TEST_ONE_ENTRY_OBJS)
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/client_config/uri_fuzzer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/uri_fuzzer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -15720,6 +15920,7 @@ src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
 src/cpp/ext/reflection.grpc.pb.cc: $(OPENSSL_DEP)
 src/cpp/ext/reflection.pb.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
+src/cpp/test/server_context_test_spouse.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
 test/core/bad_ssl/server_common.c: $(OPENSSL_DEP)

@@ -761,7 +761,6 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = include/grpc++/alarm.h \
-include/grpc++/buffer_pool.h \
 include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
@@ -788,6 +787,7 @@ include/grpc++/impl/sync_no_cxx11.h \
 include/grpc++/impl/thd.h \
 include/grpc++/impl/thd_cxx11.h \
 include/grpc++/impl/thd_no_cxx11.h \
+include/grpc++/resource_quota.h \
 include/grpc++/security/auth_context.h \
 include/grpc++/security/auth_metadata_processor.h \
 include/grpc++/security/credentials.h \
