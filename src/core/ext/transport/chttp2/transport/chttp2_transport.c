@@ -1813,7 +1813,8 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
 
 static double memory_pressure_to_error(double memory_pressure) {
   if (memory_pressure < 0.8) return 0;
-  return (1.0 - memory_pressure) * 5 * 4096;
+  return (1.0 - memory_pressure) * 5 /* 1/0.2 */ *
+         4096 /* arbitrary scale factor */;
 }
 
 static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
