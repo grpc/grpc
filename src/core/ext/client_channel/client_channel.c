@@ -216,7 +216,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
                   "resolver requested LB policy %s but provided only balancer "
                   "addresses, no backend addresses -- forcing use of grpclb LB "
                   "policy",
-                  (lb_policy_name == NULL ? "(none)" : lb_policy_name));
+                  lb_policy_name);
         }
         lb_policy_name = "grpclb";
       }
