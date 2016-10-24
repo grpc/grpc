@@ -84,7 +84,9 @@ Pod::Spec.new do |s|
   repo = 'muxi/grpc'
   file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
   s.source = {
-    :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
+    # TODO(mxyan): Reverse this change when v1.0.1 is released
+    # :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
+    :http => "https://github.com/grpc/grpc/releases/download/v1.0.0/grpc_objective_c_plugin-1.0.0-macos-x86_64.zip"
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
