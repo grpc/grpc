@@ -37,15 +37,59 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
+  'variables': {
+    'runtime%': 'node'
+  },
   'target_defaults': {
     'include_dirs': [
       '.',
       'include'
     ],
+    'defines': [
+      'GPR_BACKWARDS_COMPATIBILITY_MODE'
+    ],
     'conditions': [
+      # This is the condition for using boringssl
+      ['OS=="win" or runtime=="electron"', {
+        "include_dirs": [
+          "third_party/boringssl/include"
+        ],
+        "defines": [
+          'OPENSSL_NO_ASM',
+          'OPENSSL_NO_THREADS'
+        ]
+      }, {
+        # Based on logic above, we know that this must be a non-Windows system
+        'variables': {
+          # The output of "node --version" is "v[version]". We use cut to
+          # remove the first character.
+          'target%': '<!(node --version | cut -c2-)'
+        },
+        # Empirically, Node only exports ALPN symbols if its major version is >0.
+        # io.js always reports versions >0 and always exports ALPN symbols.
+        # Therefore, Node's major version will be truthy if and only if it
+        # supports ALPN. The target is "[major].[minor].[patch]". We split by
+        # periods and take the first field to get the major version.
+        'defines': [
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+        ],
+        'include_dirs': [
+          '<(node_root_dir)/deps/openssl/openssl/include',
+        ],
+        'conditions': [
+         ["target_arch=='ia32'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+         }],
+         ["target_arch=='x64'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+         }],
+         ["target_arch=='arm'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+         }]
+        ]
+      }],
       ['OS == "win"', {
         "include_dirs": [
-          "third_party/boringssl/include",
           "third_party/zlib"
         ],
         "defines": [
@@ -55,8 +99,6 @@
           'UNICODE',
           '_UNICODE',
           'NOMINMAX',
-          'OPENSSL_NO_ASM',
-          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         "msvs_settings": {
           'VCCLCompilerTool': {
@@ -69,21 +111,8 @@
       }, { # OS != "win"
         'variables': {
           'config': '<!(echo $CONFIG)',
-          # The output of "node --version" is "v[version]". We use cut to
-          # remove the first character.
-          'target%': '<!(node --version | cut -c2-)'
         },
-          # Empirically, Node only exports ALPN symbols if its major version is >0.
-          # io.js always reports versions >0 and always exports ALPN symbols.
-          # Therefore, Node's major version will be truthy if and only if it
-          # supports ALPN. The target is "[major].[minor].[patch]". We split by
-          # periods and take the first field to get the major version.
-        'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
-          'GPR_BACKWARDS_COMPATIBILITY_MODE'
-        ],
         'include_dirs': [
-          '<(node_root_dir)/deps/openssl/openssl/include',
           '<(node_root_dir)/deps/zlib'
         ],
         'conditions': [
@@ -98,47 +127,14 @@
               '-fprofile-arcs'
             ]
           }
-         ],
-         ["target_arch=='ia32'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-         }],
-         ["target_arch=='x64'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-         }],
-         ["target_arch=='arm'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-         }]
+         ]
         ]
       }]
     ]
   },
   'conditions': [
-    ['OS == "win"', {
+    ['OS=="win" or runtime=="electron"', {
       'targets': [
-        {
-          # IMPORTANT WINDOWS BUILD INFORMATION
-          # This library does not build on Windows without modifying the Node
-          # development packages that node-gyp downloads in order to build.
-          # Due to https://github.com/nodejs/node/issues/4932, the headers for
-          # BoringSSL conflict with the OpenSSL headers included by default
-          # when including the Node headers. The remedy for this is to remove
-          # the OpenSSL headers, from the downloaded Node development package,
-          # which is typically located in `.node-gyp` in your home directory.
-          'target_name': 'WINDOWS_BUILD_WARNING',
-          'actions': [
-            {
-              'action_name': 'WINDOWS_BUILD_WARNING',
-              'inputs': [
-                'package.json'
-              ],
-              'outputs': [
-                'ignore_this_part'
-              ],
-              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
-            }
-          ]
-        },
-        # Only want to compile BoringSSL and zlib under Windows
         {
           'cflags': [
             '-std=c99',
@@ -450,6 +446,34 @@
             'third_party/boringssl/ssl/tls_record.c',
           ]
         },
+      ]
+    }],
+    ['OS == "win"', {
+      'targets': [
+        {
+          # IMPORTANT WINDOWS BUILD INFORMATION
+          # This library does not build on Windows without modifying the Node
+          # development packages that node-gyp downloads in order to build.
+          # Due to https://github.com/nodejs/node/issues/4932, the headers for
+          # BoringSSL conflict with the OpenSSL headers included by default
+          # when including the Node headers. The remedy for this is to remove
+          # the OpenSSL headers, from the downloaded Node development package,
+          # which is typically located in `.node-gyp` in your home directory.
+          'target_name': 'WINDOWS_BUILD_WARNING',
+          'actions': [
+            {
+              'action_name': 'WINDOWS_BUILD_WARNING',
+              'inputs': [
+                'package.json'
+              ],
+              'outputs': [
+                'ignore_this_part'
+              ],
+              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
+            }
+          ]
+        },
+        # Only want to compile zlib under Windows
         {
           'cflags': [
             '-std=c99',
@@ -787,6 +811,11 @@
         '-g'
       ],
       "conditions": [
+        ['OS=="win" or runtime=="electron"', {
+          'dependencies': [
+            "boringssl",
+          ]
+        }],
         ['OS=="mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9',
@@ -798,7 +827,6 @@
         }],
         ['OS=="win"', {
           'dependencies': [
-            "boringssl",
             "z",
           ]
         }],
