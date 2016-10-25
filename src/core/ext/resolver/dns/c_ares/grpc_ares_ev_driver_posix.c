@@ -75,7 +75,7 @@ struct grpc_ares_ev_driver {
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node *fds;
 
-  /** mutex guarding the reset of the state */
+  /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** is this event driver currently working? */
   bool working;
@@ -90,8 +90,13 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
   *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
   status = ares_init(&(*ev_driver)->channel);
   if (status != ARES_SUCCESS) {
+    char *err_msg;
+    gpr_asprintf(&err_msg, "Failed to init ares channel. C-ares error: %s",
+                 ares_strerror(status));
+    grpc_error *err = GRPC_ERROR_CREATE(err_msg);
+    gpr_free(err_msg);
     gpr_free(*ev_driver);
-    return GRPC_ERROR_CREATE("Failed to init ares channel");
+    return err;
   }
   gpr_mu_init(&(*ev_driver)->mu);
   (*ev_driver)->pollset_set = pollset_set;
@@ -133,12 +138,13 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   if (error == GRPC_ERROR_NONE) {
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-      ares_process_fd(d->channel, ARES_GETSOCK_READABLE(d->socks_bitmask, i)
-                                      ? d->socks[i]
-                                      : ARES_SOCKET_BAD,
-                      ARES_GETSOCK_WRITABLE(d->socks_bitmask, i)
-                          ? d->socks[i]
-                          : ARES_SOCKET_BAD);
+      ares_socket_t read_fd = ARES_GETSOCK_READABLE(d->socks_bitmask, i)
+                                  ? d->socks[i]
+                                  : ARES_SOCKET_BAD;
+      ares_socket_t write_fd = ARES_GETSOCK_WRITABLE(d->socks_bitmask, i)
+                                   ? d->socks[i]
+                                   : ARES_SOCKET_BAD;
+      ares_process_fd(d->channel, read_fd, write_fd);
     }
   } else {
     ares_cancel(d->channel);

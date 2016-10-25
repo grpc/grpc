@@ -84,14 +84,14 @@ typedef struct {
 
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
-} dns_resolver;
+} ares_dns_resolver;
 
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 
 static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
-                                            dns_resolver *r);
+                                            ares_dns_resolver *r);
 static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
-                                              dns_resolver *r);
+                                              ares_dns_resolver *r);
 
 static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_ares_channel_saw_error(grpc_exec_ctx *exec_ctx,
@@ -106,7 +106,7 @@ static const grpc_resolver_vtable dns_ares_resolver_vtable = {
 
 static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx,
                               grpc_resolver *resolver) {
-  dns_resolver *r = (dns_resolver *)resolver;
+  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   if (r->have_retry_timer) {
     grpc_timer_cancel(exec_ctx, &r->retry_timer);
@@ -122,7 +122,7 @@ static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx,
 
 static void dns_ares_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *resolver) {
-  dns_resolver *r = (dns_resolver *)resolver;
+  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   if (!r->resolving) {
     gpr_backoff_reset(&r->backoff_state);
@@ -133,7 +133,7 @@ static void dns_ares_channel_saw_error(grpc_exec_ctx *exec_ctx,
 
 static void dns_ares_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
-  dns_resolver *r = arg;
+  ares_dns_resolver *r = arg;
   gpr_mu_lock(&r->mu);
   r->have_retry_timer = false;
   if (error == GRPC_ERROR_NONE) {
@@ -147,7 +147,7 @@ static void dns_ares_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_error *error) {
-  dns_resolver *r = arg;
+  ares_dns_resolver *r = arg;
   grpc_resolver_result *result = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
@@ -196,7 +196,7 @@ static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
 static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                           grpc_resolver_result **target_result,
                           grpc_closure *on_complete) {
-  dns_resolver *r = (dns_resolver *)resolver;
+  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
@@ -217,7 +217,7 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 }
 
 static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
-                                            dns_resolver *r) {
+                                            ares_dns_resolver *r) {
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
@@ -228,7 +228,7 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
-                                              dns_resolver *r) {
+                                              ares_dns_resolver *r) {
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
     *r->target_result = r->resolved_result;
@@ -242,7 +242,7 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
-  dns_resolver *r = (dns_resolver *)gr;
+  ares_dns_resolver *r = (ares_dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_ares_cleanup();
   if (r->resolved_result) {
@@ -256,7 +256,7 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
 
 static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
                                       const char *default_port) {
-  dns_resolver *r;
+  ares_dns_resolver *r;
   grpc_error *error = GRPC_ERROR_NONE;
   char *proxy_name;
   // Get name from args.
@@ -278,7 +278,7 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
   // Get proxy name, if any.
   proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
-  r = gpr_malloc(sizeof(dns_resolver));
+  r = gpr_malloc(sizeof(ares_dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
