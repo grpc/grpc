@@ -49,14 +49,16 @@ typedef struct grpc_byte_stream grpc_byte_stream;
 struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
-  int (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-              gpr_slice *slice, size_t max_size_hint,
-              grpc_closure *on_complete);
+  bool (*next_slice)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
+                     gpr_slice *slice, size_t max_size_hint,
+                     grpc_closure *on_complete);
+  bool (*next_buffer)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
+                      void *buffer, size_t size, grpc_closure *on_complete);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
 };
 
-/* returns 1 if the bytes are available immediately (in which case
- * on_complete will not be called), 0 if the bytes will be available
+/* returns true if the bytes are available immediately (in which case
+ * on_complete will not be called), false if the bytes will be available
  * asynchronously.
  *
  * max_size_hint can be set as a hint as to the maximum number
@@ -64,14 +66,21 @@ struct grpc_byte_stream {
  *
  * once a slice is returned into *slice, it is owned by the caller.
  */
-int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                          grpc_byte_stream *byte_stream, gpr_slice *slice,
-                          size_t max_size_hint, grpc_closure *on_complete);
+bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
+                                 grpc_byte_stream *byte_stream,
+                                 gpr_slice *slice, size_t max_size_hint,
+                                 grpc_closure *on_complete);
+
+/* like grpc_byte_stream_next, but fills \a buffer with exactly \a size bytes */
+bool grpc_byte_stream_next_buffer(grpc_exec_ctx *exec_ctx,
+                                  grpc_byte_stream *byte_stream, void *buffer,
+                                  size_t size, grpc_closure *on_complete);
 
 void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_byte_stream *byte_stream);
 
-/* grpc_byte_stream that wraps a slice buffer */
+/* grpc_byte_stream that wraps a slice buffer: it MAY mutate the backing buffer
+ */
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
   gpr_slice_buffer *backing_buffer;

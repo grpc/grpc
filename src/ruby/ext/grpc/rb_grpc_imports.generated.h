@@ -269,6 +269,12 @@ extern grpc_channel_create_registered_call_type grpc_channel_create_registered_c
 typedef grpc_call_error(*grpc_call_start_batch_type)(grpc_call *call, const grpc_op *ops, size_t nops, void *tag, void *reserved);
 extern grpc_call_start_batch_type grpc_call_start_batch_import;
 #define grpc_call_start_batch grpc_call_start_batch_import
+typedef grpc_call_error(*grpc_call_incremental_message_writer_push_type)(grpc_call *call, grpc_byte_buffer *buffer, void *tag);
+extern grpc_call_incremental_message_writer_push_type grpc_call_incremental_message_writer_push_import;
+#define grpc_call_incremental_message_writer_push grpc_call_incremental_message_writer_push_import
+typedef grpc_call_error(*grpc_call_incremental_message_reader_pull_type)(grpc_call *call, grpc_byte_buffer *buffer, void *tag);
+extern grpc_call_incremental_message_reader_pull_type grpc_call_incremental_message_reader_pull_import;
+#define grpc_call_incremental_message_reader_pull grpc_call_incremental_message_reader_pull_import
 typedef char *(*grpc_call_get_peer_type)(grpc_call *call);
 extern grpc_call_get_peer_type grpc_call_get_peer_import;
 #define grpc_call_get_peer grpc_call_get_peer_import
@@ -347,6 +353,21 @@ extern grpc_is_binary_header_type grpc_is_binary_header_import;
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
+typedef grpc_resource_quota *(*grpc_resource_quota_create_type)(const char *trace_name);
+extern grpc_resource_quota_create_type grpc_resource_quota_create_import;
+#define grpc_resource_quota_create grpc_resource_quota_create_import
+typedef void(*grpc_resource_quota_ref_type)(grpc_resource_quota *resource_quota);
+extern grpc_resource_quota_ref_type grpc_resource_quota_ref_import;
+#define grpc_resource_quota_ref grpc_resource_quota_ref_import
+typedef void(*grpc_resource_quota_unref_type)(grpc_resource_quota *resource_quota);
+extern grpc_resource_quota_unref_type grpc_resource_quota_unref_import;
+#define grpc_resource_quota_unref grpc_resource_quota_unref_import
+typedef void(*grpc_resource_quota_resize_type)(grpc_resource_quota *resource_quota, size_t new_size);
+extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
+#define grpc_resource_quota_resize grpc_resource_quota_resize_import
+typedef const grpc_arg_pointer_vtable *(*grpc_resource_quota_arg_vtable_type)(void);
+extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
+#define grpc_resource_quota_arg_vtable grpc_resource_quota_arg_vtable_import
 typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import

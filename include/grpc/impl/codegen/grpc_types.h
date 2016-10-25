@@ -201,6 +201,9 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
+   to fetch an appropriate pointer arg vtable */
+#define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** Service config data, to be passed to subchannels.
     Not intended for external use. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
@@ -242,7 +245,9 @@ typedef enum grpc_call_error {
   /** this batch of operations leads to more operations than allowed */
   GRPC_CALL_ERROR_BATCH_TOO_BIG,
   /** payload type requested is not the type registered */
-  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
+  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH,
+  /** not currently in an incremental operation */
+  GRPC_CALL_ERROR_NOT_CURRENTLY_INCREMENTAL
 } grpc_call_error;
 
 /* Write Flags: */
@@ -374,7 +379,13 @@ typedef enum {
       This op completes after the close has been received by the server.
       This operation always succeeds, meaning ops paired with this operation
       will also appear to succeed, even though they may not have. */
-  GRPC_OP_RECV_CLOSE_ON_SERVER
+  GRPC_OP_RECV_CLOSE_ON_SERVER,
+  /** Begin sending a message: when this op completes, an instance of a
+      grpc_incremental_message_writer is created */
+  GRPC_OP_SEND_MESSAGE_INCREMENTAL_START,
+  /** Begin receiving a message: when this op completes, an instance of a
+      grpc_incremental_message_reader is created */
+  GRPC_OP_RECV_MESSAGE_INCREMENTAL_START
 } grpc_op_type;
 
 struct grpc_byte_buffer;
@@ -403,7 +414,10 @@ typedef struct grpc_op {
         grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
-    struct grpc_byte_buffer *send_message;
+    grpc_byte_buffer *send_message;
+    struct {
+      uint32_t message_length;
+    } send_message_incremental_start;
     struct {
       size_t trailing_metadata_count;
       grpc_metadata *trailing_metadata;
@@ -419,7 +433,10 @@ typedef struct grpc_op {
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
-    struct grpc_byte_buffer **recv_message;
+    grpc_byte_buffer **recv_message;
+    struct {
+      uint32_t *message_length;
+    } recv_message_incremental_start;
     struct {
       /** ownership of the array is with the caller, but ownership of the
           elements stays with the call object (ie key, value members are owned
@@ -459,6 +476,8 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+typedef struct grpc_resource_quota grpc_resource_quota;
 
 #ifdef __cplusplus
 }

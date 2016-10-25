@@ -213,6 +213,12 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call *call,
                                               const grpc_op *ops, size_t nops,
                                               void *tag, void *reserved);
 
+GRPCAPI grpc_call_error grpc_call_incremental_message_writer_push(
+    grpc_call *call, grpc_byte_buffer *buffer, void *tag);
+
+GRPCAPI grpc_call_error grpc_call_incremental_message_reader_pull(
+    grpc_call *call, grpc_byte_buffer *buffer, void *tag);
+
 /** Returns a newly allocated string representing the endpoint to which this
     call is communicating with. The string is in the uri format accepted by
     grpc_channel_create.
@@ -400,6 +406,23 @@ GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
+
+/** Create a buffer pool */
+GRPCAPI grpc_resource_quota *grpc_resource_quota_create(const char *trace_name);
+
+/** Add a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_ref(grpc_resource_quota *resource_quota);
+
+/** Drop a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota *resource_quota);
+
+/** Update the size of a buffer pool */
+GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota *resource_quota,
+                                        size_t new_size);
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
+ */
+GRPCAPI const grpc_arg_pointer_vtable *grpc_resource_quota_arg_vtable(void);
 
 #ifdef __cplusplus
 }

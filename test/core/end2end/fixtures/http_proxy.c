@@ -357,7 +357,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   const gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(10, GPR_TIMESPAN));
   grpc_tcp_client_connect(exec_ctx, &conn->on_server_connect_done,
-                          &conn->server_endpoint, conn->pollset_set,
+                          &conn->server_endpoint, conn->pollset_set, NULL,
                           (struct sockaddr*)&resolved_addresses->addrs[0].addr,
                           resolved_addresses->addrs[0].len, deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
@@ -417,7 +417,8 @@ static void thread_main(void* arg) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-grpc_end2end_http_proxy* grpc_end2end_http_proxy_create() {
+grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_end2end_http_proxy* proxy = gpr_malloc(sizeof(*proxy));
   memset(proxy, 0, sizeof(*proxy));
   // Construct proxy address.
@@ -426,8 +427,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create() {
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name);
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(NULL);
-  grpc_error* error =
-      grpc_tcp_server_create(NULL, proxy->channel_args, &proxy->server);
+  grpc_error* error = grpc_tcp_server_create(
+      &exec_ctx, NULL, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   struct sockaddr_in addr;
@@ -442,7 +443,6 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create() {
   // Start server.
   proxy->pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(proxy->pollset, &proxy->mu);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server_start(&exec_ctx, proxy->server, &proxy->pollset, 1, on_accept,
                         proxy);
   grpc_exec_ctx_finish(&exec_ctx);
