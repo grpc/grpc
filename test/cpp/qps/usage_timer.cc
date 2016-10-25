@@ -68,7 +68,7 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
     }
   }
 #else
-  gpr_log(GPR_INFO, "get_cpu_usage(): Non-linux platform is not supported.").
+  gpr_log(GRPC_INFO, "get_cpu_usage(): Non-linux platform is not supported.");
 #endif
 }
 
