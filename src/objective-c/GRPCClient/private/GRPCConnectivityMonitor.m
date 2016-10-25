@@ -67,11 +67,9 @@
 
 - (BOOL)isHostReachable {
   // Note: connectionOnDemand means it'll be reachable only if using the
-  // CFSocketStream API or APIs
-  // on top of it.
+  // CFSocketStream API or APIs on top of it.
   // connectionRequired means we can't tell until a connection is attempted
-  // (e.g. for VPN on
-  // demand).
+  // (e.g. for VPN on demand).
   return self.reachable && !self.interventionRequired &&
          !self.connectionOnDemand;
 }
@@ -112,15 +110,13 @@ if (self.isCell) {
 #pragma mark Connectivity Monitor
 
 // Assumes the third argument is a block that accepts a GRPCReachabilityFlags
-// object, and passes the
-// received ones to it.
+// object, and passes the received ones to it.
 static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
                                         SCNetworkReachabilityFlags flags,
                                         void *info) {
 #pragma unused(target)
   // This can be called many times with the same info. The info is retained by
-  // SCNetworkReachability
-  // while this function is being executed.
+  // SCNetworkReachability while this function is being executed.
   void (^handler)(GRPCReachabilityFlags *) =
       (__bridge void (^)(GRPCReachabilityFlags *))info;
   handler([[GRPCReachabilityFlags alloc] initWithFlags:flags]);
@@ -181,8 +177,7 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
 
 - (void)startListeningWithHandler:(void (^)(GRPCReachabilityFlags *))handler {
   // Copy to ensure the handler block is in the heap (and so can't be
-  // deallocated when this method
-  // returns).
+  // deallocated when this method returns).
   void (^copiedHandler)(GRPCReachabilityFlags *) = [handler copy];
   SCNetworkReachabilityContext context = {
       .version = 0,
