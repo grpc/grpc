@@ -77,20 +77,20 @@
 - (NSString *)description {
   NSMutableArray *activeOptions = [NSMutableArray arrayWithCapacity:9];
 
-/*
- * For each flag, add its name to the array if it's ON. Example:
+  /*
+   * For each flag, add its name to the array if it's ON. Example:
 
-if (self.isCell) {
-  [activeOptions addObject:@"isCell"];
-}
+     if (self.isCell) {
+       [activeOptions addObject:@"isCell"];
+     }
 
- */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-  if (self.methodName) {                       \
-    [activeOptions addObject:@ #methodName];   \
-  }
-#include "GRPCReachabilityFlagNames.xmacro.h"
-#undef GRPC_XMACRO_ITEM
+   */
+  #define GRPC_XMACRO_ITEM(methodName, FlagName) \
+    if (self.methodName) {                       \
+      [activeOptions addObject:@ #methodName];   \
+    }
+  #include "GRPCReachabilityFlagNames.xmacro.h"
+  #undef GRPC_XMACRO_ITEM
 
   return activeOptions.count == 0
              ? @"(none)"
