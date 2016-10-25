@@ -851,13 +851,20 @@ static bool contains_non_ok_status(grpc_metadata_batch *batch) {
   return false;
 }
 
-typedef enum { CONTINUE_FETCHING, FINISHED_SLICE } continue_fetching_phase;
+static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s) {
+  s->fetched_send_message_length +=
+      (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
+  gpr_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
+  if (s->id != 0) {
+    grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
+  }
+}
 
 static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s,
-                                          continue_fetching_phase phase) {
-  if (phase == FINISHED_SLICE) goto finished_slice;
+                                          grpc_chttp2_stream *s) {
   for (;;) {
     if (s->fetching_send_message == NULL) {
       /* Stream was cancelled before message fetch completed */
@@ -888,7 +895,6 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
     } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
                                      &s->fetching_slice, UINT32_MAX,
                                      &s->complete_fetch)) {
-    finished_slice:
       s->fetched_send_message_length +=
           (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
       gpr_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
@@ -904,7 +910,8 @@ static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
   grpc_chttp2_stream *s = gs;
   grpc_chttp2_transport *t = s->t;
   if (error == GRPC_ERROR_NONE) {
-    continue_fetching_send_locked(exec_ctx, t, s, FINISHED_SLICE);
+    add_fetched_slice_locked(exec_ctx, t, s);
+    continue_fetching_send_locked(exec_ctx, t, s);
   } else {
     /* TODO(ctiller): what to do here */
     abort();
@@ -1039,7 +1046,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         /* TODO(ctiller): make this configurable */
         s->next_message_end_offset -= 65536;
       }
-      continue_fetching_send_locked(exec_ctx, t, s, CONTINUE_FETCHING);
+      continue_fetching_send_locked(exec_ctx, t, s);
       if (s->id != 0) {
         grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
       }
