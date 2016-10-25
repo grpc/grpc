@@ -377,6 +377,7 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
 
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
                                    incoming_frame_size);
+  grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
 
   if (s != NULL) {
     if (incoming_frame_size >
@@ -398,12 +399,6 @@ static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
     GRPC_CHTTP2_FLOW_DEBIT_STREAM("parse", t, s, incoming_window_delta,
                                   incoming_frame_size);
     s->received_bytes += incoming_frame_size;
-  } else {
-    GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", t, announce_incoming_window,
-                                      incoming_frame_size);
-    GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", t, incoming_window,
-                                      incoming_frame_size);
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "destroy_stream");
   }
 
   return GRPC_ERROR_NONE;
