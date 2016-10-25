@@ -91,7 +91,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
   // Simulate "polling for work" by sleeping for sometime
   SleepForMs(kPollingTimeoutMsec);
 
-  *tag = nullptr;
+  *tag = NULL;
   *ok = true;
 
   // Return timeout roughly 1 out of every 3 calls
