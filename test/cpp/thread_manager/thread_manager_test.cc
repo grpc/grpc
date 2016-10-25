@@ -42,6 +42,7 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 #include "test/cpp/util/test_config.h"
 
+namespace grpc {
 class ThreadManagerTest GRPC_FINAL : public grpc::ThreadManager {
  public:
   ThreadManagerTest()
@@ -91,7 +92,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
   // Simulate "polling for work" by sleeping for sometime
   SleepForMs(kPollingTimeoutMsec);
 
-  *tag = NULL;
+  *tag = nullptr;
   *ok = true;
 
   // Return timeout roughly 1 out of every 3 calls
@@ -122,12 +123,13 @@ void ThreadManagerTest::PerformTest() {
   GPR_ASSERT(gpr_atm_no_barrier_load(&num_do_work_) ==
              gpr_atm_no_barrier_load(&num_work_found_));
 }
+}  // namespace grpc
 
 int main(int argc, char **argv) {
   std::srand(std::time(NULL));
 
   grpc::testing::InitTest(&argc, &argv, true);
-  ThreadManagerTest test_rpc_manager;
+  grpc::ThreadManagerTest test_rpc_manager;
   test_rpc_manager.PerformTest();
 
   return 0;
