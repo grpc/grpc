@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\client_config\set_initial_connect_string_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\set_initial_connect_string_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -55,7 +55,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
           request_status_early ? "true" : "false");
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  config.init_client(&f, client_args, NULL);
   return f;
 }
 

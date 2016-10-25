@@ -35,8 +35,8 @@
 
 extern void grpc_chttp2_plugin_init(void);
 extern void grpc_chttp2_plugin_shutdown(void);
-extern void grpc_client_config_init(void);
-extern void grpc_client_config_shutdown(void);
+extern void grpc_client_channel_init(void);
+extern void grpc_client_channel_shutdown(void);
 extern void grpc_lb_policy_grpclb_init(void);
 extern void grpc_lb_policy_grpclb_shutdown(void);
 extern void grpc_lb_policy_pick_first_init(void);
@@ -55,8 +55,8 @@ extern void census_grpc_plugin_shutdown(void);
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init,
                        grpc_chttp2_plugin_shutdown);
-  grpc_register_plugin(grpc_client_config_init,
-                       grpc_client_config_shutdown);
+  grpc_register_plugin(grpc_client_channel_init,
+                       grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
   grpc_register_plugin(grpc_lb_policy_pick_first_init,

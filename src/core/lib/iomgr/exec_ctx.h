@@ -66,15 +66,33 @@ typedef struct grpc_combiner grpc_combiner;
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  /** The workqueue we're stealing work from.
+      As items are queued to the execution context, we try to steal one
+      workqueue item and execute it inline (assuming the exec_ctx is not
+      finished) - doing so does not invalidate the workqueue's contract, and
+      provides a small latency win in cases where we get a hit */
+  grpc_workqueue *stealing_from_workqueue;
+  /** The workqueue item that was stolen from the workqueue above. When new
+      items are scheduled to be offloaded to that workqueue, we need to update
+      this like a 1-deep fifo to maintain the invariant that workqueue items
+      queued by one thread are started in order */
+  grpc_closure *stolen_closure;
   /** currently active combiner: updated only via combiner.c */
   grpc_combiner *active_combiner;
+  /** last active combiner in the active combiner list */
+  grpc_combiner *last_combiner;
   bool cached_ready_to_finish;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 };
 
+/* initializer for grpc_exec_ctx:
+   prefer to use GRPC_EXEC_CTX_INIT whenever possible */
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, NULL, false, finish_check_arg, finish_check }
+  {                                                                          \
+    GRPC_CLOSURE_LIST_INIT, NULL, NULL, NULL, NULL, false, finish_check_arg, \
+        finish_check                                                         \
+  }
 #else
 struct grpc_exec_ctx {
   bool cached_ready_to_finish;
@@ -85,8 +103,10 @@ struct grpc_exec_ctx {
   { false, finish_check_arg, finish_check }
 #endif
 
+/* initialize an execution context at the top level of an API call into grpc
+   (this is safe to use elsewhere, though possibly not as efficient) */
 #define GRPC_EXEC_CTX_INIT \
-  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_never_ready_to_finish, NULL)
+  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_always_ready_to_finish, NULL)
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.

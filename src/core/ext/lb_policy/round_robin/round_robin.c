@@ -63,7 +63,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -629,6 +629,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     sc_args.addr =
         (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
     sc_args.addr_len = args->addresses->addresses[i].address.len;
+    sc_args.args = args->additional_args;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
