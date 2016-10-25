@@ -1072,6 +1072,10 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
   for (;;) {
     size_t remaining = call->receiving_stream->length -
                        (*call->receiving_buffer)->data.raw.slice_buffer.length;
+    gpr_log(GPR_DEBUG, "%p len=%d, have=%d, rem=%d", bctl,
+            (int)call->receiving_stream->length,
+            (int)(*call->receiving_buffer)->data.raw.slice_buffer.length,
+            (int)remaining);
     if (remaining == 0) {
       call->receiving_message = 0;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
