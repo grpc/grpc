@@ -1737,7 +1737,6 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (delta == 0 || (bdp != 0 && delta > -1024 && delta < 1024)) {
     return;
   }
-  gpr_log(GPR_DEBUG, "%s: %d %" PRId64, t->peer_string, bdp, delta);
   push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, bdp);
 }
 
@@ -1780,12 +1779,6 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
   grpc_http_parser_destroy(&parser);
   grpc_http_response_destroy(&response);
   return error;
-}
-
-static double memory_pressure_to_error(double memory_pressure) {
-  if (memory_pressure < 0.8) return 0;
-  return (1.0 - memory_pressure) * 5 /* 1/0.2 */ *
-         4096 /* arbitrary scale factor */;
 }
 
 static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
@@ -1873,51 +1866,29 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       send_ping_locked(exec_ctx, t, &t->finish_bdp_ping);
     }
 
-    int64_t estimate;
+    int64_t estimate = -1;
+    double bdp_error = 0.0;
     if (grpc_bdp_estimator_get_estimate(&t->bdp_estimator, &estimate)) {
-      gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-      gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
-      double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-      if (dt > 3) {
-        grpc_pid_controller_reset(&t->pid_controller);
-      }
-      t->bdp_guess += grpc_pid_controller_update(
-          &t->pid_controller,
-          2.0 * (double)estimate - t->bdp_guess -
-              memory_pressure_to_error(grpc_resource_quota_get_memory_pressure(
-                  grpc_endpoint_get_resource_user(t->ep)->resource_quota)),
-          dt);
-      update_bdp(exec_ctx, t, t->bdp_guess);
-      if (0)
-        gpr_log(GPR_DEBUG, "bdp guess %s: %lf (est=%" PRId64 " dt=%lf int=%lf)",
-                t->peer_string, t->bdp_guess, estimate, dt,
-                t->pid_controller.error_integral);
-      t->last_pid_update = now;
-
-      /*
-          gpr_log(
-              GPR_DEBUG, "%s BDP estimate: %" PRId64
-                         " (%d %d) [%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d
-         %d]",
-              t->peer_string, estimate, t->bdp_estimator.first_sample_idx,
-              t->bdp_estimator.num_samples, (int)t->bdp_estimator.samples[0],
-              (int)t->bdp_estimator.samples[1],
-         (int)t->bdp_estimator.samples[2],
-              (int)t->bdp_estimator.samples[3],
-         (int)t->bdp_estimator.samples[4],
-              (int)t->bdp_estimator.samples[5],
-         (int)t->bdp_estimator.samples[6],
-              (int)t->bdp_estimator.samples[7],
-         (int)t->bdp_estimator.samples[8],
-              (int)t->bdp_estimator.samples[9],
-         (int)t->bdp_estimator.samples[10],
-              (int)t->bdp_estimator.samples[11],
-         (int)t->bdp_estimator.samples[12],
-              (int)t->bdp_estimator.samples[13],
-         (int)t->bdp_estimator.samples[14],
-              (int)t->bdp_estimator.samples[15]);
-              */
+      bdp_error = 2.0 * (double)estimate - t->bdp_guess;
     }
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    gpr_timespec dt_timespec = gpr_time_sub(now, t->last_pid_update);
+    double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
+    if (dt > 3) {
+      grpc_pid_controller_reset(&t->pid_controller);
+    }
+    double memory_pressure = grpc_resource_quota_get_memory_pressure(
+        grpc_endpoint_get_resource_user(t->ep)->resource_quota);
+    if (memory_pressure > 0.8) {
+      bdp_error = -(memory_pressure - 0.8) * 5 * 32768;
+    }
+    if (t->bdp_guess < 1e-6 && bdp_error < 0) {
+      bdp_error = 0;
+    }
+    t->bdp_guess +=
+        grpc_pid_controller_update(&t->pid_controller, bdp_error, dt);
+    update_bdp(exec_ctx, t, t->bdp_guess);
+    t->last_pid_update = now;
 
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
