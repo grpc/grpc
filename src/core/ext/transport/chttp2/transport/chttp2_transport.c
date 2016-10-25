@@ -895,12 +895,7 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
     } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
                                      &s->fetching_slice, UINT32_MAX,
                                      &s->complete_fetch)) {
-      s->fetched_send_message_length +=
-          (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
-      gpr_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
-      if (s->id != 0) {
-        grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
-      }
+      add_fetched_slice_locked(exec_ctx, t, s);
     }
   }
 }
