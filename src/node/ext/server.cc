@@ -169,7 +169,7 @@ NAN_METHOD(Server::New) {
     const int argc = 1;
     Local<Value> argv[argc] = {info[0]};
     MaybeLocal<Object> maybe_instance =
-        constructor->GetFunction()->NewInstance(argc, argv);
+        Nan::NewInstance(constructor->GetFunction(), argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;

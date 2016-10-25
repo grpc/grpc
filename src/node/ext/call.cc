@@ -613,16 +613,16 @@ NAN_METHOD(Call::New) {
         return Nan::ThrowTypeError("Call's fourth argument must be a string");
       }
       call = new Call(wrapped_call);
-      info.This()->SetHiddenValue(Nan::New("channel_").ToLocalChecked(),
-                                  channel_object);
+      Nan::Set(info.This(), Nan::New("channel_").ToLocalChecked(),
+               channel_object);
     }
     call->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   } else {
     const int argc = 4;
     Local<Value> argv[argc] = {info[0], info[1], info[2], info[3]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
+    MaybeLocal<Object> maybe_instance = Nan::NewInstance(
+        constructor->GetFunction(), argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;

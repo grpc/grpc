@@ -206,8 +206,8 @@ NAN_METHOD(Channel::New) {
   } else {
     const int argc = 3;
     Local<Value> argv[argc] = {info[0], info[1], info[2]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
+    MaybeLocal<Object> maybe_instance = Nan::NewInstance(
+        constructor->GetFunction(), argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;
