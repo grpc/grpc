@@ -250,13 +250,6 @@ struct grpc_chttp2_transport {
   /** data to write next write */
   gpr_slice_buffer qbuf;
 
-  /** window available to announce to peer */
-  int64_t announce_incoming_window;
-  /** how many bytes have been given out as transport window that we'd now like
-      to retract? (since we can't retract incoming window, instead we just dont
-      give out any more until this amount goes to zero) */
-  int64_t retract_incoming_window;
-
   /** have we seen a goaway */
   uint8_t seen_goaway;
   /** have we sent a goaway */

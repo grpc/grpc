@@ -222,11 +222,13 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
 
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
      also; 3/4 is a magic number that will likely get tuned soon */
-  if (t->announce_incoming_window > 0) {
-    uint32_t announced =
-        (uint32_t)GPR_MIN(t->announce_incoming_window, UINT32_MAX);
-    GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", t, announce_incoming_window,
-                                     announced);
+  uint32_t target_incoming_window = GPR_MAX(
+      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      1024);
+  if (t->incoming_window < 3 * target_incoming_window / 4) {
+    uint32_t announced = (uint32_t)GPR_CLAMP(
+        target_incoming_window - t->incoming_window, 0, UINT32_MAX);
+    GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("write", t, incoming_window, announced);
     grpc_transport_one_way_stats throwaway_stats;
     gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
                                          0, announced, &throwaway_stats));
