@@ -33,6 +33,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Google.Apis.Auth.OAuth2;
 using Grpc.Core;
@@ -72,9 +73,10 @@ namespace Grpc.Auth
         public static AsyncAuthInterceptor FromAccessToken(string accessToken)
         {
             GrpcPreconditions.CheckNotNull(accessToken);
-            return new AsyncAuthInterceptor(async (context, metadata) =>
+            return new AsyncAuthInterceptor((context, metadata) =>
             {
                 metadata.Add(CreateBearerTokenHeader(accessToken));
+                return Task.FromResult<object>(null);
             });
         }
 
