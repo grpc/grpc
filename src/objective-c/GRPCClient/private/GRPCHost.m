@@ -54,6 +54,10 @@ NS_ASSUME_NONNULL_BEGIN
 #define GRPC_OBJC_VERSION_STRING @"1.0.0"
 
 static NSMutableDictionary *kHostCache;
+
+// This connectivity monitor flushes the host cache when connectivity status
+// changes. Otherwise, a new call might still use the cached channel which is
+// no longer available and will call gRPC to hang
 static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 @implementation GRPCHost {
@@ -94,6 +98,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   dispatch_once(&cacheInitialization, ^{
     kHostCache = [NSMutableDictionary dictionary];
   });
+
   @synchronized(kHostCache) {
     GRPCHost *cachedHost = kHostCache[address];
     if (cachedHost) {
@@ -106,6 +111,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
       kHostCache[address] = self;
     }
     // Keep a single monitor to flush the cache if the connectivity status changed
+    // Thread safety guarded by @synchronized(kHostCache)
     if (!connectivityMonitor) {
       connectivityMonitor =
       [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
