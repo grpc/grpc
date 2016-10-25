@@ -40,7 +40,7 @@
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
-/** grpc_resolver provides grpc_channel_args objects to grpc_channel objects */
+/** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
   gpr_refcount refs;
@@ -79,11 +79,11 @@ void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
 void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                      grpc_resolver *resolver);
 
-/** Get the next result from the resolver.  Expected to set *result with
-    new channel args and then schedule on_complete for execution.
+/** Get the next result from the resolver.  Expected to set \a *result with
+    new channel args and then schedule \a on_complete for execution.
 
-    If resolution is fatally broken, set *result to NULL and
-    schedule on_complete. */
+    If resolution is fatally broken, set \a *result to NULL and
+    schedule \a on_complete. */
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                         grpc_channel_args **result, grpc_closure *on_complete);
 
