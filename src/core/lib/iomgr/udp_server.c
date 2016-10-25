@@ -168,7 +168,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->head) {
     grpc_udp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
+      grpc_unlink_if_unix_domain_socket(&sp->addr);
 
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
@@ -363,8 +363,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
-      if (0 == getsockname(sp->fd,
-                           (struct sockaddr *)sockname_temp.addr,
+      if (0 == getsockname(sp->fd, (struct sockaddr *)sockname_temp.addr,
                            (socklen_t *)&sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
