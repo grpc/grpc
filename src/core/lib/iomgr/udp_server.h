@@ -59,7 +59,7 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *udp_server,
                            grpc_pollset **pollsets, size_t pollset_count,
                            struct grpc_server *server);
 
-int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
+int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.
