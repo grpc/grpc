@@ -39,6 +39,7 @@
 
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
