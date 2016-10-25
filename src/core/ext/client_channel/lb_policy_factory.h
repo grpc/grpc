@@ -77,8 +77,7 @@ typedef struct grpc_lb_addresses {
 grpc_lb_addresses *grpc_lb_addresses_create(
     size_t num_addresses, const grpc_lb_user_data_vtable *user_data_vtable);
 
-/** Creates a copy of \a addresses.  If \a user_data_copy is not NULL,
- * it will be invoked to copy the \a user_data field of each address. */
+/** Creates a copy of \a addresses. */
 grpc_lb_addresses *grpc_lb_addresses_copy(const grpc_lb_addresses *addresses);
 
 /** Sets the value of the address at index \a index of \a addresses.
@@ -93,8 +92,7 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
 int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
                           const grpc_lb_addresses *addresses2);
 
-/** Destroys \a addresses.  If \a user_data_destroy is not NULL, it will
- * be invoked to destroy the \a user_data field of each address. */
+/** Destroys \a addresses. */
 void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses);
 
 /** Returns a channel arg containing \a addresses. */
