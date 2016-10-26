@@ -14,12 +14,6 @@ grpc_proto_library(
     deps = ["payloads_proto", "stats_proto"],
 )
 
-#grpc_proto_library(
-#    name = "echo_duplicate_proto",
-#    srcs = ["duplicate/echo_duplicate.proto"],
-#    deps = ["echo_messages_proto"],
-#)
-
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
