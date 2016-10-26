@@ -1713,7 +1713,7 @@ retry:
             (void *)pi_new, fd->fd, (void *)pollset);
 
         /* No need to lock 'pi_new' here since this is a new polling island and
-           no one has a reference to it yet */
+         * no one has a reference to it yet */
         polling_island_remove_all_fds_locked(pi_new, true, &error);
 
         /* Ref and unref so that the polling island gets deleted during unref */
