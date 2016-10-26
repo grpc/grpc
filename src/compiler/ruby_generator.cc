@@ -133,7 +133,7 @@ grpc::string PackageToModule(const grpc::string& name) {
   grpc::string result;
   result.reserve(name.size());
 
-  for (uint i = 0; i < name.size(); i++) {
+  for (int i = 0; i < name.size(); i++) {
     if (name[i] == '_') {
       next_upper = true;
     } else {
