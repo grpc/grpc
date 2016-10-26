@@ -208,6 +208,9 @@ class ClientContext {
     return trailing_metadata_;
   }
 
+  /// Return the incoming compression algorithm
+  grpc_compression_algorithm GetIncomingCompressionAlgorithm();
+
   /// Set the deadline for the client call.
   ///
   /// \warning This method should only be called before invoking the rpc.
