@@ -76,7 +76,7 @@ namespace Grpc.Auth
             return new AsyncAuthInterceptor((context, metadata) =>
             {
                 metadata.Add(CreateBearerTokenHeader(accessToken));
-                return Task.FromResult<object>(null);
+                return TaskUtils.CompletedTask;
             });
         }
 

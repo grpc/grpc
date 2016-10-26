@@ -58,19 +58,20 @@
 }
 
  */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-- (BOOL)methodName { \
-  return !!(_flags & kSCNetworkReachabilityFlags ## FlagName); \
-}
+#define GRPC_XMACRO_ITEM(methodName, FlagName)                 \
+  -(BOOL)methodName {                                          \
+    return !!(_flags & kSCNetworkReachabilityFlags##FlagName); \
+  }
 #include "GRPCReachabilityFlagNames.xmacro.h"
 #undef GRPC_XMACRO_ITEM
 
 - (BOOL)isHostReachable {
-  // Note: connectionOnDemand means it'll be reachable only if using the CFSocketStream API or APIs
-  // on top of it.
-  // connectionRequired means we can't tell until a connection is attempted (e.g. for VPN on
-  // demand).
-  return self.reachable && !self.interventionRequired && !self.connectionOnDemand;
+  // Note: connectionOnDemand means it'll be reachable only if using the
+  // CFSocketStream API or APIs on top of it.
+  // connectionRequired means we can't tell until a connection is attempted
+  // (e.g. for VPN on demand).
+  return self.reachable && !self.interventionRequired &&
+         !self.connectionOnDemand;
 }
 
 - (NSString *)description {
@@ -79,24 +80,26 @@
   /*
    * For each flag, add its name to the array if it's ON. Example:
 
-  if (self.isCell) {
-    [activeOptions addObject:@"isCell"];
-  }
+     if (self.isCell) {
+       [activeOptions addObject:@"isCell"];
+     }
 
    */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-  if (self.methodName) { \
-    [activeOptions addObject:@#methodName]; \
-  }
-#include "GRPCReachabilityFlagNames.xmacro.h"
-#undef GRPC_XMACRO_ITEM
+  #define GRPC_XMACRO_ITEM(methodName, FlagName) \
+    if (self.methodName) {                       \
+      [activeOptions addObject:@ #methodName];   \
+    }
+  #include "GRPCReachabilityFlagNames.xmacro.h"
+  #undef GRPC_XMACRO_ITEM
 
-  return activeOptions.count == 0 ? @"(none)" : [activeOptions componentsJoinedByString:@", "];
+  return activeOptions.count == 0
+             ? @"(none)"
+             : [activeOptions componentsJoinedByString:@", "];
 }
 
 - (BOOL)isEqual:(id)object {
   return [object isKindOfClass:[GRPCReachabilityFlags class]] &&
-      _flags == ((GRPCReachabilityFlags *)object)->_flags;
+         _flags == ((GRPCReachabilityFlags *)object)->_flags;
 }
 
 - (NSUInteger)hash {
@@ -106,29 +109,33 @@
 
 #pragma mark Connectivity Monitor
 
-// Assumes the third argument is a block that accepts a GRPCReachabilityFlags object, and passes the
-// received ones to it.
+// Assumes the third argument is a block that accepts a GRPCReachabilityFlags
+// object, and passes the received ones to it.
 static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
                                         SCNetworkReachabilityFlags flags,
                                         void *info) {
-  #pragma unused (target)
-  // This can be called many times with the same info. The info is retained by SCNetworkReachability
-  // while this function is being executed.
-  void (^handler)(GRPCReachabilityFlags *) = (__bridge void (^)(GRPCReachabilityFlags *))info;
+#pragma unused(target)
+  // This can be called many times with the same info. The info is retained by
+  // SCNetworkReachability while this function is being executed.
+  void (^handler)(GRPCReachabilityFlags *) =
+      (__bridge void (^)(GRPCReachabilityFlags *))info;
   handler([[GRPCReachabilityFlags alloc] initWithFlags:flags]);
 }
 
 @implementation GRPCConnectivityMonitor {
   SCNetworkReachabilityRef _reachabilityRef;
+  GRPCReachabilityFlags *_previousReachabilityFlags;
 }
 
-- (nullable instancetype)initWithReachability:(nullable SCNetworkReachabilityRef)reachability {
+- (nullable instancetype)initWithReachability:
+    (nullable SCNetworkReachabilityRef)reachability {
   if (!reachability) {
     return nil;
   }
   if ((self = [super init])) {
     _reachabilityRef = CFRetain(reachability);
     _queue = dispatch_get_main_queue();
+    _previousReachabilityFlags = nil;
   }
   return self;
 }
@@ -142,33 +149,46 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
   SCNetworkReachabilityRef reachability =
       SCNetworkReachabilityCreateWithName(NULL, hostName);
 
-  GRPCConnectivityMonitor *returnValue = [[self alloc] initWithReachability:reachability];
+  GRPCConnectivityMonitor *returnValue =
+      [[self alloc] initWithReachability:reachability];
   if (reachability) {
     CFRelease(reachability);
   }
   return returnValue;
 }
 
-- (void)handleLossWithHandler:(void (^)())handler {
+- (void)handleLossWithHandler:(void (^)())handler
+      wifiStatusChangeHandler:(nonnull void (^)())wifiStatusChangeHandler {
+  __weak typeof(self) weakSelf = self;
   [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
-    if (!flags.isHostReachable) {
-      handler();
+    typeof(self) strongSelf = weakSelf;
+    if (strongSelf) {
+      if (!flags.reachable) {
+        handler();
+      } else if (strongSelf->_previousReachabilityFlags &&
+                 (flags.isWWAN ^
+                  strongSelf->_previousReachabilityFlags.isWWAN)) {
+        wifiStatusChangeHandler();
+      }
+      strongSelf->_previousReachabilityFlags = flags;
     }
   }];
 }
 
 - (void)startListeningWithHandler:(void (^)(GRPCReachabilityFlags *))handler {
-  // Copy to ensure the handler block is in the heap (and so can't be deallocated when this method
-  // returns).
+  // Copy to ensure the handler block is in the heap (and so can't be
+  // deallocated when this method returns).
   void (^copiedHandler)(GRPCReachabilityFlags *) = [handler copy];
   SCNetworkReachabilityContext context = {
-    .version = 0,
-    .info = (__bridge void *)copiedHandler,
-    .retain = CFRetain,
-    .release = CFRelease,
+      .version = 0,
+      .info = (__bridge void *)copiedHandler,
+      .retain = CFRetain,
+      .release = CFRelease,
   };
-  // The following will retain context.info, and release it when the callback is set to NULL.
-  SCNetworkReachabilitySetCallback(_reachabilityRef, PassFlagsToContextInfoBlock, &context);
+  // The following will retain context.info, and release it when the callback is
+  // set to NULL.
+  SCNetworkReachabilitySetCallback(_reachabilityRef,
+                                   PassFlagsToContextInfoBlock, &context);
   SCNetworkReachabilitySetDispatchQueue(_reachabilityRef, _queue);
 }
 

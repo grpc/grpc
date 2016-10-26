@@ -36,7 +36,7 @@
 #include <grpc/support/useful.h>
 
 /* in order of preference */
-static const char *const supported_versions[] = {"h2"};
+static const char *const supported_versions[] = {"grpc-exp", "h2"};
 
 int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
   size_t i;

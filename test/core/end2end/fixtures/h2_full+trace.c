@@ -31,9 +31,14 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <string.h>
+#ifdef GRPC_POSIX_SOCKET
+#include <unistd.h>
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -111,7 +116,7 @@ int main(int argc, char **argv) {
      code paths in trace.c to be taken */
   gpr_setenv("GRPC_TRACE", "doesnt-exist,http,all");
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10.0 : 1.0;
 #else
   g_fixture_slowdown_factor = 10.0;

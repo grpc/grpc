@@ -151,7 +151,7 @@ static char *ipv6_get_default_authority(grpc_resolver_factory *factory,
   return ip_get_default_authority(uri);
 }
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 char *unix_get_default_authority(grpc_resolver_factory *factory,
                                  grpc_uri *uri) {
   return gpr_strdup("localhost");
@@ -162,8 +162,7 @@ static void do_nothing(void *ignored) {}
 
 static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
                                       int parse(grpc_uri *uri,
-                                                struct sockaddr_storage *dst,
-                                                size_t *len)) {
+                                                grpc_resolved_address *dst)) {
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
             args->uri->scheme);
@@ -182,11 +181,8 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(
-            &ith_uri,
-            (struct sockaddr_storage *)(&addresses->addresses[i].address.addr),
-            &addresses->addresses[i].address.len)) {
-      errors_found = true;
+    if (!parse(&ith_uri, &addresses->addresses[i].address)) {
+      errors_found = true; /* GPR_TRUE */
     }
     gpr_free(part_str);
     if (errors_found) break;
@@ -231,7 +227,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver_factory name##_resolver_factory = {                  \
       &name##_factory_vtable}
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
 DECL_FACTORY(unix);
 #endif
 DECL_FACTORY(ipv4);
@@ -240,7 +236,7 @@ DECL_FACTORY(ipv6);
 void grpc_resolver_sockaddr_init(void) {
   grpc_register_resolver_type(&ipv4_resolver_factory);
   grpc_register_resolver_type(&ipv6_resolver_factory);
-#ifdef GPR_HAVE_UNIX_SOCKET
+#ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_register_resolver_type(&unix_resolver_factory);
 #endif
 }

@@ -167,8 +167,7 @@ struct grpc_subchannel_args {
   /** Server name */
   const char *server_name;
   /** Address to connect to */
-  struct sockaddr *addr;
-  size_t addr_len;
+  grpc_resolved_address *addr;
 };
 
 /** create a subchannel given a connector */

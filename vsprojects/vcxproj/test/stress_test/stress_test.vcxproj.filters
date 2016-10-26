@@ -13,6 +13,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\test.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\client_helper.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\interop_client.cc">
       <Filter>test\cpp\interop</Filter>
     </ClCompile>
