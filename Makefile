@@ -1835,6 +1835,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
+	$(E) "[RUN]     Testing noop-benchmark"
+	$(Q) $(BINDIR)/$(CONFIG)/noop-benchmark || ( echo test noop-benchmark failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_server_reflection_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_server_reflection_test || ( echo test proto_server_reflection_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
@@ -6754,7 +6756,7 @@ PUBLIC_HEADERS_CXX += \
 
 LIBGOOGLE_BENCHMARK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGOOGLE_BENCHMARK_SRC))))
 
-$(LIBGOOGLE_BENCHMARK_OBJS): CPPFLAGS += -Ithird_party/google_benchmark/include -DHAVE_STD_REGEX
+$(LIBGOOGLE_BENCHMARK_OBJS): CPPFLAGS += -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
 
 ifeq ($(NO_PROTOBUF),true)
 
