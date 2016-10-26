@@ -5,28 +5,27 @@ This library provides high level configuration machinery to construct client
 channels and load balance between them.
 
 Each grpc_channel is created with a grpc_resolver. It is the resolver's duty
-to resolve a name into configuration data for the channel. Such configuration
-data might include:
+to resolve a name into a set of arguments for the channel. Such arguments
+might include:
 
 - a list of (ip, port) addresses to connect to
 - a load balancing policy to decide which server to send a request to
 - a set of filters to mutate outgoing requests (say, by adding metadata)
 
-The resolver provides this data as a stream of grpc_resolver_result objects to
-the channel. We represent configuration as a stream so that it can be changed
-by the resolver during execution, by reacting to external events (such as a
-new configuration file being pushed to some store).
+The resolver provides this data as a stream of grpc_channel_args objects to
+the channel. We represent arguments as a stream so that they can be changed
+by the resolver during execution, by reacting to external events (such as
+new service configuration data being pushed to some store).
 
 
 Load Balancing
 --------------
 
-Load balancing configuration is provided by a grpc_lb_policy object, stored as
-part of grpc_resolver_result.
+Load balancing configuration is provided by a grpc_lb_policy object.
 
-The primary job of the load balancing policies is to pick a target server given only the
-initial metadata for a request. It does this by providing a grpc_subchannel
-object to the owning channel.
+The primary job of the load balancing policies is to pick a target server
+given only the initial metadata for a request. It does this by providing
+a grpc_subchannel object to the owning channel.
 
 
 Sub-Channels
