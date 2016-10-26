@@ -263,6 +263,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/method_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
@@ -320,7 +321,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/method_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
@@ -450,6 +450,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/method_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
@@ -516,7 +517,6 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/method_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
