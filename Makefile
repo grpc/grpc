@@ -1795,6 +1795,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_fullstack"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack || ( echo test bm_fullstack failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
@@ -6738,19 +6740,19 @@ endif
 
 
 LIBGOOGLE_BENCHMARK_SRC = \
-    third_party/google_benchmark/src/benchmark.cc \
     third_party/google_benchmark/src/benchmark_register.cc \
-    third_party/google_benchmark/src/colorprint.cc \
-    third_party/google_benchmark/src/commandlineflags.cc \
-    third_party/google_benchmark/src/complexity.cc \
-    third_party/google_benchmark/src/console_reporter.cc \
-    third_party/google_benchmark/src/csv_reporter.cc \
     third_party/google_benchmark/src/json_reporter.cc \
-    third_party/google_benchmark/src/reporter.cc \
-    third_party/google_benchmark/src/sleep.cc \
     third_party/google_benchmark/src/string_util.cc \
-    third_party/google_benchmark/src/sysinfo.cc \
+    third_party/google_benchmark/src/console_reporter.cc \
+    third_party/google_benchmark/src/reporter.cc \
     third_party/google_benchmark/src/timers.cc \
+    third_party/google_benchmark/src/commandlineflags.cc \
+    third_party/google_benchmark/src/csv_reporter.cc \
+    third_party/google_benchmark/src/complexity.cc \
+    third_party/google_benchmark/src/benchmark.cc \
+    third_party/google_benchmark/src/colorprint.cc \
+    third_party/google_benchmark/src/sleep.cc \
+    third_party/google_benchmark/src/sysinfo.cc \
 
 PUBLIC_HEADERS_CXX += \
 

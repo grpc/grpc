@@ -2680,7 +2680,6 @@ targets:
   - gpr
 - name: bm_fullstack
   build: test
-  run: false
   language: c++
   src:
   - test/cpp/microbenchmarks/bm_fullstack.cc
