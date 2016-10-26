@@ -183,7 +183,7 @@ struct grpc_call {
   grpc_slice_buffer_stream sending_stream;
   grpc_byte_stream *receiving_stream;
   grpc_byte_buffer **receiving_buffer;
-  gpr_slice receiving_slice;
+  grpc_slice receiving_slice;
   grpc_closure receiving_slice_ready;
   grpc_closure receiving_stream_ready;
   grpc_closure receiving_initial_metadata_ready;
@@ -492,8 +492,8 @@ static void destroy_encodings_accepted_by_peer(void *p) { return; }
 static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
   size_t i;
   grpc_compression_algorithm algorithm;
-  gpr_slice_buffer accept_encoding_parts;
-  gpr_slice accept_encoding_slice;
+  grpc_slice_buffer accept_encoding_parts;
+  grpc_slice accept_encoding_slice;
   void *accepted_user_data;
 
   accepted_user_data =
@@ -505,15 +505,15 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
   }
 
   accept_encoding_slice = mdel->value->slice;
-  gpr_slice_buffer_init(&accept_encoding_parts);
-  gpr_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
+  grpc_slice_buffer_init(&accept_encoding_parts);
+  grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
   /* No need to zero call->encodings_accepted_by_peer: grpc_call_create already
    * zeroes the whole grpc_call */
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
-    const gpr_slice *accept_encoding_entry_slice =
+    const grpc_slice *accept_encoding_entry_slice =
         &accept_encoding_parts.slices[i];
     if (grpc_compression_algorithm_parse(
             (const char *)GPR_SLICE_START_PTR(*accept_encoding_entry_slice),
@@ -529,7 +529,7 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
     }
   }
 
-  gpr_slice_buffer_destroy(&accept_encoding_parts);
+  grpc_slice_buffer_destroy(&accept_encoding_parts);
 
   grpc_mdelem_set_user_data(
       mdel, destroy_encodings_accepted_by_peer,
@@ -550,7 +550,7 @@ static void get_final_details(grpc_call *call, char **out_details,
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (call->status[i].is_set) {
       if (call->status[i].details) {
-        gpr_slice details = call->status[i].details->slice;
+        grpc_slice details = call->status[i].details->slice;
         size_t len = GPR_SLICE_LENGTH(details);
         if (len + 1 > *out_details_capacity) {
           *out_details_capacity =
@@ -1084,7 +1084,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
     if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
                               &call->receiving_slice, remaining,
                               &call->receiving_slice_ready)) {
-      gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+      grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                            call->receiving_slice);
     } else {
       return;
@@ -1098,7 +1098,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
 
   if (error == GRPC_ERROR_NONE) {
-    gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+    grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                          call->receiving_slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {

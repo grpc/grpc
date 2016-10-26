@@ -163,11 +163,11 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   const bool lb_enabled =
       lb_enabled_qpart != NULL && strcmp("0", lb_enabled_qpart) != 0;
   // Construct addresses.
-  gpr_slice path_slice =
-      gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
-  gpr_slice_buffer path_parts;
-  gpr_slice_buffer_init(&path_parts);
-  gpr_slice_split(path_slice, ",", &path_parts);
+  grpc_slice path_slice =
+      grpc_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
+  grpc_slice_buffer path_parts;
+  grpc_slice_buffer_init(&path_parts);
+  grpc_slice_split(path_slice, ",", &path_parts);
   grpc_lb_addresses* addresses = grpc_lb_addresses_create(path_parts.count);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
@@ -184,8 +184,8 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
     addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
-  gpr_slice_buffer_destroy(&path_parts);
-  gpr_slice_unref(path_slice);
+  grpc_slice_buffer_destroy(&path_parts);
+  grpc_slice_unref(path_slice);
   if (errors_found) {
     grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
     return NULL;

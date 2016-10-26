@@ -207,11 +207,11 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
 
 void grpc_transport_stream_op_add_cancellation_with_message(
     grpc_transport_stream_op *op, grpc_status_code status,
-    gpr_slice *optional_message) {
+    grpc_slice *optional_message) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
   if (op->cancel_error != GRPC_ERROR_NONE) {
     if (optional_message) {
-      gpr_slice_unref(*optional_message);
+      grpc_slice_unref(*optional_message);
     }
     return;
   }
@@ -221,7 +221,7 @@ void grpc_transport_stream_op_add_cancellation_with_message(
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);
-    gpr_slice_unref(*optional_message);
+    grpc_slice_unref(*optional_message);
   } else {
     error = GRPC_ERROR_CREATE("Call cancelled");
   }
@@ -231,12 +231,12 @@ void grpc_transport_stream_op_add_cancellation_with_message(
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
                                         grpc_status_code status,
-                                        gpr_slice *optional_message) {
+                                        grpc_slice *optional_message) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
   if (op->cancel_error != GRPC_ERROR_NONE ||
       op->close_error != GRPC_ERROR_NONE) {
     if (optional_message) {
-      gpr_slice_unref(*optional_message);
+      grpc_slice_unref(*optional_message);
     }
     return;
   }
@@ -246,7 +246,7 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);
-    gpr_slice_unref(*optional_message);
+    grpc_slice_unref(*optional_message);
   } else {
     error = GRPC_ERROR_CREATE("Call force closed");
   }

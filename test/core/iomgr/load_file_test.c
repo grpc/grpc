@@ -49,8 +49,8 @@ static const char prefix[] = "file_test";
 
 static void test_load_empty_file(void) {
   FILE *tmp = NULL;
-  gpr_slice slice;
-  gpr_slice slice_with_null_term;
+  grpc_slice slice;
+  grpc_slice slice_with_null_term;
   grpc_error *error;
   char *tmp_name;
 
@@ -72,13 +72,13 @@ static void test_load_empty_file(void) {
 
   remove(tmp_name);
   gpr_free(tmp_name);
-  gpr_slice_unref(slice);
-  gpr_slice_unref(slice_with_null_term);
+  grpc_slice_unref(slice);
+  grpc_slice_unref(slice_with_null_term);
 }
 
 static void test_load_failure(void) {
   FILE *tmp = NULL;
-  gpr_slice slice;
+  grpc_slice slice;
   grpc_error *error;
   char *tmp_name;
 
@@ -95,13 +95,13 @@ static void test_load_failure(void) {
   GRPC_ERROR_UNREF(error);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 0);
   gpr_free(tmp_name);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
 }
 
 static void test_load_small_file(void) {
   FILE *tmp = NULL;
-  gpr_slice slice;
-  gpr_slice slice_with_null_term;
+  grpc_slice slice;
+  grpc_slice slice_with_null_term;
   grpc_error *error;
   char *tmp_name;
   const char *blah = "blah";
@@ -127,13 +127,13 @@ static void test_load_small_file(void) {
 
   remove(tmp_name);
   gpr_free(tmp_name);
-  gpr_slice_unref(slice);
-  gpr_slice_unref(slice_with_null_term);
+  grpc_slice_unref(slice);
+  grpc_slice_unref(slice_with_null_term);
 }
 
 static void test_load_big_file(void) {
   FILE *tmp = NULL;
-  gpr_slice slice;
+  grpc_slice slice;
   grpc_error *error;
   char *tmp_name;
   static const size_t buffer_size = 124631;
@@ -161,7 +161,7 @@ static void test_load_big_file(void) {
 
   remove(tmp_name);
   gpr_free(tmp_name);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   gpr_free(buffer);
 }
 

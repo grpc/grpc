@@ -52,16 +52,16 @@ static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
   GPR_ASSERT(ekey);
   evalue = va_arg(chk->args, char *);
   GPR_ASSERT(evalue);
-  GPR_ASSERT(gpr_slice_str_cmp(md->key->slice, ekey) == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md->value->slice, evalue) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md->key->slice, ekey) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md->value->slice, evalue) == 0);
   GRPC_MDELEM_UNREF(md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,
                         grpc_slice_split_mode mode, const char *hexstring,
                         ... /* char *key, char *value */) {
-  gpr_slice input = parse_hexstring(hexstring);
-  gpr_slice *slices;
+  grpc_slice input = parse_hexstring(hexstring);
+  grpc_slice *slices;
   size_t nslices;
   size_t i;
   test_checker chk;
@@ -72,7 +72,7 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
   parser->on_header_user_data = &chk;
 
   grpc_split_slices(mode, &input, 1, &slices, &nslices);
-  gpr_slice_unref(input);
+  grpc_slice_unref(input);
 
   for (i = 0; i < nslices; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -83,7 +83,7 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
   }
 
   for (i = 0; i < nslices; i++) {
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   gpr_free(slices);
 

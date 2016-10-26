@@ -134,14 +134,14 @@ static void on_md_processing_done(
     grpc_metadata_array_destroy(&calld->md);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
-    gpr_slice message;
+    grpc_slice message;
     grpc_transport_stream_op *close_op = gpr_malloc(sizeof(*close_op));
     memset(close_op, 0, sizeof(*close_op));
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    message = gpr_slice_from_copied_string(error_details);
+    message = grpc_slice_from_copied_string(error_details);
     calld->transport_op->send_initial_metadata = NULL;
     if (calld->transport_op->send_message != NULL) {
       grpc_byte_stream_destroy(&exec_ctx, calld->transport_op->send_message);

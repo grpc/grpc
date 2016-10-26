@@ -71,7 +71,7 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *parser,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s,
-                                            gpr_slice slice, int is_last) {
+                                            grpc_slice slice, int is_last) {
   uint8_t *const beg = GPR_SLICE_START_PTR(slice);
   uint8_t *const end = GPR_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
@@ -151,7 +151,7 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
       if (is_last) {
         grpc_chttp2_add_incoming_goaway(
             exec_ctx, t, (uint32_t)p->error_code,
-            gpr_slice_new(p->debug_data, p->debug_length, gpr_free));
+            grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
         p->debug_data = NULL;
       }
       return GRPC_ERROR_NONE;
@@ -160,9 +160,9 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
-                               gpr_slice debug_data,
-                               gpr_slice_buffer *slice_buffer) {
-  gpr_slice header = gpr_slice_malloc(9 + 4 + 4);
+                               grpc_slice debug_data,
+                               grpc_slice_buffer *slice_buffer) {
+  grpc_slice header = grpc_slice_malloc(9 + 4 + 4);
   uint8_t *p = GPR_SLICE_START_PTR(header);
   uint32_t frame_length;
   GPR_ASSERT(GPR_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
@@ -192,6 +192,6 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   *p++ = (uint8_t)(error_code >> 8);
   *p++ = (uint8_t)(error_code);
   GPR_ASSERT(p == GPR_SLICE_END_PTR(header));
-  gpr_slice_buffer_add(slice_buffer, header);
-  gpr_slice_buffer_add(slice_buffer, debug_data);
+  grpc_slice_buffer_add(slice_buffer, header);
+  grpc_slice_buffer_add(slice_buffer, debug_data);
 }

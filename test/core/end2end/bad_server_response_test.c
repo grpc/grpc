@@ -82,8 +82,8 @@ struct rpc_state {
   grpc_channel *channel;
   grpc_call *call;
   size_t incoming_data_length;
-  gpr_slice_buffer temp_incoming_buffer;
-  gpr_slice_buffer outgoing_buffer;
+  grpc_slice_buffer temp_incoming_buffer;
+  grpc_slice_buffer outgoing_buffer;
   grpc_endpoint *tcp;
   gpr_atm done_atm;
   bool write_done;
@@ -105,11 +105,11 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void handle_write(grpc_exec_ctx *exec_ctx) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(state.response_payload,
+  grpc_slice slice = grpc_slice_from_copied_buffer(state.response_payload,
                                                  state.response_payload_length);
 
-  gpr_slice_buffer_reset_and_unref(&state.outgoing_buffer);
-  gpr_slice_buffer_add(&state.outgoing_buffer, slice);
+  grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
+  grpc_slice_buffer_add(&state.outgoing_buffer, slice);
   grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, &on_write);
 }
 
@@ -141,8 +141,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);
   grpc_closure_init(&on_write, done_write, NULL);
-  gpr_slice_buffer_init(&state.temp_incoming_buffer);
-  gpr_slice_buffer_init(&state.outgoing_buffer);
+  grpc_slice_buffer_init(&state.temp_incoming_buffer);
+  grpc_slice_buffer_init(&state.outgoing_buffer);
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
@@ -221,8 +221,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
 static void cleanup_rpc(void) {
   grpc_event ev;
-  gpr_slice_buffer_destroy(&state.temp_incoming_buffer);
-  gpr_slice_buffer_destroy(&state.outgoing_buffer);
+  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy(&state.outgoing_buffer);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {

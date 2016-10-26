@@ -288,7 +288,7 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
 void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_element *elem,
                                                 grpc_status_code status,
-                                                gpr_slice *optional_message) {
+                                                grpc_slice *optional_message) {
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
   op->on_complete = grpc_closure_create(destroy_op, op);
@@ -300,7 +300,7 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
 void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
                                                grpc_call_element *elem,
                                                grpc_status_code status,
-                                               gpr_slice *optional_message) {
+                                               grpc_slice *optional_message) {
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
   op->on_complete = grpc_closure_create(destroy_op, op);

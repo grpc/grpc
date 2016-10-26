@@ -64,8 +64,6 @@ filegroups:
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
-  - include/grpc/support/slice.h
-  - include/grpc/support/slice_buffer.h
   - include/grpc/support/string_util.h
   - include/grpc/support/subprocess.h
   - include/grpc/support/sync.h
@@ -86,7 +84,6 @@ filegroups:
   - src/core/lib/support/env.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
-  - src/core/lib/support/percent_encoding.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
@@ -116,9 +113,6 @@ filegroups:
   - src/core/lib/support/log_windows.c
   - src/core/lib/support/mpscq.c
   - src/core/lib/support/murmur_hash.c
-  - src/core/lib/support/percent_encoding.c
-  - src/core/lib/support/slice.c
-  - src/core/lib/support/slice_buffer.c
   - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
@@ -165,6 +159,8 @@ filegroups:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
   - include/grpc/status.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
   headers:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
@@ -191,6 +187,7 @@ filegroups:
   - src/core/lib/iomgr/ev_epoll_linux.h
   - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
+  - src/core/lib/slice/percent_encoding.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -204,6 +201,7 @@ filegroups:
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resource_quota.h
@@ -257,6 +255,10 @@ filegroups:
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/compress_filter.c
+  - src/core/lib/slice/slice.c
+  - src/core/lib/slice/percent_encoding.c
+  - src/core/lib/slice/slice_buffer.c
+  - src/core/lib/slice/slice_string_helpers.c
   - src/core/lib/channel/connected_channel.c
   - src/core/lib/channel/deadline_filter.c
   - src/core/lib/channel/handshaker.c
@@ -1748,19 +1750,19 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_slice_buffer_test
+- name: slice_buffer_test
   build: test
   language: c
   src:
-  - test/core/support/slice_buffer_test.c
+  - test/core/slice/slice_buffer_test.c
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_slice_test
+- name: slice_test
   build: test
   language: c
   src:
-  - test/core/support/slice_test.c
+  - test/core/slice/slice_test.c
   deps:
   - gpr_test_util
   - gpr
@@ -2313,27 +2315,27 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/support/percent_decode_fuzzer.c
+  - test/core/slice/percent_decode_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/support/percent_decode_corpus
+  - test/core/slice/percent_decode_corpus
   maxlen: 32
 - name: percent_encode_fuzzer
   build: fuzzer
   language: c
   src:
-  - test/core/support/percent_encode_fuzzer.c
+  - test/core/slice/percent_encode_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/support/percent_encode_corpus
+  - test/core/slice/percent_encode_corpus
   maxlen: 32
 - name: resolve_address_test
   build: test

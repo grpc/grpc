@@ -37,7 +37,7 @@
 
 extern void grpc_set_default_initial_connect_string(struct sockaddr **addr,
                                                     size_t *addr_len,
-                                                    gpr_slice *initial_str);
+                                                    grpc_slice *initial_str);
 
 static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
     grpc_set_default_initial_connect_string;
@@ -48,6 +48,6 @@ void grpc_test_set_initial_connect_string_function(
 }
 
 void grpc_set_initial_connect_string(struct sockaddr **addr, size_t *addr_len,
-                                     gpr_slice *initial_str) {
+                                     grpc_slice *initial_str) {
   g_set_initial_connect_string_func(addr, addr_len, initial_str);
 }

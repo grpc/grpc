@@ -35,6 +35,7 @@
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/slice.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
@@ -60,7 +61,7 @@ typedef struct grpc_byte_buffer {
     } reserved;
     struct {
       grpc_compression_algorithm compression;
-      gpr_slice_buffer slice_buffer;
+      grpc_slice_buffer slice_buffer;
     } raw;
   } data;
 } grpc_byte_buffer;

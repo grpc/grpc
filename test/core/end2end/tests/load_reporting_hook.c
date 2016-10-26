@@ -127,8 +127,8 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
                                           const char *response_msg,
                                           grpc_metadata *initial_lr_metadata,
                                           grpc_metadata *trailing_lr_metadata) {
-  gpr_slice request_payload_slice = gpr_slice_from_static_string(request_msg);
-  gpr_slice response_payload_slice = gpr_slice_from_static_string(response_msg);
+  grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
+  grpc_slice response_payload_slice = grpc_slice_from_static_string(response_msg);
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =

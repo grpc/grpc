@@ -130,7 +130,7 @@ struct read_state {
 
   /* vars for holding data destined for the application */
   struct grpc_slice_buffer_stream sbs;
-  gpr_slice_buffer read_slice_buffer;
+  grpc_slice_buffer read_slice_buffer;
 
   /* vars for trailing metadata */
   grpc_chttp2_incoming_metadata_buffer trailing_metadata;
@@ -517,10 +517,10 @@ static void on_response_trailers_received(
  Utility function that takes the data from s->write_slice_buffer and assembles
  into a contiguous byte stream with 5 byte gRPC header prepended.
 */
-static void create_grpc_frame(gpr_slice_buffer *write_slice_buffer,
+static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
                               char **pp_write_buffer,
                               size_t *p_write_buffer_size) {
-  gpr_slice slice = gpr_slice_buffer_take_first(write_slice_buffer);
+  grpc_slice slice = grpc_slice_buffer_take_first(write_slice_buffer);
   size_t length = GPR_SLICE_LENGTH(slice);
   *p_write_buffer_size = length + GRPC_HEADER_SIZE_IN_BYTES;
   /* This is freed in the on_write_completed callback */
@@ -817,9 +817,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       result = NO_ACTION_POSSIBLE;
       CRONET_LOG(GPR_DEBUG, "Stream is either cancelled or failed.");
     } else {
-      gpr_slice_buffer write_slice_buffer;
-      gpr_slice slice;
-      gpr_slice_buffer_init(&write_slice_buffer);
+      grpc_slice_buffer write_slice_buffer;
+      grpc_slice slice;
+      grpc_slice_buffer_init(&write_slice_buffer);
       grpc_byte_stream_next(NULL, stream_op->send_message, &slice,
                             stream_op->send_message->length, NULL);
       /* Check that compression flag is OFF. We don't support compression yet.
@@ -828,7 +828,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         gpr_log(GPR_ERROR, "Compression is not supported");
         GPR_ASSERT(stream_op->send_message->flags == 0);
       }
-      gpr_slice_buffer_add(&write_slice_buffer, slice);
+      grpc_slice_buffer_add(&write_slice_buffer, slice);
       if (write_slice_buffer.count != 1) {
         /* Empty request not handled yet */
         gpr_log(GPR_ERROR, "Empty request is not supported");
@@ -891,7 +891,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         } else {
           stream_state->rs.remaining_bytes = 0;
           CRONET_LOG(GPR_DEBUG, "read operation complete. Empty response.");
-          gpr_slice_buffer_init(&stream_state->rs.read_slice_buffer);
+          grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
           grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
                                         &stream_state->rs.read_slice_buffer, 0);
           *((grpc_byte_buffer **)stream_op->recv_message) =
@@ -918,14 +918,14 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       }
     } else if (stream_state->rs.remaining_bytes == 0) {
       CRONET_LOG(GPR_DEBUG, "read operation complete");
-      gpr_slice read_data_slice =
-          gpr_slice_malloc((uint32_t)stream_state->rs.length_field);
+      grpc_slice read_data_slice =
+          grpc_slice_malloc((uint32_t)stream_state->rs.length_field);
       uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);
       free_read_buffer(s);
-      gpr_slice_buffer_init(&stream_state->rs.read_slice_buffer);
-      gpr_slice_buffer_add(&stream_state->rs.read_slice_buffer,
+      grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
+      grpc_slice_buffer_add(&stream_state->rs.read_slice_buffer,
                            read_data_slice);
       grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
                                     &stream_state->rs.read_slice_buffer, 0);

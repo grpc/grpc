@@ -47,18 +47,18 @@ bool leak_check = true;
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   struct grpc_memory_counters counters;
   grpc_memory_counters_init();
-  gpr_slice input = gpr_slice_from_copied_buffer((const char *)data, size);
-  gpr_slice output;
+  grpc_slice input = grpc_slice_from_copied_buffer((const char *)data, size);
+  grpc_slice output;
   if (gpr_strict_percent_decode_slice(
           input, gpr_url_percent_encoding_unreserved_bytes, &output)) {
-    gpr_slice_unref(output);
+    grpc_slice_unref(output);
   }
   if (gpr_strict_percent_decode_slice(
           input, gpr_compatible_percent_encoding_unreserved_bytes, &output)) {
-    gpr_slice_unref(output);
+    grpc_slice_unref(output);
   }
-  gpr_slice_unref(gpr_permissive_percent_decode_slice(input));
-  gpr_slice_unref(input);
+  grpc_slice_unref(gpr_permissive_percent_decode_slice(input));
+  grpc_slice_unref(input);
   counters = grpc_memory_counters_snapshot();
   grpc_memory_counters_destroy();
   GPR_ASSERT(counters.total_size_relative == 0);

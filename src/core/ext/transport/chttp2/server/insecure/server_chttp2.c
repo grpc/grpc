@@ -56,7 +56,7 @@ typedef struct server_connect_state {
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
                               grpc_channel_args *args,
-                              gpr_slice_buffer *read_buffer, void *user_data,
+                              grpc_slice_buffer *read_buffer, void *user_data,
                               grpc_error *error) {
   server_connect_state *state = user_data;
   if (error != GRPC_ERROR_NONE) {

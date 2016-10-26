@@ -181,7 +181,7 @@ typedef struct grpc_transport_op {
   bool send_goaway;
   /** what should the goaway contain? */
   grpc_status_code goaway_status;
-  gpr_slice *goaway_message;
+  grpc_slice *goaway_message;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
@@ -249,11 +249,11 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
 
 void grpc_transport_stream_op_add_cancellation_with_message(
     grpc_transport_stream_op *op, grpc_status_code status,
-    gpr_slice *optional_message);
+    grpc_slice *optional_message);
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
                                         grpc_status_code status,
-                                        gpr_slice *optional_message);
+                                        grpc_slice *optional_message);
 
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 char *grpc_transport_op_string(grpc_transport_op *op);
@@ -283,7 +283,7 @@ void grpc_transport_ping(grpc_transport *transport, grpc_closure *cb);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
-                           gpr_slice debug_data);
+                           grpc_slice debug_data);
 
 /* Close a transport. Aborts all open streams. */
 void grpc_transport_close(grpc_transport *transport);

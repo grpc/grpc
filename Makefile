@@ -945,8 +945,8 @@ gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
 gpr_percent_encoding_test: $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
-gpr_slice_buffer_test: $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
-gpr_slice_test: $(BINDIR)/$(CONFIG)/gpr_slice_test
+grpc_slice_buffer_test: $(BINDIR)/$(CONFIG)/grpc_slice_buffer_test
+grpc_slice_test: $(BINDIR)/$(CONFIG)/grpc_slice_test
 gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
 gpr_string_test: $(BINDIR)/$(CONFIG)/gpr_string_test
 gpr_sync_test: $(BINDIR)/$(CONFIG)/gpr_sync_test
@@ -1279,8 +1279,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
   $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test \
-  $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
-  $(BINDIR)/$(CONFIG)/gpr_slice_test \
+  $(BINDIR)/$(CONFIG)/grpc_slice_buffer_test \
+  $(BINDIR)/$(CONFIG)/grpc_slice_test \
   $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
   $(BINDIR)/$(CONFIG)/gpr_string_test \
   $(BINDIR)/$(CONFIG)/gpr_sync_test \
@@ -1631,10 +1631,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_percent_encoding_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test || ( echo test gpr_percent_encoding_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_slice_buffer_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_slice_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_test || ( echo test gpr_slice_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_slice_buffer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_slice_buffer_test || ( echo test grpc_slice_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_slice_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_slice_test || ( echo test grpc_slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_stack_lockfree_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test || ( echo test gpr_stack_lockfree_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
@@ -8288,22 +8288,22 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/grpc_slice_buffer_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_slice_buffer_test
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/support/slice_buffer_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
+deps_grpc_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
@@ -8320,22 +8320,22 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/gpr_slice_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/grpc_slice_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_slice_test: $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_slice_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_slice_test
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/support/slice_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_gpr_slice_test: $(GPR_SLICE_TEST_OBJS:.o=.dep)
+deps_grpc_slice_test: $(GPR_SLICE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)

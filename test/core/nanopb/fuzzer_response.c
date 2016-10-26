@@ -45,11 +45,11 @@ static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
-  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
+  grpc_slice slice = grpc_slice_from_copied_buffer((const char *)data, size);
   grpc_grpclb_initial_response *response;
   if ((response = grpc_grpclb_initial_response_parse(slice))) {
     grpc_grpclb_initial_response_destroy(response);
   }
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return 0;
 }

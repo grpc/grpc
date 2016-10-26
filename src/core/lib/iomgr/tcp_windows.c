@@ -105,9 +105,9 @@ typedef struct grpc_tcp {
 
   grpc_closure *read_cb;
   grpc_closure *write_cb;
-  gpr_slice read_slice;
-  gpr_slice_buffer *write_slices;
-  gpr_slice_buffer *read_slices;
+  grpc_slice read_slice;
+  grpc_slice_buffer *write_slices;
+  grpc_slice_buffer *read_slices;
 
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
@@ -160,7 +160,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   grpc_tcp *tcp = tcpp;
   grpc_closure *cb = tcp->read_cb;
   grpc_winsocket *socket = tcp->socket;
-  gpr_slice sub;
+  grpc_slice sub;
   grpc_winsocket_callback_info *info = &socket->read_info;
 
   GRPC_ERROR_REF(error);
@@ -170,13 +170,13 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
       char *utf8_message = gpr_format_message(info->wsa_error);
       error = GRPC_ERROR_CREATE(utf8_message);
       gpr_free(utf8_message);
-      gpr_slice_unref(tcp->read_slice);
+      grpc_slice_unref(tcp->read_slice);
     } else {
       if (info->bytes_transfered != 0 && !tcp->shutting_down) {
-        sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
-        gpr_slice_buffer_add(tcp->read_slices, sub);
+        sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
+        grpc_slice_buffer_add(tcp->read_slices, sub);
       } else {
-        gpr_slice_unref(tcp->read_slice);
+        grpc_slice_unref(tcp->read_slice);
         error = GRPC_ERROR_CREATE("End of TCP stream");
       }
     }
@@ -188,7 +188,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
 }
 
 static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     gpr_slice_buffer *read_slices, grpc_closure *cb) {
+                     grpc_slice_buffer *read_slices, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->read_info;
@@ -205,9 +205,9 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  gpr_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref(read_slices);
 
-  tcp->read_slice = gpr_slice_malloc(8192);
+  tcp->read_slice = grpc_slice_malloc(8192);
 
   buffer.len = (ULONG)GPR_SLICE_LENGTH(
       tcp->read_slice);  // we know slice size fits in 32bit.
@@ -273,7 +273,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
 
 /* Initiates a write. */
 static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                      gpr_slice_buffer *slices, grpc_closure *cb) {
+                      grpc_slice_buffer *slices, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *socket = tcp->socket;
   grpc_winsocket_callback_info *info = &socket->write_info;

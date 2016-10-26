@@ -433,7 +433,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpr_percent_encoding_test",
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpr_slice_buffer_test", "vcxproj\test\gpr_slice_buffer_test\gpr_slice_buffer_test.vcxproj", "{E679773D-DE89-AEBB-9787-59019989B825}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_slice_buffer_test", "vcxproj\test\grpc_slice_buffer_test\grpc_slice_buffer_test.vcxproj", "{E679773D-DE89-AEBB-9787-59019989B825}"
 	ProjectSection(myProperties) = preProject
         	lib = "False"
 	EndProjectSection
@@ -442,7 +442,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpr_slice_buffer_test", "vc
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpr_slice_test", "vcxproj\test\gpr_slice_test\gpr_slice_test.vcxproj", "{7F2D1623-AF04-DD98-BCE6-61ADB9A52366}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_slice_test", "vcxproj\test\grpc_slice_test\grpc_slice_test.vcxproj", "{7F2D1623-AF04-DD98-BCE6-61ADB9A52366}"
 	ProjectSection(myProperties) = preProject
         	lib = "False"
 	EndProjectSection

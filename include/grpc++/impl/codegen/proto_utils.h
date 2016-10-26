@@ -63,7 +63,7 @@ class GrpcBufferWriter GRPC_FINAL
 
   ~GrpcBufferWriter() GRPC_OVERRIDE {
     if (have_backup_) {
-      g_core_codegen_interface->gpr_slice_unref(backup_slice_);
+      g_core_codegen_interface->grpc_slice_unref(backup_slice_);
     }
   }
 
@@ -72,24 +72,24 @@ class GrpcBufferWriter GRPC_FINAL
       slice_ = backup_slice_;
       have_backup_ = false;
     } else {
-      slice_ = g_core_codegen_interface->gpr_slice_malloc(block_size_);
+      slice_ = g_core_codegen_interface->grpc_slice_malloc(block_size_);
     }
     *data = GPR_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GPR_SLICE_LENGTH(slice_) <= INT_MAX);
     byte_count_ += * size = (int)GPR_SLICE_LENGTH(slice_);
-    g_core_codegen_interface->gpr_slice_buffer_add(slice_buffer_, slice_);
+    g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     return true;
   }
 
   void BackUp(int count) GRPC_OVERRIDE {
-    g_core_codegen_interface->gpr_slice_buffer_pop(slice_buffer_);
+    g_core_codegen_interface->grpc_slice_buffer_pop(slice_buffer_);
     if (count == block_size_) {
       backup_slice_ = slice_;
     } else {
-      backup_slice_ = g_core_codegen_interface->gpr_slice_split_tail(
+      backup_slice_ = g_core_codegen_interface->grpc_slice_split_tail(
           &slice_, GPR_SLICE_LENGTH(slice_) - count);
-      g_core_codegen_interface->gpr_slice_buffer_add(slice_buffer_, slice_);
+      g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     }
     have_backup_ = true;
     byte_count_ -= count;
@@ -100,10 +100,10 @@ class GrpcBufferWriter GRPC_FINAL
  private:
   const int block_size_;
   int64_t byte_count_;
-  gpr_slice_buffer* slice_buffer_;
+  grpc_slice_buffer* slice_buffer_;
   bool have_backup_;
-  gpr_slice backup_slice_;
-  gpr_slice slice_;
+  grpc_slice backup_slice_;
+  grpc_slice slice_;
 };
 
 class GrpcBufferReader GRPC_FINAL
@@ -137,7 +137,7 @@ class GrpcBufferReader GRPC_FINAL
                                                                 &slice_)) {
       return false;
     }
-    g_core_codegen_interface->gpr_slice_unref(slice_);
+    g_core_codegen_interface->grpc_slice_unref(slice_);
     *data = GPR_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GPR_SLICE_LENGTH(slice_) <= INT_MAX);
@@ -172,7 +172,7 @@ class GrpcBufferReader GRPC_FINAL
   int64_t byte_count_;
   int64_t backup_count_;
   grpc_byte_buffer_reader reader_;
-  gpr_slice slice_;
+  grpc_slice slice_;
   Status status_;
 };
 }  // namespace internal
@@ -186,12 +186,12 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     *own_buffer = true;
     int byte_size = msg.ByteSize();
     if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
-      gpr_slice slice = g_core_codegen_interface->gpr_slice_malloc(byte_size);
+      grpc_slice slice = g_core_codegen_interface->grpc_slice_malloc(byte_size);
       GPR_CODEGEN_ASSERT(
           GPR_SLICE_END_PTR(slice) ==
           msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
       *bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(&slice, 1);
-      g_core_codegen_interface->gpr_slice_unref(slice);
+      g_core_codegen_interface->grpc_slice_unref(slice);
       return g_core_codegen_interface->ok();
     } else {
       internal::GrpcBufferWriter writer(

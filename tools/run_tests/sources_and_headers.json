@@ -754,7 +754,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "gpr_slice_buffer_test", 
+    "name": "grpc_slice_buffer_test", 
     "src": [
       "test/core/support/slice_buffer_test.c"
     ], 
@@ -769,7 +769,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "gpr_slice_test", 
+    "name": "grpc_slice_test", 
     "src": [
       "test/core/support/slice_test.c"
     ], 

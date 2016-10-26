@@ -36,4 +36,4 @@
 
 void grpc_set_default_initial_connect_string(struct sockaddr **addr,
                                              size_t *addr_len,
-                                             gpr_slice *initial_str) {}
+                                             grpc_slice *initial_str) {}

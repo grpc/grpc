@@ -61,12 +61,12 @@ static const b64_huff_sym huff_alphabet[64] = {
 
 static const uint8_t tail_xtra[3] = {0, 2, 3};
 
-gpr_slice grpc_chttp2_base64_encode(gpr_slice input) {
+grpc_slice grpc_chttp2_base64_encode(grpc_slice input) {
   size_t input_length = GPR_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
   size_t output_length = input_triplets * 4 + tail_xtra[tail_case];
-  gpr_slice output = gpr_slice_malloc(output_length);
+  grpc_slice output = grpc_slice_malloc(output_length);
   uint8_t *in = GPR_SLICE_START_PTR(input);
   char *out = (char *)GPR_SLICE_START_PTR(output);
   size_t i;
@@ -105,11 +105,11 @@ gpr_slice grpc_chttp2_base64_encode(gpr_slice input) {
   return output;
 }
 
-gpr_slice grpc_chttp2_huffman_compress(gpr_slice input) {
+grpc_slice grpc_chttp2_huffman_compress(grpc_slice input) {
   size_t nbits;
   uint8_t *in;
   uint8_t *out;
-  gpr_slice output;
+  grpc_slice output;
   uint32_t temp = 0;
   uint32_t temp_length = 0;
 
@@ -118,7 +118,7 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input) {
     nbits += grpc_chttp2_huffsyms[*in].length;
   }
 
-  output = gpr_slice_malloc(nbits / 8 + (nbits % 8 != 0));
+  output = grpc_slice_malloc(nbits / 8 + (nbits % 8 != 0));
   out = GPR_SLICE_START_PTR(output);
   for (in = GPR_SLICE_START_PTR(input); in != GPR_SLICE_END_PTR(input); ++in) {
     int sym = *in;
@@ -175,14 +175,14 @@ static void enc_add1(huff_out *out, uint8_t a) {
   enc_flush_some(out);
 }
 
-gpr_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(gpr_slice input) {
+grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(grpc_slice input) {
   size_t input_length = GPR_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
   size_t output_syms = input_triplets * 4 + tail_xtra[tail_case];
   size_t max_output_bits = 11 * output_syms;
   size_t max_output_length = max_output_bits / 8 + (max_output_bits % 8 != 0);
-  gpr_slice output = gpr_slice_malloc(max_output_length);
+  grpc_slice output = grpc_slice_malloc(max_output_length);
   uint8_t *in = GPR_SLICE_START_PTR(input);
   uint8_t *start_out = GPR_SLICE_START_PTR(output);
   huff_out out;

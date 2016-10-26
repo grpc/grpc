@@ -59,9 +59,9 @@
 #endif
 
 grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(buffer, len);
+  grpc_slice slice = grpc_slice_from_copied_buffer(buffer, len);
   grpc_byte_buffer *bb = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return bb;
 }
 
@@ -282,7 +282,7 @@ GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
     const grpcsharp_batch_context *ctx, char *buffer, size_t buffer_len) {
   grpc_byte_buffer_reader reader;
-  gpr_slice slice;
+  grpc_slice slice;
   size_t offset = 0;
 
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, ctx->recv_message));
@@ -293,7 +293,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
     memcpy(buffer + offset, GPR_SLICE_START_PTR(slice),
            GPR_SLICE_LENGTH(slice));
     offset += len;
-    gpr_slice_unref(slice);
+    grpc_slice_unref(slice);
   }
 
   grpc_byte_buffer_reader_destroy(&reader);

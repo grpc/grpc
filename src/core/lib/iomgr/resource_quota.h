@@ -202,7 +202,7 @@ typedef struct grpc_resource_user_slice_allocator {
   /* Number of slices to allocate on the current request */
   size_t count;
   /* Destination for slices to allocate on the current request */
-  gpr_slice_buffer *dest;
+  grpc_slice_buffer *dest;
   /* Parent resource user */
   grpc_resource_user *resource_user;
 } grpc_resource_user_slice_allocator;
@@ -218,6 +218,6 @@ void grpc_resource_user_slice_allocator_init(
 void grpc_resource_user_alloc_slices(
     grpc_exec_ctx *exec_ctx,
     grpc_resource_user_slice_allocator *slice_allocator, size_t length,
-    size_t count, gpr_slice_buffer *dest);
+    size_t count, grpc_slice_buffer *dest);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

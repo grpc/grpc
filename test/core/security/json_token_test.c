@@ -223,7 +223,7 @@ static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
   char *b64;
   char *decoded;
   grpc_json *json;
-  gpr_slice slice;
+  grpc_slice slice;
   b64 = gpr_malloc(len + 1);
   strncpy(b64, str, len);
   b64[len] = '\0';
@@ -236,7 +236,7 @@ static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
   json = grpc_json_parse_string(decoded);
   gpr_free(b64);
   *scratchpad = decoded;
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return json;
 }
 
@@ -341,7 +341,7 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
   EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
   EVP_PKEY *key = EVP_PKEY_new();
 
-  gpr_slice sig = grpc_base64_decode(b64_signature, 1);
+  grpc_slice sig = grpc_base64_decode(b64_signature, 1);
   GPR_ASSERT(!GPR_SLICE_IS_EMPTY(sig));
   GPR_ASSERT(GPR_SLICE_LENGTH(sig) == 128);
 
@@ -355,7 +355,7 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
   GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GPR_SLICE_START_PTR(sig),
                                    GPR_SLICE_LENGTH(sig)) == 1);
 
-  gpr_slice_unref(sig);
+  grpc_slice_unref(sig);
   if (key != NULL) EVP_PKEY_free(key);
   if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
 }

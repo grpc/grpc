@@ -174,7 +174,7 @@ static grpc_error *create_default_creds_from_path(
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_call_credentials *result = NULL;
-  gpr_slice creds_data = gpr_empty_slice();
+  grpc_slice creds_data = gpr_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
     error = GRPC_ERROR_CREATE("creds_path unset");
@@ -224,7 +224,7 @@ static grpc_error *create_default_creds_from_path(
 end:
   GPR_ASSERT((result == NULL) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != NULL) gpr_free(creds_path);
-  gpr_slice_unref(creds_data);
+  grpc_slice_unref(creds_data);
   if (json != NULL) grpc_json_destroy(json);
   *creds = result;
   return error;

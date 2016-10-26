@@ -815,7 +815,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "gpr_slice_buffer_test", 
+    "name": "grpc_slice_buffer_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -836,7 +836,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "gpr_slice_test", 
+    "name": "grpc_slice_test", 
     "platforms": [
       "linux", 
       "mac", 
