@@ -2118,7 +2118,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
 }
 
 /*******************************************************************************
- * BUFFER POOLS
+ * RESOURCE QUOTAS
  */
 
 static void post_benign_reclaimer(grpc_exec_ctx *exec_ctx,
@@ -2162,6 +2162,8 @@ static void benign_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_chttp2_transport *t = arg;
   if (error == GRPC_ERROR_NONE &&
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+    /* Channel with no active streams: send a goaway to try and make it
+     * disconnect cleanly */
     if (grpc_resource_quota_trace) {
       gpr_log(GPR_DEBUG, "HTTP2: %s - send goaway to free memory",
               t->peer_string);
@@ -2198,6 +2200,10 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            GRPC_ERROR_INT_HTTP2_ERROR,
                                            GRPC_CHTTP2_ENHANCE_YOUR_CALM));
     if (n > 1) {
+      /* Since we cancel one stream per destructive reclaimation, if
+         there are more streams left, we can immediately post a new
+         reclaimer in case the resource quota needs to free more
+         memory */
       post_destructive_reclaimer(exec_ctx, t);
     }
   }
