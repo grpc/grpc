@@ -2006,14 +2006,6 @@ static bool incoming_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
   return false;
 }
 
-static bool incoming_byte_stream_next_buffer(grpc_exec_ctx *exec_ctx,
-                                             grpc_byte_stream *byte_stream,
-                                             void *buffer, size_t size,
-                                             grpc_closure *on_complete) {
-  /* TODO(ctiller): implement this */
-  GPR_UNREACHABLE_CODE(return false);
-}
-
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                                          grpc_byte_stream *byte_stream);
 
@@ -2093,7 +2085,6 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->remaining_bytes = frame_size;
   incoming_byte_stream->base.flags = flags;
   incoming_byte_stream->base.next_slice = incoming_byte_stream_next_slice;
-  incoming_byte_stream->base.next_buffer = incoming_byte_stream_next_buffer;
   incoming_byte_stream->base.destroy = incoming_byte_stream_destroy;
   gpr_mu_init(&incoming_byte_stream->slice_mu);
   gpr_ref_init(&incoming_byte_stream->refs, 2);

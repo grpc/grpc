@@ -37,6 +37,8 @@
 #include <grpc/support/slice_buffer.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#define GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT (~(size_t)0)
+
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
  * compression for the message */
 #define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
@@ -63,6 +65,10 @@ struct grpc_byte_stream {
  * of bytes that would be acceptable to read.
  *
  * once a slice is returned into *slice, it is owned by the caller.
+ *
+ * SPECIAL CASE: if max_size_hint is GRPC_BYTE_STREAM_DIRECT_DATA_PLACEMENT,
+ * then the expectation is that *slice represents a slice that should be filled
+ * in with exactly how many bytes are asked for.
  */
 bool grpc_byte_stream_next_slice(grpc_exec_ctx *exec_ctx,
                                  grpc_byte_stream *byte_stream,

@@ -65,33 +65,6 @@ static bool slice_buffer_stream_next_slice(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
-static bool slice_buffer_stream_next_buffer(grpc_exec_ctx *exec_ctx,
-                                            grpc_byte_stream *byte_stream,
-                                            void *buffer, size_t size,
-                                            grpc_closure *on_complete) {
-  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
-  uint8_t *out = buffer;
-  size_t remaining = size;
-  for (;;) {
-    GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
-    gpr_slice cur = stream->backing_buffer->slices[stream->cursor];
-    if (GPR_SLICE_LENGTH(cur) > remaining) {
-      memcpy(out, GPR_SLICE_START_PTR(cur), remaining);
-      stream->backing_buffer->slices[stream->cursor] =
-          gpr_slice_sub_no_ref(cur, remaining, GPR_SLICE_LENGTH(cur));
-      return true;
-    } else if (GPR_SLICE_LENGTH(cur) == remaining) {
-      memcpy(out, GPR_SLICE_START_PTR(cur), remaining);
-      stream->cursor++;
-      return true;
-    } else {
-      memcpy(out, GPR_SLICE_START_PTR(cur), GPR_SLICE_LENGTH(cur));
-      out += GPR_SLICE_LENGTH(cur);
-      remaining -= GPR_SLICE_LENGTH(cur);
-    }
-  }
-}
-
 static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
                                         grpc_byte_stream *byte_stream) {}
 
@@ -102,7 +75,6 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
   stream->base.length = (uint32_t)slice_buffer->length;
   stream->base.flags = flags;
   stream->base.next_slice = slice_buffer_stream_next_slice;
-  stream->base.next_buffer = slice_buffer_stream_next_buffer;
   stream->base.destroy = slice_buffer_stream_destroy;
   stream->backing_buffer = slice_buffer;
   stream->cursor = 0;
