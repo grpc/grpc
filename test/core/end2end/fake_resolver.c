@@ -42,13 +42,13 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/method_config.h"
 #include "src/core/ext/client_channel/parse_address.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/method_config.h"
 
 //
 // fake_resolver
