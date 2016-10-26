@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\client_config\lb_policies_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\lb_policies_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

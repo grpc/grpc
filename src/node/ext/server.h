@@ -73,7 +73,6 @@ class Server : public Nan::ObjectWrap {
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
 };
 
 }  // namespace node

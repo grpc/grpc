@@ -34,40 +34,40 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.
 
    If addr4_out is non-NULL, the inner IPv4 address will be copied here when
    returning true. */
-int grpc_sockaddr_is_v4mapped(const struct sockaddr *addr,
-                              struct sockaddr_in *addr4_out);
+int grpc_sockaddr_is_v4mapped(const grpc_resolved_address *addr,
+                              grpc_resolved_address *addr4_out);
 
 /* If addr is an AF_INET address, writes the corresponding ::ffff:0.0.0.0/96
    address to addr6_out and returns true.  Otherwise returns false. */
-int grpc_sockaddr_to_v4mapped(const struct sockaddr *addr,
-                              struct sockaddr_in6 *addr6_out);
+int grpc_sockaddr_to_v4mapped(const grpc_resolved_address *addr,
+                              grpc_resolved_address *addr6_out);
 
 /* If addr is ::, 0.0.0.0, or ::ffff:0.0.0.0, writes the port number to
    *port_out (if not NULL) and returns true, otherwise returns false. */
-int grpc_sockaddr_is_wildcard(const struct sockaddr *addr, int *port_out);
+int grpc_sockaddr_is_wildcard(const grpc_resolved_address *addr, int *port_out);
 
 /* Writes 0.0.0.0:port and [::]:port to separate sockaddrs. */
-void grpc_sockaddr_make_wildcards(int port, struct sockaddr_in *wild4_out,
-                                  struct sockaddr_in6 *wild6_out);
+void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address *wild4_out,
+                                  grpc_resolved_address *wild6_out);
 
 /* Writes 0.0.0.0:port. */
-void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out);
+void grpc_sockaddr_make_wildcard4(int port, grpc_resolved_address *wild_out);
 
 /* Writes [::]:port. */
-void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out);
+void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address *wild_out);
 
 /* Return the IP port number of a sockaddr */
-int grpc_sockaddr_get_port(const struct sockaddr *addr);
+int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
 
 /* Set IP port number of a sockaddr */
-int grpc_sockaddr_set_port(const struct sockaddr *addr, int port);
+int grpc_sockaddr_set_port(const grpc_resolved_address *addr, int port);
 
 /* Converts a sockaddr into a newly-allocated human-readable string.
 
@@ -81,9 +81,9 @@ int grpc_sockaddr_set_port(const struct sockaddr *addr, int port);
 
    In the unlikely event of an error, returns -1 and sets *out to NULL.
    The existing value of errno is always preserved. */
-int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
+int grpc_sockaddr_to_string(char **out, const grpc_resolved_address *addr,
                             int normalize);
 
-char *grpc_sockaddr_to_uri(const struct sockaddr *addr);
+char *grpc_sockaddr_to_uri(const grpc_resolved_address *addr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */
