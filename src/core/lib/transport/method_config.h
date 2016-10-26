@@ -29,8 +29,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef GRPC_CORE_EXT_CLIENT_CHANNEL_METHOD_CONFIG_H
-#define GRPC_CORE_EXT_CLIENT_CHANNEL_METHOD_CONFIG_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H
+#define GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H
 
 #include <stdbool.h>
 
@@ -133,4 +133,4 @@ grpc_mdstr_hash_table* grpc_method_config_table_convert(
     void* (*convert_value)(const grpc_method_config* method_config),
     const grpc_mdstr_hash_table_vtable* vtable);
 
-#endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_METHOD_CONFIG_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H */
