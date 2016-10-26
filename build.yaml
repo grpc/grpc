@@ -1742,14 +1742,6 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: percent_encoding_test
-  build: test
-  language: c
-  src:
-  - test/core/slice/percent_encoding_test.c
-  deps:
-  - gpr_test_util
-  - gpr
 - name: gpr_stack_lockfree_test
   cpu_cost: 7
   build: test
@@ -2321,6 +2313,14 @@ targets:
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
   maxlen: 32
+- name: percent_encoding_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/percent_encoding_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: resolve_address_test
   build: test
   language: c
