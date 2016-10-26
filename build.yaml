@@ -1783,6 +1783,14 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: slice_string_helpers_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_string_helpers_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_sync_test
   cpu_cost: 10
   build: test
