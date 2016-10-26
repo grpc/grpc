@@ -33,7 +33,7 @@
 
 #include <grpc++/support/slice.h>
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {

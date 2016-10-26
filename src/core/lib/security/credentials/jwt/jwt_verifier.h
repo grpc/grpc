@@ -37,7 +37,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 
 /* --- Constants. --- */

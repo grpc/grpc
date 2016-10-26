@@ -37,8 +37,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"

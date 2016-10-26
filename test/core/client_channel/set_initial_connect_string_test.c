@@ -36,7 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/thd.h>
 
 #include "src/core/ext/client_channel/initial_connect_string.h"

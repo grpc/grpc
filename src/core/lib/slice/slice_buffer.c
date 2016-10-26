@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 
 #include <string.h>
 

@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "src/core/lib/iomgr/endpoint.h"
 
 struct tsi_frame_protector;

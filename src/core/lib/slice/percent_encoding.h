@@ -43,7 +43,7 @@
 
 #include <stdbool.h>
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 /* URL percent encoding spec bitfield (usabel as 'unreserved_bytes' in
    gpr_percent_encode_slice, gpr_strict_percent_decode_slice).

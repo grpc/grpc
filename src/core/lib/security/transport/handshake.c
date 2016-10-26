@@ -38,7 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"

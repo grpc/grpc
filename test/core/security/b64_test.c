@@ -37,7 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "test/core/util/test_config.h"
 
 static int buffers_are_equal(const unsigned char *buf1,

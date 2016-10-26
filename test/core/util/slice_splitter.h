@@ -37,8 +37,8 @@
 /* utility function to split/merge slices together to help create test
    cases */
 
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
 typedef enum {
   /* merge all input slices into a single slice */

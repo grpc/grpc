@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_UTIL_B64_H
 #define GRPC_CORE_LIB_SECURITY_UTIL_B64_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 /* Encodes data using base64. It is the caller's responsability to free
    the returned char * using gpr_free. Returns NULL on NULL input. */

@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 
 #include <grpc/compression.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 
 /* compress 'input' to 'output' using 'algorithm'.
    On success, appends compressed slices to output and returns 1.

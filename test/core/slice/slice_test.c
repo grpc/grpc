@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 #include <string.h>
 

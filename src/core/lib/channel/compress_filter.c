@@ -37,7 +37,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/compress_filter.h"

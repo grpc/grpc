@@ -38,7 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "rb_grpc.h"
 
 grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
