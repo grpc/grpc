@@ -33,6 +33,7 @@ set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
 del /f /q BUILD || rmdir build /s /q
 
+call npm cache clean || goto :error
 call npm update || goto :error
 
 mkdir artifacts
