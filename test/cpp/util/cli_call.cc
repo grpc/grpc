@@ -42,7 +42,7 @@
 #include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 namespace grpc {
 namespace testing {

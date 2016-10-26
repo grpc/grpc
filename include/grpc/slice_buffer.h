@@ -34,7 +34,7 @@
 #ifndef GRPC_SUPPORT_SLICE_BUFFER_H
 #define GRPC_SUPPORT_SLICE_BUFFER_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 #ifdef __cplusplus
 extern "C" {

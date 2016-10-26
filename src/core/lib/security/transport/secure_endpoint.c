@@ -34,8 +34,8 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/profiling/timers.h"

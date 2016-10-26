@@ -33,7 +33,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 #include <string.h>
 

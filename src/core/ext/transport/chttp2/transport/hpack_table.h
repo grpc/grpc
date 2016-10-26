@@ -35,7 +35,7 @@
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
 

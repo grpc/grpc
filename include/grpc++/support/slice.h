@@ -35,7 +35,7 @@
 #define GRPCXX_SUPPORT_SLICE_H
 
 #include <grpc++/support/config.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 namespace grpc {
 

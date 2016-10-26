@@ -37,7 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/uri_parser.h"

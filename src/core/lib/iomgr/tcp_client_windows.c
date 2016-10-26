@@ -40,7 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"

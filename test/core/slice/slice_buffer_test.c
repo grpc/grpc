@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include "test/core/util/test_config.h"
 
 void test_slice_buffer_add() {

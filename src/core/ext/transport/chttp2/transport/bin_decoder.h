@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <stdbool.h>
 
 struct grpc_base64_decode_context {

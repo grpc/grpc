@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_HTTP_PARSER_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "src/core/lib/iomgr/error.h"
 
 /* Maximum length of a header string of the form 'Key: Value\r\n' */
