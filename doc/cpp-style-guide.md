@@ -66,14 +66,14 @@ default capture). Other C++ functional features such as
 - In the [include] (../../../tree/master/include/grpc++) and [src]
   (../../../tree/master/src/cpp) directory trees, you should also not
   use certain STL objects like `std::mutex`, `std::lock_guard`,
-  `std::unique_lock`, `std::nullptr`, `std::thread` . Instead, use
+  `std::unique_lock`, `std::thread` . Instead, use
   `grpc::mutex`, `grpc::lock_guard`, etc., which are gRPC
   implementations of the prominent features of these objects that are
   not always available. You can use the `std` versions of those in  [test]
   (../../../tree/master/test/cpp)
 - Similarly, in the same directories, do not use `std::chrono` unless
   it is guarded by `#ifndef GRPC_CXX0X_NO_CHRONO` . For platforms that
-  lack`std::chrono,` there is a C-language timer called gpr_timespec that can
+  lack `std::chrono,` there is a C-language timer called `gpr_timespec` that can
   be used instead.
 - `std::unique_ptr` must be used with extreme care in any kind of
   collection. For example `vector<std::unique_ptr>` does not work in
@@ -82,10 +82,12 @@ default capture). Other C++ functional features such as
   using functions like `push_back`. `map` and other pair-based
   collections do not work with `unique_ptr` under gcc 4.4. The issue
   is that many of these collection implementations assume a copy
-  constructor
-  to be available.
+  constructor to be available.
 - Don't use `std::this_thread` . Use `gpr_sleep_until` for sleeping a thread.
 - [Some adjacent character combinations cause problems]
   (https://en.wikipedia.org/wiki/Digraphs_and_trigraphs#C). If declaring a
   template against some class relative to the global namespace,
-  `<::name` will be non-portable. Separate the `<` from the `:` and use `< ::name`.
+  `<::name` will be non-portable. Separate the `<` from the `:`
+  and use `< ::name`.
+- The same rules apply to `src/cpp`, `src/compiler`, `include/grpc++`,
+  and `test/cpp`
