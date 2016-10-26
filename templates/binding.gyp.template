@@ -48,7 +48,8 @@
         'include'
       ],
       'defines': [
-        'GPR_BACKWARDS_COMPATIBILITY_MODE'
+        'GPR_BACKWARDS_COMPATIBILITY_MODE',
+        'GRPC_UV'
       ],
       'conditions': [
         # This is the condition for using boringssl

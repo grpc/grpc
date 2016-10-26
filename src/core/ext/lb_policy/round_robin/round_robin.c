@@ -626,9 +626,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
     /* server_name will be copied as part of the subchannel creation. This makes
      * the copying of args->server_name (a borrowed pointer) OK. */
     sc_args.server_name = args->server_name;
-    sc_args.addr =
-        (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
-    sc_args.addr_len = args->addresses->addresses[i].address.len;
+    sc_args.addr = &args->addresses->addresses[i].address;
     sc_args.args = args->additional_args;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(

@@ -254,12 +254,12 @@ int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
   return grpc_mdstr_hash_table_cmp(table1, table2);
 }
 
-grpc_method_config* grpc_method_config_table_get_method_config(
-    const grpc_method_config_table* table, const grpc_mdstr* path) {
-  grpc_method_config* method_config = grpc_mdstr_hash_table_get(table, path);
+void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
+                                   const grpc_mdstr* path) {
+  void* value = grpc_mdstr_hash_table_get(table, path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
-  if (method_config == NULL) {
+  if (value == NULL) {
     const char* path_str = grpc_mdstr_as_c_string(path);
     const char* sep = strrchr(path_str, '/') + 1;
     const size_t len = (size_t)(sep - path_str);
@@ -269,10 +269,10 @@ grpc_method_config* grpc_method_config_table_get_method_config(
     buf[len + 1] = '\0';
     grpc_mdstr* wildcard_path = grpc_mdstr_from_string(buf);
     gpr_free(buf);
-    method_config = grpc_mdstr_hash_table_get(table, wildcard_path);
+    value = grpc_mdstr_hash_table_get(table, wildcard_path);
     GRPC_MDSTR_UNREF(wildcard_path);
   }
-  return method_config;
+  return value;
 }
 
 static void* copy_arg(void* p) { return grpc_method_config_table_ref(p); }
@@ -293,4 +293,48 @@ grpc_arg grpc_method_config_table_create_channel_arg(
   arg.value.pointer.p = table;
   arg.value.pointer.vtable = &arg_vtable;
   return arg;
+}
+
+// State used by convert_entry() below.
+typedef struct conversion_state {
+  void* (*convert_value)(const grpc_method_config* method_config);
+  const grpc_mdstr_hash_table_vtable* vtable;
+  size_t num_entries;
+  grpc_mdstr_hash_table_entry* entries;
+} conversion_state;
+
+// A function to be passed to grpc_mdstr_hash_table_iterate() to create
+// a copy of the entries.
+static void convert_entry(const grpc_mdstr_hash_table_entry* entry,
+                          void* user_data) {
+  conversion_state* state = user_data;
+  state->entries[state->num_entries].key = GRPC_MDSTR_REF(entry->key);
+  state->entries[state->num_entries].value = state->convert_value(entry->value);
+  state->entries[state->num_entries].vtable = state->vtable;
+  ++state->num_entries;
+}
+
+grpc_mdstr_hash_table* grpc_method_config_table_convert(
+    const grpc_method_config_table* table,
+    void* (*convert_value)(const grpc_method_config* method_config),
+    const grpc_mdstr_hash_table_vtable* vtable) {
+  // Create an array of the entries in the table with converted values.
+  conversion_state state;
+  state.convert_value = convert_value;
+  state.vtable = vtable;
+  state.num_entries = 0;
+  state.entries = gpr_malloc(sizeof(grpc_mdstr_hash_table_entry) *
+                             grpc_mdstr_hash_table_num_entries(table));
+  grpc_mdstr_hash_table_iterate(table, convert_entry, &state);
+  // Create a new table based on the array we just constructed.
+  grpc_mdstr_hash_table* new_table =
+      grpc_mdstr_hash_table_create(state.num_entries, state.entries);
+  // Clean up the array.
+  for (size_t i = 0; i < state.num_entries; ++i) {
+    GRPC_MDSTR_UNREF(state.entries[i].key);
+    vtable->destroy_value(state.entries[i].value);
+  }
+  gpr_free(state.entries);
+  // Return the new table.
+  return new_table;
 }
