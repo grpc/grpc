@@ -93,7 +93,6 @@ static grpc_resolver_factory *lookup_factory(const char *name) {
       return g_all_of_the_resolvers[i];
     }
   }
-
   return NULL;
 }
 

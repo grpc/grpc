@@ -147,6 +147,10 @@ static void driver_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       ares_process_fd(d->channel, read_fd, write_fd);
     }
   } else {
+    // error != GRPC_ERROR_NONE means the waiting timed out or the fd has been
+    // shutdown. In this case, the event driver cancels all the ongoing requests
+    // that are using its channel. The fds get cleaned up in the next
+    // grpc_ares_notify_on_event.
     ares_cancel(d->channel);
   }
   grpc_ares_notify_on_event(exec_ctx, d);
@@ -170,15 +174,13 @@ static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
       if (ARES_GETSOCK_READABLE(ev_driver->socks_bitmask, i) ||
           ARES_GETSOCK_WRITABLE(ev_driver->socks_bitmask, i)) {
         fd_node *fdn = get_fd(&ev_driver->fds, ev_driver->socks[i]);
-        if (!fdn) {
+        if (fdn == NULL) {
           char *fd_name;
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
-
           fdn = gpr_malloc(sizeof(fd_node));
           fdn->grpc_fd = grpc_fd_create(ev_driver->socks[i], fd_name);
           grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
                                   fdn->grpc_fd);
-
           gpr_free(fd_name);
         }
         fdn->next = new_list;
@@ -197,9 +199,7 @@ static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
   }
 
   while (ev_driver->fds != NULL) {
-    fd_node *cur;
-
-    cur = ev_driver->fds;
+    fd_node *cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
     grpc_pollset_set_del_fd(exec_ctx, ev_driver->pollset_set, cur->grpc_fd);
     grpc_fd_shutdown(exec_ctx, cur->grpc_fd);
@@ -218,7 +218,6 @@ static void grpc_ares_notify_on_event(grpc_exec_ctx *exec_ctx,
   if (ev_driver->closing) {
     ares_destroy(ev_driver->channel);
     gpr_free(ev_driver);
-    return;
   }
 }
 
@@ -228,9 +227,8 @@ void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
   if (ev_driver->working) {
     gpr_mu_unlock(&ev_driver->mu);
     return;
-  } else {
-    ev_driver->working = true;
   }
+  ev_driver->working = true;
   gpr_mu_unlock(&ev_driver->mu);
   grpc_ares_notify_on_event(exec_ctx, ev_driver);
 }
