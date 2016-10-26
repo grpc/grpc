@@ -80,6 +80,11 @@ class ChannelArguments {
   /// The given string will be sent at the front of the user agent string.
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
+  // Set LB policy name.
+  // Note that if the name resolver returns only balancer addresses, the
+  // grpclb LB policy will be used, regardless of what is specified here.
+  void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
+
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
