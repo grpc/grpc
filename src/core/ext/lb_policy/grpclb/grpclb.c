@@ -637,9 +637,9 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
         addr_strs[addr_index++] =
             grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       } else {
-        GPR_ASSERT(grpc_sockaddr_to_string(
-                       &addr_strs[addr_index++],
-                       &addresses->addresses[i].address, true) > 0);
+        GPR_ASSERT(grpc_sockaddr_to_string(&addr_strs[addr_index++],
+                                           &addresses->addresses[i].address,
+                                           true) > 0);
       }
     }
   }
