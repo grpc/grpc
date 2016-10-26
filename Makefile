@@ -973,6 +973,8 @@ grpc_jwt_verifier_test: $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test
 grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
+handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
@@ -1303,6 +1305,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
   $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
+  $(BINDIR)/$(CONFIG)/handshake_client \
+  $(BINDIR)/$(CONFIG)/handshake_server \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
   $(BINDIR)/$(CONFIG)/http_parser_test \
@@ -1673,6 +1677,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test || ( echo test grpc_jwt_verifier_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_security_connector_test || ( echo test grpc_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_client"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_server"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
@@ -9290,6 +9298,70 @@ deps_grpc_verify_jwt: $(GRPC_VERIFY_JWT_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_VERIFY_JWT_OBJS:.o=.dep)
+endif
+endif
+
+
+HANDSHAKE_CLIENT_SRC = \
+    test/core/handshake/client_ssl.c \
+
+HANDSHAKE_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_CLIENT_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/handshake_client: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/handshake_client: $(HANDSHAKE_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_client
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/client_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_handshake_client: $(HANDSHAKE_CLIENT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HANDSHAKE_CLIENT_OBJS:.o=.dep)
+endif
+endif
+
+
+HANDSHAKE_SERVER_SRC = \
+    test/core/handshake/server_ssl.c \
+
+HANDSHAKE_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/handshake_server: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/handshake_server: $(HANDSHAKE_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_handshake_server: $(HANDSHAKE_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HANDSHAKE_SERVER_OBJS:.o=.dep)
 endif
 endif
 
