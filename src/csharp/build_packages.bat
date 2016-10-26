@@ -34,7 +34,7 @@
 @rem in build_packages_dotnetcli.sh
 
 @rem Current package versions
-set VERSION=1.0.1-pre1
+set VERSION=1.0.1
 set PROTOBUF_VERSION=3.0.0
 
 @rem Adjust the location of nuget.exe
