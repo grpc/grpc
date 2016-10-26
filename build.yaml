@@ -383,7 +383,6 @@ filegroups:
   - src/core/ext/client_channel/resolver.h
   - src/core/ext/client_channel/resolver_factory.h
   - src/core/ext/client_channel/resolver_registry.h
-  - src/core/ext/client_channel/resolver_result.h
   - src/core/ext/client_channel/subchannel.h
   - src/core/ext/client_channel/subchannel_index.h
   - src/core/ext/client_channel/uri_parser.h
@@ -403,7 +402,6 @@ filegroups:
   - src/core/ext/client_channel/resolver.c
   - src/core/ext/client_channel/resolver_factory.c
   - src/core/ext/client_channel/resolver_registry.c
-  - src/core/ext/client_channel/resolver_result.c
   - src/core/ext/client_channel/subchannel.c
   - src/core/ext/client_channel/subchannel_index.c
   - src/core/ext/client_channel/uri_parser.c

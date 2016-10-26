@@ -256,7 +256,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
     src/core/ext/client_channel/resolver_registry.c \
-    src/core/ext/client_channel/resolver_result.c \
     src/core/ext/client_channel/subchannel.c \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
