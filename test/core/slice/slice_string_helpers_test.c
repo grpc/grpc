@@ -48,7 +48,7 @@
 
 static void expect_slice_dump(grpc_slice slice, uint32_t flags,
                               const char *result) {
-  char *got = gpr_dump_slice(slice, flags);
+  char *got = grpc_dump_slice(slice, flags);
   GPR_ASSERT(0 == strcmp(got, result));
   gpr_free(got);
   grpc_slice_unref(slice);

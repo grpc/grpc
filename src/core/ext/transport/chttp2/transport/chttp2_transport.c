@@ -38,9 +38,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -51,6 +51,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -287,7 +288,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   if (is_client) {
     grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
-                                         GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+                                          GRPC_CHTTP2_CLIENT_CONNECT_STRING));
     grpc_chttp2_initiate_write(exec_ctx, t, false, "initial_write");
   }
 
@@ -757,7 +758,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      uint32_t goaway_error,
                                      grpc_slice goaway_text) {
-  char *msg = gpr_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char *msg = grpc_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   grpc_slice_unref(goaway_text);
@@ -1673,7 +1674,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     if (optional_message) {
       grpc_slice_buffer_add(&t->qbuf, message_pfx);
       grpc_slice_buffer_add(&t->qbuf,
-                           grpc_slice_from_copied_string(optional_message));
+                            grpc_slice_from_copied_string(optional_message));
     }
     grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_CHTTP2_NO_ERROR,

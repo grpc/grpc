@@ -45,6 +45,7 @@
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {
@@ -178,7 +179,7 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
-    char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
+    char *part_str = grpc_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
     if (!parse(
             &ith_uri,

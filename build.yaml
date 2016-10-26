@@ -1742,11 +1742,11 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_percent_encoding_test
+- name: percent_encoding_test
   build: test
   language: c
   src:
-  - test/core/support/percent_encoding_test.c
+  - test/core/slice/percent_encoding_test.c
   deps:
   - gpr_test_util
   - gpr

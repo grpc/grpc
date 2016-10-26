@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/support/percent_encoding.h"
+#include "src/core/lib/slice/percent_encoding.h"
 
 #include <grpc/support/log.h>
 
@@ -50,7 +50,7 @@ static bool is_unreserved_character(uint8_t c,
 }
 
 grpc_slice gpr_percent_encode_slice(grpc_slice slice,
-                                   const uint8_t *unreserved_bytes) {
+                                    const uint8_t *unreserved_bytes) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
   // first pass: count the number of bytes needed to output this string
