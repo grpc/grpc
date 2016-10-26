@@ -810,48 +810,6 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "grpc_slice_buffer_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "grpc_slice_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
     "cpu_cost": 7, 
     "exclude_configs": [], 
     "flaky": false, 
@@ -1772,6 +1730,69 @@
     "gtest": false, 
     "language": "c", 
     "name": "set_initial_connect_string_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "slice_buffer_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "slice_string_helpers_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "slice_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -91353,7 +91374,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/04cb8ccc553f9b2f5e52c421aff6d1c954d3dae6"
+      "test/core/slice/percent_decode_corpus/04cb8ccc553f9b2f5e52c421aff6d1c954d3dae6"
     ], 
     "ci_platforms": [
       "linux"
@@ -91372,7 +91393,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/0dd8f3a63745b3a2d39791559b5c1b311447b537"
+      "test/core/slice/percent_decode_corpus/0dd8f3a63745b3a2d39791559b5c1b311447b537"
     ], 
     "ci_platforms": [
       "linux"
@@ -91391,7 +91412,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/17eeaca784409adbe43365c32ac87915d736bba3"
+      "test/core/slice/percent_decode_corpus/17eeaca784409adbe43365c32ac87915d736bba3"
     ], 
     "ci_platforms": [
       "linux"
@@ -91410,7 +91431,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/2040c1ff65f52a7ae668c2c8f324de5dacc9d695"
+      "test/core/slice/percent_decode_corpus/2040c1ff65f52a7ae668c2c8f324de5dacc9d695"
     ], 
     "ci_platforms": [
       "linux"
@@ -91429,7 +91450,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/26b0d1da23027ae54db96e125e4a9e98842d77fb"
+      "test/core/slice/percent_decode_corpus/26b0d1da23027ae54db96e125e4a9e98842d77fb"
     ], 
     "ci_platforms": [
       "linux"
@@ -91448,7 +91469,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/2a089c0db45acdb4c6ed8e7ff81ca7235792c0b9"
+      "test/core/slice/percent_decode_corpus/2a089c0db45acdb4c6ed8e7ff81ca7235792c0b9"
     ], 
     "ci_platforms": [
       "linux"
@@ -91467,7 +91488,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/35b7b3bc3a740d5c3abca0d75b53f0e1e1ee998a"
+      "test/core/slice/percent_decode_corpus/35b7b3bc3a740d5c3abca0d75b53f0e1e1ee998a"
     ], 
     "ci_platforms": [
       "linux"
@@ -91486,7 +91507,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/36367ba1adba47a1cbc3a88707fde8cc7abdc248"
+      "test/core/slice/percent_decode_corpus/36367ba1adba47a1cbc3a88707fde8cc7abdc248"
     ], 
     "ci_platforms": [
       "linux"
@@ -91505,7 +91526,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/39c2ba51548a0beaf0d6d1164531f1447dc311b5"
+      "test/core/slice/percent_decode_corpus/39c2ba51548a0beaf0d6d1164531f1447dc311b5"
     ], 
     "ci_platforms": [
       "linux"
@@ -91524,7 +91545,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/56d08fea787c041395c6697ce26cfbc0decbe688"
+      "test/core/slice/percent_decode_corpus/56d08fea787c041395c6697ce26cfbc0decbe688"
     ], 
     "ci_platforms": [
       "linux"
@@ -91543,7 +91564,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/678d981fdabb9f0d6640235cf1719dd1e1e66ae9"
+      "test/core/slice/percent_decode_corpus/678d981fdabb9f0d6640235cf1719dd1e1e66ae9"
     ], 
     "ci_platforms": [
       "linux"
@@ -91562,7 +91583,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/68751961609ec010565de0aa87521dcbf0722c5d"
+      "test/core/slice/percent_decode_corpus/68751961609ec010565de0aa87521dcbf0722c5d"
     ], 
     "ci_platforms": [
       "linux"
@@ -91581,7 +91602,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/7875c06c6f03c9aa2f8e9c59f8d8957c8a32e759"
+      "test/core/slice/percent_decode_corpus/7875c06c6f03c9aa2f8e9c59f8d8957c8a32e759"
     ], 
     "ci_platforms": [
       "linux"
@@ -91600,7 +91621,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/7b302090e090a5829b6d1dd7be30bd4e36a7e60f"
+      "test/core/slice/percent_decode_corpus/7b302090e090a5829b6d1dd7be30bd4e36a7e60f"
     ], 
     "ci_platforms": [
       "linux"
@@ -91619,7 +91640,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/875e1022169c9e4c541a9ad894e69e989df22ba1"
+      "test/core/slice/percent_decode_corpus/875e1022169c9e4c541a9ad894e69e989df22ba1"
     ], 
     "ci_platforms": [
       "linux"
@@ -91638,7 +91659,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/8c1051ce066f5a26de9a9d133180621d0da957b4"
+      "test/core/slice/percent_decode_corpus/8c1051ce066f5a26de9a9d133180621d0da957b4"
     ], 
     "ci_platforms": [
       "linux"
@@ -91657,7 +91678,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/8e084e628ab83a18ac7ca7cb3506525263655c63"
+      "test/core/slice/percent_decode_corpus/8e084e628ab83a18ac7ca7cb3506525263655c63"
     ], 
     "ci_platforms": [
       "linux"
@@ -91676,7 +91697,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/9d316c4675f40ddccaf8f1cc7aea94170b1e4223"
+      "test/core/slice/percent_decode_corpus/9d316c4675f40ddccaf8f1cc7aea94170b1e4223"
     ], 
     "ci_platforms": [
       "linux"
@@ -91695,7 +91716,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/ad1c7c11d18a7d116e2c2ef4d4c5afb1270836ae"
+      "test/core/slice/percent_decode_corpus/ad1c7c11d18a7d116e2c2ef4d4c5afb1270836ae"
     ], 
     "ci_platforms": [
       "linux"
@@ -91714,7 +91735,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/b471f94aa4facf502e622e4a248f1ba4063ae681"
+      "test/core/slice/percent_decode_corpus/b471f94aa4facf502e622e4a248f1ba4063ae681"
     ], 
     "ci_platforms": [
       "linux"
@@ -91733,7 +91754,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/bf52ece030f16136d46e0dc97f58d60a0d8a1f0b"
+      "test/core/slice/percent_decode_corpus/bf52ece030f16136d46e0dc97f58d60a0d8a1f0b"
     ], 
     "ci_platforms": [
       "linux"
@@ -91752,7 +91773,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/d5b2a7177339ba2b7ce2f60e5f4459bef1e72758"
+      "test/core/slice/percent_decode_corpus/d5b2a7177339ba2b7ce2f60e5f4459bef1e72758"
     ], 
     "ci_platforms": [
       "linux"
@@ -91771,7 +91792,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/de867b64c54a7ed773dc611fc5cd2f17c5433113"
+      "test/core/slice/percent_decode_corpus/de867b64c54a7ed773dc611fc5cd2f17c5433113"
     ], 
     "ci_platforms": [
       "linux"
@@ -91790,7 +91811,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/e3948dbe004950591630dd5c52f4e0fcbd5e388a"
+      "test/core/slice/percent_decode_corpus/e3948dbe004950591630dd5c52f4e0fcbd5e388a"
     ], 
     "ci_platforms": [
       "linux"
@@ -91809,7 +91830,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/e7064f0b80f61dbc65915311032d27baa569ae2a"
+      "test/core/slice/percent_decode_corpus/e7064f0b80f61dbc65915311032d27baa569ae2a"
     ], 
     "ci_platforms": [
       "linux"
@@ -91828,7 +91849,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_decode_corpus/xyz"
+      "test/core/slice/percent_decode_corpus/xyz"
     ], 
     "ci_platforms": [
       "linux"
@@ -91847,7 +91868,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/0d3ee7fa54e6c66103965fd4409b044ba7db6c3f"
+      "test/core/slice/percent_encode_corpus/0d3ee7fa54e6c66103965fd4409b044ba7db6c3f"
     ], 
     "ci_platforms": [
       "linux"
@@ -91866,7 +91887,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/2e7ccf75e27b9501e3b28cf1c50ed0c45ab7c226"
+      "test/core/slice/percent_encode_corpus/2e7ccf75e27b9501e3b28cf1c50ed0c45ab7c226"
     ], 
     "ci_platforms": [
       "linux"
@@ -91885,7 +91906,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/55bb859f3942c462b03b7cbcf22ab4a0ac9705cf"
+      "test/core/slice/percent_encode_corpus/55bb859f3942c462b03b7cbcf22ab4a0ac9705cf"
     ], 
     "ci_platforms": [
       "linux"
@@ -91904,7 +91925,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/56070cecd54c845b6d4334953b17b712eb000d93"
+      "test/core/slice/percent_encode_corpus/56070cecd54c845b6d4334953b17b712eb000d93"
     ], 
     "ci_platforms": [
       "linux"
@@ -91923,7 +91944,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/61f50e891bf7ff5eb7a7af206f1e25d77f8756e7"
+      "test/core/slice/percent_encode_corpus/61f50e891bf7ff5eb7a7af206f1e25d77f8756e7"
     ], 
     "ci_platforms": [
       "linux"
@@ -91942,7 +91963,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/6e0c60cefc704c7940e475a87dd9ae423061cb5a"
+      "test/core/slice/percent_encode_corpus/6e0c60cefc704c7940e475a87dd9ae423061cb5a"
     ], 
     "ci_platforms": [
       "linux"
@@ -91961,7 +91982,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/7271ebcc6d22a0f186f7bc3c1973a7ed1bec8d8e"
+      "test/core/slice/percent_encode_corpus/7271ebcc6d22a0f186f7bc3c1973a7ed1bec8d8e"
     ], 
     "ci_platforms": [
       "linux"
@@ -91980,7 +92001,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/74c83ece3e2920a67593a9be9c82468f16cbb969"
+      "test/core/slice/percent_encode_corpus/74c83ece3e2920a67593a9be9c82468f16cbb969"
     ], 
     "ci_platforms": [
       "linux"
@@ -91999,7 +92020,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/98e004fd2a9f141a7a019720820080e12d637c06"
+      "test/core/slice/percent_encode_corpus/98e004fd2a9f141a7a019720820080e12d637c06"
     ], 
     "ci_platforms": [
       "linux"
@@ -92018,7 +92039,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/ba2c1e98227aa21ea3bb2ca4d0e504119717da8b"
+      "test/core/slice/percent_encode_corpus/ba2c1e98227aa21ea3bb2ca4d0e504119717da8b"
     ], 
     "ci_platforms": [
       "linux"
@@ -92037,7 +92058,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/c16b9fd45370d4afb5d3ebd307a6e263c25ffd45"
+      "test/core/slice/percent_encode_corpus/c16b9fd45370d4afb5d3ebd307a6e263c25ffd45"
     ], 
     "ci_platforms": [
       "linux"
@@ -92056,7 +92077,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/d58c3cd4eab9b6d2343abfa1c25c90a383fe0ec3"
+      "test/core/slice/percent_encode_corpus/d58c3cd4eab9b6d2343abfa1c25c90a383fe0ec3"
     ], 
     "ci_platforms": [
       "linux"
@@ -92075,7 +92096,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/e2619218ede30d2b7b8ecd601a9f0ae754b728b4"
+      "test/core/slice/percent_encode_corpus/e2619218ede30d2b7b8ecd601a9f0ae754b728b4"
     ], 
     "ci_platforms": [
       "linux"
@@ -92094,7 +92115,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/f93b3653e453f0e3eea3198001be6ce46e64bd21"
+      "test/core/slice/percent_encode_corpus/f93b3653e453f0e3eea3198001be6ce46e64bd21"
     ], 
     "ci_platforms": [
       "linux"
@@ -92113,7 +92134,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/fd41d029c7682ad3d1c40a9fd017a4c85b673a54"
+      "test/core/slice/percent_encode_corpus/fd41d029c7682ad3d1c40a9fd017a4c85b673a54"
     ], 
     "ci_platforms": [
       "linux"
@@ -92132,7 +92153,7 @@
   }, 
   {
     "args": [
-      "test/core/support/percent_encode_corpus/xyz"
+      "test/core/slice/percent_encode_corpus/xyz"
     ], 
     "ci_platforms": [
       "linux"

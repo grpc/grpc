@@ -754,36 +754,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "grpc_slice_buffer_test", 
-    "src": [
-      "test/core/support/slice_buffer_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_slice_test", 
-    "src": [
-      "test/core/support/slice_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "gpr_stack_lockfree_test", 
     "src": [
       "test/core/support/stack_lockfree_test.c"
@@ -1648,7 +1618,7 @@
     "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
-      "test/core/support/percent_decode_fuzzer.c"
+      "test/core/slice/percent_decode_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1665,7 +1635,7 @@
     "language": "c", 
     "name": "percent_encode_fuzzer", 
     "src": [
-      "test/core/support/percent_encode_fuzzer.c"
+      "test/core/slice/percent_encode_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1820,6 +1790,51 @@
     "name": "set_initial_connect_string_test", 
     "src": [
       "test/core/client_channel/set_initial_connect_string_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "slice_buffer_test", 
+    "src": [
+      "test/core/slice/slice_buffer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "slice_string_helpers_test", 
+    "src": [
+      "test/core/slice/slice_string_helpers_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "slice_test", 
+    "src": [
+      "test/core/slice/slice_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4696,7 +4711,7 @@
     "language": "c", 
     "name": "percent_decode_fuzzer_one_entry", 
     "src": [
-      "test/core/support/percent_decode_fuzzer.c", 
+      "test/core/slice/percent_decode_fuzzer.c", 
       "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
@@ -4714,7 +4729,7 @@
     "language": "c", 
     "name": "percent_encode_fuzzer_one_entry", 
     "src": [
-      "test/core/support/percent_encode_fuzzer.c", 
+      "test/core/slice/percent_encode_fuzzer.c", 
       "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
@@ -6287,8 +6302,6 @@
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
-      "include/grpc/support/slice.h", 
-      "include/grpc/support/slice_buffer.h", 
       "include/grpc/support/string_util.h", 
       "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
@@ -6308,7 +6321,6 @@
       "src/core/lib/support/env.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
-      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -6333,8 +6345,6 @@
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
-      "include/grpc/support/slice.h", 
-      "include/grpc/support/slice_buffer.h", 
       "include/grpc/support/string_util.h", 
       "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
@@ -6376,10 +6386,6 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.c", 
       "src/core/lib/support/murmur_hash.h", 
-      "src/core/lib/support/percent_encoding.c", 
-      "src/core/lib/support/percent_encoding.h", 
-      "src/core/lib/support/slice.c", 
-      "src/core/lib/support/slice_buffer.c", 
       "src/core/lib/support/stack_lockfree.c", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.c", 
@@ -6458,6 +6464,8 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/slice.h", 
+      "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -6525,6 +6533,8 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -6556,6 +6566,8 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/slice.h", 
+      "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
@@ -6690,6 +6702,12 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/percent_encoding.c", 
+      "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice.c", 
+      "src/core/lib/slice/slice_buffer.c", 
+      "src/core/lib/slice/slice_string_helpers.c", 
+      "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/alarm.c", 
       "src/core/lib/surface/api_trace.c", 
       "src/core/lib/surface/api_trace.h", 
