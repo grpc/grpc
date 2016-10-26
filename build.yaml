@@ -3109,7 +3109,6 @@ targets:
   - gpr
 - name: noop-benchmark
   build: test
-  run: false
   language: c++
   src:
   - test/cpp/microbenchmarks/noop-benchmark.cc
