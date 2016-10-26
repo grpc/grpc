@@ -1711,6 +1711,12 @@ retry:
             "pollset_add_fd: Raced creating new polling island. pi_new: %p "
             "(fd: %d, pollset: %p)",
             (void *)pi_new, fd->fd, (void *)pollset);
+
+        /* No need to lock 'pi_new' here since this is a new polling island and
+           no one has a reference to it yet */
+        polling_island_remove_all_fds_locked(pi_new, true, &error);
+
+        /* Ref and unref so that the polling island gets deleted during unref */
         PI_ADD_REF(pi_new, "dance_of_destruction");
         PI_UNREF(exec_ctx, pi_new, "dance_of_destruction");
         goto retry;
