@@ -57,7 +57,7 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
                                const char *error_details) {
   oauth2_request *request = user_data;
   char *token = NULL;
-  gpr_slice token_slice;
+  grpc_slice token_slice;
   if (status == GRPC_CREDENTIALS_ERROR) {
     gpr_log(GPR_ERROR, "Fetching token failed.");
   } else {

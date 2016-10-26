@@ -104,7 +104,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
@@ -207,8 +207,8 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = elem->call_data;
   if (error == GRPC_ERROR_NONE) {
     // close the stream with an error.
-    gpr_slice message =
-        gpr_slice_from_copied_string("Failure that's not preventable.");
+    grpc_slice message =
+        grpc_slice_from_copied_string("Failure that's not preventable.");
     grpc_transport_stream_op *op = grpc_make_transport_stream_op(NULL);
     grpc_transport_stream_op_add_close(op, GRPC_STATUS_PERMISSION_DENIED,
                                        &message);

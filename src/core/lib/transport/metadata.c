@@ -51,7 +51,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(gpr_slice input);
+grpc_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(grpc_slice input);
 
 /* There are two kinds of mdelem and mdstr instances.
  * Static instances are declared in static_metadata.{h,c} and
@@ -85,16 +85,16 @@ typedef void (*destroy_user_data_func)(void *user_data);
 /* Shadow structure for grpc_mdstr for non-static values */
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
-  gpr_slice slice;
+  grpc_slice slice;
   uint32_t hash;
 
   /* private only data */
   gpr_atm refcnt;
 
   uint8_t has_base64_and_huffman_encoded;
-  gpr_slice_refcount refcount;
+  grpc_slice_refcount refcount;
 
-  gpr_slice base64_and_huffman;
+  grpc_slice base64_and_huffman;
 
   gpr_atm size_in_decoder_table;
 
@@ -174,7 +174,7 @@ void grpc_mdctx_global_init(void) {
     grpc_mdstr *elem = &grpc_static_mdstr_table[i];
     const char *str = grpc_static_metadata_strings[i];
     uint32_t hash = gpr_murmur_hash3(str, strlen(str), g_hash_seed);
-    *(gpr_slice *)&elem->slice = gpr_slice_from_static_string(str);
+    *(grpc_slice *)&elem->slice = grpc_slice_from_static_string(str);
     *(uint32_t *)&elem->hash = hash;
     for (j = 0;; j++) {
       size_t idx = (hash + j) % GPR_ARRAY_SIZE(g_static_strtab);
@@ -321,7 +321,7 @@ static void internal_destroy_string(strtab_shard *shard, internal_string *is) {
   internal_string *cur;
   GPR_TIMER_BEGIN("internal_destroy_string", 0);
   if (is->has_base64_and_huffman_encoded) {
-    gpr_slice_unref(is->base64_and_huffman);
+    grpc_slice_unref(is->base64_and_huffman);
   }
   for (prev_next = &shard->strs[TABLE_IDX(is->hash, LOG2_STRTAB_SHARD_COUNT,
                                           shard->capacity)],
@@ -350,10 +350,10 @@ grpc_mdstr *grpc_mdstr_from_string(const char *str) {
   return grpc_mdstr_from_buffer((const uint8_t *)str, strlen(str));
 }
 
-grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice) {
+grpc_mdstr *grpc_mdstr_from_slice(grpc_slice slice) {
   grpc_mdstr *result = grpc_mdstr_from_buffer(GPR_SLICE_START_PTR(slice),
                                               GPR_SLICE_LENGTH(slice));
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return result;
 }
 
@@ -589,7 +589,7 @@ grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value) {
                                            grpc_mdstr_from_string(value));
 }
 
-grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value) {
+grpc_mdelem *grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
   return grpc_mdelem_from_metadata_strings(grpc_mdstr_from_slice(key),
                                            grpc_mdstr_from_slice(value));
 }
@@ -737,9 +737,9 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
   gpr_mu_unlock(&im->mu_user_data);
 }
 
-gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
+grpc_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   internal_string *s = (internal_string *)gs;
-  gpr_slice slice;
+  grpc_slice slice;
   strtab_shard *shard =
       &g_strtab_shard[SHARD_IDX(s->hash, LOG2_STRTAB_SHARD_COUNT)];
   gpr_mu_lock(&shard->mu);

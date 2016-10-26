@@ -1582,7 +1582,7 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *hpack_parser,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s,
-                                            gpr_slice slice, int is_last) {
+                                            grpc_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (s != NULL) {

@@ -181,7 +181,7 @@ typedef struct {
 
 static void test_claims_success(void) {
   grpc_jwt_claims *claims;
-  gpr_slice s = gpr_slice_from_copied_string(claims_without_time_constraint);
+  grpc_slice s = grpc_slice_from_copied_string(claims_without_time_constraint);
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s));
   GPR_ASSERT(json != NULL);
@@ -199,7 +199,7 @@ static void test_claims_success(void) {
 
 static void test_expired_claims_failure(void) {
   grpc_jwt_claims *claims;
-  gpr_slice s = gpr_slice_from_copied_string(expired_claims);
+  grpc_slice s = grpc_slice_from_copied_string(expired_claims);
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s));
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
@@ -223,7 +223,7 @@ static void test_expired_claims_failure(void) {
 }
 
 static void test_invalid_claims_failure(void) {
-  gpr_slice s = gpr_slice_from_copied_string(invalid_claims);
+  grpc_slice s = grpc_slice_from_copied_string(invalid_claims);
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s));
   GPR_ASSERT(grpc_jwt_claims_from_json(json, s) == NULL);
@@ -231,7 +231,7 @@ static void test_invalid_claims_failure(void) {
 
 static void test_bad_audience_claims_failure(void) {
   grpc_jwt_claims *claims;
-  gpr_slice s = gpr_slice_from_copied_string(claims_without_time_constraint);
+  grpc_slice s = grpc_slice_from_copied_string(claims_without_time_constraint);
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s));
   GPR_ASSERT(json != NULL);
@@ -478,7 +478,7 @@ static void test_jwt_verifier_bad_json_key(void) {
 }
 
 static void corrupt_jwt_sig(char *jwt) {
-  gpr_slice sig;
+  grpc_slice sig;
   char *bad_b64_sig;
   uint8_t *sig_bytes;
   char *last_dot = strrchr(jwt, '.');
@@ -491,7 +491,7 @@ static void corrupt_jwt_sig(char *jwt) {
       grpc_base64_encode(GPR_SLICE_START_PTR(sig), GPR_SLICE_LENGTH(sig), 1, 0);
   memcpy(last_dot + 1, bad_b64_sig, strlen(bad_b64_sig));
   gpr_free(bad_b64_sig);
-  gpr_slice_unref(sig);
+  grpc_slice_unref(sig);
 }
 
 static void on_verification_bad_signature(void *user_data,

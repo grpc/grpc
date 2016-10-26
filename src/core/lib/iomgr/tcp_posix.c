@@ -83,10 +83,10 @@ typedef struct {
   gpr_atm shutdown_count;
 
   /* garbage after the last read */
-  gpr_slice_buffer last_read_buffer;
+  grpc_slice_buffer last_read_buffer;
 
-  gpr_slice_buffer *incoming_buffer;
-  gpr_slice_buffer *outgoing_buffer;
+  grpc_slice_buffer *incoming_buffer;
+  grpc_slice_buffer *outgoing_buffer;
   /** slice within outgoing_buffer to write next */
   size_t outgoing_slice_idx;
   /** byte within outgoing_buffer->slices[outgoing_slice_idx] to write next */
@@ -130,7 +130,7 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
-  gpr_slice_buffer_destroy(&tcp->last_read_buffer);
+  grpc_slice_buffer_destroy(&tcp->last_read_buffer);
   grpc_resource_user_destroy(exec_ctx, &tcp->resource_user);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
@@ -177,7 +177,7 @@ static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
-  gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 
@@ -244,19 +244,19 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       /* We've consumed the edge, request a new one */
       grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
     } else {
-      gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+      grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       call_read_cb(exec_ctx, tcp, GRPC_OS_ERROR(errno, "recvmsg"));
       TCP_UNREF(exec_ctx, tcp, "read");
     }
   } else if (read_bytes == 0) {
     /* 0 read size ==> end of stream */
-    gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     call_read_cb(exec_ctx, tcp, GRPC_ERROR_CREATE("Socket closed"));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
     if ((size_t)read_bytes < tcp->incoming_buffer->length) {
-      gpr_slice_buffer_trim_end(
+      grpc_slice_buffer_trim_end(
           tcp->incoming_buffer,
           tcp->incoming_buffer->length - (size_t)read_bytes,
           &tcp->last_read_buffer);
@@ -275,8 +275,8 @@ static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
                                      grpc_error *error) {
   grpc_tcp *tcp = tcpp;
   if (error != GRPC_ERROR_NONE) {
-    gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
     call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
@@ -301,8 +301,8 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
   GPR_ASSERT(!tcp->finished_edge);
 
   if (error != GRPC_ERROR_NONE) {
-    gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
     call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
@@ -311,13 +311,13 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 }
 
 static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     gpr_slice_buffer *incoming_buffer, grpc_closure *cb) {
+                     grpc_slice_buffer *incoming_buffer, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->incoming_buffer = incoming_buffer;
-  gpr_slice_buffer_reset_and_unref(incoming_buffer);
-  gpr_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref(incoming_buffer);
+  grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = false;
@@ -442,7 +442,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 }
 
 static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                      gpr_slice_buffer *buf, grpc_closure *cb) {
+                      grpc_slice_buffer *buf, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_error *error = GRPC_ERROR_NONE;
 
@@ -552,7 +552,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   tcp->read_closure.cb_arg = tcp;
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
-  gpr_slice_buffer_init(&tcp->last_read_buffer);
+  grpc_slice_buffer_init(&tcp->last_read_buffer);
   grpc_resource_user_init(&tcp->resource_user, resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
                                           &tcp->resource_user,
@@ -577,7 +577,7 @@ void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;
   tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
-  gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 

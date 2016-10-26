@@ -42,16 +42,16 @@
 #include "rb_grpc.h"
 
 grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
+  grpc_slice slice = grpc_slice_from_copied_buffer(string, length);
   grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return buffer;
 }
 
 VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
   VALUE rb_string;
   grpc_byte_buffer_reader reader;
-  gpr_slice next;
+  grpc_slice next;
   if (buffer == NULL) {
     return Qnil;
   }
@@ -63,7 +63,7 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     rb_str_cat(rb_string, (const char *) GPR_SLICE_START_PTR(next),
                GPR_SLICE_LENGTH(next));
-    gpr_slice_unref(next);
+    grpc_slice_unref(next);
   }
   return rb_string;
 }

@@ -77,7 +77,7 @@ typedef struct grpc_mdelem grpc_mdelem;
 
 /* if changing this, make identical changes in internal_string in metadata.c */
 struct grpc_mdstr {
-  const gpr_slice slice;
+  const grpc_slice slice;
   const uint32_t hash;
   /* there is a private part to this in metadata.c */
 };
@@ -96,12 +96,12 @@ void grpc_test_only_set_metadata_hash_seed(uint32_t seed);
    clients may have handy */
 grpc_mdstr *grpc_mdstr_from_string(const char *str);
 /* Unrefs the slice. */
-grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice);
+grpc_mdstr *grpc_mdstr_from_slice(grpc_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
-gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
+grpc_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
 
 /* Constructors for grpc_mdelem instances; take a variety of data types that
    clients may have handy */
@@ -109,7 +109,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
                                                grpc_mdstr *value);
 grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
 /* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
+grpc_mdelem *grpc_mdelem_from_slices(grpc_slice key, grpc_slice value);
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 const uint8_t *value,
                                                 size_t value_length);
@@ -165,8 +165,8 @@ void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(void);
 
 /* Implementation provided by chttp2_transport */
-extern gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
-    gpr_slice input);
+extern grpc_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
+    grpc_slice input);
 
 #ifdef __cplusplus
 }

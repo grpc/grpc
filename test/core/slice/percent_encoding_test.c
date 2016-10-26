@@ -56,14 +56,14 @@ static void test_vector(const char *raw, size_t raw_length, const char *encoded,
   gpr_free(raw_msg);
   gpr_free(encoded_msg);
 
-  gpr_slice raw_slice = gpr_slice_from_copied_buffer(raw, raw_length);
-  gpr_slice encoded_slice =
-      gpr_slice_from_copied_buffer(encoded, encoded_length);
-  gpr_slice raw2encoded_slice = gpr_percent_encode_slice(raw_slice, dict);
-  gpr_slice encoded2raw_slice;
+  grpc_slice raw_slice = grpc_slice_from_copied_buffer(raw, raw_length);
+  grpc_slice encoded_slice =
+      grpc_slice_from_copied_buffer(encoded, encoded_length);
+  grpc_slice raw2encoded_slice = gpr_percent_encode_slice(raw_slice, dict);
+  grpc_slice encoded2raw_slice;
   GPR_ASSERT(
       gpr_strict_percent_decode_slice(encoded_slice, dict, &encoded2raw_slice));
-  gpr_slice encoded2raw_permissive_slice =
+  grpc_slice encoded2raw_permissive_slice =
       gpr_permissive_percent_decode_slice(encoded_slice);
 
   char *raw2encoded_msg =
@@ -80,15 +80,15 @@ static void test_vector(const char *raw, size_t raw_length, const char *encoded,
   gpr_free(encoded2raw_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(0 == gpr_slice_cmp(raw_slice, encoded2raw_slice));
-  GPR_ASSERT(0 == gpr_slice_cmp(raw_slice, encoded2raw_permissive_slice));
-  GPR_ASSERT(0 == gpr_slice_cmp(encoded_slice, raw2encoded_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(raw_slice, encoded2raw_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(raw_slice, encoded2raw_permissive_slice));
+  GPR_ASSERT(0 == grpc_slice_cmp(encoded_slice, raw2encoded_slice));
 
-  gpr_slice_unref(encoded2raw_slice);
-  gpr_slice_unref(encoded2raw_permissive_slice);
-  gpr_slice_unref(raw2encoded_slice);
-  gpr_slice_unref(raw_slice);
-  gpr_slice_unref(encoded_slice);
+  grpc_slice_unref(encoded2raw_slice);
+  grpc_slice_unref(encoded2raw_permissive_slice);
+  grpc_slice_unref(raw2encoded_slice);
+  grpc_slice_unref(raw_slice);
+  grpc_slice_unref(encoded_slice);
 }
 
 static void test_nonconformant_vector(const char *encoded,
@@ -106,14 +106,14 @@ static void test_nonconformant_vector(const char *encoded,
   gpr_free(permissive_unencoded_msg);
   gpr_free(encoded_msg);
 
-  gpr_slice permissive_unencoded_slice = gpr_slice_from_copied_buffer(
+  grpc_slice permissive_unencoded_slice = grpc_slice_from_copied_buffer(
       permissive_unencoded, permissive_unencoded_length);
-  gpr_slice encoded_slice =
-      gpr_slice_from_copied_buffer(encoded, encoded_length);
-  gpr_slice encoded2raw_slice;
+  grpc_slice encoded_slice =
+      grpc_slice_from_copied_buffer(encoded, encoded_length);
+  grpc_slice encoded2raw_slice;
   GPR_ASSERT(!gpr_strict_percent_decode_slice(encoded_slice, dict,
                                               &encoded2raw_slice));
-  gpr_slice encoded2raw_permissive_slice =
+  grpc_slice encoded2raw_permissive_slice =
       gpr_permissive_percent_decode_slice(encoded_slice);
 
   char *encoded2raw_permissive_msg = gpr_dump_slice(
@@ -122,12 +122,12 @@ static void test_nonconformant_vector(const char *encoded,
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(0 == gpr_slice_cmp(permissive_unencoded_slice,
+  GPR_ASSERT(0 == grpc_slice_cmp(permissive_unencoded_slice,
                                 encoded2raw_permissive_slice));
 
-  gpr_slice_unref(permissive_unencoded_slice);
-  gpr_slice_unref(encoded2raw_permissive_slice);
-  gpr_slice_unref(encoded_slice);
+  grpc_slice_unref(permissive_unencoded_slice);
+  grpc_slice_unref(encoded2raw_permissive_slice);
+  grpc_slice_unref(encoded_slice);
 }
 
 int main(int argc, char **argv) {

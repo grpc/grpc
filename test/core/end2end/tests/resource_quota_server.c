@@ -95,8 +95,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a gpr_slice containing random alphanumeric characters. */
-static gpr_slice generate_random_slice() {
+/* Creates and returns a grpc_slice containing random alphanumeric characters. */
+static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char output[1024 * 1024];
@@ -104,7 +104,7 @@ static gpr_slice generate_random_slice() {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
   output[GPR_ARRAY_SIZE(output) - 1] = '\0';
-  return gpr_slice_from_copied_string(output);
+  return grpc_slice_from_copied_string(output);
 }
 
 void resource_quota_server(grpc_end2end_test_config config) {
@@ -131,7 +131,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  gpr_slice request_payload_slice = generate_random_slice();
+  grpc_slice request_payload_slice = generate_random_slice();
 
   grpc_call *client_calls[NUM_CALLS];
   grpc_call *server_calls[NUM_CALLS];
@@ -349,7 +349,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   GPR_ASSERT(cancelled_calls_on_server >= 0.9 * cancelled_calls_on_client);
 
   grpc_byte_buffer_destroy(request_payload);
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
 
   end_test(&f);

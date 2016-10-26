@@ -54,9 +54,6 @@ extern "C" {
    Result should be freed with gpr_free() */
 char *gpr_dump(const char *buf, size_t len, uint32_t flags);
 
-/* Calls gpr_dump on a slice. */
-char *gpr_dump_slice(gpr_slice slice, uint32_t flags);
-
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
 int gpr_parse_bytes_to_uint32(const char *data, size_t length,
@@ -97,10 +94,6 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
    if it is non-null. */
 char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
                       size_t *total_length);
-
-/** Split \a str by the separator \a sep. Results are stored in \a dst, which
- * should be a properly initialized instance. */
-void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {

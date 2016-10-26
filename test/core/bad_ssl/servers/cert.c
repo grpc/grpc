@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_server_credentials *ssl_creds;
   grpc_server *server;
-  gpr_slice cert_slice, key_slice;
+  grpc_slice cert_slice, key_slice;
 
   grpc_init();
 
@@ -70,8 +70,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
 
-  gpr_slice_unref(cert_slice);
-  gpr_slice_unref(key_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
 
   bad_ssl_run(server);
   grpc_shutdown();
