@@ -36,6 +36,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {

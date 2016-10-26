@@ -80,7 +80,7 @@ DEFINE_string(test_case, "large_unary",
               "slow client consumer;\n"
               "status_code_and_message: verify status code & message;\n"
               "timeout_on_sleeping_server: deadline exceeds on stream;\n"
-              "unimplemented_method: client calls an unimplemented_method;\n");
+              "unimplemented_method: client calls an unimplemented method;\n");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
