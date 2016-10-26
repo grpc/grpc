@@ -204,27 +204,34 @@ filegroups:
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/iomgr/pollset_uv.h
   - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_uv.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
+  - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_uv.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/workqueue.h
+  - src/core/lib/iomgr/workqueue_uv.h
   - src/core/lib/iomgr/workqueue_windows.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_common.h
@@ -271,6 +278,7 @@ filegroups:
   - src/core/lib/iomgr/combiner.c
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
+  - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll_linux.c
@@ -282,28 +290,38 @@ filegroups:
   - src/core/lib/iomgr/iocp_windows.c
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
+  - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
   - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/network_status_tracker.c
   - src/core/lib/iomgr/polling_entity.c
+  - src/core/lib/iomgr/pollset_set_uv.c
   - src/core/lib/iomgr/pollset_set_windows.c
+  - src/core/lib/iomgr/pollset_uv.c
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
+  - src/core/lib/iomgr/resolve_address_uv.c
   - src/core/lib/iomgr/resolve_address_windows.c
   - src/core/lib/iomgr/sockaddr_utils.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
   - src/core/lib/iomgr/socket_utils_posix.c
+  - src/core/lib/iomgr/socket_utils_uv.c
+  - src/core/lib/iomgr/socket_utils_windows.c
   - src/core/lib/iomgr/socket_windows.c
   - src/core/lib/iomgr/tcp_client_posix.c
+  - src/core/lib/iomgr/tcp_client_uv.c
   - src/core/lib/iomgr/tcp_client_windows.c
   - src/core/lib/iomgr/tcp_posix.c
   - src/core/lib/iomgr/tcp_server_posix.c
+  - src/core/lib/iomgr/tcp_server_uv.c
   - src/core/lib/iomgr/tcp_server_windows.c
+  - src/core/lib/iomgr/tcp_uv.c
   - src/core/lib/iomgr/tcp_windows.c
   - src/core/lib/iomgr/time_averaged_stats.c
-  - src/core/lib/iomgr/timer.c
+  - src/core/lib/iomgr/timer_generic.c
   - src/core/lib/iomgr/timer_heap.c
+  - src/core/lib/iomgr/timer_uv.c
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
   - src/core/lib/iomgr/unix_sockets_posix_noop.c
@@ -312,6 +330,7 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
   - src/core/lib/iomgr/wakeup_fd_posix.c
+  - src/core/lib/iomgr/workqueue_uv.c
   - src/core/lib/iomgr/workqueue_windows.c
   - src/core/lib/json/json.c
   - src/core/lib/json/json_reader.c
@@ -483,8 +502,7 @@ filegroups:
   - src/core/lib/security/credentials/credentials.c
   - src/core/lib/security/credentials/credentials_metadata.c
   - src/core/lib/security/credentials/fake/fake_credentials.c
-  - src/core/lib/security/credentials/google_default/credentials_posix.c
-  - src/core/lib/security/credentials/google_default/credentials_windows.c
+  - src/core/lib/security/credentials/google_default/credentials_generic.c
   - src/core/lib/security/credentials/google_default/google_default_credentials.c
   - src/core/lib/security/credentials/iam/iam_credentials.c
   - src/core/lib/security/credentials/jwt/json_token.c
@@ -536,6 +554,7 @@ filegroups:
   - test/core/util/passthru_endpoint.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
+  - test/core/util/port_uv.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   deps:
@@ -664,6 +683,8 @@ filegroups:
   deps:
   - gpr
   secure: true
+  uses:
+  - grpc_base
 - name: grpc++_base
   language: c++
   public_headers:
@@ -1007,6 +1028,26 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_cronet
+  build: all
+  language: c++
+  src:
+  - src/cpp/client/cronet_credentials.cc
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/common/insecure_create_auth_context.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  deps:
+  - gpr
+  - grpc_cronet
+  baselib: true
+  dll: true
+  filegroups:
+  - grpc++_base
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  platforms:
+  - linux
+  secure: true
 - name: grpc++_reflection
   build: all
   language: c++
@@ -1337,6 +1378,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: bin_decoder_test
   build: test
   language: c
@@ -1478,6 +1521,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: connection_refused_test
   cpu_cost: 0.1
   build: test
@@ -1500,6 +1545,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: dns_resolver_test
   build: test
   language: c
@@ -1521,6 +1568,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1535,6 +1584,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: ev_epoll_linux_test
   build: test
   language: c
@@ -1545,6 +1596,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - linux
 - name: fd_conservation_posix_test
@@ -1557,6 +1610,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1571,6 +1626,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1658,6 +1715,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1878,6 +1937,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: grpc_create_jwt
   build: tool
   language: c
@@ -2340,6 +2401,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: secure_channel_create_test
   build: test
   language: c
@@ -2360,6 +2423,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sequential_connectivity_test
   build: test
   language: c
@@ -2370,6 +2435,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: server_chttp2_test
   build: test
   language: c
@@ -2416,6 +2483,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sockaddr_resolver_test
   build: test
   language: c
@@ -2446,6 +2515,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2461,6 +2532,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2476,6 +2549,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2490,6 +2565,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2524,6 +2601,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: timer_list_test
   build: test
   language: c
@@ -2534,6 +2613,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: transport_connectivity_state_test
   build: test
   language: c
@@ -2578,6 +2659,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2615,6 +2698,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -3352,6 +3437,7 @@ targets:
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/metrics.proto
   - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
@@ -3573,6 +3659,7 @@ node_modules:
   - src/node/ext/call_credentials.h
   - src/node/ext/channel.h
   - src/node/ext/channel_credentials.h
+  - src/node/ext/completion_queue.h
   - src/node/ext/completion_queue_async_worker.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
@@ -3592,6 +3679,7 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
+  - src/node/ext/completion_queue.cc
   - src/node/ext/completion_queue_async_worker.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc

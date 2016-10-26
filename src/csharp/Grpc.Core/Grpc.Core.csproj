@@ -139,6 +139,7 @@
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Logging\LogLevelFilterLogger.cs" />
     <Compile Include="Internal\RequestCallContextSafeHandle.cs" />
+    <Compile Include="Utils\TaskUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

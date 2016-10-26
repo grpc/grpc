@@ -96,6 +96,12 @@
  * - Implement LB service forwarding (point 2c. in the doc's diagram).
  */
 
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <errno.h>
 
 #include <string.h>
@@ -114,7 +120,6 @@
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
@@ -396,7 +401,7 @@ static grpc_lb_addresses *process_serverlist(
       gpr_log(GPR_ERROR,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri((struct sockaddr *)&addr.addr));
+              grpc_sockaddr_to_uri(&addr));
       user_data = GRPC_MDELEM_LB_TOKEN_EMPTY;
     }
 
@@ -602,15 +607,12 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     }
     if (args->addresses->addresses[i].is_balancer) {
       if (addr_index == 0) {
-        addr_strs[addr_index++] = grpc_sockaddr_to_uri(
-            (const struct sockaddr *)&args->addresses->addresses[i]
-                .address.addr);
+        addr_strs[addr_index++] =
+            grpc_sockaddr_to_uri(&args->addresses->addresses[i].address);
       } else {
         GPR_ASSERT(grpc_sockaddr_to_string(
                        &addr_strs[addr_index++],
-                       (const struct sockaddr *)&args->addresses->addresses[i]
-                           .address.addr,
-                       true) > 0);
+                       &args->addresses->addresses[i].address, true) > 0);
       }
     }
   }
