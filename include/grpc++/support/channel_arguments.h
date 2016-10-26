@@ -91,6 +91,13 @@ class ChannelArguments {
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
 
+  grpc_channel_args c_args() {
+    grpc_channel_args out;
+    out.num_args = args_.size();
+    out.args = args_.empty() ? NULL : &args_[0];
+    return out;
+  }
+
  private:
   friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
