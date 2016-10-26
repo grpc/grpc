@@ -35,13 +35,14 @@
 
 #include <string.h>
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 /** a size_t default value... maps to all 1's */
@@ -162,16 +163,16 @@ static void parse_query_parts(grpc_uri *uri) {
   uri->num_query_parts = query_parts.count;
   for (size_t i = 0; i < query_parts.count; i++) {
     grpc_slice_split(query_parts.slices[i], QUERY_PARTS_VALUE_SEPARATOR,
-                    &query_param_parts);
+                     &query_param_parts);
     GPR_ASSERT(query_param_parts.count > 0);
     uri->query_parts[i] =
-        gpr_dump_slice(query_param_parts.slices[0], GPR_DUMP_ASCII);
+        grpc_dump_slice(query_param_parts.slices[0], GPR_DUMP_ASCII);
     if (query_param_parts.count > 1) {
       /* TODO(dgq): only the first value after the separator is considered.
        * Perhaps all chars after the first separator for the query part should
        * be included, even if they include the separator. */
       uri->query_parts_values[i] =
-          gpr_dump_slice(query_param_parts.slices[1], GPR_DUMP_ASCII);
+          grpc_dump_slice(query_param_parts.slices[1], GPR_DUMP_ASCII);
     } else {
       uri->query_parts_values[i] = NULL;
     }

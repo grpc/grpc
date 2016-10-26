@@ -104,8 +104,8 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
   grpc_metadata_batch_destroy(&b);
 
   if (0 != grpc_slice_cmp(merged, expect)) {
-    char *expect_str = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *got_str = gpr_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *expect_str = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *got_str = grpc_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "mismatched output for %s", expected);
     gpr_log(GPR_ERROR, "EXPECT: %s", expect_str);
     gpr_log(GPR_ERROR, "GOT:    %s", got_str);

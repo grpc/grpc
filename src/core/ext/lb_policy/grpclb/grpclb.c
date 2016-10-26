@@ -116,6 +116,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -1135,7 +1136,7 @@ static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
     GPR_ASSERT(serverlist == NULL);
     gpr_log(GPR_ERROR, "Invalid LB response received: '%s'",
-            gpr_dump_slice(response_slice, GPR_DUMP_ASCII));
+            grpc_dump_slice(response_slice, GPR_DUMP_ASCII));
     grpc_slice_unref(response_slice);
 
     /* Disconnect from server returning invalid response. */

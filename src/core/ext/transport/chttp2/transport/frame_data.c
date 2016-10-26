@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -176,7 +177,7 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
           p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                         (intptr_t)s->id);
           gpr_free(msg);
-          msg = gpr_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          msg = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
           p->error =
               grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES, msg);
           gpr_free(msg);
@@ -247,7 +248,7 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
         grpc_chttp2_incoming_byte_stream_push(
             exec_ctx, p->parsing_frame,
             grpc_slice_sub(slice, (size_t)(cur - beg),
-                          (size_t)(cur + p->frame_size - beg)));
+                           (size_t)(cur + p->frame_size - beg)));
         grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame,
                                                   GRPC_ERROR_NONE);
         p->parsing_frame = NULL;

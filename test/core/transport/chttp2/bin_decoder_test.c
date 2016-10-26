@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 static int all_ok = 1;
@@ -45,8 +46,8 @@ static int all_ok = 1;
 static void expect_slice_eq(grpc_slice expected, grpc_slice slice, char *debug,
                             int line) {
   if (0 != grpc_slice_cmp(slice, expected)) {
-    char *hs = gpr_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *he = gpr_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
             he);
     gpr_free(hs);
@@ -72,15 +73,15 @@ static grpc_slice base64_decode(const char *s) {
 }
 
 static grpc_slice base64_decode_with_length(const char *s,
-                                           size_t output_length) {
+                                            size_t output_length) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode_with_length(ss, output_length);
   grpc_slice_unref(ss);
   return out;
 }
 
-#define EXPECT_SLICE_EQ(expected, slice)                                   \
-  expect_slice_eq(                                                         \
+#define EXPECT_SLICE_EQ(expected, slice)                                    \
+  expect_slice_eq(                                                          \
       grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, \
       #slice, __LINE__);
 

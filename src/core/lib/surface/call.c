@@ -38,9 +38,9 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -48,6 +48,7 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -521,7 +522,7 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
       char *accept_encoding_entry_str =
-          gpr_dump_slice(*accept_encoding_entry_slice, GPR_DUMP_ASCII);
+          grpc_dump_slice(*accept_encoding_entry_slice, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR,
               "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
               accept_encoding_entry_str);
@@ -1085,7 +1086,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
                               &call->receiving_slice, remaining,
                               &call->receiving_slice_ready)) {
       grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                           call->receiving_slice);
+                            call->receiving_slice);
     } else {
       return;
     }
@@ -1099,7 +1100,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
 
   if (error == GRPC_ERROR_NONE) {
     grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                         call->receiving_slice);
+                          call->receiving_slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
     if (grpc_trace_operation_failures) {

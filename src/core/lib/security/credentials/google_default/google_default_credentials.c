@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -187,7 +188,7 @@ static grpc_error *create_default_creds_from_path(
   json = grpc_json_parse_string_with_len(
       (char *)GPR_SLICE_START_PTR(creds_data), GPR_SLICE_LENGTH(creds_data));
   if (json == NULL) {
-    char *dump = gpr_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *dump = grpc_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
                                GRPC_ERROR_STR_RAW_BYTES, dump);
     gpr_free(dump);

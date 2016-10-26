@@ -32,14 +32,15 @@
  */
 
 #include "src/core/lib/security/transport/secure_endpoint.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
 
@@ -132,8 +133,8 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
   if (grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
-      char *data = gpr_dump_slice(ep->read_buffer->slices[i],
-                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      char *data = grpc_dump_slice(ep->read_buffer->slices[i],
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
       gpr_free(data);
     }
@@ -262,7 +263,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (grpc_trace_secure_endpoint) {
     for (i = 0; i < slices->count; i++) {
       char *data =
-          gpr_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
       gpr_free(data);
     }
@@ -397,7 +398,7 @@ grpc_endpoint *grpc_secure_endpoint_create(
   grpc_slice_buffer_init(&ep->leftover_bytes);
   for (i = 0; i < leftover_nslices; i++) {
     grpc_slice_buffer_add(&ep->leftover_bytes,
-                         grpc_slice_ref(leftover_slices[i]));
+                          grpc_slice_ref(leftover_slices[i]));
   }
   ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
   ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);

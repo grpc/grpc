@@ -67,10 +67,10 @@ static void test_vector(const char *raw, size_t raw_length, const char *encoded,
       gpr_permissive_percent_decode_slice(encoded_slice);
 
   char *raw2encoded_msg =
-      gpr_dump_slice(raw2encoded_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      grpc_dump_slice(raw2encoded_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char *encoded2raw_msg =
-      gpr_dump_slice(encoded2raw_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  char *encoded2raw_permissive_msg = gpr_dump_slice(
+      grpc_dump_slice(encoded2raw_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char *encoded2raw_permissive_msg = grpc_dump_slice(
       encoded2raw_permissive_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG,
           "Result:\nraw2encoded = %s\nencoded2raw = %s\nencoded2raw_permissive "
@@ -116,7 +116,7 @@ static void test_nonconformant_vector(const char *encoded,
   grpc_slice encoded2raw_permissive_slice =
       gpr_permissive_percent_decode_slice(encoded_slice);
 
-  char *encoded2raw_permissive_msg = gpr_dump_slice(
+  char *encoded2raw_permissive_msg = grpc_dump_slice(
       encoded2raw_permissive_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG, "Result:\nencoded2raw_permissive = %s",
           encoded2raw_permissive_msg);

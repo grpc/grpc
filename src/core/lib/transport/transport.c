@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -217,7 +218,7 @@ void grpc_transport_stream_op_add_cancellation_with_message(
   }
   grpc_error *error;
   if (optional_message != NULL) {
-    char *msg = gpr_dump_slice(*optional_message, GPR_DUMP_ASCII);
+    char *msg = grpc_dump_slice(*optional_message, GPR_DUMP_ASCII);
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);
@@ -242,7 +243,7 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
   }
   grpc_error *error;
   if (optional_message != NULL) {
-    char *msg = gpr_dump_slice(*optional_message, GPR_DUMP_ASCII);
+    char *msg = grpc_dump_slice(*optional_message, GPR_DUMP_ASCII);
     error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
                                GRPC_ERROR_STR_GRPC_MESSAGE, msg);
     gpr_free(msg);

@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 /* Calls gpr_dump on a slice. */
-char *gpr_dump_slice(grpc_slice slice, uint32_t flags);
+char *grpc_dump_slice(grpc_slice slice, uint32_t flags);
 
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */

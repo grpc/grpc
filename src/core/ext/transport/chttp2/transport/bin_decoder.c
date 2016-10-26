@@ -34,6 +34,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 static uint8_t decode_table[] = {
@@ -175,7 +176,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   ctx.contains_tail = false;
 
   if (!grpc_base64_decode_partial(&ctx)) {
-    char *s = gpr_dump_slice(input, GPR_DUMP_ASCII);
+    char *s = grpc_dump_slice(input, GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref(output);
@@ -187,7 +188,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
 }
 
 grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
-                                                size_t output_length) {
+                                                 size_t output_length) {
   size_t input_length = GPR_SLICE_LENGTH(input);
   grpc_slice output = grpc_slice_malloc(output_length);
   struct grpc_base64_decode_context ctx;
@@ -220,7 +221,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
   ctx.contains_tail = true;
 
   if (!grpc_base64_decode_partial(&ctx)) {
-    char *s = gpr_dump_slice(input, GPR_DUMP_ASCII);
+    char *s = grpc_dump_slice(input, GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref(output);

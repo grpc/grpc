@@ -283,12 +283,10 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
   test_dump();
-  test_dump_slice();
   test_parse_uint32();
   test_asprintf();
   test_strjoin();
   test_strjoin_sep();
-  test_strsplit();
   test_ltoa();
   test_int64toa();
   test_leftpad();

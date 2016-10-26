@@ -130,7 +130,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     grpc_slice_split(uri_slice, ",", &uri_parts);
     hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
-      char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
+      char *uri_part_str = grpc_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
       gpr_free(uri_part_str);
     }

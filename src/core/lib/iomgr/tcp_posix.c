@@ -46,9 +46,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -56,6 +56,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 #ifdef GPR_HAVE_MSG_NOSIGNAL
@@ -191,8 +192,8 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
     gpr_log(GPR_DEBUG, "read: error=%s", str);
     grpc_error_free_string(str);
     for (i = 0; i < tcp->incoming_buffer->count; i++) {
-      char *dump = gpr_dump_slice(tcp->incoming_buffer->slices[i],
-                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      char *dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
       gpr_free(dump);
     }
@@ -451,7 +452,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
     for (i = 0; i < buf->count; i++) {
       char *data =
-          gpr_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
       gpr_free(data);
     }

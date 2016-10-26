@@ -119,7 +119,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   size_t i;
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
-    char *dump = gpr_dump_slice(state.temp_incoming_buffer.slices[i],
+    char *dump = grpc_dump_slice(state.temp_incoming_buffer.slices[i],
                                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_DEBUG, "Server received: %s", dump);
     gpr_free(dump);
