@@ -345,10 +345,6 @@ HOST_CXX ?= $(CXX)
 HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
-ifdef EXTRA_DEFINES
-DEFINES += $(EXTRA_DEFINES)
-endif
-
 CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
 ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
@@ -446,6 +442,14 @@ CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
+
+
+CFLAGS += $(EXTRA_CFLAGS)
+CXXFLAGS += $(EXTRA_CXXFLAGS)
+CPPFLAGS += $(EXTRA_CPPFLAGS)
+LDFLAGS += $(EXTRA_LDFLAGS)
+DEFINES += $(EXTRA_DEFINES)
+LDLIBS += $(EXTRA_LDLIBS)
 
 HOST_CPPFLAGS = $(CPPFLAGS)
 HOST_CFLAGS = $(CFLAGS)
@@ -2583,6 +2587,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -2594,28 +2599,38 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
+    src/core/lib/iomgr/pollset_set_uv.c \
     src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_uv.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_uv.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_uv.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_uv.c \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_uv.c \
     src/core/lib/iomgr/tcp_windows.c \
     src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
+    src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
@@ -2624,6 +2639,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
+    src/core/lib/iomgr/workqueue_uv.c \
     src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
@@ -2685,8 +2701,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/credentials.c \
     src/core/lib/security/credentials/credentials_metadata.c \
     src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
+    src/core/lib/security/credentials/google_default/credentials_generic.c \
     src/core/lib/security/credentials/google_default/google_default_credentials.c \
     src/core/lib/security/credentials/iam/iam_credentials.c \
     src/core/lib/security/credentials/jwt/json_token.c \
@@ -2862,6 +2877,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -2873,28 +2889,38 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
+    src/core/lib/iomgr/pollset_set_uv.c \
     src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_uv.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_uv.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_uv.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_uv.c \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_uv.c \
     src/core/lib/iomgr/tcp_windows.c \
     src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
+    src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
@@ -2903,6 +2929,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
+    src/core/lib/iomgr/workqueue_uv.c \
     src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
@@ -2987,8 +3014,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/credentials.c \
     src/core/lib/security/credentials/credentials_metadata.c \
     src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
+    src/core/lib/security/credentials/google_default/credentials_generic.c \
     src/core/lib/security/credentials/google_default/google_default_credentials.c \
     src/core/lib/security/credentials/iam/iam_credentials.c \
     src/core/lib/security/credentials/jwt/json_token.c \
@@ -3109,6 +3135,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/passthru_endpoint.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
+    test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
     src/core/lib/channel/channel_args.c \
@@ -3131,6 +3158,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -3142,28 +3170,38 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
+    src/core/lib/iomgr/pollset_set_uv.c \
     src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_uv.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_uv.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_uv.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_uv.c \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_uv.c \
     src/core/lib/iomgr/tcp_windows.c \
     src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
+    src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
@@ -3172,6 +3210,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
+    src/core/lib/iomgr/workqueue_uv.c \
     src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
@@ -3278,6 +3317,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/passthru_endpoint.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
+    test/core/util/port_uv.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
@@ -3326,6 +3366,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_uv.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
@@ -3337,28 +3378,38 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_uv.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
+    src/core/lib/iomgr/pollset_set_uv.c \
     src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_uv.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_uv.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_utils_uv.c \
+    src/core/lib/iomgr/socket_utils_windows.c \
     src/core/lib/iomgr/socket_windows.c \
     src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_uv.c \
     src/core/lib/iomgr/tcp_client_windows.c \
     src/core/lib/iomgr/tcp_posix.c \
     src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_uv.c \
     src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_uv.c \
     src/core/lib/iomgr/tcp_windows.c \
     src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
+    src/core/lib/iomgr/timer_generic.c \
     src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/timer_uv.c \
     src/core/lib/iomgr/udp_server.c \
     src/core/lib/iomgr/unix_sockets_posix.c \
     src/core/lib/iomgr/unix_sockets_posix_noop.c \
@@ -3367,6 +3418,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.c \
     src/core/lib/iomgr/wakeup_fd_pipe.c \
     src/core/lib/iomgr/wakeup_fd_posix.c \
+    src/core/lib/iomgr/workqueue_uv.c \
     src/core/lib/iomgr/workqueue_windows.c \
     src/core/lib/json/json.c \
     src/core/lib/json/json_reader.c \
@@ -16048,8 +16100,7 @@ src/core/lib/security/credentials/composite/composite_credentials.c: $(OPENSSL_D
 src/core/lib/security/credentials/credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_posix.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_windows.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_generic.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)
