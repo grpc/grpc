@@ -231,7 +231,7 @@ static bool client_ssl_test(char *server_alpn_preferred) {
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  gpr_slice ca_slice, cert_slice, key_slice;
+  grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
@@ -286,9 +286,9 @@ static bool client_ssl_test(char *server_alpn_preferred) {
 
   grpc_channel_destroy(channel);
   grpc_channel_credentials_release(ssl_creds);
-  gpr_slice_unref(cert_slice);
-  gpr_slice_unref(key_slice);
-  gpr_slice_unref(ca_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
 
   gpr_thd_join(thdid);
 

@@ -84,7 +84,7 @@ static void server_thread(void *arg) {
 
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  gpr_slice ca_slice, cert_slice, key_slice;
+  grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
@@ -129,9 +129,9 @@ static void server_thread(void *arg) {
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_server_credentials_release(ssl_creds);
-  gpr_slice_unref(cert_slice);
-  gpr_slice_unref(key_slice);
-  gpr_slice_unref(ca_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
 }
 
 // This test launches a gRPC server on a separate thread and then establishes a
