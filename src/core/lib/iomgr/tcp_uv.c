@@ -315,6 +315,7 @@ grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle, char *peer_string) {
     gpr_log(GPR_DEBUG, "Creating TCP endpoint %p", tcp);
   }
 
+  /* Disable Nagle's Algorithm */
   uv_tcp_nodelay(handle, 1);
 
   memset(tcp, 0, sizeof(grpc_tcp));
