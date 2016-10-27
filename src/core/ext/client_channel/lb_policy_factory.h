@@ -59,19 +59,26 @@ typedef struct grpc_lb_address {
   void *user_data;
 } grpc_lb_address;
 
+typedef struct grpc_lb_user_data_vtable {
+  void *(*copy)(void *);
+  void (*destroy)(void *);
+  int (*cmp)(void *, void *);
+} grpc_lb_user_data_vtable;
+
 typedef struct grpc_lb_addresses {
   size_t num_addresses;
   grpc_lb_address *addresses;
+  const grpc_lb_user_data_vtable *user_data_vtable;
 } grpc_lb_addresses;
 
 /** Returns a grpc_addresses struct with enough space for
- * \a num_addresses addresses. */
-grpc_lb_addresses *grpc_lb_addresses_create(size_t num_addresses);
+    \a num_addresses addresses.  The \a user_data_vtable argument may be
+    NULL if no user data will be added. */
+grpc_lb_addresses *grpc_lb_addresses_create(
+    size_t num_addresses, const grpc_lb_user_data_vtable *user_data_vtable);
 
-/** Creates a copy of \a addresses.  If \a user_data_copy is not NULL,
- * it will be invoked to copy the \a user_data field of each address. */
-grpc_lb_addresses *grpc_lb_addresses_copy(grpc_lb_addresses *addresses,
-                                          void *(*user_data_copy)(void *));
+/** Creates a copy of \a addresses. */
+grpc_lb_addresses *grpc_lb_addresses_copy(const grpc_lb_addresses *addresses);
 
 /** Sets the value of the address at index \a index of \a addresses.
  * \a address is a socket address of length \a address_len.
@@ -81,20 +88,21 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
                                    bool is_balancer, char *balancer_name,
                                    void *user_data);
 
-/** Destroys \a addresses.  If \a user_data_destroy is not NULL, it will
- * be invoked to destroy the \a user_data field of each address. */
-void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses,
-                               void (*user_data_destroy)(void *));
+/** Compares \a addresses1 and \a addresses2. */
+int grpc_lb_addresses_cmp(const grpc_lb_addresses *addresses1,
+                          const grpc_lb_addresses *addresses2);
+
+/** Destroys \a addresses. */
+void grpc_lb_addresses_destroy(grpc_lb_addresses *addresses);
+
+/** Returns a channel arg containing \a addresses. */
+grpc_arg grpc_lb_addresses_create_channel_arg(
+    const grpc_lb_addresses *addresses);
 
 /** Arguments passed to LB policies. */
-/* TODO(roth, ctiller): Consider replacing this struct with
-   grpc_channel_args.  See comment in resolver_result.h for details. */
 typedef struct grpc_lb_policy_args {
-  const char *server_name;
-  grpc_lb_addresses *addresses;
   grpc_client_channel_factory *client_channel_factory;
-  /* Can be used to pass implementation-specific parameters to the LB policy. */
-  grpc_channel_args *additional_args;
+  grpc_channel_args *args;
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {
