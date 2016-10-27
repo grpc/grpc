@@ -33,15 +33,16 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/thd.h>
 
 #include "src/core/ext/client_channel/initial_connect_string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -68,7 +69,7 @@ static grpc_closure on_read;
 static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_slice_buffer_move_into(&state.temp_incoming_buffer,
-                             &state.incoming_buffer);
+                              &state.incoming_buffer);
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, magic is %" PRIuPTR " bytes",
           state.incoming_buffer.length, strlen(magic_connect_string));
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
