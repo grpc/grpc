@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_SLICE_BUFFER_H
-#define GRPC_SUPPORT_SLICE_BUFFER_H
+#ifndef GRPC_SLICE_BUFFER_H
+#define GRPC_SLICE_BUFFER_H
 
 #include <grpc/slice.h>
 
@@ -84,4 +84,4 @@ GPRAPI grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer *src);
 }
 #endif
 
-#endif /* GRPC_SUPPORT_SLICE_BUFFER_H */
+#endif /* GRPC_SLICE_BUFFER_H */

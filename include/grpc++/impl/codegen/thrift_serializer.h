@@ -214,4 +214,4 @@ typedef ThriftSerializer<void, TCompactProtocolT<TBufferBase>>
 }  // namespace thrift
 }  // namespace apache
 
-#endif
+#endif  // GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
