@@ -48,12 +48,12 @@ static void test(const uint8_t *data, size_t size, const uint8_t *dict) {
   struct grpc_memory_counters counters;
   grpc_memory_counters_init();
   grpc_slice input = grpc_slice_from_copied_buffer((const char *)data, size);
-  grpc_slice output = gpr_percent_encode_slice(input, dict);
+  grpc_slice output = grpc_percent_encode_slice(input, dict);
   grpc_slice decoded_output;
   // encoder must always produce decodable output
-  GPR_ASSERT(gpr_strict_percent_decode_slice(output, dict, &decoded_output));
+  GPR_ASSERT(grpc_strict_percent_decode_slice(output, dict, &decoded_output));
   grpc_slice permissive_decoded_output =
-      gpr_permissive_percent_decode_slice(output);
+      grpc_permissive_percent_decode_slice(output);
   // and decoded output must always match the input
   GPR_ASSERT(grpc_slice_cmp(input, decoded_output) == 0);
   GPR_ASSERT(grpc_slice_cmp(input, permissive_decoded_output) == 0);
@@ -67,7 +67,7 @@ static void test(const uint8_t *data, size_t size, const uint8_t *dict) {
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  test(data, size, gpr_url_percent_encoding_unreserved_bytes);
-  test(data, size, gpr_compatible_percent_encoding_unreserved_bytes);
+  test(data, size, grpc_url_percent_encoding_unreserved_bytes);
+  test(data, size, grpc_compatible_percent_encoding_unreserved_bytes);
   return 0;
 }

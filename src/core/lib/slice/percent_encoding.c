@@ -35,11 +35,11 @@
 
 #include <grpc/support/log.h>
 
-const uint8_t gpr_url_percent_encoding_unreserved_bytes[256 / 8] = {
+const uint8_t grpc_url_percent_encoding_unreserved_bytes[256 / 8] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0xfe, 0xff, 0xff,
     0x87, 0xfe, 0xff, 0xff, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t gpr_compatible_percent_encoding_unreserved_bytes[256 / 8] = {
+const uint8_t grpc_compatible_percent_encoding_unreserved_bytes[256 / 8] = {
     0x00, 0x00, 0x00, 0x00, 0xdf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -49,8 +49,8 @@ static bool is_unreserved_character(uint8_t c,
   return ((unreserved_bytes[c / 8] >> (c % 8)) & 1) != 0;
 }
 
-grpc_slice gpr_percent_encode_slice(grpc_slice slice,
-                                    const uint8_t *unreserved_bytes) {
+grpc_slice grpc_percent_encode_slice(grpc_slice slice,
+                                     const uint8_t *unreserved_bytes) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
   // first pass: count the number of bytes needed to output this string
@@ -97,9 +97,9 @@ static uint8_t dehex(uint8_t c) {
   GPR_UNREACHABLE_CODE(return 255);
 }
 
-bool gpr_strict_percent_decode_slice(grpc_slice slice_in,
-                                     const uint8_t *unreserved_bytes,
-                                     grpc_slice *slice_out) {
+bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
+                                      const uint8_t *unreserved_bytes,
+                                      grpc_slice *slice_out) {
   const uint8_t *p = GPR_SLICE_START_PTR(slice_in);
   const uint8_t *in_end = GPR_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
@@ -137,7 +137,7 @@ bool gpr_strict_percent_decode_slice(grpc_slice slice_in,
   return true;
 }
 
-grpc_slice gpr_permissive_percent_decode_slice(grpc_slice slice_in) {
+grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
   const uint8_t *p = GPR_SLICE_START_PTR(slice_in);
   const uint8_t *in_end = GPR_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
