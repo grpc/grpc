@@ -2189,7 +2189,7 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            GRPC_ERROR_INT_HTTP2_ERROR,
                                            GRPC_CHTTP2_ENHANCE_YOUR_CALM));
     if (n > 1) {
-      /* Since we cancel one stream per destructive reclaimation, if
+      /* Since we cancel one stream per destructive reclamation, if
          there are more streams left, we can immediately post a new
          reclaimer in case the resource quota needs to free more
          memory */

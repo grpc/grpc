@@ -339,9 +339,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
       "Done. %d total calls: %d cancelled at server, %d cancelled at client.",
       NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client);
 
-  /* The server call may be cancelled after it's received it's status, but
-   * before the client does: this means that we should see strictly more
-   * failures on the client than on the server */
+  /* The call may be cancelled after the server has sent its status but before
+   * the client has received it. */
   GPR_ASSERT(cancelled_calls_on_client >= cancelled_calls_on_server);
   /* However, we shouldn't see radically more... 0.9 is a guessed bound on what
    * we'd want that ratio to be... to at least trigger some investigation should

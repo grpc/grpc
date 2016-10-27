@@ -553,9 +553,13 @@ static void test_resource_user_stays_allocated_until_memory_released(void) {
 static void
 test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
     void) {
-  gpr_log(GPR_INFO, "** test_pools_merged_on_resource_user_deletion **");
-  grpc_resource_quota *q =
-      grpc_resource_quota_create("test_pools_merged_on_resource_user_deletion");
+  gpr_log(GPR_INFO,
+          "** "
+          "test_resource_user_stays_allocated_and_reclaimers_unrun_until_"
+          "memory_released **");
+  grpc_resource_quota *q = grpc_resource_quota_create(
+      "test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_"
+      "released");
   grpc_resource_quota_resize(q, 1024);
   for (int i = 0; i < 10; i++) {
     grpc_resource_user usr;
