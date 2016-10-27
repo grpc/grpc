@@ -209,7 +209,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   /* Check atomically for a selected channel */
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   if (selected != NULL) {
-    *target = selected;
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
     return 1;
   }
 
@@ -218,7 +218,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   selected = GET_SELECTED(p);
   if (selected) {
     gpr_mu_unlock(&p->mu);
-    *target = selected;
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
     return 1;
   } else {
     if (!p->started_picking) {
@@ -310,7 +310,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         /* update any calls that were waiting for a pick */
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
-          *pp->target = selected;
+          *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
           grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
           gpr_free(pp);
         }
