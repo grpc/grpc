@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_SLICE_STRING_H
-#define GRPC_CORE_LIB_SUPPORT_SLICE_STRING_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
+#define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 
 #include <stddef.h>
 
@@ -55,4 +55,4 @@ void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst);
 }
 #endif
 
-#endif /* GRPC_CORE_LIB_SUPPORT_STRING_H */
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */

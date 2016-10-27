@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_SLICE_H
-#define GRPC_SUPPORT_SLICE_H
+#ifndef GRPC_SLICE_H
+#define GRPC_SLICE_H
 
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/support/sync.h>
@@ -125,4 +125,4 @@ GPRAPI int grpc_slice_str_cmp(grpc_slice a, const char *b);
 }
 #endif
 
-#endif /* GRPC_SUPPORT_SLICE_H */
+#endif /* GRPC_SLICE_H */
