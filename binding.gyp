@@ -46,10 +46,14 @@
       'include'
     ],
     'defines': [
-      'GPR_BACKWARDS_COMPATIBILITY_MODE',
-      'GRPC_UV'
+      'GPR_BACKWARDS_COMPATIBILITY_MODE'
     ],
     'conditions': [
+      ['runtime=="node"', {
+        'defines': [
+          'GRPC_UV'
+        ]
+      }],
       # This is the condition for using boringssl
       ['OS=="win" or runtime=="electron"', {
         "include_dirs": [
