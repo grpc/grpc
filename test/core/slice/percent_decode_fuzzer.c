@@ -38,7 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/percent_encoding.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "test/core/util/memory_counters.h"
 
 bool squelch = true;

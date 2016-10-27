@@ -2319,6 +2319,8 @@ targets:
   src:
   - test/core/slice/percent_encoding_test.c
   deps:
+  - grpc_test_util
+  - grpc
   - gpr_test_util
   - gpr
 - name: resolve_address_test
@@ -2424,6 +2426,8 @@ targets:
   src:
   - test/core/slice/slice_buffer_test.c
   deps:
+  - grpc_test_util
+  - grpc
   - gpr_test_util
   - gpr
 - name: slice_string_helpers_test
@@ -2432,6 +2436,8 @@ targets:
   src:
   - test/core/slice/slice_string_helpers_test.c
   deps:
+  - grpc_test_util
+  - grpc
   - gpr_test_util
   - gpr
 - name: slice_test
@@ -2440,6 +2446,8 @@ targets:
   src:
   - test/core/slice/slice_test.c
   deps:
+  - grpc_test_util
+  - grpc
   - gpr_test_util
   - gpr
 - name: sockaddr_resolver_test
