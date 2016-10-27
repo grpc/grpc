@@ -43,7 +43,6 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/client_channel/lb_policy_registry.h"
-#include "src/core/ext/client_channel/method_config.h"
 #include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -56,6 +55,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/method_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 /* Client channel implementation */

@@ -2681,6 +2681,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/method_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
@@ -2747,7 +2748,6 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/method_config.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
@@ -2970,6 +2970,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/method_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
@@ -3011,7 +3012,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/method_config.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
@@ -3250,6 +3250,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/method_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
@@ -3458,6 +3459,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/mdstr_hash_table.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/method_config.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/timeout_encoding.c \
     src/core/lib/transport/transport.c \
@@ -3499,7 +3501,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/lb_policy.c \
     src/core/ext/client_channel/lb_policy_factory.c \
     src/core/ext/client_channel/lb_policy_registry.c \
-    src/core/ext/client_channel/method_config.c \
     src/core/ext/client_channel/parse_address.c \
     src/core/ext/client_channel/resolver.c \
     src/core/ext/client_channel/resolver_factory.c \
