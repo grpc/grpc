@@ -84,8 +84,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes')
-default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False)
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky')
+default_test_options = TestOptions(False, False, True, False, True, 1.0, [], False, False)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -108,7 +108,7 @@ END2END_TESTS = {
         proxyable=False, cpu_cost=LOWCPU, exclude_iomgrs=['uv']),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
-    'disappearing_server': connectivity_test_options,
+    'disappearing_server': connectivity_test_options._replace(flaky=True),
     'empty_batch': default_test_options,
     'filter_causes_close': default_test_options,
     'filter_call_init_fails': default_test_options,
@@ -263,7 +263,7 @@ def main():
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
-              'flaky': False,
+              'flaky': END2END_TESTS[t].flaky,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
@@ -280,7 +280,7 @@ def main():
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
-              'flaky': False,
+              'flaky': END2END_TESTS[t].flaky,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
