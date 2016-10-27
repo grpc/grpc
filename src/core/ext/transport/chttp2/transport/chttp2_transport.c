@@ -853,45 +853,6 @@ static bool contains_non_ok_status(grpc_metadata_batch *batch) {
 
 static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
-                                     grpc_chttp2_stream *s);
-
-static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s) {
-  if (s->fetching_send_message == NULL) {
-    /* Stream was cancelled before message fetch completed */
-    abort(); /* TODO(ctiller): what cleanup here? */
-    return;
-  }
-  if (s->fetched_send_message_length == s->fetching_send_message->length) {
-    int64_t notify_offset = s->next_message_end_offset;
-    if (notify_offset <= s->flow_controlled_bytes_written) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
-          "fetching_send_message_finished");
-    } else {
-      grpc_chttp2_write_cb *cb = t->write_cb_pool;
-      if (cb == NULL) {
-        cb = gpr_malloc(sizeof(*cb));
-      } else {
-        t->write_cb_pool = cb->next;
-      }
-      cb->call_at_byte = notify_offset;
-      cb->closure = s->fetching_send_message_finished;
-      s->fetching_send_message_finished = NULL;
-      cb->next = s->on_write_finished_cbs;
-      s->on_write_finished_cbs = cb;
-    }
-    s->fetching_send_message = NULL;
-  } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
-                                   &s->fetching_slice, UINT32_MAX,
-                                   &s->complete_fetch)) {
-    add_fetched_slice_locked(exec_ctx, t, s);
-  }
-}
-
-static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
-                                     grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s) {
   s->fetched_send_message_length +=
       (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
@@ -899,7 +860,44 @@ static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
   if (s->id != 0) {
     grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
   }
-  continue_fetching_send_locked(exec_ctx, t, s);
+}
+
+static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s) {
+  for (;;) {
+    if (s->fetching_send_message == NULL) {
+      /* Stream was cancelled before message fetch completed */
+      abort(); /* TODO(ctiller): what cleanup here? */
+      return;  /* early out */
+    }
+    if (s->fetched_send_message_length == s->fetching_send_message->length) {
+      int64_t notify_offset = s->next_message_end_offset;
+      if (notify_offset <= s->flow_controlled_bytes_written) {
+        grpc_chttp2_complete_closure_step(
+            exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
+            "fetching_send_message_finished");
+      } else {
+        grpc_chttp2_write_cb *cb = t->write_cb_pool;
+        if (cb == NULL) {
+          cb = gpr_malloc(sizeof(*cb));
+        } else {
+          t->write_cb_pool = cb->next;
+        }
+        cb->call_at_byte = notify_offset;
+        cb->closure = s->fetching_send_message_finished;
+        s->fetching_send_message_finished = NULL;
+        cb->next = s->on_write_finished_cbs;
+        s->on_write_finished_cbs = cb;
+      }
+      s->fetching_send_message = NULL;
+      return; /* early out */
+    } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
+                                     &s->fetching_slice, UINT32_MAX,
+                                     &s->complete_fetch)) {
+      add_fetched_slice_locked(exec_ctx, t, s);
+    }
+  }
 }
 
 static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
@@ -908,6 +906,7 @@ static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
   grpc_chttp2_transport *t = s->t;
   if (error == GRPC_ERROR_NONE) {
     add_fetched_slice_locked(exec_ctx, t, s);
+    continue_fetching_send_locked(exec_ctx, t, s);
   } else {
     /* TODO(ctiller): what to do here */
     abort();

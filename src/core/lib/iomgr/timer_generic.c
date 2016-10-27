@@ -31,6 +31,10 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_TIMER_USE_GENERIC
+
 #include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/log.h>
@@ -382,3 +386,5 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE("Shutting down timer system"));
 }
+
+#endif /* GRPC_TIMER_USE_GENERIC */

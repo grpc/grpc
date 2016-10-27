@@ -229,6 +229,15 @@ class CXXLanguage:
           secure=secure,
           categories=smoketest_categories + [SCALABLE])
 
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='SYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          categories=smoketest_categories+[SCALABLE])
+
       for rpc_type in ['unary', 'streaming']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
@@ -369,6 +378,11 @@ class NodeLanguage:
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         categories=[SCALABLE, SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'cpp_to_node_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='async_server',
+        client_language='c++')
 
     yield _ping_pong_scenario(
         'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
