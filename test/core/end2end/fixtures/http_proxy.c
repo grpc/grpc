@@ -33,6 +33,8 @@
 
 #include "test/core/end2end/fixtures/http_proxy.h"
 
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -358,8 +360,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(10, GPR_TIMESPAN));
   grpc_tcp_client_connect(exec_ctx, &conn->on_server_connect_done,
                           &conn->server_endpoint, conn->pollset_set, NULL,
-                          (struct sockaddr*)&resolved_addresses->addrs[0].addr,
-                          resolved_addresses->addrs[0].len, deadline);
+                          &resolved_addresses->addrs[0], deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 
@@ -431,13 +432,13 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
       &exec_ctx, NULL, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  grpc_sockaddr_set_port((struct sockaddr*)&addr, proxy_port);
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  addr->sin_family = AF_INET;
+  grpc_sockaddr_set_port(&resolved_addr, proxy_port);
   int port;
-  error = grpc_tcp_server_add_port(proxy->server, (struct sockaddr*)&addr,
-                                   sizeof(addr), &port);
+  error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port == proxy_port);
   // Start server.
