@@ -1022,9 +1022,14 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       }
       if (!s->write_closed) {
         if (t->is_client) {
-          GPR_ASSERT(s->id == 0);
-          grpc_chttp2_list_add_waiting_for_concurrency(t, s);
-          maybe_start_some_streams(exec_ctx, t);
+          if (!t->closed) {
+            GPR_ASSERT(s->id == 0);
+            grpc_chttp2_list_add_waiting_for_concurrency(t, s);
+            maybe_start_some_streams(exec_ctx, t);
+          } else {
+            grpc_chttp2_cancel_stream(exec_ctx, t, s,
+                                      GRPC_ERROR_CREATE("Transport closed"));
+          }
         } else {
           GPR_ASSERT(s->id != 0);
           grpc_chttp2_become_writable(exec_ctx, t, s, true,
