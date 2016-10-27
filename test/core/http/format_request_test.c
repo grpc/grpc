@@ -52,13 +52,13 @@ static void test_format_get_request(void) {
   slice = grpc_httpcli_format_get_request(&req);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                    "GET /index.html HTTP/1.0\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n"
-                                    "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                    "\r\n"
-                                    "x-yz: abc\r\n"
-                                    "\r\n"));
+                                     "GET /index.html HTTP/1.0\r\n"
+                                     "Host: example.com\r\n"
+                                     "Connection: close\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
+                                     "\r\n"
+                                     "x-yz: abc\r\n"
+                                     "\r\n"));
 
   grpc_slice_unref(slice);
 }
@@ -79,16 +79,16 @@ static void test_format_post_request(void) {
   slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                    "POST /index.html HTTP/1.0\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n"
-                                    "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                    "\r\n"
-                                    "x-yz: abc\r\n"
-                                    "Content-Type: text/plain\r\n"
-                                    "Content-Length: 9\r\n"
-                                    "\r\n"
-                                    "fake body"));
+                                     "POST /index.html HTTP/1.0\r\n"
+                                     "Host: example.com\r\n"
+                                     "Connection: close\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
+                                     "\r\n"
+                                     "x-yz: abc\r\n"
+                                     "Content-Type: text/plain\r\n"
+                                     "Content-Length: 9\r\n"
+                                     "\r\n"
+                                     "fake body"));
 
   grpc_slice_unref(slice);
 }
@@ -107,13 +107,13 @@ static void test_format_post_request_no_body(void) {
   slice = grpc_httpcli_format_post_request(&req, NULL, 0);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                    "POST /index.html HTTP/1.0\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n"
-                                    "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                    "\r\n"
-                                    "x-yz: abc\r\n"
-                                    "\r\n"));
+                                     "POST /index.html HTTP/1.0\r\n"
+                                     "Host: example.com\r\n"
+                                     "Connection: close\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
+                                     "\r\n"
+                                     "x-yz: abc\r\n"
+                                     "\r\n"));
 
   grpc_slice_unref(slice);
 }

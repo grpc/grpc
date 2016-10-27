@@ -47,7 +47,8 @@ int main(int argc, char **argv) {
   leak_check = false;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("load_file", grpc_load_file(argv[1], 0, &buffer)));
-  LLVMFuzzerTestOneInput(GRPC_SLICE_START_PTR(buffer), GRPC_SLICE_LENGTH(buffer));
+  LLVMFuzzerTestOneInput(GRPC_SLICE_START_PTR(buffer),
+                         GRPC_SLICE_LENGTH(buffer));
   grpc_slice_unref(buffer);
   return 0;
 }

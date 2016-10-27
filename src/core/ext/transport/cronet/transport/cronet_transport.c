@@ -34,10 +34,10 @@
 #include <string.h>
 
 #include <grpc/impl/codegen/port_platform.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -926,7 +926,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       free_read_buffer(s);
       grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
       grpc_slice_buffer_add(&stream_state->rs.read_slice_buffer,
-                           read_data_slice);
+                            read_data_slice);
       grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
                                     &stream_state->rs.read_slice_buffer, 0);
       *((grpc_byte_buffer **)stream_op->recv_message) =

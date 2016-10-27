@@ -466,7 +466,8 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
 grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
-                                     grpc_chttp2_transport *t, grpc_slice slice);
+                                     grpc_chttp2_transport *t,
+                                     grpc_slice slice);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s);

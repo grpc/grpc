@@ -456,7 +456,8 @@ static void perform_request(client_fixture *cf) {
   int i;
 
   memset(ops, 0, sizeof(ops));
-  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",

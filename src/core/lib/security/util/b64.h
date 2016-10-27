@@ -47,6 +47,6 @@ grpc_slice grpc_base64_decode(const char *b64, int url_safe);
 
 /* Same as above except that the length is provided by the caller. */
 grpc_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
-                                      int url_safe);
+                                       int url_safe);
 
 #endif /* GRPC_CORE_LIB_SECURITY_UTIL_B64_H */

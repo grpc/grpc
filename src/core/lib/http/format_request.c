@@ -37,8 +37,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/support/string.h"
@@ -65,7 +65,8 @@ static void fill_common_header(const grpc_httpcli_request *request,
   }
 }
 
-grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request) {
+grpc_slice grpc_httpcli_format_get_request(
+    const grpc_httpcli_request *request) {
   gpr_strvec out;
   char *flat;
   size_t flat_len;
@@ -82,8 +83,8 @@ grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request) 
 }
 
 grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                           const char *body_bytes,
-                                           size_t body_size) {
+                                            const char *body_bytes,
+                                            size_t body_size) {
   gpr_strvec out;
   char *tmp;
   size_t out_len;

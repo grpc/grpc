@@ -56,9 +56,9 @@ GPRAPI void grpc_slice_buffer_add(grpc_slice_buffer *sb, grpc_slice slice);
    The implementation MAY decide to concatenate data at the end of a small
    slice added in this fashion. */
 GPRAPI size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer *sb,
-                                           grpc_slice slice);
+                                            grpc_slice slice);
 GPRAPI void grpc_slice_buffer_addn(grpc_slice_buffer *sb, grpc_slice *slices,
-                                  size_t n);
+                                   size_t n);
 /* add a very small (less than 8 bytes) amount of data to the end of a slice
    buffer: returns a pointer into which to add the data */
 GPRAPI uint8_t *grpc_slice_buffer_tiny_add(grpc_slice_buffer *sb, size_t len);
@@ -70,13 +70,13 @@ GPRAPI void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer *sb);
 GPRAPI void grpc_slice_buffer_swap(grpc_slice_buffer *a, grpc_slice_buffer *b);
 /* move all of the elements of src into dst */
 GPRAPI void grpc_slice_buffer_move_into(grpc_slice_buffer *src,
-                                       grpc_slice_buffer *dst);
+                                        grpc_slice_buffer *dst);
 /* remove n bytes from the end of a slice buffer */
 GPRAPI void grpc_slice_buffer_trim_end(grpc_slice_buffer *src, size_t n,
-                                      grpc_slice_buffer *garbage);
+                                       grpc_slice_buffer *garbage);
 /* move the first n bytes of src into dst */
 GPRAPI void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
-                                        grpc_slice_buffer *dst);
+                                         grpc_slice_buffer *dst);
 /* take the first slice in the slice buffer */
 GPRAPI grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer *src);
 

@@ -114,13 +114,15 @@ grpc_slice grpc_chttp2_huffman_compress(grpc_slice input) {
   uint32_t temp_length = 0;
 
   nbits = 0;
-  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input); ++in) {
+  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
+       ++in) {
     nbits += grpc_chttp2_huffsyms[*in].length;
   }
 
   output = grpc_slice_malloc(nbits / 8 + (nbits % 8 != 0));
   out = GRPC_SLICE_START_PTR(output);
-  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input); ++in) {
+  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
+       ++in) {
     int sym = *in;
     temp <<= grpc_chttp2_huffsyms[sym].length;
     temp |= grpc_chttp2_huffsyms[sym].bits;
@@ -175,7 +177,8 @@ static void enc_add1(huff_out *out, uint8_t a) {
   enc_flush_some(out);
 }
 
-grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(grpc_slice input) {
+grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(
+    grpc_slice input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;

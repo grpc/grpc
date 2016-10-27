@@ -37,9 +37,9 @@
 
 #include <grpc/grpc.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/httpcli.h"
@@ -487,8 +487,8 @@ static void corrupt_jwt_sig(char *jwt) {
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(sig));
   sig_bytes = GRPC_SLICE_START_PTR(sig);
   (*sig_bytes)++; /* Corrupt first byte. */
-  bad_b64_sig =
-      grpc_base64_encode(GRPC_SLICE_START_PTR(sig), GRPC_SLICE_LENGTH(sig), 1, 0);
+  bad_b64_sig = grpc_base64_encode(GRPC_SLICE_START_PTR(sig),
+                                   GRPC_SLICE_LENGTH(sig), 1, 0);
   memcpy(last_dot + 1, bad_b64_sig, strlen(bad_b64_sig));
   gpr_free(bad_b64_sig);
   grpc_slice_unref(sig);

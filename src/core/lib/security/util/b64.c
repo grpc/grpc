@@ -183,7 +183,7 @@ static int decode_group(const unsigned char *codes, size_t num_codes,
 }
 
 grpc_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
-                                      int url_safe) {
+                                       int url_safe) {
   grpc_slice result = grpc_slice_malloc(b64_len);
   unsigned char *current = GRPC_SLICE_START_PTR(result);
   size_t result_size = 0;

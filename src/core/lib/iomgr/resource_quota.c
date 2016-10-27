@@ -300,7 +300,7 @@ static void ru_slice_unref(void *p) {
 }
 
 static grpc_slice ru_slice_create(grpc_resource_user *resource_user,
-                                 size_t size) {
+                                  size_t size) {
   ru_slice_refcount *rc = gpr_malloc(sizeof(ru_slice_refcount) + size);
   rc->base.ref = ru_slice_ref;
   rc->base.unref = ru_slice_unref;

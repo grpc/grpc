@@ -82,7 +82,7 @@ class CoreCodegen : public CoreCodegenInterface {
   void grpc_slice_unref(grpc_slice slice) GRPC_OVERRIDE;
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) GRPC_OVERRIDE;
   void grpc_slice_buffer_add(grpc_slice_buffer* sb,
-                            grpc_slice slice) GRPC_OVERRIDE;
+                             grpc_slice slice) GRPC_OVERRIDE;
   void grpc_slice_buffer_pop(grpc_slice_buffer* sb) GRPC_OVERRIDE;
 
   void grpc_metadata_array_init(grpc_metadata_array* array) GRPC_OVERRIDE;

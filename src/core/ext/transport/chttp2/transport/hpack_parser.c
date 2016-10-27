@@ -1501,9 +1501,9 @@ static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
-  *is =
-      grpc_is_binary_header((const char *)GRPC_SLICE_START_PTR(elem->key->slice),
-                            GRPC_SLICE_LENGTH(elem->key->slice));
+  *is = grpc_is_binary_header(
+      (const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+      GRPC_SLICE_LENGTH(elem->key->slice));
   return GRPC_ERROR_NONE;
 }
 

@@ -45,7 +45,7 @@ typedef struct {
 } grpc_chttp2_rst_stream_parser;
 
 grpc_slice grpc_chttp2_rst_stream_create(uint32_t stream_id, uint32_t code,
-                                        grpc_transport_one_way_stats *stats);
+                                         grpc_transport_one_way_stats *stats);
 
 grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser *parser, uint32_t length, uint8_t flags);

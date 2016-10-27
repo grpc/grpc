@@ -40,10 +40,10 @@
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 

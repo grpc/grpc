@@ -61,6 +61,6 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input);
    slice, does not take ownership of the input. Returns an empty slice if
    decoding is failed. */
 grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
-                                                size_t output_length);
+                                                 size_t output_length);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H */

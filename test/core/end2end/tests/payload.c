@@ -95,7 +95,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a grpc_slice containing random alphanumeric characters. */
+/* Creates and returns a grpc_slice containing random alphanumeric characters.
+ */
 static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";

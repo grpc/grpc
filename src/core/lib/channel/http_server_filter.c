@@ -164,7 +164,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     calld->seen_payload_bin = 1;
     grpc_slice_buffer_init(&calld->read_slice_buffer);
     grpc_slice_buffer_add(&calld->read_slice_buffer,
-                         grpc_slice_ref(md->value->slice));
+                          grpc_slice_ref(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;
