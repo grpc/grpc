@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "src/core/ext/client_channel/method_config.h"
+#include "src/core/lib/transport/method_config.h"
 
 #include <string.h>
 

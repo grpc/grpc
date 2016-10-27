@@ -305,6 +305,7 @@ add_library(grpc
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -316,29 +317,39 @@ add_library(grpc
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
+  src/core/lib/iomgr/pollset_set_uv.c
   src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_uv.c
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_uv.c
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_uv.c
+  src/core/lib/iomgr/socket_utils_windows.c
   src/core/lib/iomgr/socket_windows.c
   src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_uv.c
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_uv.c
   src/core/lib/iomgr/tcp_windows.c
   src/core/lib/iomgr/time_averaged_stats.c
-  src/core/lib/iomgr/timer.c
+  src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
@@ -347,6 +358,7 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_uv.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -379,6 +391,7 @@ add_library(grpc
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/method_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -412,8 +425,7 @@ add_library(grpc
   src/core/lib/security/credentials/credentials.c
   src/core/lib/security/credentials/credentials_metadata.c
   src/core/lib/security/credentials/fake/fake_credentials.c
-  src/core/lib/security/credentials/google_default/credentials_posix.c
-  src/core/lib/security/credentials/google_default/credentials_windows.c
+  src/core/lib/security/credentials/google_default/credentials_generic.c
   src/core/lib/security/credentials/google_default/google_default_credentials.c
   src/core/lib/security/credentials/iam/iam_credentials.c
   src/core/lib/security/credentials/jwt/json_token.c
@@ -446,12 +458,10 @@ add_library(grpc
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/method_config.c
   src/core/ext/client_channel/parse_address.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/resolver_result.c
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
@@ -573,6 +583,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -584,29 +595,39 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
+  src/core/lib/iomgr/pollset_set_uv.c
   src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_uv.c
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_uv.c
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_uv.c
+  src/core/lib/iomgr/socket_utils_windows.c
   src/core/lib/iomgr/socket_windows.c
   src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_uv.c
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_uv.c
   src/core/lib/iomgr/tcp_windows.c
   src/core/lib/iomgr/time_averaged_stats.c
-  src/core/lib/iomgr/timer.c
+  src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
@@ -615,6 +636,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_uv.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -647,6 +669,7 @@ add_library(grpc_cronet
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/method_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -688,12 +711,10 @@ add_library(grpc_cronet
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/method_config.c
   src/core/ext/client_channel/parse_address.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/resolver_result.c
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
@@ -703,8 +724,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/credentials.c
   src/core/lib/security/credentials/credentials_metadata.c
   src/core/lib/security/credentials/fake/fake_credentials.c
-  src/core/lib/security/credentials/google_default/credentials_posix.c
-  src/core/lib/security/credentials/google_default/credentials_windows.c
+  src/core/lib/security/credentials/google_default/credentials_generic.c
   src/core/lib/security/credentials/google_default/google_default_credentials.c
   src/core/lib/security/credentials/iam/iam_credentials.c
   src/core/lib/security/credentials/jwt/json_token.c
@@ -813,6 +833,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_uv.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
@@ -824,29 +845,39 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_uv.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
   src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
+  src/core/lib/iomgr/pollset_set_uv.c
   src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_uv.c
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_uv.c
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_utils_uv.c
+  src/core/lib/iomgr/socket_utils_windows.c
   src/core/lib/iomgr/socket_windows.c
   src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_uv.c
   src/core/lib/iomgr/tcp_client_windows.c
   src/core/lib/iomgr/tcp_posix.c
   src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_uv.c
   src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_uv.c
   src/core/lib/iomgr/tcp_windows.c
   src/core/lib/iomgr/time_averaged_stats.c
-  src/core/lib/iomgr/timer.c
+  src/core/lib/iomgr/timer_generic.c
   src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/timer_uv.c
   src/core/lib/iomgr/udp_server.c
   src/core/lib/iomgr/unix_sockets_posix.c
   src/core/lib/iomgr/unix_sockets_posix_noop.c
@@ -855,6 +886,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.c
   src/core/lib/iomgr/wakeup_fd_pipe.c
   src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_uv.c
   src/core/lib/iomgr/workqueue_windows.c
   src/core/lib/json/json.c
   src/core/lib/json/json_reader.c
@@ -887,6 +919,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/method_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -928,12 +961,10 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/method_config.c
   src/core/ext/client_channel/parse_address.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/resolver_result.c
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
@@ -1188,6 +1219,171 @@ endforeach()
   
 if (gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
+  
+add_library(grpc++_cronet
+  src/cpp/client/cronet_credentials.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/common/insecure_create_auth_context.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/client/channel_cc.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials_cc.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue_cc.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_cc.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/slice_cc.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time_cc.cc
+  src/cpp/codegen/codegen_init.cc
+)
+
+target_include_directories(grpc++_cronet
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc++_cronet
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  gpr
+  grpc_cronet
+)
+
+foreach(_hdr
+  include/grpc++/alarm.h
+  include/grpc++/channel.h
+  include/grpc++/client_context.h
+  include/grpc++/completion_queue.h
+  include/grpc++/create_channel.h
+  include/grpc++/create_channel_posix.h
+  include/grpc++/generic/async_generic_service.h
+  include/grpc++/generic/generic_stub.h
+  include/grpc++/grpc++.h
+  include/grpc++/impl/call.h
+  include/grpc++/impl/client_unary_call.h
+  include/grpc++/impl/codegen/core_codegen.h
+  include/grpc++/impl/grpc_library.h
+  include/grpc++/impl/method_handler_impl.h
+  include/grpc++/impl/rpc_method.h
+  include/grpc++/impl/rpc_service_method.h
+  include/grpc++/impl/serialization_traits.h
+  include/grpc++/impl/server_builder_option.h
+  include/grpc++/impl/server_builder_plugin.h
+  include/grpc++/impl/server_initializer.h
+  include/grpc++/impl/service_type.h
+  include/grpc++/impl/sync.h
+  include/grpc++/impl/sync_cxx11.h
+  include/grpc++/impl/sync_no_cxx11.h
+  include/grpc++/impl/thd.h
+  include/grpc++/impl/thd_cxx11.h
+  include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
+  include/grpc++/security/auth_context.h
+  include/grpc++/security/auth_metadata_processor.h
+  include/grpc++/security/credentials.h
+  include/grpc++/security/server_credentials.h
+  include/grpc++/server.h
+  include/grpc++/server_builder.h
+  include/grpc++/server_context.h
+  include/grpc++/server_posix.h
+  include/grpc++/support/async_stream.h
+  include/grpc++/support/async_unary_call.h
+  include/grpc++/support/byte_buffer.h
+  include/grpc++/support/channel_arguments.h
+  include/grpc++/support/config.h
+  include/grpc++/support/slice.h
+  include/grpc++/support/status.h
+  include/grpc++/support/status_code_enum.h
+  include/grpc++/support/string_ref.h
+  include/grpc++/support/stub_options.h
+  include/grpc++/support/sync_stream.h
+  include/grpc++/support/time.h
+  include/grpc++/impl/codegen/async_stream.h
+  include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/call.h
+  include/grpc++/impl/codegen/call_hook.h
+  include/grpc++/impl/codegen/channel_interface.h
+  include/grpc++/impl/codegen/client_context.h
+  include/grpc++/impl/codegen/client_unary_call.h
+  include/grpc++/impl/codegen/completion_queue.h
+  include/grpc++/impl/codegen/completion_queue_tag.h
+  include/grpc++/impl/codegen/config.h
+  include/grpc++/impl/codegen/core_codegen_interface.h
+  include/grpc++/impl/codegen/create_auth_context.h
+  include/grpc++/impl/codegen/grpc_library.h
+  include/grpc++/impl/codegen/method_handler_impl.h
+  include/grpc++/impl/codegen/rpc_method.h
+  include/grpc++/impl/codegen/rpc_service_method.h
+  include/grpc++/impl/codegen/security/auth_context.h
+  include/grpc++/impl/codegen/serialization_traits.h
+  include/grpc++/impl/codegen/server_context.h
+  include/grpc++/impl/codegen/server_interface.h
+  include/grpc++/impl/codegen/service_type.h
+  include/grpc++/impl/codegen/status.h
+  include/grpc++/impl/codegen/status_code_enum.h
+  include/grpc++/impl/codegen/status_helper.h
+  include/grpc++/impl/codegen/string_ref.h
+  include/grpc++/impl/codegen/stub_options.h
+  include/grpc++/impl/codegen/sync.h
+  include/grpc++/impl/codegen/sync_cxx11.h
+  include/grpc++/impl/codegen/sync_no_cxx11.h
+  include/grpc++/impl/codegen/sync_stream.h
+  include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/atm.h
+  include/grpc/impl/codegen/atm_gcc_atomic.h
+  include/grpc/impl/codegen/atm_gcc_sync.h
+  include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_generic.h
+  include/grpc/impl/codegen/sync_posix.h
+  include/grpc/impl/codegen/sync_windows.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+  
+if (gRPC_INSTALL)
+  install(TARGETS grpc++_cronet EXPORT gRPCTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

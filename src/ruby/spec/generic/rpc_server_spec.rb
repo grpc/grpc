@@ -462,6 +462,7 @@ describe GRPC::RpcServer do
           'connect_k1' => 'connect_v1'
         }
         wanted_md.each do |key, value|
+          puts "key: #{key}"
           expect(op.metadata[key]).to eq(value)
         end
         @srv.stop

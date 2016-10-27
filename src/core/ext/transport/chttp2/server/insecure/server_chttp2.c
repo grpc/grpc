@@ -148,9 +148,7 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   const size_t naddrs = resolved->naddrs;
   errors = gpr_malloc(sizeof(*errors) * naddrs);
   for (i = 0; i < naddrs; i++) {
-    errors[i] = grpc_tcp_server_add_port(
-        tcp, (struct sockaddr *)&resolved->addrs[i].addr,
-        resolved->addrs[i].len, &port_temp);
+    errors[i] = grpc_tcp_server_add_port(tcp, &resolved->addrs[i], &port_temp);
     if (errors[i] == GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
