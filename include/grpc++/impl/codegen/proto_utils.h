@@ -74,10 +74,10 @@ class GrpcBufferWriter GRPC_FINAL
     } else {
       slice_ = g_core_codegen_interface->grpc_slice_malloc(block_size_);
     }
-    *data = GPR_SLICE_START_PTR(slice_);
+    *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
-    GPR_CODEGEN_ASSERT(GPR_SLICE_LENGTH(slice_) <= INT_MAX);
-    byte_count_ += * size = (int)GPR_SLICE_LENGTH(slice_);
+    GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
+    byte_count_ += * size = (int)GRPC_SLICE_LENGTH(slice_);
     g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     return true;
   }
@@ -88,7 +88,7 @@ class GrpcBufferWriter GRPC_FINAL
       backup_slice_ = slice_;
     } else {
       backup_slice_ = g_core_codegen_interface->grpc_slice_split_tail(
-          &slice_, GPR_SLICE_LENGTH(slice_) - count);
+          &slice_, GRPC_SLICE_LENGTH(slice_) - count);
       g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     }
     have_backup_ = true;
@@ -126,7 +126,7 @@ class GrpcBufferReader GRPC_FINAL
       return false;
     }
     if (backup_count_ > 0) {
-      *data = GPR_SLICE_START_PTR(slice_) + GPR_SLICE_LENGTH(slice_) -
+      *data = GRPC_SLICE_START_PTR(slice_) + GRPC_SLICE_LENGTH(slice_) -
               backup_count_;
       GPR_CODEGEN_ASSERT(backup_count_ <= INT_MAX);
       *size = (int)backup_count_;
@@ -138,10 +138,10 @@ class GrpcBufferReader GRPC_FINAL
       return false;
     }
     g_core_codegen_interface->grpc_slice_unref(slice_);
-    *data = GPR_SLICE_START_PTR(slice_);
+    *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
-    GPR_CODEGEN_ASSERT(GPR_SLICE_LENGTH(slice_) <= INT_MAX);
-    byte_count_ += * size = (int)GPR_SLICE_LENGTH(slice_);
+    GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
+    byte_count_ += * size = (int)GRPC_SLICE_LENGTH(slice_);
     return true;
   }
 
@@ -188,8 +188,8 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
       grpc_slice slice = g_core_codegen_interface->grpc_slice_malloc(byte_size);
       GPR_CODEGEN_ASSERT(
-          GPR_SLICE_END_PTR(slice) ==
-          msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
+          GRPC_SLICE_END_PTR(slice) ==
+          msg.SerializeWithCachedSizesToArray(GRPC_SLICE_START_PTR(slice)));
       *bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(&slice, 1);
       g_core_codegen_interface->grpc_slice_unref(slice);
       return g_core_codegen_interface->ok();

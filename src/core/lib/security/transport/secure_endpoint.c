@@ -124,8 +124,8 @@ static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                       uint8_t **end) {
   grpc_slice_buffer_add(ep->read_buffer, ep->read_staging_buffer);
   ep->read_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
-  *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
-  *end = GPR_SLICE_END_PTR(ep->read_staging_buffer);
+  *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
+  *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 }
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
@@ -150,8 +150,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   uint8_t keep_looping = 0;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)user_data;
-  uint8_t *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
-  uint8_t *end = GPR_SLICE_END_PTR(ep->read_staging_buffer);
+  uint8_t *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
+  uint8_t *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
   if (error != GRPC_ERROR_NONE) {
     grpc_slice_buffer_reset_and_unref(ep->read_buffer);
@@ -163,8 +163,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   /* TODO(yangg) check error, maybe bail out early */
   for (i = 0; i < ep->source_buffer.count; i++) {
     grpc_slice encrypted = ep->source_buffer.slices[i];
-    uint8_t *message_bytes = GPR_SLICE_START_PTR(encrypted);
-    size_t message_size = GPR_SLICE_LENGTH(encrypted);
+    uint8_t *message_bytes = GRPC_SLICE_START_PTR(encrypted);
+    size_t message_size = GRPC_SLICE_LENGTH(encrypted);
 
     while (message_size > 0 || keep_looping) {
       size_t unprotected_buffer_size_written = (size_t)(end - cur);
@@ -199,12 +199,12 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
     if (result != TSI_OK) break;
   }
 
-  if (cur != GPR_SLICE_START_PTR(ep->read_staging_buffer)) {
+  if (cur != GRPC_SLICE_START_PTR(ep->read_staging_buffer)) {
     grpc_slice_buffer_add(
         ep->read_buffer,
         grpc_slice_split_head(
             &ep->read_staging_buffer,
-            (size_t)(cur - GPR_SLICE_START_PTR(ep->read_staging_buffer))));
+            (size_t)(cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
   }
 
   /* TODO(yangg) experiment with moving this block after read_cb to see if it
@@ -244,8 +244,8 @@ static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                        uint8_t **end) {
   grpc_slice_buffer_add(&ep->output_buffer, ep->write_staging_buffer);
   ep->write_staging_buffer = grpc_slice_malloc(STAGING_BUFFER_SIZE);
-  *cur = GPR_SLICE_START_PTR(ep->write_staging_buffer);
-  *end = GPR_SLICE_END_PTR(ep->write_staging_buffer);
+  *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
+  *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 }
 
 static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
@@ -255,8 +255,8 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  uint8_t *cur = GPR_SLICE_START_PTR(ep->write_staging_buffer);
-  uint8_t *end = GPR_SLICE_END_PTR(ep->write_staging_buffer);
+  uint8_t *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
+  uint8_t *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
   grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
 
@@ -271,8 +271,8 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   for (i = 0; i < slices->count; i++) {
     grpc_slice plain = slices->slices[i];
-    uint8_t *message_bytes = GPR_SLICE_START_PTR(plain);
-    size_t message_size = GPR_SLICE_LENGTH(plain);
+    uint8_t *message_bytes = GRPC_SLICE_START_PTR(plain);
+    size_t message_size = GRPC_SLICE_LENGTH(plain);
     while (message_size > 0) {
       size_t protected_buffer_size_to_send = (size_t)(end - cur);
       size_t processed_message_size = message_size;
@@ -311,12 +311,12 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
         flush_write_staging_buffer(ep, &cur, &end);
       }
     } while (still_pending_size > 0);
-    if (cur != GPR_SLICE_START_PTR(ep->write_staging_buffer)) {
+    if (cur != GRPC_SLICE_START_PTR(ep->write_staging_buffer)) {
       grpc_slice_buffer_add(
           &ep->output_buffer,
           grpc_slice_split_head(
               &ep->write_staging_buffer,
-              (size_t)(cur - GPR_SLICE_START_PTR(ep->write_staging_buffer))));
+              (size_t)(cur - GRPC_SLICE_START_PTR(ep->write_staging_buffer))));
     }
   }
 

@@ -186,7 +186,7 @@ static grpc_error *create_default_creds_from_path(
     goto end;
   }
   json = grpc_json_parse_string_with_len(
-      (char *)GPR_SLICE_START_PTR(creds_data), GPR_SLICE_LENGTH(creds_data));
+      (char *)GRPC_SLICE_START_PTR(creds_data), GRPC_SLICE_LENGTH(creds_data));
   if (json == NULL) {
     char *dump = grpc_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),

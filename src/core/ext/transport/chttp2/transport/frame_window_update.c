@@ -43,7 +43,7 @@ grpc_slice grpc_chttp2_window_update_create(
   static const size_t frame_size = 13;
   grpc_slice slice = grpc_slice_malloc(frame_size);
   stats->header_bytes += frame_size;
-  uint8_t *p = GPR_SLICE_START_PTR(slice);
+  uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
   GPR_ASSERT(window_update);
 
@@ -82,8 +82,8 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
 grpc_error *grpc_chttp2_window_update_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser, grpc_chttp2_transport *t,
     grpc_chttp2_stream *s, grpc_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_window_update_parser *p = parser;
 

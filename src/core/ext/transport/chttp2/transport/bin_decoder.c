@@ -144,7 +144,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
 }
 
 grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
-  size_t input_length = GPR_SLICE_LENGTH(input);
+  size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t output_length = input_length / 4 * 3;
   struct grpc_base64_decode_context ctx;
   grpc_slice output;
@@ -159,7 +159,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   }
 
   if (input_length > 0) {
-    uint8_t *input_end = GPR_SLICE_END_PTR(input);
+    uint8_t *input_end = GRPC_SLICE_END_PTR(input);
     if (*(--input_end) == '=') {
       output_length--;
       if (*(--input_end) == '=') {
@@ -169,10 +169,10 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   }
   output = grpc_slice_malloc(output_length);
 
-  ctx.input_cur = GPR_SLICE_START_PTR(input);
-  ctx.input_end = GPR_SLICE_END_PTR(input);
-  ctx.output_cur = GPR_SLICE_START_PTR(output);
-  ctx.output_end = GPR_SLICE_END_PTR(output);
+  ctx.input_cur = GRPC_SLICE_START_PTR(input);
+  ctx.input_end = GRPC_SLICE_END_PTR(input);
+  ctx.output_cur = GRPC_SLICE_START_PTR(output);
+  ctx.output_end = GRPC_SLICE_END_PTR(output);
   ctx.contains_tail = false;
 
   if (!grpc_base64_decode_partial(&ctx)) {
@@ -182,14 +182,14 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
     grpc_slice_unref(output);
     return gpr_empty_slice();
   }
-  GPR_ASSERT(ctx.output_cur == GPR_SLICE_END_PTR(output));
-  GPR_ASSERT(ctx.input_cur == GPR_SLICE_END_PTR(input));
+  GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  GPR_ASSERT(ctx.input_cur == GRPC_SLICE_END_PTR(input));
   return output;
 }
 
 grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
                                                  size_t output_length) {
-  size_t input_length = GPR_SLICE_LENGTH(input);
+  size_t input_length = GRPC_SLICE_LENGTH(input);
   grpc_slice output = grpc_slice_malloc(output_length);
   struct grpc_base64_decode_context ctx;
 
@@ -214,10 +214,10 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
     return gpr_empty_slice();
   }
 
-  ctx.input_cur = GPR_SLICE_START_PTR(input);
-  ctx.input_end = GPR_SLICE_END_PTR(input);
-  ctx.output_cur = GPR_SLICE_START_PTR(output);
-  ctx.output_end = GPR_SLICE_END_PTR(output);
+  ctx.input_cur = GRPC_SLICE_START_PTR(input);
+  ctx.input_end = GRPC_SLICE_END_PTR(input);
+  ctx.output_cur = GRPC_SLICE_START_PTR(output);
+  ctx.output_end = GRPC_SLICE_END_PTR(output);
   ctx.contains_tail = true;
 
   if (!grpc_base64_decode_partial(&ctx)) {
@@ -227,7 +227,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
     grpc_slice_unref(output);
     return gpr_empty_slice();
   }
-  GPR_ASSERT(ctx.output_cur == GPR_SLICE_END_PTR(output));
-  GPR_ASSERT(ctx.input_cur <= GPR_SLICE_END_PTR(input));
+  GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  GPR_ASSERT(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
   return output;
 }

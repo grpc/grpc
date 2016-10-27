@@ -239,9 +239,9 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   }
 
   for (i = 0; i < h->incoming.count; i++) {
-    consumed_slice_size = GPR_SLICE_LENGTH(h->incoming.slices[i]);
+    consumed_slice_size = GRPC_SLICE_LENGTH(h->incoming.slices[i]);
     result = tsi_handshaker_process_bytes_from_peer(
-        h->handshaker, GPR_SLICE_START_PTR(h->incoming.slices[i]),
+        h->handshaker, GRPC_SLICE_START_PTR(h->incoming.slices[i]),
         &consumed_slice_size);
     if (!tsi_handshaker_is_in_progress(h->handshaker)) break;
   }
@@ -267,7 +267,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 
   /* Handshake is done and successful this point. */
   has_left_overs_in_current_slice =
-      (consumed_slice_size < GPR_SLICE_LENGTH(h->incoming.slices[i]));
+      (consumed_slice_size < GRPC_SLICE_LENGTH(h->incoming.slices[i]));
   num_left_overs =
       (has_left_overs_in_current_slice ? 1 : 0) + h->incoming.count - i - 1;
   if (num_left_overs == 0) {

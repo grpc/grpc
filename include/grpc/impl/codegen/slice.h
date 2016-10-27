@@ -60,7 +60,7 @@ typedef struct grpc_slice_refcount {
   void (*unref)(void *);
 } grpc_slice_refcount;
 
-#define GPR_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
+#define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
 
 /* A grpc_slice s, if initialized, represents the byte range
    s.bytes[0..s.length-1].
@@ -80,7 +80,7 @@ typedef struct grpc_slice {
     } refcounted;
     struct {
       uint8_t length;
-      uint8_t bytes[GPR_SLICE_INLINED_SIZE];
+      uint8_t bytes[GRPC_SLICE_INLINED_SIZE];
     } inlined;
   } data;
 } grpc_slice;
@@ -102,17 +102,17 @@ typedef struct {
   grpc_slice inlined[GRPC_SLICE_BUFFER_INLINE_ELEMENTS];
 } grpc_slice_buffer;
 
-#define GPR_SLICE_START_PTR(slice)                  \
+#define GRPC_SLICE_START_PTR(slice)                 \
   ((slice).refcount ? (slice).data.refcounted.bytes \
                     : (slice).data.inlined.bytes)
-#define GPR_SLICE_LENGTH(slice)                      \
+#define GRPC_SLICE_LENGTH(slice)                     \
   ((slice).refcount ? (slice).data.refcounted.length \
                     : (slice).data.inlined.length)
-#define GPR_SLICE_SET_LENGTH(slice, newlen)                               \
+#define GRPC_SLICE_SET_LENGTH(slice, newlen)                              \
   ((slice).refcount ? ((slice).data.refcounted.length = (size_t)(newlen)) \
                     : ((slice).data.inlined.length = (uint8_t)(newlen)))
-#define GPR_SLICE_END_PTR(slice) \
-  GPR_SLICE_START_PTR(slice) + GPR_SLICE_LENGTH(slice)
-#define GPR_SLICE_IS_EMPTY(slice) (GPR_SLICE_LENGTH(slice) == 0)
+#define GRPC_SLICE_END_PTR(slice) \
+  GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(slice)
+#define GRPC_SLICE_IS_EMPTY(slice) (GRPC_SLICE_LENGTH(slice) == 0)
 
 #endif /* GRPC_IMPL_CODEGEN_SLICE_H */

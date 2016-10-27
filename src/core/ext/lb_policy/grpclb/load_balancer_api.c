@@ -101,7 +101,7 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
 
   slice = grpc_slice_malloc(encoded_length);
   outputstream =
-      pb_ostream_from_buffer(GPR_SLICE_START_PTR(slice), encoded_length);
+      pb_ostream_from_buffer(GRPC_SLICE_START_PTR(slice), encoded_length);
   GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,
                        request) != 0);
   return slice;
@@ -115,8 +115,8 @@ typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
 grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
     grpc_slice encoded_grpc_grpclb_response) {
   pb_istream_t stream =
-      pb_istream_from_buffer(GPR_SLICE_START_PTR(encoded_grpc_grpclb_response),
-                             GPR_SLICE_LENGTH(encoded_grpc_grpclb_response));
+      pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
+                             GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
   if (!pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res)) {
@@ -136,8 +136,8 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   bool status;
   decode_serverlist_arg arg;
   pb_istream_t stream =
-      pb_istream_from_buffer(GPR_SLICE_START_PTR(encoded_grpc_grpclb_response),
-                             GPR_SLICE_LENGTH(encoded_grpc_grpclb_response));
+      pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
+                             GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   pb_istream_t stream_at_start = stream;
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));

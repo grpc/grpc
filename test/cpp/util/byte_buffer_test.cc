@@ -81,11 +81,11 @@ TEST_F(ByteBufferTest, Length) {
 }
 
 bool SliceEqual(const Slice& a, grpc_slice b) {
-  if (a.size() != GPR_SLICE_LENGTH(b)) {
+  if (a.size() != GRPC_SLICE_LENGTH(b)) {
     return false;
   }
   for (size_t i = 0; i < a.size(); i++) {
-    if (a.begin()[i] != GPR_SLICE_START_PTR(b)[i]) {
+    if (a.begin()[i] != GRPC_SLICE_START_PTR(b)[i]) {
       return false;
     }
   }

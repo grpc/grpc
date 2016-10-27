@@ -159,7 +159,7 @@ class ThriftSerializer {
     grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
 
     uint32_t len =
-        Deserialize(GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice), msg);
+        Deserialize(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice), msg);
 
     grpc_slice_unref(slice);
 

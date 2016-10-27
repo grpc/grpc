@@ -36,9 +36,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
@@ -117,12 +117,12 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   connector *c = arg;
   grpc_endpoint *tcp = c->tcp;
   if (tcp != NULL) {
-    if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
+    if (!GRPC_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
       grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
                         c);
       grpc_slice_buffer_init(&c->initial_string_buffer);
       grpc_slice_buffer_add(&c->initial_string_buffer,
-                           c->args.initial_connect_string);
+                            c->args.initial_connect_string);
       connector_ref(arg);
       grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
                           &c->initial_string_sent);

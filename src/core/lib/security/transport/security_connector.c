@@ -656,7 +656,7 @@ static grpc_slice compute_default_pem_root_certs_once(void) {
 
   /* Try overridden roots if needed. */
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
-  if (GPR_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != NULL) {
+  if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != NULL) {
     char *pem_root_certs = NULL;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
@@ -666,7 +666,7 @@ static grpc_slice compute_default_pem_root_certs_once(void) {
   }
 
   /* Fall back to installed certs if needed. */
-  if (GPR_SLICE_IS_EMPTY(result) &&
+  if (GRPC_SLICE_IS_EMPTY(result) &&
       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     GRPC_LOG_IF_ERROR("load_file",
                       grpc_load_file(installed_roots_path, 0, &result));
@@ -714,8 +714,8 @@ size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
      loading all the roots once for the lifetime of the process. */
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_default_pem_root_certs);
-  *pem_root_certs = GPR_SLICE_START_PTR(default_pem_root_certs);
-  return GPR_SLICE_LENGTH(default_pem_root_certs);
+  *pem_root_certs = GRPC_SLICE_START_PTR(default_pem_root_certs);
+  return GRPC_SLICE_LENGTH(default_pem_root_certs);
 }
 
 grpc_security_status grpc_ssl_channel_security_connector_create(

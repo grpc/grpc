@@ -335,10 +335,10 @@ void grpc_http_response_destroy(grpc_http_response *response) {
 
 grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, grpc_slice slice,
                                    size_t *start_of_body) {
-  for (size_t i = 0; i < GPR_SLICE_LENGTH(slice); i++) {
+  for (size_t i = 0; i < GRPC_SLICE_LENGTH(slice); i++) {
     bool found_body_start = false;
     grpc_error *err =
-        addbyte(parser, GPR_SLICE_START_PTR(slice)[i], &found_body_start);
+        addbyte(parser, GRPC_SLICE_START_PTR(slice)[i], &found_body_start);
     if (err != GRPC_ERROR_NONE) return err;
     if (found_body_start && start_of_body != NULL) *start_of_body = i + 1;
   }

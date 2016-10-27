@@ -397,7 +397,7 @@ static void test_default_ssl_roots(void) {
      an empty slice. */
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_get_default_ssl_roots_for_testing();
-  GPR_ASSERT(GPR_SLICE_IS_EMPTY(roots));
+  GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));
 
   /* Cleanup. */
   remove(roots_env_var_file_path);

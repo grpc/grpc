@@ -217,8 +217,8 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   GPR_TIMER_BEGIN("tcp_continue_read", 0);
 
   for (i = 0; i < tcp->incoming_buffer->count; i++) {
-    iov[i].iov_base = GPR_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
-    iov[i].iov_len = GPR_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
+    iov[i].iov_base = GRPC_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
+    iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
   }
 
   msg.msg_name = NULL;
@@ -348,11 +348,11 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
       iov[iov_size].iov_base =
-          GPR_SLICE_START_PTR(
+          GRPC_SLICE_START_PTR(
               tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]) +
           tcp->outgoing_byte_idx;
       iov[iov_size].iov_len =
-          GPR_SLICE_LENGTH(
+          GRPC_SLICE_LENGTH(
               tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]) -
           tcp->outgoing_byte_idx;
       sending_length += iov[iov_size].iov_len;
@@ -393,7 +393,7 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
       size_t slice_length;
 
       tcp->outgoing_slice_idx--;
-      slice_length = GPR_SLICE_LENGTH(
+      slice_length = GRPC_SLICE_LENGTH(
           tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]);
       if (slice_length > trailing) {
         tcp->outgoing_byte_idx = slice_length - trailing;

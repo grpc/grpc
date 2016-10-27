@@ -351,8 +351,8 @@ grpc_mdstr *grpc_mdstr_from_string(const char *str) {
 }
 
 grpc_mdstr *grpc_mdstr_from_slice(grpc_slice slice) {
-  grpc_mdstr *result = grpc_mdstr_from_buffer(GPR_SLICE_START_PTR(slice),
-                                              GPR_SLICE_LENGTH(slice));
+  grpc_mdstr *result = grpc_mdstr_from_buffer(GRPC_SLICE_START_PTR(slice),
+                                              GRPC_SLICE_LENGTH(slice));
   grpc_slice_unref(slice);
   return result;
 }
@@ -373,9 +373,9 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
     idx = (hash + i) % GPR_ARRAY_SIZE(g_static_strtab);
     ss = g_static_strtab[idx];
     if (ss == NULL) break;
-    if (ss->hash == hash && GPR_SLICE_LENGTH(ss->slice) == length &&
+    if (ss->hash == hash && GRPC_SLICE_LENGTH(ss->slice) == length &&
         (length == 0 ||
-         0 == memcmp(buf, GPR_SLICE_START_PTR(ss->slice), length))) {
+         0 == memcmp(buf, GRPC_SLICE_START_PTR(ss->slice), length))) {
       GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
       return ss;
     }
@@ -386,8 +386,8 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   /* search for an existing string */
   idx = TABLE_IDX(hash, LOG2_STRTAB_SHARD_COUNT, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
-    if (s->hash == hash && GPR_SLICE_LENGTH(s->slice) == length &&
-        0 == memcmp(buf, GPR_SLICE_START_PTR(s->slice), length)) {
+    if (s->hash == hash && GRPC_SLICE_LENGTH(s->slice) == length &&
+        0 == memcmp(buf, GRPC_SLICE_START_PTR(s->slice), length)) {
       if (gpr_atm_full_fetch_add(&s->refcnt, 1) == 0) {
         /* If we get here, we've added a ref to something that was about to
          * die - drop it immediately.
@@ -404,7 +404,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   }
 
   /* not found: create a new string */
-  if (length + 1 < GPR_SLICE_INLINED_SIZE) {
+  if (length + 1 < GRPC_SLICE_INLINED_SIZE) {
     /* string data goes directly into the slice */
     s = gpr_malloc(sizeof(internal_string));
     gpr_atm_rel_store(&s->refcnt, 1);
@@ -607,12 +607,12 @@ static size_t get_base64_encoded_size(size_t raw_length) {
 }
 
 size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
-  size_t overhead_and_key = 32 + GPR_SLICE_LENGTH(elem->key->slice);
-  size_t value_len = GPR_SLICE_LENGTH(elem->value->slice);
+  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(elem->key->slice);
+  size_t value_len = GRPC_SLICE_LENGTH(elem->value->slice);
   if (is_mdstr_static(elem->value)) {
     if (grpc_is_binary_header(
-            (const char *)GPR_SLICE_START_PTR(elem->key->slice),
-            GPR_SLICE_LENGTH(elem->key->slice))) {
+            (const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+            GRPC_SLICE_LENGTH(elem->key->slice))) {
       return overhead_and_key + get_base64_encoded_size(value_len);
     } else {
       return overhead_and_key + value_len;
@@ -622,8 +622,8 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
     gpr_atm current_size = gpr_atm_acq_load(&is->size_in_decoder_table);
     if (current_size == SIZE_IN_DECODER_TABLE_NOT_SET) {
       if (grpc_is_binary_header(
-              (const char *)GPR_SLICE_START_PTR(elem->key->slice),
-              GPR_SLICE_LENGTH(elem->key->slice))) {
+              (const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+              GRPC_SLICE_LENGTH(elem->key->slice))) {
         current_size = (gpr_atm)get_base64_encoded_size(value_len);
       } else {
         current_size = (gpr_atm)value_len;
@@ -679,7 +679,7 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
 }
 
 const char *grpc_mdstr_as_c_string(const grpc_mdstr *s) {
-  return (const char *)GPR_SLICE_START_PTR(s->slice);
+  return (const char *)GRPC_SLICE_START_PTR(s->slice);
 }
 
 size_t grpc_mdstr_length(const grpc_mdstr *s) { return GRPC_MDSTR_LENGTH(s); }

@@ -149,7 +149,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(const grpc_mdstr *s);
 
-#define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
+#define GRPC_MDSTR_LENGTH(s) (GRPC_SLICE_LENGTH(s->slice))
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
 #define GRPC_MDELEM_LENGTH(e) \

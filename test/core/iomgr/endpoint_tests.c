@@ -68,12 +68,12 @@ size_t count_slices(grpc_slice *slices, size_t nslices, int *current_data) {
   size_t j;
   unsigned char *buf;
   for (i = 0; i < nslices; ++i) {
-    buf = GPR_SLICE_START_PTR(slices[i]);
-    for (j = 0; j < GPR_SLICE_LENGTH(slices[i]); ++j) {
+    buf = GRPC_SLICE_START_PTR(slices[i]);
+    for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {
       GPR_ASSERT(buf[j] == *current_data);
       *current_data = (*current_data + 1) % 256;
     }
-    num_bytes += GPR_SLICE_LENGTH(slices[i]);
+    num_bytes += GRPC_SLICE_LENGTH(slices[i]);
   }
   return num_bytes;
 }
@@ -100,9 +100,9 @@ static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
   for (i = 0; i < nslices; ++i) {
     slices[i] = grpc_slice_malloc(slice_size > num_bytes_left ? num_bytes_left
                                                              : slice_size);
-    num_bytes_left -= GPR_SLICE_LENGTH(slices[i]);
-    buf = GPR_SLICE_START_PTR(slices[i]);
-    for (j = 0; j < GPR_SLICE_LENGTH(slices[i]); ++j) {
+    num_bytes_left -= GRPC_SLICE_LENGTH(slices[i]);
+    buf = GRPC_SLICE_START_PTR(slices[i]);
+    for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {
       buf[j] = *current_data;
       (*current_data)++;
     }

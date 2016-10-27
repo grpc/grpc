@@ -212,8 +212,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   grpc_byte_buffer_reader_init(&bbr, request_payload_recv);
   grpc_slice request_payload_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc::lb::v1::LoadBalanceRequest request;
-  request.ParseFromArray(GPR_SLICE_START_PTR(request_payload_slice),
-                         GPR_SLICE_LENGTH(request_payload_slice));
+  request.ParseFromArray(GRPC_SLICE_START_PTR(request_payload_slice),
+                         GRPC_SLICE_LENGTH(request_payload_slice));
   GPR_ASSERT(request.has_initial_request());
   GPR_ASSERT(request.initial_request().name() == sf->servers_hostport);
   grpc_slice_unref(request_payload_slice);

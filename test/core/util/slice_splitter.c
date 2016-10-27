@@ -69,28 +69,28 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
       *dst_slice_count = 1;
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
-        length += GPR_SLICE_LENGTH(src_slices[i]);
+        length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
       *dst_slices = gpr_malloc(sizeof(grpc_slice));
       **dst_slices = grpc_slice_malloc(length);
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
-        memcpy(GPR_SLICE_START_PTR(**dst_slices) + length,
-               GPR_SLICE_START_PTR(src_slices[i]),
-               GPR_SLICE_LENGTH(src_slices[i]));
-        length += GPR_SLICE_LENGTH(src_slices[i]);
+        memcpy(GRPC_SLICE_START_PTR(**dst_slices) + length,
+               GRPC_SLICE_START_PTR(src_slices[i]),
+               GRPC_SLICE_LENGTH(src_slices[i]));
+        length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
       break;
     case GRPC_SLICE_SPLIT_ONE_BYTE:
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
-        length += GPR_SLICE_LENGTH(src_slices[i]);
+        length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
       *dst_slice_count = length;
       *dst_slices = gpr_malloc(sizeof(grpc_slice) * length);
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
-        for (j = 0; j < GPR_SLICE_LENGTH(src_slices[i]); j++) {
+        for (j = 0; j < GRPC_SLICE_LENGTH(src_slices[i]); j++) {
           (*dst_slices)[length] = grpc_slice_sub(src_slices[i], j, j + 1);
           length++;
         }
@@ -125,13 +125,13 @@ grpc_slice grpc_slice_merge(grpc_slice *slices, size_t nslices) {
   size_t i;
 
   for (i = 0; i < nslices; i++) {
-    if (GPR_SLICE_LENGTH(slices[i]) + length > capacity) {
-      capacity = GPR_MAX(capacity * 2, GPR_SLICE_LENGTH(slices[i]) + length);
+    if (GRPC_SLICE_LENGTH(slices[i]) + length > capacity) {
+      capacity = GPR_MAX(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
       out = gpr_realloc(out, capacity);
     }
-    memcpy(out + length, GPR_SLICE_START_PTR(slices[i]),
-           GPR_SLICE_LENGTH(slices[i]));
-    length += GPR_SLICE_LENGTH(slices[i]);
+    memcpy(out + length, GRPC_SLICE_START_PTR(slices[i]),
+           GRPC_SLICE_LENGTH(slices[i]));
+    length += GRPC_SLICE_LENGTH(slices[i]);
   }
 
   return grpc_slice_new(out, length, gpr_free);

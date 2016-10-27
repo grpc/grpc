@@ -521,7 +521,7 @@ static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
                               char **pp_write_buffer,
                               size_t *p_write_buffer_size) {
   grpc_slice slice = grpc_slice_buffer_take_first(write_slice_buffer);
-  size_t length = GPR_SLICE_LENGTH(slice);
+  size_t length = GRPC_SLICE_LENGTH(slice);
   *p_write_buffer_size = length + GRPC_HEADER_SIZE_IN_BYTES;
   /* This is freed in the on_write_completed callback */
   char *write_buffer = gpr_malloc(length + GRPC_HEADER_SIZE_IN_BYTES);
@@ -534,7 +534,7 @@ static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
   *p++ = (uint8_t)(length >> 8);
   *p++ = (uint8_t)(length);
   /* append actual data */
-  memcpy(p, GPR_SLICE_START_PTR(slice), length);
+  memcpy(p, GRPC_SLICE_START_PTR(slice), length);
 }
 
 /*
@@ -920,7 +920,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       CRONET_LOG(GPR_DEBUG, "read operation complete");
       grpc_slice read_data_slice =
           grpc_slice_malloc((uint32_t)stream_state->rs.length_field);
-      uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
+      uint8_t *dst_p = GRPC_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);
       free_read_buffer(s);

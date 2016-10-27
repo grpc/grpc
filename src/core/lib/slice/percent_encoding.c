@@ -55,8 +55,8 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
 
   // first pass: count the number of bytes needed to output this string
   size_t output_length = 0;
-  const uint8_t *slice_start = GPR_SLICE_START_PTR(slice);
-  const uint8_t *slice_end = GPR_SLICE_END_PTR(slice);
+  const uint8_t *slice_start = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *slice_end = GRPC_SLICE_END_PTR(slice);
   const uint8_t *p;
   bool any_reserved_bytes = false;
   for (p = slice_start; p < slice_end; p++) {
@@ -70,7 +70,7 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
   }
   // second pass: actually encode
   grpc_slice out = grpc_slice_malloc(output_length);
-  uint8_t *q = GPR_SLICE_START_PTR(out);
+  uint8_t *q = GRPC_SLICE_START_PTR(out);
   for (p = slice_start; p < slice_end; p++) {
     if (is_unreserved_character(*p, unreserved_bytes)) {
       *q++ = *p;
@@ -80,7 +80,7 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
       *q++ = hex[*p & 15];
     }
   }
-  GPR_ASSERT(q == GPR_SLICE_END_PTR(out));
+  GPR_ASSERT(q == GRPC_SLICE_END_PTR(out));
   return out;
 }
 
@@ -100,8 +100,8 @@ static uint8_t dehex(uint8_t c) {
 bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
                                       const uint8_t *unreserved_bytes,
                                       grpc_slice *slice_out) {
-  const uint8_t *p = GPR_SLICE_START_PTR(slice_in);
-  const uint8_t *in_end = GPR_SLICE_END_PTR(slice_in);
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice_in);
+  const uint8_t *in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
   bool any_percent_encoded_stuff = false;
   while (p != in_end) {
@@ -122,9 +122,9 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
     *slice_out = grpc_slice_ref(slice_in);
     return true;
   }
-  p = GPR_SLICE_START_PTR(slice_in);
+  p = GRPC_SLICE_START_PTR(slice_in);
   *slice_out = grpc_slice_malloc(out_length);
-  uint8_t *q = GPR_SLICE_START_PTR(*slice_out);
+  uint8_t *q = GRPC_SLICE_START_PTR(*slice_out);
   while (p != in_end) {
     if (*p == '%') {
       *q++ = (uint8_t)(dehex(p[1]) << 4) | (dehex(p[2]));
@@ -133,13 +133,13 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
       *q++ = *p++;
     }
   }
-  GPR_ASSERT(q == GPR_SLICE_END_PTR(*slice_out));
+  GPR_ASSERT(q == GRPC_SLICE_END_PTR(*slice_out));
   return true;
 }
 
 grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
-  const uint8_t *p = GPR_SLICE_START_PTR(slice_in);
-  const uint8_t *in_end = GPR_SLICE_END_PTR(slice_in);
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice_in);
+  const uint8_t *in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
   bool any_percent_encoded_stuff = false;
   while (p != in_end) {
@@ -160,9 +160,9 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
   if (!any_percent_encoded_stuff) {
     return grpc_slice_ref(slice_in);
   }
-  p = GPR_SLICE_START_PTR(slice_in);
+  p = GRPC_SLICE_START_PTR(slice_in);
   grpc_slice out = grpc_slice_malloc(out_length);
-  uint8_t *q = GPR_SLICE_START_PTR(out);
+  uint8_t *q = GRPC_SLICE_START_PTR(out);
   while (p != in_end) {
     if (*p == '%') {
       if (!valid_hex(p + 1, in_end) || !valid_hex(p + 2, in_end)) {
@@ -175,6 +175,6 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
       *q++ = *p++;
     }
   }
-  GPR_ASSERT(q == GPR_SLICE_END_PTR(out));
+  GPR_ASSERT(q == GRPC_SLICE_END_PTR(out));
   return out;
 }

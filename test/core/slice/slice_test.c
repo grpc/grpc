@@ -55,10 +55,10 @@ static void test_slice_malloc_returns_something_sensible(void) {
     /* If there is a length, slice.data must be non-NULL. If length is zero
        we don't care. */
     if (length) {
-      GPR_ASSERT(GPR_SLICE_START_PTR(slice));
+      GPR_ASSERT(GRPC_SLICE_START_PTR(slice));
     }
     /* Returned slice length must be what was requested. */
-    GPR_ASSERT(GPR_SLICE_LENGTH(slice) == length);
+    GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == length);
     /* If the slice has a refcount, it must be destroyable. */
     if (slice.refcount) {
       GPR_ASSERT(slice.refcount->ref != NULL);
@@ -66,7 +66,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
     }
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
-      GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+      GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
     }
     /* And finally we must succeed in destroying the slice */
     grpc_slice_unref(slice);
@@ -97,9 +97,9 @@ static void test_slice_new_with_user_data(void) {
   buf[1] = 1;
   slice = grpc_slice_new_with_user_data(buf, 2, set_mark, &marker);
   GPR_ASSERT(marker == 0);
-  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 2);
-  GPR_ASSERT(GPR_SLICE_START_PTR(slice)[0] == 0);
-  GPR_ASSERT(GPR_SLICE_START_PTR(slice)[1] == 1);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 2);
+  GPR_ASSERT(GRPC_SLICE_START_PTR(slice)[0] == 0);
+  GPR_ASSERT(GRPC_SLICE_START_PTR(slice)[1] == 1);
 
   /* unref should cause destroy function to run. */
   grpc_slice_unref(slice);
@@ -152,7 +152,7 @@ static void test_slice_sub_works(unsigned length) {
      beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+    GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -160,9 +160,9 @@ static void test_slice_sub_works(unsigned length) {
   for (i = 0; i < length; i++) {
     for (j = i; j < length; j++) {
       sub = grpc_slice_sub(slice, i, j);
-      GPR_ASSERT(GPR_SLICE_LENGTH(sub) == j - i);
+      GPR_ASSERT(GRPC_SLICE_LENGTH(sub) == j - i);
       for (k = 0; k < j - i; k++) {
-        GPR_ASSERT(GPR_SLICE_START_PTR(sub)[k] == (uint8_t)(i + k));
+        GPR_ASSERT(GRPC_SLICE_START_PTR(sub)[k] == (uint8_t)(i + k));
       }
       grpc_slice_unref(sub);
     }
@@ -171,12 +171,12 @@ static void test_slice_sub_works(unsigned length) {
 }
 
 static void check_head_tail(grpc_slice slice, grpc_slice head, grpc_slice tail) {
-  GPR_ASSERT(GPR_SLICE_LENGTH(slice) ==
-             GPR_SLICE_LENGTH(head) + GPR_SLICE_LENGTH(tail));
-  GPR_ASSERT(0 == memcmp(GPR_SLICE_START_PTR(slice), GPR_SLICE_START_PTR(head),
-                         GPR_SLICE_LENGTH(head)));
-  GPR_ASSERT(0 == memcmp(GPR_SLICE_START_PTR(slice) + GPR_SLICE_LENGTH(head),
-                         GPR_SLICE_START_PTR(tail), GPR_SLICE_LENGTH(tail)));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(slice) ==
+             GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
+  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_START_PTR(head),
+                         GRPC_SLICE_LENGTH(head)));
+  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
+                         GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
 }
 
 static void test_slice_split_head_works(size_t length) {
@@ -191,7 +191,7 @@ static void test_slice_split_head_works(size_t length) {
      beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+    GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -219,7 +219,7 @@ static void test_slice_split_tail_works(size_t length) {
      beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+    GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -242,9 +242,9 @@ static void test_slice_from_copied_string_works(void) {
   LOG_TEST_NAME("test_slice_from_copied_string_works");
 
   slice = grpc_slice_from_copied_string(text);
-  GPR_ASSERT(strlen(text) == GPR_SLICE_LENGTH(slice));
+  GPR_ASSERT(strlen(text) == GRPC_SLICE_LENGTH(slice));
   GPR_ASSERT(0 ==
-             memcmp(text, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice)));
+             memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
   grpc_slice_unref(slice);
 }
 

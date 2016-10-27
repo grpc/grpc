@@ -192,7 +192,7 @@ static void client_validator(grpc_slice_buffer *incoming) {
   grpc_slice last_frame = last_frame_buffer.slices[0];
   // Construct expected frame.
   grpc_slice expected = grpc_slice_malloc(13);
-  uint8_t *p = GPR_SLICE_START_PTR(expected);
+  uint8_t *p = GRPC_SLICE_START_PTR(expected);
   // Length.
   *p++ = 0;
   *p++ = 0;
