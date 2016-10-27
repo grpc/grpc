@@ -31,11 +31,12 @@
  *
  */
 
-#include "src/core/lib/support/percent_encoding.h"
+#include "src/core/lib/slice/percent_encoding.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
@@ -123,7 +124,7 @@ static void test_nonconformant_vector(const char *encoded,
   gpr_free(encoded2raw_permissive_msg);
 
   GPR_ASSERT(0 == grpc_slice_cmp(permissive_unencoded_slice,
-                                encoded2raw_permissive_slice));
+                                 encoded2raw_permissive_slice));
 
   grpc_slice_unref(permissive_unencoded_slice);
   grpc_slice_unref(encoded2raw_permissive_slice);
