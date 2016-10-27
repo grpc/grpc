@@ -54,6 +54,7 @@ module GRPC
     DEFAULT_MAX_WAITING_REQUESTS = 60
 
     # Default poll period is 1s
+    # Used for grpc server shutdown and thread pool shutdown timeouts
     DEFAULT_POLL_PERIOD = 1
 
     # Signal check period is 0.25s
@@ -124,10 +125,10 @@ module GRPC
         return if @running_state != :running
         transition_running_state(:stopping)
       end
+      @pool.shutdown
+      @pool.wait_for_termination(@poll_period)
       deadline = from_relative_time(@poll_period)
       @server.close(deadline)
-      @pool.shutdown
-      @pool.wait_for_termination
     end
 
     def running_state
