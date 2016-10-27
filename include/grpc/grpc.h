@@ -237,6 +237,10 @@ GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
     created for. */
 GRPCAPI char *grpc_channel_get_target(grpc_channel *channel);
 
+/** Request info about the channel. */
+GRPCAPI void grpc_channel_get_info(grpc_channel *channel,
+                                   grpc_channel_info *channel_info);
+
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
     clients will want to simply pass NULL. See grpc_channel_args definition for
