@@ -243,9 +243,10 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   GPR_ASSERT(token_lifetime.tv_sec == 3599);
   GPR_ASSERT(token_lifetime.tv_nsec == 0);
   GPR_ASSERT(token_md->num_entries == 1);
-  GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].key, "authorization") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].key, "authorization") ==
+             0);
   GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].value,
-                               "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
+                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   grpc_credentials_md_store_unref(token_md);
   grpc_http_response_destroy(&response);
@@ -530,7 +531,7 @@ static void on_oauth2_creds_get_metadata_success(
   GPR_ASSERT(num_md == 1);
   GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].key, "authorization") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].value,
-                               "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
+                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   GPR_ASSERT(user_data != NULL);
   GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);

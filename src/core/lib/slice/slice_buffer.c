@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
 #include <string.h>
 
@@ -112,7 +112,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer *sb, grpc_slice s) {
      writes */
   if (!s.refcount && n) {
     grpc_slice *back = &sb->slices[n - 1];
-    if (!back->refcount && back->data.inlined.length < GRPC_SLICE_INLINED_SIZE) {
+    if (!back->refcount &&
+        back->data.inlined.length < GRPC_SLICE_INLINED_SIZE) {
       if (s.data.inlined.length + back->data.inlined.length <=
           GRPC_SLICE_INLINED_SIZE) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
@@ -193,7 +194,8 @@ void grpc_slice_buffer_swap(grpc_slice_buffer *a, grpc_slice_buffer *b) {
   }
 }
 
-void grpc_slice_buffer_move_into(grpc_slice_buffer *src, grpc_slice_buffer *dst) {
+void grpc_slice_buffer_move_into(grpc_slice_buffer *src,
+                                 grpc_slice_buffer *dst) {
   /* anything to move? */
   if (src->count == 0) {
     return;
@@ -210,7 +212,7 @@ void grpc_slice_buffer_move_into(grpc_slice_buffer *src, grpc_slice_buffer *dst)
 }
 
 void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
-                                 grpc_slice_buffer *dst) {
+                                  grpc_slice_buffer *dst) {
   size_t src_idx;
   size_t output_len = dst->length + n;
   size_t new_input_len = src->length - n;
@@ -248,7 +250,7 @@ void grpc_slice_buffer_move_first(grpc_slice_buffer *src, size_t n,
 }
 
 void grpc_slice_buffer_trim_end(grpc_slice_buffer *sb, size_t n,
-                               grpc_slice_buffer *garbage) {
+                                grpc_slice_buffer *garbage) {
   GPR_ASSERT(n <= sb->length);
   sb->length -= n;
   for (;;) {

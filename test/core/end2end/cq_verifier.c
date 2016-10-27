@@ -119,7 +119,8 @@ static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {
   cursor = GRPC_SLICE_START_PTR(out);
 
   for (i = 0; i < nslices; i++) {
-    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]), GRPC_SLICE_LENGTH(slices[i]));
+    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]),
+           GRPC_SLICE_LENGTH(slices[i]));
     cursor += GRPC_SLICE_LENGTH(slices[i]);
   }
 

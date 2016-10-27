@@ -39,11 +39,11 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/profiling/timers.h"
@@ -115,13 +115,16 @@ grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
   return ::grpc_slice_malloc(length);
 }
 
-void CoreCodegen::grpc_slice_unref(grpc_slice slice) { ::grpc_slice_unref(slice); }
+void CoreCodegen::grpc_slice_unref(grpc_slice slice) {
+  ::grpc_slice_unref(slice);
+}
 
 grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_tail(s, split);
 }
 
-void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) {
+void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb,
+                                        grpc_slice slice) {
   ::grpc_slice_buffer_add(sb, slice);
 }
 

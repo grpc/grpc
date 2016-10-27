@@ -118,8 +118,10 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
-  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
-  grpc_slice response_payload_slice = grpc_slice_from_copied_string("hello you");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =

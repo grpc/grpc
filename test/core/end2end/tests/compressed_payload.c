@@ -308,7 +308,8 @@ static void request_with_payload_template(
   response_str[1023] = '\0';
 
   request_payload_slice = grpc_slice_from_copied_string(request_str);
-  grpc_slice response_payload_slice = grpc_slice_from_copied_string(response_str);
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string(response_str);
 
   client_args = grpc_channel_args_set_compression_algorithm(
       NULL, default_client_channel_compression_algorithm);

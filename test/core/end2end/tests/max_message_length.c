@@ -116,7 +116,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *recv_payload = NULL;

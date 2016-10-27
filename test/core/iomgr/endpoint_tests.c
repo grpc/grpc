@@ -36,9 +36,9 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
@@ -88,7 +88,7 @@ static grpc_endpoint_test_fixture begin_test(grpc_endpoint_test_config config,
 static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 
 static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
-                                  size_t *num_blocks, uint8_t *current_data) {
+                                   size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
   grpc_slice *slices = gpr_malloc(sizeof(grpc_slice) * nslices);
   size_t num_bytes_left = num_bytes;
@@ -99,7 +99,7 @@ static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
 
   for (i = 0; i < nslices; ++i) {
     slices[i] = grpc_slice_malloc(slice_size > num_bytes_left ? num_bytes_left
-                                                             : slice_size);
+                                                              : slice_size);
     num_bytes_left -= GRPC_SLICE_LENGTH(slices[i]);
     buf = GRPC_SLICE_START_PTR(slices[i]);
     for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {

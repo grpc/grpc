@@ -38,9 +38,9 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice_buffer.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"

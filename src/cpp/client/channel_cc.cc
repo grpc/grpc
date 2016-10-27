@@ -47,8 +47,8 @@
 #include <grpc++/support/status.h>
 #include <grpc++/support/time.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include "src/core/lib/profiling/timers.h"
 
 namespace grpc {

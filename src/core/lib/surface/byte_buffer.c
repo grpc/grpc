@@ -42,7 +42,8 @@ grpc_byte_buffer *grpc_raw_byte_buffer_create(grpc_slice *slices,
 }
 
 grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
-    grpc_slice *slices, size_t nslices, grpc_compression_algorithm compression) {
+    grpc_slice *slices, size_t nslices,
+    grpc_compression_algorithm compression) {
   size_t i;
   grpc_byte_buffer *bb = gpr_malloc(sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;

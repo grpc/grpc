@@ -37,9 +37,9 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice_buffer.h>
 
 #include "src/core/lib/compression/message_compress.h"
 

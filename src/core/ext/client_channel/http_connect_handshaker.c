@@ -35,9 +35,9 @@
 
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/uri_parser.h"
@@ -136,11 +136,11 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
           grpc_slice_buffer_add(
               &tmp_buffer,
               grpc_slice_split_tail(&handshaker->read_buffer->slices[i],
-                                   body_start_offset));
+                                    body_start_offset));
         }
         grpc_slice_buffer_addn(&tmp_buffer,
-                              &handshaker->read_buffer->slices[i + 1],
-                              handshaker->read_buffer->count - i - 1);
+                               &handshaker->read_buffer->slices[i + 1],
+                               handshaker->read_buffer->count - i - 1);
         grpc_slice_buffer_swap(handshaker->read_buffer, &tmp_buffer);
         grpc_slice_buffer_destroy(&tmp_buffer);
         break;

@@ -31,9 +31,9 @@
  *
  */
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 
 #include <string.h>
 
@@ -62,7 +62,7 @@ void grpc_slice_unref(grpc_slice slice) {
 static void noop_ref_or_unref(void *unused) {}
 
 static grpc_slice_refcount noop_refcount = {noop_ref_or_unref,
-                                           noop_ref_or_unref};
+                                            noop_ref_or_unref};
 
 grpc_slice grpc_slice_from_static_string(const char *s) {
   grpc_slice slice;
@@ -95,8 +95,8 @@ static void new_slice_unref(void *p) {
 }
 
 grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
-                                       void (*destroy)(void *),
-                                       void *user_data) {
+                                         void (*destroy)(void *),
+                                         void *user_data) {
   grpc_slice slice;
   new_slice_refcount *rc = gpr_malloc(sizeof(new_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
@@ -140,7 +140,7 @@ static void new_with_len_unref(void *p) {
 }
 
 grpc_slice grpc_slice_new_with_len(void *p, size_t len,
-                                 void (*destroy)(void *, size_t)) {
+                                   void (*destroy)(void *, size_t)) {
   grpc_slice slice;
   new_with_len_slice_refcount *rc =
       gpr_malloc(sizeof(new_with_len_slice_refcount));

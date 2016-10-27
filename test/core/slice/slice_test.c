@@ -170,11 +170,12 @@ static void test_slice_sub_works(unsigned length) {
   grpc_slice_unref(slice);
 }
 
-static void check_head_tail(grpc_slice slice, grpc_slice head, grpc_slice tail) {
+static void check_head_tail(grpc_slice slice, grpc_slice head,
+                            grpc_slice tail) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) ==
              GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
-  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_START_PTR(head),
-                         GRPC_SLICE_LENGTH(head)));
+  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice),
+                         GRPC_SLICE_START_PTR(head), GRPC_SLICE_LENGTH(head)));
   GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
                          GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
 }
@@ -243,8 +244,8 @@ static void test_slice_from_copied_string_works(void) {
 
   slice = grpc_slice_from_copied_string(text);
   GPR_ASSERT(strlen(text) == GRPC_SLICE_LENGTH(slice));
-  GPR_ASSERT(0 ==
-             memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
+  GPR_ASSERT(
+      0 == memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
   grpc_slice_unref(slice);
 }
 

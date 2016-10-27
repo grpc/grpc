@@ -33,15 +33,16 @@
 
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
-#include <grpc/support/log.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
 
 static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
                         const char *expect_bytes, size_t expect_length) {
   uint32_t nbytes = GRPC_CHTTP2_VARINT_LENGTH(value, prefix_bits);
-  grpc_slice expect = grpc_slice_from_copied_buffer(expect_bytes, expect_length);
+  grpc_slice expect =
+      grpc_slice_from_copied_buffer(expect_bytes, expect_length);
   grpc_slice slice;
   gpr_log(GPR_DEBUG, "Test: 0x%08x", value);
   GPR_ASSERT(nbytes == expect_length);

@@ -83,7 +83,7 @@ static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
 }
 
 grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
-                                      uint32_t force_mask, size_t count) {
+                                       uint32_t force_mask, size_t count) {
   size_t i;
   uint32_t n = 0;
   grpc_slice output;

@@ -70,8 +70,8 @@ static void assert_passthrough(grpc_slice value,
       GPR_INFO, "assert_passthrough: value_length=%" PRIuPTR
                 " value_hash=0x%08x "
                 "algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
-      GRPC_SLICE_LENGTH(value),
-      gpr_murmur_hash3(GRPC_SLICE_START_PTR(value), GRPC_SLICE_LENGTH(value), 0),
+      GRPC_SLICE_LENGTH(value), gpr_murmur_hash3(GRPC_SLICE_START_PTR(value),
+                                                 GRPC_SLICE_LENGTH(value), 0),
       algorithm_name, grpc_slice_split_mode_name(uncompressed_split_mode),
       grpc_slice_split_mode_name(compressed_split_mode));
 
@@ -221,7 +221,7 @@ static void test_bad_decompression_data_stream(void) {
   grpc_slice_buffer_init(&input);
   grpc_slice_buffer_init(&output);
   grpc_slice_buffer_add(&input,
-                       grpc_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
+                        grpc_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
 
   /* try (and fail) to decompress the invalid compresed buffer */
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
@@ -237,8 +237,8 @@ static void test_bad_compression_algorithm(void) {
 
   grpc_slice_buffer_init(&input);
   grpc_slice_buffer_init(&output);
-  grpc_slice_buffer_add(&input,
-                       grpc_slice_from_copied_string("Never gonna give you up"));
+  grpc_slice_buffer_add(
+      &input, grpc_slice_from_copied_string("Never gonna give you up"));
   was_compressed =
       grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_compressed);
@@ -259,8 +259,8 @@ static void test_bad_decompression_algorithm(void) {
   grpc_slice_buffer_init(&input);
   grpc_slice_buffer_init(&output);
   grpc_slice_buffer_add(&input,
-                       grpc_slice_from_copied_string(
-                           "I'm not really compressed but it doesn't matter"));
+                        grpc_slice_from_copied_string(
+                            "I'm not really compressed but it doesn't matter"));
   was_decompressed =
       grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_decompressed);

@@ -100,7 +100,8 @@ static void test_invoke_request_with_flags(
     grpc_end2end_test_config config, uint32_t *flags_for_op,
     grpc_call_error call_start_batch_expected_result) {
   grpc_call *c;
-  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();

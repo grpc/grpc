@@ -41,8 +41,8 @@
 #include <grpc++/generic/generic_stub.h>
 #include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 namespace grpc {
 namespace testing {

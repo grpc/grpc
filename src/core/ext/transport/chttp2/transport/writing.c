@@ -131,8 +131,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
     if (s->announce_window > 0) {
       uint32_t announce = s->announce_window;
       grpc_slice_buffer_add(&t->outbuf,
-                           grpc_chttp2_window_update_create(
-                               s->id, s->announce_window, &s->stats.outgoing));
+                            grpc_chttp2_window_update_create(
+                                s->id, s->announce_window, &s->stats.outgoing));
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", t, s, announce_window, announce);
     }
     if (sent_initial_metadata) {
@@ -163,8 +163,8 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
             s->sent_trailing_metadata = true;
             if (!t->is_client && !s->read_closed) {
               grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
-                                                   s->id, GRPC_CHTTP2_NO_ERROR,
-                                                   &s->stats.outgoing));
+                                                    s->id, GRPC_CHTTP2_NO_ERROR,
+                                                    &s->stats.outgoing));
             }
           }
           s->sending_bytes += send_bytes;
@@ -221,7 +221,7 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
                                      announced);
     grpc_transport_one_way_stats throwaway_stats;
     grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_window_update_create(
-                                         0, announced, &throwaway_stats));
+                                          0, announced, &throwaway_stats));
   }
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);

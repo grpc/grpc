@@ -37,9 +37,9 @@
 #include <string.h>
 
 #include <grpc/census.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/census/census_interface.h"
