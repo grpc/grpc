@@ -52,6 +52,8 @@ static testing_pair testing_pairs[] = {
     /* Testing trivial parses, with de-indentation. */
     {" 0 ", "0"},
     {" 1 ", "1"},
+    {"42", "42"},
+    {"-0.1", "-0.1"},
     {" \"    \" ", "\"    \""},
     {" \"a\" ", "\"a\""},
     {" true ", "true"},
@@ -78,6 +80,7 @@ static testing_pair testing_pairs[] = {
     /* Testing valid number parsing. */
     {"[0, 42 , 0.0123, 123.456]", "[0,42,0.0123,123.456]"},
     {"[1e4,-53.235e-31, 0.3e+3]", "[1e4,-53.235e-31,0.3e+3]"},
+    {"[0e+1, 0e1, 0e0]", "[0e+1,0e1,0e0]"},
     /* Testing keywords parsing. */
     {"[true, false, null]", "[true,false,null]"},
 
@@ -139,6 +142,13 @@ static testing_pair testing_pairs[] = {
     /* Testing having a key syntax in an array. */
     {"[\"x\":0]", NULL},
     /* Testing invalid numbers. */
+    {"[-]", NULL},
+    {"[-01]", NULL},
+    {"[0.3e+]", NULL},
+    {"[1.0e+]", NULL},
+    {"[1.0e-]", NULL},
+    {"[-012]", NULL},
+    {"[-.123]", NULL},
     {"1.", NULL},
     {"1e", NULL},
     {".12", NULL},
