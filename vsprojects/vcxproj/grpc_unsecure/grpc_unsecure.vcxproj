@@ -372,6 +372,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\method_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
@@ -405,7 +406,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\method_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\resolver_factory.h" />
@@ -641,6 +641,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\method_config.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.c">
@@ -722,8 +724,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\lb_policy_registry.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\method_config.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\parse_address.c">
     </ClCompile>
