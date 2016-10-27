@@ -33,14 +33,15 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <grpc/support/thd.h>
 
 // #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -105,8 +106,8 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void handle_write(grpc_exec_ctx *exec_ctx) {
-  grpc_slice slice = grpc_slice_from_copied_buffer(state.response_payload,
-                                                 state.response_payload_length);
+  grpc_slice slice = grpc_slice_from_copied_buffer(
+      state.response_payload, state.response_payload_length);
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
@@ -120,7 +121,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   size_t i;
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
     char *dump = grpc_dump_slice(state.temp_incoming_buffer.slices[i],
-                                GPR_DUMP_HEX | GPR_DUMP_ASCII);
+                                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_DEBUG, "Server received: %s", dump);
     gpr_free(dump);
   }

@@ -42,6 +42,7 @@
 
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"

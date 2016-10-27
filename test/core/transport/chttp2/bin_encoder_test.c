@@ -41,6 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 static int all_ok = 1;
@@ -74,8 +75,8 @@ static grpc_slice HUFF(const char *s) {
   return out;
 }
 
-#define EXPECT_SLICE_EQ(expected, slice)                                   \
-  expect_slice_eq(                                                         \
+#define EXPECT_SLICE_EQ(expected, slice)                                    \
+  expect_slice_eq(                                                          \
       grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, \
       #slice, __LINE__);
 
