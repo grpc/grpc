@@ -460,7 +460,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
   grpc_slice slice = value->slice;
-  size_t len = GPR_SLICE_LENGTH(slice);
+  size_t len = GRPC_SLICE_LENGTH(slice);
 
   if (len + 1 > *capacity) {
     *capacity = GPR_MAX(len + 1, *capacity * 2);

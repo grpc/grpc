@@ -69,13 +69,13 @@ class Slice GRPC_FINAL {
   }
 
   /// Byte size.
-  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
+  size_t size() const { return GRPC_SLICE_LENGTH(slice_); }
 
   /// Raw pointer to the beginning (first element) of the slice.
-  const uint8_t* begin() const { return GPR_SLICE_START_PTR(slice_); }
+  const uint8_t* begin() const { return GRPC_SLICE_START_PTR(slice_); }
 
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
-  const uint8_t* end() const { return GPR_SLICE_END_PTR(slice_); }
+  const uint8_t* end() const { return GRPC_SLICE_END_PTR(slice_); }
 
   /// Raw C slice. Caller needs to call grpc_slice_unref when done.
   grpc_slice c_slice() const { return grpc_slice_ref(slice_); }

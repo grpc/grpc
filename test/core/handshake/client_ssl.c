@@ -238,9 +238,9 @@ static bool client_ssl_test(char *server_alpn_preferred) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char *ca_cert = (const char *)GPR_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
+  const char *ca_cert = (const char *)GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
   grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, NULL);
 

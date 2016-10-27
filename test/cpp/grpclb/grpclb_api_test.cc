@@ -72,9 +72,9 @@ TEST_F(GrpclbTest, CreateRequest) {
   LoadBalanceRequest request;
   grpc_grpclb_request* c_req = grpc_grpclb_request_create(service_name.c_str());
   grpc_slice slice = grpc_grpclb_request_encode(c_req);
-  const int num_bytes_written = GPR_SLICE_LENGTH(slice);
+  const int num_bytes_written = GRPC_SLICE_LENGTH(slice);
   EXPECT_GT(num_bytes_written, 0);
-  request.ParseFromArray(GPR_SLICE_START_PTR(slice), num_bytes_written);
+  request.ParseFromArray(GRPC_SLICE_START_PTR(slice), num_bytes_written);
   EXPECT_EQ(request.initial_request().name(), service_name);
   grpc_slice_unref(slice);
   grpc_grpclb_request_destroy(c_req);

@@ -51,22 +51,22 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
   grpc_slice outbuf = grpc_slice_malloc(OUTPUT_BLOCK_SIZE);
   const uInt uint_max = ~(uInt)0;
 
-  GPR_ASSERT(GPR_SLICE_LENGTH(outbuf) <= uint_max);
-  zs->avail_out = (uInt)GPR_SLICE_LENGTH(outbuf);
-  zs->next_out = GPR_SLICE_START_PTR(outbuf);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+  zs->avail_out = (uInt)GRPC_SLICE_LENGTH(outbuf);
+  zs->next_out = GRPC_SLICE_START_PTR(outbuf);
   flush = Z_NO_FLUSH;
   for (i = 0; i < input->count; i++) {
     if (i == input->count - 1) flush = Z_FINISH;
-    GPR_ASSERT(GPR_SLICE_LENGTH(input->slices[i]) <= uint_max);
-    zs->avail_in = (uInt)GPR_SLICE_LENGTH(input->slices[i]);
-    zs->next_in = GPR_SLICE_START_PTR(input->slices[i]);
+    GPR_ASSERT(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
+    zs->avail_in = (uInt)GRPC_SLICE_LENGTH(input->slices[i]);
+    zs->next_in = GRPC_SLICE_START_PTR(input->slices[i]);
     do {
       if (zs->avail_out == 0) {
         grpc_slice_buffer_add_indexed(output, outbuf);
         outbuf = grpc_slice_malloc(OUTPUT_BLOCK_SIZE);
-        GPR_ASSERT(GPR_SLICE_LENGTH(outbuf) <= uint_max);
-        zs->avail_out = (uInt)GPR_SLICE_LENGTH(outbuf);
-        zs->next_out = GPR_SLICE_START_PTR(outbuf);
+        GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+        zs->avail_out = (uInt)GRPC_SLICE_LENGTH(outbuf);
+        zs->next_out = GRPC_SLICE_START_PTR(outbuf);
       }
       r = flate(zs, flush);
       if (r < 0 && r != Z_BUF_ERROR /* not fatal */) {

@@ -77,8 +77,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     grpc_slice encrypted_leftover;
     for (i = 0; i < leftover_nslices; i++) {
       grpc_slice plain = leftover_slices[i];
-      uint8_t *message_bytes = GPR_SLICE_START_PTR(plain);
-      size_t message_size = GPR_SLICE_LENGTH(plain);
+      uint8_t *message_bytes = GRPC_SLICE_START_PTR(plain);
+      size_t message_size = GRPC_SLICE_LENGTH(plain);
       while (message_size > 0) {
         size_t protected_buffer_size_to_send = buffer_size;
         size_t processed_message_size = message_size;

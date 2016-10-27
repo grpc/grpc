@@ -40,7 +40,7 @@
 #include "src/core/lib/support/string.h"
 
 char *grpc_dump_slice(grpc_slice s, uint32_t flags) {
-  return gpr_dump((const char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s),
+  return gpr_dump((const char *)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
                   flags);
 }
 
@@ -53,8 +53,8 @@ static int slice_find_separator_offset(const grpc_slice str, const char *sep,
                                        const size_t read_offset, size_t *begin,
                                        size_t *end) {
   size_t i;
-  const uint8_t *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
-  const size_t str_len = GPR_SLICE_LENGTH(str) - read_offset;
+  const uint8_t *str_ptr = GRPC_SLICE_START_PTR(str) + read_offset;
+  const size_t str_len = GRPC_SLICE_LENGTH(str) - read_offset;
   const size_t sep_len = strlen(sep);
   if (str_len < sep_len) {
     return 0;
@@ -82,7 +82,7 @@ void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst) {
     } while (slice_find_separator_offset(str, sep, end + sep_len, &begin,
                                          &end) != 0);
     grpc_slice_buffer_add_indexed(
-        dst, grpc_slice_sub(str, end + sep_len, GPR_SLICE_LENGTH(str)));
+        dst, grpc_slice_sub(str, end + sep_len, GRPC_SLICE_LENGTH(str)));
   } else { /* no sep found, add whole input */
     grpc_slice_buffer_add_indexed(dst, grpc_slice_ref(str));
   }

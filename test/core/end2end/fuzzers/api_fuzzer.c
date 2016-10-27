@@ -138,7 +138,7 @@ static uint32_t read_uint32(input_stream *inp) {
 
 static grpc_byte_buffer *read_message(input_stream *inp) {
   grpc_slice slice = grpc_slice_malloc(read_uint22(inp));
-  memset(GPR_SLICE_START_PTR(slice), 0, GPR_SLICE_LENGTH(slice));
+  memset(GRPC_SLICE_START_PTR(slice), 0, GRPC_SLICE_LENGTH(slice));
   grpc_byte_buffer *out = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
   return out;

@@ -885,7 +885,7 @@ static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s) {
   s->fetched_send_message_length +=
-      (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
+      (uint32_t)GRPC_SLICE_LENGTH(s->fetching_slice);
   grpc_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
   if (s->id != 0) {
     grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
@@ -1602,7 +1602,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
        compression
        and just write the uncompressed bytes onto the wire. */
     status_hdr = grpc_slice_malloc(15 + (grpc_status >= 10));
-    p = GPR_SLICE_START_PTR(status_hdr);
+    p = GRPC_SLICE_START_PTR(status_hdr);
     *p++ = 0x40; /* literal header */
     *p++ = 11;   /* len(grpc-status) */
     *p++ = 'g';
@@ -1624,8 +1624,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       *p++ = (uint8_t)('0' + (grpc_status / 10));
       *p++ = (uint8_t)('0' + (grpc_status % 10));
     }
-    GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
-    len += (uint32_t)GPR_SLICE_LENGTH(status_hdr);
+    GPR_ASSERT(p == GRPC_SLICE_END_PTR(status_hdr));
+    len += (uint32_t)GRPC_SLICE_LENGTH(status_hdr);
 
     const char *optional_message =
         grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE);
@@ -1634,7 +1634,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       size_t msg_len = strlen(optional_message);
       GPR_ASSERT(msg_len < 127);
       message_pfx = grpc_slice_malloc(15);
-      p = GPR_SLICE_START_PTR(message_pfx);
+      p = GRPC_SLICE_START_PTR(message_pfx);
       *p++ = 0x40;
       *p++ = 12; /* len(grpc-message) */
       *p++ = 'g';
@@ -1650,13 +1650,13 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       *p++ = 'g';
       *p++ = 'e';
       *p++ = (uint8_t)msg_len;
-      GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
-      len += (uint32_t)GPR_SLICE_LENGTH(message_pfx);
+      GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
+      len += (uint32_t)GRPC_SLICE_LENGTH(message_pfx);
       len += (uint32_t)msg_len;
     }
 
     hdr = grpc_slice_malloc(9);
-    p = GPR_SLICE_START_PTR(hdr);
+    p = GRPC_SLICE_START_PTR(hdr);
     *p++ = (uint8_t)(len >> 16);
     *p++ = (uint8_t)(len >> 8);
     *p++ = (uint8_t)(len);
@@ -1666,7 +1666,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     *p++ = (uint8_t)(s->id >> 16);
     *p++ = (uint8_t)(s->id >> 8);
     *p++ = (uint8_t)(s->id);
-    GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
+    GPR_ASSERT(p == GRPC_SLICE_END_PTR(hdr));
 
     grpc_slice_buffer_add(&t->qbuf, hdr);
     grpc_slice_buffer_add(&t->qbuf, status_hdr);
@@ -2043,11 +2043,11 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            grpc_slice slice) {
   gpr_mu_lock(&bs->slice_mu);
-  if (bs->remaining_bytes < GPR_SLICE_LENGTH(slice)) {
+  if (bs->remaining_bytes < GRPC_SLICE_LENGTH(slice)) {
     incoming_byte_stream_publish_error(
         exec_ctx, bs, GRPC_ERROR_CREATE("Too many bytes in stream"));
   } else {
-    bs->remaining_bytes -= (uint32_t)GPR_SLICE_LENGTH(slice);
+    bs->remaining_bytes -= (uint32_t)GRPC_SLICE_LENGTH(slice);
     if (bs->on_next != NULL) {
       *bs->next = slice;
       grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);

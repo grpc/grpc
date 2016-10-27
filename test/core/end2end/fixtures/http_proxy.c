@@ -37,11 +37,11 @@
 
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
@@ -151,7 +151,7 @@ static void on_client_write_done(grpc_exec_ctx* exec_ctx, void* arg,
   // write that data now.
   if (conn->client_deferred_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
-                               &conn->client_write_buffer);
+                                &conn->client_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                         &conn->client_write_buffer,
                         &conn->on_client_write_done);
@@ -176,7 +176,7 @@ static void on_server_write_done(grpc_exec_ctx* exec_ctx, void* arg,
   // write that data now.
   if (conn->server_deferred_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
-                               &conn->server_write_buffer);
+                                &conn->server_write_buffer);
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
                         &conn->server_write_buffer,
                         &conn->on_server_write_done);
@@ -204,10 +204,10 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // Otherwise, move the read data into the write buffer and write it.
   if (conn->server_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->client_read_buffer,
-                               &conn->server_deferred_write_buffer);
+                                &conn->server_deferred_write_buffer);
   } else {
     grpc_slice_buffer_move_into(&conn->client_read_buffer,
-                               &conn->server_write_buffer);
+                                &conn->server_write_buffer);
     gpr_ref(&conn->refcount);
     grpc_endpoint_write(exec_ctx, conn->server_endpoint,
                         &conn->server_write_buffer,
@@ -236,10 +236,10 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // Otherwise, move the read data into the write buffer and write it.
   if (conn->client_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->server_read_buffer,
-                               &conn->client_deferred_write_buffer);
+                                &conn->client_deferred_write_buffer);
   } else {
     grpc_slice_buffer_move_into(&conn->server_read_buffer,
-                               &conn->client_write_buffer);
+                                &conn->client_write_buffer);
     gpr_ref(&conn->refcount);
     grpc_endpoint_write(exec_ctx, conn->client_endpoint,
                         &conn->client_write_buffer,
@@ -313,7 +313,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
   // Read request and feed it to the parser.
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
-    if (GPR_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
+    if (GRPC_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
       error = grpc_http_parser_parse(&conn->http_parser,
                                      conn->client_read_buffer.slices[i], NULL);
       if (error != GRPC_ERROR_NONE) {

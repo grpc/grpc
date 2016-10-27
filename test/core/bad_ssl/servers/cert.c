@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file("src/core/lib/tsi/test_creds/badserver.key",
                                   1, &key_slice)));
-  pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
+  pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
 
   ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);

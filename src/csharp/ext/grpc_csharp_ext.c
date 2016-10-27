@@ -288,10 +288,10 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, ctx->recv_message));
 
   while (grpc_byte_buffer_reader_next(&reader, &slice)) {
-    size_t len = GPR_SLICE_LENGTH(slice);
+    size_t len = GRPC_SLICE_LENGTH(slice);
     GPR_ASSERT(offset + len <= buffer_len);
-    memcpy(buffer + offset, GPR_SLICE_START_PTR(slice),
-           GPR_SLICE_LENGTH(slice));
+    memcpy(buffer + offset, GRPC_SLICE_START_PTR(slice),
+           GRPC_SLICE_LENGTH(slice));
     offset += len;
     grpc_slice_unref(slice);
   }

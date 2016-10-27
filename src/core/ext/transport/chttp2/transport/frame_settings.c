@@ -94,7 +94,7 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
   }
 
   output = grpc_slice_malloc(9 + 6 * n);
-  p = fill_header(GPR_SLICE_START_PTR(output), 6 * n, 0);
+  p = fill_header(GRPC_SLICE_START_PTR(output), 6 * n, 0);
 
   for (i = 0; i < count; i++) {
     if (new[i] != old[i] || (force_mask & (1u << i)) != 0) {
@@ -109,14 +109,14 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
     }
   }
 
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(output));
+  GPR_ASSERT(p == GRPC_SLICE_END_PTR(output));
 
   return output;
 }
 
 grpc_slice grpc_chttp2_settings_ack_create(void) {
   grpc_slice output = grpc_slice_malloc(9);
-  fill_header(GPR_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
+  fill_header(GRPC_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
   return output;
 }
 
@@ -148,8 +148,8 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
                                               grpc_chttp2_stream *s,
                                               grpc_slice slice, int is_last) {
   grpc_chttp2_settings_parser *parser = p;
-  const uint8_t *cur = GPR_SLICE_START_PTR(slice);
-  const uint8_t *end = GPR_SLICE_END_PTR(slice);
+  const uint8_t *cur = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *end = GRPC_SLICE_END_PTR(slice);
   char *msg;
 
   if (parser->is_ack) {

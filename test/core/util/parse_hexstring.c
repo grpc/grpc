@@ -48,7 +48,7 @@ grpc_slice parse_hexstring(const char *hexstring) {
   GPR_ASSERT((nibbles & 1) == 0);
 
   slice = grpc_slice_malloc(nibbles / 2);
-  out = GPR_SLICE_START_PTR(slice);
+  out = GRPC_SLICE_START_PTR(slice);
 
   nibbles = 0;
   temp = 0;

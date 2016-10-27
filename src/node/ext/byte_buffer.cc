@@ -57,7 +57,7 @@ grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   int length = ::node::Buffer::Length(buffer);
   char *data = ::node::Buffer::Data(buffer);
   grpc_slice slice = grpc_slice_malloc(length);
-  memcpy(GPR_SLICE_START_PTR(slice), data, length);
+  memcpy(GRPC_SLICE_START_PTR(slice), data, length);
   grpc_byte_buffer *byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
   grpc_slice_unref(slice);
   return byte_buffer;
@@ -78,9 +78,9 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     return scope.Escape(Nan::Undefined());
   }
   grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GPR_SLICE_LENGTH(slice);
+  size_t length = GRPC_SLICE_LENGTH(slice);
   char *result = new char[length];
-  memcpy(result, GPR_SLICE_START_PTR(slice), length);
+  memcpy(result, GRPC_SLICE_START_PTR(slice), length);
   grpc_slice_unref(slice);
   return scope.Escape(MakeFastBuffer(
       Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));

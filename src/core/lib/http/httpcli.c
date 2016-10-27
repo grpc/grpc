@@ -144,7 +144,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   size_t i;
 
   for (i = 0; i < req->incoming.count; i++) {
-    if (GPR_SLICE_LENGTH(req->incoming.slices[i])) {
+    if (GRPC_SLICE_LENGTH(req->incoming.slices[i])) {
       req->have_read_byte = 1;
       grpc_error *err =
           grpc_http_parser_parse(&req->parser, req->incoming.slices[i], NULL);

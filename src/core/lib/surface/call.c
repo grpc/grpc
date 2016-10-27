@@ -518,8 +518,8 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
     const grpc_slice *accept_encoding_entry_slice =
         &accept_encoding_parts.slices[i];
     if (grpc_compression_algorithm_parse(
-            (const char *)GPR_SLICE_START_PTR(*accept_encoding_entry_slice),
-            GPR_SLICE_LENGTH(*accept_encoding_entry_slice), &algorithm)) {
+            (const char *)GRPC_SLICE_START_PTR(*accept_encoding_entry_slice),
+            GRPC_SLICE_LENGTH(*accept_encoding_entry_slice), &algorithm)) {
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
       char *accept_encoding_entry_str =
@@ -553,13 +553,13 @@ static void get_final_details(grpc_call *call, char **out_details,
     if (call->status[i].is_set) {
       if (call->status[i].details) {
         grpc_slice details = call->status[i].details->slice;
-        size_t len = GPR_SLICE_LENGTH(details);
+        size_t len = GRPC_SLICE_LENGTH(details);
         if (len + 1 > *out_details_capacity) {
           *out_details_capacity =
               GPR_MAX(len + 1, *out_details_capacity * 3 / 2);
           *out_details = gpr_realloc(*out_details, *out_details_capacity);
         }
-        memcpy(*out_details, GPR_SLICE_START_PTR(details), len);
+        memcpy(*out_details, GRPC_SLICE_START_PTR(details), len);
         (*out_details)[len] = 0;
       } else {
         goto no_details;
@@ -901,7 +901,7 @@ static uint32_t decode_status(grpc_mdelem *md) {
     status = ((uint32_t)(intptr_t)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
-                                   GPR_SLICE_LENGTH(md->value->slice),
+                                   GRPC_SLICE_LENGTH(md->value->slice),
                                    &status)) {
       status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
     }
@@ -954,7 +954,7 @@ static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
   mdusr = &dest->metadata[dest->count++];
   mdusr->key = grpc_mdstr_as_c_string(elem->key);
   mdusr->value = grpc_mdstr_as_c_string(elem->value);
-  mdusr->value_length = GPR_SLICE_LENGTH(elem->value->slice);
+  mdusr->value_length = GRPC_SLICE_LENGTH(elem->value->slice);
   GPR_TIMER_END("publish_app_metadata", 0);
   return elem;
 }

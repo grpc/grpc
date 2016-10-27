@@ -118,7 +118,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
   // Add buffer to parser.
   for (size_t i = 0; i < handshaker->read_buffer->count; ++i) {
-    if (GPR_SLICE_LENGTH(handshaker->read_buffer->slices[i]) > 0) {
+    if (GRPC_SLICE_LENGTH(handshaker->read_buffer->slices[i]) > 0) {
       size_t body_start_offset = 0;
       error = grpc_http_parser_parse(&handshaker->http_parser,
                                      handshaker->read_buffer->slices[i],
@@ -132,7 +132,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
         grpc_slice_buffer tmp_buffer;
         grpc_slice_buffer_init(&tmp_buffer);
         if (body_start_offset <
-            GPR_SLICE_LENGTH(handshaker->read_buffer->slices[i])) {
+            GRPC_SLICE_LENGTH(handshaker->read_buffer->slices[i])) {
           grpc_slice_buffer_add(
               &tmp_buffer,
               grpc_slice_split_tail(&handshaker->read_buffer->slices[i],

@@ -73,8 +73,8 @@ TEST_F(SliceTest, Cslice) {
   Slice spp(s, Slice::STEAL_REF);
   CheckSlice(spp, kContent);
   grpc_slice c_slice = spp.c_slice();
-  EXPECT_EQ(GPR_SLICE_START_PTR(s), GPR_SLICE_START_PTR(c_slice));
-  EXPECT_EQ(GPR_SLICE_END_PTR(s), GPR_SLICE_END_PTR(c_slice));
+  EXPECT_EQ(GRPC_SLICE_START_PTR(s), GRPC_SLICE_START_PTR(c_slice));
+  EXPECT_EQ(GRPC_SLICE_END_PTR(s), GRPC_SLICE_END_PTR(c_slice));
   grpc_slice_unref(c_slice);
 }
 

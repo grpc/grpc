@@ -72,8 +72,8 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s,
                                             grpc_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_goaway_parser *p = parser;
 
@@ -163,10 +163,10 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                grpc_slice debug_data,
                                grpc_slice_buffer *slice_buffer) {
   grpc_slice header = grpc_slice_malloc(9 + 4 + 4);
-  uint8_t *p = GPR_SLICE_START_PTR(header);
+  uint8_t *p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
-  GPR_ASSERT(GPR_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
-  frame_length = 4 + 4 + (uint32_t)GPR_SLICE_LENGTH(debug_data);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  frame_length = 4 + 4 + (uint32_t)GRPC_SLICE_LENGTH(debug_data);
 
   /* frame header: length */
   *p++ = (uint8_t)(frame_length >> 16);
@@ -191,7 +191,7 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   *p++ = (uint8_t)(error_code >> 16);
   *p++ = (uint8_t)(error_code >> 8);
   *p++ = (uint8_t)(error_code);
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(header));
+  GPR_ASSERT(p == GRPC_SLICE_END_PTR(header));
   grpc_slice_buffer_add(slice_buffer, header);
   grpc_slice_buffer_add(slice_buffer, debug_data);
 }

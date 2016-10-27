@@ -159,7 +159,7 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
 
 grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
   grpc_slice slice = grpc_slice_malloc(length);
-  memcpy(GPR_SLICE_START_PTR(slice), source, length);
+  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }
 
@@ -252,7 +252,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   if (end - begin <= sizeof(subset.data.inlined.bytes)) {
     subset.refcount = NULL;
     subset.data.inlined.length = (uint8_t)(end - begin);
-    memcpy(subset.data.inlined.bytes, GPR_SLICE_START_PTR(source) + begin,
+    memcpy(subset.data.inlined.bytes, GRPC_SLICE_START_PTR(source) + begin,
            end - begin);
   } else {
     subset = grpc_slice_sub_no_ref(source, begin, end);
@@ -336,15 +336,15 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
 }
 
 int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
-  int d = (int)(GPR_SLICE_LENGTH(a) - GPR_SLICE_LENGTH(b));
+  int d = (int)(GRPC_SLICE_LENGTH(a) - GRPC_SLICE_LENGTH(b));
   if (d != 0) return d;
-  return memcmp(GPR_SLICE_START_PTR(a), GPR_SLICE_START_PTR(b),
-                GPR_SLICE_LENGTH(a));
+  return memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                GRPC_SLICE_LENGTH(a));
 }
 
 int grpc_slice_str_cmp(grpc_slice a, const char *b) {
   size_t b_length = strlen(b);
-  int d = (int)(GPR_SLICE_LENGTH(a) - b_length);
+  int d = (int)(GRPC_SLICE_LENGTH(a) - b_length);
   if (d != 0) return d;
-  return memcmp(GPR_SLICE_START_PTR(a), b, b_length);
+  return memcmp(GRPC_SLICE_START_PTR(a), b, b_length);
 }

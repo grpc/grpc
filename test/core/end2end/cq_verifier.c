@@ -112,15 +112,15 @@ static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {
   grpc_slice out;
 
   for (i = 0; i < nslices; i++) {
-    len += GPR_SLICE_LENGTH(slices[i]);
+    len += GRPC_SLICE_LENGTH(slices[i]);
   }
 
   out = grpc_slice_malloc(len);
-  cursor = GPR_SLICE_START_PTR(out);
+  cursor = GRPC_SLICE_START_PTR(out);
 
   for (i = 0; i < nslices; i++) {
-    memcpy(cursor, GPR_SLICE_START_PTR(slices[i]), GPR_SLICE_LENGTH(slices[i]));
-    cursor += GPR_SLICE_LENGTH(slices[i]);
+    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]), GRPC_SLICE_LENGTH(slices[i]));
+    cursor += GRPC_SLICE_LENGTH(slices[i]);
   }
 
   return out;
@@ -134,9 +134,9 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer *rbb, grpc_slice b) {
 
   a = merge_slices(rbb->data.raw.slice_buffer.slices,
                    rbb->data.raw.slice_buffer.count);
-  ok = GPR_SLICE_LENGTH(a) == GPR_SLICE_LENGTH(b) &&
-       0 == memcmp(GPR_SLICE_START_PTR(a), GPR_SLICE_START_PTR(b),
-                   GPR_SLICE_LENGTH(a));
+  ok = GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
+       0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                   GRPC_SLICE_LENGTH(a));
   grpc_slice_unref(a);
   grpc_slice_unref(b);
   return ok;

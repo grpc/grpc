@@ -63,10 +63,10 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
   } else {
     GPR_ASSERT(num_md == 1);
     token_slice = md_elems[0].value;
-    token = gpr_malloc(GPR_SLICE_LENGTH(token_slice) + 1);
-    memcpy(token, GPR_SLICE_START_PTR(token_slice),
-           GPR_SLICE_LENGTH(token_slice));
-    token[GPR_SLICE_LENGTH(token_slice)] = '\0';
+    token = gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1);
+    memcpy(token, GRPC_SLICE_START_PTR(token_slice),
+           GRPC_SLICE_LENGTH(token_slice));
+    token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
   }
   gpr_mu_lock(request->mu);
   request->is_done = 1;

@@ -68,8 +68,8 @@ cdef extern from "grpc/grpc.h":
   grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
 
   # Declare functions for function-like macros (because Cython)...
-  void *grpc_slice_start_ptr "GPR_SLICE_START_PTR" (grpc_slice s) nogil
-  size_t grpc_slice_length "GPR_SLICE_LENGTH" (grpc_slice s) nogil
+  void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
+  size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC

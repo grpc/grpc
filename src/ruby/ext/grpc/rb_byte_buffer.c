@@ -61,8 +61,8 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
     return Qnil;
   }
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    rb_str_cat(rb_string, (const char *) GPR_SLICE_START_PTR(next),
-               GPR_SLICE_LENGTH(next));
+    rb_str_cat(rb_string, (const char *) GRPC_SLICE_START_PTR(next),
+               GRPC_SLICE_LENGTH(next));
     grpc_slice_unref(next);
   }
   return rb_string;

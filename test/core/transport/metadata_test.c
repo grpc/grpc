@@ -279,7 +279,7 @@ static void verify_binary_header_size(const char *key, const uint8_t *value,
   grpc_slice value_slice =
       grpc_slice_from_copied_buffer((const char *)value, value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
-  size_t expected_size = 32 + strlen(key) + GPR_SLICE_LENGTH(base64_encoded);
+  size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
   grpc_slice_unref(value_slice);
   grpc_slice_unref(base64_encoded);

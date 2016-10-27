@@ -89,12 +89,12 @@ static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
   grpc_json *json;
 
   *buffer = grpc_base64_decode_with_len(str, len, 1);
-  if (GPR_SLICE_IS_EMPTY(*buffer)) {
+  if (GRPC_SLICE_IS_EMPTY(*buffer)) {
     gpr_log(GPR_ERROR, "Invalid base64.");
     return NULL;
   }
-  json = grpc_json_parse_string_with_len((char *)GPR_SLICE_START_PTR(*buffer),
-                                         GPR_SLICE_LENGTH(*buffer));
+  json = grpc_json_parse_string_with_len((char *)GRPC_SLICE_START_PTR(*buffer),
+                                         GRPC_SLICE_LENGTH(*buffer));
   if (json == NULL) {
     grpc_slice_unref(*buffer);
     gpr_log(GPR_ERROR, "JSON parsing error.");
@@ -453,12 +453,12 @@ static BIGNUM *bignum_from_base64(const char *b64) {
 
   if (b64 == NULL) return NULL;
   bin = grpc_base64_decode(b64, 1);
-  if (GPR_SLICE_IS_EMPTY(bin)) {
+  if (GRPC_SLICE_IS_EMPTY(bin)) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return NULL;
   }
-  result = BN_bin2bn(GPR_SLICE_START_PTR(bin),
-                     TSI_SIZE_AS_SIZE(GPR_SLICE_LENGTH(bin)), NULL);
+  result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
+                     TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), NULL);
   grpc_slice_unref(bin);
   return result;
 }
@@ -567,13 +567,13 @@ static int verify_jwt_signature(EVP_PKEY *key, const char *alg,
     gpr_log(GPR_ERROR, "EVP_DigestVerifyInit failed.");
     goto end;
   }
-  if (EVP_DigestVerifyUpdate(md_ctx, GPR_SLICE_START_PTR(signed_data),
-                             GPR_SLICE_LENGTH(signed_data)) != 1) {
+  if (EVP_DigestVerifyUpdate(md_ctx, GRPC_SLICE_START_PTR(signed_data),
+                             GRPC_SLICE_LENGTH(signed_data)) != 1) {
     gpr_log(GPR_ERROR, "EVP_DigestVerifyUpdate failed.");
     goto end;
   }
-  if (EVP_DigestVerifyFinal(md_ctx, GPR_SLICE_START_PTR(signature),
-                            GPR_SLICE_LENGTH(signature)) != 1) {
+  if (EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(signature),
+                            GRPC_SLICE_LENGTH(signature)) != 1) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
     goto end;
   }
@@ -824,7 +824,7 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
   signed_jwt_len = (size_t)(dot - jwt);
   cur = dot + 1;
   signature = grpc_base64_decode(cur, 1);
-  if (GPR_SLICE_IS_EMPTY(signature)) goto error;
+  if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
   retrieve_key_and_verify(
       exec_ctx,
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,

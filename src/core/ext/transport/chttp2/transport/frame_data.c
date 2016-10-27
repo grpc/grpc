@@ -122,7 +122,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
   static const size_t header_size = 9;
 
   hdr = grpc_slice_malloc(header_size);
-  p = GPR_SLICE_START_PTR(hdr);
+  p = GRPC_SLICE_START_PTR(hdr);
   GPR_ASSERT(write_bytes < (1 << 24));
   *p++ = (uint8_t)(write_bytes >> 16);
   *p++ = (uint8_t)(write_bytes >> 8);
@@ -145,8 +145,8 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_data_parser *p,
                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,
                                grpc_slice slice) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   uint32_t message_flags;
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream;

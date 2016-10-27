@@ -73,8 +73,8 @@ static grpc_error *parse_frame_slice(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_slice slice) {
-  uint8_t *beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *end = GPR_SLICE_END_PTR(slice);
+  uint8_t *beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_error *err;
 

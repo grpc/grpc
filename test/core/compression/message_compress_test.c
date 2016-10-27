@@ -70,8 +70,8 @@ static void assert_passthrough(grpc_slice value,
       GPR_INFO, "assert_passthrough: value_length=%" PRIuPTR
                 " value_hash=0x%08x "
                 "algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
-      GPR_SLICE_LENGTH(value),
-      gpr_murmur_hash3(GPR_SLICE_START_PTR(value), GPR_SLICE_LENGTH(value), 0),
+      GRPC_SLICE_LENGTH(value),
+      gpr_murmur_hash3(GRPC_SLICE_START_PTR(value), GRPC_SLICE_LENGTH(value), 0),
       algorithm_name, grpc_slice_split_mode_name(uncompressed_split_mode),
       grpc_slice_split_mode_name(compressed_split_mode));
 
@@ -114,7 +114,7 @@ static void assert_passthrough(grpc_slice value,
 
 static grpc_slice repeated(char c, size_t length) {
   grpc_slice out = grpc_slice_malloc(length);
-  memset(GPR_SLICE_START_PTR(out), c, length);
+  memset(GRPC_SLICE_START_PTR(out), c, length);
   return out;
 }
 
@@ -184,9 +184,9 @@ static void test_bad_decompression_data_crc(void) {
   grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
   /* corrupt the output by smashing the CRC */
   GPR_ASSERT(corrupted.count > 1);
-  GPR_ASSERT(GPR_SLICE_LENGTH(corrupted.slices[1]) > 8);
-  idx = GPR_SLICE_LENGTH(corrupted.slices[1]) - 8;
-  memcpy(GPR_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(corrupted.slices[1]) > 8);
+  idx = GRPC_SLICE_LENGTH(corrupted.slices[1]) - 8;
+  memcpy(GRPC_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
 
   /* try (and fail) to decompress the corrupted compresed buffer */
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));

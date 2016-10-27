@@ -104,7 +104,7 @@ static void finish_frame(framer_state *st, int is_header_boundary,
   type = st->is_first_frame ? GRPC_CHTTP2_FRAME_HEADER
                             : GRPC_CHTTP2_FRAME_CONTINUATION;
   fill_header(
-      GPR_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
+      GRPC_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
       st->stream_id, st->output->length - st->output_length_at_start_of_frame,
       (uint8_t)((is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
                 (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
@@ -148,7 +148,7 @@ static void inc_filter(uint8_t idx, uint32_t *sum, uint8_t *elems) {
 }
 
 static void add_header_data(framer_state *st, grpc_slice slice) {
-  size_t len = GPR_SLICE_LENGTH(slice);
+  size_t len = GRPC_SLICE_LENGTH(slice);
   size_t remaining;
   if (len == 0) return;
   remaining = st->max_frame_size + st->output_length_at_start_of_frame -
@@ -269,8 +269,8 @@ static void emit_indexed(grpc_chttp2_hpack_compressor *c, uint32_t elem_index,
 }
 
 static grpc_slice get_wire_value(grpc_mdelem *elem, uint8_t *huffman_prefix) {
-  if (grpc_is_binary_header((const char *)GPR_SLICE_START_PTR(elem->key->slice),
-                            GPR_SLICE_LENGTH(elem->key->slice))) {
+  if (grpc_is_binary_header((const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+                            GRPC_SLICE_LENGTH(elem->key->slice))) {
     *huffman_prefix = 0x80;
     return grpc_mdstr_as_base64_encoded_and_huffman_compressed(elem->value);
   }
@@ -285,7 +285,7 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 2);
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
-  size_t len_val = GPR_SLICE_LENGTH(value_slice);
+  size_t len_val = GRPC_SLICE_LENGTH(value_slice);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
@@ -302,7 +302,7 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
-  size_t len_val = GPR_SLICE_LENGTH(value_slice);
+  size_t len_val = GRPC_SLICE_LENGTH(value_slice);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
@@ -315,14 +315,14 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
 
 static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
                                  grpc_mdelem *elem, framer_state *st) {
-  uint32_t len_key = (uint32_t)GPR_SLICE_LENGTH(elem->key->slice);
+  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(elem->key->slice);
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
-  uint32_t len_val = (uint32_t)GPR_SLICE_LENGTH(value_slice);
+  uint32_t len_val = (uint32_t)GRPC_SLICE_LENGTH(value_slice);
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
-  GPR_ASSERT(GPR_SLICE_LENGTH(value_slice) <= UINT32_MAX);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(value_slice) <= UINT32_MAX);
   *add_tiny_header_data(st, 1) = 0x40;
   GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
                            add_tiny_header_data(st, len_key_len), len_key_len);
@@ -334,14 +334,14 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
 
 static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
                                 grpc_mdelem *elem, framer_state *st) {
-  uint32_t len_key = (uint32_t)GPR_SLICE_LENGTH(elem->key->slice);
+  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(elem->key->slice);
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
-  uint32_t len_val = (uint32_t)GPR_SLICE_LENGTH(value_slice);
+  uint32_t len_val = (uint32_t)GRPC_SLICE_LENGTH(value_slice);
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
-  GPR_ASSERT(GPR_SLICE_LENGTH(value_slice) <= UINT32_MAX);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(value_slice) <= UINT32_MAX);
   *add_tiny_header_data(st, 1) = 0x00;
   GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
                            add_tiny_header_data(st, len_key_len), len_key_len);
@@ -373,8 +373,8 @@ static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
   uint32_t indices_key;
   int should_add_elem;
 
-  GPR_ASSERT(GPR_SLICE_LENGTH(elem->key->slice) > 0);
-  if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
+  GPR_ASSERT(GRPC_SLICE_LENGTH(elem->key->slice) > 0);
+  if (GRPC_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
   } else {
     GPR_ASSERT(
