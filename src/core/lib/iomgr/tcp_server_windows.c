@@ -106,7 +106,8 @@ struct grpc_tcp_server {
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
-grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx, grpc_closure *shutdown_complete,
+grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
+                                   grpc_closure *shutdown_complete,
                                    const grpc_channel_args *args,
                                    grpc_tcp_server **server) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
@@ -116,7 +117,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx, grpc_closure *shutdo
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
         s->resource_quota =
-          grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
+            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
       } else {
         grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
         gpr_free(s);
@@ -385,8 +386,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         gpr_free(utf8_message);
       }
       gpr_asprintf(&fd_name, "tcp_server:%s", peer_name_string);
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name), sp->server->resource_quota,
-                           peer_name_string);
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name),
+                           sp->server->resource_quota, peer_name_string);
       gpr_free(fd_name);
       gpr_free(peer_name_string);
     } else {

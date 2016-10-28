@@ -43,6 +43,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -50,7 +51,6 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/channel/channel_args.h"
 
 typedef struct {
   grpc_closure *on_done;
@@ -65,7 +65,8 @@ typedef struct {
   grpc_resource_quota *resource_quota;
 } async_connect;
 
-static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx, async_connect *ac,
+static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
+                                             async_connect *ac,
                                              grpc_winsocket *socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -151,11 +152,10 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-                 strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
         resource_quota = grpc_resource_quota_internal_ref(
-          channel_args->args[i].value.pointer.p);
+            channel_args->args[i].value.pointer.p);
       }
     }
   }

@@ -429,7 +429,9 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_get_resource_user,
                                       win_get_peer};
 
-grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, grpc_resource_quota *resource_quota, char *peer_string) {
+grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket,
+                               grpc_resource_quota *resource_quota,
+                               char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
