@@ -199,9 +199,6 @@ grpc::string GetServices(const FileDescriptor *file) {
     std::vector<grpc::string> modules = Split(file->package(), '.');
     for (size_t i = 0; i < modules.size(); ++i) {
       std::map<grpc::string, grpc::string> module_vars = ListToDict({
-          "module.name", CapitalizeFirst(modules[i]),
-      });
-      std::map<grpc::string, grpc::string> module_vars = ListToDict({
           "module.name", PackageToModule(modules[i]),
       });
       out.Print(module_vars, "module $module.name$\n");
