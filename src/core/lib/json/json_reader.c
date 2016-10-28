@@ -121,14 +121,19 @@ static uint32_t json_maybe_flush(grpc_json_reader *reader) {
 }
 
 int grpc_json_reader_is_complete(grpc_json_reader *reader) {
-  return (((reader->depth == 0) &&
-          ((reader->state == GRPC_JSON_STATE_END) ||
-           (reader->state == GRPC_JSON_STATE_VALUE_END))) ||
-           ((reader->in_object == 0) && (reader->in_array == 0) &&
-           ((reader->state == GRPC_JSON_STATE_VALUE_NUMBER) ||
-            (reader->state == GRPC_JSON_STATE_VALUE_NUMBER_ZERO) ||
-            (reader->state == GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL) ||
-            (reader->state == GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE))));
+  switch (reader->state) {
+    case GRPC_JSON_STATE_END:
+    case GRPC_JSON_STATE_VALUE_END:
+      return reader->depth == 0;
+    case GRPC_JSON_STATE_VALUE_NUMBER:
+    case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
+    case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
+    case GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE:
+      return (reader->in_object == 0) && (reader->in_array == 0) &&
+             (reader->depth == 0);
+    default:
+      return 0;
+  }
 }
 
 grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
