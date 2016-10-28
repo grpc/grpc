@@ -1014,11 +1014,9 @@ bool InteropClient::DoUnimplementedService() {
   Empty response;
   ClientContext context;
 
-  UnimplementedService::Stub* stub =
-      serviceStub_.GetUnimplementedServiceStub();
+  UnimplementedService::Stub* stub = serviceStub_.GetUnimplementedServiceStub();
 
-  Status s =
-      stub->UnimplementedCall(&context, request, &response);
+  Status s = stub->UnimplementedCall(&context, request, &response);
 
   if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
     return false;
