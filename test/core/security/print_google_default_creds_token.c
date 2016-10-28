@@ -44,8 +44,8 @@
 
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/support/string.h"
 
 typedef struct {
   gpr_mu *mu;
