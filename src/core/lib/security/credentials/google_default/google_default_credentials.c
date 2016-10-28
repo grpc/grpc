@@ -124,11 +124,14 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_init(&context);
 
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
-      &exec_ctx, &context, &detector.pollent, &request,
+      &exec_ctx, &context, &detector.pollent, resource_quota, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       grpc_closure_create(on_compute_engine_detection_http_response, &detector),
       &detector.response);
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
 
   grpc_exec_ctx_flush(&exec_ctx);
 
