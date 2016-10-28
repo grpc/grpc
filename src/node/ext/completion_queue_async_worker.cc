@@ -74,6 +74,7 @@ void CompletionQueueAsyncWorker::Execute() {
 grpc_completion_queue *CompletionQueueAsyncWorker::GetQueue() { return queue; }
 
 void CompletionQueueAsyncWorker::Next() {
+#ifndef GRPC_UV
   Nan::HandleScope scope;
   if (current_threads < max_queue_threads) {
     current_threads += 1;
@@ -85,6 +86,7 @@ void CompletionQueueAsyncWorker::Next() {
   GPR_ASSERT(current_threads <= max_queue_threads);
   GPR_ASSERT((current_threads == max_queue_threads) ||
              (waiting_next_calls == 0));
+#endif
 }
 
 void CompletionQueueAsyncWorker::Init(Local<Object> exports) {

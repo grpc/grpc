@@ -58,6 +58,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\resource_quota_cc.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -185,6 +188,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\thd_no_cxx11.h">
       <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\resource_quota.h">
+      <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\security\auth_context.h">
       <Filter>include\grpc++\security</Filter>
