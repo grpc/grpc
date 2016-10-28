@@ -125,10 +125,10 @@ module GRPC
         return if @running_state != :running
         transition_running_state(:stopping)
       end
-      @pool.shutdown
-      @pool.wait_for_termination(@poll_period)
       deadline = from_relative_time(@poll_period)
       @server.close(deadline)
+      @pool.shutdown
+      @pool.wait_for_termination(@poll_period)
     end
 
     def running_state
