@@ -365,7 +365,7 @@
     "language": "c", 
     "name": "dns_resolver_connectivity_test", 
     "src": [
-      "test/core/client_config/resolvers/dns_resolver_connectivity_test.c"
+      "test/core/client_channel/resolvers/dns_resolver_connectivity_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -382,7 +382,7 @@
     "language": "c", 
     "name": "dns_resolver_test", 
     "src": [
-      "test/core/client_config/resolvers/dns_resolver_test.c"
+      "test/core/client_channel/resolvers/dns_resolver_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1140,6 +1140,40 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "handshake_client", 
+    "src": [
+      "test/core/handshake/client_ssl.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_server", 
+    "src": [
+      "test/core/handshake/server_ssl.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "hpack_parser_fuzzer_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
@@ -1480,7 +1514,7 @@
     "language": "c", 
     "name": "lb_policies_test", 
     "src": [
-      "test/core/client_config/lb_policies_test.c"
+      "test/core/client_channel/lb_policies_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1802,7 +1836,7 @@
     "language": "c", 
     "name": "set_initial_connect_string_test", 
     "src": [
-      "test/core/client_config/set_initial_connect_string_test.c"
+      "test/core/client_channel/set_initial_connect_string_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1819,7 +1853,7 @@
     "language": "c", 
     "name": "sockaddr_resolver_test", 
     "src": [
-      "test/core/client_config/resolvers/sockaddr_resolver_test.c"
+      "test/core/client_channel/resolvers/sockaddr_resolver_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2057,7 +2091,7 @@
     "language": "c", 
     "name": "uri_fuzzer_test", 
     "src": [
-      "test/core/client_config/uri_fuzzer_test.c"
+      "test/core/client_channel/uri_fuzzer_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2074,7 +2108,24 @@
     "language": "c", 
     "name": "uri_parser_test", 
     "src": [
-      "test/core/client_config/uri_parser_test.c"
+      "test/core/client_channel/uri_parser_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "wakeup_fd_cv_test", 
+    "src": [
+      "test/core/iomgr/wakeup_fd_cv_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2678,6 +2729,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++_test_config", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2983,6 +3035,25 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_context_test_spouse_test", 
+    "src": [
+      "test/cpp/test/server_context_test_spouse_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -3099,6 +3170,7 @@
     "language": "c++", 
     "name": "stress_test", 
     "src": [
+      "test/cpp/interop/client_helper.cc", 
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.cc", 
       "test/cpp/interop/interop_client.h", 
@@ -3939,6 +4011,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "h2_fake_resolver_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fake_resolver.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "h2_fakesec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_fakesec.c"
@@ -4248,6 +4338,24 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_fake_resolver_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fake_resolver.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4660,7 +4768,7 @@
     "language": "c", 
     "name": "uri_fuzzer_test_one_entry", 
     "src": [
-      "test/core/client_config/uri_fuzzer_test.c", 
+      "test/core/client_channel/uri_fuzzer_test.c", 
       "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
@@ -4896,6 +5004,27 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc++_base", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc_cronet"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_cronet", 
+    "src": [
+      "src/cpp/client/cronet_credentials.cc", 
+      "src/cpp/client/insecure_credentials.cc", 
+      "src/cpp/common/insecure_create_auth_context.cc", 
+      "src/cpp/server/insecure_server_credentials.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc++", 
       "grpc++_reflection_proto"
     ], 
@@ -4925,6 +5054,23 @@
     "language": "c++", 
     "name": "grpc++_reflection_codegen", 
     "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/test/server_context_test_spouse.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_test", 
+    "src": [
+      "include/grpc++/test/server_context_test_spouse.h", 
+      "src/cpp/test/server_context_test_spouse.cc"
+    ], 
     "third_party": false, 
     "type": "lib"
   }, 
@@ -6388,27 +6534,34 @@
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_set.h", 
       "src/core/lib/iomgr/pollset_set_windows.h", 
+      "src/core/lib/iomgr/pollset_uv.h", 
       "src/core/lib/iomgr/pollset_windows.h", 
+      "src/core/lib/iomgr/port.h", 
       "src/core/lib/iomgr/resolve_address.h", 
       "src/core/lib/iomgr/sockaddr.h", 
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
       "src/core/lib/iomgr/socket_windows.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
+      "src/core/lib/iomgr/tcp_uv.h", 
       "src/core/lib/iomgr/tcp_windows.h", 
       "src/core/lib/iomgr/time_averaged_stats.h", 
       "src/core/lib/iomgr/timer.h", 
+      "src/core/lib/iomgr/timer_generic.h", 
       "src/core/lib/iomgr/timer_heap.h", 
+      "src/core/lib/iomgr/timer_uv.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
+      "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/iomgr/workqueue.h", 
-      "src/core/lib/iomgr/workqueue_posix.h", 
+      "src/core/lib/iomgr/workqueue_uv.h", 
       "src/core/lib/iomgr/workqueue_windows.h", 
       "src/core/lib/json/json.h", 
       "src/core/lib/json/json_common.h", 
@@ -6427,8 +6580,10 @@
       "src/core/lib/surface/server.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
+      "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
+      "src/core/lib/transport/method_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
@@ -6486,6 +6641,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/endpoint_pair_posix.c", 
+      "src/core/lib/iomgr/endpoint_pair_uv.c", 
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
@@ -6508,6 +6664,7 @@
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.c", 
       "src/core/lib/iomgr/iomgr_posix.h", 
+      "src/core/lib/iomgr/iomgr_uv.c", 
       "src/core/lib/iomgr/iomgr_windows.c", 
       "src/core/lib/iomgr/load_file.c", 
       "src/core/lib/iomgr/load_file.h", 
@@ -6517,45 +6674,62 @@
       "src/core/lib/iomgr/polling_entity.h", 
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_set.h", 
+      "src/core/lib/iomgr/pollset_set_uv.c", 
       "src/core/lib/iomgr/pollset_set_windows.c", 
       "src/core/lib/iomgr/pollset_set_windows.h", 
+      "src/core/lib/iomgr/pollset_uv.c", 
+      "src/core/lib/iomgr/pollset_uv.h", 
       "src/core/lib/iomgr/pollset_windows.c", 
       "src/core/lib/iomgr/pollset_windows.h", 
+      "src/core/lib/iomgr/port.h", 
       "src/core/lib/iomgr/resolve_address.h", 
       "src/core/lib/iomgr/resolve_address_posix.c", 
+      "src/core/lib/iomgr/resolve_address_uv.c", 
       "src/core/lib/iomgr/resolve_address_windows.c", 
       "src/core/lib/iomgr/sockaddr.h", 
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.c", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_common_posix.c", 
       "src/core/lib/iomgr/socket_utils_linux.c", 
       "src/core/lib/iomgr/socket_utils_posix.c", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
+      "src/core/lib/iomgr/socket_utils_uv.c", 
+      "src/core/lib/iomgr/socket_utils_windows.c", 
       "src/core/lib/iomgr/socket_windows.c", 
       "src/core/lib/iomgr/socket_windows.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_client_posix.c", 
+      "src/core/lib/iomgr/tcp_client_uv.c", 
       "src/core/lib/iomgr/tcp_client_windows.c", 
       "src/core/lib/iomgr/tcp_posix.c", 
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
       "src/core/lib/iomgr/tcp_server_posix.c", 
+      "src/core/lib/iomgr/tcp_server_uv.c", 
       "src/core/lib/iomgr/tcp_server_windows.c", 
+      "src/core/lib/iomgr/tcp_uv.c", 
+      "src/core/lib/iomgr/tcp_uv.h", 
       "src/core/lib/iomgr/tcp_windows.c", 
       "src/core/lib/iomgr/tcp_windows.h", 
       "src/core/lib/iomgr/time_averaged_stats.c", 
       "src/core/lib/iomgr/time_averaged_stats.h", 
-      "src/core/lib/iomgr/timer.c", 
       "src/core/lib/iomgr/timer.h", 
+      "src/core/lib/iomgr/timer_generic.c", 
+      "src/core/lib/iomgr/timer_generic.h", 
       "src/core/lib/iomgr/timer_heap.c", 
       "src/core/lib/iomgr/timer_heap.h", 
+      "src/core/lib/iomgr/timer_uv.c", 
+      "src/core/lib/iomgr/timer_uv.h", 
       "src/core/lib/iomgr/udp_server.c", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.c", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
       "src/core/lib/iomgr/unix_sockets_posix_noop.c", 
+      "src/core/lib/iomgr/wakeup_fd_cv.c", 
+      "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_eventfd.c", 
       "src/core/lib/iomgr/wakeup_fd_nospecial.c", 
       "src/core/lib/iomgr/wakeup_fd_pipe.c", 
@@ -6563,8 +6737,8 @@
       "src/core/lib/iomgr/wakeup_fd_posix.c", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/iomgr/workqueue.h", 
-      "src/core/lib/iomgr/workqueue_posix.c", 
-      "src/core/lib/iomgr/workqueue_posix.h", 
+      "src/core/lib/iomgr/workqueue_uv.c", 
+      "src/core/lib/iomgr/workqueue_uv.h", 
       "src/core/lib/iomgr/workqueue_windows.c", 
       "src/core/lib/iomgr/workqueue_windows.h", 
       "src/core/lib/json/json.c", 
@@ -6608,10 +6782,14 @@
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.c", 
       "src/core/lib/transport/connectivity_state.h", 
+      "src/core/lib/transport/mdstr_hash_table.c", 
+      "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.c", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
       "src/core/lib/transport/metadata_batch.h", 
+      "src/core/lib/transport/method_config.c", 
+      "src/core/lib/transport/method_config.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.c", 
@@ -6630,62 +6808,59 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/client_config/client_channel.h", 
-      "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/connector.h", 
-      "src/core/ext/client_config/http_connect_handshaker.h", 
-      "src/core/ext/client_config/initial_connect_string.h", 
-      "src/core/ext/client_config/lb_policy.h", 
-      "src/core/ext/client_config/lb_policy_factory.h", 
-      "src/core/ext/client_config/lb_policy_registry.h", 
-      "src/core/ext/client_config/parse_address.h", 
-      "src/core/ext/client_config/resolver.h", 
-      "src/core/ext/client_config/resolver_factory.h", 
-      "src/core/ext/client_config/resolver_registry.h", 
-      "src/core/ext/client_config/resolver_result.h", 
-      "src/core/ext/client_config/subchannel.h", 
-      "src/core/ext/client_config/subchannel_index.h", 
-      "src/core/ext/client_config/uri_parser.h"
+      "src/core/ext/client_channel/client_channel.h", 
+      "src/core/ext/client_channel/client_channel_factory.h", 
+      "src/core/ext/client_channel/connector.h", 
+      "src/core/ext/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/client_channel/initial_connect_string.h", 
+      "src/core/ext/client_channel/lb_policy.h", 
+      "src/core/ext/client_channel/lb_policy_factory.h", 
+      "src/core/ext/client_channel/lb_policy_registry.h", 
+      "src/core/ext/client_channel/parse_address.h", 
+      "src/core/ext/client_channel/resolver.h", 
+      "src/core/ext/client_channel/resolver_factory.h", 
+      "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/subchannel.h", 
+      "src/core/ext/client_channel/subchannel_index.h", 
+      "src/core/ext/client_channel/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
-    "name": "grpc_client_config", 
+    "name": "grpc_client_channel", 
     "src": [
-      "src/core/ext/client_config/channel_connectivity.c", 
-      "src/core/ext/client_config/client_channel.c", 
-      "src/core/ext/client_config/client_channel.h", 
-      "src/core/ext/client_config/client_channel_factory.c", 
-      "src/core/ext/client_config/client_channel_factory.h", 
-      "src/core/ext/client_config/client_config_plugin.c", 
-      "src/core/ext/client_config/connector.c", 
-      "src/core/ext/client_config/connector.h", 
-      "src/core/ext/client_config/default_initial_connect_string.c", 
-      "src/core/ext/client_config/http_connect_handshaker.c", 
-      "src/core/ext/client_config/http_connect_handshaker.h", 
-      "src/core/ext/client_config/initial_connect_string.c", 
-      "src/core/ext/client_config/initial_connect_string.h", 
-      "src/core/ext/client_config/lb_policy.c", 
-      "src/core/ext/client_config/lb_policy.h", 
-      "src/core/ext/client_config/lb_policy_factory.c", 
-      "src/core/ext/client_config/lb_policy_factory.h", 
-      "src/core/ext/client_config/lb_policy_registry.c", 
-      "src/core/ext/client_config/lb_policy_registry.h", 
-      "src/core/ext/client_config/parse_address.c", 
-      "src/core/ext/client_config/parse_address.h", 
-      "src/core/ext/client_config/resolver.c", 
-      "src/core/ext/client_config/resolver.h", 
-      "src/core/ext/client_config/resolver_factory.c", 
-      "src/core/ext/client_config/resolver_factory.h", 
-      "src/core/ext/client_config/resolver_registry.c", 
-      "src/core/ext/client_config/resolver_registry.h", 
-      "src/core/ext/client_config/resolver_result.c", 
-      "src/core/ext/client_config/resolver_result.h", 
-      "src/core/ext/client_config/subchannel.c", 
-      "src/core/ext/client_config/subchannel.h", 
-      "src/core/ext/client_config/subchannel_index.c", 
-      "src/core/ext/client_config/subchannel_index.h", 
-      "src/core/ext/client_config/uri_parser.c", 
-      "src/core/ext/client_config/uri_parser.h"
+      "src/core/ext/client_channel/channel_connectivity.c", 
+      "src/core/ext/client_channel/client_channel.c", 
+      "src/core/ext/client_channel/client_channel.h", 
+      "src/core/ext/client_channel/client_channel_factory.c", 
+      "src/core/ext/client_channel/client_channel_factory.h", 
+      "src/core/ext/client_channel/client_channel_plugin.c", 
+      "src/core/ext/client_channel/connector.c", 
+      "src/core/ext/client_channel/connector.h", 
+      "src/core/ext/client_channel/default_initial_connect_string.c", 
+      "src/core/ext/client_channel/http_connect_handshaker.c", 
+      "src/core/ext/client_channel/http_connect_handshaker.h", 
+      "src/core/ext/client_channel/initial_connect_string.c", 
+      "src/core/ext/client_channel/initial_connect_string.h", 
+      "src/core/ext/client_channel/lb_policy.c", 
+      "src/core/ext/client_channel/lb_policy.h", 
+      "src/core/ext/client_channel/lb_policy_factory.c", 
+      "src/core/ext/client_channel/lb_policy_factory.h", 
+      "src/core/ext/client_channel/lb_policy_registry.c", 
+      "src/core/ext/client_channel/lb_policy_registry.h", 
+      "src/core/ext/client_channel/parse_address.c", 
+      "src/core/ext/client_channel/parse_address.h", 
+      "src/core/ext/client_channel/resolver.c", 
+      "src/core/ext/client_channel/resolver.h", 
+      "src/core/ext/client_channel/resolver_factory.c", 
+      "src/core/ext/client_channel/resolver_factory.h", 
+      "src/core/ext/client_channel/resolver_registry.c", 
+      "src/core/ext/client_channel/resolver_registry.h", 
+      "src/core/ext/client_channel/subchannel.c", 
+      "src/core/ext/client_channel/subchannel.h", 
+      "src/core/ext/client_channel/subchannel_index.c", 
+      "src/core/ext/client_channel/subchannel_index.h", 
+      "src/core/ext/client_channel/uri_parser.c", 
+      "src/core/ext/client_channel/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6720,7 +6895,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
+      "grpc_client_channel", 
       "nanopb"
     ], 
     "headers": [
@@ -6746,7 +6921,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6762,7 +6937,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6799,7 +6974,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6815,7 +6990,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -6871,8 +7046,7 @@
       "src/core/lib/security/credentials/credentials_metadata.c", 
       "src/core/lib/security/credentials/fake/fake_credentials.c", 
       "src/core/lib/security/credentials/fake/fake_credentials.h", 
-      "src/core/lib/security/credentials/google_default/credentials_posix.c", 
-      "src/core/lib/security/credentials/google_default/credentials_windows.c", 
+      "src/core/lib/security/credentials/google_default/credentials_generic.c", 
       "src/core/lib/security/credentials/google_default/google_default_credentials.c", 
       "src/core/lib/security/credentials/google_default/google_default_credentials.h", 
       "src/core/lib/security/credentials/iam/iam_credentials.c", 
@@ -6957,6 +7131,7 @@
       "test/core/util/port_posix.c", 
       "test/core/util/port_server_client.c", 
       "test/core/util/port_server_client.h", 
+      "test/core/util/port_uv.c", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"
@@ -7062,7 +7237,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
+      "grpc_client_channel", 
       "grpc_transport_chttp2"
     ], 
     "headers": [], 
@@ -7080,7 +7255,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
+      "grpc_client_channel", 
       "grpc_secure", 
       "grpc_transport_chttp2"
     ], 
@@ -7170,7 +7345,8 @@
   }, 
   {
     "deps": [
-      "gpr"
+      "gpr", 
+      "grpc_base"
     ], 
     "headers": [
       "src/core/lib/tsi/fake_transport_security.h", 

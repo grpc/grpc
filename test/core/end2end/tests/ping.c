@@ -48,7 +48,7 @@ static void test_ping(grpc_end2end_test_config config) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
-  config.init_client(&f, NULL);
+  config.init_client(&f, NULL, NULL);
   config.init_server(&f, NULL);
 
   grpc_channel_ping(f.client, f.cq, tag(0), NULL);

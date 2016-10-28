@@ -37,14 +37,16 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static void *tag(intptr_t i) { return (void *)i; }
 
-static void run_test(bool fail_fast) {
+static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel *chan;
   grpc_call *call;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
@@ -57,8 +59,10 @@ static void run_test(bool fail_fast) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  gpr_log(GPR_INFO, "TEST: fail_fast=%d", fail_fast);
+  gpr_log(GPR_INFO, "TEST: wait_for_ready=%d use_service_config=%d",
+          wait_for_ready, use_service_config);
 
+  grpc_fake_resolver_init();
   grpc_init();
 
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -69,11 +73,21 @@ static void run_test(bool fail_fast) {
   /* create a call, channel to a port which will refuse connection */
   int port = grpc_pick_unused_port_or_die();
   char *addr;
-  gpr_join_host_port(&addr, "localhost", port);
+  gpr_join_host_port(&addr, "127.0.0.1", port);
+  if (use_service_config) {
+    GPR_ASSERT(wait_for_ready);
+    char *server_uri;
+    gpr_asprintf(&server_uri,
+                 "test:%s?method_name=/service/method&wait_for_ready=1", addr);
+    gpr_free(addr);
+    addr = server_uri;
+  }
+  gpr_log(GPR_INFO, "server: %s", addr);
 
   chan = grpc_insecure_channel_create(addr, NULL, NULL);
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Foo", "nonexistant", deadline, NULL);
+                                  "/service/method", "nonexistant", deadline,
+                                  NULL);
 
   gpr_free(addr);
 
@@ -81,7 +95,9 @@ static void run_test(bool fail_fast) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = fail_fast ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY;
+  op->flags = (wait_for_ready && !use_service_config)
+                  ? GRPC_INITIAL_METADATA_WAIT_FOR_READY
+                  : 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -98,10 +114,10 @@ static void run_test(bool fail_fast) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  if (fail_fast) {
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  } else {
+  if (wait_for_ready) {
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_completion_queue_shutdown(cq);
@@ -122,7 +138,8 @@ static void run_test(bool fail_fast) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  run_test(true);
-  run_test(false);
+  run_test(false /* wait_for_ready */, false /* use_service_config */);
+  run_test(true /* wait_for_ready */, false /* use_service_config */);
+  run_test(true /* wait_for_ready */, true /* use_service_config */);
   return 0;
 }

@@ -84,16 +84,23 @@ typedef struct grpcsharp_batch_context {
     size_t status_details_capacity;
   } recv_status_on_client;
   int recv_close_on_server_cancelled;
-  struct {
-    grpc_call *call;
-    grpc_call_details call_details;
-    grpc_metadata_array request_metadata;
-  } server_rpc_new;
 } grpcsharp_batch_context;
 
 GPR_EXPORT grpcsharp_batch_context *GPR_CALLTYPE grpcsharp_batch_context_create() {
   grpcsharp_batch_context *ctx = gpr_malloc(sizeof(grpcsharp_batch_context));
   memset(ctx, 0, sizeof(grpcsharp_batch_context));
+  return ctx;
+}
+
+typedef struct {
+  grpc_call *call;
+  grpc_call_details call_details;
+  grpc_metadata_array request_metadata;
+} grpcsharp_request_call_context;
+
+GPR_EXPORT grpcsharp_request_call_context *GPR_CALLTYPE grpcsharp_request_call_context_create() {
+  grpcsharp_request_call_context *ctx = gpr_malloc(sizeof(grpcsharp_request_call_context));
+  memset(ctx, 0, sizeof(grpcsharp_request_call_context));
   return ctx;
 }
 
@@ -230,13 +237,20 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_destroy(grpcsharp_batch_con
       &(ctx->recv_status_on_client.trailing_metadata));
   gpr_free((void *)ctx->recv_status_on_client.status_details);
 
+  gpr_free(ctx);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_request_call_context_destroy(grpcsharp_request_call_context *ctx) {
+  if (!ctx) {
+    return;
+  }
   /* NOTE: ctx->server_rpc_new.call is not destroyed because callback handler is
      supposed
      to take its ownership. */
 
-  grpc_call_details_destroy(&(ctx->server_rpc_new.call_details));
+  grpc_call_details_destroy(&(ctx->call_details));
   grpcsharp_metadata_array_destroy_metadata_only(
-      &(ctx->server_rpc_new.request_metadata));
+      &(ctx->request_metadata));
 
   gpr_free(ctx);
 }
@@ -303,32 +317,32 @@ grpcsharp_batch_context_recv_status_on_client_trailing_metadata(
   return &(ctx->recv_status_on_client.trailing_metadata);
 }
 
-GPR_EXPORT grpc_call *GPR_CALLTYPE grpcsharp_batch_context_server_rpc_new_call(
-    const grpcsharp_batch_context *ctx) {
-  return ctx->server_rpc_new.call;
+GPR_EXPORT grpc_call *GPR_CALLTYPE grpcsharp_request_call_context_call(
+    const grpcsharp_request_call_context *ctx) {
+  return ctx->call;
 }
 
 GPR_EXPORT const char *GPR_CALLTYPE
-grpcsharp_batch_context_server_rpc_new_method(
-    const grpcsharp_batch_context *ctx) {
-  return ctx->server_rpc_new.call_details.method;
+grpcsharp_request_call_context_method(
+    const grpcsharp_request_call_context *ctx) {
+  return ctx->call_details.method;
 }
 
-GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_batch_context_server_rpc_new_host(
-    const grpcsharp_batch_context *ctx) {
-  return ctx->server_rpc_new.call_details.host;
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_request_call_context_host(
+    const grpcsharp_request_call_context *ctx) {
+  return ctx->call_details.host;
 }
 
 GPR_EXPORT gpr_timespec GPR_CALLTYPE
-grpcsharp_batch_context_server_rpc_new_deadline(
-    const grpcsharp_batch_context *ctx) {
-  return ctx->server_rpc_new.call_details.deadline;
+grpcsharp_request_call_context_deadline(
+    const grpcsharp_request_call_context *ctx) {
+  return ctx->call_details.deadline;
 }
 
 GPR_EXPORT const grpc_metadata_array *GPR_CALLTYPE
-grpcsharp_batch_context_server_rpc_new_request_metadata(
-    const grpcsharp_batch_context *ctx) {
-  return &(ctx->server_rpc_new.request_metadata);
+grpcsharp_request_call_context_request_metadata(
+    const grpcsharp_request_call_context *ctx) {
+  return &(ctx->request_metadata);
 }
 
 GPR_EXPORT int32_t GPR_CALLTYPE
@@ -853,10 +867,10 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_destroy(grpc_server *server) {
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
-                              grpcsharp_batch_context *ctx) {
+                              grpcsharp_request_call_context *ctx) {
   return grpc_server_request_call(
-      server, &(ctx->server_rpc_new.call), &(ctx->server_rpc_new.call_details),
-      &(ctx->server_rpc_new.request_metadata), cq, cq, ctx);
+      server, &(ctx->call), &(ctx->call_details),
+      &(ctx->request_metadata), cq, cq, ctx);
 }
 
 /* Security */
