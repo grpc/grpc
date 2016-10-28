@@ -80,7 +80,8 @@ DEFINE_string(test_case, "large_unary",
               "slow client consumer;\n"
               "status_code_and_message: verify status code & message;\n"
               "timeout_on_sleeping_server: deadline exceeds on stream;\n"
-              "unimplemented_method: client calls an unimplemented method;\n");
+              "unimplemented_method: client calls an unimplemented method;\n"
+              "unimplemented_service: client calls an unimplemented service;\n");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
@@ -152,6 +153,8 @@ int main(int argc, char** argv) {
     client.DoCustomMetadata();
   } else if (FLAGS_test_case == "unimplemented_method") {
     client.DoUnimplementedMethod();
+  } else if (FLAGS_test_case == "unimplemented_service") {
+    client.DoUnimplementedService();
   } else if (FLAGS_test_case == "cacheable_unary") {
     client.DoCacheableUnary();
   } else if (FLAGS_test_case == "all") {
@@ -172,6 +175,7 @@ int main(int argc, char** argv) {
     client.DoStatusWithMessage();
     client.DoCustomMetadata();
     client.DoUnimplementedMethod();
+    client.DoUnimplementedService();
     client.DoCacheableUnary();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_use_tls) {
@@ -207,7 +211,8 @@ int main(int argc, char** argv) {
                                "server_streaming",
                                "status_code_and_message",
                                "timeout_on_sleeping_server",
-                               "unimplemented_method"};
+                               "unimplemented_method",
+                               "unimplemented_service"};
     char* joined_testcases =
         gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
 
