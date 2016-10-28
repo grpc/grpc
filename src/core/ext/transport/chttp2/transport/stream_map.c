@@ -151,6 +151,17 @@ size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map *map) {
   return map->count - map->free;
 }
 
+void *grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map *map) {
+  if (map->count == map->free) {
+    return NULL;
+  }
+  if (map->free != 0) {
+    map->count = compact(map->keys, map->values, map->count);
+    map->free = 0;
+  }
+  return map->values[((size_t)rand()) % map->count];
+}
+
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map *map,
                                      void (*f)(void *user_data, uint32_t key,
                                                void *value),
