@@ -377,7 +377,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         gpr_log(GPR_ERROR, "setsockopt error: %s", utf8_message);
         gpr_free(utf8_message);
       }
-      int peer_name_len = (int) peer_name.len;
+      int peer_name_len = (int)peer_name.len;
       err =
           getpeername(sock, (struct sockaddr *)peer_name.addr, &peer_name_len);
       peer_name.len = peer_name_len;
