@@ -407,8 +407,7 @@ static NSMutableDictionary *callFlags;
     }
   };
   [_connectivityMonitor handleLossWithHandler:handler
-                      wifiStatusChangeHandler:^{
-                      }];
+                      wifiStatusChangeHandler:nil];
 }
 
 - (void)setState:(GRXWriterState)newState {
