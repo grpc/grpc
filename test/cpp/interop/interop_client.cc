@@ -167,8 +167,8 @@ bool InteropClient::AssertStatusCode(const Status& s,
 bool InteropClient::DoEmpty() {
   gpr_log(GPR_DEBUG, "Sending an empty rpc...");
 
-  Empty request = Empty::default_instance();
-  Empty response = Empty::default_instance();
+  Empty request;
+  Empty response;
   ClientContext context;
 
   Status s = serviceStub_.Get()->EmptyCall(&context, request, &response);
@@ -1010,8 +1010,8 @@ bool InteropClient::DoCustomMetadata() {
 bool InteropClient::DoUnimplementedService() {
   gpr_log(GPR_DEBUG, "Sending a request for an unimplemented service...");
 
-  Empty request = Empty::default_instance();
-  Empty response = Empty::default_instance();
+  Empty request;
+  Empty response;
   ClientContext context;
 
   UnimplementedService::Stub* stub =
@@ -1031,8 +1031,8 @@ bool InteropClient::DoUnimplementedService() {
 bool InteropClient::DoUnimplementedMethod() {
   gpr_log(GPR_DEBUG, "Sending a request for an unimplemented rpc...");
 
-  Empty request = Empty::default_instance();
-  Empty response = Empty::default_instance();
+  Empty request;
+  Empty response;
   ClientContext context;
 
   Status s =
