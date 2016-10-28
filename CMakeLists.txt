@@ -391,6 +391,7 @@ add_library(grpc
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/method_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -457,12 +458,10 @@ add_library(grpc
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/method_config.c
   src/core/ext/client_channel/parse_address.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/resolver_result.c
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
@@ -663,6 +662,7 @@ add_library(grpc_cronet
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/method_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -704,12 +704,10 @@ add_library(grpc_cronet
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/method_config.c
   src/core/ext/client_channel/parse_address.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/resolver_result.c
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
@@ -907,6 +905,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/method_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -948,12 +947,10 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/lb_policy.c
   src/core/ext/client_channel/lb_policy_factory.c
   src/core/ext/client_channel/lb_policy_registry.c
-  src/core/ext/client_channel/method_config.c
   src/core/ext/client_channel/parse_address.c
   src/core/ext/client_channel/resolver.c
   src/core/ext/client_channel/resolver_factory.c
   src/core/ext/client_channel/resolver_registry.c
-  src/core/ext/client_channel/resolver_result.c
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
