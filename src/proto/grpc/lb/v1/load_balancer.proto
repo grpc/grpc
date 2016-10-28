@@ -130,6 +130,8 @@ message Server {
   // frontend requests for that pick must include the token in its initial
   // metadata. The token is used by the backend to verify the request and to
   // allow the backend to report load to the gRPC LB system.
+  //
+  // Its length is variable but less than 50 bytes.
   string load_balance_token = 3;
 
   // Indicates whether this particular request should be dropped by the client
