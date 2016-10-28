@@ -38,8 +38,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_channel/method_config.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/method_config.h"
 
 #define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
 // The protobuf library will (by default) start warning at 100 megs.
