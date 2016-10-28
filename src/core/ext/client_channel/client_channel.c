@@ -1022,6 +1022,10 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING);
   gpr_mu_destroy(&calld->mu);
   GPR_ASSERT(calld->waiting_ops_count == 0);
+  if (calld->connected_subchannel != NULL) {
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, calld->connected_subchannel,
+                                    "picked");
+  }
   gpr_free(calld->waiting_ops);
   gpr_free(and_free_memory);
 }
