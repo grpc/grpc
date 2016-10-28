@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -58,14 +58,14 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 
-#ifdef GPR_HAVE_MSG_NOSIGNAL
+#ifdef GRPC_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL
 #else
 #define SENDMSG_FLAGS 0
 #endif
 
-#ifdef GPR_MSG_IOVLEN_TYPE
-typedef GPR_MSG_IOVLEN_TYPE msg_iovlen_type;
+#ifdef GRPC_MSG_IOVLEN_TYPE
+typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif
@@ -177,7 +177,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
+  grpc_closure_run(exec_ctx, cb, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -209,11 +209,11 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  GPR_TIMER_BEGIN("recvmsg", 1);
+  GPR_TIMER_BEGIN("recvmsg", 0);
   do {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
-  GPR_TIMER_END("recvmsg", 0);
+  GPR_TIMER_END("recvmsg", read_bytes >= 0);
 
   if (read_bytes < 0) {
     /* NB: After calling call_read_cb a parallel call of the read handler may
@@ -392,11 +392,8 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
       grpc_error_free_string(str);
     }
 
-    GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
-    cb->cb(exec_ctx, cb->cb_arg, error);
-    GPR_TIMER_END("tcp_handle_write.cb", 0);
+    grpc_closure_run(exec_ctx, cb, error);
     TCP_UNREF(exec_ctx, tcp, "write");
-    GRPC_ERROR_UNREF(error);
   }
 }
 

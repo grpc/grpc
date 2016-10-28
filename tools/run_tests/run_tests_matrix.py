@@ -36,13 +36,14 @@ import multiprocessing
 import os
 import report_utils
 import sys
+from filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 # Set the timeout high to allow enough time for sanitizers and pre-building
 # clang docker.
-_RUNTESTS_TIMEOUT = 2*60*60
+_RUNTESTS_TIMEOUT = 4*60*60
 
 # Number of jobs assigned to each run_tests.py instance
 _INNER_JOBS = 2
@@ -55,7 +56,8 @@ def _docker_jobspec(name, runtests_args=[]):
                    '--use_docker',
                    '-t',
                    '-j', str(_INNER_JOBS),
-                   '-x', 'report_%s.xml' % name] + runtests_args,
+                   '-x', 'report_%s.xml' % name,
+                   '--report_suite_name', '%s' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
   return test_job
@@ -70,7 +72,8 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None):
           cmdline=['tools/run_tests/run_tests_in_workspace.sh',
                    '-t',
                    '-j', str(_INNER_JOBS),
-                   '-x', '../report_%s.xml' % name] + runtests_args,
+                   '-x', '../report_%s.xml' % name,
+                   '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
@@ -111,28 +114,28 @@ def _create_test_jobs(extra_args=[]):
                              platforms=['linux'],
                              labels=['basictests'],
                              extra_args=extra_args)
-  
+
   # supported on all platforms.
   test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
                              configs=['dbg', 'opt'],
                              platforms=['linux', 'macos', 'windows'],
                              labels=['basictests'],
                              extra_args=extra_args)
-  
+
   # supported on linux and mac.
   test_jobs += _generate_jobs(languages=['c++', 'ruby', 'php'],
                               configs=['dbg', 'opt'],
                               platforms=['linux', 'macos'],
                               labels=['basictests'],
                               extra_args=extra_args)
-  
+
   # supported on mac only.
   test_jobs += _generate_jobs(languages=['objc'],
                               configs=['dbg', 'opt'],
                               platforms=['macos'],
                               labels=['basictests'],
                               extra_args=extra_args)
-  
+
   # sanitizers
   test_jobs += _generate_jobs(languages=['c'],
                               configs=['msan', 'asan', 'tsan'],
@@ -144,9 +147,17 @@ def _create_test_jobs(extra_args=[]):
                               platforms=['linux'],
                               labels=['sanitizers'],
                               extra_args=extra_args)
+
+  # libuv tests
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg', 'opt'],
+                              platforms=['linux'],
+                              labels=['libuv'],
+                              extra_args=extra_args + ['--iomgr_platform=uv'])
+
   return test_jobs
 
-  
+
 def _create_portability_test_jobs(extra_args=[]):
   test_jobs = []
   # portability C x86
@@ -157,7 +168,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='default',
                               labels=['portability'],
                               extra_args=extra_args)
-  
+
   # portability C and C++ on x64
   for compiler in ['gcc4.4', 'gcc4.6', 'gcc5.3',
                    'clang3.5', 'clang3.6', 'clang3.7']:
@@ -168,7 +179,7 @@ def _create_portability_test_jobs(extra_args=[]):
                                 compiler=compiler,
                                 labels=['portability'],
                                 extra_args=extra_args)
-  
+
   # portability C on Windows
   for arch in ['x86', 'x64']:
     for compiler in ['vs2013', 'vs2015']:
@@ -179,7 +190,7 @@ def _create_portability_test_jobs(extra_args=[]):
                                   compiler=compiler,
                                   labels=['portability'],
                                   extra_args=extra_args)
-  
+
   test_jobs += _generate_jobs(languages=['python'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -187,7 +198,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='python3.4',
                               labels=['portability'],
                               extra_args=extra_args)
-  
+
   test_jobs += _generate_jobs(languages=['csharp'],
                               configs=['dbg'],
                               platforms=['linux'],
@@ -195,7 +206,7 @@ def _create_portability_test_jobs(extra_args=[]):
                               compiler='coreclr',
                               labels=['portability'],
                               extra_args=extra_args)
-  return test_jobs  
+  return test_jobs
 
 
 def _allowed_labels():
@@ -229,6 +240,15 @@ argp.add_argument('--dry_run',
                   action='store_const',
                   const=True,
                   help='Only print what would be run.')
+argp.add_argument('--filter_pr_tests',
+	          default=False,
+		  action='store_const',	
+		  const=True,	  
+		  help='Filters out tests irrelavant to pull request changes.')
+argp.add_argument('--base_branch',
+                  default='origin/master',
+                  type=str,
+                  help='Branch that pull request is requesting to merge into')
 args = argp.parse_args()
 
 extra_args = []
@@ -248,12 +268,12 @@ if not jobs:
   jobset.message('FAILED', 'No test suites match given criteria.',
                  do_newline=True)
   sys.exit(1)
-  
+
 print('IMPORTANT: The changes you are testing need to be locally committed')
 print('because only the committed changes in the current branch will be')
 print('copied to the docker environment or into subworkspaces.')
 
-print 
+print
 print 'Will run these tests:'
 for job in jobs:
   if args.dry_run:
@@ -261,6 +281,19 @@ for job in jobs:
   else:
     print '  %s' % job.shortname
 print
+
+if args.filter_pr_tests:
+  print 'IMPORTANT: Test filtering is not active; this is only for testing.'
+  relevant_jobs = filter_tests(jobs, args.base_branch)
+  # todo(mattkwong): add skipped tests to report.xml
+  print
+  if len(relevant_jobs) == len(jobs):
+    print '(TESTING) No tests will be skipped.'
+  else:
+    print '(TESTING) These tests will be skipped:'
+    for job in list(set(jobs) - set(relevant_jobs)):
+      print '  %s' % job.shortname
+  print
 
 if args.dry_run:
   print '--dry_run was used, exiting'
@@ -271,7 +304,8 @@ num_failures, resultset = jobset.run(jobs,
                                      newline_on_success=True,
                                      travis=True,
                                      maxjobs=args.jobs)
-report_utils.render_junit_xml_report(resultset, 'report.xml')
+report_utils.render_junit_xml_report(resultset, 'report.xml',
+                                     suite_name='aggregate_tests')
 
 if num_failures == 0:
   jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',
