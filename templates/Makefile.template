@@ -219,10 +219,6 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  ifdef EXTRA_DEFINES
-  DEFINES += $(EXTRA_DEFINES)
-  endif
-
   CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
@@ -323,6 +319,11 @@
   LDFLAGS += $(ARCH_FLAGS)
   LDLIBS += $(addprefix -l, $(LIBS))
   LDLIBSXX += $(addprefix -l, $(LIBSXX))
+
+
+  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES', 'LDLIBS']:
+  ${arg} += $(EXTRA_${arg})
+  % endfor
 
   HOST_CPPFLAGS = $(CPPFLAGS)
   HOST_CFLAGS = $(CFLAGS)

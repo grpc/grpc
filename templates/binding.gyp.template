@@ -44,6 +44,9 @@
         '.',
         'include'
       ],
+      'defines': [
+        'GRPC_UV'
+      ],
       'conditions': [
         ['OS == "win"', {
           "include_dirs": [

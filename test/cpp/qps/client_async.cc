@@ -83,7 +83,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
               BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
               CompletionQueue*)>
           start_req,
-      std::function<void(grpc::Status, ResponseType*)> on_done)
+      std::function<void(grpc::Status, ResponseType*, HistogramEntry*)> on_done)
       : context_(),
         stub_(stub),
         cq_(nullptr),
@@ -113,7 +113,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         return true;
       case State::RESP_DONE:
         entry->set_value((UsageTimer::Now() - start_) * 1e9);
-        callback_(status_, &response_);
+        callback_(status_, &response_, entry);
         next_state_ = State::INVALID;
         return false;
       default:
@@ -135,7 +135,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   ResponseType response_;
   enum State { INVALID, READY, RESP_DONE };
   State next_state_;
-  std::function<void(grpc::Status, ResponseType*)> callback_;
+  std::function<void(grpc::Status, ResponseType*, HistogramEntry*)> callback_;
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
       BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
@@ -290,7 +290,10 @@ class AsyncUnaryClient GRPC_FINAL
   ~AsyncUnaryClient() GRPC_OVERRIDE {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(grpc::Status s, SimpleResponse* response,
+                        HistogramEntry* entry) {
+    entry->set_status(s.error_code());
+  }
   static std::unique_ptr<grpc::ClientAsyncResponseReader<SimpleResponse>>
   StartReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
            const SimpleRequest& request, CompletionQueue* cq) {

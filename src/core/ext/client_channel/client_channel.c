@@ -43,7 +43,6 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/client_channel/lb_policy_registry.h"
-#include "src/core/ext/client_channel/method_config.h"
 #include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -56,6 +55,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/method_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 /* Client channel implementation */
@@ -127,7 +127,7 @@ typedef struct client_channel_channel_data {
   /** maps method names to method_parameters structs */
   grpc_mdstr_hash_table *method_params_table;
   /** incoming resolver result - set by resolver.next() */
-  grpc_resolver_result *resolver_result;
+  grpc_channel_args *resolver_result;
   /** a list of closures that are all waiting for config to come in */
   grpc_closure_list waiting_for_config_closures;
   /** resolver callback */
@@ -232,35 +232,42 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (chand->resolver_result != NULL) {
     grpc_lb_policy_args lb_policy_args;
-    lb_policy_args.server_name =
-        grpc_resolver_result_get_server_name(chand->resolver_result);
-    lb_policy_args.addresses =
-        grpc_resolver_result_get_addresses(chand->resolver_result);
-    lb_policy_args.additional_args =
-        grpc_resolver_result_get_lb_policy_args(chand->resolver_result);
+    lb_policy_args.args = chand->resolver_result;
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
 
+    // Find LB policy name.
+    const char *lb_policy_name = NULL;
+    const grpc_arg *channel_arg =
+        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_POLICY_NAME);
+    if (channel_arg != NULL) {
+      GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+      lb_policy_name = channel_arg->value.string;
+    }
     // Special case: If all of the addresses are balancer addresses,
     // assume that we should use the grpclb policy, regardless of what the
     // resolver actually specified.
-    const char *lb_policy_name =
-        grpc_resolver_result_get_lb_policy_name(chand->resolver_result);
-    bool found_backend_address = false;
-    for (size_t i = 0; i < lb_policy_args.addresses->num_addresses; ++i) {
-      if (!lb_policy_args.addresses->addresses[i].is_balancer) {
-        found_backend_address = true;
-        break;
+    channel_arg =
+        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_ADDRESSES);
+    if (channel_arg != NULL) {
+      GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
+      grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
+      bool found_backend_address = false;
+      for (size_t i = 0; i < addresses->num_addresses; ++i) {
+        if (!addresses->addresses[i].is_balancer) {
+          found_backend_address = true;
+          break;
+        }
       }
-    }
-    if (!found_backend_address) {
-      if (lb_policy_name != NULL && strcmp(lb_policy_name, "grpclb") != 0) {
-        gpr_log(GPR_INFO,
-                "resolver requested LB policy %s but provided only balancer "
-                "addresses, no backend addresses -- forcing use of grpclb LB "
-                "policy",
-                (lb_policy_name == NULL ? "(none)" : lb_policy_name));
+      if (!found_backend_address) {
+        if (lb_policy_name != NULL && strcmp(lb_policy_name, "grpclb") != 0) {
+          gpr_log(GPR_INFO,
+                  "resolver requested LB policy %s but provided only balancer "
+                  "addresses, no backend addresses -- forcing use of grpclb LB "
+                  "policy",
+                  lb_policy_name);
+        }
+        lb_policy_name = "grpclb";
       }
-      lb_policy_name = "grpclb";
     }
     // Use pick_first if nothing was specified and we didn't select grpclb
     // above.
@@ -274,15 +281,15 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       state =
           grpc_lb_policy_check_connectivity(exec_ctx, lb_policy, &state_error);
     }
-    const grpc_arg *channel_arg = grpc_channel_args_find(
-        lb_policy_args.additional_args, GRPC_ARG_SERVICE_CONFIG);
+    channel_arg =
+        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
       method_params_table = grpc_method_config_table_convert(
           (grpc_method_config_table *)channel_arg->value.pointer.p,
           method_config_convert_value, &method_parameters_vtable);
     }
-    grpc_resolver_result_unref(exec_ctx, chand->resolver_result);
+    grpc_channel_args_destroy(chand->resolver_result);
     chand->resolver_result = NULL;
   }
 
@@ -1015,6 +1022,10 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(calld->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING);
   gpr_mu_destroy(&calld->mu);
   GPR_ASSERT(calld->waiting_ops_count == 0);
+  if (calld->connected_subchannel != NULL) {
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, calld->connected_subchannel,
+                                    "picked");
+  }
   gpr_free(calld->waiting_ops);
   gpr_free(and_free_memory);
 }

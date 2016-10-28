@@ -271,7 +271,8 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   memset(server_state, 0, sizeof(*server_state));
   grpc_closure_init(&server_state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, server_state);
-  err = grpc_tcp_server_create(&server_state->tcp_server_shutdown_complete,
+  err = grpc_tcp_server_create(&exec_ctx,
+                               &server_state->tcp_server_shutdown_complete,
                                grpc_server_get_channel_args(server), &tcp);
   if (err != GRPC_ERROR_NONE) {
     goto error;
@@ -286,9 +287,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 
   errors = gpr_malloc(sizeof(*errors) * resolved->naddrs);
   for (i = 0; i < resolved->naddrs; i++) {
-    errors[i] = grpc_tcp_server_add_port(
-        tcp, (struct sockaddr *)&resolved->addrs[i].addr,
-        resolved->addrs[i].len, &port_temp);
+    errors[i] = grpc_tcp_server_add_port(tcp, &resolved->addrs[i], &port_temp);
     if (errors[i] == GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
