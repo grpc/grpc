@@ -31,31 +31,17 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H
+#define GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H
 
-#ifdef GPR_POSIX_FILE
+#include "test/core/end2end/cq_verifier.h"
 
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+typedef struct expectation expectation;
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+expectation *cq_verifier_get_first_expectation(cq_verifier *v);
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e);
 
-char *grpc_get_well_known_google_credentials_file_path_impl(void) {
-  char *result = NULL;
-  char *home = gpr_getenv("HOME");
-  if (home == NULL) {
-    gpr_log(GPR_ERROR, "Could not get HOME environment variable.");
-    return NULL;
-  }
-  gpr_asprintf(&result, "%s/.config/%s/%s", home,
-               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
-               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free(home);
-  return result;
-}
+grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds);
 
-#endif /* GPR_POSIX_FILE */
+#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H */

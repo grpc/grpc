@@ -96,6 +96,12 @@
  * - Implement LB service forwarding (point 2c. in the doc's diagram).
  */
 
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <errno.h>
 
 #include <string.h>
@@ -114,7 +120,6 @@
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
@@ -338,6 +343,21 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
   return true;
 }
 
+/* vtable for LB tokens in grpc_lb_addresses. */
+static void *lb_token_copy(void *token) {
+  return token == NULL ? NULL : GRPC_MDELEM_REF(token);
+}
+static void lb_token_destroy(void *token) {
+  if (token != NULL) GRPC_MDELEM_UNREF(token);
+}
+static int lb_token_cmp(void *token1, void *token2) {
+  if (token1 > token2) return 1;
+  if (token1 < token2) return -1;
+  return 0;
+}
+static const grpc_lb_user_data_vtable lb_token_vtable = {
+    lb_token_copy, lb_token_destroy, lb_token_cmp};
+
 /* Returns addresses extracted from \a serverlist. */
 static grpc_lb_addresses *process_serverlist(
     const grpc_grpclb_serverlist *serverlist) {
@@ -349,7 +369,8 @@ static grpc_lb_addresses *process_serverlist(
   }
   if (num_valid == 0) return NULL;
 
-  grpc_lb_addresses *lb_addresses = grpc_lb_addresses_create(num_valid);
+  grpc_lb_addresses *lb_addresses =
+      grpc_lb_addresses_create(num_valid, &lb_token_vtable);
 
   /* second pass: actually populate the addresses and LB tokens (aka user data
    * to the outside world) to be read by the RR policy during its creation.
@@ -396,7 +417,7 @@ static grpc_lb_addresses *process_serverlist(
       gpr_log(GPR_ERROR,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri((struct sockaddr *)&addr.addr));
+              grpc_sockaddr_to_uri(&addr));
       user_data = GRPC_MDELEM_LB_TOKEN_EMPTY;
     }
 
@@ -408,11 +429,6 @@ static grpc_lb_addresses *process_serverlist(
   GPR_ASSERT(addr_idx == num_valid);
 
   return lb_addresses;
-}
-
-/* A plugin for grpc_lb_addresses_destroy that unrefs the LB token metadata. */
-static void lb_token_destroy(void *token) {
-  if (token != NULL) GRPC_MDELEM_UNREF(token);
 }
 
 /* perform a pick over \a rr_policy. Given that a pick can return immediately
@@ -454,20 +470,27 @@ static grpc_lb_policy *create_rr_locked(
     glb_lb_policy *glb_policy) {
   GPR_ASSERT(serverlist != NULL && serverlist->num_servers > 0);
 
-  grpc_lb_policy_args args;
-  memset(&args, 0, sizeof(args));
-  args.server_name = glb_policy->server_name;
-  args.client_channel_factory = glb_policy->cc_factory;
-  args.addresses = process_serverlist(serverlist);
-  args.additional_args = glb_policy->args;
-
-  grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
-
   if (glb_policy->addresses != NULL) {
     /* dispose of the previous version */
-    grpc_lb_addresses_destroy(glb_policy->addresses, lb_token_destroy);
+    grpc_lb_addresses_destroy(glb_policy->addresses);
   }
-  glb_policy->addresses = args.addresses;
+  glb_policy->addresses = process_serverlist(serverlist);
+
+  grpc_lb_policy_args args;
+  memset(&args, 0, sizeof(args));
+  args.client_channel_factory = glb_policy->cc_factory;
+
+  // Replace the LB addresses in the channel args that we pass down to
+  // the subchannel.
+  static const char *keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
+  const grpc_arg arg =
+      grpc_lb_addresses_create_channel_arg(glb_policy->addresses);
+  args.args = grpc_channel_args_copy_and_add_and_remove(
+      glb_policy->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &arg,
+      1);
+
+  grpc_lb_policy *rr = grpc_lb_policy_create(exec_ctx, "round_robin", &args);
+  grpc_channel_args_destroy(args.args);
 
   return rr;
 }
@@ -563,6 +586,12 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
+  /* Get server name. */
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
+  const char *server_name =
+      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
+
   /* Count the number of gRPC-LB addresses. There must be at least one.
    * TODO(roth): For now, we ignore non-balancer addresses, but in the
    * future, we may change the behavior such that we fall back to using
@@ -570,24 +599,27 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * time, this should be changed to allow a list with no balancer addresses,
    * since the resolver might fail to return a balancer address even when
    * this is the right LB policy to use. */
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
+  grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_grpclb_addrs = 0;
-  for (size_t i = 0; i < args->addresses->num_addresses; ++i) {
-    if (args->addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
+  for (size_t i = 0; i < addresses->num_addresses; ++i) {
+    if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
   }
   if (num_grpclb_addrs == 0) return NULL;
 
   glb_lb_policy *glb_policy = gpr_malloc(sizeof(*glb_policy));
   memset(glb_policy, 0, sizeof(*glb_policy));
 
-  /* All input addresses in args->addresses come from a resolver that claims
+  /* All input addresses in addresses come from a resolver that claims
    * they are LB services. It's the resolver's responsibility to make sure
    * this
    * policy is only instantiated and used in that case.
    *
    * Create a client channel over them to communicate with a LB service */
-  glb_policy->server_name = gpr_strdup(args->server_name);
+  glb_policy->server_name = gpr_strdup(server_name);
   glb_policy->cc_factory = args->client_channel_factory;
-  glb_policy->args = grpc_channel_args_copy(args->additional_args);
+  glb_policy->args = grpc_channel_args_copy(args->args);
   GPR_ASSERT(glb_policy->cc_factory != NULL);
 
   /* construct a target from the addresses in args, given in the form
@@ -595,22 +627,19 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * TODO(dgq): support mixed ip version */
   char **addr_strs = gpr_malloc(sizeof(char *) * num_grpclb_addrs);
   size_t addr_index = 0;
-  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
-    if (args->addresses->addresses[i].user_data != NULL) {
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
+    if (addresses->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,
               "This LB policy doesn't support user data. It will be ignored");
     }
-    if (args->addresses->addresses[i].is_balancer) {
+    if (addresses->addresses[i].is_balancer) {
       if (addr_index == 0) {
-        addr_strs[addr_index++] = grpc_sockaddr_to_uri(
-            (const struct sockaddr *)&args->addresses->addresses[i]
-                .address.addr);
+        addr_strs[addr_index++] =
+            grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       } else {
-        GPR_ASSERT(grpc_sockaddr_to_string(
-                       &addr_strs[addr_index++],
-                       (const struct sockaddr *)&args->addresses->addresses[i]
-                           .address.addr,
-                       true) > 0);
+        GPR_ASSERT(grpc_sockaddr_to_string(&addr_strs[addr_index++],
+                                           &addresses->addresses[i].address,
+                                           true) > 0);
       }
     }
   }
@@ -618,10 +647,29 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   char *target_uri_str = gpr_strjoin_sep((const char **)addr_strs,
                                          num_grpclb_addrs, ",", &uri_path_len);
 
-  /* will pick using pick_first */
+  /* Create a channel to talk to the LBs.
+   *
+   * We strip out the channel arg for the LB policy name, since we want
+   * to use the default (pick_first) in this case.
+   *
+   * We also strip out the channel arg for the resolved addresses, since
+   * that will be generated by the name resolver used in the LB channel.
+   * Note that the LB channel will use the sockaddr resolver, so this
+   * won't actually generate a query to DNS (or some other name service).
+   * However, the addresses returned by the sockaddr resolver will have
+   * is_balancer=false, whereas our own addresses have is_balancer=true.
+   * We need the LB channel to return addresses with is_balancer=false
+   * so that it does not wind up recursively using the grpclb LB policy,
+   * as per the special case logic in client_channel.c.
+   */
+  static const char *keys_to_remove[] = {GRPC_ARG_LB_POLICY_NAME,
+                                         GRPC_ARG_LB_ADDRESSES};
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
+      args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
       exec_ctx, glb_policy->cc_factory, target_uri_str,
-      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
+      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);
+  grpc_channel_args_destroy(new_args);
 
   gpr_free(target_uri_str);
   for (size_t i = 0; i < num_grpclb_addrs; i++) {
@@ -662,7 +710,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
   }
   gpr_mu_destroy(&glb_policy->mu);
-  grpc_lb_addresses_destroy(glb_policy->addresses, lb_token_destroy);
+  grpc_lb_addresses_destroy(glb_policy->addresses);
   gpr_free(glb_policy);
 }
 
