@@ -307,9 +307,15 @@ static void compute_engine_fetch_oauth2(
   request.http.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
-  grpc_httpcli_get(exec_ctx, httpcli_context, pollent, &request, deadline,
-                   grpc_closure_create(response_cb, metadata_req),
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+     channel. This would allow us to cancel an authentication query when under
+     extreme memory pressure. */
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("oauth2_credentials");
+  grpc_httpcli_get(exec_ctx, httpcli_context, pollent, resource_quota, &request,
+                   deadline, grpc_closure_create(response_cb, metadata_req),
                    &metadata_req->response);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
 }
 
 grpc_call_credentials *grpc_google_compute_engine_credentials_create(
@@ -357,10 +363,16 @@ static void refresh_token_fetch_oauth2(
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
-  grpc_httpcli_post(exec_ctx, httpcli_context, pollent, &request, body,
-                    strlen(body), deadline,
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+     channel. This would allow us to cancel an authentication query when under
+     extreme memory pressure. */
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("oauth2_credentials_refresh");
+  grpc_httpcli_post(exec_ctx, httpcli_context, pollent, resource_quota,
+                    &request, body, strlen(body), deadline,
                     grpc_closure_create(response_cb, metadata_req),
                     &metadata_req->response);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   gpr_free(body);
 }
 
