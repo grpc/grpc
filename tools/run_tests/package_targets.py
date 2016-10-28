@@ -81,14 +81,7 @@ class CSharpPackage:
       self.labels += ['windows']
 
   def pre_build_jobspecs(self):
-    if 'windows' in self.labels:
-      return [create_jobspec('prebuild_%s' % self.name,
-                             ['tools\\run_tests\\pre_build_csharp.bat'],
-                             shell=True,
-                             flake_retries=5,
-                             timeout_retries=2)]
-    else:
-      return []
+    return [] # now using dotnet cli to build all packages
 
   def build_jobspec(self):
     if self.use_dotnet_cli:
@@ -98,7 +91,7 @@ class CSharpPackage:
           'src/csharp/build_packages_dotnetcli.sh')
     else:
       return create_jobspec(self.name,
-                            ['build_packages.bat'],
+                            ['build_packages_dotnetcli.bat'],
                             cwd='src\\csharp',
                             shell=True)
 
