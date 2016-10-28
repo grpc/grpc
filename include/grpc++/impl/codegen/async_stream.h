@@ -91,7 +91,20 @@ class AsyncWriterInterface {
  public:
   virtual ~AsyncWriterInterface() {}
 
-  /// Request the writing of \a msg with identifying tag \a tag.
+  /// Request the writing of \a msg with options and identifying tag \a tag.
+  ///
+  /// Only one write may be outstanding at any given time. This means that
+  /// after calling Write, one must wait to receive \a tag from the completion
+  /// queue BEFORE calling Write again.
+  /// This is thread-safe with respect to \a Read
+  ///
+  /// \param[in] msg The message to be written.
+  /// \param[in] options Options affecting the write operation.
+  /// \param[in] tag The tag identifying the operation.
+  virtual void Write(const W& msg, const WriteOptions& options, void* tag) = 0;
+
+  /// Request the writing of \a msg with default options and identifying tag
+  /// \a tag.
   ///
   /// Only one write may be outstanding at any given time. This means that
   /// after calling Write, one must wait to receive \a tag from the completion
@@ -100,7 +113,9 @@ class AsyncWriterInterface {
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] tag The tag identifying the operation.
-  virtual void Write(const W& msg, void* tag) = 0;
+  inline void Write(const W& msg, void* tag) {
+    Write(msg, WriteOptions(), tag);
+  }
 };
 
 template <class R>
@@ -198,10 +213,12 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, const WriteOptions& options,
+             void* tag) override {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -276,10 +293,12 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, const WriteOptions& options,
+             void* tag) override {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -386,8 +405,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   CallOpSet<CallOpSendInitialMetadata> meta_ops_;
   CallOpSet<CallOpRecvMessage<R>> read_ops_;
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus>
-      finish_ops_;
+            CallOpServerSendStatus> finish_ops_;
 };
 
 template <class W>
@@ -416,7 +434,9 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, const WriteOptions& options,
+             void* tag) override {
     write_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -427,7 +447,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -490,7 +510,9 @@ class ServerAsyncReaderWriter final
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, const WriteOptions& options,
+             void* tag) override {
     write_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -501,7 +523,7 @@ class ServerAsyncReaderWriter final
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
