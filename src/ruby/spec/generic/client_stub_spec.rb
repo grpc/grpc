@@ -180,30 +180,44 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
-      def get_response(stub)
+      def get_response(stub, run_start_call_first: false)
         op = stub.request_response(@method, @sent_msg, noop, noop,
                                    return_op: true,
                                    metadata: { k1: 'v1', k2: 'v2' },
                                    deadline: from_relative_time(2))
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        op.execute
+        op.start_call if run_start_call_first
+        result = op.execute
+        op.wait # make sure wait doesn't hang
+        result
       end
 
       it_behaves_like 'request response'
+
+      it 'sends metadata to the server ok when running start_call first' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_request_response(@sent_msg, @resp, @pass,
+                                  k1: 'v1', k2: 'v2')
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        expect(get_response(stub)).to eq(@resp)
+        th.join
+      end
     end
   end
 
   describe '#client_streamer' do
-    shared_examples 'client streaming' do
-      before(:each) do
-        server_port = create_test_server
-        host = "localhost:#{server_port}"
-        @stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
-        @metadata = { k1: 'v1', k2: 'v2' }
-        @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
-        @resp = 'a_reply'
-      end
+    before(:each) do
+      Thread.abort_on_exception = true
+      server_port = create_test_server
+      host = "localhost:#{server_port}"
+      @stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+      @metadata = { k1: 'v1', k2: 'v2' }
+      @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
+      @resp = 'a_reply'
+    end
 
+    shared_examples 'client streaming' do
       it 'should send requests to/receive a reply from a server' do
         th = run_client_streamer(@sent_msgs, @resp, @pass)
         expect(get_response(@stub)).to eq(@resp)
@@ -242,24 +256,33 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
-      def get_response(stub)
+      def get_response(stub, run_start_call_first: false)
         op = stub.client_streamer(@method, @sent_msgs, noop, noop,
                                   return_op: true, metadata: @metadata)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        op.execute
+        op.start_call if run_start_call_first
+        result = op.execute
+        op.wait # make sure wait doesn't hang
+        result
       end
 
       it_behaves_like 'client streaming'
+
+      it 'sends metadata to the server ok when running start_call first' do
+        th = run_client_streamer(@sent_msgs, @resp, @pass, **@metadata)
+        expect(get_response(@stub, run_start_call_first: true)).to eq(@resp)
+        th.join
+      end
     end
   end
 
   describe '#server_streamer' do
-    shared_examples 'server streaming' do
-      before(:each) do
-        @sent_msg = 'a_msg'
-        @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
-      end
+    before(:each) do
+      @sent_msg = 'a_msg'
+      @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
+    end
 
+    shared_examples 'server streaming' do
       it 'should send a request to/receive replies from a server' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
@@ -303,29 +326,44 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
-      def get_responses(stub)
-        op = stub.server_streamer(@method, @sent_msg, noop, noop,
-                                  return_op: true,
-                                  metadata: { k1: 'v1', k2: 'v2' })
-        expect(op).to be_a(GRPC::ActiveCall::Operation)
-        e = op.execute
+      after(:each) do
+        @op.wait # make sure wait doesn't hang
+      end
+      def get_responses(stub, run_start_call_first: false)
+        @op = stub.server_streamer(@method, @sent_msg, noop, noop,
+                                   return_op: true,
+                                   metadata: { k1: 'v1', k2: 'v2' })
+        expect(@op).to be_a(GRPC::ActiveCall::Operation)
+        @op.start_call if run_start_call_first
+        e = @op.execute
         expect(e).to be_a(Enumerator)
         e
       end
 
       it_behaves_like 'server streaming'
+
+      it 'should send metadata to the server ok when start_call is run first' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_server_streamer(@sent_msg, @replys, @fail,
+                                 k1: 'v1', k2: 'v2')
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        e = get_responses(stub, run_start_call_first: true)
+        expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
+        th.join
+      end
     end
   end
 
   describe '#bidi_streamer' do
-    shared_examples 'bidi streaming' do
-      before(:each) do
-        @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
-        @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
-        server_port = create_test_server
-        @host = "localhost:#{server_port}"
-      end
+    before(:each) do
+      @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
+      @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
+      server_port = create_test_server
+      @host = "localhost:#{server_port}"
+    end
 
+    shared_examples 'bidi streaming' do
       it 'supports sending all the requests first', bidi: true do
         th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
                                                    @pass)
@@ -363,16 +401,29 @@ describe 'ClientStub' do
     end
 
     describe 'via a call operation' do
-      def get_responses(stub)
-        op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
-                                return_op: true)
-        expect(op).to be_a(GRPC::ActiveCall::Operation)
-        e = op.execute
+      after(:each) do
+        @op.wait # make sure wait doesn't hang
+      end
+      def get_responses(stub, run_start_call_first: false)
+        @op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+                                 return_op: true)
+        expect(@op).to be_a(GRPC::ActiveCall::Operation)
+        @op.start_call if run_start_call_first
+        e = @op.execute
         expect(e).to be_a(Enumerator)
         e
       end
 
       it_behaves_like 'bidi streaming'
+
+      it 'can run start_call before executing the call' do
+        th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
+                                                   @pass)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+        e = get_responses(stub, run_start_call_first: true)
+        expect(e.collect { |r| r }).to eq(@replys)
+        th.join
+      end
     end
   end
 

@@ -204,6 +204,13 @@ typedef struct {
 /** Service config data, to be passed to subchannels.
     Not intended for external use. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
+/** LB policy name. */
+#define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
+/** Server name. Not intended for external use. */
+#define GRPC_ARG_SERVER_NAME "grpc.server_name"
+/** Resolved addresses in a form used by the LB policy.
+    Not intended for external use. */
+#define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
