@@ -388,35 +388,29 @@ namespace Grpc.Core.Internal
 
         private void Initialize(CompletionQueueSafeHandle cq)
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCall.Initialize"))
-            { 
-                var call = CreateNativeCall(cq);
+            var call = CreateNativeCall(cq);
 
-                details.Channel.AddCallReference(this);
-                InitializeInternal(call);
-                RegisterCancellationCallback();
-            }
+            details.Channel.AddCallReference(this);
+            InitializeInternal(call);
+            RegisterCancellationCallback();
         }
 
         private INativeCall CreateNativeCall(CompletionQueueSafeHandle cq)
         {
-            using (Profilers.ForCurrentThread().NewScope("AsyncCall.CreateNativeCall"))
-            { 
-                if (injectedNativeCall != null)
-                {
-                    return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
-                }
+            if (injectedNativeCall != null)
+            {
+                return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
+            }
 
-                var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.ParentCall : CallSafeHandle.NullInstance;
+            var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.ParentCall : CallSafeHandle.NullInstance;
 
-                var credentials = details.Options.Credentials;
-                using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
-                {
-                    var result = details.Channel.Handle.CreateCall(
-                                 parentCall, ContextPropagationToken.DefaultMask, cq,
-                                 details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
-                    return result;
-                }
+            var credentials = details.Options.Credentials;
+            using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
+            {
+                var result = details.Channel.Handle.CreateCall(
+                             parentCall, ContextPropagationToken.DefaultMask, cq,
+                             details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
+                return result;
             }
         }
 
@@ -456,47 +450,44 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            using (Profilers.ForCurrentThread().NewScope("AsyncCall.HandleUnaryResponse"))
+            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+            TResponse msg = default(TResponse);
+            var deserializeException = TryDeserialize(receivedMessage, out msg);
+
+            lock (myLock)
             {
-                TaskCompletionSource<object> delayedStreamingWriteTcs = null;
-                TResponse msg = default(TResponse);
-                var deserializeException = TryDeserialize(receivedMessage, out msg);
+                finished = true;
 
-                lock (myLock)
+                if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
                 {
-                    finished = true;
+                    receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
+                }
+                finishedStatus = receivedStatus;
 
-                    if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
-                    {
-                        receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
-                    }
-                    finishedStatus = receivedStatus;
-
-                    if (isStreamingWriteCompletionDelayed)
-                    {
-                        delayedStreamingWriteTcs = streamingWriteTcs;
-                        streamingWriteTcs = null;
-                    }
-
-                    ReleaseResourcesIfPossible();
+                if (isStreamingWriteCompletionDelayed)
+                {
+                    delayedStreamingWriteTcs = streamingWriteTcs;
+                    streamingWriteTcs = null;
                 }
 
-                responseHeadersTcs.SetResult(responseHeaders);
-
-                if (delayedStreamingWriteTcs != null)
-                {
-                    delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
-                }
-
-                var status = receivedStatus.Status;
-                if (status.StatusCode != StatusCode.OK)
-                {
-                    unaryResponseTcs.SetException(new RpcException(status));
-                    return;
-                }
-
-                unaryResponseTcs.SetResult(msg);
+                ReleaseResourcesIfPossible();
             }
+
+            responseHeadersTcs.SetResult(responseHeaders);
+
+            if (delayedStreamingWriteTcs != null)
+            {
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+            }
+
+            var status = receivedStatus.Status;
+            if (status.StatusCode != StatusCode.OK)
+            {
+                unaryResponseTcs.SetException(new RpcException(status));
+                return;
+            }
+
+            unaryResponseTcs.SetResult(msg);
         }
 
         /// <summary>
