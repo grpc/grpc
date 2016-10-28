@@ -321,6 +321,54 @@
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
+- (void)testErroneousPingPongRPC {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
+
+  NSArray *requests = @[@27182, @8, @1828, @45904];
+  NSArray *responses = @[@31415, @9, @2653, @58979];
+
+  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+
+  __block int index = 0;
+
+  RMTStreamingOutputCallRequest *request =
+      [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                      requestedResponseSize:responses[index]];
+
+  [requestsBuffer writeValue:request];
+
+  [_service fullDuplexCallWithRequestsWriter:requestsBuffer
+                                eventHandler:^(BOOL done,
+                                               RMTStreamingOutputCallResponse *response,
+                                               NSError *error) {
+      if (index == 0) {
+        XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+        XCTAssertNotNil(response, @"Event handler called without an event.");
+        XCTAssertFalse(done);
+
+        id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+        XCTAssertEqualObjects(response, expected);
+        index += 1;
+
+        RMTStreamingOutputCallRequest *request =
+        [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                        requestedResponseSize:responses[index]];
+        RMTEchoStatus *status = [RMTEchoStatus message];
+        status.code = 7;
+        status.message = @"Error message!";
+        request.responseStatus = status;
+        [requestsBuffer writeValue:request];
+      } else {
+        XCTAssertNil(response);
+        XCTAssertNotNil(error);
+
+        [expectation fulfill];
+      }
+  }];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
 #ifndef GRPC_COMPILE_WITH_CRONET
 // TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
