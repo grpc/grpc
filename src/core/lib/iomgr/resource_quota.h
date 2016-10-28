@@ -49,7 +49,8 @@
     resource constrained, grpc_resource_user instances are asked (in turn) to
     free up whatever they can so that the system as a whole can make progress.
 
-    There are three kinds of reclamation that take place:
+    There are three kinds of reclamation that take place, in order of increasing
+    invasiveness:
     - an internal reclamation, where cached resource at the resource user level
       is returned to the quota
     - a benign reclamation phase, whereby resources that are in use but are not
@@ -58,9 +59,14 @@
       make progress may be enacted so that at least one part of the system can
       complete.
 
-    These reclamations are tried in priority order, and only one reclamation
-    is outstanding for a quota at any given time (meaning that if a destructive
-    reclamation makes progress, we may follow up with a benign reclamation).
+    Only one reclamation will be outstanding for a given quota at a given time.
+    On each reclamation attempt, the kinds of reclamation are tried in order of
+    increasing invasiveness, stopping at the first one that succeeds. Thus, on a
+    given reclamation attempt, if internal and benign reclamation both fail, it
+    will wind up doing a destructive reclamation. However, the next reclamation
+    attempt may then be able to get what it needs via internal or benign
+    reclamation, due to resources that may have been freed up by the destructive
+    reclamation in the previous attempt.
 
     Future work will be to expose the current resource pressure so that back
     pressure can be applied to avoid reclamation phases starting.
@@ -111,11 +117,6 @@ struct grpc_resource_user {
   /* Closure to publish a non empty free pool under the resource quota combiner
      lock */
   grpc_closure add_to_free_pool_closure;
-
-#ifndef NDEBUG
-  /* Canary object to detect leaked resource users with ASAN */
-  void *asan_canary;
-#endif
 
   gpr_mu mu;
   /* Total allocated memory outstanding by this resource user in bytes;
