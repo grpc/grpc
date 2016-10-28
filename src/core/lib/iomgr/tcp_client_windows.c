@@ -194,7 +194,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
   status =
-      bind(sock, (struct sockaddr *)&local_address.addr, local_address.len);
+      bind(sock, (struct sockaddr *)&local_address.addr, (int)local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
