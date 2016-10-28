@@ -41,6 +41,7 @@
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -84,6 +85,8 @@ typedef struct {
 
   /** currently resolving addresses */
   grpc_resolved_addresses *addresses;
+
+  grpc_ares_ev_driver *ev_driver;
 } ares_dns_resolver;
 
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -198,18 +201,20 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                           grpc_closure *on_complete) {
   ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
+  gpr_log(GPR_DEBUG, "dns_ares_next is called.");
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
     gpr_backoff_reset(&r->backoff_state);
-    GRPC_RESOLVER_REF(&r->base, "dns-resolving");
-    GPR_ASSERT(!r->resolving);
-    r->resolving = true;
-    r->addresses = NULL;
-    grpc_resolve_address_ares(
-        exec_ctx, r->name_to_resolve, r->default_port, r->base.pollset_set,
-        grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);
+    dns_ares_start_resolving_locked(exec_ctx, r);
+    // GRPC_RESOLVER_REF(&r->base, "dns-resolving");
+    // GPR_ASSERT(!r->resolving);
+    // r->resolving = true;
+    // r->addresses = NULL;
+    // grpc_resolve_address_ares(
+    //     exec_ctx, r->name_to_resolve, r->default_port, r->ev_driver,
+    //     grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);
   } else {
     dns_ares_maybe_finish_next_locked(exec_ctx, r);
   }
@@ -223,7 +228,7 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->resolving = true;
   r->addresses = NULL;
   grpc_resolve_address_ares(
-      exec_ctx, r->name_to_resolve, r->default_port, r->base.pollset_set,
+      exec_ctx, r->name_to_resolve, r->default_port, r->ev_driver,
       grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);
 }
 
@@ -242,7 +247,9 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
+  gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
+  grpc_ares_ev_driver_destroy(exec_ctx, r->ev_driver);
   gpr_mu_destroy(&r->mu);
   grpc_ares_cleanup();
   if (r->resolved_result) {
@@ -280,8 +287,14 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
   // Create resolver.
   r = gpr_malloc(sizeof(ares_dns_resolver));
   memset(r, 0, sizeof(*r));
-  gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
+  error = grpc_ares_ev_driver_create(&r->ev_driver, r->base.pollset_set);
+  if (error != GRPC_ERROR_NONE) {
+    GRPC_LOG_IF_ERROR("grpc_ares_ev_driver_create() failed", error);
+    gpr_free(r);
+    return NULL;
+  }
+  gpr_mu_init(&r->mu);
   r->target_name = gpr_strdup(path);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);

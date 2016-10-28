@@ -36,6 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -47,7 +48,7 @@
 extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          const char *addr,
                                          const char *default_port,
-                                         grpc_pollset_set *pollset_set,
+                                         grpc_ares_ev_driver *ev_driver,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
 

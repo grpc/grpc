@@ -228,7 +228,7 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
 
 void my_resolve_address_async(grpc_exec_ctx *exec_ctx, const char *addr,
                               const char *default_port,
-                              grpc_pollset_set *pollset_set,
+                              grpc_ares_ev_driver *ev_driver,
                               grpc_closure *on_done,
                               grpc_resolved_addresses **addresses) {
   my_resolve_address(exec_ctx, addr, default_port, on_done, addresses);

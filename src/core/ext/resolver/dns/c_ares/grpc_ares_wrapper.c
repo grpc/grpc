@@ -92,7 +92,6 @@ typedef struct grpc_ares_request {
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
 static void destroy_request(grpc_ares_request *request) {
-  grpc_ares_ev_driver_destroy(request->ev_driver);
   gpr_free(request->host);
   gpr_free(request->port);
   gpr_free(request->default_port);
@@ -112,6 +111,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
   grpc_ares_request *r = (grpc_ares_request *)arg;
   grpc_resolved_addresses **addresses = r->addrs_out;
   if (status == ARES_SUCCESS) {
+    gpr_log(GPR_DEBUG, "on_done_cb success");
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     r->success = true;
@@ -175,7 +175,9 @@ static void on_done_cb(void *arg, int status, int timeouts,
       r->error = grpc_error_add_child(error, r->error);
     }
   }
+  gpr_log(GPR_DEBUG, "update pending queries: %d", r->pending_queries);
   if (--r->pending_queries == 0) {
+    gpr_log(GPR_DEBUG, "finish");
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -189,12 +191,14 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
   grpc_ares_request *r = (grpc_ares_request *)arg;
   grpc_ares_ev_driver *ev_driver = r->ev_driver;
-  ares_channel *channel = grpc_ares_ev_driver_get_channel(ev_driver);
+  ares_channel *channel =
+      (ares_channel *)grpc_ares_ev_driver_get_channel(ev_driver);
   r->pending_queries = 1;
   if (grpc_ipv6_loopback_available()) {
     ++r->pending_queries;
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
+  gpr_log(GPR_DEBUG, "pending queries: %d", r->pending_queries);
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
   grpc_ares_ev_driver_start(exec_ctx, ev_driver);
 }
@@ -232,14 +236,13 @@ static int try_sockaddr_resolve(const char *name, const char *port,
 
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
-                                    grpc_pollset_set *pollset_set,
+                                    grpc_ares_ev_driver *ev_driver,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
   char *host;
   char *port;
   grpc_error *err;
   grpc_ares_request *r = NULL;
-  grpc_ares_ev_driver *ev_driver;
 
   if (grpc_customized_resolve_address(name, default_port, addrs, &err) != 0) {
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
@@ -268,11 +271,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   if (try_sockaddr_resolve(host, port, addrs)) {
     grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   } else {
-    err = grpc_ares_ev_driver_create(&ev_driver, pollset_set);
-    if (err != GRPC_ERROR_NONE) {
-      grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-      goto done;
-    }
+    gpr_log(GPR_DEBUG, "%s", host);
     r = gpr_malloc(sizeof(grpc_ares_request));
     r->ev_driver = ev_driver;
     r->on_done = on_done;
@@ -294,7 +293,7 @@ done:
 
 void (*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_pollset_set *pollset_set, grpc_closure *on_done,
+    grpc_ares_ev_driver *ev_driver, grpc_closure *on_done,
     grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 grpc_error *grpc_ares_init(void) {
