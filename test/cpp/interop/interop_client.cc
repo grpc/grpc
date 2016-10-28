@@ -107,6 +107,11 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
   return stub_.get();
 }
 
+UnimplementedService::Stub*
+InteropClient::ServiceStub::GetUnimplementedServiceStub() {
+  return UnimplementedService::NewStub(channel_).get();
+}
+
 void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
   channel_ = channel;
 
@@ -999,6 +1004,27 @@ bool InteropClient::DoCustomMetadata() {
     gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
   }
 
+  return true;
+}
+
+bool InteropClient::DoUnimplementedService() {
+  gpr_log(GPR_DEBUG, "Sending a request for an unimplemented service...");
+
+  Empty request = Empty::default_instance();
+  Empty response = Empty::default_instance();
+  ClientContext context;
+
+  UnimplementedService::Stub* stub =
+      serviceStub_.GetUnimplementedServiceStub();
+
+  Status s =
+      stub->UnimplementedCall(&context, request, &response);
+
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "unimplemented service done.");
   return true;
 }
 
