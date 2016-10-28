@@ -28,9 +28,9 @@
   "bundledDependencies": ["node-pre-gyp"],
   "dependencies": {
     "arguejs": "^0.2.3",
-    "lodash": "^3.9.3",
-    "nan": "^2.0.0",
-    "protobufjs": "^4.0.0"
+    "lodash": "^3.10.1",
+    "nan": "^2.4.0",
+    "protobufjs": "^5.0.1"
   },
   "devDependencies": {
     "async": "^1.5.0",
