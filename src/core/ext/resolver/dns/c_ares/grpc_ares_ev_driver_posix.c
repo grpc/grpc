@@ -31,13 +31,11 @@
  *
  */
 #include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 #ifndef GRPC_NATIVE_ADDRESS_RESOLVE
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
-
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <ares.h>
 #include <grpc/support/alloc.h>
@@ -46,6 +44,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -333,5 +332,5 @@ void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&ev_driver->mu);
 }
 
-#endif /* GPR_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET */
 #endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
