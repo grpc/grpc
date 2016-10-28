@@ -39,6 +39,14 @@ cd $(dirname $0)/../..
 
 PLATFORM=`uname -s`
 
+function is_msys() {
+  if [ "${PLATFORM/MSYS}" != "$PLATFORM" ]; then
+    echo true
+  else
+    exit 1
+  fi
+}
+
 function is_mingw() {
   if [ "${PLATFORM/MINGW}" != "$PLATFORM" ]; then
     echo true
@@ -107,6 +115,12 @@ PYTHON=${1:-python2.7}
 VENV=${2:-$(venv $PYTHON)}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
 TOOLCHAIN=${4:-$(toolchain)}
+
+if [ $(is_msys) ]; then
+  echo "MSYS doesn't directly provide the right compiler(s);"
+  echo "switch to a MinGW shell."
+  exit 1
+fi
 
 ROOT=`pwd`
 export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"

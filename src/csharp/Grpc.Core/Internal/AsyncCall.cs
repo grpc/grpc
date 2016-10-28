@@ -265,7 +265,7 @@ namespace Grpc.Core.Internal
                     // the halfclose has already been done implicitly, so just return
                     // completed task here.
                     halfcloseRequested = true;
-                    return Task.FromResult<object>(null);
+                    return TaskUtils.CompletedTask;
                 }
                 call.StartSendCloseFromClient(HandleSendFinished);
 

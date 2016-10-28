@@ -35,7 +35,7 @@
 #define GRPC_CORE_EXT_CLIENT_CHANNEL_CONNECTOR_H
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_connector grpc_connector;
@@ -49,7 +49,7 @@ typedef struct {
   /** set of pollsets interested in this connection */
   grpc_pollset_set *interested_parties;
   /** address to connect to */
-  const struct sockaddr *addr;
+  const grpc_resolved_address *addr;
   size_t addr_len;
   /** initial connect string to send */
   gpr_slice initial_connect_string;
