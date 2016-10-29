@@ -138,6 +138,12 @@ typedef enum {
   GRPC_NUM_SETTING_SETS
 } grpc_chttp2_setting_set;
 
+typedef enum {
+  GRPC_CHTTP2_NO_GOAWAY_SEND,
+  GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_GOAWAY_SENT,
+} grpc_chttp2_sent_goaway_state;
+
 /* Outstanding ping request data */
 typedef struct grpc_chttp2_outstanding_ping {
   uint8_t id[8];
@@ -249,7 +255,7 @@ struct grpc_chttp2_transport {
   /** have we seen a goaway */
   uint8_t seen_goaway;
   /** have we sent a goaway */
-  uint8_t sent_goaway;
+  grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
   uint8_t dirtied_local_settings;
@@ -320,6 +326,18 @@ struct grpc_chttp2_transport {
   /* if non-NULL, close the transport with this error when writes are finished
    */
   grpc_error *close_transport_on_writes_finished;
+
+  /* buffer pool state */
+  /** have we scheduled a benign cleanup? */
+  bool benign_reclaimer_registered;
+  /** have we scheduled a destructive cleanup? */
+  bool destructive_reclaimer_registered;
+  /** benign cleanup closure */
+  grpc_closure benign_reclaimer;
+  grpc_closure benign_reclaimer_locked;
+  /** destructive cleanup closure */
+  grpc_closure destructive_reclaimer;
+  grpc_closure destructive_reclaimer_locked;
 };
 
 typedef enum {

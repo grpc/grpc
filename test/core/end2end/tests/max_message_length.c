@@ -402,7 +402,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
   GPR_ASSERT(0 == strcmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
-  GPR_ASSERT(was_cancelled == 0);
 
   GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
   GPR_ASSERT(strcmp(details,

@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -65,9 +66,8 @@ grpc_channel *grpc_insecure_channel_create_from_fd(
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
 
-  grpc_endpoint *client =
-      grpc_tcp_create(grpc_fd_create(fd, "client"),
-                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, "fd-client");
+  grpc_endpoint *client = grpc_tcp_client_create_from_fd(
+      &exec_ctx, grpc_fd_create(fd, "client"), args, "fd-client");
 
   grpc_transport *transport =
       grpc_create_chttp2_transport(&exec_ctx, final_args, client, 1);

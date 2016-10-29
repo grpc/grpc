@@ -397,7 +397,9 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_lock(&p->mu);
   if ((selected = peek_next_connected_locked(p))) {
     /* readily available, report right away */
-    *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(
+        grpc_subchannel_get_connected_subchannel(selected->subchannel),
+        "picked");
 
     if (user_data != NULL) {
       *user_data = selected->user_data;
@@ -463,8 +465,9 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
 
-          *pp->target =
-              grpc_subchannel_get_connected_subchannel(selected->subchannel);
+          *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(
+              grpc_subchannel_get_connected_subchannel(selected->subchannel),
+              "picked");
           if (pp->user_data != NULL) {
             *pp->user_data = selected->user_data;
           }
@@ -578,7 +581,9 @@ static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_lock(&p->mu);
   if ((selected = peek_next_connected_locked(p))) {
     gpr_mu_unlock(&p->mu);
-    target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
+    target = GRPC_CONNECTED_SUBCHANNEL_REF(
+        grpc_subchannel_get_connected_subchannel(selected->subchannel),
+        "picked");
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
   } else {
     gpr_mu_unlock(&p->mu);
