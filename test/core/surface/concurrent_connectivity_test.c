@@ -120,7 +120,7 @@ void bad_server_thread(void *vargs) {
   struct sockaddr_storage *addr = (struct sockaddr_storage *)resolved_addr.addr;
   int port;
   grpc_tcp_server *s;
-  grpc_error *error = grpc_tcp_server_create(NULL, NULL, &s);
+  grpc_error *error = grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->ss_family = AF_INET;

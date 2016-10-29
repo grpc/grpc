@@ -34,6 +34,7 @@
 #include <grpc++/server_builder.h>
 
 #include <grpc++/impl/service_type.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/server.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -56,6 +57,7 @@ ServerBuilder::ServerBuilder()
     : max_receive_message_size_(-1),
       max_send_message_size_(-1),
       sync_server_settings_(SyncServerSettings()),
+      resource_quota_(nullptr),
       generic_service_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
@@ -71,6 +73,12 @@ ServerBuilder::ServerBuilder()
          sizeof(maybe_default_compression_level_));
   memset(&maybe_default_compression_algorithm_, 0,
          sizeof(maybe_default_compression_algorithm_));
+}
+
+ServerBuilder::~ServerBuilder() {
+  if (resource_quota_ != nullptr) {
+    grpc_resource_quota_unref(resource_quota_);
+  }
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
@@ -152,6 +160,16 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
   return *this;
 }
 
+ServerBuilder& ServerBuilder::SetResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
+  if (resource_quota_ != nullptr) {
+    grpc_resource_quota_unref(resource_quota_);
+  }
+  resource_quota_ = resource_quota.c_resource_quota();
+  grpc_resource_quota_ref(resource_quota_);
+  return *this;
+}
+
 ServerBuilder& ServerBuilder::AddListeningPort(
     const grpc::string& addr, std::shared_ptr<ServerCredentials> creds,
     int* selected_port) {
@@ -188,6 +206,11 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   if (maybe_default_compression_algorithm_.is_set) {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
+  }
+
+  if (resource_quota_ != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
+                              grpc_resource_quota_arg_vtable());
   }
 
   // == Determine if the server has any syncrhonous methods ==

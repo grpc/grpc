@@ -334,6 +334,7 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_uv.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -605,6 +606,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_uv.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -848,6 +850,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address_posix.c
   src/core/lib/iomgr/resolve_address_uv.c
   src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -1061,6 +1064,7 @@ add_library(grpc++
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1123,6 +1127,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h
@@ -1225,6 +1230,7 @@ add_library(grpc++_cronet
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1287,6 +1293,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h
@@ -1480,6 +1487,7 @@ add_library(grpc++_unsecure
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -1542,6 +1550,7 @@ foreach(_hdr
   include/grpc++/impl/thd.h
   include/grpc++/impl/thd_cxx11.h
   include/grpc++/impl/thd_no_cxx11.h
+  include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
   include/grpc++/security/credentials.h
