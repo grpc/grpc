@@ -64,7 +64,7 @@ message LoadBalanceRequest {
 
 message InitialLoadBalanceRequest {
   // Name of load balanced service (IE, service.grpc.gslb.google.com). Its
-  // length should be less than 128 bytes.
+  // length should be less than 256 bytes.
   string name = 1;
 }
 
