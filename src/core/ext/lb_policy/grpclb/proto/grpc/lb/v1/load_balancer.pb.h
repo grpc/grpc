@@ -66,7 +66,7 @@ typedef struct _grpc_lb_v1_Duration {
 
 typedef struct _grpc_lb_v1_InitialLoadBalanceRequest {
     bool has_name;
-    char name[128];
+    char name[256];
 /* @@protoc_insertion_point(struct:grpc_lb_v1_InitialLoadBalanceRequest) */
 } grpc_lb_v1_InitialLoadBalanceRequest;
 
@@ -166,8 +166,8 @@ extern const pb_field_t grpc_lb_v1_Server_fields[5];
 
 /* Maximum encoded size of messages (where known) */
 #define grpc_lb_v1_Duration_size                 22
-#define grpc_lb_v1_LoadBalanceRequest_size       169
-#define grpc_lb_v1_InitialLoadBalanceRequest_size 131
+#define grpc_lb_v1_LoadBalanceRequest_size       297
+#define grpc_lb_v1_InitialLoadBalanceRequest_size 259
 #define grpc_lb_v1_ClientStats_size              33
 #define grpc_lb_v1_LoadBalanceResponse_size      (98 + grpc_lb_v1_ServerList_size)
 #define grpc_lb_v1_InitialLoadBalanceResponse_size 90
