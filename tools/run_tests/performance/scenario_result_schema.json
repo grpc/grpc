@@ -210,7 +210,7 @@
     "mode": "NULLABLE"
   },
   {
-    "name": "request_results",
+    "name": "requestResults",
     "type": "STRING",
     "mode": "NULLABLE"
   }
