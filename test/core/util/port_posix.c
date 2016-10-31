@@ -120,7 +120,7 @@ static int is_port_available(int *port, int is_tcp) {
   const int fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
   int one = 1;
   struct sockaddr_in addr;
-  socklen_t alen = sizeof(addr);
+  uint32_t alen = sizeof(addr);
   int actual_port;
 
   GPR_ASSERT(*port >= 0);
@@ -148,7 +148,7 @@ static int is_port_available(int *port, int is_tcp) {
   }
 
   /* Get the bound port number */
-  if (getsockname(fd, (struct sockaddr *)&addr, &alen) < 0) {
+  if (getsockname(fd, (struct sockaddr *)&addr, (grpc_socklen *)&alen) < 0) {
     gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
     close(fd);
     return 0;

@@ -168,7 +168,7 @@ static void server_thread(void *arg) {
   const int sock = args->socket;
   gpr_log(GPR_INFO, "Server listening");
   struct sockaddr_in addr;
-  socklen_t len = sizeof(addr);
+  grpc_socklen len = sizeof(addr);
   const int client = accept(sock, (struct sockaddr *)&addr, &len);
   if (client < 0) {
     perror("Unable to accept");

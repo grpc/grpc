@@ -124,7 +124,7 @@ static int is_port_available(int *port, int is_tcp) {
   const SOCKET fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
   int one = 1;
   struct sockaddr_in addr;
-  socklen_t alen = sizeof(addr);
+  grpc_socklen alen = sizeof(addr);
   int actual_port;
 
   GPR_ASSERT(*port >= 0);
@@ -158,7 +158,7 @@ static int is_port_available(int *port, int is_tcp) {
     closesocket(fd);
     return 0;
   }
-  GPR_ASSERT(alen <= (socklen_t)sizeof(addr));
+  GPR_ASSERT(alen <= (grpc_socklen)sizeof(addr));
   actual_port = ntohs(addr.sin_port);
   GPR_ASSERT(actual_port > 0);
   if (*port == 0) {

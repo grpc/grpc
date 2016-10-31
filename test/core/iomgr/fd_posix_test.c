@@ -202,7 +202,7 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   int flags;
   session *se;
   struct sockaddr_storage ss;
-  socklen_t slen = sizeof(ss);
+  grpc_socklen slen = sizeof(ss);
   grpc_fd *listen_em_fd = sv->em_fd;
 
   if (error != GRPC_ERROR_NONE) {
@@ -237,7 +237,7 @@ static int server_start(grpc_exec_ctx *exec_ctx, server *sv) {
   int port = 0;
   int fd;
   struct sockaddr_in sin;
-  socklen_t addr_len;
+  grpc_socklen addr_len;
 
   create_test_socket(port, &fd, &sin);
   addr_len = sizeof(sin);

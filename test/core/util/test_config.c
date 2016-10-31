@@ -267,6 +267,9 @@ static void install_crash_handler() {
   GPR_ASSERT(sigaction(SIGSEGV, &sa, NULL) == 0);
   GPR_ASSERT(sigaction(SIGTERM, &sa, NULL) == 0);
   GPR_ASSERT(sigaction(SIGQUIT, &sa, NULL) == 0);
+#ifndef GRPC_HAVE_SO_NOSIGPIPE
+  signal(SIGPIPE, SIG_IGN);
+#endif
 }
 #else
 static void install_crash_handler() {}
