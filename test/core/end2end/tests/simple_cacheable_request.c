@@ -235,9 +235,7 @@ static void test_cacheable_request_response_with_metadata_and_payload(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, authority));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     // Our simple proxy does not support cacheable requests
   } else {

@@ -212,9 +212,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   // Expected behavior of a RPC when network is lost.
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, authority));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
   GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);

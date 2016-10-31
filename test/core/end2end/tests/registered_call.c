@@ -97,7 +97,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
+static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_test_fixture f, void *rc) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -186,9 +186,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, authority));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
@@ -208,7 +206,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
       begin_test(config, "test_invoke_simple_request", NULL, NULL);
   void *rc = grpc_channel_register_call(f.client, "/foo", get_host_override_string("foo.test.google.fr:1234", config), NULL);
 
-  simple_request_body(f, rc);
+  simple_request_body(config, f, rc);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -220,7 +218,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   void *rc = grpc_channel_register_call(f.client, "/foo", get_host_override_string("foo.test.google.fr:1234", config), NULL);
 
   for (i = 0; i < 10; i++) {
-    simple_request_body(f, rc);
+    simple_request_body(config, f, rc);
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
   end_test(&f);

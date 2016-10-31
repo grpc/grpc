@@ -71,4 +71,6 @@ void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config);
 
 const char *get_host_override_string(const char *str, grpc_end2end_test_config config);
 
+void validate_host_override_string(const char *pattern, const char *str, grpc_end2end_test_config config);
+
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

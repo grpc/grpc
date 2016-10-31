@@ -236,9 +236,7 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, authority));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));

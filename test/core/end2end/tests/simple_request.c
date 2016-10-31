@@ -201,9 +201,7 @@ static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_te
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
 

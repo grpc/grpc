@@ -171,9 +171,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, authority));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
