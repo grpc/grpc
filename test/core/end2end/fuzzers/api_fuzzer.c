@@ -178,9 +178,10 @@ static grpc_channel_args *read_args(input_stream *inp) {
         break;
       case 3:
         args[i].type = GRPC_ARG_POINTER;
-        args[i].key = GRPC_ARG_RESOURCE_QUOTA;
+        args[i].key = gpr_strdup(GRPC_ARG_RESOURCE_QUOTA);
         args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
         args[i].value.pointer.p = g_resource_quota;
+        grpc_resource_quota_ref(g_resource_quota);
         break;
       default:
         end(inp);
