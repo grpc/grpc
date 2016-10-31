@@ -38,6 +38,7 @@
 #include <thread>
 
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -93,6 +94,11 @@ class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
 
     for (int i = 0; i < num_threads; i++) {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
+    }
+
+    if (config.resource_quota_size() > 0) {
+      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                   .Resize(config.resource_quota_size()));
     }
 
     server_ = builder.BuildAndStart();
