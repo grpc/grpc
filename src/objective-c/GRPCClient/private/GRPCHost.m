@@ -33,9 +33,9 @@
 
 #import "GRPCHost.h"
 
+#import <GRPCClient/GRPCCall.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#import <GRPCClient/GRPCCall.h>
 #ifdef GRPC_COMPILE_WITH_CRONET
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
@@ -43,18 +43,27 @@
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
+#import "GRPCConnectivityMonitor.h"
 #import "NSDictionary+GRPC.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-// TODO(jcanizales): Generate the version in a standalone header, from templates. Like
+// TODO(jcanizales): Generate the version in a standalone header, from
+// templates. Like
 // templates/src/core/surface/version.c.template .
-#define GRPC_OBJC_VERSION_STRING @"1.0.0"
+#define GRPC_OBJC_VERSION_STRING @"1.0.1"
 
 static NSMutableDictionary *kHostCache;
 
+// This connectivity monitor flushes the host cache when connectivity status
+// changes or when connection switch between Wifi and Cellular data, so that a
+// new call will use a new channel. Otherwise, a new call will still use the
+// cached channel which is no longer available and will cause gRPC to hang.
+static GRPCConnectivityMonitor *connectivityMonitor = nil;
+
 @implementation GRPCHost {
-  // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
+  // TODO(mlumish): Investigate whether caching channels with strong links is a
+  // good idea.
   GRPCChannel *_channel;
 }
 
@@ -74,11 +83,13 @@ static NSMutableDictionary *kHostCache;
     return nil;
   }
 
-  // To provide a default port, we try to interpret the address. If it's just a host name without
-  // scheme and without port, we'll use port 443. If it has a scheme, we pass it untouched to the C
-  // gRPC library.
-  // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
+  // To provide a default port, we try to interpret the address. If it's just a
+  // host name without scheme and without port, we'll use port 443. If it has a
+  // scheme, we pass it untouched to the C gRPC library.
+  // TODO(jcanizales): Add unit tests for the types of addresses we want to let
+  // pass untouched.
+  NSURL *hostURL =
+      [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
   if (hostURL.host && !hostURL.port) {
     address = [hostURL.host stringByAppendingString:@":443"];
   }
@@ -88,6 +99,7 @@ static NSMutableDictionary *kHostCache;
   dispatch_once(&cacheInitialization, ^{
     kHostCache = [NSMutableDictionary dictionary];
   });
+
   @synchronized(kHostCache) {
     GRPCHost *cachedHost = kHostCache[address];
     if (cachedHost) {
@@ -98,6 +110,17 @@ static NSMutableDictionary *kHostCache;
       _address = address;
       _secure = YES;
       kHostCache[address] = self;
+    }
+    // Keep a single monitor to flush the cache if the connectivity status changes
+    // Thread safety guarded by @synchronized(kHostCache)
+    if (!connectivityMonitor) {
+      connectivityMonitor =
+      [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
+      void (^handler)() = ^{
+        [GRPCHost flushChannelCache];
+      };
+      [connectivityMonitor handleLossWithHandler:handler
+                         wifiStatusChangeHandler:handler];
     }
   }
   return self;
@@ -114,7 +137,7 @@ static NSMutableDictionary *kHostCache;
 }
 
 + (void)resetAllHostSettings {
-  @synchronized (kHostCache) {
+  @synchronized(kHostCache) {
     kHostCache = [NSMutableDictionary dictionary];
   }
 }
@@ -140,16 +163,19 @@ static NSMutableDictionary *kHostCache;
   static NSError *kDefaultRootsError;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
-    NSString *defaultPath = @"gRPCCertificates.bundle/roots"; // .pem
-    // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
+    NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
+    // Do not use NSBundle.mainBundle, as it's nil for tests of library
+    // projects.
     NSBundle *bundle = [NSBundle bundleForClass:self.class];
     NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
     NSError *error;
-    // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
-    // issuer). Load them as UTF8 and produce an ASCII equivalent.
-    NSString *contentInUTF8 = [NSString stringWithContentsOfFile:path
-                                                        encoding:NSUTF8StringEncoding
-                                                           error:&error];
+    // Files in PEM format can have non-ASCII characters in their comments (e.g.
+    // for the name of the issuer). Load them as UTF8 and produce an ASCII
+    // equivalent.
+    NSString *contentInUTF8 =
+        [NSString stringWithContentsOfFile:path
+                                  encoding:NSUTF8StringEncoding
+                                     error:&error];
     if (contentInUTF8 == nil) {
       kDefaultRootsError = error;
       return;
@@ -161,17 +187,21 @@ static NSMutableDictionary *kHostCache;
   NSData *rootsASCII;
   if (pemRootCerts != nil) {
     rootsASCII = [pemRootCerts dataUsingEncoding:NSASCIIStringEncoding
-                     allowLossyConversion:YES];
+                            allowLossyConversion:YES];
   } else {
     if (kDefaultRootsASCII == nil) {
       if (errorPtr) {
         *errorPtr = kDefaultRootsError;
       }
-      NSAssert(kDefaultRootsASCII, @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
-               "with the root certificates, is needed to establish secure (TLS) connections. "
-               "Because the file is distributed with the gRPC library, this error is usually a sign "
-               "that the library wasn't configured correctly for your project. Error: %@",
-                kDefaultRootsError);
+      NSAssert(kDefaultRootsASCII,
+               @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
+                "with the root certificates, is needed to establish secure "
+                "(TLS) connections. "
+                "Because the file is distributed with the gRPC library, this "
+                "error is usually a sign "
+                "that the library wasn't configured correctly for your "
+                "project. Error: %@",
+               kDefaultRootsError);
       return NO;
     }
     rootsASCII = kDefaultRootsASCII;
@@ -182,10 +212,12 @@ static NSMutableDictionary *kHostCache;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
-    NSData *privateKeyASCII = [pemPrivateKey dataUsingEncoding:NSASCIIStringEncoding
-                                       allowLossyConversion:YES];
-    NSData *certChainASCII = [pemCertChain dataUsingEncoding:NSASCIIStringEncoding
-                                     allowLossyConversion:YES];
+    NSData *privateKeyASCII =
+        [pemPrivateKey dataUsingEncoding:NSASCIIStringEncoding
+                    allowLossyConversion:YES];
+    NSData *certChainASCII =
+        [pemCertChain dataUsingEncoding:NSASCIIStringEncoding
+                   allowLossyConversion:YES];
     key_cert_pair.private_key = privateKeyASCII.bytes;
     key_cert_pair.cert_chain = certChainASCII.bytes;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL);
@@ -205,7 +237,8 @@ static NSMutableDictionary *kHostCache;
   NSMutableDictionary *args = [NSMutableDictionary dictionary];
 
   // TODO(jcanizales): Add OS and device information (see
-  // https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#user-agents ).
+  // https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#user-agents
+  // ).
   NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;
   if (_userAgentPrefix) {
     userAgent = [_userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
@@ -219,7 +252,7 @@ static NSMutableDictionary *kHostCache;
   if (_responseSizeLimitOverride) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
-  // Use 10000ms initial backoff time for correct behavior on bad/slow networks  
+  // Use 10000ms initial backoff time for correct behavior on bad/slow networks
   args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = @10000;
   return args;
 }
@@ -230,31 +263,35 @@ static NSMutableDictionary *kHostCache;
   BOOL useCronet = [GRPCCall isUsingCronet];
 #endif
   if (_secure) {
-      GRPCChannel *channel;
-      @synchronized(self) {
-        if (_channelCreds == nil) {
-          [self setTLSPEMRootCerts:nil withPrivateKey:nil withCertChain:nil error:nil];
-        }
-#ifdef GRPC_COMPILE_WITH_CRONET
-        if (useCronet) {
-          channel = [GRPCChannel secureCronetChannelWithHost:_address
-                                                 channelArgs:args];
-        } else
-#endif
-        {
-          channel = [GRPCChannel secureChannelWithHost:_address
-                                            credentials:_channelCreds
-                                            channelArgs:args];
-        }
+    GRPCChannel *channel;
+    @synchronized(self) {
+      if (_channelCreds == nil) {
+        [self setTLSPEMRootCerts:nil
+                  withPrivateKey:nil
+                   withCertChain:nil
+                           error:nil];
       }
-      return channel;
+#ifdef GRPC_COMPILE_WITH_CRONET
+      if (useCronet) {
+        channel =
+            [GRPCChannel secureCronetChannelWithHost:_address channelArgs:args];
+      } else
+#endif
+      {
+        channel = [GRPCChannel secureChannelWithHost:_address
+                                         credentials:_channelCreds
+                                         channelArgs:args];
+      }
+    }
+    return channel;
   } else {
     return [GRPCChannel insecureChannelWithHost:_address channelArgs:args];
   }
 }
 
 - (NSString *)hostName {
-  // TODO(jcanizales): Default to nil instead of _address when Issue #2635 is clarified.
+  // TODO(jcanizales): Default to nil instead of _address when Issue #2635 is
+  // clarified.
   return _hostNameOverride ?: _address;
 }
 

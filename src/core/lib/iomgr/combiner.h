@@ -52,19 +52,14 @@ grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
 // Execute \a action within the lock.
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
-                           grpc_closure *closure, grpc_error *error);
+                           grpc_closure *closure, grpc_error *error,
+                           bool covered_by_poller);
 // Execute \a action within the lock just prior to unlocking.
-// if \a hint_async_break is true, the combiner tries to hand execution to
-// another thread before finishing the primary queue of combined closures and
-// executing the finally list.
-// Deprecation warning: \a hint_async_break will be removed in a future version
-// Takes a very slow and round-about path if not called from a
-// grpc_combiner_execute closure.
 void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                                    grpc_closure *closure, grpc_error *error,
-                                   bool hint_async_break);
-// Deprecated: force the finally list execution onto another thread
-void grpc_combiner_force_async_finally(grpc_combiner *lock);
+                                   bool covered_by_poller);
+
+bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
 
 extern int grpc_combiner_trace;
 

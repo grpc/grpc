@@ -51,7 +51,7 @@
 
 #include <grpc++/impl/codegen/config.h>
 extern "C" {
-#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/support/string.h"
@@ -334,8 +334,7 @@ static void start_backend_server(server_fixture *sf) {
     // have a version for int but does have one for long long int.
     string expected_token = "token" + std::to_string((long long int)sf->port);
     expected_token.resize(64, '-');
-    GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                 "load-reporting-initial",
+    GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
     gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
