@@ -29,6 +29,5 @@
 
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
-@rem Expire cache after 1 week
-call npm update --cache-min 604800
-
+@rem Expire cache after 1 day
+call npm update --cache-min 86400
