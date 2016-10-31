@@ -261,8 +261,7 @@ void cancel_after_accept(grpc_end2end_test_config config) {
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
     test_cancel_after_accept(config, cancellation_modes[i],
                              false /* use_service_config */);
-    if (cancellation_modes[i].expect_status ==
-        GRPC_STATUS_DEADLINE_EXCEEDED) {
+    if (cancellation_modes[i].expect_status == GRPC_STATUS_DEADLINE_EXCEEDED) {
       test_cancel_after_accept(config, cancellation_modes[i],
                                true /* use_service_config */);
     }

@@ -508,8 +508,7 @@ void run_spec(const test_spec *spec) {
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s",
-               servers_hostports_str);
+  gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
   arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
