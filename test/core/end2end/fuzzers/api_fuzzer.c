@@ -56,6 +56,21 @@ bool leak_check = true;
 static void dont_log(gpr_log_func_args *args) {}
 
 ////////////////////////////////////////////////////////////////////////////////
+// global state
+
+static gpr_timespec g_now;
+static grpc_server *g_server;
+static grpc_channel *g_channel;
+static grpc_resource_quota *g_resource_quota;
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+
+static gpr_timespec now_impl(gpr_clock_type clock_type) {
+  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  return g_now;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // input_stream: allows easy access to input bytes, and allows reading a little
 //               past the end (avoiding needing to check everywhere)
 
@@ -150,13 +165,27 @@ static grpc_channel_args *read_args(input_stream *inp) {
   size_t n = next_byte(inp);
   grpc_arg *args = gpr_malloc(sizeof(*args) * n);
   for (size_t i = 0; i < n; i++) {
-    bool is_string = next_byte(inp) & 1;
-    args[i].type = is_string ? GRPC_ARG_STRING : GRPC_ARG_INTEGER;
-    args[i].key = read_string(inp);
-    if (is_string) {
-      args[i].value.string = read_string(inp);
-    } else {
-      args[i].value.integer = read_int(inp);
+    switch (next_byte(inp)) {
+      case 1:
+        args[i].type = GRPC_ARG_STRING;
+        args[i].key = read_string(inp);
+        args[i].value.string = read_string(inp);
+        break;
+      case 2:
+        args[i].type = GRPC_ARG_INTEGER;
+        args[i].key = read_string(inp);
+        args[i].value.integer = read_int(inp);
+        break;
+      case 3:
+        args[i].type = GRPC_ARG_POINTER;
+        args[i].key = GRPC_ARG_RESOURCE_QUOTA;
+        args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+        args[i].value.pointer.p = g_resource_quota;
+        break;
+      default:
+        end(inp);
+        n = i;
+        break;
     }
   }
   grpc_channel_args *a = gpr_malloc(sizeof(*a));
@@ -166,21 +195,6 @@ static grpc_channel_args *read_args(input_stream *inp) {
 }
 
 static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
-
-////////////////////////////////////////////////////////////////////////////////
-// global state
-
-static gpr_timespec g_now;
-static grpc_server *g_server;
-static grpc_channel *g_channel;
-static grpc_resource_quota *g_resource_quota;
-
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
-
-static gpr_timespec now_impl(gpr_clock_type clock_type) {
-  GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  return g_now;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
