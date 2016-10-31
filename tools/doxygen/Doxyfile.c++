@@ -787,6 +787,7 @@ include/grpc++/impl/sync_no_cxx11.h \
 include/grpc++/impl/thd.h \
 include/grpc++/impl/thd_cxx11.h \
 include/grpc++/impl/thd_no_cxx11.h \
+include/grpc++/resource_quota.h \
 include/grpc++/security/auth_context.h \
 include/grpc++/security/auth_metadata_processor.h \
 include/grpc++/security/credentials.h \

@@ -39,6 +39,10 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+/* Channel arg (integer) setting how large a slice to try and read from the wire
+   each time recvmsg (or equivalent) is called */
+#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and
    NULL on failure).
@@ -47,6 +51,7 @@
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
+                             const grpc_channel_args *channel_args,
                              const grpc_resolved_address *addr,
                              gpr_timespec deadline);
 
