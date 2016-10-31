@@ -66,8 +66,10 @@ static int message_size_limits_cmp(void* value1, void* value2) {
   return 0;
 }
 
+static void free_mem(grpc_exec_ctx* exec_ctx, void* p) { gpr_free(p); }
+
 static const grpc_mdstr_hash_table_vtable message_size_limits_vtable = {
-    gpr_free, message_size_limits_copy, message_size_limits_cmp};
+    free_mem, message_size_limits_copy, message_size_limits_cmp};
 
 static void* method_config_convert_value(
     const grpc_method_config* method_config) {
@@ -171,8 +173,8 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   calld->max_send_size = chand->max_send_size;
   calld->max_recv_size = chand->max_recv_size;
   if (chand->method_limit_table != NULL) {
-    message_size_limits* limits =
-        grpc_method_config_table_get(chand->method_limit_table, args->path);
+    message_size_limits* limits = grpc_method_config_table_get(
+        exec_ctx, chand->method_limit_table, args->path);
     if (limits != NULL) {
       if (limits->max_send_size >= 0 &&
           (limits->max_send_size < calld->max_send_size ||
@@ -225,7 +227,7 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   if (channel_arg != NULL) {
     GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
     chand->method_limit_table = grpc_method_config_table_convert(
-        (grpc_method_config_table*)channel_arg->value.pointer.p,
+        exec_ctx, (grpc_method_config_table*)channel_arg->value.pointer.p,
         method_config_convert_value, &message_size_limits_vtable);
   }
 }
@@ -234,7 +236,7 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_element* elem) {
   channel_data* chand = elem->channel_data;
-  grpc_mdstr_hash_table_unref(chand->method_limit_table);
+  grpc_mdstr_hash_table_unref(exec_ctx, chand->method_limit_table);
 }
 
 const grpc_channel_filter grpc_message_size_filter = {

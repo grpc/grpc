@@ -96,7 +96,7 @@ static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
   json = grpc_json_parse_string_with_len((char *)GRPC_SLICE_START_PTR(*buffer),
                                          GRPC_SLICE_LENGTH(*buffer));
   if (json == NULL) {
-    grpc_slice_unref(*buffer);
+    grpc_slice_unref_internal(exec_ctx, *buffer);
     gpr_log(GPR_ERROR, "JSON parsing error.");
   }
   return json;
@@ -133,7 +133,7 @@ typedef struct {
 } jose_header;
 
 static void jose_header_destroy(jose_header *h) {
-  grpc_slice_unref(h->buffer);
+  grpc_slice_unref_internal(exec_ctx, h->buffer);
   gpr_free(h);
 }
 
@@ -195,7 +195,7 @@ struct grpc_jwt_claims {
 
 void grpc_jwt_claims_destroy(grpc_jwt_claims *claims) {
   grpc_json_destroy(claims->json);
-  grpc_slice_unref(claims->buffer);
+  grpc_slice_unref_internal(exec_ctx, claims->buffer);
   gpr_free(claims);
 }
 
@@ -365,8 +365,8 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
 void verifier_cb_ctx_destroy(verifier_cb_ctx *ctx) {
   if (ctx->audience != NULL) gpr_free(ctx->audience);
   if (ctx->claims != NULL) grpc_jwt_claims_destroy(ctx->claims);
-  grpc_slice_unref(ctx->signature);
-  grpc_slice_unref(ctx->signed_data);
+  grpc_slice_unref_internal(exec_ctx, ctx->signature);
+  grpc_slice_unref_internal(exec_ctx, ctx->signed_data);
   jose_header_destroy(ctx->header);
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
@@ -459,7 +459,7 @@ static BIGNUM *bignum_from_base64(const char *b64) {
   }
   result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
                      TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), NULL);
-  grpc_slice_unref(bin);
+  grpc_slice_unref_internal(exec_ctx, bin);
   return result;
 }
 
@@ -667,7 +667,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       grpc_closure_create(on_keys_retrieved, ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
-  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   grpc_json_destroy(json);
   gpr_free(req.host);
   return;
@@ -779,7 +779,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, &ctx->responses[rsp_idx]);
-  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

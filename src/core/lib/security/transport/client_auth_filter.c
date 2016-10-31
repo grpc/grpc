@@ -121,8 +121,8 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   for (i = 0; i < num_md; i++) {
     grpc_metadata_batch_add_tail(
         mdb, &calld->md_links[i],
-        grpc_mdelem_from_slices(grpc_slice_ref(md_elems[i].key),
-                                grpc_slice_ref(md_elems[i].value)));
+        grpc_mdelem_from_slices(grpc_slice_ref_internal(md_elems[i].key),
+                                grpc_slice_ref_internal(md_elems[i].value)));
   }
   grpc_call_next_op(exec_ctx, elem, op);
 }

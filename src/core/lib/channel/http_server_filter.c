@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -155,7 +156,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* translate host to :authority since :authority may be
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-        GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
+        a->exec_ctx, GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
     calld->seen_authority = 1;
     return authority;
   } else if (md->key == GRPC_MDSTR_GRPC_PAYLOAD_BIN) {
@@ -164,7 +165,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     calld->seen_payload_bin = 1;
     grpc_slice_buffer_init(&calld->read_slice_buffer);
     grpc_slice_buffer_add(&calld->read_slice_buffer,
-                          grpc_slice_ref(md->value->slice));
+                          grpc_slice_ref_internal(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;
@@ -181,7 +182,8 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
     server_filter_args a;
     a.elem = elem;
     a.exec_ctx = exec_ctx;
-    grpc_metadata_batch_filter(calld->recv_initial_metadata, server_filter, &a);
+    grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                               server_filter, &a);
     /* Have we seen the required http2 transport headers?
        (:method, :scheme, content-type, with :path and :authority covered
        at the channel level right now) */

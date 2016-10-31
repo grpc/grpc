@@ -110,12 +110,12 @@ static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
     if (conn->server_endpoint != NULL)
       grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
     grpc_pollset_set_destroy(conn->pollset_set);
-    grpc_slice_buffer_destroy(&conn->client_read_buffer);
-    grpc_slice_buffer_destroy(&conn->client_deferred_write_buffer);
-    grpc_slice_buffer_destroy(&conn->client_write_buffer);
-    grpc_slice_buffer_destroy(&conn->server_read_buffer);
-    grpc_slice_buffer_destroy(&conn->server_deferred_write_buffer);
-    grpc_slice_buffer_destroy(&conn->server_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_deferred_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_deferred_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_write_buffer);
     grpc_http_parser_destroy(&conn->http_parser);
     grpc_http_request_destroy(&conn->http_request);
     gpr_free(conn);

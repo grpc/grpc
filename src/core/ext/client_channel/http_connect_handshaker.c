@@ -76,7 +76,7 @@ static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
   if (gpr_unref(&handshaker->refcount)) {
     gpr_free(handshaker->proxy_server);
     gpr_free(handshaker->server_name);
-    grpc_slice_buffer_destroy(&handshaker->write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
     grpc_http_response_destroy(&handshaker->http_response);
     gpr_free(handshaker);
@@ -142,7 +142,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                &handshaker->read_buffer->slices[i + 1],
                                handshaker->read_buffer->count - i - 1);
         grpc_slice_buffer_swap(handshaker->read_buffer, &tmp_buffer);
-        grpc_slice_buffer_destroy(&tmp_buffer);
+        grpc_slice_buffer_destroy_internal(exec_ctx, &tmp_buffer);
         break;
       }
     }
@@ -159,7 +159,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // complete (e.g., handling chunked transfer encoding or looking
   // at the Content-Length: header).
   if (handshaker->http_parser.state != GRPC_HTTP_BODY) {
-    grpc_slice_buffer_reset_and_unref(handshaker->read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, handshaker->read_buffer);
     grpc_endpoint_read(exec_ctx, handshaker->endpoint, handshaker->read_buffer,
                        &handshaker->response_read_closure);
     return;

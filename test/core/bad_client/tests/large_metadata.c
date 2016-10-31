@@ -213,7 +213,7 @@ static void client_validator(grpc_slice_buffer *incoming) {
   *p++ = 11;
   // Compare actual and expected.
   GPR_ASSERT(grpc_slice_cmp(last_frame, expected) == 0);
-  grpc_slice_buffer_destroy(&last_frame_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &last_frame_buffer);
 }
 
 int main(int argc, char **argv) {

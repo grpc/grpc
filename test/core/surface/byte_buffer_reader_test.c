@@ -162,8 +162,8 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   GPR_ASSERT(read_count == input_size);
   grpc_byte_buffer_reader_destroy(&reader);
   grpc_byte_buffer_destroy(buffer);
-  grpc_slice_buffer_destroy(&sliceb_out);
-  grpc_slice_buffer_destroy(&sliceb_in);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &sliceb_out);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &sliceb_in);
 }
 
 static void test_read_gzip_compressed_slice(void) {

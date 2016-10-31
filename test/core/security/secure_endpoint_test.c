@@ -59,7 +59,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("secure_endpoint_test");
   tcp = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, slice_size);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
@@ -171,7 +171,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_slice_unref(s);
-  grpc_slice_buffer_destroy(&incoming);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &incoming);
 
   clean_up();
 }

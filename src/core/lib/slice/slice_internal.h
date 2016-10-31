@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,19 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H
+#ifndef GRPC_CORE_LIB_SUPPORT_SLICE_INTERNAL_H
+#define GRPC_CORE_LIB_SUPPORT_SLICE_INTERNAL_H
 
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
-/* base64 encode a slice. Returns a new slice, does not take ownership of the
-   input */
-grpc_slice grpc_chttp2_base64_encode(grpc_slice input);
+#include "src/core/lib/iomgr/exec_ctx.h"
 
-/* Compress a slice with the static huffman encoder detailed in the hpack
-   standard. Returns a new slice, does not take ownership of the input */
-grpc_slice grpc_chttp2_huffman_compress(grpc_slice input);
+grpc_slice grpc_slice_ref_internal(grpc_slice slice);
+void grpc_slice_unref_internal(grpc_exec_ctx *exec_ctx, grpc_slice slice);
+void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx *exec_ctx,
+                                                grpc_slice_buffer *sb);
+void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
+                                        grpc_slice_buffer *sb);
 
-/* equivalent to:
-   grpc_slice x = grpc_chttp2_base64_encode(input);
-   grpc_slice y = grpc_chttp2_huffman_compress(x);
-   grpc_slice_unref_internal(exec_ctx, x);
-   return y; */
-grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(
-    grpc_slice input);
-
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H */
+#endif

@@ -228,8 +228,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
 static void cleanup_rpc(void) {
   grpc_event ev;
-  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
-  grpc_slice_buffer_destroy(&state.outgoing_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.outgoing_buffer);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {

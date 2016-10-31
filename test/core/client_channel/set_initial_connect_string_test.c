@@ -155,8 +155,8 @@ static void start_rpc(int use_creds, int target_port) {
 
 static void cleanup_rpc(void) {
   grpc_event ev;
-  grpc_slice_buffer_destroy(&state.incoming_buffer);
-  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.incoming_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
   grpc_channel_credentials_unref(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);

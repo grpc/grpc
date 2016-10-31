@@ -189,7 +189,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
     addresses->addresses[i].is_balancer = lb_enabled;
     if (errors_found) break;
   }
-  grpc_slice_buffer_destroy(&path_parts);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &path_parts);
   grpc_slice_unref(path_slice);
   if (errors_found) {
     grpc_lb_addresses_destroy(addresses);

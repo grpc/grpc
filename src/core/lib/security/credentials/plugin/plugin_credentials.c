@@ -100,8 +100,8 @@ static void plugin_md_request_metadata_ready(void *request,
       r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK,
             NULL);
       for (i = 0; i < num_md; i++) {
-        grpc_slice_unref(md_array[i].key);
-        grpc_slice_unref(md_array[i].value);
+        grpc_slice_unref_internal(exec_ctx, md_array[i].key);
+        grpc_slice_unref_internal(exec_ctx, md_array[i].value);
       }
       gpr_free(md_array);
     }

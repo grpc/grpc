@@ -63,7 +63,9 @@ static int bool_cmp(void* v1, void* v2) {
   return 0;
 }
 
-static grpc_mdstr_hash_table_vtable bool_vtable = {gpr_free, bool_copy,
+static void free_mem(grpc_exec_ctx* exec_ctx, void* p) { gpr_free(p); }
+
+static grpc_mdstr_hash_table_vtable bool_vtable = {free_mem, bool_copy,
                                                    bool_cmp};
 
 // timespec vtable
@@ -79,7 +81,7 @@ static int timespec_cmp(void* v1, void* v2) {
   return gpr_time_cmp(*(gpr_timespec*)v1, *(gpr_timespec*)v2);
 }
 
-static grpc_mdstr_hash_table_vtable timespec_vtable = {gpr_free, timespec_copy,
+static grpc_mdstr_hash_table_vtable timespec_vtable = {free_mem, timespec_copy,
                                                        timespec_cmp};
 
 // int32 vtable
@@ -99,7 +101,7 @@ static int int32_cmp(void* v1, void* v2) {
   return 0;
 }
 
-static grpc_mdstr_hash_table_vtable int32_vtable = {gpr_free, int32_copy,
+static grpc_mdstr_hash_table_vtable int32_vtable = {free_mem, int32_copy,
                                                     int32_cmp};
 
 // Hash table keys.
@@ -166,12 +168,13 @@ grpc_method_config* grpc_method_config_ref(grpc_method_config* method_config) {
   return method_config;
 }
 
-void grpc_method_config_unref(grpc_method_config* method_config) {
-  if (grpc_mdstr_hash_table_unref(method_config->table)) {
-    GRPC_MDSTR_UNREF(method_config->wait_for_ready_key);
-    GRPC_MDSTR_UNREF(method_config->timeout_key);
-    GRPC_MDSTR_UNREF(method_config->max_request_message_bytes_key);
-    GRPC_MDSTR_UNREF(method_config->max_response_message_bytes_key);
+void grpc_method_config_unref(grpc_exec_ctx* exec_ctx,
+                              grpc_method_config* method_config) {
+  if (grpc_mdstr_hash_table_unref(exec_ctx, method_config->table)) {
+    GRPC_MDSTR_UNREF(exec_ctx, method_config->wait_for_ready_key);
+    GRPC_MDSTR_UNREF(exec_ctx, method_config->timeout_key);
+    GRPC_MDSTR_UNREF(exec_ctx, method_config->max_request_message_bytes_key);
+    GRPC_MDSTR_UNREF(exec_ctx, method_config->max_response_message_bytes_key);
     gpr_free(method_config);
   }
 }
@@ -210,8 +213,8 @@ const int32_t* grpc_method_config_get_max_response_message_bytes(
 // grpc_method_config_table
 //
 
-static void method_config_unref(void* valuep) {
-  grpc_method_config_unref(valuep);
+static void method_config_unref(grpc_exec_ctx* exec_ctx, void* valuep) {
+  grpc_method_config_unref(exec_ctx, valuep);
 }
 
 static void* method_config_ref(void* valuep) {
@@ -245,8 +248,9 @@ grpc_method_config_table* grpc_method_config_table_ref(
   return grpc_mdstr_hash_table_ref(table);
 }
 
-void grpc_method_config_table_unref(grpc_method_config_table* table) {
-  grpc_mdstr_hash_table_unref(table);
+void grpc_method_config_table_unref(grpc_exec_ctx* exec_ctx,
+                                    grpc_method_config_table* table) {
+  grpc_mdstr_hash_table_unref(exec_ctx, table);
 }
 
 int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
@@ -254,7 +258,8 @@ int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
   return grpc_mdstr_hash_table_cmp(table1, table2);
 }
 
-void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
+void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
+                                   const grpc_mdstr_hash_table* table,
                                    const grpc_mdstr* path) {
   void* value = grpc_mdstr_hash_table_get(table, path);
   // If we didn't find a match for the path, try looking for a wildcard
@@ -270,14 +275,16 @@ void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
     grpc_mdstr* wildcard_path = grpc_mdstr_from_string(buf);
     gpr_free(buf);
     value = grpc_mdstr_hash_table_get(table, wildcard_path);
-    GRPC_MDSTR_UNREF(wildcard_path);
+    GRPC_MDSTR_UNREF(exec_ctx, wildcard_path);
   }
   return value;
 }
 
 static void* copy_arg(void* p) { return grpc_method_config_table_ref(p); }
 
-static void destroy_arg(void* p) { grpc_method_config_table_unref(p); }
+static void destroy_arg(grpc_exec_ctx* exec_ctx, void* p) {
+  grpc_method_config_table_unref(exec_ctx, p);
+}
 
 static int cmp_arg(void* p1, void* p2) {
   return grpc_method_config_table_cmp(p1, p2);
@@ -315,7 +322,7 @@ static void convert_entry(const grpc_mdstr_hash_table_entry* entry,
 }
 
 grpc_mdstr_hash_table* grpc_method_config_table_convert(
-    const grpc_method_config_table* table,
+    grpc_exec_ctx* exec_ctx, const grpc_method_config_table* table,
     void* (*convert_value)(const grpc_method_config* method_config),
     const grpc_mdstr_hash_table_vtable* vtable) {
   // Create an array of the entries in the table with converted values.
@@ -331,8 +338,8 @@ grpc_mdstr_hash_table* grpc_method_config_table_convert(
       grpc_mdstr_hash_table_create(state.num_entries, state.entries);
   // Clean up the array.
   for (size_t i = 0; i < state.num_entries; ++i) {
-    GRPC_MDSTR_UNREF(state.entries[i].key);
-    vtable->destroy_value(state.entries[i].value);
+    GRPC_MDSTR_UNREF(exec_ctx, state.entries[i].key);
+    vtable->destroy_value(exec_ctx, state.entries[i].value);
   }
   gpr_free(state.entries);
   // Return the new table.

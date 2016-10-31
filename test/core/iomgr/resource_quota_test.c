@@ -672,7 +672,7 @@ static void test_one_slice(void) {
     GPR_ASSERT(num_allocs == start_allocs + 1);
   }
 
-  grpc_slice_buffer_destroy(&buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &buffer);
   destroy_user(&usr);
   grpc_resource_quota_unref(q);
 }
@@ -712,7 +712,7 @@ static void test_one_slice_deleted_late(void) {
   }
 
   grpc_resource_quota_unref(q);
-  grpc_slice_buffer_destroy(&buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &buffer);
   GPR_ASSERT(done);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

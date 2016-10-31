@@ -132,8 +132,8 @@ static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
     gpr_mu_destroy(&p->mu);
-    grpc_slice_buffer_destroy(&p->client.read_buffer);
-    grpc_slice_buffer_destroy(&p->server.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->client.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->server.read_buffer);
     gpr_free(p);
   } else {
     gpr_mu_unlock(&p->mu);
