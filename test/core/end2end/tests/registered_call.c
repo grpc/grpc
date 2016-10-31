@@ -45,7 +45,7 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -230,7 +230,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 }
 
 void registered_call(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr:1234", config);
+  authority = get_host_override_string("foo.test.google.fr:1234", config);
   test_invoke_simple_request(config);
   test_invoke_10_simple_requests(config);
 }

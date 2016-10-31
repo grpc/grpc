@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 /* this is a private API but exposed here for testing*/
 extern void grpc_network_status_shutdown_all_endpoints();
@@ -238,7 +238,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
 }
 
 void network_status_change(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   test_invoke_network_status_change(config);
 }
 

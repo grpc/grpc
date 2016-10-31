@@ -49,7 +49,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static char *authority;
+static const char *authority;
 
 static bool g_enable_filter = false;
 
@@ -265,7 +265,7 @@ static void init_plugin(void) {
 static void destroy_plugin(void) {}
 
 void filter_call_init_fails(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   g_enable_filter = true;
   test_request(config);
   g_enable_filter = false;

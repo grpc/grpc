@@ -51,7 +51,7 @@ static const char iam_selector[] = "selector";
 static const char overridden_iam_token[] = "overridden_token";
 static const char overridden_iam_selector[] = "overridden_selector";
 
-static char *authority;
+static const char *authority;
 
 typedef enum { NONE, OVERRIDE, DESTROY } override_mode;
 
@@ -475,7 +475,7 @@ static void test_request_with_server_rejecting_client_creds(
 
 void call_creds(grpc_end2end_test_config config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {
-    authority = validate_host_override_string("foo.test.google.fr", config);
+    authority = get_host_override_string("foo.test.google.fr", config);
     test_request_response_with_payload_and_call_creds(config);
     test_request_response_with_payload_and_overridden_call_creds(config);
     test_request_response_with_payload_and_deleted_call_creds(config);

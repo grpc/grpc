@@ -44,7 +44,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -123,7 +123,7 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
 void cancel_in_a_vacuum(grpc_end2end_test_config config) {
   unsigned i;
 
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
     test_cancel_in_a_vacuum(config, cancellation_modes[i]);
   }

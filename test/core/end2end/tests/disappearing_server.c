@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -213,7 +213,7 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 }
 
 void disappearing_server(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr:1234", config);
+  authority = get_host_override_string("foo.test.google.fr:1234", config);
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   disappearing_server_test(config);
 }

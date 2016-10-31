@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -277,7 +277,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 void ping_pong_streaming(grpc_end2end_test_config config) {
   int i;
 
-  authority = validate_host_override_string("foo.test.google.fr:1234", config);
+  authority = get_host_override_string("foo.test.google.fr:1234", config);
   for (i = 1; i < 10; i++) {
     test_pingpong_streaming(config, i);
   }

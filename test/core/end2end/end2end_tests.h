@@ -47,9 +47,6 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
-#define validate_host_override_string(str, config) \
-    ((config).feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER ? (str) : NULL)
-
 struct grpc_end2end_test_fixture {
   grpc_completion_queue *cq;
   grpc_server *server;
@@ -71,5 +68,7 @@ struct grpc_end2end_test_config {
 
 void grpc_end2end_tests_pre_init(void);
 void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config);
+
+const char *get_host_override_string(const char *str, grpc_end2end_test_config config);
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

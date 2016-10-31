@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -397,7 +397,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 }
 
 void max_message_length(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr:1234", config);
+  authority = get_host_override_string("foo.test.google.fr:1234", config);
   test_max_message_length_on_request(config, false /* send_limit */);
   test_max_message_length_on_request(config, true /* send_limit */);
   test_max_message_length_on_response(config, false /* send_limit */);

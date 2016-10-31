@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -191,7 +191,7 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
 
 void cancel_before_invoke(grpc_end2end_test_config config) {
   size_t i;
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   for (i = 1; i <= 6; i++) {
     test_cancel_before_invoke(config, i);
   }

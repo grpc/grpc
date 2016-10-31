@@ -48,7 +48,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-static char *authority;
+static const char *authority;
 
 enum { TIMEOUT = 200000 };
 
@@ -316,7 +316,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
 }
 
 void load_reporting_hook(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   test_load_reporting_hook(config);
 }
 

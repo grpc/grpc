@@ -44,7 +44,7 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -188,7 +188,7 @@ static void test_invoke_request_with_flags(
 
 void request_with_flags(grpc_end2end_test_config config) {
   size_t i;
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
   {

@@ -47,7 +47,7 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 enum { TIMEOUT = 200000 };
 
@@ -296,7 +296,7 @@ static void test_no_logging_in_one_request(grpc_end2end_test_config config) {
 }
 
 void no_logging(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr:1234", config);
+  authority = get_host_override_string("foo.test.google.fr:1234", config);
   gpr_set_log_function(log_dispatcher_func);
   test_no_logging_in_one_request(config);
   test_no_error_logging_in_entire_process(config);

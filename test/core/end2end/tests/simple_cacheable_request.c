@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
+static const char *authority;
 
 enum { TIMEOUT = 200000 };
 
@@ -274,7 +274,7 @@ static void test_cacheable_request_response_with_metadata_and_payload(
 }
 
 void simple_cacheable_request(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr", config);
+  authority = get_host_override_string("foo.test.google.fr", config);
   test_cacheable_request_response_with_metadata_and_payload(config);
 }
 
