@@ -82,7 +82,7 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
 #ifdef GRPC_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;
-  socklen_t intlen = sizeof(newval);
+  grpc_socklen intlen = sizeof(newval);
   if (0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
     return GRPC_OS_ERROR(errno, "setsockopt(SO_NOSIGPIPE)");
   }
@@ -156,7 +156,7 @@ grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec) {
 grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
   int val = (reuse != 0);
   int newval;
-  socklen_t intlen = sizeof(newval);
+  grpc_socklen intlen = sizeof(newval);
   if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
     return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEADDR)");
   }
@@ -177,7 +177,7 @@ grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
 #else
   int val = (reuse != 0);
   int newval;
-  socklen_t intlen = sizeof(newval);
+  grpc_socklen intlen = sizeof(newval);
   if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
     return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEPORT)");
   }
@@ -196,7 +196,7 @@ grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
 grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
   int val = (low_latency != 0);
   int newval;
-  socklen_t intlen = sizeof(newval);
+  grpc_socklen intlen = sizeof(newval);
   if (0 != setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
     return GRPC_OS_ERROR(errno, "setsockopt(TCP_NODELAY)");
   }
@@ -298,8 +298,8 @@ grpc_error *grpc_create_dualstack_socket(
 }
 
 const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
-  GPR_ASSERT(size <= (socklen_t)-1);
-  return inet_ntop(af, src, dst, (socklen_t)size);
+  GPR_ASSERT(size <= GRPC_SOCKLEN_MAX);
+  return inet_ntop(af, src, dst, (GPR_INET_NTOP_SIZE)size);
 }
 
 #endif

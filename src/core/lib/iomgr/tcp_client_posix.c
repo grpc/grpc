@@ -152,7 +152,7 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
 static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
   int so_error = 0;
-  socklen_t so_error_size;
+  grpc_socklen so_error_size;
   int err;
   int done;
   grpc_endpoint **ep = ac->ep;
@@ -293,9 +293,9 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   do {
-    GPR_ASSERT(addr->len < ~(socklen_t)0);
+    GPR_ASSERT(addr->len < GRPC_SOCKLEN_MAX);
     err =
-        connect(fd, (const struct sockaddr *)addr->addr, (socklen_t)addr->len);
+        connect(fd, (const struct sockaddr *)addr->addr, (grpc_socklen)addr->len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);

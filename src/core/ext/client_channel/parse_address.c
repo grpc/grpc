@@ -52,7 +52,7 @@ int parse_unix(grpc_uri *uri, grpc_resolved_address *resolved_addr) {
 
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, uri->path);
-  resolved_addr->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
+  resolved_addr->len = (uint32_t)(strlen(un->sun_path) + sizeof(un->sun_family) + 1);
 
   return 1;
 }

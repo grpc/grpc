@@ -60,7 +60,7 @@ grpc_error *grpc_resolve_unix_domain_address(const char *name,
   un = (struct sockaddr_un *)(*addrs)->addrs->addr;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, name);
-  (*addrs)->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
+  (*addrs)->addrs->len = (uint32_t)(strlen(un->sun_path) + sizeof(un->sun_family) + 1);
   return GRPC_ERROR_NONE;
 }
 

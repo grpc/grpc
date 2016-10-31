@@ -242,8 +242,8 @@ static int prepare_socket(int fd, const grpc_resolved_address *addr) {
     }
   }
 
-  GPR_ASSERT(addr->len < ~(socklen_t)0);
-  if (bind(fd, (struct sockaddr *)addr, (socklen_t)addr->len) < 0) {
+  GPR_ASSERT(addr->len < GRPC_SOCKLEN_MAX);
+  if (bind(fd, (struct sockaddr *)addr, (grpc_socklen)addr->len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
@@ -254,7 +254,7 @@ static int prepare_socket(int fd, const grpc_resolved_address *addr) {
   sockname_temp.len = sizeof(struct sockaddr_storage);
 
   if (getsockname(fd, (struct sockaddr *)sockname_temp.addr,
-                  (socklen_t *)&sockname_temp.len) < 0) {
+                  (grpc_socklen *)&sockname_temp.len) < 0) {
     goto error;
   }
 
@@ -364,7 +364,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s,
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->fd, (struct sockaddr *)sockname_temp.addr,
-                           (socklen_t *)&sockname_temp.len)) {
+                           (grpc_socklen *)&sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
           allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));

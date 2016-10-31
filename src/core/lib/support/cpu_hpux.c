@@ -31,65 +31,48 @@
  *
  */
 
-#include "src/core/lib/support/murmur_hash.h"
+#include <grpc/support/port_platform.h>
 
+#ifdef GPR_CPU_HPUX
+
+#include <errno.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/pstat.h>
 
-#define ROTL32(x, r) ((x) << (r)) | ((x) >> (32 - (r)))
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
-#define FMIX32(h)    \
-  (h) ^= (h) >> 16;  \
-  (h) *= 0x85ebca6b; \
-  (h) ^= (h) >> 13;  \
-  (h) *= 0xc2b2ae35; \
-  (h) ^= (h) >> 16;
+static __thread char magic_thread_local;
 
-uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
-  const uint8_t *data = (const uint8_t *)key;
-  const size_t nblocks = len / 4;
-  int i;
+static long ncpus = 0;
 
-  uint32_t h1 = seed;
-  uint32_t k1;
-
-  const uint32_t c1 = 0xcc9e2d51;
-  const uint32_t c2 = 0x1b873593;
-
-  const uint32_t *blocks = ((const uint32_t *)key) + nblocks;
-  const uint8_t *tail = (const uint8_t *)(data + nblocks * 4);
-
-  /* body */
-  for (i = -(int)nblocks; i; i++) {
-    memcpy(&k1, blocks + i, sizeof(uint32_t));
-
-    GRP_WORD_TO_NATIVE(k1, k1);
-    k1 *= c1;
-    k1 = ROTL32(k1, 15);
-    k1 *= c2;
-
-    h1 ^= k1;
-    h1 = ROTL32(h1, 13);
-    h1 = h1 * 5 + 0xe6546b64;
-  }
-
-  k1 = 0;
-
-  /* tail */
-  switch (len & 3) {
-    case 3:
-      k1 ^= ((uint32_t)tail[2]) << 16;
-    case 2:
-      k1 ^= ((uint32_t)tail[1]) << 8;
-    case 1:
-      k1 ^= tail[0];
-      k1 *= c1;
-      k1 = ROTL32(k1, 15);
-      k1 *= c2;
-      h1 ^= k1;
-  };
-
-  /* finalization */
-  h1 ^= (uint32_t)len;
-  FMIX32(h1);
-  return h1;
+static void init_ncpus() {
+struct pst_dynamic psd;
+  if (pstat_getdynamic (&psd, sizeof (psd), (size_t) 1, 0) != -1)
+   ncpus = psd.psd_max_proc_cnt;
+  else
+   ncpus = 1;
 }
+
+unsigned gpr_cpu_num_cores(void) {
+  static gpr_once once = GPR_ONCE_INIT;
+  gpr_once_init(&once, init_ncpus);
+  return (unsigned)ncpus;
+}
+
+/* This is a cheap, but good enough, pointer hash for sharding things: */
+static size_t shard_ptr(const void *info) {
+  size_t x = (size_t)info;
+  return ((x >> 4) ^ (x >> 9) ^ (x >> 14)) % gpr_cpu_num_cores();
+}
+
+unsigned gpr_cpu_current_cpu(void) {
+  /* NOTE: there's no way I know to return the actual cpu index portably...
+     most code that's using this is using it to shard across work queues though,
+     so here we use thread identity instead to achieve a similar though not
+     identical effect */
+  return (unsigned)shard_ptr(&magic_thread_local);
+}
+
+#endif /* GPR_CPU_POSIX */

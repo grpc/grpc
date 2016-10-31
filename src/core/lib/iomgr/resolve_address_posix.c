@@ -131,7 +131,7 @@ static grpc_error *blocking_resolve_address_impl(
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    (*addresses)->addrs[i].len = resp->ai_addrlen;
+    (*addresses)->addrs[i].len = (uint32_t)resp->ai_addrlen;
     i++;
   }
   err = GRPC_ERROR_NONE;

@@ -71,7 +71,7 @@
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
-static gpr_once s_init_max_accept_queue_size;
+static gpr_once s_init_max_accept_queue_size = GPR_ONCE_INIT;
 static int s_max_accept_queue_size;
 
 /* one listening port */
@@ -287,7 +287,8 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
 /* get max listen queue size on linux */
 static void init_max_accept_queue_size(void) {
-  int n = SOMAXCONN;
+  int n = GRPC_TCP_CONN_REQUEST_MAX;
+#ifdef GRPC_HAVE_PROCFS   
   char buf[64];
   FILE *fp = fopen("/proc/sys/net/core/somaxconn", "r");
   if (fp == NULL) {
@@ -303,6 +304,7 @@ static void init_max_accept_queue_size(void) {
     }
   }
   fclose(fp);
+#endif
   s_max_accept_queue_size = n;
 
   if (s_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
@@ -344,8 +346,8 @@ static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  GPR_ASSERT(addr->len < ~(socklen_t)0);
-  if (bind(fd, (struct sockaddr *)addr->addr, (socklen_t)addr->len) < 0) {
+  GPR_ASSERT(addr->len < GRPC_SOCKLEN_MAX);
+  if (bind(fd, (struct sockaddr *)addr->addr, (grpc_socklen)addr->len) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     goto error;
   }
@@ -358,7 +360,7 @@ static grpc_error *prepare_socket(int fd, const grpc_resolved_address *addr,
   sockname_temp.len = sizeof(struct sockaddr_storage);
 
   if (getsockname(fd, (struct sockaddr *)sockname_temp.addr,
-                  (socklen_t *)&sockname_temp.len) < 0) {
+                  (grpc_socklen *)&sockname_temp.len) < 0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     goto error;
   }
@@ -580,7 +582,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->fd, (struct sockaddr *)sockname_temp.addr,
-                           (socklen_t *)&sockname_temp.len)) {
+                           (grpc_socklen *)&sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
           allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));
