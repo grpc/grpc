@@ -275,7 +275,8 @@ static grpc_call_credentials *read_call_creds(input_stream *inp) {
       cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
       const char *access_token = read_cred_artifact(&ctx, inp, NULL, 0);
       grpc_call_credentials *out =
-          grpc_access_token_credentials_create(access_token, NULL);
+          access_token == NULL ? NULL : grpc_access_token_credentials_create(
+                                            access_token, NULL);
       cred_artifact_ctx_finish(&ctx);
       return out;
     }
@@ -283,8 +284,10 @@ static grpc_call_credentials *read_call_creds(input_stream *inp) {
       cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
       const char *auth_token = read_cred_artifact(&ctx, inp, NULL, 0);
       const char *auth_selector = read_cred_artifact(&ctx, inp, NULL, 0);
-      grpc_call_credentials *out =
-          grpc_google_iam_credentials_create(auth_token, auth_selector, NULL);
+      grpc_call_credentials *out = auth_token == NULL || auth_selector == NULL
+                                       ? NULL
+                                       : grpc_google_iam_credentials_create(
+                                             auth_token, auth_selector, NULL);
       cred_artifact_ctx_finish(&ctx);
       return out;
     }
