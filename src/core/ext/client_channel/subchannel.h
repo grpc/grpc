@@ -97,7 +97,7 @@ grpc_subchannel *grpc_subchannel_weak_ref(
 void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel *channel
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_connected_subchannel_ref(
+grpc_connected_subchannel *grpc_connected_subchannel_ref(
     grpc_connected_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_connected_subchannel *channel

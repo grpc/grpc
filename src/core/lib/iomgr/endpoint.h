@@ -39,6 +39,7 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
@@ -58,6 +59,7 @@ struct grpc_endpoint_vtable {
                              grpc_pollset_set *pollset);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+  grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
 };
 
@@ -99,6 +101,8 @@ void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
                                       grpc_endpoint *ep,
                                       grpc_pollset_set *pollset_set);
+
+grpc_resource_user *grpc_endpoint_get_resource_user(grpc_endpoint *endpoint);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
