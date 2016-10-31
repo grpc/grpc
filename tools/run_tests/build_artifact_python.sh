@@ -66,7 +66,7 @@ ${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py sdist
 # Build gRPC tools package binary distribution
 ${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
-if [ "$BUILD_MANYLINUX_WHEEL" != "" ]
+if [ "$GRPC_BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
@@ -82,16 +82,21 @@ fi
 # Wheels are not supported by setup_requires/dependency_links, so we
 # manually install the dependency.  Note we should only do this if we
 # are in a docker image or in a virtualenv.
-if [ "$BUILD_HEALTH_CHECKING" != "" ]
+if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
   ${PIP} install -rrequirements.txt
   ${PIP} install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
   ${PIP} install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
-  # Build gRPC health check source distribution
+  # Build gRPC health-checking source distribution
   ${SETARCH_CMD} ${PYTHON} src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos sdist
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
+
+  # Build gRPC reflection source distribution
+  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_reflection/setup.py \
+      preprocess build_package_protos sdist
+  cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 fi
 
 cp -r dist/* "$ARTIFACT_DIR"
