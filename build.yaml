@@ -208,6 +208,7 @@ filegroups:
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
@@ -216,6 +217,7 @@ filegroups:
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_uv.h
@@ -303,6 +305,7 @@ filegroups:
   - src/core/lib/iomgr/resolve_address_posix.c
   - src/core/lib/iomgr/resolve_address_uv.c
   - src/core/lib/iomgr/resolve_address_windows.c
+  - src/core/lib/iomgr/resource_quota.c
   - src/core/lib/iomgr/sockaddr_utils.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
@@ -713,6 +716,7 @@ filegroups:
   - include/grpc++/impl/thd.h
   - include/grpc++/impl/thd_cxx11.h
   - include/grpc++/impl/thd_no_cxx11.h
+  - include/grpc++/resource_quota.h
   - include/grpc++/security/auth_context.h
   - include/grpc++/security/auth_metadata_processor.h
   - include/grpc++/security/credentials.h
@@ -738,6 +742,7 @@ filegroups:
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_context.cc
@@ -750,6 +755,7 @@ filegroups:
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -759,6 +765,7 @@ filegroups:
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
   - src/cpp/util/slice_cc.cc
   - src/cpp/util/status.cc
@@ -2427,6 +2434,17 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: resource_quota_test
+  cpu_cost: 30
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resource_quota_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_channel_create_test
   build: test
   language: c
@@ -3472,6 +3490,16 @@ targets:
   - grpc++
   - grpc
   - gpr_test_util
+  - gpr
+  - grpc++_test_config
+- name: thread_manager_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/thread_manager/thread_manager_test.cc
+  deps:
+  - grpc++
+  - grpc
   - gpr
   - grpc++_test_config
 - name: thread_stress_test

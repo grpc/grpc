@@ -73,6 +73,12 @@ void CompositeReporter::ReportTimes(const ScenarioResult& result) {
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
+  if (result.summary().failed_requests_per_second() > 0) {
+    gpr_log(GPR_INFO, "failed requests/second: %.1f",
+            result.summary().failed_requests_per_second());
+    gpr_log(GPR_INFO, "successful requests/second: %.1f",
+            result.summary().successful_requests_per_second());
+  }
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
