@@ -239,7 +239,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_test_fixture f, size_t index) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f, size_t index) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -268,8 +269,10 @@ static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_te
   extra_metadata[2].value = dragons[index % GPR_ARRAY_SIZE(dragons)];
   extra_metadata[2].value_length = strlen(extra_metadata[2].value);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -341,7 +344,8 @@ static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_te
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host, config);
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
