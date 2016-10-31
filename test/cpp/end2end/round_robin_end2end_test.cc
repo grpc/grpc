@@ -107,8 +107,8 @@ class RoundRobinEnd2endTest : public ::testing::Test {
       uri << "127.0.0.1:" << servers_[i]->port_ << ",";
     }
     uri << "127.0.0.1:" << servers_[servers_.size() - 1]->port_;
-    std::shared_ptr<Channel> channel = CreateCustomChannel(
-        uri.str(), InsecureChannelCredentials(), args);
+    std::shared_ptr<Channel> channel =
+        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
