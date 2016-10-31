@@ -31,15 +31,21 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
 
 #include <grpc/support/port_platform.h>
 
 #include <limits.h>
 #include <string.h>
+
+/* TODO(jboeuf): refactor inet_ntop into a portability header. */
+/* Note: for whomever reads this and tries to refactor this, this
+   can't be in grpc, it has to be in gpr. */
+#ifdef GPR_WINDOWS
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -349,8 +355,8 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         result = TSI_INTERNAL_ERROR;
         break;
       }
-      const char *name = grpc_inet_ntop(af, subject_alt_name->d.iPAddress->data,
-                                        ntop_buf, INET6_ADDRSTRLEN);
+      const char *name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
+                                   ntop_buf, INET6_ADDRSTRLEN);
       if (name == NULL) {
         gpr_log(GPR_ERROR, "Could not get IP string from asn1 octet.");
         result = TSI_INTERNAL_ERROR;
