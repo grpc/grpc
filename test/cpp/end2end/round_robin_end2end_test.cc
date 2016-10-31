@@ -130,15 +130,15 @@ class RoundRobinEnd2endTest : public ::testing::Test {
     int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    std::thread* thread_;
+    std::unique_ptr<std::thread> thread_;
 
     explicit ServerData(const grpc::string& server_host) {
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::condition_variable cond;
-      thread_ = new std::thread(
-          std::bind(&ServerData::Start, this, server_host, &mu, &cond));
+      thread_.reset(new std::thread(
+          std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
       unique_lock<mutex> lock(mu);
       cond.wait(lock);
       gpr_log(GPR_INFO, "server startup complete");
