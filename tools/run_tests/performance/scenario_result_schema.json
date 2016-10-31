@@ -208,5 +208,10 @@
     "name": "serverSuccess",
     "type": "STRING",
     "mode": "NULLABLE"
+  },
+  {
+    "name": "request_results",
+    "type": "STRING",
+    "mode": "NULLABLE"
   }
 ]
