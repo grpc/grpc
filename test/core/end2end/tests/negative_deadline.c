@@ -97,7 +97,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_test_fixture f, size_t num_ops) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_call *c;
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -112,8 +113,10 @@ static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_te
 
   gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

@@ -105,8 +105,10 @@ static void empty_batch_body(grpc_end2end_test_config config,
   grpc_call_error error;
   grpc_op *op = NULL;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   error = grpc_call_start_batch(c, op, 0, tag(1), NULL);
