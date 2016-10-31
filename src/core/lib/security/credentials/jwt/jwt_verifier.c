@@ -36,17 +36,18 @@
 #include <limits.h>
 #include <string.h>
 
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/util/b64.h"
-#include "src/core/lib/tsi/ssl_types.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 #include <openssl/pem.h>
+
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/tsi/ssl_types.h"
 
 /* --- Utils. --- */
 
@@ -84,7 +85,8 @@ static const EVP_MD *evp_md_from_alg(const char *alg) {
   }
 }
 
-static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
+static grpc_json *parse_json_part_from_jwt(grpc_exec_ctx *exec_ctx,
+                                           const char *str, size_t len,
                                            grpc_slice *buffer) {
   grpc_json *json;
 
@@ -132,13 +134,14 @@ typedef struct {
   grpc_slice buffer;
 } jose_header;
 
-static void jose_header_destroy(jose_header *h) {
+static void jose_header_destroy(grpc_exec_ctx *exec_ctx, jose_header *h) {
   grpc_slice_unref_internal(exec_ctx, h->buffer);
   gpr_free(h);
 }
 
 /* Takes ownership of json and buffer. */
-static jose_header *jose_header_from_json(grpc_json *json, grpc_slice buffer) {
+static jose_header *jose_header_from_json(grpc_exec_ctx *exec_ctx,
+                                          grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
   jose_header *h = gpr_malloc(sizeof(jose_header));
   memset(h, 0, sizeof(jose_header));
@@ -173,7 +176,7 @@ static jose_header *jose_header_from_json(grpc_json *json, grpc_slice buffer) {
 
 error:
   grpc_json_destroy(json);
-  jose_header_destroy(h);
+  jose_header_destroy(exec_ctx, h);
   return NULL;
 }
 
@@ -193,7 +196,7 @@ struct grpc_jwt_claims {
   grpc_slice buffer;
 };
 
-void grpc_jwt_claims_destroy(grpc_jwt_claims *claims) {
+void grpc_jwt_claims_destroy(grpc_exec_ctx *exec_ctx, grpc_jwt_claims *claims) {
   grpc_json_destroy(claims->json);
   grpc_slice_unref_internal(exec_ctx, claims->buffer);
   gpr_free(claims);
@@ -240,7 +243,8 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims *claims) {
 }
 
 /* Takes ownership of json and buffer even in case of failure. */
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer) {
+grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
+                                           grpc_json *json, grpc_slice buffer) {
   grpc_json *cur;
   grpc_jwt_claims *claims = gpr_malloc(sizeof(grpc_jwt_claims));
   memset(claims, 0, sizeof(grpc_jwt_claims));
@@ -281,7 +285,7 @@ grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer) {
   return claims;
 
 error:
-  grpc_jwt_claims_destroy(claims);
+  grpc_jwt_claims_destroy(exec_ctx, claims);
   return NULL;
 }
 
@@ -362,12 +366,12 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
   return ctx;
 }
 
-void verifier_cb_ctx_destroy(verifier_cb_ctx *ctx) {
+void verifier_cb_ctx_destroy(grpc_exec_ctx *exec_ctx, verifier_cb_ctx *ctx) {
   if (ctx->audience != NULL) gpr_free(ctx->audience);
-  if (ctx->claims != NULL) grpc_jwt_claims_destroy(ctx->claims);
+  if (ctx->claims != NULL) grpc_jwt_claims_destroy(exec_ctx, ctx->claims);
   grpc_slice_unref_internal(exec_ctx, ctx->signature);
   grpc_slice_unref_internal(exec_ctx, ctx->signed_data);
-  jose_header_destroy(ctx->header);
+  jose_header_destroy(exec_ctx, ctx->header);
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
   }
@@ -447,7 +451,7 @@ end:
   return result;
 }
 
-static BIGNUM *bignum_from_base64(const char *b64) {
+static BIGNUM *bignum_from_base64(grpc_exec_ctx *exec_ctx, const char *b64) {
   BIGNUM *result = NULL;
   grpc_slice bin;
 
@@ -463,7 +467,8 @@ static BIGNUM *bignum_from_base64(const char *b64) {
   return result;
 }
 
-static EVP_PKEY *pkey_from_jwk(const grpc_json *json, const char *kty) {
+static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
+                               const char *kty) {
   const grpc_json *key_prop;
   RSA *rsa = NULL;
   EVP_PKEY *result = NULL;
@@ -480,10 +485,12 @@ static EVP_PKEY *pkey_from_jwk(const grpc_json *json, const char *kty) {
   }
   for (key_prop = json->child; key_prop != NULL; key_prop = key_prop->next) {
     if (strcmp(key_prop->key, "n") == 0) {
-      rsa->n = bignum_from_base64(validate_string_field(key_prop, "n"));
+      rsa->n =
+          bignum_from_base64(exec_ctx, validate_string_field(key_prop, "n"));
       if (rsa->n == NULL) goto end;
     } else if (strcmp(key_prop->key, "e") == 0) {
-      rsa->e = bignum_from_base64(validate_string_field(key_prop, "e"));
+      rsa->e =
+          bignum_from_base64(exec_ctx, validate_string_field(key_prop, "e"));
       if (rsa->e == NULL) goto end;
     }
   }
@@ -499,7 +506,8 @@ end:
   return result;
 }
 
-static EVP_PKEY *find_verification_key(const grpc_json *json,
+static EVP_PKEY *find_verification_key(grpc_exec_ctx *exec_ctx,
+                                       const grpc_json *json,
                                        const char *header_alg,
                                        const char *header_kid) {
   const grpc_json *jkey;
@@ -543,7 +551,7 @@ static EVP_PKEY *find_verification_key(const grpc_json *json,
     }
     if (alg != NULL && kid != NULL && kty != NULL &&
         strcmp(kid, header_kid) == 0 && strcmp(alg, header_alg) == 0) {
-      return pkey_from_jwk(jkey, kty);
+      return pkey_from_jwk(exec_ctx, jkey, kty);
     }
   }
   gpr_log(GPR_ERROR,
@@ -597,7 +605,7 @@ static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
     goto end;
   }
   verification_key =
-      find_verification_key(json, ctx->header->alg, ctx->header->kid);
+      find_verification_key(exec_ctx, json, ctx->header->alg, ctx->header->kid);
   if (verification_key == NULL) {
     gpr_log(GPR_ERROR, "Could not find verification key with kid %s.",
             ctx->header->kid);
@@ -622,7 +630,7 @@ end:
   if (json != NULL) grpc_json_destroy(json);
   if (verification_key != NULL) EVP_PKEY_free(verification_key);
   ctx->user_cb(ctx->user_data, status, claims);
-  verifier_cb_ctx_destroy(ctx);
+  verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
 static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -675,7 +683,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
 error:
   if (json != NULL) grpc_json_destroy(json);
   ctx->user_cb(ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
-  verifier_cb_ctx_destroy(ctx);
+  verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
 static email_key_mapping *verifier_get_mapping(grpc_jwt_verifier *v,
@@ -786,7 +794,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
 
 error:
   ctx->user_cb(ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
-  verifier_cb_ctx_destroy(ctx);
+  verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
 void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
@@ -808,17 +816,19 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(verifier != NULL && jwt != NULL && audience != NULL && cb != NULL);
   dot = strchr(cur, '.');
   if (dot == NULL) goto error;
-  json = parse_json_part_from_jwt(cur, (size_t)(dot - cur), &header_buffer);
+  json = parse_json_part_from_jwt(exec_ctx, cur, (size_t)(dot - cur),
+                                  &header_buffer);
   if (json == NULL) goto error;
-  header = jose_header_from_json(json, header_buffer);
+  header = jose_header_from_json(exec_ctx, json, header_buffer);
   if (header == NULL) goto error;
 
   cur = dot + 1;
   dot = strchr(cur, '.');
   if (dot == NULL) goto error;
-  json = parse_json_part_from_jwt(cur, (size_t)(dot - cur), &claims_buffer);
+  json = parse_json_part_from_jwt(exec_ctx, cur, (size_t)(dot - cur),
+                                  &claims_buffer);
   if (json == NULL) goto error;
-  claims = grpc_jwt_claims_from_json(json, claims_buffer);
+  claims = grpc_jwt_claims_from_json(exec_ctx, json, claims_buffer);
   if (claims == NULL) goto error;
 
   signed_jwt_len = (size_t)(dot - jwt);
@@ -832,8 +842,8 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
   return;
 
 error:
-  if (header != NULL) jose_header_destroy(header);
-  if (claims != NULL) grpc_jwt_claims_destroy(claims);
+  if (header != NULL) jose_header_destroy(exec_ctx, header);
+  if (claims != NULL) grpc_jwt_claims_destroy(exec_ctx, claims);
   cb(user_data, GRPC_JWT_VERIFIER_BAD_FORMAT, NULL);
 }
 

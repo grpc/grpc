@@ -48,7 +48,8 @@ typedef struct {
   char *secure_peer_name;
 } grpc_httpcli_ssl_channel_security_connector;
 
-static void httpcli_ssl_destroy(grpc_security_connector *sc) {
+static void httpcli_ssl_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_security_connector *sc) {
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
@@ -111,8 +112,9 @@ static grpc_security_connector_vtable httpcli_ssl_vtable = {
     httpcli_ssl_destroy, httpcli_ssl_check_peer};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const char *secure_peer_name, grpc_channel_security_connector **sc) {
+    grpc_exec_ctx *exec_ctx, const unsigned char *pem_root_certs,
+    size_t pem_root_certs_size, const char *secure_peer_name,
+    grpc_channel_security_connector **sc) {
   tsi_result result = TSI_OK;
   grpc_httpcli_ssl_channel_security_connector *c;
 
@@ -136,7 +138,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
-    httpcli_ssl_destroy(&c->base.base);
+    httpcli_ssl_destroy(exec_ctx, &c->base.base);
     *sc = NULL;
     return GRPC_SECURITY_ERROR;
   }
@@ -184,11 +186,11 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   c->func = on_done;
   c->arg = arg;
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
-                 pem_root_certs, pem_root_certs_size, host, &sc) ==
+                 exec_ctx, pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
   grpc_channel_security_connector_do_handshake(
       exec_ctx, sc, tcp, NULL, deadline, on_secure_transport_setup_done, c);
-  GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
+  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &sc->base, "httpcli");
 }
 
 const grpc_httpcli_handshaker grpc_httpcli_ssl = {"https", ssl_handshake};

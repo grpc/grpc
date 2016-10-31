@@ -151,7 +151,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_hpack_compressor_destroy(exec_ctx, &t->hpack_compressor);
 
   grpc_slice_buffer_destroy_internal(exec_ctx, &t->read_buffer);
-  grpc_chttp2_hpack_parser_destroy(&t->hpack_parser);
+  grpc_chttp2_hpack_parser_destroy(exec_ctx, &t->hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->goaway_parser);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
@@ -264,7 +264,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                     destructive_reclaimer_locked, t);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
-  grpc_chttp2_hpack_parser_init(&t->hpack_parser);
+  grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
 
   grpc_slice_buffer_init(&t->read_buffer);
 
@@ -531,8 +531,10 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GPR_ASSERT(s->recv_message_ready == NULL);
   GPR_ASSERT(s->recv_trailing_metadata_finished == NULL);
   grpc_chttp2_data_parser_destroy(exec_ctx, &s->data_parser);
-  grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[0]);
-  grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[1]);
+  grpc_chttp2_incoming_metadata_buffer_destroy(exec_ctx,
+                                               &s->metadata_buffer[0]);
+  grpc_chttp2_incoming_metadata_buffer_destroy(exec_ctx,
+                                               &s->metadata_buffer[1]);
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->flow_controlled_buffer);
   GRPC_ERROR_UNREF(s->read_closed_error);
   GRPC_ERROR_UNREF(s->write_closed_error);

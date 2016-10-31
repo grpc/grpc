@@ -199,8 +199,8 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *statep,
 
   /* Flush queued work before a synchronous unref. */
   grpc_exec_ctx_flush(exec_ctx);
-  GRPC_SECURITY_CONNECTOR_UNREF(&server_state->sc->base, "server");
-  grpc_server_credentials_unref(server_state->creds);
+  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &server_state->sc->base, "server");
+  grpc_server_credentials_unref(exec_ctx, server_state->creds);
 
   if (destroy_done != NULL) {
     destroy_done->cb(exec_ctx, destroy_done->cb_arg, GRPC_ERROR_REF(error));
@@ -249,7 +249,8 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
         "No credentials specified for secure server port (creds==NULL)");
     goto error;
   }
-  status = grpc_server_credentials_create_security_connector(creds, &sc);
+  status =
+      grpc_server_credentials_create_security_connector(&exec_ctx, creds, &sc);
   if (status != GRPC_SECURITY_OK) {
     char *msg;
     gpr_asprintf(&msg,
@@ -349,7 +350,7 @@ error:
   } else {
     if (sc) {
       grpc_exec_ctx_flush(&exec_ctx);
-      GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "server");
+      GRPC_SECURITY_CONNECTOR_UNREF(&exec_ctx, &sc->base, "server");
     }
     if (server_state) {
       gpr_free(server_state);
