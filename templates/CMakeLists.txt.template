@@ -83,8 +83,12 @@
 
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
+  include(cmake/debug_postfix.cmake)
+
   if (MSVC)
     add_definitions( -D_WIN32_WINNT=0x600 )
+    include(cmake/msvc_static_runtime.cmake)
+    include(cmake/msvc_disable_deprecation.cmake)
   endif()
 
   if (gRPC_USE_PROTO_LITE)
