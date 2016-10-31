@@ -81,7 +81,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   gpr_timespec ret;
   ret.clock_type = clock_type;
   ret.tv_sec = (int64_t)(usec / 1e9);
-  ret.tv_nsec = (int32_t)(usec - (double) clk->tv_sec * 1e9);
+  ret.tv_nsec = (int32_t)(usec - (double) ret.tv_sec * 1e9);
   return ret;
 }
 
