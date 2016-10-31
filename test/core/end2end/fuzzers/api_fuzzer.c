@@ -304,7 +304,11 @@ static grpc_channel_credentials *read_channel_creds(input_stream *inp) {
       grpc_channel_credentials *c1 = read_channel_creds(inp);
       grpc_call_credentials *c2 = read_call_creds(inp);
       if (c1 != NULL && c2 != NULL) {
-        return grpc_composite_channel_credentials_create(c1, c2, NULL);
+        grpc_channel_credentials *out =
+            grpc_composite_channel_credentials_create(c1, c2, NULL);
+        grpc_channel_credentials_release(c1);
+        grpc_call_credentials_release(c2);
+        return out;
       } else if (c1) {
         return c1;
       } else if (c2) {
