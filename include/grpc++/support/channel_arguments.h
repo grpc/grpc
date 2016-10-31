@@ -46,6 +46,8 @@ namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
+class ResourceQuota;
+
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to c channel creation code. For grpc related options,
 /// concrete setters are provided.
@@ -80,6 +82,9 @@ class ChannelArguments {
   /// The given string will be sent at the front of the user agent string.
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
+  /// The given buffer pool will be attached to the constructed channel
+  void SetResourceQuota(const ResourceQuota& resource_quota);
+
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
@@ -87,6 +92,9 @@ class ChannelArguments {
   // Generic channel argument setter. Only for advanced use cases.
   /// Set a pointer argument \a value under \a key. Owership is not transferred.
   void SetPointer(const grpc::string& key, void* value);
+
+  void SetPointerWithVtable(const grpc::string& key, void* value,
+                            const grpc_arg_pointer_vtable* vtable);
 
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);

@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(NULL, NULL);
-  config.init_client(&f, NULL);
+  config.init_client(&f, NULL, NULL);
   if (fail_server_auth_check) {
     grpc_arg fail_auth_arg = {
         GRPC_ARG_STRING, FAIL_AUTH_CHECK_SERVER_ARG_NAME, {NULL}};

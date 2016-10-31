@@ -624,7 +624,7 @@ void PrintHeaderServerMethodStreamedUnary(
     printer->Indent();
     printer->Print(*vars,
                    "WithStreamedUnaryMethod_$Method$() {\n"
-                   "  ::grpc::Service::MarkMethodStreamedUnary($Idx$,\n"
+                   "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
                    "    new ::grpc::StreamedUnaryHandler< $Request$, "
                    "$Response$>(std::bind"
                    "(&WithStreamedUnaryMethod_$Method$<BaseClass>::"
@@ -650,6 +650,58 @@ void PrintHeaderServerMethodStreamedUnary(
                    "::grpc::ServerContext* context, "
                    "::grpc::ServerUnaryStreamer< "
                    "$Request$,$Response$>* server_unary_streamer)"
+                   " = 0;\n");
+    printer->Outdent();
+    printer->Print(*vars, "};\n");
+  }
+}
+
+void PrintHeaderServerMethodSplitStreaming(
+    Printer *printer, const Method *method,
+    std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+  if (method->ServerOnlyStreaming()) {
+    printer->Print(*vars, "template <class BaseClass>\n");
+    printer->Print(*vars,
+                   "class WithSplitStreamingMethod_$Method$ : "
+                   "public BaseClass {\n");
+    printer->Print(
+        " private:\n"
+        "  void BaseClassMustBeDerivedFromService(const Service *service) "
+        "{}\n");
+    printer->Print(" public:\n");
+    printer->Indent();
+    printer->Print(*vars,
+                   "WithSplitStreamingMethod_$Method$() {\n"
+                   "  ::grpc::Service::MarkMethodStreamed($Idx$,\n"
+                   "    new ::grpc::SplitServerStreamingHandler< $Request$, "
+                   "$Response$>(std::bind"
+                   "(&WithSplitStreamingMethod_$Method$<BaseClass>::"
+                   "Streamed$Method$, this, std::placeholders::_1, "
+                   "std::placeholders::_2)));\n"
+                   "}\n");
+    printer->Print(*vars,
+                   "~WithSplitStreamingMethod_$Method$() GRPC_OVERRIDE {\n"
+                   "  BaseClassMustBeDerivedFromService(this);\n"
+                   "}\n");
+    printer->Print(
+        *vars,
+        "// disable regular version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, const $Request$* request, "
+        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE "
+        "{\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+    printer->Print(*vars,
+                   "// replace default version of method with split streamed\n"
+                   "virtual ::grpc::Status Streamed$Method$("
+                   "::grpc::ServerContext* context, "
+                   "::grpc::ServerSplitStreamer< "
+                   "$Request$,$Response$>* server_split_streamer)"
                    " = 0;\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
@@ -843,6 +895,48 @@ void PrintHeaderService(Printer *printer, const Service *service,
     }
   }
   printer->Print(" StreamedUnaryService;\n");
+
+  // Server side - controlled server-side streaming
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Idx"] = as_string(i);
+    PrintHeaderServerMethodSplitStreaming(printer, service->method(i).get(),
+                                          vars);
+  }
+
+  printer->Print("typedef ");
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i).get()->name();
+    if (service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(*vars, "WithSplitStreamingMethod_$method_name$<");
+    }
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    if (service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(" >");
+    }
+  }
+  printer->Print(" SplitStreamedService;\n");
+
+  // Server side - typedef for controlled both unary and server-side streaming
+  printer->Print("typedef ");
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["method_name"] = service->method(i).get()->name();
+    if (service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(*vars, "WithSplitStreamingMethod_$method_name$<");
+    }
+    if (service->method(i)->NoStreaming()) {
+      printer->Print(*vars, "WithStreamedUnaryMethod_$method_name$<");
+    }
+  }
+  printer->Print("Service");
+  for (int i = 0; i < service->method_count(); ++i) {
+    if (service->method(i)->NoStreaming() ||
+        service->method(i)->ServerOnlyStreaming()) {
+      printer->Print(" >");
+    }
+  }
+  printer->Print(" StreamedService;\n");
 
   printer->Outdent();
   printer->Print("};\n");

@@ -107,6 +107,11 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
   return stub_.get();
 }
 
+UnimplementedService::Stub*
+InteropClient::ServiceStub::GetUnimplementedServiceStub() {
+  return UnimplementedService::NewStub(channel_).get();
+}
+
 void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
   channel_ = channel;
 
@@ -162,8 +167,8 @@ bool InteropClient::AssertStatusCode(const Status& s,
 bool InteropClient::DoEmpty() {
   gpr_log(GPR_DEBUG, "Sending an empty rpc...");
 
-  Empty request = Empty::default_instance();
-  Empty response = Empty::default_instance();
+  Empty request;
+  Empty response;
   ClientContext context;
 
   Status s = serviceStub_.Get()->EmptyCall(&context, request, &response);
@@ -827,21 +832,42 @@ bool InteropClient::DoStatusWithMessage() {
   gpr_log(GPR_DEBUG,
           "Sending RPC with a request for status code 2 and message");
 
+  const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
+  const grpc::string test_msg = "This is a test message";
+
+  // Test UnaryCall.
   ClientContext context;
   SimpleRequest request;
   SimpleResponse response;
   EchoStatus* requested_status = request.mutable_response_status();
-  requested_status->set_code(grpc::StatusCode::UNKNOWN);
-  grpc::string test_msg = "This is a test message";
+  requested_status->set_code(test_code);
   requested_status->set_message(test_msg);
-
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-
   if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN)) {
     return false;
   }
-
   GPR_ASSERT(s.error_message() == test_msg);
+
+  // Test FullDuplexCall.
+  ClientContext stream_context;
+  std::shared_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(serviceStub_.Get()->FullDuplexCall(&stream_context));
+  StreamingOutputCallRequest streaming_request;
+  requested_status = streaming_request.mutable_response_status();
+  requested_status->set_code(test_code);
+  requested_status->set_message(test_msg);
+  stream->Write(streaming_request);
+  stream->WritesDone();
+  StreamingOutputCallResponse streaming_response;
+  while (stream->Read(&streaming_response))
+    ;
+  s = stream->Finish();
+  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN)) {
+    return false;
+  }
+  GPR_ASSERT(s.error_message() == test_msg);
+
   gpr_log(GPR_DEBUG, "Done testing Status and Message");
   return true;
 }
@@ -978,6 +1004,43 @@ bool InteropClient::DoCustomMetadata() {
     gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
   }
 
+  return true;
+}
+
+bool InteropClient::DoUnimplementedService() {
+  gpr_log(GPR_DEBUG, "Sending a request for an unimplemented service...");
+
+  Empty request;
+  Empty response;
+  ClientContext context;
+
+  UnimplementedService::Stub* stub = serviceStub_.GetUnimplementedServiceStub();
+
+  Status s = stub->UnimplementedCall(&context, request, &response);
+
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "unimplemented service done.");
+  return true;
+}
+
+bool InteropClient::DoUnimplementedMethod() {
+  gpr_log(GPR_DEBUG, "Sending a request for an unimplemented rpc...");
+
+  Empty request;
+  Empty response;
+  ClientContext context;
+
+  Status s =
+      serviceStub_.Get()->UnimplementedCall(&context, request, &response);
+
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "unimplemented rpc done.");
   return true;
 }
 

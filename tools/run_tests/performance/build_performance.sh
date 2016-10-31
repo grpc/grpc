@@ -54,6 +54,9 @@ do
   "go")
     tools/run_tests/performance/build_performance_go.sh
     ;;
+  "csharp")
+    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
+    ;;
   *)
     tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
     ;;

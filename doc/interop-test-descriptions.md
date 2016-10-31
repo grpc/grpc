@@ -779,16 +779,15 @@ Client asserts:
 
 ### unimplemented_method
 
-Status: Ready for implementation. Blocking beta.
-
-This test verifies calling unimplemented RPC method returns the UNIMPLEMENTED status code.
+This test verifies that calling an unimplemented RPC method returns the
+UNIMPLEMENTED status code.
 
 Server features:
 N/A
 
 Procedure:
-* Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an
-  empty request (defined as `grpc.testing.Empty`):
+* Client calls `grpc.testing.TestService/UnimplementedCall` with an empty
+  request (defined as `grpc.testing.Empty`):
 
     ```
     {
@@ -797,7 +796,21 @@ Procedure:
 
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
-* received status message is empty or null/unset
+
+### unimplemented_service
+
+This test verifies calling an unimplemented server returns the UNIMPLEMENTED
+status code.
+
+Server features:
+N/A
+
+Procedure:
+* Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an
+  empty request (defined as `grpc.testing.Empty`)
+
+Client asserts:
+* received status code is 12 (UNIMPLEMENTED)
 
 ### cancel_after_begin
 

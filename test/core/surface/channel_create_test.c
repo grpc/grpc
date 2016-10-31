@@ -33,7 +33,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {

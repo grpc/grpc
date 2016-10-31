@@ -41,7 +41,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_server_filter.h"
@@ -85,7 +85,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 }
 
 void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *client_args) {
+                                  grpc_channel_args *client_args,
+                                  const char *query_args) {
+  GPR_ASSERT(query_args == NULL);
   fullstack_fixture_data *ffd = f->fixture_data;
   f->client = grpc_insecure_channel_create(
       grpc_end2end_proxy_get_client_target(ffd->proxy), client_args, NULL);
