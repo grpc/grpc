@@ -166,8 +166,11 @@ static void rq_step(grpc_exec_ctx *exec_ctx, void *rq, grpc_error *error) {
   do {
     if (rq_alloc(exec_ctx, resource_quota)) goto done;
   } while (rq_reclaim_from_per_user_free_pool(exec_ctx, resource_quota));
-  rq_reclaim(exec_ctx, resource_quota, false) ||
-      rq_reclaim(exec_ctx, resource_quota, true);
+
+  if (!rq_reclaim(exec_ctx, resource_quota, false)) {
+    rq_reclaim(exec_ctx, resource_quota, true);
+  }
+
 done:
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
 }
