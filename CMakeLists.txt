@@ -177,6 +177,7 @@ add_library(gpr
   src/core/lib/support/avl.c
   src/core/lib/support/backoff.c
   src/core/lib/support/cmdline.c
+  src/core/lib/support/cpu_hpux.c
   src/core/lib/support/cpu_iphone.c
   src/core/lib/support/cpu_linux.c
   src/core/lib/support/cpu_posix.c
@@ -210,6 +211,7 @@ add_library(gpr
   src/core/lib/support/thd_posix.c
   src/core/lib/support/thd_windows.c
   src/core/lib/support/time.c
+  src/core/lib/support/time_hpux.c
   src/core/lib/support/time_posix.c
   src/core/lib/support/time_precise.c
   src/core/lib/support/time_windows.c

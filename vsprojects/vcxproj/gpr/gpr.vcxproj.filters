@@ -19,6 +19,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cmdline.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_hpux.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_iphone.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
@@ -116,6 +119,9 @@
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_hpux.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_posix.c">

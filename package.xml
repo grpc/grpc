@@ -109,6 +109,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/avl.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cmdline.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/cpu_hpux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cpu_iphone.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cpu_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cpu_posix.c" role="src" />
@@ -142,6 +143,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/thd_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/time_hpux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_windows.c" role="src" />

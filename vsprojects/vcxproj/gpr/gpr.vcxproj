@@ -215,6 +215,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cmdline.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_hpux.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_iphone.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_linux.c">
@@ -280,6 +282,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_hpux.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_posix.c">
     </ClCompile>
