@@ -207,7 +207,7 @@ const char *read_ssl_artifact(struct ssl_artifact_ctx *ctx, input_stream *inp,
   uint8_t b = next_byte(inp);
   if (b == 0) return NULL;
   if (b == 1) return ctx->release[ctx->num_release++] = read_string(inp);
-  if (b > num_builtins + 1) {
+  if (b >= num_builtins + 1) {
     end(inp);
     return NULL;
   }
@@ -1028,6 +1028,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args_destroy(args);
           gpr_free(target_uri);
           gpr_free(target);
+          grpc_channel_credentials_release(creds);
         } else {
           end(&inp);
         }
