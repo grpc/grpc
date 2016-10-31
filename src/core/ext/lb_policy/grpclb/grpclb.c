@@ -121,6 +121,7 @@
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
@@ -970,7 +971,8 @@ static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg,
 static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error);
 
-static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
+static lb_client_data *lb_client_data_create(grpc_exec_ctx *exec_ctx,
+                                             glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->server_name != NULL);
   GPR_ASSERT(glb_policy->server_name[0] != '\0');
 
@@ -1004,7 +1006,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *glb_policy) {
   grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
   lb_client->request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref_internal(exec_ctx, request_payload_slice);
   grpc_grpclb_request_destroy(request);
 
   lb_client->status_details = NULL;
@@ -1035,7 +1037,7 @@ static void query_for_backends(grpc_exec_ctx *exec_ctx,
                                glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_channel != NULL);
 
-  glb_policy->lb_client = lb_client_data_create(glb_policy);
+  glb_policy->lb_client = lb_client_data_create(exec_ctx, glb_policy);
   grpc_call_error call_error;
   grpc_op ops[1];
   memset(ops, 0, sizeof(ops));
@@ -1126,7 +1128,7 @@ static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_grpclb_serverlist *serverlist =
         grpc_grpclb_response_parse_serverlist(response_slice);
     if (serverlist != NULL) {
-      grpc_slice_unref(response_slice);
+      grpc_slice_unref_internal(exec_ctx, response_slice);
       if (grpc_lb_glb_trace) {
         gpr_log(GPR_INFO, "Serverlist with %lu servers received",
                 (unsigned long)serverlist->num_servers);
@@ -1185,7 +1187,7 @@ static void res_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     GPR_ASSERT(serverlist == NULL);
     gpr_log(GPR_ERROR, "Invalid LB response received: '%s'",
             grpc_dump_slice(response_slice, GPR_DUMP_ASCII));
-    grpc_slice_unref(response_slice);
+    grpc_slice_unref_internal(exec_ctx, response_slice);
 
     /* Disconnect from server returning invalid response. */
     op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;

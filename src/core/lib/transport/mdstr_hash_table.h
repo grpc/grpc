@@ -49,7 +49,7 @@
 typedef struct grpc_mdstr_hash_table grpc_mdstr_hash_table;
 
 typedef struct grpc_mdstr_hash_table_vtable {
-  void (*destroy_value)(void* value);
+  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
   void* (*copy_value)(void* value);
   int (*compare_value)(void* value1, void* value2);
 } grpc_mdstr_hash_table_vtable;
@@ -68,7 +68,8 @@ grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
 
 grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table);
 /** Returns 1 when \a table is destroyed. */
-int grpc_mdstr_hash_table_unref(grpc_mdstr_hash_table* table);
+int grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
+                                grpc_mdstr_hash_table* table);
 
 /** Returns the number of entries in \a table. */
 size_t grpc_mdstr_hash_table_num_entries(const grpc_mdstr_hash_table* table);

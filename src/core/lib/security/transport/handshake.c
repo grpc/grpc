@@ -104,9 +104,9 @@ static void unref_handshake(grpc_security_handshake *h) {
   if (gpr_unref(&h->refs)) {
     if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
     if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
-    grpc_slice_buffer_destroy(&h->left_overs);
-    grpc_slice_buffer_destroy(&h->outgoing);
-    grpc_slice_buffer_destroy(&h->incoming);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &h->left_overs);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &h->outgoing);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &h->incoming);
     GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
     GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
     gpr_free(h);
@@ -213,7 +213,7 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
 
   to_send =
       grpc_slice_from_copied_buffer((const char *)h->handshake_buffer, offset);
-  grpc_slice_buffer_reset_and_unref(&h->outgoing);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
   grpc_slice_buffer_add(&h->outgoing, to_send);
   /* TODO(klempner,jboeuf): This should probably use the client setup
      deadline */
@@ -280,7 +280,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
     grpc_slice_buffer_add(
         &h->left_overs,
         grpc_slice_split_tail(&h->incoming.slices[i], consumed_slice_size));
-    grpc_slice_unref(
+    grpc_slice_unref_internal(exec_ctx, 
         h->incoming.slices[i]); /* split_tail above increments refcount. */
   }
   grpc_slice_buffer_addn(

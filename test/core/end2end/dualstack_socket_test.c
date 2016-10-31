@@ -145,7 +145,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
       gpr_free(hosts_with_port[i]);
     }
     gpr_free(hosts_with_port);
-    grpc_slice_buffer_destroy(&uri_parts);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &uri_parts);
     grpc_slice_unref(uri_slice);
   } else {
     gpr_join_host_port(&client_hostport, client_host, port);

@@ -46,6 +46,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -206,7 +207,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(c->args);
   gpr_free(c->addr);
-  grpc_slice_unref(c->initial_connect_string);
+  grpc_slice_unref_internal(exec_ctx, c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(c->pollset_set);

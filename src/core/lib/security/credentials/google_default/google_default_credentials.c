@@ -132,7 +132,7 @@ static int is_stack_running_on_compute_engine(void) {
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       grpc_closure_create(on_compute_engine_detection_http_response, &detector),
       &detector.response);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
   grpc_exec_ctx_flush(&exec_ctx);
 
@@ -225,7 +225,7 @@ static grpc_error *create_default_creds_from_path(
 end:
   GPR_ASSERT((result == NULL) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != NULL) gpr_free(creds_path);
-  grpc_slice_unref(creds_data);
+  grpc_slice_unref_internal(exec_ctx, creds_data);
   if (json != NULL) grpc_json_destroy(json);
   *creds = result;
   return error;

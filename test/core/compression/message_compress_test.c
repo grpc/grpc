@@ -105,10 +105,10 @@ static void assert_passthrough(grpc_slice value,
   final = grpc_slice_merge(output.slices, output.count);
   GPR_ASSERT(0 == grpc_slice_cmp(value, final));
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&compressed);
-  grpc_slice_buffer_destroy(&compressed_raw);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &compressed);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &compressed_raw);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_slice_unref(final);
 }
 
@@ -164,8 +164,8 @@ static void test_tiny_data_compress(void) {
     GPR_ASSERT(1 == output.count);
   }
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
 }
 
 static void test_bad_decompression_data_crc(void) {
@@ -191,9 +191,9 @@ static void test_bad_decompression_data_crc(void) {
   /* try (and fail) to decompress the corrupted compresed buffer */
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&corrupted);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &corrupted);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
 }
 
 static void test_bad_decompression_data_trailing_garbage(void) {
@@ -210,8 +210,8 @@ static void test_bad_decompression_data_trailing_garbage(void) {
   /* try (and fail) to decompress the invalid compresed buffer */
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
 }
 
 static void test_bad_decompression_data_stream(void) {
@@ -226,8 +226,8 @@ static void test_bad_decompression_data_stream(void) {
   /* try (and fail) to decompress the invalid compresed buffer */
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
 }
 
 static void test_bad_compression_algorithm(void) {
@@ -247,8 +247,8 @@ static void test_bad_compression_algorithm(void) {
       grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
   GPR_ASSERT(0 == was_compressed);
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
 }
 
 static void test_bad_decompression_algorithm(void) {
@@ -269,8 +269,8 @@ static void test_bad_decompression_algorithm(void) {
                                          &input, &output);
   GPR_ASSERT(0 == was_decompressed);
 
-  grpc_slice_buffer_destroy(&input);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &input);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
 }
 
 int main(int argc, char **argv) {

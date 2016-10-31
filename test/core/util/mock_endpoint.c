@@ -82,7 +82,7 @@ static void unref(grpc_exec_ctx *exec_ctx, grpc_mock_endpoint *m) {
   gpr_mu_lock(&m->mu);
   if (0 == --m->refs) {
     gpr_mu_unlock(&m->mu);
-    grpc_slice_buffer_destroy(&m->read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &m->read_buffer);
     grpc_resource_user_destroy(exec_ctx, &m->resource_user);
     gpr_free(m);
   } else {

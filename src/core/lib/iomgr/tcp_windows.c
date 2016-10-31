@@ -190,13 +190,13 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
       char *utf8_message = gpr_format_message(info->wsa_error);
       error = GRPC_ERROR_CREATE(utf8_message);
       gpr_free(utf8_message);
-      grpc_slice_unref(tcp->read_slice);
+      grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
     } else {
       if (info->bytes_transfered != 0 && !tcp->shutting_down) {
         sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
         grpc_slice_buffer_add(tcp->read_slices, sub);
       } else {
-        grpc_slice_unref(tcp->read_slice);
+        grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
         error = GRPC_ERROR_CREATE("End of TCP stream");
       }
     }
@@ -225,7 +225,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  grpc_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
 
   tcp->read_slice = grpc_slice_malloc(8192);
 

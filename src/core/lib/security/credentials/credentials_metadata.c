@@ -62,8 +62,8 @@ void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
                                    grpc_slice key, grpc_slice value) {
   if (store == NULL) return;
   store_ensure_capacity(store);
-  store->entries[store->num_entries].key = grpc_slice_ref(key);
-  store->entries[store->num_entries].value = grpc_slice_ref(value);
+  store->entries[store->num_entries].key = grpc_slice_ref_internal(key);
+  store->entries[store->num_entries].value = grpc_slice_ref_internal(value);
   store->num_entries++;
 }
 
@@ -91,8 +91,8 @@ void grpc_credentials_md_store_unref(grpc_credentials_md_store *store) {
     if (store->entries != NULL) {
       size_t i;
       for (i = 0; i < store->num_entries; i++) {
-        grpc_slice_unref(store->entries[i].key);
-        grpc_slice_unref(store->entries[i].value);
+        grpc_slice_unref_internal(exec_ctx, store->entries[i].key);
+        grpc_slice_unref_internal(exec_ctx, store->entries[i].value);
       }
       gpr_free(store->entries);
     }

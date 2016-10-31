@@ -72,10 +72,11 @@ void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
   batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
-void grpc_metadata_batch_destroy(grpc_metadata_batch *batch) {
+void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
+                                 grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    GRPC_MDELEM_UNREF(l->md);
+    GRPC_MDELEM_UNREF(exec_ctx, l->md);
   }
 }
 
@@ -140,7 +141,8 @@ void grpc_metadata_batch_move(grpc_metadata_batch *dst,
   memset(src, 0, sizeof(grpc_metadata_batch));
 }
 
-void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
+void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
+                                grpc_metadata_batch *batch,
                                 grpc_mdelem *(*filter)(void *user_data,
                                                        grpc_mdelem *elem),
                                 void *user_data) {
@@ -168,9 +170,9 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
         batch->list.tail = l->prev;
       }
       assert_valid_list(&batch->list);
-      GRPC_MDELEM_UNREF(l->md);
+      GRPC_MDELEM_UNREF(exec_ctx, l->md);
     } else if (filt != orig) {
-      GRPC_MDELEM_UNREF(orig);
+      GRPC_MDELEM_UNREF(exec_ctx, orig);
       l->md = filt;
     }
   }
@@ -183,9 +185,10 @@ static grpc_mdelem *no_metadata_for_you(void *user_data, grpc_mdelem *elem) {
   return NULL;
 }
 
-void grpc_metadata_batch_clear(grpc_metadata_batch *batch) {
+void grpc_metadata_batch_clear(grpc_exec_ctx *exec_ctx,
+                               grpc_metadata_batch *batch) {
   batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-  grpc_metadata_batch_filter(batch, no_metadata_for_you, NULL);
+  grpc_metadata_batch_filter(exec_ctx, batch, no_metadata_for_you, NULL);
 }
 
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch) {

@@ -39,6 +39,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 static void add_to_write_list(grpc_chttp2_write_cb **list,
                               grpc_chttp2_write_cb *cb) {
@@ -254,7 +255,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");
   }
-  grpc_slice_buffer_reset_and_unref(&t->outbuf);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &t->outbuf);
   GRPC_ERROR_UNREF(error);
   GPR_TIMER_END("grpc_chttp2_end_write", 0);
 }

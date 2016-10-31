@@ -117,7 +117,7 @@ void grpc_run_bad_client_test(
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("bad_client_test");
   sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);
-  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
 
   /* Create server, completion events */
   a.server = grpc_server_create(NULL, NULL);
@@ -181,7 +181,7 @@ void grpc_run_bad_client_test(
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(
           gpr_event_wait(&args.read_done, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
-      grpc_slice_buffer_destroy(&args.incoming);
+      grpc_slice_buffer_destroy_internal(exec_ctx, &args.incoming);
     }
     // Shutdown.
     grpc_endpoint_shutdown(&exec_ctx, sfd.client);
@@ -194,7 +194,7 @@ void grpc_run_bad_client_test(
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
-  grpc_slice_buffer_destroy(&outgoing);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &outgoing);
 
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

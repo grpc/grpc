@@ -98,7 +98,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
         grpc_server_setup_transport(
             exec_ctx, connection_state->server_state->server, transport,
             connection_state->accepting_pollset, args_copy);
-        grpc_channel_args_destroy(args_copy);
+        grpc_channel_args_destroy(exec_ctx, args_copy);
         grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
       } else {
         /* We need to consume this here, because the server may already have
@@ -110,7 +110,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
   } else {
     gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
   }
-  grpc_channel_args_destroy(connection_state->args);
+  grpc_channel_args_destroy(exec_ctx, connection_state->args);
   grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
   gpr_free(connection_state);
 }
@@ -125,7 +125,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
     GRPC_ERROR_UNREF(error);
-    grpc_channel_args_destroy(args);
+    grpc_channel_args_destroy(exec_ctx, args);
     gpr_free(read_buffer);
     grpc_handshake_manager_shutdown(exec_ctx, connection_state->handshake_mgr);
     grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);

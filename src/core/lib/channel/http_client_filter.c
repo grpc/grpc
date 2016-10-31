@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -136,8 +137,8 @@ static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   client_recv_filter_args a;
   a.elem = elem;
   a.exec_ctx = exec_ctx;
-  grpc_metadata_batch_filter(calld->recv_initial_metadata, client_recv_filter,
-                             &a);
+  grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                             client_recv_filter, &a);
   calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, error);
 }
 
@@ -155,7 +156,7 @@ static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
 static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_reset_and_unref(&calld->slices);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &calld->slices);
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
@@ -244,7 +245,7 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         /* when all the send_message data is available, then create a MDELEM and
         append to headers */
         grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
-            GRPC_MDSTR_GRPC_PAYLOAD_BIN,
+            exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
             grpc_mdstr_from_buffer(calld->payload_bytes,
                                    op->send_message->length));
         grpc_metadata_batch_add_tail(op->send_initial_metadata,
@@ -261,8 +262,8 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       }
     }
 
-    grpc_metadata_batch_filter(op->send_initial_metadata, client_strip_filter,
-                               elem);
+    grpc_metadata_batch_filter(exec_ctx, op->send_initial_metadata,
+                               client_strip_filter, elem);
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
     grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->method,
@@ -324,7 +325,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_destroy(&calld->slices);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &calld->slices);
 }
 
 static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
@@ -425,7 +426,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);
   chand->user_agent = grpc_mdelem_from_metadata_strings(
-      GRPC_MDSTR_USER_AGENT,
+      exec_ctx, GRPC_MDSTR_USER_AGENT,
       user_agent_from_args(args->channel_args,
                            args->optional_transport->vtable->name));
 }
@@ -434,7 +435,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-  GRPC_MDELEM_UNREF(chand->user_agent);
+  GRPC_MDELEM_UNREF(exec_ctx, chand->user_agent);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

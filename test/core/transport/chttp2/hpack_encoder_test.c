@@ -101,7 +101,7 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
   grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, eof, 16384, &stats,
                             &output);
   merged = grpc_slice_merge(output.slices, output.count);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(&b);
 
   if (0 != grpc_slice_cmp(merged, expect)) {
@@ -205,7 +205,7 @@ static void verify_table_size_change_match_elem_size(const char *key,
   memset(&stats, 0, sizeof(stats));
   grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, 0, 16384, &stats,
                             &output);
-  grpc_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(&b);
 
   GPR_ASSERT(g_compressor.table_size == elem_size + initial_table_size);
