@@ -363,7 +363,8 @@ class NodeLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6'])
+                                         'node4', 'node5', 'node6',
+                                         'node7'])
     if self.args.compiler == 'default':
       self.node_version = '4'
     else:
@@ -842,6 +843,53 @@ class Sanity(object):
   def __str__(self):
     return 'sanity'
 
+class NodeExpressLanguage(object):
+  """Dummy Node express test target to enable running express performance
+  benchmarks"""
+
+  def __init__(self):
+    self.platform = platform_string()
+
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default', 'node0.12',
+                                         'node4', 'node5', 'node6'])
+    if self.args.compiler == 'default':
+      self.node_version = '4'
+    else:
+      # Take off the word "node"
+      self.node_version = self.args.compiler[4:]
+
+  def test_specs(self):
+    return []
+
+  def pre_build_steps(self):
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\pre_build_node.bat']]
+    else:
+      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+
+  def make_targets(self):
+    return []
+
+  def make_options(self):
+    return []
+
+  def build_steps(self):
+    return []
+
+  def post_tests_steps(self):
+    return []
+
+  def makefile_name(self):
+    return 'Makefile'
+
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def __str__(self):
+    return 'node_express'
 
 # different configurations we can run under
 with open('tools/run_tests/configs.json') as f:
@@ -852,6 +900,7 @@ _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
     'node': NodeLanguage(),
+    'node_express': NodeExpressLanguage(),
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
@@ -1016,6 +1065,7 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
+                           'node0.12', 'node4', 'node5', 'node6', 'node7',
                            'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')

@@ -63,6 +63,8 @@ namespace {
 // every call to the Echo RPC.
 class MyTestServiceImpl : public TestServiceImpl {
  public:
+  MyTestServiceImpl() : request_count_(0) {}
+
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
     {
@@ -79,7 +81,7 @@ class MyTestServiceImpl : public TestServiceImpl {
 
  private:
   mutex mu_;
-  int request_count_ = 0;
+  int request_count_;
 };
 
 class RoundRobinEnd2endTest : public ::testing::Test {
@@ -93,8 +95,8 @@ class RoundRobinEnd2endTest : public ::testing::Test {
   }
 
   void TearDown() GRPC_OVERRIDE {
-    for (const auto& server : servers_) {
-      server->Shutdown();
+    for (size_t i = 0; i < servers_.size(); ++i) {
+      servers_[i]->Shutdown();
     }
   }
 
@@ -107,8 +109,8 @@ class RoundRobinEnd2endTest : public ::testing::Test {
       uri << "127.0.0.1:" << servers_[i]->port_ << ",";
     }
     uri << "127.0.0.1:" << servers_[servers_.size() - 1]->port_;
-    std::shared_ptr<Channel> channel = CreateCustomChannel(
-        uri.str(), InsecureChannelCredentials(), args);
+    std::shared_ptr<Channel> channel =
+        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -128,24 +130,22 @@ class RoundRobinEnd2endTest : public ::testing::Test {
     int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    std::thread* thread_;
+    std::unique_ptr<std::thread> thread_;
 
     explicit ServerData(const grpc::string& server_host) {
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::condition_variable cond;
-      thread_ = new std::thread([this, server_host, &mu, &cond]() {
-        Start(server_host);
-        lock_guard<mutex> lock(mu);
-        cond.notify_one();
-      });
+      thread_.reset(new std::thread(
+          std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
       unique_lock<mutex> lock(mu);
       cond.wait(lock);
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Start(const grpc::string& server_host) {
+    void Start(const grpc::string& server_host, std::mutex* mu,
+               std::condition_variable* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -153,6 +153,8 @@ class RoundRobinEnd2endTest : public ::testing::Test {
                                InsecureServerCredentials());
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
+      lock_guard<mutex> lock(*mu);
+      cond->notify_one();
     }
 
     void Shutdown() {
@@ -175,8 +177,8 @@ TEST_F(RoundRobinEnd2endTest, PickFirst) {
   SendRpc(kNumServers);
   // All requests should have gone to a single server.
   bool found = false;
-  for (const auto& server : servers_) {
-    const int request_count = server->service_.request_count();
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    const int request_count = servers_[i]->service_.request_count();
     if (request_count == kNumServers) {
       found = true;
     } else {
@@ -193,8 +195,8 @@ TEST_F(RoundRobinEnd2endTest, RoundRobin) {
   ResetStub(true /* round_robin */);
   SendRpc(kNumServers);
   // One request should have gone to each server.
-  for (const auto& server : servers_) {
-    EXPECT_EQ(1, server->service_.request_count());
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    EXPECT_EQ(1, servers_[i]->service_.request_count());
   }
 }
 
