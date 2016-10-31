@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -45,6 +46,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/passthru_endpoint.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -193,6 +195,57 @@ static grpc_channel_args *read_args(input_stream *inp) {
   a->args = args;
   a->num_args = n;
   return a;
+}
+
+struct ssl_artifact_ctx {
+  int num_release;
+  char *release[3];
+};
+
+const char *read_ssl_artifact(struct ssl_artifact_ctx *ctx, input_stream *inp,
+                              const char **builtins, size_t num_builtins) {
+  uint8_t b = next_byte(inp);
+  if (b == 0) return NULL;
+  if (b == 1) return ctx->release[ctx->num_release++] = read_string(inp);
+  if (b > num_builtins + 1) {
+    end(inp);
+    return NULL;
+  }
+  return builtins[b - 1];
+}
+
+static grpc_channel_credentials *read_ssl_channel_creds(input_stream *inp) {
+  struct ssl_artifact_ctx ctx = {0, {0}};
+  static const char *builtin_root_certs[] = {test_root_cert};
+  static const char *builtin_private_keys[] = {
+      test_server1_key, test_self_signed_client_key, test_signed_client_key};
+  static const char *builtin_cert_chains[] = {
+      test_server1_cert, test_self_signed_client_cert, test_signed_client_cert};
+  const char *root_certs = read_ssl_artifact(
+      &ctx, inp, builtin_root_certs, GPR_ARRAY_SIZE(builtin_root_certs));
+  const char *private_key = read_ssl_artifact(
+      &ctx, inp, builtin_private_keys, GPR_ARRAY_SIZE(builtin_private_keys));
+  const char *certs = read_ssl_artifact(&ctx, inp, builtin_cert_chains,
+                                        GPR_ARRAY_SIZE(builtin_cert_chains));
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key, certs};
+  grpc_channel_credentials *creds = grpc_ssl_credentials_create(
+      root_certs, private_key != NULL && certs != NULL ? &key_cert_pair : NULL,
+      NULL);
+  for (int i = 0; i < ctx.num_release; i++) {
+    gpr_free(ctx.release[i]);
+  }
+  return creds;
+}
+
+static grpc_channel_credentials *read_channel_creds(input_stream *inp) {
+  switch (next_byte(inp)) {
+    case 0:
+      return read_ssl_channel_creds(inp);
+      break;
+    default:
+      end(inp);
+      return NULL;
+  }
 }
 
 static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
@@ -960,6 +1013,24 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // resize the buffer pool
       case 21: {
         grpc_resource_quota_resize(g_resource_quota, read_uint22(&inp));
+        break;
+      }
+      // create a secure channel
+      case 22: {
+        if (g_channel == NULL) {
+          char *target = read_string(&inp);
+          char *target_uri;
+          gpr_asprintf(&target_uri, "dns:%s", target);
+          grpc_channel_args *args = read_args(&inp);
+          grpc_channel_credentials *creds = read_channel_creds(&inp);
+          g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
+          GPR_ASSERT(g_channel != NULL);
+          grpc_channel_args_destroy(args);
+          gpr_free(target_uri);
+          gpr_free(target);
+        } else {
+          end(&inp);
+        }
         break;
       }
     }
