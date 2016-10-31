@@ -1533,7 +1533,8 @@ static grpc_error *parse_value_string_with_literal_key(
 
 /* PUBLIC INTERFACE */
 
-void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p) {
+void grpc_chttp2_hpack_parser_init(grpc_exec_ctx *exec_ctx,
+                                   grpc_chttp2_hpack_parser *p) {
   p->on_header = NULL;
   p->on_header_user_data = NULL;
   p->state = parse_begin;
@@ -1553,7 +1554,8 @@ void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p) {
   p->state = parse_stream_dep0;
 }
 
-void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser *p) {
+void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
+                                      grpc_chttp2_hpack_parser *p) {
   grpc_chttp2_hptbl_destroy(exec_ctx, &p->table);
   GRPC_ERROR_UNREF(p->last_error);
   gpr_free(p->key.str);

@@ -43,6 +43,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -100,7 +101,8 @@ static void security_connector_remove_handshake(grpc_security_handshake *h) {
   gpr_mu_unlock(&sc->mu);
 }
 
-static void unref_handshake(grpc_security_handshake *h) {
+static void unref_handshake(grpc_exec_ctx *exec_ctx,
+                            grpc_security_handshake *h) {
   if (gpr_unref(&h->refs)) {
     if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
     if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
@@ -108,7 +110,7 @@ static void unref_handshake(grpc_security_handshake *h) {
     grpc_slice_buffer_destroy_internal(exec_ctx, &h->outgoing);
     grpc_slice_buffer_destroy_internal(exec_ctx, &h->incoming);
     GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
-    GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
+    GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, h->connector, "handshake");
     gpr_free(h);
   }
 }
@@ -136,7 +138,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
     }
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   }
-  unref_handshake(h);
+  unref_handshake(exec_ctx, h);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -280,7 +282,8 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
     grpc_slice_buffer_add(
         &h->left_overs,
         grpc_slice_split_tail(&h->incoming.slices[i], consumed_slice_size));
-    grpc_slice_unref_internal(exec_ctx, 
+    grpc_slice_unref_internal(
+        exec_ctx,
         h->incoming.slices[i]); /* split_tail above increments refcount. */
   }
   grpc_slice_buffer_addn(
@@ -319,7 +322,7 @@ static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_shutdown(exec_ctx, h->wrapped_endpoint);
   }
-  unref_handshake(h);
+  unref_handshake(exec_ctx, h);
 }
 
 void grpc_do_security_handshake(

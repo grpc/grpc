@@ -129,8 +129,8 @@ static void on_md_processing_done(
   if (status == GRPC_STATUS_OK) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
-    grpc_metadata_batch_filter(calld->recv_initial_metadata, remove_consumed_md,
-                               elem);
+    grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
+                               remove_consumed_md, elem);
     grpc_metadata_array_destroy(&calld->md);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
@@ -149,7 +149,7 @@ static void on_md_processing_done(
     }
     calld->transport_op->send_trailing_metadata = NULL;
     close_op->on_complete = grpc_closure_create(destroy_op, close_op);
-    grpc_transport_stream_op_add_close(close_op, status, &message);
+    grpc_transport_stream_op_add_close(&exec_ctx, close_op, status, &message);
     grpc_call_next_op(&exec_ctx, elem, close_op);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv,
                         grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
@@ -264,7 +264,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "server_auth_filter");
-  grpc_server_credentials_unref(chand->creds);
+  grpc_server_credentials_unref(exec_ctx, chand->creds);
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {

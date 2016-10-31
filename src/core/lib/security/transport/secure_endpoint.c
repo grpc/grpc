@@ -40,6 +40,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/transport_security_interface.h"

@@ -37,6 +37,8 @@
 
 #include <string.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 static void store_ensure_capacity(grpc_credentials_md_store *store) {
   if (store->num_entries == store->allocated) {
     store->allocated = (store->allocated == 0) ? 1 : store->allocated * 2;
@@ -85,7 +87,8 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
   return store;
 }
 
-void grpc_credentials_md_store_unref(grpc_credentials_md_store *store) {
+void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_credentials_md_store *store) {
   if (store == NULL) return;
   if (gpr_unref(&store->refcount)) {
     if (store->entries != NULL) {
