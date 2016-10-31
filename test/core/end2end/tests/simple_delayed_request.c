@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_seconds_time(int n) {
@@ -109,7 +107,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   config.init_client(f, client_args);
 
   c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -221,7 +219,6 @@ static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
 }
 
 void simple_delayed_request(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr", config);
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);

@@ -45,8 +45,6 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -208,7 +206,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
 static void test_invoke_simple_request(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_simple_request", NULL, NULL);
-  void *rc = grpc_channel_register_call(f.client, "/foo", authority, NULL);
+  void *rc = grpc_channel_register_call(f.client, "/foo", get_host_override_string("foo.test.google.fr:1234", config), NULL);
 
   simple_request_body(f, rc);
   end_test(&f);
@@ -219,7 +217,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   int i;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_10_simple_requests", NULL, NULL);
-  void *rc = grpc_channel_register_call(f.client, "/foo", authority, NULL);
+  void *rc = grpc_channel_register_call(f.client, "/foo", get_host_override_string("foo.test.google.fr:1234", config), NULL);
 
   for (i = 0; i < 10; i++) {
     simple_request_body(f, rc);
@@ -230,7 +228,6 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 }
 
 void registered_call(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr:1234", config);
   test_invoke_simple_request(config);
   test_invoke_10_simple_requests(config);
 }

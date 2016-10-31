@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -97,7 +95,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -115,7 +114,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -253,18 +252,18 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   /* perform a ping-pong to ensure that settings have had a chance to round
      trip */
-  simple_request_body(f);
+  simple_request_body(config, f);
   /* perform another one to make sure that the one stream case still works */
-  simple_request_body(f);
+  simple_request_body(config, f);
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = n_seconds_time(1000);
   c1 = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                                "/alpha", authority, deadline, NULL);
+                                "/alpha", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c1);
   c2 = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                                "/beta", authority, deadline, NULL);
+                                "/beta", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -441,7 +440,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 }
 
 void max_concurrent_streams(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr:1234", config);
   test_max_concurrent_streams(config);
 }
 

@@ -47,8 +47,6 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 const char *hobbits[][2] = {
@@ -241,7 +239,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
+static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_test_fixture f, size_t index) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -271,7 +269,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   extra_metadata[2].value_length = strlen(extra_metadata[2].value);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -386,7 +384,7 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   f = begin_test(config, name, encode_size != 4096 ? &client_args : NULL,
                  decode_size != 4096 ? &server_args : NULL);
   for (i = 0; i < 4 * GPR_ARRAY_SIZE(hobbits); i++) {
-    simple_request_body(f, i);
+    simple_request_body(config, f, i);
   }
   end_test(&f);
   config.tear_down_data(&f);
@@ -398,7 +396,6 @@ void hpack_size(grpc_end2end_test_config config) {
                                           1000, 32768, 4 * 1024 * 1024};
   size_t i, j;
 
-  authority = get_host_override_string("foo.test.google.fr:1234", config);
   for (i = 0; i < GPR_ARRAY_SIZE(interesting_sizes); i++) {
     for (j = 0; j < GPR_ARRAY_SIZE(interesting_sizes); j++) {
       test_size(config, interesting_sizes[i], interesting_sizes[j]);

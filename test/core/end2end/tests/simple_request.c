@@ -45,8 +45,6 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -99,7 +97,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -118,7 +116,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   char *peer;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -225,7 +223,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
   f = begin_test(config, "test_invoke_simple_request", NULL, NULL);
-  simple_request_body(f);
+  simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -235,7 +233,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_10_simple_requests", NULL, NULL);
   for (i = 0; i < 10; i++) {
-    simple_request_body(f);
+    simple_request_body(config, f);
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
   end_test(&f);
@@ -244,7 +242,6 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 
 void simple_request(grpc_end2end_test_config config) {
   int i;
-  authority = get_host_override_string("foo.test.google.fr:1234", config);
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
   }

@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -143,7 +141,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority,
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config),
                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(c);
 
@@ -397,7 +395,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 }
 
 void max_message_length(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr:1234", config);
   test_max_message_length_on_request(config, false /* send_limit */);
   test_max_message_length_on_request(config, true /* send_limit */);
   test_max_message_length_on_response(config, false /* send_limit */);

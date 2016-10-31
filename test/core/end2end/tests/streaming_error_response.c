@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -128,7 +126,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -273,7 +271,6 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
 }
 
 void streaming_error_response(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr", config);
   test(config, false);
   test(config, true);
 }

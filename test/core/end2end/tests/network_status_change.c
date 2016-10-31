@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 /* this is a private API but exposed here for testing*/
 extern void grpc_network_status_shutdown_all_endpoints();
 
@@ -125,7 +123,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -238,7 +236,6 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
 }
 
 void network_status_change(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr", config);
   test_invoke_network_status_change(config);
 }
 

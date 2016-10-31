@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static const char *authority;
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_seconds_time(int n) {
@@ -81,7 +79,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
+static void do_request_and_shutdown_server(grpc_end2end_test_config config,
+                                           grpc_end2end_test_fixture *f,
                                            cq_verifier *cqv) {
   grpc_call *c;
   grpc_call *s;
@@ -99,7 +98,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                               "/foo", authority, deadline, NULL);
+                               "/foo", get_host_override_string("foo.test.google.fr:1234", config), deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -199,12 +198,12 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   config.init_client(&f, NULL);
   config.init_server(&f, NULL);
 
-  do_request_and_shutdown_server(&f, cqv);
+  do_request_and_shutdown_server(config, &f, cqv);
 
   /* now destroy and recreate the server */
   config.init_server(&f, NULL);
 
-  do_request_and_shutdown_server(&f, cqv);
+  do_request_and_shutdown_server(config, &f, cqv);
 
   cq_verifier_destroy(cqv);
 
@@ -213,7 +212,6 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 }
 
 void disappearing_server(grpc_end2end_test_config config) {
-  authority = get_host_override_string("foo.test.google.fr:1234", config);
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   disappearing_server_test(config);
 }
