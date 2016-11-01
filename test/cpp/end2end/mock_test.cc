@@ -61,8 +61,7 @@ namespace testing {
 
 namespace {
 template <class W, class R>
-class MockClientReaderWriter final
-    : public ClientReaderWriterInterface<W, R> {
+class MockClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  public:
   void WaitForInitialMetadata() override {}
   bool NextMessageSize(uint32_t* sz) override {
@@ -90,8 +89,7 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> final
     return true;
   }
 
-  bool Write(const EchoRequest& msg,
-             const WriteOptions& options) override {
+  bool Write(const EchoRequest& msg, const WriteOptions& options) override {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
     return true;
@@ -221,9 +219,9 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      override {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {

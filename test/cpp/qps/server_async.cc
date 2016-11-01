@@ -214,9 +214,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                       AsyncQpsServerTest::tag(this));
     }
     ~ServerRpcContextUnaryImpl() override {}
-    bool RunNextState(bool ok) override {
-      return (this->*next_state_)(ok);
-    }
+    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
     void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
@@ -274,9 +272,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
     }
     ~ServerRpcContextStreamingImpl() override {}
-    bool RunNextState(bool ok) override {
-      return (this->*next_state_)(ok);
-    }
+    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
     void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();

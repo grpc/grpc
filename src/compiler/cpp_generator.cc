@@ -423,11 +423,10 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
                      "::grpc::ClientWriter< $Request$>* $Method$Raw("
                      "::grpc::ClientContext* context, $Response$* response) "
                      "override;\n");
-      printer->Print(
-          *vars,
-          "::grpc::ClientAsyncWriter< $Request$>* Async$Method$Raw("
-          "::grpc::ClientContext* context, $Response$* response, "
-          "::grpc::CompletionQueue* cq, void* tag) override;\n");
+      printer->Print(*vars,
+                     "::grpc::ClientAsyncWriter< $Request$>* Async$Method$Raw("
+                     "::grpc::ClientContext* context, $Response$* response, "
+                     "::grpc::CompletionQueue* cq, void* tag) override;\n");
     } else if (method->ServerOnlyStreaming()) {
       printer->Print(*vars,
                      "::grpc::ClientReader< $Response$>* $Method$Raw("
@@ -439,15 +438,13 @@ void PrintHeaderClientMethod(Printer *printer, const Method *method,
           "::grpc::ClientContext* context, const $Request$& request, "
           "::grpc::CompletionQueue* cq, void* tag) override;\n");
     } else if (method->BidiStreaming()) {
-      printer->Print(
-          *vars,
-          "::grpc::ClientReaderWriter< $Request$, $Response$>* "
-          "$Method$Raw(::grpc::ClientContext* context) override;\n");
-      printer->Print(
-          *vars,
-          "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
-          "Async$Method$Raw(::grpc::ClientContext* context, "
-          "::grpc::CompletionQueue* cq, void* tag) override;\n");
+      printer->Print(*vars,
+                     "::grpc::ClientReaderWriter< $Request$, $Response$>* "
+                     "$Method$Raw(::grpc::ClientContext* context) override;\n");
+      printer->Print(*vars,
+                     "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
+                     "Async$Method$Raw(::grpc::ClientContext* context, "
+                     "::grpc::CompletionQueue* cq, void* tag) override;\n");
     }
   }
 }

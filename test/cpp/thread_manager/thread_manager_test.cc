@@ -51,8 +51,7 @@ class ThreadManagerTest final : public grpc::ThreadManager {
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
-  grpc::ThreadManager::WorkStatus PollForWork(void **tag,
-                                              bool *ok) override;
+  grpc::ThreadManager::WorkStatus PollForWork(void **tag, bool *ok) override;
   void DoWork(void *tag, bool ok) override;
   void PerformTest();
 

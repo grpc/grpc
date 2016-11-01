@@ -143,8 +143,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host,
-                       Service* service) override;
+  bool RegisterService(const grpc::string* host, Service* service) override;
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.

@@ -213,8 +213,8 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
   void UpdateArguments(ChannelArguments* arg) override {}
 
-  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
-      override {
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
     plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
                                   plugin_has_sync_methods),
                    plugins->end());

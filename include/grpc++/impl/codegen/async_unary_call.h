@@ -113,8 +113,7 @@ class ClientAsyncResponseReader final
 };
 
 template <class W>
-class ServerAsyncResponseWriter final
-    : public ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}

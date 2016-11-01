@@ -62,8 +62,7 @@ class SecureAuthContext final : public AuthContext {
   void AddProperty(const grpc::string& key,
                    const grpc::string_ref& value) override;
 
-  virtual bool SetPeerIdentityPropertyName(const grpc::string& name)
-      override;
+  virtual bool SetPeerIdentityPropertyName(const grpc::string& name) override;
 
  private:
   grpc_auth_context* ctx_;

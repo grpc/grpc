@@ -45,8 +45,7 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* grpc_completion_queue_create(void* reserved)
-      override;
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
   void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                          gpr_timespec deadline,
@@ -61,8 +60,7 @@ class CoreCodegen : public CoreCodegenInterface {
   void gpr_mu_unlock(gpr_mu* mu) override;
   void gpr_cv_init(gpr_cv* cv) override;
   void gpr_cv_destroy(gpr_cv* cv) override;
-  int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
-                  gpr_timespec abs_deadline) override;
+  int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) override;
   void gpr_cv_signal(gpr_cv* cv) override;
   void gpr_cv_broadcast(gpr_cv* cv) override;
 
@@ -70,8 +68,8 @@ class CoreCodegen : public CoreCodegenInterface {
 
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                    grpc_byte_buffer* buffer) override;
-  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader)
-      override;
+  void grpc_byte_buffer_reader_destroy(
+      grpc_byte_buffer_reader* reader) override;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                    gpr_slice* slice) override;
 
@@ -81,8 +79,7 @@ class CoreCodegen : public CoreCodegenInterface {
   gpr_slice gpr_slice_malloc(size_t length) override;
   void gpr_slice_unref(gpr_slice slice) override;
   gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) override;
-  void gpr_slice_buffer_add(gpr_slice_buffer* sb,
-                            gpr_slice slice) override;
+  void gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) override;
   void gpr_slice_buffer_pop(gpr_slice_buffer* sb) override;
 
   void grpc_metadata_array_init(grpc_metadata_array* array) override;

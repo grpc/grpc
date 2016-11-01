@@ -66,9 +66,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
  public:
   ~DefaultCredentialsProvider() override {}
 
-  void AddSecureType(const grpc::string& type,
-                     std::unique_ptr<CredentialTypeProvider> type_provider)
-      override {
+  void AddSecureType(
+      const grpc::string& type,
+      std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
     grpc::unique_lock<grpc::mutex> lock(mu_);

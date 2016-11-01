@@ -118,9 +118,9 @@ class WorkerServiceImpl final : public WorkerService::Service {
   WorkerServiceImpl(int server_port, QpsWorker* worker)
       : acquired_(false), server_port_(server_port), worker_(worker) {}
 
-  Status RunClient(ServerContext* ctx,
-                   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
-      override {
+  Status RunClient(
+      ServerContext* ctx,
+      ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
@@ -132,9 +132,9 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return ret;
   }
 
-  Status RunServer(ServerContext* ctx,
-                   ServerReaderWriter<ServerStatus, ServerArgs>* stream)
-      override {
+  Status RunServer(
+      ServerContext* ctx,
+      ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");

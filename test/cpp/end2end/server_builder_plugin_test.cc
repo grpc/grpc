@@ -114,8 +114,8 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
 
   void UpdateArguments(ChannelArguments* arg) override {}
 
-  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
-      override {
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
     plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(

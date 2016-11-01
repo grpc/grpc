@@ -72,8 +72,7 @@ class SecureServerCredentials final : public ServerCredentials {
     grpc_server_credentials_release(creds_);
   }
 
-  int AddPortToServer(const grpc::string& addr,
-                      grpc_server* server) override;
+  int AddPortToServer(const grpc::string& addr, grpc_server* server) override;
 
   void SetAuthMetadataProcessor(
       const std::shared_ptr<AuthMetadataProcessor>& processor) override;
