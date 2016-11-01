@@ -60,12 +60,12 @@ struct grpc_client_channel_factory_vtable {
   void (*unref)(grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory);
   grpc_subchannel *(*create_subchannel)(grpc_exec_ctx *exec_ctx,
                                         grpc_client_channel_factory *factory,
-                                        grpc_subchannel_args *args);
+                                        const grpc_subchannel_args *args);
   grpc_channel *(*create_client_channel)(grpc_exec_ctx *exec_ctx,
                                          grpc_client_channel_factory *factory,
                                          const char *target,
                                          grpc_client_channel_type type,
-                                         grpc_channel_args *args);
+                                         const grpc_channel_args *args);
 };
 
 void grpc_client_channel_factory_ref(grpc_client_channel_factory *factory);
@@ -75,11 +75,12 @@ void grpc_client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
 /** Create a new grpc_subchannel */
 grpc_subchannel *grpc_client_channel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
-    grpc_subchannel_args *args);
+    const grpc_subchannel_args *args);
 
 /** Create a new grpc_channel */
 grpc_channel *grpc_client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
-    const char *target, grpc_client_channel_type type, grpc_channel_args *args);
+    const char *target, grpc_client_channel_type type,
+    const grpc_channel_args *args);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */

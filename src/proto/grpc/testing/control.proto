@@ -137,6 +137,11 @@ message ServerConfig {
 
   // If we use an OTHER_SERVER client_type, this string gives more detail
   string other_server_api = 11;
+
+  // c++-only options (for now) --------------------------------
+
+  // Buffer pool size (no buffer pool specified if unset)
+  int32 resource_quota_size = 1001;
 }
 
 message ServerArgs {
@@ -213,6 +218,10 @@ message ScenarioResultSummary
   double latency_95 = 9;
   double latency_99 = 10;
   double latency_999 = 11;
+
+  // Number of requests that succeeded/failed
+  double successful_requests_per_second = 12;
+  double failed_requests_per_second = 13;
 }
 
 // Results of a single benchmark scenario.
@@ -232,4 +241,6 @@ message ScenarioResult {
   // Information on success or failure of each worker
   repeated bool client_success = 7;
   repeated bool server_success = 8;
+  // Number of failed requests (one row per status code seen)
+  repeated RequestResultCount request_results = 9;
 }

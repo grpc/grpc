@@ -183,9 +183,10 @@ static void connection_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(c);
 }
 
-void grpc_connected_subchannel_ref(
+grpc_connected_subchannel *grpc_connected_subchannel_ref(
     grpc_connected_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CONNECTION(c), REF_REASON);
+  return c;
 }
 
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
@@ -297,7 +298,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
 
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
-                                        grpc_subchannel_args *args) {
+                                        const grpc_subchannel_args *args) {
   grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {

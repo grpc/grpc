@@ -67,6 +67,7 @@ environment.update({
     'LDFLAGS': '-L{}'.format(LIBRARY_PATH),
     'LD_LIBRARY_PATH': LIBRARY_PATH,
     'GRPC_PYTHON_BUILD_WITH_CYTHON': '1',
+    'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD': '1',
 })
 
 subprocess_arguments_list = [
