@@ -97,7 +97,7 @@ grpc_subchannel *grpc_subchannel_weak_ref(
 void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel *channel
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_connected_subchannel_ref(
+grpc_connected_subchannel *grpc_connected_subchannel_ref(
     grpc_connected_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_connected_subchannel *channel
@@ -173,6 +173,6 @@ struct grpc_subchannel_args {
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
-                                        grpc_subchannel_args *args);
+                                        const grpc_subchannel_args *args);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CHANNEL_SUBCHANNEL_H */

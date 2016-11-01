@@ -167,8 +167,8 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_cli_libs\grpc_cli_libs.vcxproj">
       <Project>{86E35862-43E8-F59E-F906-AFE0348AD3D2}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj">
-      <Project>{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}</Project>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_proto_reflection_desc_db\grpc++_proto_reflection_desc_db.vcxproj">
+      <Project>{7B95AF96-915A-7132-AE45-9FA37769FACE}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>

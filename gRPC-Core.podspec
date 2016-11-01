@@ -35,7 +35,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.0.0'
+  version = '1.0.1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -186,7 +186,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 6.0'
+    ss.dependency 'BoringSSL', '~> 7.0'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -291,6 +291,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
                       'src/core/lib/iomgr/resolve_address.h',
+                      'src/core/lib/iomgr/resource_quota.h',
                       'src/core/lib/iomgr/sockaddr.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
                       'src/core/lib/iomgr/sockaddr_utils.h',
@@ -299,6 +300,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/socket_utils_posix.h',
                       'src/core/lib/iomgr/socket_windows.h',
                       'src/core/lib/iomgr/tcp_client.h',
+                      'src/core/lib/iomgr/tcp_client_posix.h',
                       'src/core/lib/iomgr/tcp_posix.h',
                       'src/core/lib/iomgr/tcp_server.h',
                       'src/core/lib/iomgr/tcp_uv.h',
@@ -336,6 +338,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/mdstr_hash_table.h',
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.h',
+                      'src/core/lib/transport/method_config.h',
                       'src/core/lib/transport/static_metadata.h',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
@@ -393,12 +396,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/lb_policy.h',
                       'src/core/ext/client_channel/lb_policy_factory.h',
                       'src/core/ext/client_channel/lb_policy_registry.h',
-                      'src/core/ext/client_channel/method_config.h',
                       'src/core/ext/client_channel/parse_address.h',
                       'src/core/ext/client_channel/resolver.h',
                       'src/core/ext/client_channel/resolver_factory.h',
                       'src/core/ext/client_channel/resolver_registry.h',
-                      'src/core/ext/client_channel/resolver_result.h',
                       'src/core/ext/client_channel/subchannel.h',
                       'src/core/ext/client_channel/subchannel_index.h',
                       'src/core/ext/client_channel/uri_parser.h',
@@ -467,6 +468,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/resolve_address_posix.c',
                       'src/core/lib/iomgr/resolve_address_uv.c',
                       'src/core/lib/iomgr/resolve_address_windows.c',
+                      'src/core/lib/iomgr/resource_quota.c',
                       'src/core/lib/iomgr/sockaddr_utils.c',
                       'src/core/lib/iomgr/socket_utils_common_posix.c',
                       'src/core/lib/iomgr/socket_utils_linux.c',
@@ -524,6 +526,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/mdstr_hash_table.c',
                       'src/core/lib/transport/metadata.c',
                       'src/core/lib/transport/metadata_batch.c',
+                      'src/core/lib/transport/method_config.c',
                       'src/core/lib/transport/static_metadata.c',
                       'src/core/lib/transport/timeout_encoding.c',
                       'src/core/lib/transport/transport.c',
@@ -590,12 +593,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/lb_policy.c',
                       'src/core/ext/client_channel/lb_policy_factory.c',
                       'src/core/ext/client_channel/lb_policy_registry.c',
-                      'src/core/ext/client_channel/method_config.c',
                       'src/core/ext/client_channel/parse_address.c',
                       'src/core/ext/client_channel/resolver.c',
                       'src/core/ext/client_channel/resolver_factory.c',
                       'src/core/ext/client_channel/resolver_registry.c',
-                      'src/core/ext/client_channel/resolver_result.c',
                       'src/core/ext/client_channel/subchannel.c',
                       'src/core/ext/client_channel/subchannel_index.c',
                       'src/core/ext/client_channel/uri_parser.c',
@@ -686,6 +687,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
                               'src/core/lib/iomgr/resolve_address.h',
+                              'src/core/lib/iomgr/resource_quota.h',
                               'src/core/lib/iomgr/sockaddr.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
                               'src/core/lib/iomgr/sockaddr_utils.h',
@@ -694,6 +696,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/socket_utils_posix.h',
                               'src/core/lib/iomgr/socket_windows.h',
                               'src/core/lib/iomgr/tcp_client.h',
+                              'src/core/lib/iomgr/tcp_client_posix.h',
                               'src/core/lib/iomgr/tcp_posix.h',
                               'src/core/lib/iomgr/tcp_server.h',
                               'src/core/lib/iomgr/tcp_uv.h',
@@ -731,6 +734,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/mdstr_hash_table.h',
                               'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
+                              'src/core/lib/transport/method_config.h',
                               'src/core/lib/transport/static_metadata.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
@@ -788,12 +792,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/lb_policy.h',
                               'src/core/ext/client_channel/lb_policy_factory.h',
                               'src/core/ext/client_channel/lb_policy_registry.h',
-                              'src/core/ext/client_channel/method_config.h',
                               'src/core/ext/client_channel/parse_address.h',
                               'src/core/ext/client_channel/resolver.h',
                               'src/core/ext/client_channel/resolver_factory.h',
                               'src/core/ext/client_channel/resolver_registry.h',
-                              'src/core/ext/client_channel/resolver_result.h',
                               'src/core/ext/client_channel/subchannel.h',
                               'src/core/ext/client_channel/subchannel_index.h',
                               'src/core/ext/client_channel/uri_parser.h',

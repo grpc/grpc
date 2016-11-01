@@ -38,6 +38,7 @@
 
 static void test_alpn_success(void) {
   GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2", 2));
+  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("grpc-exp", 8));
 }
 
 static void test_alpn_failure(void) {
@@ -45,9 +46,27 @@ static void test_alpn_failure(void) {
   GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h1-15", 5));
 }
 
+// First index in ALPN supported version list of a given protocol. Returns a
+// value one beyond the last valid element index if not found.
+static size_t alpn_version_index(const char *version, size_t size) {
+  size_t i;
+  for (i = 0; i < grpc_chttp2_num_alpn_versions(); ++i) {
+    if (!strncmp(version, grpc_chttp2_get_alpn_version_index(i), size)) {
+      return i;
+    }
+  }
+  return i;
+}
+
+static void test_alpn_grpc_before_h2(void) {
+  // grpc-exp is preferred over h2.
+  GPR_ASSERT(alpn_version_index("grpc-exp", 8) < alpn_version_index("h2", 2));
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_alpn_success();
   test_alpn_failure();
+  test_alpn_grpc_before_h2();
   return 0;
 }
