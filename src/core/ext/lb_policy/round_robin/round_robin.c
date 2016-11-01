@@ -121,7 +121,7 @@ typedef struct {
   /** the subchannel's target user data */
   void *user_data;
   /** vtable to operate over \a user_data */
-  grpc_lb_user_data_vtable user_data_vtable;
+  const grpc_lb_user_data_vtable *user_data_vtable;
 } subchannel_data;
 
 struct round_robin_lb_policy {
@@ -269,7 +269,9 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   for (size_t i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, "round_robin_destroy");
-    sd->user_data_vtable.destroy(sd->user_data);
+    if (sd->user_data_vtable != NULL) {
+      sd->user_data_vtable->destroy(sd->user_data);
+    }
     gpr_free(sd);
   }
 
@@ -298,7 +300,7 @@ static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
   gpr_mu_lock(&p->mu);
   if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "Shutting down Round Robin policy at %p", pol);
+    gpr_log(GPR_DEBUG, "Shutting down Round Robin policy at %p", (void *)pol);
   }
 
   p->shutdown = 1;
@@ -412,7 +414,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_lock(&p->mu);
 
   if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_INFO, "Round Robin %p trying to pick", pol);
+    gpr_log(GPR_INFO, "Round Robin %p trying to pick", (void *)pol);
   }
 
   if ((selected = peek_next_connected_locked(p))) {
@@ -674,9 +676,9 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       sd->policy = p;
       sd->index = subchannel_idx;
       sd->subchannel = subchannel;
-      sd->user_data_vtable = *addresses->user_data_vtable;
+      sd->user_data_vtable = addresses->user_data_vtable;
       sd->user_data =
-          sd->user_data_vtable.copy(addresses->addresses[i].user_data);
+          sd->user_data_vtable->copy(addresses->addresses[i].user_data);
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed, sd);
