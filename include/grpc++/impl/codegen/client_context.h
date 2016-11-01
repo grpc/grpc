@@ -235,12 +235,10 @@ class ClientContext {
   /// DEPRECATED: Use set_wait_for_ready() instead.
   void set_fail_fast(bool fail_fast) { set_wait_for_ready(!fail_fast); }
 
-#ifndef GRPC_CXX0X_NO_CHRONO
   /// Return the deadline for the client call.
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
   /// Return a \a gpr_timespec representation of the client call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
