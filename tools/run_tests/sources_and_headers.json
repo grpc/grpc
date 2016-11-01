@@ -1140,6 +1140,40 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "handshake_client", 
+    "src": [
+      "test/core/handshake/client_ssl.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_server", 
+    "src": [
+      "test/core/handshake/server_ssl.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "hpack_parser_fuzzer_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
@@ -1683,6 +1717,23 @@
     "name": "resolve_address_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "resource_quota_test", 
+    "src": [
+      "test/core/iomgr/resource_quota_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2466,7 +2517,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_reflection", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_test_config", 
       "grpc_cli_libs"
     ], 
@@ -2585,8 +2636,9 @@
       "grpc", 
       "grpc++", 
       "grpc++_codegen_proto", 
-      "grpc++_config_proto", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection", 
+      "grpc++_test_util", 
       "grpc_cli_libs", 
       "grpc_test_util"
     ], 
@@ -2594,16 +2646,13 @@
       "src/proto/grpc/testing/echo.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_messages.pb.h", 
-      "test/cpp/util/string_ref_helper.h"
+      "src/proto/grpc/testing/echo_messages.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "grpc_tool_test", 
     "src": [
-      "test/cpp/util/grpc_tool_test.cc", 
-      "test/cpp/util/string_ref_helper.cc", 
-      "test/cpp/util/string_ref_helper.h"
+      "test/cpp/util/grpc_tool_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2809,20 +2858,17 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [
-      "test/cpp/util/proto_reflection_descriptor_database.h"
-    ], 
+    "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "proto_server_reflection_test", 
     "src": [
-      "test/cpp/end2end/proto_server_reflection_test.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
+      "test/cpp/end2end/proto_server_reflection_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3179,6 +3225,23 @@
       "test/cpp/interop/stress_test.cc", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "thread_manager_test", 
+    "src": [
+      "test/cpp/thread_manager/thread_manager_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5026,6 +5089,25 @@
   {
     "deps": [
       "grpc++", 
+      "grpc++_config_proto", 
+      "grpc++_reflection_proto"
+    ], 
+    "headers": [
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_proto_reflection_desc_db", 
+    "src": [
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++", 
       "grpc++_reflection_proto"
     ], 
     "headers": [
@@ -5041,19 +5123,6 @@
       "src/cpp/ext/proto_server_reflection.h", 
       "src/cpp/ext/proto_server_reflection_plugin.cc"
     ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [], 
-    "headers": [
-      "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h", 
-      "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_reflection_codegen", 
-    "src": [], 
     "third_party": false, 
     "type": "lib"
   }, 
@@ -5156,7 +5225,9 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_reflection"
+      "grpc++_config_proto", 
+      "grpc++_proto_reflection_desc_db", 
+      "grpc++_reflection_proto"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
@@ -5164,7 +5235,6 @@
       "test/cpp/util/config_grpc_cli.h", 
       "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.h", 
-      "test/cpp/util/proto_reflection_descriptor_database.h", 
       "test/cpp/util/service_describer.h"
     ], 
     "is_filegroup": false, 
@@ -5180,8 +5250,6 @@
       "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.cc", 
       "test/cpp/util/proto_file_parser.h", 
-      "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h", 
       "test/cpp/util/service_describer.cc", 
       "test/cpp/util/service_describer.h"
     ], 
@@ -6205,6 +6273,7 @@
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
       "test/core/end2end/tests/request_with_payload.c", 
+      "test/core/end2end/tests/resource_quota_server.c", 
       "test/core/end2end/tests/server_finishes_request.c", 
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
@@ -6270,6 +6339,7 @@
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
       "test/core/end2end/tests/request_with_payload.c", 
+      "test/core/end2end/tests/resource_quota_server.c", 
       "test/core/end2end/tests/server_finishes_request.c", 
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
@@ -6565,27 +6635,36 @@
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_set.h", 
       "src/core/lib/iomgr/pollset_set_windows.h", 
+      "src/core/lib/iomgr/pollset_uv.h", 
       "src/core/lib/iomgr/pollset_windows.h", 
+      "src/core/lib/iomgr/port.h", 
       "src/core/lib/iomgr/resolve_address.h", 
+      "src/core/lib/iomgr/resource_quota.h", 
       "src/core/lib/iomgr/sockaddr.h", 
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
       "src/core/lib/iomgr/socket_windows.h", 
       "src/core/lib/iomgr/tcp_client.h", 
+      "src/core/lib/iomgr/tcp_client_posix.h", 
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
+      "src/core/lib/iomgr/tcp_uv.h", 
       "src/core/lib/iomgr/tcp_windows.h", 
       "src/core/lib/iomgr/time_averaged_stats.h", 
       "src/core/lib/iomgr/timer.h", 
+      "src/core/lib/iomgr/timer_generic.h", 
       "src/core/lib/iomgr/timer_heap.h", 
+      "src/core/lib/iomgr/timer_uv.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
       "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/iomgr/workqueue.h", 
+      "src/core/lib/iomgr/workqueue_uv.h", 
       "src/core/lib/iomgr/workqueue_windows.h", 
       "src/core/lib/json/json.h", 
       "src/core/lib/json/json_common.h", 
@@ -6607,6 +6686,7 @@
       "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
+      "src/core/lib/transport/method_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
@@ -6664,6 +6744,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/endpoint_pair_posix.c", 
+      "src/core/lib/iomgr/endpoint_pair_uv.c", 
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
@@ -6686,6 +6767,7 @@
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.c", 
       "src/core/lib/iomgr/iomgr_posix.h", 
+      "src/core/lib/iomgr/iomgr_uv.c", 
       "src/core/lib/iomgr/iomgr_windows.c", 
       "src/core/lib/iomgr/load_file.c", 
       "src/core/lib/iomgr/load_file.h", 
@@ -6695,40 +6777,58 @@
       "src/core/lib/iomgr/polling_entity.h", 
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_set.h", 
+      "src/core/lib/iomgr/pollset_set_uv.c", 
       "src/core/lib/iomgr/pollset_set_windows.c", 
       "src/core/lib/iomgr/pollset_set_windows.h", 
+      "src/core/lib/iomgr/pollset_uv.c", 
+      "src/core/lib/iomgr/pollset_uv.h", 
       "src/core/lib/iomgr/pollset_windows.c", 
       "src/core/lib/iomgr/pollset_windows.h", 
+      "src/core/lib/iomgr/port.h", 
       "src/core/lib/iomgr/resolve_address.h", 
       "src/core/lib/iomgr/resolve_address_posix.c", 
+      "src/core/lib/iomgr/resolve_address_uv.c", 
       "src/core/lib/iomgr/resolve_address_windows.c", 
+      "src/core/lib/iomgr/resource_quota.c", 
+      "src/core/lib/iomgr/resource_quota.h", 
       "src/core/lib/iomgr/sockaddr.h", 
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.c", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_common_posix.c", 
       "src/core/lib/iomgr/socket_utils_linux.c", 
       "src/core/lib/iomgr/socket_utils_posix.c", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
+      "src/core/lib/iomgr/socket_utils_uv.c", 
+      "src/core/lib/iomgr/socket_utils_windows.c", 
       "src/core/lib/iomgr/socket_windows.c", 
       "src/core/lib/iomgr/socket_windows.h", 
       "src/core/lib/iomgr/tcp_client.h", 
       "src/core/lib/iomgr/tcp_client_posix.c", 
+      "src/core/lib/iomgr/tcp_client_posix.h", 
+      "src/core/lib/iomgr/tcp_client_uv.c", 
       "src/core/lib/iomgr/tcp_client_windows.c", 
       "src/core/lib/iomgr/tcp_posix.c", 
       "src/core/lib/iomgr/tcp_posix.h", 
       "src/core/lib/iomgr/tcp_server.h", 
       "src/core/lib/iomgr/tcp_server_posix.c", 
+      "src/core/lib/iomgr/tcp_server_uv.c", 
       "src/core/lib/iomgr/tcp_server_windows.c", 
+      "src/core/lib/iomgr/tcp_uv.c", 
+      "src/core/lib/iomgr/tcp_uv.h", 
       "src/core/lib/iomgr/tcp_windows.c", 
       "src/core/lib/iomgr/tcp_windows.h", 
       "src/core/lib/iomgr/time_averaged_stats.c", 
       "src/core/lib/iomgr/time_averaged_stats.h", 
-      "src/core/lib/iomgr/timer.c", 
       "src/core/lib/iomgr/timer.h", 
+      "src/core/lib/iomgr/timer_generic.c", 
+      "src/core/lib/iomgr/timer_generic.h", 
       "src/core/lib/iomgr/timer_heap.c", 
       "src/core/lib/iomgr/timer_heap.h", 
+      "src/core/lib/iomgr/timer_uv.c", 
+      "src/core/lib/iomgr/timer_uv.h", 
       "src/core/lib/iomgr/udp_server.c", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.c", 
@@ -6743,6 +6843,8 @@
       "src/core/lib/iomgr/wakeup_fd_posix.c", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/iomgr/workqueue.h", 
+      "src/core/lib/iomgr/workqueue_uv.c", 
+      "src/core/lib/iomgr/workqueue_uv.h", 
       "src/core/lib/iomgr/workqueue_windows.c", 
       "src/core/lib/iomgr/workqueue_windows.h", 
       "src/core/lib/json/json.c", 
@@ -6792,6 +6894,8 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
       "src/core/lib/transport/metadata_batch.h", 
+      "src/core/lib/transport/method_config.c", 
+      "src/core/lib/transport/method_config.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.c", 
@@ -6818,12 +6922,10 @@
       "src/core/ext/client_channel/lb_policy.h", 
       "src/core/ext/client_channel/lb_policy_factory.h", 
       "src/core/ext/client_channel/lb_policy_registry.h", 
-      "src/core/ext/client_channel/method_config.h", 
       "src/core/ext/client_channel/parse_address.h", 
       "src/core/ext/client_channel/resolver.h", 
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.h", 
-      "src/core/ext/client_channel/resolver_result.h", 
       "src/core/ext/client_channel/subchannel.h", 
       "src/core/ext/client_channel/subchannel_index.h", 
       "src/core/ext/client_channel/uri_parser.h"
@@ -6851,8 +6953,6 @@
       "src/core/ext/client_channel/lb_policy_factory.h", 
       "src/core/ext/client_channel/lb_policy_registry.c", 
       "src/core/ext/client_channel/lb_policy_registry.h", 
-      "src/core/ext/client_channel/method_config.c", 
-      "src/core/ext/client_channel/method_config.h", 
       "src/core/ext/client_channel/parse_address.c", 
       "src/core/ext/client_channel/parse_address.h", 
       "src/core/ext/client_channel/resolver.c", 
@@ -6861,8 +6961,6 @@
       "src/core/ext/client_channel/resolver_factory.h", 
       "src/core/ext/client_channel/resolver_registry.c", 
       "src/core/ext/client_channel/resolver_registry.h", 
-      "src/core/ext/client_channel/resolver_result.c", 
-      "src/core/ext/client_channel/resolver_result.h", 
       "src/core/ext/client_channel/subchannel.c", 
       "src/core/ext/client_channel/subchannel.h", 
       "src/core/ext/client_channel/subchannel_index.c", 
@@ -7054,8 +7152,7 @@
       "src/core/lib/security/credentials/credentials_metadata.c", 
       "src/core/lib/security/credentials/fake/fake_credentials.c", 
       "src/core/lib/security/credentials/fake/fake_credentials.h", 
-      "src/core/lib/security/credentials/google_default/credentials_posix.c", 
-      "src/core/lib/security/credentials/google_default/credentials_windows.c", 
+      "src/core/lib/security/credentials/google_default/credentials_generic.c", 
       "src/core/lib/security/credentials/google_default/google_default_credentials.c", 
       "src/core/lib/security/credentials/google_default/google_default_credentials.h", 
       "src/core/lib/security/credentials/iam/iam_credentials.c", 
@@ -7140,6 +7237,7 @@
       "test/core/util/port_posix.c", 
       "test/core/util/port_server_client.c", 
       "test/core/util/port_server_client.h", 
+      "test/core/util/port_uv.c", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"
@@ -7353,7 +7451,8 @@
   }, 
   {
     "deps": [
-      "gpr"
+      "gpr", 
+      "grpc_base"
     ], 
     "headers": [
       "src/core/lib/tsi/fake_transport_security.h", 
@@ -7410,6 +7509,7 @@
       "include/grpc++/impl/thd.h", 
       "include/grpc++/impl/thd_cxx11.h", 
       "include/grpc++/impl/thd_no_cxx11.h", 
+      "include/grpc++/resource_quota.h", 
       "include/grpc++/security/auth_context.h", 
       "include/grpc++/security/auth_metadata_processor.h", 
       "include/grpc++/security/credentials.h", 
@@ -7433,7 +7533,8 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/thread_pool_interface.h"
+      "src/cpp/server/thread_pool_interface.h", 
+      "src/cpp/thread_manager/thread_manager.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
@@ -7466,6 +7567,7 @@
       "include/grpc++/impl/thd.h", 
       "include/grpc++/impl/thd_cxx11.h", 
       "include/grpc++/impl/thd_no_cxx11.h", 
+      "include/grpc++/resource_quota.h", 
       "include/grpc++/security/auth_context.h", 
       "include/grpc++/security/auth_metadata_processor.h", 
       "include/grpc++/security/credentials.h", 
@@ -7499,6 +7601,7 @@
       "src/cpp/common/channel_filter.h", 
       "src/cpp/common/completion_queue_cc.cc", 
       "src/cpp/common/core_codegen.cc", 
+      "src/cpp/common/resource_quota_cc.cc", 
       "src/cpp/common/rpc_method.cc", 
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
@@ -7510,6 +7613,8 @@
       "src/cpp/server/server_credentials.cc", 
       "src/cpp/server/server_posix.cc", 
       "src/cpp/server/thread_pool_interface.h", 
+      "src/cpp/thread_manager/thread_manager.cc", 
+      "src/cpp/thread_manager/thread_manager.h", 
       "src/cpp/util/byte_buffer_cc.cc", 
       "src/cpp/util/slice_cc.cc", 
       "src/cpp/util/status.cc", 
@@ -7641,22 +7746,15 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [
-      "grpc++_codegen_proto"
-    ], 
+    "deps": [], 
     "headers": [
-      "include/grpc++/ext/reflection.grpc.pb.h", 
-      "include/grpc++/ext/reflection.pb.h"
+      "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h", 
+      "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpc++_reflection_proto", 
-    "src": [
-      "include/grpc++/ext/reflection.grpc.pb.h", 
-      "include/grpc++/ext/reflection.pb.h", 
-      "src/cpp/ext/reflection.grpc.pb.cc", 
-      "src/cpp/ext/reflection.pb.cc"
-    ], 
+    "src": [], 
     "third_party": false, 
     "type": "filegroup"
   }, 

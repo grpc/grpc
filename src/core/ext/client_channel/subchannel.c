@@ -95,8 +95,7 @@ struct grpc_subchannel {
   /** channel arguments */
   grpc_channel_args *args;
   /** address to connect to */
-  struct sockaddr *addr;
-  size_t addr_len;
+  grpc_resolved_address *addr;
 
   grpc_subchannel_key *key;
 
@@ -184,9 +183,10 @@ static void connection_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(c);
 }
 
-void grpc_connected_subchannel_ref(
+grpc_connected_subchannel *grpc_connected_subchannel_ref(
     grpc_connected_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CONNECTION(c), REF_REASON);
+  return c;
 }
 
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
@@ -298,7 +298,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
 
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
-                                        grpc_subchannel_args *args) {
+                                        const grpc_subchannel_args *args) {
   grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {
@@ -320,12 +320,11 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   } else {
     c->filters = NULL;
   }
-  c->addr = gpr_malloc(args->addr_len);
-  if (args->addr_len) memcpy(c->addr, args->addr, args->addr_len);
+  c->addr = gpr_malloc(sizeof(grpc_resolved_address));
+  if (args->addr->len)
+    memcpy(c->addr, args->addr, sizeof(grpc_resolved_address));
   c->pollset_set = grpc_pollset_set_create();
-  c->addr_len = args->addr_len;
-  grpc_set_initial_connect_string(&c->addr, &c->addr_len,
-                                  &c->initial_connect_string);
+  grpc_set_initial_connect_string(&c->addr, &c->initial_connect_string);
   c->args = grpc_channel_args_copy(args->args);
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
@@ -376,7 +375,6 @@ static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 
   args.interested_parties = c->pollset_set;
   args.addr = c->addr;
-  args.addr_len = c->addr_len;
   args.deadline = c->next_attempt;
   args.channel_args = c->args;
   args.initial_connect_string = c->initial_connect_string;
