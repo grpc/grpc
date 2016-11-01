@@ -58,7 +58,6 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
   char *name;
   gpr_asprintf(&name, "fd:%d", fd);
 
-
   GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_set_socket_nonblocking",
                                grpc_set_socket_nonblocking(fd, 1)));
 
