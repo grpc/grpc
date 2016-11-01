@@ -44,15 +44,6 @@ module GRPC
 
     def_delegators :@server, :add_http2_port
 
-    # Default max size of the thread pool size is 100
-    DEFAULT_MAX_POOL_SIZE = 100
-
-    # Default minimum size of the thread pool is 5
-    DEFAULT_MIN_POOL_SIZE = 5
-
-    # Default max_waiting_requests size is 60
-    DEFAULT_MAX_WAITING_REQUESTS = 60
-
     # Default poll period is 1s
     # Used for grpc server shutdown and thread pool shutdown timeouts
     DEFAULT_POLL_PERIOD = 1
@@ -75,12 +66,9 @@ module GRPC
     # There are some specific keyword args used to configure the RpcServer
     # instance.
     #
-    # * pool_size: the maximum size of the thread pool that the server's
-    # thread pool can reach.
+    # * pool_size: deprecated
     #
-    # * max_waiting_requests: the maximum number of requests that are not
-    # being handled to allow. When this limit is exceeded, the server responds
-    # with not available to new requests
+    # * max_waiting_requests: deprecated
     #
     # * poll_period: when present, the server polls for new events with this
     # period
@@ -99,14 +87,13 @@ module GRPC
                    connect_md_proc:nil,
                    server_args:{})
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
-      @max_waiting_requests = max_waiting_requests
       @poll_period = poll_period
 
-      @pool = Concurrent::ThreadPoolExecutor.new(
-        min_threads: [min_pool_size, pool_size].min,
-        max_threads: pool_size,
-        max_queue: max_waiting_requests,
-        fallback_policy: :discard)
+      # Bogus calculation below to use deprecated parameters to avoid
+      # unused variable complaints from compiler
+      @dummyvar = pool_size + min_pool_size + max_waiting_requests
+
+      @pool = Concurrent::CachedThreadPool.new
       @run_cond = ConditionVariable.new
       @run_mutex = Mutex.new
       # running_state can take 4 values: :not_started, :running, :stopping, and
