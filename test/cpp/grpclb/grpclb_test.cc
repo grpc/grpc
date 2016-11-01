@@ -144,7 +144,6 @@ static gpr_slice build_response_payload_slice(
     // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
     // have a version for int but does have one for long long int.
     string token_data = "token" + std::to_string((long long int)ports[i]);
-    token_data.resize(64, '-');
     server->set_load_balance_token(token_data);
   }
   const grpc::string &enc_resp = response.SerializeAsString();
@@ -333,7 +332,6 @@ static void start_backend_server(server_fixture *sf) {
     // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
     // have a version for int but does have one for long long int.
     string expected_token = "token" + std::to_string((long long int)sf->port);
-    expected_token.resize(64, '-');
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
