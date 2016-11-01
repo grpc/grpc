@@ -269,7 +269,8 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   for (size_t i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, "round_robin_destroy");
-    if (sd->user_data_vtable != NULL) {
+    if (sd->user_data != NULL) {
+      GPR_ASSERT(sd->user_data_vtable);
       sd->user_data_vtable->destroy(sd->user_data);
     }
     gpr_free(sd);

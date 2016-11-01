@@ -51,7 +51,7 @@
  * lb_on_response_received. The former will be called when the call to the LB
  * server completes. This can happen if the LB server closes the connection or
  * if this policy itself cancels the call (for example because it's shutting
- * down).If the internal call times out, the usual behavior of pick-first
+ * down). If the internal call times out, the usual behavior of pick-first
  * applies, continuing to pick from the list {a1..an}.
  *
  * Upon sucesss, the incoming \a LoadBalancingResponse is processed by \a
@@ -325,11 +325,10 @@ typedef struct glb_lb_policy {
    * server indicates a redirect. */
   grpc_byte_buffer *lb_request_payload;
 
-  /* response from the LB server, if any. Processed in lb_on_response_received()
-   */
+  /* response the LB server, if any. Processed in lb_on_response_received() */
   grpc_byte_buffer *lb_response_payload;
 
-  /* the call's status and status detailset in lb_on_server_status_received() */
+  /* call status code and details, set in lb_on_server_status_received() */
   grpc_status_code lb_call_status;
   char *lb_call_status_details;
   size_t lb_call_status_details_capacity;
@@ -1013,7 +1012,7 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(glb_policy->lb_channel != NULL);
   /* take a weak ref (won't prevent calling of \a glb_shutdown if the strong ref
    * count goes to zero) to be unref'd in lb_on_server_status_received */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "query_for_backends_locked");
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "query_for_backends");
   lb_call_init(glb_policy);
 
   if (grpc_lb_glb_trace) {
@@ -1139,19 +1138,21 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_slice_unref(response_slice);
     }
 
-    /* keep listening for serverlist updates */
-    op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message = &glb_policy->lb_response_payload;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
-    const grpc_call_error call_error = grpc_call_start_batch_and_execute(
-        exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
-        &glb_policy->lb_on_response_received); /* loop */
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
+    if (!glb_policy->shutting_down) {
+      /* keep listening for serverlist updates */
+      op->op = GRPC_OP_RECV_MESSAGE;
+      op->data.recv_message = &glb_policy->lb_response_payload;
+      op->flags = 0;
+      op->reserved = NULL;
+      op++;
+      const grpc_call_error call_error = grpc_call_start_batch_and_execute(
+          exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
+          &glb_policy->lb_on_response_received); /* loop */
+      GPR_ASSERT(GRPC_CALL_OK == call_error);
+    }
     return;
   }
-  /* else, empty payload: call cancelled by server. */
+  /* else, empty payload: call cancelled. */
 }
 
 static void lb_call_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
@@ -1188,14 +1189,10 @@ static void lb_on_server_status_received(grpc_exec_ctx *exec_ctx, void *arg,
             (void *)glb_policy->lb_call);
   }
 
-  const bool was_cancelled =
-      (glb_policy->lb_call_status == GRPC_STATUS_CANCELLED);
-
   /* We need to performe cleanups no matter what. */
   lb_call_destroy(glb_policy);
 
   if (!glb_policy->shutting_down) {
-    GPR_ASSERT(!was_cancelled);
     /* if we aren't shutting down, restart the LB client call after some time */
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try =
