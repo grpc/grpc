@@ -188,7 +188,7 @@ class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message(request->message() + "_dup");
     return Status::OK;
   }
@@ -230,7 +230,7 @@ class HybridEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     if (server_) {
       server_->Shutdown();
     }
@@ -451,7 +451,7 @@ class StreamedUnaryDupPkg
  public:
   Status StreamedEcho(ServerContext* context,
                       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-      GRPC_OVERRIDE {
+      override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -489,7 +489,7 @@ class FullyStreamedUnaryDupPkg
  public:
   Status StreamedEcho(ServerContext* context,
                       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-      GRPC_OVERRIDE {
+      override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -528,7 +528,7 @@ class SplitResponseStreamDupPkg
  public:
   Status StreamedResponseStream(
       ServerContext* context,
-      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -568,7 +568,7 @@ class FullySplitStreamedDupPkg
  public:
   Status StreamedResponseStream(
       ServerContext* context,
-      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -607,7 +607,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
  public:
   Status StreamedEcho(ServerContext* context,
                       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-      GRPC_OVERRIDE {
+      override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -620,7 +620,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
   }
   Status StreamedResponseStream(
       ServerContext* context,
-      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) GRPC_OVERRIDE {
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;

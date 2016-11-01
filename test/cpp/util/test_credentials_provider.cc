@@ -64,11 +64,11 @@ class CredentialsProvider {
 
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
-  ~DefaultCredentialsProvider() GRPC_OVERRIDE {}
+  ~DefaultCredentialsProvider() override {}
 
   void AddSecureType(const grpc::string& type,
                      std::unique_ptr<CredentialTypeProvider> type_provider)
-      GRPC_OVERRIDE {
+      override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
     grpc::unique_lock<grpc::mutex> lock(mu_);
@@ -84,7 +84,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) GRPC_OVERRIDE {
+      const grpc::string& type, ChannelArguments* args) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureChannelCredentials();
     } else if (type == grpc::testing::kTlsCredentialsType) {
@@ -105,7 +105,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) GRPC_OVERRIDE {
+      const grpc::string& type) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureServerCredentials();
     } else if (type == grpc::testing::kTlsCredentialsType) {
@@ -127,7 +127,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
           ->GetServerCredentials();
     }
   }
-  std::vector<grpc::string> GetSecureCredentialsTypeList() GRPC_OVERRIDE {
+  std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
     grpc::unique_lock<grpc::mutex> lock(mu_);

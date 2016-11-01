@@ -58,11 +58,11 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl GRPC_FINAL
+class ServiceImpl final
     : public ::grpc::testing::EchoTestService::Service {
   Status BidiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+      override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {

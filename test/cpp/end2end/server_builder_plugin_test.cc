@@ -65,29 +65,29 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     register_service_ = false;
   }
 
-  grpc::string name() GRPC_OVERRIDE { return PLUGIN_NAME; }
+  grpc::string name() override { return PLUGIN_NAME; }
 
-  void InitServer(ServerInitializer* si) GRPC_OVERRIDE {
+  void InitServer(ServerInitializer* si) override {
     init_server_is_called_ = true;
     if (register_service_) {
       si->RegisterService(service_);
     }
   }
 
-  void Finish(ServerInitializer* si) GRPC_OVERRIDE { finish_is_called_ = true; }
+  void Finish(ServerInitializer* si) override { finish_is_called_ = true; }
 
-  void ChangeArguments(const grpc::string& name, void* value) GRPC_OVERRIDE {
+  void ChangeArguments(const grpc::string& name, void* value) override {
     change_arguments_is_called_ = true;
   }
 
-  bool has_async_methods() const GRPC_OVERRIDE {
+  bool has_async_methods() const override {
     if (register_service_) {
       return service_->has_async_methods();
     }
     return false;
   }
 
-  bool has_sync_methods() const GRPC_OVERRIDE {
+  bool has_sync_methods() const override {
     if (register_service_) {
       return service_->has_synchronous_methods();
     }
@@ -112,10 +112,10 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
  public:
   InsertPluginServerBuilderOption() { register_service_ = false; }
 
-  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+  void UpdateArguments(ChannelArguments* arg) override {}
 
   void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
-      GRPC_OVERRIDE {
+      override {
     plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(
@@ -154,7 +154,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
  public:
   ServerBuilderPluginTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     builder_.reset(new ServerBuilder());
   }
@@ -202,7 +202,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     auto plugin = CheckPresent();
     EXPECT_TRUE(plugin);
     EXPECT_TRUE(plugin->init_server_is_called());

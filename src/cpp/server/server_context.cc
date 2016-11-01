@@ -48,7 +48,7 @@ namespace grpc {
 
 // CompletionOp
 
-class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
+class ServerContext::CompletionOp final : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
   CompletionOp()
@@ -58,8 +58,8 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
         finalized_(false),
         cancelled_(0) {}
 
-  void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+  void FillOps(grpc_op* ops, size_t* nops) override;
+  bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
     cq->TryPluck(this);
