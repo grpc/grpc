@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/api_trace.h"
