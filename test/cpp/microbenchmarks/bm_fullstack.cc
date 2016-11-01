@@ -93,6 +93,15 @@ class FullstackFixture {
     channel_ = CreateChannel(address, InsecureChannelCredentials());
   }
 
+  virtual ~FullstackFixture() {
+    server_->Shutdown();
+    cq_->Shutdown();
+    void* tag;
+    bool ok;
+    while (cq_->Next(&tag, &ok)) {
+    }
+  }
+
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
@@ -167,6 +176,15 @@ class EndpointPairFixture {
     }
 
     grpc_exec_ctx_finish(&exec_ctx);
+  }
+
+  virtual ~EndpointPairFixture() {
+    server_->Shutdown();
+    cq_->Shutdown();
+    void* tag;
+    bool ok;
+    while (cq_->Next(&tag, &ok)) {
+    }
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -260,6 +278,8 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture.cq(), fixture.cq(), tag(slot));
   }
+  server_env[0]->~ServerEnv();
+  server_env[1]->~ServerEnv();
 }
 
 /*******************************************************************************
