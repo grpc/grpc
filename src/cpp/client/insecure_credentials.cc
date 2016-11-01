@@ -54,9 +54,7 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
         grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr));
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override {
-    return nullptr;
-  }
+  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
 };
 }  // namespace
 

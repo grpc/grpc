@@ -74,9 +74,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) override;
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      override;
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override;
 
   bool signal_client() {
     std::unique_lock<std::mutex> lock(mu_);

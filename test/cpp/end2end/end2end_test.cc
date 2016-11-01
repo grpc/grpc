@@ -94,10 +94,10 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
 
   bool IsBlocking() const override { return is_blocking_; }
 
-  Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
-                     const grpc::AuthContext& channel_auth_context,
-                     std::multimap<grpc::string, grpc::string>* metadata)
-      override {
+  Status GetMetadata(
+      grpc::string_ref service_url, grpc::string_ref method_name,
+      const grpc::AuthContext& channel_auth_context,
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     EXPECT_GT(service_url.length(), 0UL);
     EXPECT_GT(method_name.length(), 0UL);
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());

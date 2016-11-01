@@ -68,8 +68,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
   bool FindFileContainingSymbol(const string& symbol_name,
-                                protobuf::FileDescriptorProto* output)
-      override;
+                                protobuf::FileDescriptorProto* output) override;
 
   // Find the file which defines an extension extending the given message type
   // with the given field number.  If found, fills in *output and returns true,

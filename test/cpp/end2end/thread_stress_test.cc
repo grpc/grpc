@@ -142,9 +142,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      override {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {

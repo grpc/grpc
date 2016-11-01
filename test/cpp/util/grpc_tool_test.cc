@@ -95,8 +95,7 @@ namespace {
 
 class TestCliCredentials final : public grpc::testing::CliCredentials {
  public:
-  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const
-      override {
+  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const override {
     return InsecureChannelCredentials();
   }
   const grpc::string GetCredentialUsage() const override { return ""; }

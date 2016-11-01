@@ -449,9 +449,9 @@ class StreamedUnaryDupPkg
     : public duplicate::EchoTestService::WithStreamedUnaryMethod_Echo<
           TestServiceImplDupPkg> {
  public:
-  Status StreamedEcho(ServerContext* context,
-                      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-      override {
+  Status StreamedEcho(
+      ServerContext* context,
+      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -487,9 +487,9 @@ TEST_F(HybridEnd2endTest,
 class FullyStreamedUnaryDupPkg
     : public duplicate::EchoTestService::StreamedUnaryService {
  public:
-  Status StreamedEcho(ServerContext* context,
-                      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-      override {
+  Status StreamedEcho(
+      ServerContext* context,
+      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -605,9 +605,9 @@ TEST_F(HybridEnd2endTest,
 // Add a second service that is fully server streamed
 class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
  public:
-  Status StreamedEcho(ServerContext* context,
-                      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream)
-      override {
+  Status StreamedEcho(
+      ServerContext* context,
+      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;

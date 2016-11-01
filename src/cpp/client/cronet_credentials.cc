@@ -53,9 +53,7 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
                                               &channel_args, nullptr));
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override {
-    return nullptr;
-  }
+  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
 
  private:
   void* engine_;

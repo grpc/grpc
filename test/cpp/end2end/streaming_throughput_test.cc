@@ -121,9 +121,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   // Only implement the one method we will be calling for brevity.
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      override {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
