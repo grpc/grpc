@@ -66,10 +66,16 @@ namespace testing {
 
 static class InitializeStuff {
  public:
-  InitializeStuff() { init_lib.init(); }
+  InitializeStuff() {
+    init_lib_.init();
+    rq_ = grpc_resource_quota_create("bm");
+  }
+
+  grpc_resource_quota* rq() { return rq_; }
 
  private:
-  internal::GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib_;
+  grpc_resource_quota* rq_;
 } initialize_stuff;
 
 /*******************************************************************************
@@ -175,8 +181,9 @@ class EndpointPairFixture {
 class SockPair : public EndpointPairFixture {
  public:
   SockPair(Service* service)
-      : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", 8192)) {}
+      : EndpointPairFixture(service, grpc_iomgr_create_endpoint_pair(
+                                         "test", initialize_stuff.rq(), 8192)) {
+  }
 };
 
 class InProcessCHTTP2 : public EndpointPairFixture {
@@ -187,7 +194,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
  private:
   grpc_endpoint_pair MakeEndpoints() {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server);
+    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq());
     return p;
   }
 };
