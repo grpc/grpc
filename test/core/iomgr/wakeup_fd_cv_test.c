@@ -31,6 +31,10 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_POSIX_SOCKET
+
 #include <pthread.h>
 
 #include <grpc/support/log.h>
@@ -238,3 +242,9 @@ int main(int argc, char **argv) {
   grpc_iomgr_platform_shutdown();
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

@@ -204,27 +204,36 @@ filegroups:
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/iomgr/pollset_uv.h
   - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_uv.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
+  - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_uv.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/workqueue.h
+  - src/core/lib/iomgr/workqueue_uv.h
   - src/core/lib/iomgr/workqueue_windows.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_common.h
@@ -246,6 +255,7 @@ filegroups:
   - src/core/lib/transport/mdstr_hash_table.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/method_config.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -271,6 +281,7 @@ filegroups:
   - src/core/lib/iomgr/combiner.c
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
+  - src/core/lib/iomgr/endpoint_pair_uv.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll_linux.c
@@ -282,28 +293,39 @@ filegroups:
   - src/core/lib/iomgr/iocp_windows.c
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
+  - src/core/lib/iomgr/iomgr_uv.c
   - src/core/lib/iomgr/iomgr_windows.c
   - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/network_status_tracker.c
   - src/core/lib/iomgr/polling_entity.c
+  - src/core/lib/iomgr/pollset_set_uv.c
   - src/core/lib/iomgr/pollset_set_windows.c
+  - src/core/lib/iomgr/pollset_uv.c
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
+  - src/core/lib/iomgr/resolve_address_uv.c
   - src/core/lib/iomgr/resolve_address_windows.c
+  - src/core/lib/iomgr/resource_quota.c
   - src/core/lib/iomgr/sockaddr_utils.c
   - src/core/lib/iomgr/socket_utils_common_posix.c
   - src/core/lib/iomgr/socket_utils_linux.c
   - src/core/lib/iomgr/socket_utils_posix.c
+  - src/core/lib/iomgr/socket_utils_uv.c
+  - src/core/lib/iomgr/socket_utils_windows.c
   - src/core/lib/iomgr/socket_windows.c
   - src/core/lib/iomgr/tcp_client_posix.c
+  - src/core/lib/iomgr/tcp_client_uv.c
   - src/core/lib/iomgr/tcp_client_windows.c
   - src/core/lib/iomgr/tcp_posix.c
   - src/core/lib/iomgr/tcp_server_posix.c
+  - src/core/lib/iomgr/tcp_server_uv.c
   - src/core/lib/iomgr/tcp_server_windows.c
+  - src/core/lib/iomgr/tcp_uv.c
   - src/core/lib/iomgr/tcp_windows.c
   - src/core/lib/iomgr/time_averaged_stats.c
-  - src/core/lib/iomgr/timer.c
+  - src/core/lib/iomgr/timer_generic.c
   - src/core/lib/iomgr/timer_heap.c
+  - src/core/lib/iomgr/timer_uv.c
   - src/core/lib/iomgr/udp_server.c
   - src/core/lib/iomgr/unix_sockets_posix.c
   - src/core/lib/iomgr/unix_sockets_posix_noop.c
@@ -312,6 +334,7 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_nospecial.c
   - src/core/lib/iomgr/wakeup_fd_pipe.c
   - src/core/lib/iomgr/wakeup_fd_posix.c
+  - src/core/lib/iomgr/workqueue_uv.c
   - src/core/lib/iomgr/workqueue_windows.c
   - src/core/lib/json/json.c
   - src/core/lib/json/json_reader.c
@@ -340,6 +363,7 @@ filegroups:
   - src/core/lib/transport/mdstr_hash_table.c
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
+  - src/core/lib/transport/method_config.c
   - src/core/lib/transport/static_metadata.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
@@ -358,12 +382,10 @@ filegroups:
   - src/core/ext/client_channel/lb_policy.h
   - src/core/ext/client_channel/lb_policy_factory.h
   - src/core/ext/client_channel/lb_policy_registry.h
-  - src/core/ext/client_channel/method_config.h
   - src/core/ext/client_channel/parse_address.h
   - src/core/ext/client_channel/resolver.h
   - src/core/ext/client_channel/resolver_factory.h
   - src/core/ext/client_channel/resolver_registry.h
-  - src/core/ext/client_channel/resolver_result.h
   - src/core/ext/client_channel/subchannel.h
   - src/core/ext/client_channel/subchannel_index.h
   - src/core/ext/client_channel/uri_parser.h
@@ -379,12 +401,10 @@ filegroups:
   - src/core/ext/client_channel/lb_policy.c
   - src/core/ext/client_channel/lb_policy_factory.c
   - src/core/ext/client_channel/lb_policy_registry.c
-  - src/core/ext/client_channel/method_config.c
   - src/core/ext/client_channel/parse_address.c
   - src/core/ext/client_channel/resolver.c
   - src/core/ext/client_channel/resolver_factory.c
   - src/core/ext/client_channel/resolver_registry.c
-  - src/core/ext/client_channel/resolver_result.c
   - src/core/ext/client_channel/subchannel.c
   - src/core/ext/client_channel/subchannel_index.c
   - src/core/ext/client_channel/uri_parser.c
@@ -483,8 +503,7 @@ filegroups:
   - src/core/lib/security/credentials/credentials.c
   - src/core/lib/security/credentials/credentials_metadata.c
   - src/core/lib/security/credentials/fake/fake_credentials.c
-  - src/core/lib/security/credentials/google_default/credentials_posix.c
-  - src/core/lib/security/credentials/google_default/credentials_windows.c
+  - src/core/lib/security/credentials/google_default/credentials_generic.c
   - src/core/lib/security/credentials/google_default/google_default_credentials.c
   - src/core/lib/security/credentials/iam/iam_credentials.c
   - src/core/lib/security/credentials/jwt/json_token.c
@@ -536,6 +555,7 @@ filegroups:
   - test/core/util/passthru_endpoint.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
+  - test/core/util/port_uv.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
   deps:
@@ -664,6 +684,8 @@ filegroups:
   deps:
   - gpr
   secure: true
+  uses:
+  - grpc_base
 - name: grpc++_base
   language: c++
   public_headers:
@@ -694,6 +716,7 @@ filegroups:
   - include/grpc++/impl/thd.h
   - include/grpc++/impl/thd_cxx11.h
   - include/grpc++/impl/thd_no_cxx11.h
+  - include/grpc++/resource_quota.h
   - include/grpc++/security/auth_context.h
   - include/grpc++/security/auth_metadata_processor.h
   - include/grpc++/security/credentials.h
@@ -719,6 +742,7 @@ filegroups:
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_context.cc
@@ -731,6 +755,7 @@ filegroups:
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -740,6 +765,7 @@ filegroups:
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
   - src/cpp/util/slice_cc.cc
   - src/cpp/util/status.cc
@@ -802,14 +828,8 @@ filegroups:
   - include/grpc++/impl/codegen/config_protobuf.h
 - name: grpc++_reflection_proto
   language: c++
-  public_headers:
-  - include/grpc++/ext/reflection.grpc.pb.h
-  - include/grpc++/ext/reflection.pb.h
   src:
-  - src/cpp/ext/reflection.grpc.pb.cc
-  - src/cpp/ext/reflection.pb.cc
-  uses:
-  - grpc++_codegen_proto
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: thrift_util
   language: c++
   public_headers:
@@ -1027,6 +1047,18 @@ libs:
   platforms:
   - linux
   secure: true
+- name: grpc++_proto_reflection_desc_db
+  build: private
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++
+  filegroups:
+  - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc++_reflection
   build: all
   language: c++
@@ -1041,11 +1073,6 @@ libs:
   - grpc++
   filegroups:
   - grpc++_reflection_proto
-- name: grpc++_reflection_codegen
-  build: private
-  language: c++
-  src:
-  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test
   build: private
   language: c++
@@ -1118,18 +1145,19 @@ libs:
   - test/cpp/util/config_grpc_cli.h
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
-  - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
-  - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
+  filegroups:
+  - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -1357,6 +1385,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: bin_decoder_test
   build: test
   language: c
@@ -1498,6 +1528,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: connection_refused_test
   cpu_cost: 0.1
   build: test
@@ -1520,6 +1552,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: dns_resolver_test
   build: test
   language: c
@@ -1541,6 +1575,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1555,6 +1591,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: ev_epoll_linux_test
   build: test
   language: c
@@ -1565,6 +1603,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - linux
 - name: fd_conservation_posix_test
@@ -1577,6 +1617,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1591,6 +1633,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1678,6 +1722,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -1898,6 +1944,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: grpc_create_jwt
   build: tool
   language: c
@@ -1988,6 +2036,32 @@ targets:
   deps:
   - grpc
   - gpr
+- name: handshake_client
+  build: test
+  language: c
+  src:
+  - test/core/handshake/client_ssl.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  secure: true
+- name: handshake_server
+  build: test
+  language: c
+  src:
+  - test/core/handshake/server_ssl.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  secure: true
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c
@@ -2360,6 +2434,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
+- name: resource_quota_test
+  cpu_cost: 30
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resource_quota_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_channel_create_test
   build: test
   language: c
@@ -2380,6 +2467,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sequential_connectivity_test
   build: test
   language: c
@@ -2390,6 +2479,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: server_chttp2_test
   build: test
   language: c
@@ -2436,6 +2527,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: sockaddr_resolver_test
   build: test
   language: c
@@ -2466,6 +2559,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2481,6 +2576,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2496,6 +2593,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2510,6 +2609,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2544,6 +2645,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: timer_list_test
   build: test
   language: c
@@ -2554,6 +2657,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
 - name: transport_connectivity_state_test
   build: test
   language: c
@@ -2598,6 +2703,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2635,6 +2742,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - mac
   - linux
@@ -2877,7 +2986,7 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
   - grpc
   - gpr
@@ -2954,16 +3063,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/cpp/util/string_ref_helper.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/grpc_tool_test.cc
-  - test/cpp/util/string_ref_helper.cc
   deps:
   - grpc_cli_libs
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
@@ -2971,7 +3079,6 @@ targets:
   - gpr
   filegroups:
   - grpc++_codegen_proto
-  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -3118,12 +3225,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/end2end/proto_server_reflection_test.cc
-  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
@@ -3392,6 +3497,16 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: thread_manager_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/thread_manager/thread_manager_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: thread_stress_test
   gtest: true
   cpu_cost: 100
@@ -3603,6 +3718,7 @@ node_modules:
   - src/node/ext/call_credentials.h
   - src/node/ext/channel.h
   - src/node/ext/channel_credentials.h
+  - src/node/ext/completion_queue.h
   - src/node/ext/completion_queue_async_worker.h
   - src/node/ext/server.h
   - src/node/ext/server_credentials.h
@@ -3622,6 +3738,7 @@ node_modules:
   - src/node/ext/call_credentials.cc
   - src/node/ext/channel.cc
   - src/node/ext/channel_credentials.cc
+  - src/node/ext/completion_queue.cc
   - src/node/ext/completion_queue_async_worker.cc
   - src/node/ext/node_grpc.cc
   - src/node/ext/server.cc

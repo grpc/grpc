@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_LINUX_EVENTFD
+#ifdef GRPC_LINUX_EVENTFD
 
 #include <errno.h>
 #include <sys/eventfd.h>
@@ -94,4 +94,4 @@ const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable = {
     eventfd_create, eventfd_consume, eventfd_wakeup, eventfd_destroy,
     eventfd_check_availability};
 
-#endif /* GPR_LINUX_EVENTFD */
+#endif /* GRPC_LINUX_EVENTFD */

@@ -43,8 +43,8 @@
 typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 /** Create a key that can be used to uniquely identify a subchannel */
-grpc_subchannel_key *grpc_subchannel_key_create(grpc_connector *con,
-                                                grpc_subchannel_args *args);
+grpc_subchannel_key *grpc_subchannel_key_create(
+    grpc_connector *con, const grpc_subchannel_args *args);
 
 /** Destroy a subchannel key */
 void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
