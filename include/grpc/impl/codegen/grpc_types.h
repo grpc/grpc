@@ -201,9 +201,19 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
+   to fetch an appropriate pointer arg vtable */
+#define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** Service config data, to be passed to subchannels.
     Not intended for external use. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
+/** LB policy name. */
+#define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
+/** Server name. Not intended for external use. */
+#define GRPC_ARG_SERVER_NAME "grpc.server_name"
+/** Resolved addresses in a form used by the LB policy.
+    Not intended for external use. */
+#define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -459,6 +469,8 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+typedef struct grpc_resource_quota grpc_resource_quota;
 
 #ifdef __cplusplus
 }

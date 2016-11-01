@@ -389,6 +389,7 @@ static NSMutableDictionary *callFlags;
 
   [self sendHeaders:_requestHeaders];
   [self invokeCall];
+
   // TODO(jcanizales): Extract this logic somewhere common.
   NSString *host = [NSURL URLWithString:[@"https://" stringByAppendingString:_host]].host;
   if (!host) {
@@ -397,15 +398,16 @@ static NSMutableDictionary *callFlags;
   }
   __weak typeof(self) weakSelf = self;
   _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
-  [_connectivityMonitor handleLossWithHandler:^{
+  void (^handler)() = ^{
     typeof(self) strongSelf = weakSelf;
     if (strongSelf) {
       [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                       code:GRPCErrorCodeUnavailable
-                                                  userInfo:@{NSLocalizedDescriptionKey: @"Connectivity lost."}]];
-      [[GRPCHost hostWithAddress:strongSelf->_host] disconnect];
+                                                  userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
     }
-  }];
+  };
+  [_connectivityMonitor handleLossWithHandler:handler
+                      wifiStatusChangeHandler:nil];
 }
 
 - (void)setState:(GRXWriterState)newState {

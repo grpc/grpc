@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_WAKEUP_FD
+#ifdef GRPC_POSIX_WAKEUP_FD
 
 #include "src/core/lib/iomgr/wakeup_fd_cv.h"
 
@@ -115,4 +115,4 @@ const grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable = {
     cv_fd_init, cv_fd_consume, cv_fd_wakeup, cv_fd_destroy,
     cv_check_availability};
 
-#endif /* GPR_POSIX_WAKUP_FD */
+#endif /* GRPC_POSIX_WAKUP_FD */

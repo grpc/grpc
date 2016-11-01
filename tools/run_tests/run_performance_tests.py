@@ -42,6 +42,7 @@ import os
 import performance.scenario_config as scenario_config
 import pipes
 import re
+import report_utils
 import subprocess
 import sys
 import tempfile
@@ -453,6 +454,7 @@ if not scenarios:
 
 total_scenario_failures = 0
 qps_workers_killed = 0
+merged_resultset = {}
 for scenario in scenarios:
   if args.dry_run:
     print(scenario.name)
@@ -460,13 +462,19 @@ for scenario in scenarios:
     try:
       for worker in scenario.workers:
         worker.start()
-      scenario_failures, _ = jobset.run([scenario.jobspec,
-                                 create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
-                                 newline_on_success=True, maxjobs=1)
+      scenario_failures, resultset = jobset.run([scenario.jobspec,
+                                                create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
+                                                newline_on_success=True, maxjobs=1)
       total_scenario_failures += scenario_failures
+      merged_resultset = dict(itertools.chain(merged_resultset.iteritems(),
+                                              resultset.iteritems()))
     finally:
       # Consider qps workers that need to be killed as failures
       qps_workers_killed += finish_qps_workers(scenario.workers)
+
+
+report_utils.render_junit_xml_report(merged_resultset, 'report.xml',
+                                     suite_name='benchmarks')
 
 if total_scenario_failures > 0 or qps_workers_killed > 0:
   print ("%s scenarios failed and %s qps worker jobs killed" % (total_scenario_failures, qps_workers_killed))
