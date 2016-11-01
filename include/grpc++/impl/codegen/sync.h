@@ -34,12 +34,16 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SYNC_H
 #define GRPCXX_IMPL_CODEGEN_SYNC_H
 
-#include <grpc++/impl/codegen/config.h>
+#include <condition_variable>
+#include <mutex>
 
-#ifdef GRPC_CXX0X_NO_THREAD
-#include <grpc++/impl/codegen/sync_no_cxx11.h>
-#else
-#include <grpc++/impl/codegen/sync_cxx11.h>
-#endif
+namespace grpc {
+
+using std::condition_variable;
+using std::mutex;
+using std::lock_guard;
+using std::unique_lock;
+
+}  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_SYNC_H

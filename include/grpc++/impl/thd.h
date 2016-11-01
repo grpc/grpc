@@ -34,12 +34,12 @@
 #ifndef GRPCXX_IMPL_THD_H
 #define GRPCXX_IMPL_THD_H
 
-#include <grpc++/support/config.h>
+#include <thread>
 
-#ifdef GRPC_CXX0X_NO_THREAD
-#include <grpc++/impl/thd_no_cxx11.h>
-#else
-#include <grpc++/impl/thd_cxx11.h>
-#endif
+namespace grpc {
+
+using std::thread;
+
+}  // namespace grpc
 
 #endif  // GRPCXX_IMPL_THD_H
