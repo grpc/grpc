@@ -34,7 +34,9 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+
 #include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct pending_pick {
@@ -207,7 +209,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   /* Check atomically for a selected channel */
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   if (selected != NULL) {
-    *target = selected;
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
     return 1;
   }
 
@@ -216,7 +218,7 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   selected = GET_SELECTED(p);
   if (selected) {
     gpr_mu_unlock(&p->mu);
-    *target = selected;
+    *target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
     return 1;
   } else {
     if (!p->started_picking) {
@@ -308,7 +310,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         /* update any calls that were waiting for a pick */
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
-          *pp->target = selected;
+          *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked");
           grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
           gpr_free(pp);
         }
@@ -432,14 +434,22 @@ static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
 static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
-  GPR_ASSERT(args->addresses != NULL);
   GPR_ASSERT(args->client_channel_factory != NULL);
+
+  /* Get server name. */
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_NAME);
+  const char *server_name =
+      arg != NULL && arg->type == GRPC_ARG_STRING ? arg->value.string : NULL;
 
   /* Find the number of backend addresses. We ignore balancer
    * addresses, since we don't know how to handle them. */
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
+  grpc_lb_addresses *addresses = arg->value.pointer.p;
   size_t num_addrs = 0;
-  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
-    if (!args->addresses->addresses[i].is_balancer) ++num_addrs;
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
+    if (!addresses->addresses[i].is_balancer) ++num_addrs;
   }
   if (num_addrs == 0) return NULL;
 
@@ -450,23 +460,21 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   memset(p->subchannels, 0, sizeof(*p->subchannels) * num_addrs);
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
-  for (size_t i = 0; i < args->addresses->num_addresses; i++) {
+  for (size_t i = 0; i < addresses->num_addresses; i++) {
     /* Skip balancer addresses, since we only know how to handle backends. */
-    if (args->addresses->addresses[i].is_balancer) continue;
+    if (addresses->addresses[i].is_balancer) continue;
 
-    if (args->addresses->addresses[i].user_data != NULL) {
+    if (addresses->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,
               "This LB policy doesn't support user data. It will be ignored");
     }
 
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     /* server_name will be copied as part of the subchannel creation. This makes
-     * the copying of args->server_name (a borrowed pointer) OK. */
-    sc_args.server_name = args->server_name;
-    sc_args.addr =
-        (struct sockaddr *)(&args->addresses->addresses[i].address.addr);
-    sc_args.addr_len = args->addresses->addresses[i].address.len;
-    sc_args.args = args->additional_args;
+     * the copying of server_name (a borrowed pointer) OK. */
+    sc_args.server_name = server_name;
+    sc_args.addr = &addresses->addresses[i].address;
+    sc_args.args = args->args;
 
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);

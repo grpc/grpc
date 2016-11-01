@@ -214,27 +214,36 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
@@ -256,6 +265,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/method_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
@@ -313,12 +323,10 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/method_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.h" role="src" />
@@ -363,6 +371,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_linux.c" role="src" />
@@ -374,28 +383,39 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/timer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.c" role="src" />
@@ -404,6 +424,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_uv.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
@@ -432,6 +453,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/method_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
@@ -465,8 +487,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_generic.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/iam/iam_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/json_token.c" role="src" />
@@ -499,12 +520,10 @@
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/lb_policy_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/method_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/parse_address.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/client_channel/resolver_result.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_channel/uri_parser.c" role="src" />

@@ -500,6 +500,16 @@ function statusCodeAndMessage($stub)
                $status->details);
 }
 
+# NOTE: the stub input to this function is from UnimplementedService
+function unimplementedService($stub)
+{
+    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    list($result, $status) = $call->wait();
+    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
+               'Received unexpected status code');
+}
+
+# NOTE: the stub input to this function is from TestService
 function unimplementedMethod($stub)
 {
     $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
@@ -592,7 +602,7 @@ function _makeStub($args)
         $opts['update_metadata'] = $update_metadata;
     }
 
-    if ($test_case === 'unimplemented_method') {
+    if ($test_case === 'unimplemented_service') {
         $stub = new grpc\testing\UnimplementedServiceClient($server_address,
                                                             $opts);
     } else {
@@ -644,6 +654,9 @@ function interop_main($args, $stub = false)
             break;
         case 'status_code_and_message':
             statusCodeAndMessage($stub);
+            break;
+        case 'unimplemented_service':
+            unimplementedService($stub);
             break;
         case 'unimplemented_method':
             unimplementedMethod($stub);

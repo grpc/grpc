@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -241,4 +241,4 @@ grpc_error *grpc_pollset_kick(grpc_pollset *p,
 
 void grpc_kick_poller(void) { grpc_iocp_kick(); }
 
-#endif /* GPR_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */
