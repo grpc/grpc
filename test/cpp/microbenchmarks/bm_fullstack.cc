@@ -226,7 +226,7 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 template <class Fixture>
 static void BM_UnaryPingPong(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  Fixture fixture(&service);
+  std::unique_ptr<Fixture> fixture(new Fixture(&service));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
@@ -244,20 +244,20 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
-                      &server_env[0]->response_writer, fixture.cq(),
-                      fixture.cq(), tag(0));
+                      &server_env[0]->response_writer, fixture->cq(),
+                      fixture->cq(), tag(0));
   service.RequestEcho(&server_env[1]->ctx, &server_env[1]->recv_request,
-                      &server_env[1]->response_writer, fixture.cq(),
-                      fixture.cq(), tag(1));
+                      &server_env[1]->response_writer, fixture->cq(),
+                      fixture->cq(), tag(1));
   std::unique_ptr<EchoTestService::Stub> stub(
-      EchoTestService::NewStub(fixture.channel()));
+      EchoTestService::NewStub(fixture->channel()));
   while (state.KeepRunning()) {
     ClientContext cli_ctx;
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-        stub->AsyncEcho(&cli_ctx, send_request, fixture.cq()));
+        stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
-    GPR_ASSERT(fixture.cq()->Next(&t, &ok));
+    GPR_ASSERT(fixture->cq()->Next(&t, &ok));
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
@@ -265,7 +265,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      GPR_ASSERT(fixture.cq()->Next(&t, &ok));
+      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
       int tagnum = (int)reinterpret_cast<intptr_t>(t);
       GPR_ASSERT(i & (1 << tagnum));
@@ -276,8 +276,9 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
-                        fixture.cq(), fixture.cq(), tag(slot));
+                        fixture->cq(), fixture->cq(), tag(slot));
   }
+  fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
 }
