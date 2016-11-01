@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,23 +27,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-# clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
-
-cd /var/local/git/grpc
-
-# build grpc cpp plugin for generating grpc pb files
-make grpc_cpp_plugin
-
-# generate pb files
-tools/codegen/extensions/gen_reflection_proto.sh
-
-# check if the pb files in the checked out codebase are identical with the newly
-# generated ones
-git diff --exit-code
