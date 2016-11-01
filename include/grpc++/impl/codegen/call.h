@@ -337,16 +337,16 @@ class DeserializeFunc {
 };
 
 template <class R>
-class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
+class DeserializeFuncType final : public DeserializeFunc {
  public:
   DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(grpc_byte_buffer* buf,
-                     int max_receive_message_size) GRPC_OVERRIDE {
+                     int max_receive_message_size) override {
     return SerializationTraits<R>::Deserialize(buf, message_,
                                                max_receive_message_size);
   }
 
-  ~DeserializeFuncType() GRPC_OVERRIDE {}
+  ~DeserializeFuncType() override {}
 
  private:
   R* message_;  // Not a managed pointer because management is external to this
@@ -603,7 +603,7 @@ class CallOpSet : public CallOpSetInterface,
                   public Op6 {
  public:
   CallOpSet() : return_tag_(this) {}
-  void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE {
+  void FillOps(grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
     this->Op3::AddOp(ops, nops);
@@ -612,7 +612,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op6::AddOp(ops, nops);
   }
 
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+  bool FinalizeResult(void** tag, bool* status) override {
     this->Op1::FinishOp(status, max_receive_message_size_);
     this->Op2::FinishOp(status, max_receive_message_size_);
     this->Op3::FinishOp(status, max_receive_message_size_);
@@ -639,14 +639,14 @@ template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
           class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
 class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
  public:
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+  bool FinalizeResult(void** tag, bool* status) override {
     typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;
     return Base::FinalizeResult(tag, status) && false;
   }
 };
 
 // Straightforward wrapping of the C call object
-class Call GRPC_FINAL {
+class Call final {
  public:
   /* call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)

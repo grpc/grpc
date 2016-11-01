@@ -45,12 +45,12 @@
 
 namespace grpc {
 
-class DefaultGlobalClientCallbacks GRPC_FINAL
+class DefaultGlobalClientCallbacks final
     : public ClientContext::GlobalCallbacks {
  public:
-  ~DefaultGlobalClientCallbacks() GRPC_OVERRIDE {}
-  void DefaultConstructor(ClientContext* context) GRPC_OVERRIDE {}
-  void Destructor(ClientContext* context) GRPC_OVERRIDE {}
+  ~DefaultGlobalClientCallbacks() override {}
+  void DefaultConstructor(ClientContext* context) override {}
+  void Destructor(ClientContext* context) override {}
 };
 
 static DefaultGlobalClientCallbacks g_default_client_callbacks;

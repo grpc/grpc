@@ -55,11 +55,11 @@
 
 namespace grpc {
 
-class DefaultGlobalCallbacks GRPC_FINAL : public Server::GlobalCallbacks {
+class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
-  ~DefaultGlobalCallbacks() GRPC_OVERRIDE {}
-  void PreSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
-  void PostSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
+  ~DefaultGlobalCallbacks() override {}
+  void PreSynchronousRequest(ServerContext* context) override {}
+  void PostSynchronousRequest(ServerContext* context) override {}
 };
 
 static std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
@@ -79,7 +79,7 @@ class Server::UnimplementedAsyncRequestContext {
   GenericServerAsyncReaderWriter generic_stream_;
 };
 
-class Server::UnimplementedAsyncRequest GRPC_FINAL
+class Server::UnimplementedAsyncRequest final
     : public UnimplementedAsyncRequestContext,
       public GenericAsyncRequest {
  public:
@@ -89,7 +89,7 @@ class Server::UnimplementedAsyncRequest GRPC_FINAL
         server_(server),
         cq_(cq) {}
 
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+  bool FinalizeResult(void** tag, bool* status) override;
 
   ServerContext* context() { return &server_context_; }
   GenericServerAsyncReaderWriter* stream() { return &generic_stream_; }
@@ -101,13 +101,13 @@ class Server::UnimplementedAsyncRequest GRPC_FINAL
 
 typedef SneakyCallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus>
     UnimplementedAsyncResponseOp;
-class Server::UnimplementedAsyncResponse GRPC_FINAL
+class Server::UnimplementedAsyncResponse final
     : public UnimplementedAsyncResponseOp {
  public:
   UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
   ~UnimplementedAsyncResponse() { delete request_; }
 
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+  bool FinalizeResult(void** tag, bool* status) override {
     bool r = UnimplementedAsyncResponseOp::FinalizeResult(tag, status);
     delete this;
     return r;
@@ -122,7 +122,7 @@ class ShutdownTag : public CompletionQueueTag {
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
-class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
+class Server::SyncRequest final : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
       : method_(method),
@@ -170,7 +170,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     }
   }
 
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+  bool FinalizeResult(void** tag, bool* status) override {
     if (!*status) {
       grpc_completion_queue_destroy(cq_);
     }
@@ -182,7 +182,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return true;
   }
 
-  class CallData GRPC_FINAL {
+  class CallData final {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
@@ -255,7 +255,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
         cq_timeout_msec_(cq_timeout_msec),
         global_callbacks_(global_callbacks) {}
 
-  WorkStatus PollForWork(void** tag, bool* ok) GRPC_OVERRIDE {
+  WorkStatus PollForWork(void** tag, bool* ok) override {
     *tag = nullptr;
     gpr_timespec deadline =
         gpr_time_from_millis(cq_timeout_msec_, GPR_TIMESPAN);
@@ -272,7 +272,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     GPR_UNREACHABLE_CODE(return TIMEOUT);
   }
 
-  void DoWork(void* tag, bool ok) GRPC_OVERRIDE {
+  void DoWork(void* tag, bool ok) override {
     SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
 
     if (!sync_req) {

@@ -34,9 +34,6 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CONFIG_H
 #define GRPCXX_IMPL_CODEGEN_CONFIG_H
 
-#define GRPC_FINAL final
-#define GRPC_OVERRIDE override
-
 #ifndef GRPC_CUSTOM_STRING
 #include <string>
 #define GRPC_CUSTOM_STRING std::string
