@@ -678,8 +678,10 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       sd->index = subchannel_idx;
       sd->subchannel = subchannel;
       sd->user_data_vtable = addresses->user_data_vtable;
-      sd->user_data =
-          sd->user_data_vtable->copy(addresses->addresses[i].user_data);
+      if (sd->user_data_vtable != NULL) {
+        sd->user_data =
+            sd->user_data_vtable->copy(addresses->addresses[i].user_data);
+      }
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed, sd);
