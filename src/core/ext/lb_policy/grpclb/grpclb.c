@@ -407,10 +407,12 @@ static grpc_lb_addresses *process_serverlist(
     /* lb token processing */
     void *user_data;
     if (server->has_load_balance_token) {
-      const size_t lb_token_size =
-          GPR_ARRAY_SIZE(server->load_balance_token) - 1;
+      const size_t lb_token_max_length =
+          GPR_ARRAY_SIZE(server->load_balance_token);
+      const size_t lb_token_length =
+          strnlen(server->load_balance_token, lb_token_max_length);
       grpc_mdstr *lb_token_mdstr = grpc_mdstr_from_buffer(
-          (uint8_t *)server->load_balance_token, lb_token_size);
+          (uint8_t *)server->load_balance_token, lb_token_length);
       user_data = grpc_mdelem_from_metadata_strings(GRPC_MDSTR_LB_TOKEN,
                                                     lb_token_mdstr);
     } else {
