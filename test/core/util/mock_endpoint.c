@@ -33,6 +33,8 @@
 
 #include "test/core/util/mock_endpoint.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -40,10 +42,12 @@
 typedef struct grpc_mock_endpoint {
   grpc_endpoint base;
   gpr_mu mu;
+  int refs;
   void (*on_write)(gpr_slice slice);
   gpr_slice_buffer read_buffer;
   gpr_slice_buffer *on_read_out;
   grpc_closure *on_read;
+  grpc_resource_user resource_user;
 } grpc_mock_endpoint;
 
 static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -75,6 +79,24 @@ static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
 
+static void unref(grpc_exec_ctx *exec_ctx, grpc_mock_endpoint *m) {
+  gpr_mu_lock(&m->mu);
+  if (0 == --m->refs) {
+    gpr_mu_unlock(&m->mu);
+    gpr_slice_buffer_destroy(&m->read_buffer);
+    grpc_resource_user_destroy(exec_ctx, &m->resource_user);
+    gpr_free(m);
+  } else {
+    gpr_mu_unlock(&m->mu);
+  }
+}
+
+static void me_finish_shutdown(grpc_exec_ctx *exec_ctx, void *me,
+                               grpc_error *error) {
+  grpc_mock_endpoint *m = me;
+  unref(exec_ctx, m);
+}
+
 static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
@@ -83,36 +105,51 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
                         GRPC_ERROR_CREATE("Endpoint Shutdown"), NULL);
     m->on_read = NULL;
   }
+  grpc_resource_user_shutdown(exec_ctx, &m->resource_user,
+                              grpc_closure_create(me_finish_shutdown, m));
   gpr_mu_unlock(&m->mu);
 }
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
-  gpr_slice_buffer_destroy(&m->read_buffer);
-  gpr_free(m);
+  unref(exec_ctx, m);
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
 
+static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
+  grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
+  return &m->resource_user;
+}
+
 static int me_get_fd(grpc_endpoint *ep) { return -1; }
 
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
-static const grpc_endpoint_vtable vtable = {me_read,
-                                            me_write,
-                                            me_get_workqueue,
-                                            me_add_to_pollset,
-                                            me_add_to_pollset_set,
-                                            me_shutdown,
-                                            me_destroy,
-                                            me_get_peer,
-                                            me_get_fd};
+static const grpc_endpoint_vtable vtable = {
+    me_read,
+    me_write,
+    me_get_workqueue,
+    me_add_to_pollset,
+    me_add_to_pollset_set,
+    me_shutdown,
+    me_destroy,
+    me_get_resource_user,
+    me_get_peer,
+    me_get_fd,
+};
 
-grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice)) {
+grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
+                                         grpc_resource_quota *resource_quota) {
   grpc_mock_endpoint *m = gpr_malloc(sizeof(*m));
   m->base.vtable = &vtable;
+  m->refs = 2;
+  char *name;
+  gpr_asprintf(&name, "mock_endpoint_%" PRIxPTR, (intptr_t)m);
+  grpc_resource_user_init(&m->resource_user, resource_quota, name);
+  gpr_free(name);
   gpr_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;

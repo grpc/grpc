@@ -64,7 +64,9 @@ _SKIP_SERVER_COMPRESSION = ['server_compressed_unary',
 
 _SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
-_SKIP_ADVANCED_GO = ['custom_metadata', 'unimplemented_method']
+_SKIP_ADVANCED_GO = ['custom_metadata',
+                     'unimplemented_method',
+                     'unimplemented_service']
 
 _SKIP_ADVANCED = _SKIP_ADVANCED_GO + ['status_code_and_message']
 
@@ -385,10 +387,10 @@ class PythonLanguage:
             'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'python'
@@ -416,7 +418,8 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'timeout_on_sleeping_server', 'custom_metadata',
                'status_code_and_message', 'unimplemented_method',
                'client_compressed_unary', 'server_compressed_unary',
-               'client_compressed_streaming', 'server_compressed_streaming']
+               'client_compressed_streaming', 'server_compressed_streaming',
+               'unimplemented_service']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
