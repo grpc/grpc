@@ -366,9 +366,7 @@ static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_peer(ep->wrapped_ep);
 }
 
-static GRPC_SOCKET *endpoint_get_socket(grpc_endpoint *secure_ep) {
-  return NULL;
-}
+static int endpoint_get_fd(grpc_endpoint *secure_ep) { return -1; }
 
 static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -383,7 +381,7 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_shutdown,
                                             endpoint_destroy,
                                             endpoint_get_peer,
-                                            endpoint_get_socket};
+                                            endpoint_get_fd};
 
 grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *transport,

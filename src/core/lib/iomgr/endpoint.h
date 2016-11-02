@@ -39,7 +39,6 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
@@ -60,7 +59,7 @@ struct grpc_endpoint_vtable {
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
-  GRPC_SOCKET *(*get_socket)(grpc_endpoint *ep);
+  int (*get_fd)(grpc_endpoint *ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
@@ -73,9 +72,9 @@ void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
-/* Get the socket (file descriptor or SOCKET) used by \a ep. Return NULL if
-   \a ep is not using a socket. */
-GRPC_SOCKET *grpc_endpoint_get_socket(grpc_endpoint *ep);
+/* Get the file descriptor used by \a ep. Return -1 if \a ep is not using a fd.
+   */
+int grpc_endpoint_get_fd(grpc_endpoint *ep);
 
 /* Retrieve a reference to the workqueue associated with this endpoint */
 grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);

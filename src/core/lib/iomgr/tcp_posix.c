@@ -464,9 +464,9 @@ static char *tcp_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static int *tcp_get_socket(grpc_endpoint *ep) {
+static int tcp_get_fd(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  return &tcp->fd;
+  return tcp->fd;
 }
 
 static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
@@ -482,7 +482,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_shutdown,
                                             tcp_destroy,
                                             tcp_get_peer,
-                                            tcp_get_socket};
+                                            tcp_get_fd};
 
 grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
                                const char *peer_string) {
