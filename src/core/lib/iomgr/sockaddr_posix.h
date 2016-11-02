@@ -41,6 +41,4 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-typedef int GRPC_SOCKET;
-
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H */

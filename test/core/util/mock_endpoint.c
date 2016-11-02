@@ -96,7 +96,7 @@ static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
 
-static GRPC_SOCKET *me_get_socket(grpc_endpoint *ep) { return NULL; }
+static int me_get_fd(grpc_endpoint *ep) { return -1; }
 
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
@@ -108,7 +108,7 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_shutdown,
                                             me_destroy,
                                             me_get_peer,
-                                            me_get_socket};
+                                            me_get_fd};
 
 grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice)) {
   grpc_mock_endpoint *m = gpr_malloc(sizeof(*m));

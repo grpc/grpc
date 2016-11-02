@@ -40,6 +40,4 @@
 // must be included after the above
 #include <mswsock.h>
 
-typedef SOCKET GRPC_SOCKET;
-
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */
