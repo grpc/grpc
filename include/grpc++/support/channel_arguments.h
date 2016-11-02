@@ -85,9 +85,9 @@ class ChannelArguments {
   /// The given buffer pool will be attached to the constructed channel
   void SetResourceQuota(const ResourceQuota& resource_quota);
 
-  // Set LB policy name.
-  // Note that if the name resolver returns only balancer addresses, the
-  // grpclb LB policy will be used, regardless of what is specified here.
+  /// Set LB policy name.
+  /// Note that if the name resolver returns only balancer addresses, the
+  /// grpclb LB policy will be used, regardless of what is specified here.
   void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
 
   // Generic channel argument setters. Only for advanced use cases.
