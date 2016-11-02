@@ -715,3 +715,10 @@ void grpc_resource_user_alloc_slices(
   grpc_resource_user_alloc(exec_ctx, slice_allocator->resource_user,
                            count * length, &slice_allocator->on_allocated);
 }
+
+gpr_slice grpc_resource_user_slice_malloc(grpc_exec_ctx *exec_ctx,
+                                          grpc_resource_user *resource_user,
+                                          size_t size) {
+  grpc_resource_user_alloc(exec_ctx, resource_user, size, NULL);
+  return ru_slice_create(resource_user, size);
+}
