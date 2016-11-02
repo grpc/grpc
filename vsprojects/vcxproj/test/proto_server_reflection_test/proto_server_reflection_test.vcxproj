@@ -160,15 +160,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\proto_server_reflection_test.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_proto_reflection_desc_db\grpc++_proto_reflection_desc_db.vcxproj">
+      <Project>{7B95AF96-915A-7132-AE45-9FA37769FACE}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj">
       <Project>{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}</Project>
     </ProjectReference>

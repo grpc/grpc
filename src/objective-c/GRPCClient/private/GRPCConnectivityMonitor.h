@@ -53,7 +53,6 @@
 @property(nonatomic, readonly) BOOL isHostReachable;
 @end
 
-
 @interface GRPCConnectivityMonitor : NSObject
 
 + (nullable instancetype)monitorWithHost:(nonnull NSString *)hostName;
@@ -73,5 +72,6 @@
  * Only one handler is active at a time, so if this method is called again before the previous
  * handler has been called, it might never be called at all (or yes, if it has already been queued).
  */
-- (void)handleLossWithHandler:(nonnull void (^)())handler;
+- (void)handleLossWithHandler:(nullable void (^)())lossHandler
+      wifiStatusChangeHandler:(nullable void (^)())wifiStatusChangeHandler;
 @end

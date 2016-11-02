@@ -42,9 +42,9 @@
  *  - ev_epoll_posix.{h,c}
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
 
@@ -1338,7 +1338,7 @@ static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null) {
  * pollset_multipoller_with_poll_posix.c
  */
 
-#ifndef GPR_LINUX_MULTIPOLL_WITH_EPOLL
+#ifndef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
 
 typedef struct {
   /* all polled fds */
@@ -1520,13 +1520,13 @@ static void poll_become_multipoller(grpc_exec_ctx *exec_ctx,
   }
 }
 
-#endif /* !GPR_LINUX_MULTIPOLL_WITH_EPOLL */
+#endif /* !GRPC_LINUX_MULTIPOLL_WITH_EPOLL */
 
 /*******************************************************************************
  * pollset_multipoller_with_epoll_posix.c
  */
 
-#ifdef GPR_LINUX_MULTIPOLL_WITH_EPOLL
+#ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
 
 #include <errno.h>
 #include <poll.h>
@@ -1839,11 +1839,11 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
   }
 }
 
-#else /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
+#else /* GRPC_LINUX_MULTIPOLL_WITH_EPOLL */
 
 static void remove_fd_from_all_epoll_sets(int fd) {}
 
-#endif /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
+#endif /* GRPC_LINUX_MULTIPOLL_WITH_EPOLL */
 
 /*******************************************************************************
  * pollset_set_posix.c
@@ -1989,6 +1989,32 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 }
 
 /*******************************************************************************
+ * workqueue stubs
+ */
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue,
+                                     const char *file, int line,
+                                     const char *reason) {
+  return workqueue;
+}
+static void workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            const char *file, int line, const char *reason) {}
+#else
+static grpc_workqueue *workqueue_ref(grpc_workqueue *workqueue) {
+  return workqueue;
+}
+static void workqueue_unref(grpc_exec_ctx *exec_ctx,
+                            grpc_workqueue *workqueue) {}
+#endif
+
+static void workqueue_enqueue(grpc_exec_ctx *exec_ctx,
+                              grpc_workqueue *workqueue, grpc_closure *closure,
+                              grpc_error *error) {
+  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+}
+
+/*******************************************************************************
  * event engine binding
  */
 
@@ -2029,11 +2055,15 @@ static const grpc_event_engine_vtable vtable = {
 
     .kick_poller = kick_poller,
 
+    .workqueue_ref = workqueue_ref,
+    .workqueue_unref = workqueue_unref,
+    .workqueue_enqueue = workqueue_enqueue,
+
     .shutdown_engine = shutdown_engine,
 };
 
 const grpc_event_engine_vtable *grpc_init_poll_and_epoll_posix(void) {
-#ifdef GPR_LINUX_MULTIPOLL_WITH_EPOLL
+#ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
   platform_become_multipoller = epoll_become_multipoller;
 #else
   platform_become_multipoller = poll_become_multipoller;

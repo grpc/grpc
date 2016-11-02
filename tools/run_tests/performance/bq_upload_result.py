@@ -117,9 +117,13 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['latencies'] = json.dumps(scenario_result['latencies'])
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
+    stats.pop('requestResults', None)
   scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
   scenario_result['clientSuccess'] = json.dumps(scenario_result['clientSuccess'])
   scenario_result['serverSuccess'] = json.dumps(scenario_result['serverSuccess'])
+  scenario_result['requestResults'] = json.dumps(scenario_result.get('requestResults', []))
+  scenario_result['summary'].pop('successfulRequestsPerSecond', None)
+  scenario_result['summary'].pop('failedRequestsPerSecond', None)
 
 
 def _populate_metadata_inplace(scenario_result):

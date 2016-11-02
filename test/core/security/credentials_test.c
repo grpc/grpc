@@ -46,6 +46,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -411,7 +412,7 @@ static grpc_security_status check_channel_oauth2_create_security_connector(
 static void test_channel_oauth2_composite_creds(void) {
   grpc_channel_args *new_args;
   grpc_channel_credentials_vtable vtable = {
-      NULL, check_channel_oauth2_create_security_connector};
+      NULL, check_channel_oauth2_create_security_connector, NULL};
   grpc_channel_credentials *channel_creds =
       grpc_mock_channel_credentials_create(&vtable);
   grpc_call_credentials *oauth2_creds =
@@ -495,7 +496,7 @@ check_channel_oauth2_google_iam_create_security_connector(
 static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_channel_args *new_args;
   grpc_channel_credentials_vtable vtable = {
-      NULL, check_channel_oauth2_google_iam_create_security_connector};
+      NULL, check_channel_oauth2_google_iam_create_security_connector, NULL};
   grpc_channel_credentials *channel_creds =
       grpc_mock_channel_credentials_create(&vtable);
   grpc_call_credentials *oauth2_creds =
@@ -1124,28 +1125,44 @@ static void test_metadata_plugin_failure(void) {
 }
 
 static void test_get_well_known_google_credentials_file_path(void) {
-#ifdef GPR_POSIX_FILE
   char *path;
-  char *old_home = gpr_getenv("HOME");
-  gpr_setenv("HOME", "/tmp");
+  char *home = gpr_getenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != NULL);
-  GPR_ASSERT(0 == strcmp("/tmp/.config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY
-                         "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE,
-                         path));
   gpr_free(path);
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
   unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == NULL);
-#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
-  gpr_setenv("HOME", old_home);
-  gpr_free(old_home);
-#else /* GPR_POSIX_FILE */
-  char *path = grpc_get_well_known_google_credentials_file_path();
-  GPR_ASSERT(path != NULL);
+  gpr_setenv("HOME", home);
   gpr_free(path);
-#endif
+#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  gpr_free(home);
+}
+
+static void test_channel_creds_duplicate_without_call_creds(void) {
+  grpc_channel_credentials *channel_creds =
+      grpc_fake_transport_security_credentials_create();
+
+  grpc_channel_credentials *dup =
+      grpc_channel_credentials_duplicate_without_call_credentials(
+          channel_creds);
+  GPR_ASSERT(dup == channel_creds);
+  grpc_channel_credentials_unref(dup);
+
+  grpc_call_credentials *call_creds =
+      grpc_access_token_credentials_create("blah", NULL);
+  grpc_channel_credentials *composite_creds =
+      grpc_composite_channel_credentials_create(channel_creds, call_creds,
+                                                NULL);
+  grpc_call_credentials_unref(call_creds);
+  dup = grpc_channel_credentials_duplicate_without_call_credentials(
+      composite_creds);
+  GPR_ASSERT(dup == channel_creds);
+  grpc_channel_credentials_unref(dup);
+
+  grpc_channel_credentials_unref(channel_creds);
+  grpc_channel_credentials_unref(composite_creds);
 }
 
 int main(int argc, char **argv) {
@@ -1182,6 +1199,7 @@ int main(int argc, char **argv) {
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
+  test_channel_creds_duplicate_without_call_creds();
   grpc_shutdown();
   return 0;
 }

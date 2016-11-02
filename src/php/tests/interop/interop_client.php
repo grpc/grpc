@@ -477,9 +477,11 @@ function statusCodeAndMessage($stub)
     list($result, $status) = $call->wait();
 
     hardAssert($status->code === 2,
-               'Received unexpected status code');
+               'Received unexpected UnaryCall status code: ' .
+               $status->code);
     hardAssert($status->details === 'test status message',
-               'Received unexpected status details');
+               'Received unexpected UnaryCall status details: ' .
+               $status->details);
 
     $streaming_call = $stub->FullDuplexCall();
 
@@ -487,14 +489,27 @@ function statusCodeAndMessage($stub)
     $streaming_request->setResponseStatus($echo_status);
     $streaming_call->write($streaming_request);
     $streaming_call->writesDone();
+    $result = $streaming_call->read();
 
     $status = $streaming_call->getStatus();
     hardAssert($status->code === 2,
-               'Received unexpected status code');
+               'Received unexpected FullDuplexCall status code: ' .
+               $status->code);
     hardAssert($status->details === 'test status message',
-               'Received unexpected status details');
+               'Received unexpected FullDuplexCall status details: ' .
+               $status->details);
 }
 
+# NOTE: the stub input to this function is from UnimplementedService
+function unimplementedService($stub)
+{
+    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    list($result, $status) = $call->wait();
+    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
+               'Received unexpected status code');
+}
+
+# NOTE: the stub input to this function is from TestService
 function unimplementedMethod($stub)
 {
     $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
@@ -587,7 +602,7 @@ function _makeStub($args)
         $opts['update_metadata'] = $update_metadata;
     }
 
-    if ($test_case === 'unimplemented_method') {
+    if ($test_case === 'unimplemented_service') {
         $stub = new grpc\testing\UnimplementedServiceClient($server_address,
                                                             $opts);
     } else {
@@ -639,6 +654,9 @@ function interop_main($args, $stub = false)
             break;
         case 'status_code_and_message':
             statusCodeAndMessage($stub);
+            break;
+        case 'unimplemented_service':
+            unimplementedService($stub);
             break;
         case 'unimplemented_method':
             unimplementedMethod($stub);

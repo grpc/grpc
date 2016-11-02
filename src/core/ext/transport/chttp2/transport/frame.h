@@ -40,8 +40,8 @@
 #include "src/core/lib/iomgr/error.h"
 
 /* defined in internal.h */
-typedef struct grpc_chttp2_stream_parsing grpc_chttp2_stream_parsing;
-typedef struct grpc_chttp2_transport_parsing grpc_chttp2_transport_parsing;
+typedef struct grpc_chttp2_stream grpc_chttp2_stream;
+typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 
 #define GRPC_CHTTP2_FRAME_DATA 0
 #define GRPC_CHTTP2_FRAME_HEADER 1

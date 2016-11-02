@@ -38,20 +38,11 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
-/** arguments for a tcp client connection */
-typedef struct {
-  /** set of pollsets interested in this connection */
-  grpc_pollset_set *interested_parties;
-  /** address to connect to */
-  const struct sockaddr *addr;
-  size_t addr_len;
-  /** deadline for connection */
-  gpr_timespec deadline;
-  /** channel arguments */
-  const grpc_channel_args *channel_args;
-} grpc_tcp_client_connect_args;
+/* Channel arg (integer) setting how large a slice to try and read from the wire
+   each time recvmsg (or equivalent) is called */
+#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and
@@ -60,6 +51,9 @@ typedef struct {
    in this connection being established (in order to continue their work) */
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              grpc_endpoint **endpoint,
-                             const grpc_tcp_client_connect_args *args);
+                             grpc_pollset_set *interested_parties,
+                             const grpc_channel_args *channel_args,
+                             const grpc_resolved_address *addr,
+                             gpr_timespec deadline);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */
