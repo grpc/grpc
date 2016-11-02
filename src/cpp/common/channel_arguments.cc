@@ -121,6 +121,11 @@ void ChannelArguments::SetResourceQuota(
                        grpc_resource_quota_arg_vtable());
 }
 
+void ChannelArguments::SetLoadBalancingPolicyName(
+    const grpc::string& lb_policy_name) {
+  SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
+}
+
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
