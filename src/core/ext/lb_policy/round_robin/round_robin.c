@@ -263,7 +263,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   ready_list *elem;
 
   if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "Destroying Round Robin policy at %p", (void*)pol);
+    gpr_log(GPR_DEBUG, "Destroying Round Robin policy at %p", (void *)pol);
   }
 
   for (size_t i = 0; i < p->num_subchannels; i++) {
