@@ -37,6 +37,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/mdstr_hash_table.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -131,6 +132,12 @@ grpc_arg grpc_method_config_table_create_channel_arg(
 grpc_mdstr_hash_table* grpc_method_config_table_convert(
     const grpc_method_config_table* table,
     void* (*convert_value)(const grpc_method_config* method_config),
+    const grpc_mdstr_hash_table_vtable* vtable);
+
+// FIXME: document
+grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
+    const grpc_json* json,
+    void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H */
