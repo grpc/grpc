@@ -34,9 +34,9 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <mutex>
 #include <unordered_map>
 
-#include <grpc++/impl/sync.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -71,7 +71,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     auto it = std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type);
     if (it == added_secure_type_names_.end()) {
@@ -92,7 +92,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return SslCredentials(ssl_opts);
     } else {
-      grpc::unique_lock<grpc::mutex> lock(mu_);
+      std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
@@ -116,7 +116,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       return SslServerCredentials(ssl_opts);
     } else {
-      grpc::unique_lock<grpc::mutex> lock(mu_);
+      std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
@@ -130,7 +130,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
-    grpc::unique_lock<grpc::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
          it != added_secure_type_names_.end(); it++) {
       types.push_back(*it);
@@ -139,7 +139,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
  private:
-  grpc::mutex mu_;
+  std::mutex mu_;
   std::vector<grpc::string> added_secure_type_names_;
   std::vector<std::unique_ptr<CredentialTypeProvider>>
       added_secure_type_providers_;

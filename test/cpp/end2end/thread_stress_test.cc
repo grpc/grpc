@@ -91,7 +91,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     MaybeEchoDeadline(context, request, response);
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {
-        unique_lock<mutex> lock(mu_);
+        std::unique_lock<std::mutex> lock(mu_);
         signal_client_ = true;
       }
       while (!context->IsCancelled()) {
@@ -156,13 +156,13 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   bool signal_client() {
-    unique_lock<mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
 
  private:
   bool signal_client_;
-  mutex mu_;
+  std::mutex mu_;
 };
 
 class TestServiceImplDupPkg
@@ -249,7 +249,7 @@ class CommonStressTestAsyncServer
   }
   void TearDown() override {
     {
-      unique_lock<mutex> l(mu_);
+      std::unique_lock<std::mutex> l(mu_);
       TearDownStart();
       shutting_down_ = true;
       cq_->Shutdown();
@@ -292,7 +292,7 @@ class CommonStressTestAsyncServer
     }
   }
   void RefreshContext(int i) {
-    unique_lock<mutex> l(mu_);
+    std::unique_lock<std::mutex> l(mu_);
     if (!shutting_down_) {
       contexts_[i].state = Context::READY;
       contexts_[i].srv_ctx.reset(new ServerContext);
@@ -315,7 +315,7 @@ class CommonStressTestAsyncServer
   ::grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
-  mutex mu_;
+  std::mutex mu_;
   std::vector<std::thread*> server_threads_;
 };
 
@@ -379,7 +379,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   }
 
   void Wait() {
-    unique_lock<mutex> l(mu_);
+    std::unique_lock<std::mutex> l(mu_);
     while (rpcs_outstanding_ != 0) {
       cv_.wait(l);
     }
@@ -404,7 +404,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       call->response_reader->Finish(&call->response, &call->status,
                                     (void*)call);
 
-      unique_lock<mutex> l(mu_);
+      std::unique_lock<std::mutex> l(mu_);
       rpcs_outstanding_++;
     }
   }
@@ -422,7 +422,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
       bool notify;
       {
-        unique_lock<mutex> l(mu_);
+        std::unique_lock<std::mutex> l(mu_);
         rpcs_outstanding_--;
         notify = (rpcs_outstanding_ == 0);
       }
@@ -434,8 +434,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
   Common common_;
   CompletionQueue cq_;
-  mutex mu_;
-  condition_variable cv_;
+  std::mutex mu_;
+  std::condition_variable cv_;
   int rpcs_outstanding_;
 };
 

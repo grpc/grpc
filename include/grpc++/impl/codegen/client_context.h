@@ -51,6 +51,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <grpc++/impl/codegen/config.h>
@@ -59,7 +60,6 @@
 #include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
-#include <grpc++/impl/codegen/sync.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -366,7 +366,7 @@ class ClientContext {
   bool idempotent_;
   bool cacheable_;
   std::shared_ptr<Channel> channel_;
-  grpc::mutex mu_;
+  std::mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
