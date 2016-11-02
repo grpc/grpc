@@ -34,8 +34,10 @@
 #ifndef GRPCXX_SERVER_H
 #define GRPCXX_SERVER_H
 
+#include <condition_variable>
 #include <list>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <grpc++/completion_queue.h>
@@ -43,7 +45,6 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/impl/rpc_service_method.h>
-#include <grpc++/impl/sync.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
@@ -197,12 +198,12 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
   // Sever status
-  grpc::mutex mu_;
+  std::mutex mu_;
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
-  grpc::condition_variable shutdown_cv_;
+  std::condition_variable shutdown_cv_;
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 

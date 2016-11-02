@@ -78,35 +78,35 @@ namespace {
 
 int global_num_connections = 0;
 int global_num_calls = 0;
-mutex global_mu;
+std::mutex global_mu;
 
 void IncrementConnectionCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   ++global_num_connections;
 }
 
 void ResetConnectionCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   global_num_connections = 0;
 }
 
 int GetConnectionCounterValue() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   return global_num_connections;
 }
 
 void IncrementCallCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   ++global_num_calls;
 }
 
 void ResetCallCounter() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   global_num_calls = 0;
 }
 
 int GetCallCounterValue() {
-  unique_lock<mutex> lock(global_mu);
+  std::unique_lock<std::mutex> lock(global_mu);
   return global_num_calls;
 }
 

@@ -379,7 +379,7 @@ Server::Server(
 
 Server::~Server() {
   {
-    grpc::unique_lock<grpc::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     if (started_ && !shutdown_) {
       lock.unlock();
       Shutdown();
@@ -501,7 +501,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
-  grpc::unique_lock<grpc::mutex> lock(mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
 
@@ -549,7 +549,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 }
 
 void Server::Wait() {
-  grpc::unique_lock<grpc::mutex> lock(mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   while (started_ && !shutdown_notified_) {
     shutdown_cv_.wait(lock);
   }

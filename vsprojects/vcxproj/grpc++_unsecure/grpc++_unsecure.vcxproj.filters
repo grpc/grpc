@@ -159,12 +159,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\service_type.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync.h">
-      <Filter>include\grpc++\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\thd.h">
-      <Filter>include\grpc++\impl</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\resource_quota.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -304,9 +298,6 @@
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h">

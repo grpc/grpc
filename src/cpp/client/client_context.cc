@@ -93,7 +93,7 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<Channel>& channel) {
-  grpc::unique_lock<grpc::mutex> lock(mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
@@ -119,7 +119,7 @@ void ClientContext::set_compression_algorithm(
 }
 
 void ClientContext::TryCancel() {
-  grpc::unique_lock<grpc::mutex> lock(mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   if (call_) {
     grpc_call_cancel(call_, nullptr);
   } else {
