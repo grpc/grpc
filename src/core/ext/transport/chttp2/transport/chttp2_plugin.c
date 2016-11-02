@@ -36,14 +36,11 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/metadata.h"
 
-extern int grpc_http_write_state_trace;
-
 void grpc_chttp2_plugin_init(void) {
   grpc_chttp2_base64_encode_and_huffman_compress =
       grpc_chttp2_base64_encode_and_huffman_compress_impl;
   grpc_register_tracer("http", &grpc_http_trace);
   grpc_register_tracer("flowctl", &grpc_flowctl_trace);
-  grpc_register_tracer("http_write_state", &grpc_http_write_state_trace);
 }
 
 void grpc_chttp2_plugin_shutdown(void) {}

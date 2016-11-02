@@ -112,6 +112,14 @@ void grpc_iomgr_shutdown(void) {
       continue;
     }
     if (g_root_object.next != &g_root_object) {
+      if (grpc_iomgr_abort_on_leaks()) {
+        gpr_log(GPR_DEBUG, "Failed to free %" PRIuPTR
+                           " iomgr objects before shutdown deadline: "
+                           "memory leaks are likely",
+                count_objects());
+        dump_objects("LEAKED");
+        abort();
+      }
       gpr_timespec short_deadline = gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
       if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
@@ -122,9 +130,6 @@ void grpc_iomgr_shutdown(void) {
                                "memory leaks are likely",
                     count_objects());
             dump_objects("LEAKED");
-            if (grpc_iomgr_abort_on_leaks()) {
-              abort();
-            }
           }
           break;
         }

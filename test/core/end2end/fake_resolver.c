@@ -42,12 +42,14 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/parse_address.h"
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/lb_policy_factory.h"
+#include "src/core/ext/client_channel/parse_address.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/method_config.h"
 
 //
 // fake_resolver
@@ -58,9 +60,10 @@ typedef struct {
   grpc_resolver base;
 
   // passed-in parameters
-  char* target_name;  // the path component of the uri passed in
+  grpc_channel_args* channel_args;
   grpc_lb_addresses* addresses;
   char* lb_policy_name;
+  grpc_method_config_table* method_config_table;
 
   // mutex guarding the rest of the state
   gpr_mu mu;
@@ -69,15 +72,16 @@ typedef struct {
   // pending next completion, or NULL
   grpc_closure* next_completion;
   // target result address for next completion
-  grpc_resolver_result** target_result;
+  grpc_channel_args** target_result;
 } fake_resolver;
 
 static void fake_resolver_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   gpr_mu_destroy(&r->mu);
-  gpr_free(r->target_name);
-  grpc_lb_addresses_destroy(r->addresses, NULL /* user_data_destroy */);
+  grpc_channel_args_destroy(r->channel_args);
+  grpc_lb_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
+  grpc_method_config_table_unref(r->method_config_table);
   gpr_free(r);
 }
 
@@ -97,10 +101,21 @@ static void fake_resolver_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
                                                    fake_resolver* r) {
   if (r->next_completion != NULL && !r->published) {
     r->published = true;
-    *r->target_result = grpc_resolver_result_create(
-        r->target_name,
-        grpc_lb_addresses_copy(r->addresses, NULL /* user_data_copy */),
-        r->lb_policy_name, NULL /* lb_policy_args */);
+    grpc_arg new_args[3];
+    size_t num_args = 0;
+    new_args[num_args++] = grpc_lb_addresses_create_channel_arg(r->addresses);
+    if (r->method_config_table != NULL) {
+      new_args[num_args++] =
+          grpc_method_config_table_create_channel_arg(r->method_config_table);
+    }
+    if (r->lb_policy_name != NULL) {
+      new_args[num_args].type = GRPC_ARG_STRING;
+      new_args[num_args].key = GRPC_ARG_LB_POLICY_NAME;
+      new_args[num_args].value.string = r->lb_policy_name;
+      ++num_args;
+    }
+    *r->target_result =
+        grpc_channel_args_copy_and_add(r->channel_args, new_args, num_args);
     grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
   }
@@ -116,7 +131,7 @@ static void fake_resolver_channel_saw_error(grpc_exec_ctx* exec_ctx,
 }
 
 static void fake_resolver_next(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
-                               grpc_resolver_result** target_result,
+                               grpc_channel_args** target_result,
                                grpc_closure* on_complete) {
   fake_resolver* r = (fake_resolver*)resolver;
   gpr_mu_lock(&r->mu);
@@ -159,16 +174,14 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   gpr_slice_buffer path_parts;
   gpr_slice_buffer_init(&path_parts);
   gpr_slice_split(path_slice, ",", &path_parts);
-  grpc_lb_addresses* addresses = grpc_lb_addresses_create(path_parts.count);
+  grpc_lb_addresses* addresses =
+      grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
     char* part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse_ipv4(
-            &ith_uri,
-            (struct sockaddr_storage*)(&addresses->addresses[i].address.addr),
-            &addresses->addresses[i].address.len)) {
+    if (!parse_ipv4(&ith_uri, &addresses->addresses[i].address)) {
       errors_found = true;
     }
     gpr_free(part_str);
@@ -178,16 +191,61 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
-    grpc_lb_addresses_destroy(addresses, NULL /* user_data_destroy */);
+    grpc_lb_addresses_destroy(addresses);
     return NULL;
+  }
+  // Construct method config table.
+  // We only support parameters for a single method.
+  grpc_method_config_table* method_config_table = NULL;
+  const char* method_name = grpc_uri_get_query_arg(args->uri, "method_name");
+  if (method_name != NULL) {
+    const char* wait_for_ready_str =
+        grpc_uri_get_query_arg(args->uri, "wait_for_ready");
+    // Anything other than "0" is interpreted as true.
+    bool wait_for_ready =
+        wait_for_ready_str != NULL && strcmp("0", wait_for_ready_str) != 0;
+    const char* timeout_str =
+        grpc_uri_get_query_arg(args->uri, "timeout_seconds");
+    gpr_timespec timeout = {timeout_str == NULL ? 0 : atoi(timeout_str), 0,
+                            GPR_TIMESPAN};
+    const char* max_request_message_bytes_str =
+        grpc_uri_get_query_arg(args->uri, "max_request_message_bytes");
+    int32_t max_request_message_bytes =
+        max_request_message_bytes_str == NULL
+            ? 0
+            : atoi(max_request_message_bytes_str);
+    const char* max_response_message_bytes_str =
+        grpc_uri_get_query_arg(args->uri, "max_response_message_bytes");
+    int32_t max_response_message_bytes =
+        max_response_message_bytes_str == NULL
+            ? 0
+            : atoi(max_response_message_bytes_str);
+    grpc_method_config* method_config = grpc_method_config_create(
+        wait_for_ready_str == NULL ? NULL : &wait_for_ready,
+        timeout_str == NULL ? NULL : &timeout,
+        max_request_message_bytes_str == NULL ? NULL
+                                              : &max_request_message_bytes,
+        max_response_message_bytes_str == NULL ? NULL
+                                               : &max_response_message_bytes);
+    grpc_method_config_table_entry entry = {grpc_mdstr_from_string(method_name),
+                                            method_config};
+    method_config_table = grpc_method_config_table_create(1, &entry);
+    GRPC_MDSTR_UNREF(entry.method_name);
+    grpc_method_config_unref(method_config);
   }
   // Instantiate resolver.
   fake_resolver* r = gpr_malloc(sizeof(fake_resolver));
   memset(r, 0, sizeof(*r));
-  r->target_name = gpr_strdup(args->uri->path);
+  grpc_arg server_name_arg;
+  server_name_arg.type = GRPC_ARG_STRING;
+  server_name_arg.key = GRPC_ARG_SERVER_NAME;
+  server_name_arg.value.string = args->uri->path;
+  r->channel_args =
+      grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   r->addresses = addresses;
   r->lb_policy_name =
       gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
+  r->method_config_table = method_config_table;
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &fake_resolver_vtable);
   return &r->base;

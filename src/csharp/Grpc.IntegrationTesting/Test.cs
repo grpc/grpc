@@ -10,7 +10,6 @@ using scg = global::System.Collections.Generic;
 namespace Grpc.Testing {
 
   /// <summary>Holder for reflection information generated from src/proto/grpc/testing/test.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class TestReflection {
 
     #region Descriptor
@@ -25,25 +24,28 @@ namespace Grpc.Testing {
           string.Concat(
             "CiFzcmMvcHJvdG8vZ3JwYy90ZXN0aW5nL3Rlc3QucHJvdG8SDGdycGMudGVz",
             "dGluZxoic3JjL3Byb3RvL2dycGMvdGVzdGluZy9lbXB0eS5wcm90bxolc3Jj",
-            "L3Byb3RvL2dycGMvdGVzdGluZy9tZXNzYWdlcy5wcm90bzK7BAoLVGVzdFNl",
+            "L3Byb3RvL2dycGMvdGVzdGluZy9tZXNzYWdlcy5wcm90bzLLBQoLVGVzdFNl",
             "cnZpY2USNQoJRW1wdHlDYWxsEhMuZ3JwYy50ZXN0aW5nLkVtcHR5GhMuZ3Jw",
             "Yy50ZXN0aW5nLkVtcHR5EkYKCVVuYXJ5Q2FsbBIbLmdycGMudGVzdGluZy5T",
-            "aW1wbGVSZXF1ZXN0GhwuZ3JwYy50ZXN0aW5nLlNpbXBsZVJlc3BvbnNlEmwK",
-            "E1N0cmVhbWluZ091dHB1dENhbGwSKC5ncnBjLnRlc3RpbmcuU3RyZWFtaW5n",
-            "T3V0cHV0Q2FsbFJlcXVlc3QaKS5ncnBjLnRlc3RpbmcuU3RyZWFtaW5nT3V0",
-            "cHV0Q2FsbFJlc3BvbnNlMAESaQoSU3RyZWFtaW5nSW5wdXRDYWxsEicuZ3Jw",
-            "Yy50ZXN0aW5nLlN0cmVhbWluZ0lucHV0Q2FsbFJlcXVlc3QaKC5ncnBjLnRl",
-            "c3RpbmcuU3RyZWFtaW5nSW5wdXRDYWxsUmVzcG9uc2UoARJpCg5GdWxsRHVw",
-            "bGV4Q2FsbBIoLmdycGMudGVzdGluZy5TdHJlYW1pbmdPdXRwdXRDYWxsUmVx",
-            "dWVzdBopLmdycGMudGVzdGluZy5TdHJlYW1pbmdPdXRwdXRDYWxsUmVzcG9u",
-            "c2UoATABEmkKDkhhbGZEdXBsZXhDYWxsEiguZ3JwYy50ZXN0aW5nLlN0cmVh",
-            "bWluZ091dHB1dENhbGxSZXF1ZXN0GikuZ3JwYy50ZXN0aW5nLlN0cmVhbWlu",
-            "Z091dHB1dENhbGxSZXNwb25zZSgBMAEyVQoUVW5pbXBsZW1lbnRlZFNlcnZp",
-            "Y2USPQoRVW5pbXBsZW1lbnRlZENhbGwSEy5ncnBjLnRlc3RpbmcuRW1wdHka",
-            "Ey5ncnBjLnRlc3RpbmcuRW1wdHkyiQEKEFJlY29ubmVjdFNlcnZpY2USOwoF",
-            "U3RhcnQSHS5ncnBjLnRlc3RpbmcuUmVjb25uZWN0UGFyYW1zGhMuZ3JwYy50",
-            "ZXN0aW5nLkVtcHR5EjgKBFN0b3ASEy5ncnBjLnRlc3RpbmcuRW1wdHkaGy5n",
-            "cnBjLnRlc3RpbmcuUmVjb25uZWN0SW5mb2IGcHJvdG8z"));
+            "aW1wbGVSZXF1ZXN0GhwuZ3JwYy50ZXN0aW5nLlNpbXBsZVJlc3BvbnNlEk8K",
+            "EkNhY2hlYWJsZVVuYXJ5Q2FsbBIbLmdycGMudGVzdGluZy5TaW1wbGVSZXF1",
+            "ZXN0GhwuZ3JwYy50ZXN0aW5nLlNpbXBsZVJlc3BvbnNlEmwKE1N0cmVhbWlu",
+            "Z091dHB1dENhbGwSKC5ncnBjLnRlc3RpbmcuU3RyZWFtaW5nT3V0cHV0Q2Fs",
+            "bFJlcXVlc3QaKS5ncnBjLnRlc3RpbmcuU3RyZWFtaW5nT3V0cHV0Q2FsbFJl",
+            "c3BvbnNlMAESaQoSU3RyZWFtaW5nSW5wdXRDYWxsEicuZ3JwYy50ZXN0aW5n",
+            "LlN0cmVhbWluZ0lucHV0Q2FsbFJlcXVlc3QaKC5ncnBjLnRlc3RpbmcuU3Ry",
+            "ZWFtaW5nSW5wdXRDYWxsUmVzcG9uc2UoARJpCg5GdWxsRHVwbGV4Q2FsbBIo",
+            "LmdycGMudGVzdGluZy5TdHJlYW1pbmdPdXRwdXRDYWxsUmVxdWVzdBopLmdy",
+            "cGMudGVzdGluZy5TdHJlYW1pbmdPdXRwdXRDYWxsUmVzcG9uc2UoATABEmkK",
+            "DkhhbGZEdXBsZXhDYWxsEiguZ3JwYy50ZXN0aW5nLlN0cmVhbWluZ091dHB1",
+            "dENhbGxSZXF1ZXN0GikuZ3JwYy50ZXN0aW5nLlN0cmVhbWluZ091dHB1dENh",
+            "bGxSZXNwb25zZSgBMAESPQoRVW5pbXBsZW1lbnRlZENhbGwSEy5ncnBjLnRl",
+            "c3RpbmcuRW1wdHkaEy5ncnBjLnRlc3RpbmcuRW1wdHkyVQoUVW5pbXBsZW1l",
+            "bnRlZFNlcnZpY2USPQoRVW5pbXBsZW1lbnRlZENhbGwSEy5ncnBjLnRlc3Rp",
+            "bmcuRW1wdHkaEy5ncnBjLnRlc3RpbmcuRW1wdHkyiQEKEFJlY29ubmVjdFNl",
+            "cnZpY2USOwoFU3RhcnQSHS5ncnBjLnRlc3RpbmcuUmVjb25uZWN0UGFyYW1z",
+            "GhMuZ3JwYy50ZXN0aW5nLkVtcHR5EjgKBFN0b3ASEy5ncnBjLnRlc3Rpbmcu",
+            "RW1wdHkaGy5ncnBjLnRlc3RpbmcuUmVjb25uZWN0SW5mb2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.EmptyReflection.Descriptor, global::Grpc.Testing.MessagesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null));
