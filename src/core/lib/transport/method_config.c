@@ -39,6 +39,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/mdstr_hash_table.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -337,4 +339,124 @@ grpc_mdstr_hash_table* grpc_method_config_table_convert(
   gpr_free(state.entries);
   // Return the new table.
   return new_table;
+}
+
+// Returns the number of names specified in the method config \a json.
+static size_t count_names_in_method_config_json(grpc_json* json) {
+  size_t num_names = 0;
+  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+    if (field->key != NULL && strcmp(field->key, "name") == 0) ++num_names;
+  }
+  return num_names;
+}
+
+// Returns a path string for the name specified by \a json.
+// Returns NULL on error.  Caller takes ownership of result.
+static char* parse_json_method_name(grpc_json* json) {
+  if (json->type != GRPC_JSON_OBJECT) return NULL;
+  const char* service_name = NULL;
+  const char* method_name = NULL;
+  for (grpc_json* child = json->child; child != NULL; child = child->next) {
+    if (child->key == NULL) return NULL;
+    if (child->type != GRPC_JSON_STRING) return NULL;
+    if (strcmp(child->key, "service") == 0) {
+      if (service_name != NULL) return NULL;  // Duplicate.
+      if (child->value == NULL) return NULL;
+      service_name = child->value;
+    } else if (strcmp(child->key, "method") == 0) {
+      if (method_name != NULL) return NULL;  // Duplicate.
+      if (child->value == NULL) return NULL;
+      method_name = child->value;
+    }
+  }
+  if (service_name == NULL) return NULL;  // Required field.
+  char* path;
+  gpr_asprintf(&path, "/%s/%s", service_name,
+               method_name == NULL ? "*" : method_name);
+  return path;
+}
+
+// Parses the method config from \a json.  Adds an entry to \a entries for
+// each name found, incrementing \a idx for each entry added.
+static bool parse_json_method_config(
+    grpc_json* json,
+    void* (*create_value)(const grpc_json* method_config_json),
+    const grpc_mdstr_hash_table_vtable* vtable,
+    grpc_mdstr_hash_table_entry* entries, size_t *idx) {
+  // Construct value.
+  void* method_config = create_value(json);
+  if (method_config == NULL) return NULL;
+  // Construct list of paths.
+  bool retval = false;
+  gpr_strvec paths;
+  gpr_strvec_init(&paths);
+  for (grpc_json* child = json->child; child != NULL; child = child->next) {
+    if (child->key == NULL) continue;
+    if (strcmp(child->key, "name") == 0) {
+      if (child->type != GRPC_JSON_ARRAY) goto done;
+      for (grpc_json* name = child->child; name != NULL; name = name->next) {
+        char* path = parse_json_method_name(name);
+        gpr_strvec_add(&paths, path);
+      }
+    }
+  }
+  if (paths.count == 0) goto done;  // No names specified.
+  // Add entry for each path.
+  for (size_t i = 0; i < paths.count; ++i) {
+    entries[*idx].key = grpc_mdstr_from_string(paths.strs[i]);
+    entries[*idx].value = vtable->copy_value(method_config);
+    entries[*idx].vtable = vtable;
+    ++*idx;
+  }
+  retval = true;
+done:
+  vtable->destroy_value(method_config);
+  gpr_strvec_destroy(&paths);
+  return retval;
+}
+
+grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
+    const grpc_json* json,
+    void* (*create_value)(const grpc_json* method_config_json),
+    const grpc_mdstr_hash_table_vtable* vtable) {
+  // Traverse parsed JSON tree.
+  if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
+  size_t num_entries = 0;
+  grpc_mdstr_hash_table_entry* entries = NULL;
+  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+    if (field->key == NULL) return NULL;
+    if (strcmp(field->key, "method_config") == 0) {
+      if (entries != NULL) return NULL;  // Duplicate.
+      if (field->type != GRPC_JSON_ARRAY) return NULL;
+      // Find number of entries.
+      for (grpc_json* method = field->child; method != NULL;
+           method = method->next) {
+        num_entries += count_names_in_method_config_json(method);
+      }
+      // Populate method config table entries.
+      entries =
+          gpr_malloc(num_entries * sizeof(grpc_method_config_table_entry));
+      size_t idx = 0;
+      for (grpc_json* method = field->child; method != NULL;
+           method = method->next) {
+        if (!parse_json_method_config(method, create_value, vtable, entries,
+                                      &idx)) {
+          return NULL;
+        }
+      }
+      GPR_ASSERT(idx == num_entries);
+    }
+  }
+  // Instantiate method config table.
+  grpc_mdstr_hash_table* method_config_table = NULL;
+  if (entries != NULL) {
+    method_config_table = grpc_mdstr_hash_table_create(num_entries, entries);
+    // Clean up.
+    for (size_t i = 0; i < num_entries; ++i) {
+      GRPC_MDSTR_UNREF(entries[i].key);
+      vtable->destroy_value(entries[i].value);
+    }
+    gpr_free(entries);
+  }
+  return method_config_table;
 }
