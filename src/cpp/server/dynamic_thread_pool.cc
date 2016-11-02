@@ -40,7 +40,7 @@ namespace grpc {
 DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
       thd_(new std::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
-                            this)) {}
+                           this)) {}
 DynamicThreadPool::DynamicThread::~DynamicThread() {
   thd_->join();
   thd_.reset();
