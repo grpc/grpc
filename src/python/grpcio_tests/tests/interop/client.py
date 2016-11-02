@@ -106,7 +106,10 @@ def _stub(args):
         (('grpc.ssl_target_name_override', args.server_host_override,),))
   else:
     channel = grpc.insecure_channel(target)
-  return test_pb2.TestServiceStub(channel)
+  if args.test_case == "unimplemented_service":
+    return test_pb2.UnimplementedServiceStub(channel)
+  else:
+    return test_pb2.TestServiceStub(channel)
 
 
 def _test_case_from_arg(test_case_arg):

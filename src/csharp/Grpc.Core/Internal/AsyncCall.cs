@@ -52,9 +52,8 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
-        // TODO(jtattermusch): this field doesn't need to be initialized for unary response calls.
-        // Indicates that response streaming call has finished.
-        TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
+        // Completion of a streaming response call if not null.
+        TaskCompletionSource<object> streamingResponseCallFinishedTcs;
 
         // TODO(jtattermusch): this field could be lazy-initialized (only if someone requests the response headers).
         // Response headers set here once received.
@@ -198,6 +197,7 @@ namespace Grpc.Core.Internal
 
                 byte[] payload = UnsafeSerialize(msg);
 
+                streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
                     call.StartServerStreaming(HandleFinished, payload, metadataArray, GetWriteFlagsForCall());
@@ -219,6 +219,7 @@ namespace Grpc.Core.Internal
 
                 Initialize(details.Channel.CompletionQueue);
 
+                streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
                     call.StartDuplexStreaming(HandleFinished, metadataArray);
@@ -265,7 +266,7 @@ namespace Grpc.Core.Internal
                     // the halfclose has already been done implicitly, so just return
                     // completed task here.
                     halfcloseRequested = true;
-                    return Task.FromResult<object>(null);
+                    return TaskUtils.CompletedTask;
                 }
                 call.StartSendCloseFromClient(HandleSendFinished);
 
@@ -276,13 +277,13 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Get the task that completes once if streaming call finishes with ok status and throws RpcException with given status otherwise.
+        /// Get the task that completes once if streaming response call finishes with ok status and throws RpcException with given status otherwise.
         /// </summary>
-        public Task StreamingCallFinishedTask
+        public Task StreamingResponseCallFinishedTask
         {
             get
             {
-                return streamingCallFinishedTcs.Task;
+                return streamingResponseCallFinishedTcs.Task;
             }
         }
 
@@ -529,11 +530,11 @@ namespace Grpc.Core.Internal
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                streamingCallFinishedTcs.SetException(new RpcException(status));
+                streamingResponseCallFinishedTcs.SetException(new RpcException(status));
                 return;
             }
 
-            streamingCallFinishedTcs.SetResult(null);
+            streamingResponseCallFinishedTcs.SetResult(null);
         }
     }
 }

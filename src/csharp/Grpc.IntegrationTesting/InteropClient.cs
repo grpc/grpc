@@ -195,8 +195,11 @@ namespace Grpc.IntegrationTesting
                 case "status_code_and_message":
                     await RunStatusCodeAndMessageAsync(client);
                     break;
+                case "unimplemented_service":
+                    RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
+                    break;
                 case "unimplemented_method":
-                    RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
+                    RunUnimplementedMethod(client);
                     break;
                 case "client_compressed_unary":
                     RunClientCompressedUnary(client);
@@ -577,7 +580,16 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunUnimplementedMethod(UnimplementedService.UnimplementedServiceClient client)
+        public static void RunUnimplementedService(UnimplementedService.UnimplementedServiceClient client)
+        {
+            Console.WriteLine("running unimplemented_service");
+            var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));
+
+            Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunUnimplementedMethod(TestService.TestServiceClient client)
         {
             Console.WriteLine("running unimplemented_method");
             var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));

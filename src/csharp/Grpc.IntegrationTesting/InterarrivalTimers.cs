@@ -69,7 +69,7 @@ namespace Grpc.IntegrationTesting
 
         public Task WaitForNextAsync()
         {
-            return Task.FromResult<object>(null);
+            return TaskUtils.CompletedTask;
         }
     }
 
