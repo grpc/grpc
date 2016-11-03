@@ -54,6 +54,12 @@ grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
 void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
                                    const grpc_mdstr* path);
 
+/// Gets the LB policy name from \a service_config.
+/// Returns NULL if no LB policy name was specified.
+/// Caller does NOT take ownership.
+const char* grpc_service_config_get_lb_policy_name(
+    grpc_json_tree* service_config);
+
 /// Creates a channel arg containing \a service_config.
 grpc_arg grpc_service_config_create_channel_arg(grpc_json_tree* service_config);
 
