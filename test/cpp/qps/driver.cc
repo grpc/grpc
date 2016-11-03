@@ -262,10 +262,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   workers.resize(num_clients + num_servers);
 
   // Start servers
-  using runsc::ServerData;
-  // servers is array rather than std::vector to avoid gcc-4.4 issues
-  // where class contained in std::vector must have a copy constructor
-  auto* servers = new ServerData[num_servers];
+  std::vector<runsc::ServerData> servers(num_servers);
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
@@ -328,10 +325,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Targets are all set by now
   result_client_config = client_config;
   // Start clients
-  using runsc::ClientData;
-  // clients is array rather than std::vector to avoid gcc-4.4 issues
-  // where class contained in std::vector must have a copy constructor
-  auto* clients = new ClientData[num_clients];
+  std::vector<runsc::ClientData> clients(num_clients);
   size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
@@ -501,7 +495,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
               s.error_message().c_str());
     }
   }
-  delete[] clients;
 
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
@@ -543,8 +536,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
               s.error_message().c_str());
     }
   }
-
-  delete[] servers;
 
   postprocess_scenario_result(result.get());
   return result;

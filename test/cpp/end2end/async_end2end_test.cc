@@ -352,15 +352,13 @@ void ServerWait(Server* server, int* notify) {
 }
 TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   int notify = 0;
-  std::thread* wait_thread =
-      new std::thread(&ServerWait, server_.get(), &notify);
+  std::thread wait_thread(&ServerWait, server_.get(), &notify);
   ResetStub();
   SendRpc(1);
   EXPECT_EQ(0, notify);
   server_->Shutdown();
-  wait_thread->join();
+  wait_thread.join();
   EXPECT_EQ(1, notify);
-  delete wait_thread;
 }
 
 TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
