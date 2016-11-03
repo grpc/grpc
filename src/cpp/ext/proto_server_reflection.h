@@ -42,7 +42,7 @@
 
 namespace grpc {
 
-class ProtoServerReflection GRPC_FINAL
+class ProtoServerReflection final
     : public reflection::v1alpha::ServerReflection::Service {
  public:
   ProtoServerReflection();
@@ -56,7 +56,7 @@ class ProtoServerReflection GRPC_FINAL
       ServerContext* context,
       ServerReaderWriter<reflection::v1alpha::ServerReflectionResponse,
                          reflection::v1alpha::ServerReflectionRequest>* stream)
-      GRPC_OVERRIDE;
+      override;
 
  private:
   Status ListService(ServerContext* context,
