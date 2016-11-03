@@ -71,17 +71,28 @@ def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
 class CSharpPackage:
   """Builds C# nuget packages."""
 
-  def __init__(self, use_dotnet_cli=False):
+  def __init__(self, linux=False, use_dotnet_cli=True):
+    self.linux = linux
     self.use_dotnet_cli = use_dotnet_cli
-    self.name = 'csharp_package_dotnetcli' if use_dotnet_cli else 'csharp_package'
+
     self.labels = ['package', 'csharp']
+
     if use_dotnet_cli:
-      self.labels += ['linux']
+      if linux:
+        self.name = 'csharp_package_dotnetcli_linux'
+	self.labels += ['linux']
+      else:
+        self.name = 'csharp_package_dotnetcli_windows'
+        self.labels += ['windows']
     else:
-      self.labels += ['windows']
+      # official packages built with dotnet cli rather than nuget pack
+      self.name = 'csharp_package_obsolete'
+      self.labels += ['obsolete']
+
 
   def pre_build_jobspecs(self):
-    if 'windows' in self.labels:
+    # The older, obsolete build uses nuget only instead of dotnet cli
+    if 'obsolete' in self.labels:
       return [create_jobspec('prebuild_%s' % self.name,
                              ['tools\\run_tests\\pre_build_csharp.bat'],
                              shell=True,
@@ -91,11 +102,16 @@ class CSharpPackage:
       return []
 
   def build_jobspec(self):
-    if self.use_dotnet_cli:
+    if self.use_dotnet_cli and self.linux:
       return create_docker_jobspec(
           self.name,
           'tools/dockerfile/test/csharp_coreclr_x64',
           'src/csharp/build_packages_dotnetcli.sh')
+    elif self.use_dotnet_cli:
+      return create_jobspec(self.name,
+                            ['build_packages_dotnetcli.bat'],
+                            cwd='src\\csharp',
+                            shell=True)
     else:
       return create_jobspec(self.name,
                             ['build_packages.bat'],
@@ -177,7 +193,8 @@ class PHPPackage:
 def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
-          CSharpPackage(use_dotnet_cli=True),
+          CSharpPackage(linux=True),
+          CSharpPackage(use_dotnet_cli=False),
           NodePackage(),
           RubyPackage(),
           PythonPackage(),

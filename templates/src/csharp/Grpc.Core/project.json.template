@@ -29,7 +29,6 @@
       "embed": [ "../../../etc/roots.pem" ],
       "define": [ "SIGNED" ],
       "keyFile": "../keys/Grpc.snk",
-      "publicSign": true,
       "xmlDoc": true
     },
     "dependencies": {
