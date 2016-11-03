@@ -44,7 +44,7 @@ namespace grpc {
 /// A slice represents a contiguous reference counted array of bytes.
 /// It is cheap to take references to a slice, and it is cheap to create a
 /// slice pointing to a subset of another slice.
-class Slice GRPC_FINAL {
+class Slice final {
  public:
   /// Construct an empty slice.
   Slice();

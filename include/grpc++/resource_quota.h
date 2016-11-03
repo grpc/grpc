@@ -44,7 +44,7 @@ namespace grpc {
 /// A ResourceQuota can be attached to a server (via ServerBuilder), or a client
 /// channel (via ChannelArguments). gRPC will attempt to keep memory used by
 /// all attached entities below the ResourceQuota bound.
-class ResourceQuota GRPC_FINAL {
+class ResourceQuota final {
  public:
   explicit ResourceQuota(const grpc::string& name);
   ResourceQuota();

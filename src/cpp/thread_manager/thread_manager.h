@@ -34,11 +34,12 @@
 #ifndef GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 #define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
+#include <condition_variable>
 #include <list>
 #include <memory>
+#include <mutex>
+#include <thread>
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
 #include <grpc++/support/config.h>
 
 namespace grpc {
@@ -115,7 +116,7 @@ class ThreadManager {
     void Run();
 
     ThreadManager* thd_mgr_;
-    grpc::thread thd_;
+    std::thread thd_;
   };
 
   // The main funtion in ThreadManager
@@ -134,10 +135,10 @@ class ThreadManager {
 
   // Protects shutdown_, num_pollers_ and num_threads_
   // TODO: sreek - Change num_pollers and num_threads_ to atomics
-  grpc::mutex mu_;
+  std::mutex mu_;
 
   bool shutdown_;
-  grpc::condition_variable shutdown_cv_;
+  std::condition_variable shutdown_cv_;
 
   // Number of threads doing polling
   int num_pollers_;
@@ -150,7 +151,7 @@ class ThreadManager {
   // currently polling i.e num_pollers_)
   int num_threads_;
 
-  grpc::mutex list_mu_;
+  std::mutex list_mu_;
   std::list<WorkerThread*> completed_threads_;
 };
 
