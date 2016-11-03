@@ -29,12 +29,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
-SYSTEM ?= $(HOST_SYSTEM)
+LD_SUPPORT_NO_AS_NEEDED = $(shell ld --no-as-needed -v 2>&1 > /dev/null && echo 1 || echo 0)
 CXX = g++
 CPPFLAGS += -I/usr/local/include -pthread
 CXXFLAGS += -std=c++11
-ifeq ($(SYSTEM),Linux)
+ifeq ($(LD_SUPPORT_NO_AS_NEEDED),1)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed \
            -lprotobuf -lpthread -ldl
