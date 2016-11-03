@@ -78,6 +78,14 @@ typedef struct grpc_channel grpc_channel;
 /** A server listens to some port and responds to request calls */
 typedef struct grpc_server grpc_server;
 
+/** A tunnel represents a communication interface that itself can
+    either be a channel (a non-authoritative tunnel) or a server
+    (an authoritative tunnel). The tunnel can be used to create
+    a tunneling_channel or a tunneling_server. By definition,
+    a tunnel will present slightly higher overheads over non-tunneling
+    grpc_channels or grpc_servers. */
+typedef struct grpc_tunnel grpc_tunnel;
+
 /** A Call represents an RPC. When created, it is in a configuration state
     allowing properties to be set until it is invoked. After invoke, the Call
     can have messages written to it and read from it. */
@@ -214,6 +222,8 @@ typedef struct {
 /** Resolved addresses in a form used by the LB policy.
     Not intended for external use. */
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+/** Tunnel shutdown timeout in miliseconds. */
+#define GRPC_ARG_TUNNEL_SHUTDOWN_TIMEOUT_MS "grpc.tunnel_shutdown_timeout_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

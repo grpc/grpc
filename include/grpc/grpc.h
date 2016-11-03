@@ -378,6 +378,41 @@ GRPCAPI void grpc_server_cancel_all_calls(grpc_server *server);
     one call to grpc_server_shutdown_and_notify must have been made). */
 GRPCAPI void grpc_server_destroy(grpc_server *server);
 
+/** Create the non-authoritative end of a gRPC tunnel using a channel.
+    The  gRPC server supporting the authoritative end of that tunnel must be
+    at the other end. The tunneling_channel and tunnel_queue are owned by the
+    tunnel from this point on. */
+GRPCAPI grpc_tunnel* grpc_non_authoritative_tunnel_create(
+    grpc_channel *tunneling_channel,
+    grpc_channel_args *tunnel_args,
+    grpc_completion_queue *tunnel_queue);
+
+/** Create the authoritative end of a gRPC tunnel using a gprc_server.
+    The tunneling_server and tunnel_queue are owned by the tunnel from this
+    point on. */
+GRPCAPI grpc_tunnel* grpc_authoritative_tunnel_create(
+    grpc_server *tunneling_server,
+    grpc_channel_args *tunnel_args,
+    grpc_completion_queue *tunnel_queue);
+
+/** Starts up a gRPC tunnel. */
+GRPCAPI void grpc_tunnel_start(grpc_tunnel *tunnel);
+
+/** Shuts down a gRPC tunnel and frees up all associated resources. */
+GRPCAPI void grpc_tunnel_shutdown(grpc_tunnel *tunnel);
+
+/** Destroys all resources used by the tunnel and the tunnel itself. */
+GRPCAPI void grpc_destroy_tunnel(grpc_tunnel *tunnel);
+
+/** Create a channel over a grpc_tunnel. */
+GRPCAPI grpc_channel* grpc_tunnel_channel_create(
+    const char* target, const grpc_channel_args *args, void *reserved,
+    grpc_tunnel *tunnel);
+
+/** Add a server to listen to events over a grpc_tunnel. */
+GRPCAPI int grpc_server_add_tunnel(
+    grpc_server *server, const char *addr, grpc_tunnel *tunnel);
+
 /** Enable or disable a tracer.
 
     Tracers (usually controlled by the environment variable GRPC_TRACE)

@@ -59,6 +59,7 @@ END2END_FIXTURES = {
     'h2_fake_resolver': default_unsecure_fixture_options,
     'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,
+    'h2_fulltunnel': default_unsecure_fixture_options,
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux'], exclude_iomgrs=['uv']),
     'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),

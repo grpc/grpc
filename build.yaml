@@ -260,6 +260,12 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
+  - src/core/lib/tunnel/authoritative_tunnel.h
+  - src/core/lib/tunnel/non_authoritative_tunnel.h
+  - src/core/lib/tunnel/tunnel.h
+  - src/core/lib/tunnel/tunnel_connector.h
+  - src/core/lib/tunnel/tunnel_server_listener.h
+  - src/core/lib/tunnel/tunneling_endpoint.h
   src:
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
@@ -368,6 +374,12 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
   - src/core/lib/transport/transport_op_string.c
+  - src/core/lib/tunnel/authoritative_tunnel.c
+  - src/core/lib/tunnel/non_authoritative_tunnel.c
+  - src/core/lib/tunnel/tunnel.c
+  - src/core/lib/tunnel/tunnel_connector.c
+  - src/core/lib/tunnel/tunnel_server_listener.c
+  - src/core/lib/tunnel/tunneling_endpoint.c
   deps:
   - gpr
   uses:
