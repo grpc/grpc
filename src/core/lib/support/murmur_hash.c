@@ -31,6 +31,8 @@
  *
  */
 
+#include <grpc/support/endian.h>
+
 #include "src/core/lib/support/murmur_hash.h"
 
 #include <string.h>
@@ -62,7 +64,7 @@ uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
   for (i = -(int)nblocks; i; i++) {
     memcpy(&k1, blocks + i, sizeof(uint32_t));
 
-    GRP_WORD_TO_NATIVE(k1, k1);
+    GPR_WORD_TO_NATIVE(k1, k1);
     k1 *= c1;
     k1 = ROTL32(k1, 15);
     k1 *= c2;

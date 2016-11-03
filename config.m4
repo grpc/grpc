@@ -133,6 +133,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
+    src/core/lib/iomgr/socket_utils_hpux.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
     src/core/lib/iomgr/socket_utils_uv.c \

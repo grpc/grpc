@@ -155,6 +155,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\avl.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cmdline.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cpu.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\endian.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\histogram.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\host_port.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log.h" />

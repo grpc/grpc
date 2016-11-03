@@ -40,4 +40,7 @@
 // must be included after the above
 #include <mswsock.h>
 
+typedef socklen_t grpc_socklen;
+#define GRPC_SOCKLEN_MAX ((socklen_t)-1)
+
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */

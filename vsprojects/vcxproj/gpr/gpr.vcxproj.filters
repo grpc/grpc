@@ -174,6 +174,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cpu.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\endian.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\histogram.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>

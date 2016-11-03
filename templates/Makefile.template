@@ -277,17 +277,13 @@
   LIBS = m pthread ws2_32
   LDFLAGS += -pthread
   endif
-  
+
   ifeq ($(SYSTEM),HP-UX)
   CC = gcc
   CXX = g++
   LD = g++
   LIBS = pthread dl rt m nsl unwind
-  LDFLAGS += -pthread -gdwarf2
-  ARCH_FLAGS += -mlp64
-  DEFINES += _INCLUDE_STDC__SOURCE_199901 GRPC_SOCKLEN_T=int GRPC_CXX0X_NO_TOSTRING \
-     _REENTRANT _INCLUDE_XOPEN_SOURCE_EXTENDED _INCLUDE_HPUX_SOURCE \
-     _INCLUDE_XOPEN_SOURCE_520 _INCLUDE_XOPEN_SOURCE_600
+  LDFLAGS += -pthread
   endif
 
   #

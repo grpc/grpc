@@ -31,29 +31,47 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
-
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
+#ifdef GRPC_HPUX_SOCKETUTILS
 
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-#ifdef GRPC_HPUX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_hpux.h"
-#endif
+#include <grpc/support/log.h>
+#include "src/core/lib/iomgr/sockaddr.h"
 
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
+                 int cloexec) {
+  int fd, flags;
+  GPR_ASSERT(sizeof(grpc_socklen) <= sizeof(size_t));
+  GPR_ASSERT(resolved_addr->len <= GRPC_SOCKLEN_MAX);
+  fd = accept(sockfd, (struct sockaddr *)resolved_addr->addr,
+              (grpc_socklen *)&resolved_addr->len);
+  if (fd >= 0) {
+    if (nonblock) {
+      flags = fcntl(fd, F_GETFL, 0);
+      if (flags < 0) goto close_and_error;
+      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
+    }
+    if (cloexec) {
+      flags = fcntl(fd, F_GETFD, 0);
+      if (flags < 0) goto close_and_error;
+      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
+    }
+  }
+  return fd;
+
+close_and_error:
+  close(fd);
+  return -1;
+}
+
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  return inet_ntop(af, src, dst, size);
+}
+
+#endif /* GRPC_POSIX_SOCKETUTILS */

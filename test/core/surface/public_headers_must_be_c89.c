@@ -56,6 +56,7 @@
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/endian.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>

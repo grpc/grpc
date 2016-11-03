@@ -241,6 +241,7 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
+  include/grpc/support/endian.h
   include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
@@ -339,6 +340,7 @@ add_library(grpc
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_hpux.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
   src/core/lib/iomgr/socket_utils_uv.c
@@ -611,6 +613,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_hpux.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
   src/core/lib/iomgr/socket_utils_uv.c
@@ -855,6 +858,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
   src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_hpux.c
   src/core/lib/iomgr/socket_utils_linux.c
   src/core/lib/iomgr/socket_utils_posix.c
   src/core/lib/iomgr/socket_utils_uv.c

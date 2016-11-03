@@ -31,29 +31,18 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_HPUX_H
+#define GRPC_CORE_LIB_IOMGR_SOCKADDR_HPUX_H
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "src/core/lib/iomgr/port.h"
+/* use BSD sockets API */
+typedef int grpc_socklen;
+#define GRPC_SOCKLEN_MAX INT_MAX
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
-
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
-
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
-
-#ifdef GRPC_HPUX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_hpux.h"
-#endif
-
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_HPUX_H */

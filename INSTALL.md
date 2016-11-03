@@ -32,6 +32,13 @@ terminal:
  $ [sudo] xcode-select --install
 ```
 
+##HP-UX
+
+* GNU make
+* gcc-4.8.5
+* openssl-1.0.2j
+* zlib-1.2.8
+
 ##Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
@@ -107,3 +114,29 @@ This approach requires having [msys2](https://msys2.github.io/) installed.
   generate "projects" for your compiler.
 - Build with your compiler of choice. The generated build files should have the
   protobuf3 dependency baked in.
+
+
+###HP-UX
+
+- Export folowing variables:
+```DEP_FLAGS=" -I/usr/local/include "
+ DEP_LDFLAGS=" -L/usr/local/lib "
+ CFG_FLAGS=" -mlp64 -gdwarf-2 \
+          -D_INCLUDE_STDC__SOURCE_199901 \
+          -D_REENTRANT  \
+          -D_INCLUDE_XOPEN_SOURCE_EXTENDED \
+          -D_INCLUDE_HPUX_SOURCE \
+          -D_INCLUDE_XOPEN_SOURCE_520 \
+          -D_INCLUDE_XOPEN_SOURCE_600 -D_GLIBCXX_USE_C99 "
+
+ CXXFLAGS="${CFG_FLAGS} ${DEP_FLAGS} -mlp64 -gdwarf-2 "
+ LDFLAGS="${DEP_LDFLAGS} -mlp64 -gdwarf-2 "
+ CFLAGS=${CXXFLAGS}
+ CPPFLAGS=${CXXFLAGS}
+ CCFLAGS=${CXXFLAGS}
+
+ EMBED_OPENSSL=false
+ PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+```
+- Ensure gcc-4.8.5 appears in $PATH first.
+- Run make and make test

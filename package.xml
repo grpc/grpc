@@ -59,6 +59,7 @@
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/endian.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/histogram.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
@@ -222,6 +223,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_hpux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
@@ -400,6 +402,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_hpux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_uv.c" role="src" />

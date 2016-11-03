@@ -287,8 +287,8 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
 /* get max listen queue size on linux */
 static void init_max_accept_queue_size(void) {
-  int n = GRPC_TCP_CONN_REQUEST_MAX;
-#ifdef GRPC_HAVE_PROCFS   
+  int n = SOMAXCONN;
+#ifdef GRPC_HAVE_PROCFS
   char buf[64];
   FILE *fp = fopen("/proc/sys/net/core/somaxconn", "r");
   if (fp == NULL) {

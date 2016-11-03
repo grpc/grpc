@@ -31,29 +31,32 @@
  *
  */
 
-/* This header transitively includes other headers that care about include
- * order, so it should be included first. As a consequence, it should not be
- * included in any other header. */
+#ifndef GRPC_SUPPORT_ENDIAN_H
+#define GRPC_SUPPORT_ENDIAN_H
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_UV
-#include <uv.h>
+/* Only for HPUX now */
+#ifdef GPR_HPUX
+#define GPR_BIG_ENDIAN
+#else
+#define GPR_LITTLE_ENDIAN
 #endif
 
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
+#ifdef GPR_BIG_ENDIAN
+ #if defined(__GNUC__) && (__GNUC__>4 || (__GNUC__==4 && __GNUC_MINOR__>=3))
+  #define GPR_WORD_TO_NATIVE(N, W32)   N = __builtin_bswap32(W32)
+ #else
+  #define GPR_WORD_TO_NATIVE(N, W32)     \
+    N = ((((W32) & 0x000000FF) << 24)  | \
+      (((W32) & 0x0000FF00) <<  8)     | \
+      (((W32) & 0x00FF0000) >>  8)     | \
+      (((W32) & 0xFF000000) >> 24))
+ #endif
 #endif
 
-#ifdef GRPC_POSIX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_posix.h"
+#ifdef GPR_LITTLE_ENDIAN
+  #define GPR_WORD_TO_NATIVE(N, W32)
 #endif
 
-#ifdef GRPC_HPUX_SOCKETADDR
-#include "src/core/lib/iomgr/sockaddr_hpux.h"
-#endif
-
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */
+#endif /* GRPC_SUPPORT_ENDIAN_H */

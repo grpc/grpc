@@ -33,6 +33,7 @@
 
 #include "src/core/lib/support/murmur_hash.h"
 #include <grpc/support/log.h>
+#include <grpc/support/endian.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/test_config.h"
 
@@ -59,7 +60,7 @@ static void verification_test(hash_func hash, uint32_t expected) {
   for (i = 0; i < 256; i++) {
     key[i] = (uint8_t)i;
     hashes[i] = hash(key, i, (uint32_t)(256u - i));
-    GRP_WORD_TO_NATIVE(hashes[i], hashes[i]);
+    GPR_WORD_TO_NATIVE(hashes[i], hashes[i]);
   }
 
   /* Then hash the result array */

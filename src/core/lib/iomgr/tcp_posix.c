@@ -70,6 +70,12 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 typedef size_t msg_iovlen_type;
 #endif
 
+#ifdef GRPC_MSG_LIMITED_WRITE
+#define MAX_WRITE_IOVEC 5
+#else
+#define MAX_WRITE_IOVEC 1000
+#endif
+
 int grpc_tcp_trace = 0;
 
 typedef struct {

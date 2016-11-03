@@ -32,7 +32,7 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
-
+#include "src/core/lib/iomgr/sockaddr.h"
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET
 

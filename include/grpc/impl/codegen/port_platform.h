@@ -78,8 +78,6 @@
 #endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || \
           defined(WIN32) */
 
-#define GRPC_SOCKLEN_TYPE socklen_t
-#define GRPC_SOCKLEN_MAX ((socklen_t)-1)
 /* Override this file with one for your platform if you need to redefine
    things.  */
 
@@ -94,7 +92,6 @@
 #define GPR_WINDOWS 1
 #define GPR_WINDOWS_SUBPROCESS 1
 #define GPR_WINDOWS_ENV
-#define GPR_LITTLE_ENDIAN 1
 #ifdef __MSYS__
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_MSYS_TMPFILE
@@ -134,8 +131,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-#define GPR_LITTLE_ENDIAN 1
-#define GPR_INET_NTOP_SIZE socklen_t
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -161,8 +156,6 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_LITTLE_ENDIAN 1
-#define GPR_INET_NTOP_SIZE socklen_t
 #elif defined(__linux__)
 #define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
@@ -189,8 +182,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-#define GPR_LITTLE_ENDIAN 1
-#define GPR_INET_NTOP_SIZE socklen_t
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -234,8 +225,6 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_LITTLE_ENDIAN 1
-#define GPR_INET_NTOP_SIZE socklen_t
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -259,8 +248,6 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_LITTLE_ENDIAN 1
-#define GPR_INET_NTOP_SIZE socklen_t
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -289,8 +276,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-#define GPR_LITTLE_ENDIAN 1
-#define GPR_INET_NTOP_SIZE socklen_t
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -313,13 +298,7 @@
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define S_IFMT _S_IFMT
-#define GPR_BIG_ENDIAN 1
-#undef GRPC_SOCKLEN_TYPE
-#undef GRPC_SOCKLEN_MAX
-#define GRPC_SOCKLEN_TYPE int
-#define GRPC_SOCKLEN_MAX INT_MAX
 #define GPR_ARCH_64 1
-#define GPR_INET_NTOP_SIZE size_t
 #else
 #error "Could not auto-detect platform"
 #endif
@@ -395,29 +374,6 @@ typedef unsigned __int64 uint64_t;
 #error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
 #endif
 
-#if defined(GPR_BIG_ENDIAN)     + \
-    defined(GPR_LITTLE_ENDIAN) != \
-    1
-#error Must define exactly one of GPR_BIG_ENDIAN, GPR_LITTLE_ENDIAN
-#endif
-
-#ifdef GPR_BIG_ENDIAN
- #if defined(__GNUC__) && (__GNUC__>4 || (__GNUC__==4 && __GNUC_MINOR__>=3))
-  #define GRP_WORD_TO_NATIVE(N, W32)   N = __builtin_bswap32(W32)
- #else
-  #define GRP_WORD_TO_NATIVE(N, W32)   \
-    N = ((((W32) & 0x000000FF) << 24)  | \
-      (((W32) & 0x0000FF00) <<  8)     | \
-      (((W32) & 0x00FF0000) >>  8)     | \
-      (((W32) & 0xFF000000) >> 24))
- #endif
-#endif
-
-#ifdef GPR_LITTLE_ENDIAN
-  #define GRP_WORD_TO_NATIVE(N, W32)
-#endif
-
-
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */
 #define GPR_MAX_ALIGNMENT 16
@@ -461,7 +417,5 @@ typedef unsigned __int64 uint64_t;
 #ifndef CENSUSAPI
 #define CENSUSAPI GRPCAPI
 #endif
-
-#define grpc_socklen GRPC_SOCKLEN_TYPE
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

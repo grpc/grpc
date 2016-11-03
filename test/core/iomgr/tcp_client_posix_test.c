@@ -32,6 +32,7 @@
  */
 
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <errno.h>
 #include <netinet/in.h>

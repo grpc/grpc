@@ -70,4 +70,9 @@ close_and_error:
   return -1;
 }
 
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  GPR_ASSERT(size <= GRPC_SOCKLEN_MAX);
+  return inet_ntop(af, src, dst, (grpc_socklen)size);
+}
+
 #endif /* GRPC_POSIX_SOCKETUTILS */

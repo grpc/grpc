@@ -54,4 +54,9 @@ int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
                  (grpc_socklen *)&resolved_addr->len, flags);
 }
 
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+  GPR_ASSERT(size <= GRPC_SOCKLEN_MAX);
+  return inet_ntop(af, src, dst, (grpc_socklen)size);
+}
+
 #endif
