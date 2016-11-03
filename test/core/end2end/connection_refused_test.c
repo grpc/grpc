@@ -76,7 +76,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel_args *args = NULL;
   if (use_service_config) {
     GPR_ASSERT(wait_for_ready);
-    grpc_json_tree* service_config_json = grpc_json_tree_create(
+    grpc_json_tree *service_config_json = grpc_json_tree_create(
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"
