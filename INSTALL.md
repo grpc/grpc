@@ -119,24 +119,22 @@ This approach requires having [msys2](https://msys2.github.io/) installed.
 ###HP-UX
 
 - Export folowing variables:
-```DEP_FLAGS=" -I/usr/local/include "
- DEP_LDFLAGS=" -L/usr/local/lib "
- CFG_FLAGS=" -mlp64 -gdwarf-2 \
-          -D_INCLUDE_STDC__SOURCE_199901 \
-          -D_REENTRANT  \
-          -D_INCLUDE_XOPEN_SOURCE_EXTENDED \
+```
+DEP_FLAGS=” -I/usr/local/include ”
+DEP_LDFLAGS=” -L/usr/local/lib ”
+CFG_FLAGS=” -mlp64 -gdwarf-2 -D_INCLUDE_STDC__SOURCE_199901 -D_REENTRANT -D_INCLUDE_XOPEN_SOURCE_EXTENDED \
           -D_INCLUDE_HPUX_SOURCE \
           -D_INCLUDE_XOPEN_SOURCE_520 \
-          -D_INCLUDE_XOPEN_SOURCE_600 -D_GLIBCXX_USE_C99 "
+          -D_INCLUDE_XOPEN_SOURCE_600 -D_GLIBCXX_USE_C99 ”
 
- CXXFLAGS="${CFG_FLAGS} ${DEP_FLAGS} -mlp64 -gdwarf-2 "
- LDFLAGS="${DEP_LDFLAGS} -mlp64 -gdwarf-2 "
- CFLAGS=${CXXFLAGS}
- CPPFLAGS=${CXXFLAGS}
- CCFLAGS=${CXXFLAGS}
+CXXFLAGS=”${CFG_FLAGS} ${DEP_FLAGS} -mlp64 -gdwarf-2 ”
+LDFLAGS=”${DEP_LDFLAGS} -mlp64 -gdwarf-2 ”
+CFLAGS=${CXXFLAGS}
+CPPFLAGS=${CXXFLAGS}
+CCFLAGS=${CXXFLAGS}
 
- EMBED_OPENSSL=false
- PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+EMBED_OPENSSL=false
+PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 ```
 - Ensure gcc-4.8.5 appears in $PATH first.
 - Run make and make test
