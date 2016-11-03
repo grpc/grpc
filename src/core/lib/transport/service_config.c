@@ -42,6 +42,40 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/mdstr_hash_table.h"
 
+struct grpc_service_config {
+  char* string;
+  grpc_json* json;
+};
+
+grpc_service_config* grpc_service_config_create(const char* json_string) {
+  grpc_service_config* service_config = gpr_malloc(sizeof(*service_config));
+  service_config->string = gpr_strdup(json_string);
+  service_config->json = grpc_json_parse_string(service_config->string);
+  return service_config;
+}
+
+void grpc_service_config_destroy(grpc_service_config* service_config) {
+  grpc_json_destroy(service_config->json);
+  gpr_free(service_config->string);
+  gpr_free(service_config);
+}
+
+const char* grpc_service_config_get_lb_policy_name(
+    const grpc_service_config* service_config) {
+  const grpc_json* json = service_config->json;
+  if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
+  const char* lb_policy_name = NULL;
+  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+    if (field->key == NULL) return NULL;
+    if (strcmp(field->key, "lb_policy_name") == 0) {
+      if (lb_policy_name != NULL) return NULL;  // Duplicate.
+      if (field->type != GRPC_JSON_STRING) return NULL;
+      lb_policy_name = field->value;
+    }
+  }
+  return lb_policy_name;
+}
+
 // Returns the number of names specified in the method config \a json.
 static size_t count_names_in_method_config_json(grpc_json* json) {
   size_t num_names = 0;
@@ -115,10 +149,11 @@ done:
   return retval;
 }
 
-grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
-    const grpc_json* json,
+grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
+    const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable) {
+  const grpc_json* json = service_config->json;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
   size_t num_entries = 0;
@@ -179,43 +214,4 @@ void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
     GRPC_MDSTR_UNREF(wildcard_path);
   }
   return value;
-}
-
-const char* grpc_service_config_get_lb_policy_name(
-    grpc_json_tree* service_config) {
-  grpc_json* json = service_config->root;
-  if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
-  const char* lb_policy_name = NULL;
-  for (grpc_json* field = json->child; field != NULL; field = field->next) {
-    if (field->key == NULL) return NULL;
-    if (strcmp(field->key, "lb_policy_name") == 0) {
-      if (lb_policy_name != NULL) return NULL;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return NULL;
-      lb_policy_name = field->value;
-    }
-  }
-  return lb_policy_name;
-}
-
-static void* copy_json_tree(void* t) { return grpc_json_tree_ref(t); }
-
-static void destroy_json_tree(void* t) { grpc_json_tree_unref(t); }
-
-static int cmp_json_tree(void* t1, void* t2) {
-  grpc_json_tree* tree1 = t1;
-  grpc_json_tree* tree2 = t2;
-  return grpc_json_cmp(tree1->root, tree2->root);
-}
-
-static grpc_arg_pointer_vtable service_config_arg_vtable = {
-    copy_json_tree, destroy_json_tree, cmp_json_tree};
-
-grpc_arg grpc_service_config_create_channel_arg(
-    grpc_json_tree* service_config) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_SERVICE_CONFIG;
-  arg.value.pointer.p = service_config;
-  arg.value.pointer.vtable = &service_config_arg_vtable;
-  return arg;
 }

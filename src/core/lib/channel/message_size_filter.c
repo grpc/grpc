@@ -223,11 +223,13 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (channel_arg != NULL) {
-    GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-    grpc_json_tree* json_tree = channel_arg->value.pointer.p;
-    chand->method_limit_table = grpc_method_config_table_create_from_json(
-        json_tree->root, message_size_limits_create_from_json,
+    GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+    grpc_service_config* service_config =
+        grpc_service_config_create(channel_arg->value.string);
+    chand->method_limit_table = grpc_service_config_create_method_config_table(
+        service_config, message_size_limits_create_from_json,
         &message_size_limits_vtable);
+    grpc_service_config_destroy(service_config);
   }
 }
 

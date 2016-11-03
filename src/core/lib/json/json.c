@@ -34,8 +34,6 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/json/json.h"
 
@@ -63,61 +61,4 @@ void grpc_json_destroy(grpc_json* json) {
   }
 
   gpr_free(json);
-}
-
-int grpc_json_cmp(const grpc_json* json1, const grpc_json* json2) {
-  if (json1 == NULL) {
-    if (json2 != NULL) return 1;
-    return 0;  // Both NULL.
-  } else {
-    if (json2 == NULL) return -1;
-  }
-  // Compare type.
-  if (json1->type > json2->type) return 1;
-  if (json1->type < json2->type) return -1;
-  // Compare key.
-  if (json1->key == NULL) {
-    if (json2->key != NULL) return -1;
-  } else {
-    if (json2->key == NULL) return 1;
-    int retval = strcmp(json1->key, json2->key);
-    if (retval != 0) return retval;
-  }
-  // Compare value.
-  if (json1->value == NULL) {
-    if (json2->value != NULL) return -1;
-  } else {
-    if (json2->value == NULL) return 1;
-    int retval = strcmp(json1->value, json2->value);
-    if (retval != 0) return retval;
-  }
-  // Recursively compare the next pointer.
-  int retval = grpc_json_cmp(json1->next, json2->next);
-  if (retval != 0) return retval;
-  // Recursively compare the child pointer.
-  retval = grpc_json_cmp(json1->child, json2->child);
-  if (retval != 0) return retval;
-  // Both are the same.
-  return 0;
-}
-
-grpc_json_tree* grpc_json_tree_create(const char* json_string) {
-  grpc_json_tree* tree = gpr_malloc(sizeof(*tree));
-  tree->string = gpr_strdup(json_string);
-  tree->root = grpc_json_parse_string(tree->string);
-  gpr_ref_init(&tree->refs, 1);
-  return tree;
-}
-
-grpc_json_tree* grpc_json_tree_ref(grpc_json_tree* tree) {
-  gpr_ref(&tree->refs);
-  return tree;
-}
-
-void grpc_json_tree_unref(grpc_json_tree* tree) {
-  if (gpr_unref(&tree->refs)) {
-    grpc_json_destroy(tree->root);
-    gpr_free(tree->string);
-    gpr_free(tree);
-  }
 }

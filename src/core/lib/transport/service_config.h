@@ -37,30 +37,34 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/mdstr_hash_table.h"
 
+typedef struct grpc_service_config grpc_service_config;
+
+grpc_service_config* grpc_service_config_create(const char* json_string);
+void grpc_service_config_destroy(grpc_service_config* service_config);
+
+/// Gets the LB policy name from \a service_config.
+/// Returns NULL if no LB policy name was specified.
+/// Caller does NOT take ownership.
+const char* grpc_service_config_get_lb_policy_name(
+    const grpc_service_config* service_config);
+
 /// Creates a method config table based on the data in \a json.
 /// The table's keys are request paths.  The table's value type is
 /// returned by \a create_value(), based on data parsed from the JSON tree.
 /// \a vtable provides methods used to manage the values.
 /// Returns NULL on error.
-grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
-    const grpc_json* json,
+grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
+    const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable);
 
+/// A helper function for looking up values in the table returned by
+/// grpc_service_config_create_method_config_table().
 /// Gets the method config for the specified \a path, which should be of
 /// the form "/service/method".
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
 void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
                                    const grpc_mdstr* path);
-
-/// Gets the LB policy name from \a service_config.
-/// Returns NULL if no LB policy name was specified.
-/// Caller does NOT take ownership.
-const char* grpc_service_config_get_lb_policy_name(
-    grpc_json_tree* service_config);
-
-/// Creates a channel arg containing \a service_config.
-grpc_arg grpc_service_config_create_channel_arg(grpc_json_tree* service_config);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */

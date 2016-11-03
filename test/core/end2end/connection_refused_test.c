@@ -76,7 +76,10 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel_args *args = NULL;
   if (use_service_config) {
     GPR_ASSERT(wait_for_ready);
-    grpc_json_tree *service_config_json = grpc_json_tree_create(
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"
@@ -84,10 +87,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
         "    ],\n"
         "    \"wait_for_ready\": true\n"
         "  } ]\n"
-        "}");
-    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
+        "}";
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_json_tree_unref(service_config_json);
   }
 
   /* create a call, channel to a port which will refuse connection */

@@ -137,7 +137,10 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(send_limit);
-    grpc_json_tree *service_config_json = grpc_json_tree_create(
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"
@@ -145,10 +148,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
         "    ],\n"
         "    \"max_request_message_bytes\": 5\n"
         "  } ]\n"
-        "}");
-    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
+        "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-    grpc_json_tree_unref(service_config_json);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
@@ -308,7 +309,10 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(!send_limit);
-    grpc_json_tree *service_config_json = grpc_json_tree_create(
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"
@@ -316,10 +320,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
         "    ],\n"
         "    \"max_response_message_bytes\": 5\n"
         "  } ]\n"
-        "}");
-    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
+        "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-    grpc_json_tree_unref(service_config_json);
   } else {
     // Set limit via channel args.
     grpc_arg arg;

@@ -132,7 +132,10 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   grpc_channel_args *args = NULL;
   if (use_service_config) {
-    grpc_json_tree *service_config_json = grpc_json_tree_create(
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"
@@ -140,10 +143,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
         "    ],\n"
         "    \"timeout\": { \"seconds\": 5 }\n"
         "  } ]\n"
-        "}");
-    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
+        "}";
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_json_tree_unref(service_config_json);
   }
 
   grpc_end2end_test_fixture f =
