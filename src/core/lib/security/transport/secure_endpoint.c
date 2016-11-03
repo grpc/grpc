@@ -370,6 +370,12 @@ static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_workqueue(ep->wrapped_ep);
 }
 
+static grpc_resource_user *endpoint_get_resource_user(
+    grpc_endpoint *secure_ep) {
+  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  return grpc_endpoint_get_resource_user(ep->wrapped_ep);
+}
+
 static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
                                             endpoint_get_workqueue,
@@ -377,6 +383,7 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_add_to_pollset_set,
                                             endpoint_shutdown,
                                             endpoint_destroy,
+                                            endpoint_get_resource_user,
                                             endpoint_get_peer};
 
 grpc_endpoint *grpc_secure_endpoint_create(

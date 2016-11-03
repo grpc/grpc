@@ -50,6 +50,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 
@@ -1578,6 +1579,20 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
     grpc_chttp2_maybe_complete_recv_initial_metadata,
     grpc_chttp2_maybe_complete_recv_trailing_metadata};
 
+static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
+                                    grpc_error *error) {
+  grpc_chttp2_stream *s = sp;
+  grpc_chttp2_transport *t = s->t;
+  if (!s->write_closed) {
+    gpr_slice_buffer_add(
+        &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_CHTTP2_NO_ERROR,
+                                                &s->stats.outgoing));
+    grpc_chttp2_initiate_write(exec_ctx, t, false, "force_rst_stream");
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, GRPC_ERROR_NONE);
+  }
+  GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "final_rst");
+}
+
 grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *hpack_parser,
                                             grpc_chttp2_transport *t,
@@ -1613,6 +1628,17 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
         s->header_frames_received++;
       }
       if (parser->is_eof) {
+        if (t->is_client && !s->write_closed) {
+          /* server eof ==> complete closure; we may need to forcefully close
+             the stream. Wait until the combiner lock is ready to be released
+             however -- it might be that we receive a RST_STREAM following this
+             and can avoid the extra write */
+          GRPC_CHTTP2_STREAM_REF(s, "final_rst");
+          grpc_combiner_execute_finally(
+              exec_ctx, t->combiner,
+              grpc_closure_create(force_client_rst_stream, s), GRPC_ERROR_NONE,
+              false);
+        }
         grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
                                        GRPC_ERROR_NONE);
       }
