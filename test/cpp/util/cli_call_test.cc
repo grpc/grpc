@@ -56,7 +56,7 @@ namespace testing {
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     if (!context->client_metadata().empty()) {
       for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
                iter = context->client_metadata().begin();
@@ -75,7 +75,7 @@ class CliCallTest : public ::testing::Test {
  protected:
   CliCallTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -86,7 +86,7 @@ class CliCallTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
+  void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
     channel_ =
