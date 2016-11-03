@@ -70,7 +70,7 @@ static int message_size_limits_cmp(void* value1, void* value2) {
 static const grpc_mdstr_hash_table_vtable message_size_limits_vtable = {
     gpr_free, message_size_limits_copy, message_size_limits_cmp};
 
-static void* method_config_convert_value(const grpc_json* json) {
+static void* message_size_limits_create_from_json(const grpc_json* json) {
   int max_request_message_bytes = -1;
   int max_response_message_bytes = -1;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
@@ -236,7 +236,7 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
     GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
     grpc_json_tree* json_tree = channel_arg->value.pointer.p;
     chand->method_limit_table = grpc_method_config_table_create_from_json(
-        json_tree->root, method_config_convert_value,
+        json_tree->root, message_size_limits_create_from_json,
         &message_size_limits_vtable);
   }
 }
