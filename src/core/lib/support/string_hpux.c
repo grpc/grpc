@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_STRING
+#ifdef GPR_HPUX_STRING
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -83,8 +83,13 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   return -1;
 }
 
-size_t gpr_strnlen(const char *s, size_t maxlen) {
-    return strnlen(s, maxlen);
+size_t gpr_strnlen(const char *s, size_t maxlen){
+    size_t l;
+    for (l = 0; l < maxlen; l++) 
+      if (!s[l]) 
+        break;
+    
+    return l;
 }
 
-#endif /* GPR_POSIX_STRING */
+#endif /* GPR_HPUX_STRING */

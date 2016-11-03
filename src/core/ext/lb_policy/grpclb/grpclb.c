@@ -94,6 +94,7 @@
    including windows.h on Windows, uv.h must be included before other system
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/support/string.h"
 
 #include <errno.h>
 
@@ -443,7 +444,7 @@ static grpc_lb_addresses *process_serverlist(
       const size_t lb_token_max_length =
           GPR_ARRAY_SIZE(server->load_balance_token);
       const size_t lb_token_length =
-          strnlen(server->load_balance_token, lb_token_max_length);
+          gpr_strnlen(server->load_balance_token, lb_token_max_length);
       grpc_mdstr *lb_token_mdstr = grpc_mdstr_from_buffer(
           (uint8_t *)server->load_balance_token, lb_token_length);
       user_data = grpc_mdelem_from_metadata_strings(GRPC_MDSTR_LB_TOKEN,

@@ -80,4 +80,8 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   return -1;
 }
 
+size_t gpr_strnlen(const char *s, size_t maxlen){
+    return strnlen(s, maxlen);
+}
+
 #endif /* GPR_WINDOWS_STRING */

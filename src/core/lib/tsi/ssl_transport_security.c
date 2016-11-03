@@ -32,6 +32,7 @@
  */
 
 #include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <grpc/support/port_platform.h>
 
