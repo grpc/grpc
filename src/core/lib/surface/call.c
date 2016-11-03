@@ -632,9 +632,6 @@ static int prepare_application_metadata(grpc_call *call, int count,
     if (call->send_extra_metadata_count == 0) {
       prepend_extra_metadata = 0;
     } else {
-      for (i = 0; i < call->send_extra_metadata_count; i++) {
-        GRPC_MDELEM_REF(call->send_extra_metadata[i].md);
-      }
       for (i = 1; i < call->send_extra_metadata_count; i++) {
         call->send_extra_metadata[i].prev = &call->send_extra_metadata[i - 1];
       }
@@ -680,6 +677,7 @@ static int prepare_application_metadata(grpc_call *call, int count,
           &call->send_extra_metadata[call->send_extra_metadata_count - 1];
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
+      call->send_extra_metadata_count = 0;
       break;
     case 3: {
       /* prepend AND md */
@@ -695,6 +693,7 @@ static int prepare_application_metadata(grpc_call *call, int count,
       batch->list.tail = linked_from_md(last_md);
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
+      call->send_extra_metadata_count = 0;
       break;
     }
     default:
