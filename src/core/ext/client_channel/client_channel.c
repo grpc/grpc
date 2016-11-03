@@ -249,14 +249,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
 
   if (chand->resolver_result != NULL) {
-    grpc_lb_policy_args lb_policy_args;
-    lb_policy_args.args = chand->resolver_result;
-    lb_policy_args.client_channel_factory = chand->client_channel_factory;
-
     // Find LB policy name.
     const char *lb_policy_name = NULL;
     const grpc_arg *channel_arg =
-        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_POLICY_NAME);
+        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
       lb_policy_name = channel_arg->value.string;
@@ -265,7 +261,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // assume that we should use the grpclb policy, regardless of what the
     // resolver actually specified.
     channel_arg =
-        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_ADDRESSES);
+        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
       grpc_lb_addresses *addresses = channel_arg->value.pointer.p;
@@ -290,7 +286,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     // Use pick_first if nothing was specified and we didn't select grpclb
     // above.
     if (lb_policy_name == NULL) lb_policy_name = "pick_first";
-
+    // Instantiate LB policy.
+    grpc_lb_policy_args lb_policy_args;
+    lb_policy_args.args = chand->resolver_result;
+    lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy =
         grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
     if (lb_policy != NULL) {
@@ -299,15 +298,17 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       state =
           grpc_lb_policy_check_connectivity(exec_ctx, lb_policy, &state_error);
     }
+    // Find service config.
     channel_arg =
-        grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_SERVICE_CONFIG);
+        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-      grpc_json_tree *json_tree = channel_arg->value.pointer.p;
+      grpc_json_tree *service_config_json = channel_arg->value.pointer.p;
       method_params_table = grpc_method_config_table_create_from_json(
-          json_tree->root, method_parameters_create_from_json,
+          service_config_json->root, method_parameters_create_from_json,
           &method_parameters_vtable);
     }
+    // Clean up.
     grpc_channel_args_destroy(chand->resolver_result);
     chand->resolver_result = NULL;
   }
