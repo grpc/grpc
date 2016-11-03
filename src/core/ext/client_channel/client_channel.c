@@ -104,7 +104,8 @@ static void *method_config_convert_value(const grpc_json *json) {
       if (field->type != GRPC_JSON_TRUE && field->type != GRPC_JSON_FALSE) {
         return NULL;
       }
-      wait_for_ready = field->type == GRPC_JSON_TRUE;
+      wait_for_ready = field->type == GRPC_JSON_TRUE
+                       ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
     } else if (strcmp(field->key, "timeout") == 0) {
       if (timeout.tv_sec > 0 || timeout.tv_nsec > 0) return NULL;  // Duplicate.
       if (field->type != GRPC_JSON_OBJECT) return NULL;
@@ -312,9 +313,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
+      grpc_json_tree* json_tree = channel_arg->value.pointer.p;
       method_params_table = grpc_method_config_table_create_from_json(
-          (grpc_json *)channel_arg->value.pointer.p,
-          method_config_convert_value, &method_parameters_vtable);
+          json_tree->root, method_config_convert_value,
+          &method_parameters_vtable);
     }
     grpc_channel_args_destroy(chand->resolver_result);
     chand->resolver_result = NULL;

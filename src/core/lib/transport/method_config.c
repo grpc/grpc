@@ -460,3 +460,26 @@ grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
   }
   return method_config_table;
 }
+
+static void* copy_json_tree(void* t) { return grpc_json_tree_ref(t); }
+
+static void destroy_json_tree(void* t) { grpc_json_tree_unref(t); }
+
+static int cmp_json_tree(void* t1, void* t2) {
+  grpc_json_tree* tree1 = t1;
+  grpc_json_tree* tree2 = t2;
+  return grpc_json_cmp(tree1->root, tree2->root);
+}
+
+static grpc_arg_pointer_vtable service_config_arg_vtable = {
+    copy_json_tree, destroy_json_tree, cmp_json_tree};
+
+grpc_arg grpc_service_config_create_channel_arg(
+    grpc_json_tree* service_config) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_ARG_SERVICE_CONFIG;
+  arg.value.pointer.p = service_config;
+  arg.value.pointer.vtable = &service_config_arg_vtable;
+  return arg;
+}
