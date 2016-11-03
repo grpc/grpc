@@ -36,7 +36,9 @@
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
-struct grpc_ares_ev_driver {};
+struct grpc_ares_ev_driver {
+  char unused_member;  // unused member to prevent undefined behaviour
+};
 
 void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver) {}
