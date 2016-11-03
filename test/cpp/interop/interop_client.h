@@ -80,6 +80,7 @@ class InteropClient {
   bool DoStatusWithMessage();
   bool DoCustomMetadata();
   bool DoUnimplementedMethod();
+  bool DoUnimplementedService();
   bool DoCacheableUnary();
   // Auth tests.
   // username is a string containing the user email
@@ -100,6 +101,7 @@ class InteropClient {
     ServiceStub(std::shared_ptr<Channel> channel, bool new_stub_every_call);
 
     TestService::Stub* Get();
+    UnimplementedService::Stub* GetUnimplementedServiceStub();
 
     void Reset(std::shared_ptr<Channel> channel);
 

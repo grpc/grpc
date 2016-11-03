@@ -212,9 +212,9 @@ static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
   GPR_ASSERT(c->connecting_endpoint == NULL);
   gpr_mu_unlock(&c->mu);
   grpc_closure_init(&c->connected_closure, connected, c);
-  grpc_tcp_client_connect(exec_ctx, &c->connected_closure,
-                          &c->newly_connecting_endpoint,
-                          args->interested_parties, args->addr, args->deadline);
+  grpc_tcp_client_connect(
+      exec_ctx, &c->connected_closure, &c->newly_connecting_endpoint,
+      args->interested_parties, args->channel_args, args->addr, args->deadline);
 }
 
 static const grpc_connector_vtable connector_vtable = {
@@ -347,7 +347,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
   // Clean up.
   GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
-                                "client_channel_factory_create_channel");
+                                "secure_client_channel_factory_create_channel");
   grpc_channel_args_destroy(new_args);
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);

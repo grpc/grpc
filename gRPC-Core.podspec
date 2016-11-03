@@ -35,7 +35,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.0.0'
+  version = '1.0.1'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
@@ -186,7 +186,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 6.0'
+    ss.dependency 'BoringSSL', '~> 7.0'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -291,6 +291,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
                       'src/core/lib/iomgr/resolve_address.h',
+                      'src/core/lib/iomgr/resource_quota.h',
                       'src/core/lib/iomgr/sockaddr.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
                       'src/core/lib/iomgr/sockaddr_utils.h',
@@ -299,6 +300,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/socket_utils_posix.h',
                       'src/core/lib/iomgr/socket_windows.h',
                       'src/core/lib/iomgr/tcp_client.h',
+                      'src/core/lib/iomgr/tcp_client_posix.h',
                       'src/core/lib/iomgr/tcp_posix.h',
                       'src/core/lib/iomgr/tcp_server.h',
                       'src/core/lib/iomgr/tcp_uv.h',
@@ -466,6 +468,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/resolve_address_posix.c',
                       'src/core/lib/iomgr/resolve_address_uv.c',
                       'src/core/lib/iomgr/resolve_address_windows.c',
+                      'src/core/lib/iomgr/resource_quota.c',
                       'src/core/lib/iomgr/sockaddr_utils.c',
                       'src/core/lib/iomgr/socket_utils_common_posix.c',
                       'src/core/lib/iomgr/socket_utils_linux.c',
@@ -684,6 +687,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
                               'src/core/lib/iomgr/resolve_address.h',
+                              'src/core/lib/iomgr/resource_quota.h',
                               'src/core/lib/iomgr/sockaddr.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
                               'src/core/lib/iomgr/sockaddr_utils.h',
@@ -692,6 +696,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/socket_utils_posix.h',
                               'src/core/lib/iomgr/socket_windows.h',
                               'src/core/lib/iomgr/tcp_client.h',
+                              'src/core/lib/iomgr/tcp_client_posix.h',
                               'src/core/lib/iomgr/tcp_posix.h',
                               'src/core/lib/iomgr/tcp_server.h',
                               'src/core/lib/iomgr/tcp_uv.h',
