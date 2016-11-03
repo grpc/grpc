@@ -41,7 +41,7 @@ namespace Helloworld {
   /// <summary>
   ///  The greeting service definition.
   /// </summary>
-  public static class Greeter
+  public static partial class Greeter
   {
     static readonly string __ServiceName = "helloworld.Greeter";
 
@@ -75,7 +75,7 @@ namespace Helloworld {
     }
 
     /// <summary>Client for Greeter</summary>
-    public class GreeterClient : ClientBase<GreeterClient>
+    public partial class GreeterClient : ClientBase<GreeterClient>
     {
       /// <summary>Creates a new client for Greeter</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>

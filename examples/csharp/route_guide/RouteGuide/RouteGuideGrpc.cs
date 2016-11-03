@@ -41,7 +41,7 @@ namespace Routeguide {
   /// <summary>
   ///  Interface exported by the server.
   /// </summary>
-  public static class RouteGuide
+  public static partial class RouteGuide
   {
     static readonly string __ServiceName = "routeguide.RouteGuide";
 
@@ -139,7 +139,7 @@ namespace Routeguide {
     }
 
     /// <summary>Client for RouteGuide</summary>
-    public class RouteGuideClient : ClientBase<RouteGuideClient>
+    public partial class RouteGuideClient : ClientBase<RouteGuideClient>
     {
       /// <summary>Creates a new client for RouteGuide</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
