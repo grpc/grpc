@@ -121,6 +121,10 @@ GPRAPI gpr_slice gpr_empty_slice(void);
 GPRAPI int gpr_slice_cmp(gpr_slice a, gpr_slice b);
 GPRAPI int gpr_slice_str_cmp(gpr_slice a, const char *b);
 
+/* Do two slices point at the same memory, with the same length
+   If a or b is inlined, actually compares data */
+GPRAPI int gpr_slice_is_equivalent(gpr_slice a, gpr_slice b);
+
 #ifdef __cplusplus
 }
 #endif
