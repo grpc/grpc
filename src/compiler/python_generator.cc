@@ -212,11 +212,10 @@ void PrivateGenerator::PrintAllComments(const DescriptorType* descriptor) {
     return;
   }
   out->Print("\"\"\"");
-  for (StringVector::iterator it = comments.begin(); it != comments.end();
-       ++it) {
-    size_t start_pos = it->find_first_not_of(' ');
+  for (auto comment : comments) {
+    size_t start_pos = comment.find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
-      out->Print(it->c_str() + start_pos);
+      out->Print(comment.c_str() + start_pos);
     }
     out->Print("\n");
   }
