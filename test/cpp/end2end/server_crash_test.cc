@@ -60,14 +60,13 @@ namespace testing {
 
 namespace {
 
-class ServiceImpl GRPC_FINAL
-    : public ::grpc::testing::EchoTestService::Service {
+class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     bidi_stream_count_++;
     EchoRequest request;
     EchoResponse response;
@@ -82,7 +81,7 @@ class ServiceImpl GRPC_FINAL
   }
 
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
+                        ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     response_stream_count_++;
     for (int i = 0;; i++) {

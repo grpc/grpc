@@ -142,7 +142,7 @@ class ServerInterface : public CallHook {
                      bool delete_on_finalize);
     virtual ~BaseAsyncRequest() {}
 
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+    bool FinalizeResult(void** tag, bool* status) override;
 
    protected:
     ServerInterface* const server_;
@@ -168,7 +168,7 @@ class ServerInterface : public CallHook {
                       ServerCompletionQueue* notification_cq);
   };
 
-  class NoPayloadAsyncRequest GRPC_FINAL : public RegisteredAsyncRequest {
+  class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     NoPayloadAsyncRequest(void* registered_method, ServerInterface* server,
                           ServerContext* context,
@@ -183,7 +183,7 @@ class ServerInterface : public CallHook {
   };
 
   template <class Message>
-  class PayloadAsyncRequest GRPC_FINAL : public RegisteredAsyncRequest {
+  class PayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     PayloadAsyncRequest(void* registered_method, ServerInterface* server,
                         ServerContext* context,
@@ -196,7 +196,7 @@ class ServerInterface : public CallHook {
       IssueRequest(registered_method, &payload_, notification_cq);
     }
 
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    bool FinalizeResult(void** tag, bool* status) override {
       bool serialization_status =
           *status && payload_ &&
           SerializationTraits<Message>::Deserialize(
@@ -220,7 +220,7 @@ class ServerInterface : public CallHook {
                         ServerCompletionQueue* notification_cq, void* tag,
                         bool delete_on_finalize);
 
-    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+    bool FinalizeResult(void** tag, bool* status) override;
 
    private:
     grpc_call_details call_details_;
