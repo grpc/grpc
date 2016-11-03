@@ -125,6 +125,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/slice_buffer.c )
   s.files += %w( src/core/lib/support/stack_lockfree.c )
   s.files += %w( src/core/lib/support/string.c )
+  s.files += %w( src/core/lib/support/string_hpux.c )
   s.files += %w( src/core/lib/support/string_posix.c )
   s.files += %w( src/core/lib/support/string_util_windows.c )
   s.files += %w( src/core/lib/support/string_windows.c )

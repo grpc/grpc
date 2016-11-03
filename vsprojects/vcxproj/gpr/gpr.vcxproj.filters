@@ -85,6 +85,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_hpux.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>

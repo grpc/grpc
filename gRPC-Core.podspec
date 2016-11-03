@@ -231,6 +231,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/slice_buffer.c',
                       'src/core/lib/support/stack_lockfree.c',
                       'src/core/lib/support/string.c',
+                      'src/core/lib/support/string_hpux.c',
                       'src/core/lib/support/string_posix.c',
                       'src/core/lib/support/string_util_windows.c',
                       'src/core/lib/support/string_windows.c',
