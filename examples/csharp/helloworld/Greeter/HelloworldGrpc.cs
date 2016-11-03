@@ -62,7 +62,7 @@ namespace Helloworld {
     }
 
     /// <summary>Base class for server-side implementations of Greeter</summary>
-    public abstract class GreeterBase
+    public abstract partial class GreeterBase
     {
       /// <summary>
       ///  Sends a greeting

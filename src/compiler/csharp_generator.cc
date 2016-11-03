@@ -297,7 +297,7 @@ void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *se
 void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
   out->Print("/// <summary>Base class for server-side implementations of $servicename$</summary>\n",
              "servicename", GetServiceClassName(service));
-  out->Print("public abstract class $name$\n", "name",
+  out->Print("public abstract partial class $name$\n", "name",
              GetServerClassName(service));
   out->Print("{\n");
   out->Indent();

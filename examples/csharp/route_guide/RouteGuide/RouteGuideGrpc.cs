@@ -86,7 +86,7 @@ namespace Routeguide {
     }
 
     /// <summary>Base class for server-side implementations of RouteGuide</summary>
-    public abstract class RouteGuideBase
+    public abstract partial class RouteGuideBase
     {
       /// <summary>
       ///  A simple RPC.
