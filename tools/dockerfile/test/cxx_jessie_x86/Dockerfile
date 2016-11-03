@@ -93,5 +93,9 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 RUN mkdir /var/local/jenkins
 
+
+# Install gcc-4.8 and other relevant items
+RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean
+
 # Define the default command.
 CMD ["bash"]
