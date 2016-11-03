@@ -36,8 +36,6 @@
 
 #include <stdlib.h>
 
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/json/json_common.h"
 
 /* A tree-like structure to hold json values. The key and value pointers
@@ -86,22 +84,5 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
  */
 grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
-
-/* Compares two JSON trees. */
-int grpc_json_cmp(const grpc_json* json1, const grpc_json* json2);
-
-/* A wrapper that contains the string used for underlying allocation and
-   is refcounted. */
-typedef struct {
-  grpc_json* root;
-  char* string;
-  gpr_refcount refs;
-} grpc_json_tree;
-
-/* Creates a copy of \a json_string. */
-grpc_json_tree* grpc_json_tree_create(const char* json_string);
-
-grpc_json_tree* grpc_json_tree_ref(grpc_json_tree* tree);
-void grpc_json_tree_unref(grpc_json_tree* tree);
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_H */
