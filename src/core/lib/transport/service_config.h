@@ -29,8 +29,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H
-#define GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
+#define GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -63,4 +63,4 @@ const char* grpc_service_config_get_lb_policy_name(
 /// Creates a channel arg containing \a service_config.
 grpc_arg grpc_service_config_create_channel_arg(grpc_json_tree* service_config);
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */

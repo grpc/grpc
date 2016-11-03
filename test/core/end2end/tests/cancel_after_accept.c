@@ -44,7 +44,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/method_config.h"
+#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
