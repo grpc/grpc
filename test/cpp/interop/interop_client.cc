@@ -107,6 +107,11 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
   return stub_.get();
 }
 
+UnimplementedService::Stub*
+InteropClient::ServiceStub::GetUnimplementedServiceStub() {
+  return UnimplementedService::NewStub(channel_).get();
+}
+
 void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
   channel_ = channel;
 
@@ -162,8 +167,8 @@ bool InteropClient::AssertStatusCode(const Status& s,
 bool InteropClient::DoEmpty() {
   gpr_log(GPR_DEBUG, "Sending an empty rpc...");
 
-  Empty request = Empty::default_instance();
-  Empty response = Empty::default_instance();
+  Empty request;
+  Empty response;
   ClientContext context;
 
   Status s = serviceStub_.Get()->EmptyCall(&context, request, &response);
@@ -1002,11 +1007,30 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
+bool InteropClient::DoUnimplementedService() {
+  gpr_log(GPR_DEBUG, "Sending a request for an unimplemented service...");
+
+  Empty request;
+  Empty response;
+  ClientContext context;
+
+  UnimplementedService::Stub* stub = serviceStub_.GetUnimplementedServiceStub();
+
+  Status s = stub->UnimplementedCall(&context, request, &response);
+
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "unimplemented service done.");
+  return true;
+}
+
 bool InteropClient::DoUnimplementedMethod() {
   gpr_log(GPR_DEBUG, "Sending a request for an unimplemented rpc...");
 
-  Empty request = Empty::default_instance();
-  Empty response = Empty::default_instance();
+  Empty request;
+  Empty response;
   ClientContext context;
 
   Status s =

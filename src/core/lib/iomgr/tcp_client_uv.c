@@ -54,9 +54,12 @@ typedef struct grpc_uv_tcp_connect {
   grpc_endpoint **endpoint;
   int refs;
   char *addr_name;
+  grpc_resource_quota *resource_quota;
 } grpc_uv_tcp_connect;
 
-static void uv_tcp_connect_cleanup(grpc_uv_tcp_connect *connect) {
+static void uv_tcp_connect_cleanup(grpc_exec_ctx *exec_ctx,
+                                   grpc_uv_tcp_connect *connect) {
+  grpc_resource_quota_internal_unref(exec_ctx, connect->resource_quota);
   gpr_free(connect);
 }
 
@@ -74,7 +77,7 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
   }
   done = (--connect->refs == 0);
   if (done) {
-    uv_tcp_connect_cleanup(connect);
+    uv_tcp_connect_cleanup(exec_ctx, connect);
   }
 }
 
@@ -86,8 +89,8 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   grpc_closure *closure = connect->closure;
   grpc_timer_cancel(&exec_ctx, &connect->alarm);
   if (status == 0) {
-    *connect->endpoint =
-        grpc_tcp_create(connect->tcp_handle, connect->addr_name);
+    *connect->endpoint = grpc_tcp_create(
+        connect->tcp_handle, connect->resource_quota, connect->addr_name);
   } else {
     error = GRPC_ERROR_CREATE("Failed to connect to remote host");
     error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, -status);
@@ -105,7 +108,7 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   }
   done = (--connect->refs == 0);
   if (done) {
-    uv_tcp_connect_cleanup(connect);
+    uv_tcp_connect_cleanup(&exec_ctx, connect);
   }
   grpc_exec_ctx_sched(&exec_ctx, closure, error, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -114,16 +117,31 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_closure *closure, grpc_endpoint **ep,
                                     grpc_pollset_set *interested_parties,
+                                    const grpc_channel_args *channel_args,
                                     const grpc_resolved_address *resolved_addr,
                                     gpr_timespec deadline) {
   grpc_uv_tcp_connect *connect;
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  (void)channel_args;
   (void)interested_parties;
+
+  if (channel_args != NULL) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+        grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
+        resource_quota = grpc_resource_quota_internal_ref(
+            channel_args->args[i].value.pointer.p);
+      }
+    }
+  }
+
   connect = gpr_malloc(sizeof(grpc_uv_tcp_connect));
   memset(connect, 0, sizeof(grpc_uv_tcp_connect));
   connect->closure = closure;
   connect->endpoint = ep;
   connect->tcp_handle = gpr_malloc(sizeof(uv_tcp_t));
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
+  connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
   // TODO(murgatroid99): figure out what the return value here means
@@ -138,16 +156,18 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 // overridden by api_fuzzer.c
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const grpc_resolved_address *addr,
+    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
+    const grpc_resolved_address *addr,
     gpr_timespec deadline) = tcp_client_connect_impl;
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
+                             const grpc_channel_args *channel_args,
                              const grpc_resolved_address *addr,
                              gpr_timespec deadline) {
-  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties, addr,
-                               deadline);
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
+                               channel_args, addr, deadline);
 }
 
 #endif /* GRPC_UV */

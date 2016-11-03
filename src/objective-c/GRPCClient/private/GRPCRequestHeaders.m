@@ -38,10 +38,9 @@
 #import "NSDictionary+GRPC.h"
 
 // Used by the setter.
-static void CheckIsNonNilASCII(NSString *name, NSString *value) {
+static void CheckIsNonNilASCII(NSString *name, NSString* value) {
   if (!value) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"%@ cannot be nil", name];
+    [NSException raise:NSInvalidArgumentException format:@"%@ cannot be nil", name];
   }
   if (![value canBeConvertedToEncoding:NSASCIIStringEncoding]) {
     [NSException raise:NSInvalidArgumentException
@@ -53,20 +52,15 @@ static void CheckIsNonNilASCII(NSString *name, NSString *value) {
 static void CheckKeyValuePairIsValid(NSString *key, id value) {
   if ([key hasSuffix:@"-bin"]) {
     if (![value isKindOfClass:NSData.class]) {
-      [NSException
-           raise:NSInvalidArgumentException
-          format:@"Expected NSData value for header %@ ending in \"-bin\", "
-                 @"instead got %@",
-                 key, value];
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Expected NSData value for header %@ ending in \"-bin\", "
+       @"instead got %@", key, value];
     }
   } else {
     if (![value isKindOfClass:NSString.class]) {
-      [NSException
-           raise:NSInvalidArgumentException
-          format:
-              @"Expected NSString value for header %@ not ending in \"-bin\", "
-              @"instead got %@",
-              key, value];
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Expected NSString value for header %@ not ending in \"-bin\", "
+       @"instead got %@", key, value];
     }
     CheckIsNonNilASCII(@"Text header value", (NSString *)value);
   }
@@ -74,10 +68,9 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 
 @implementation GRPCRequestHeaders {
   __weak GRPCCall *_call;
-  // The NSMutableDictionary superclass doesn't hold any storage (so that people
-  // can implement their own in subclasses). As that's not the reason we're
-  // subclassing, we just delegate storage to the default NSMutableDictionary
-  // subclass returned by the cluster (e.g. __NSDictionaryM on iOS 9).
+  // The NSMutableDictionary superclass doesn't hold any storage (so that people can implement their
+  // own in subclasses). As that's not the reason we're subclassing, we just delegate storage to the
+  // default NSMutableDictionary subclass returned by the cluster (e.g. __NSDictionaryM on iOS 9).
   NSMutableDictionary *_delegate;
 }
 
@@ -98,8 +91,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 }
 
 // Designated initializer
-- (instancetype)initWithCall:(GRPCCall *)call
-                     storage:(NSMutableDictionary *)storage {
+- (instancetype)initWithCall:(GRPCCall *)call storage:(NSMutableDictionary *)storage {
   // TODO(jcanizales): Throw if call or storage are nil.
   if ((self = [super init])) {
     _call = call;
@@ -108,10 +100,9 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   return self;
 }
 
-- (instancetype)
-initWithObjects:(const id _Nonnull __unsafe_unretained *)objects
-        forKeys:(const id<NSCopying> _Nonnull __unsafe_unretained *)keys
-          count:(NSUInteger)cnt {
+- (instancetype)initWithObjects:(const id  _Nonnull __unsafe_unretained *)objects
+                        forKeys:(const id<NSCopying>  _Nonnull __unsafe_unretained *)keys
+                          count:(NSUInteger)cnt {
   return [self init];
 }
 
@@ -143,7 +134,7 @@ initWithObjects:(const id _Nonnull __unsafe_unretained *)objects
   return _delegate.count;
 }
 
-- (NSEnumerator *_Nonnull)keyEnumerator {
+- (NSEnumerator * _Nonnull)keyEnumerator {
   return [_delegate keyEnumerator];
 }
 

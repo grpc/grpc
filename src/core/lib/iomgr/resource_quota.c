@@ -166,8 +166,11 @@ static void rq_step(grpc_exec_ctx *exec_ctx, void *rq, grpc_error *error) {
   do {
     if (rq_alloc(exec_ctx, resource_quota)) goto done;
   } while (rq_reclaim_from_per_user_free_pool(exec_ctx, resource_quota));
-  rq_reclaim(exec_ctx, resource_quota, false) ||
-      rq_reclaim(exec_ctx, resource_quota, true);
+
+  if (!rq_reclaim(exec_ctx, resource_quota, false)) {
+    rq_reclaim(exec_ctx, resource_quota, true);
+  }
+
 done:
   grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
 }
@@ -711,4 +714,11 @@ void grpc_resource_user_alloc_slices(
   slice_allocator->dest = dest;
   grpc_resource_user_alloc(exec_ctx, slice_allocator->resource_user,
                            count * length, &slice_allocator->on_allocated);
+}
+
+gpr_slice grpc_resource_user_slice_malloc(grpc_exec_ctx *exec_ctx,
+                                          grpc_resource_user *resource_user,
+                                          size_t size) {
+  grpc_resource_user_alloc(exec_ctx, resource_user, size, NULL);
+  return ru_slice_create(resource_user, size);
 }
