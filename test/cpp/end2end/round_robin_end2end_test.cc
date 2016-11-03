@@ -66,21 +66,21 @@ class MyTestServiceImpl : public TestServiceImpl {
   MyTestServiceImpl() : request_count_(0) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     {
-      unique_lock<mutex> lock(mu_);
+      std::unique_lock<std::mutex> lock(mu_);
       ++request_count_;
     }
     return TestServiceImpl::Echo(context, request, response);
   }
 
   int request_count() {
-    unique_lock<mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     return request_count_;
   }
 
  private:
-  mutex mu_;
+  std::mutex mu_;
   int request_count_;
 };
 
@@ -94,7 +94,7 @@ class RoundRobinEnd2endTest : public ::testing::Test {
     }
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
@@ -139,7 +139,7 @@ class RoundRobinEnd2endTest : public ::testing::Test {
       std::condition_variable cond;
       thread_.reset(new std::thread(
           std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
-      unique_lock<mutex> lock(mu);
+      std::unique_lock<std::mutex> lock(mu);
       cond.wait(lock);
       gpr_log(GPR_INFO, "server startup complete");
     }
@@ -153,7 +153,7 @@ class RoundRobinEnd2endTest : public ::testing::Test {
                                InsecureServerCredentials());
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      lock_guard<mutex> lock(*mu);
+      std::lock_guard<std::mutex> lock(*mu);
       cond->notify_one();
     }
 
