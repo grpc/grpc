@@ -75,18 +75,21 @@ typedef struct grpc_ares_request {
   /** the pointer to receive the resolved addresses, set in
       grpc_resolve_address_ares_impl */
   grpc_resolved_addresses **addrs_out;
+  /** the evernt driver used by this request, set in
+      grpc_resolve_address_ares_impl */
+  grpc_ares_ev_driver *ev_driver;
   /** the closure wraps request_resolving_address, initialized in
       grpc_resolve_address_ares_impl */
   grpc_closure request_closure;
   /** number of ongoing queries, set in grpc_resolve_address_ares_impl */
-  int pending_queries;
+  gpr_refcount pending_queries;
+
+  /** mutex guarding the rest of the state */
+  gpr_mu mu;
   /** is there at least one successful query, set in on_done_cb */
   bool success;
   /** the errors explaining the request failure, set in on_done_cb */
   grpc_error *error;
-  /** the evernt driver owned by this request, created in
-      grpc_resolve_address_ares_impl */
-  grpc_ares_ev_driver *ev_driver;
 } grpc_ares_request;
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
@@ -110,8 +113,8 @@ static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
   grpc_ares_request *r = (grpc_ares_request *)arg;
   grpc_resolved_addresses **addresses = r->addrs_out;
+  gpr_mu_lock(&r->mu);
   if (status == ARES_SUCCESS) {
-    gpr_log(GPR_DEBUG, "on_done_cb success");
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     r->success = true;
@@ -163,7 +166,6 @@ static void on_done_cb(void *arg, int status, int timeouts,
       }
     }
   } else if (!r->success) {
-    gpr_log(GPR_DEBUG, "c-ares status is not ARES_SUCCESS");
     char *error_msg;
     gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
                  ares_strerror(status));
@@ -175,9 +177,8 @@ static void on_done_cb(void *arg, int status, int timeouts,
       r->error = grpc_error_add_child(error, r->error);
     }
   }
-  gpr_log(GPR_DEBUG, "update pending queries: %d", r->pending_queries);
-  if (--r->pending_queries == 0) {
-    gpr_log(GPR_DEBUG, "finish");
+  gpr_mu_unlock(&r->mu);
+  if (gpr_unref(&r->pending_queries)) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -193,12 +194,11 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_ares_ev_driver *ev_driver = r->ev_driver;
   ares_channel *channel =
       (ares_channel *)grpc_ares_ev_driver_get_channel(ev_driver);
-  r->pending_queries = 1;
+  gpr_ref_init(&r->pending_queries, 1);
   if (grpc_ipv6_loopback_available()) {
-    ++r->pending_queries;
+    gpr_ref(&r->pending_queries);
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
-  gpr_log(GPR_DEBUG, "pending queries: %d", r->pending_queries);
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
   grpc_ares_ev_driver_start(exec_ctx, ev_driver);
 }
@@ -271,15 +271,14 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   if (try_sockaddr_resolve(host, port, addrs)) {
     grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   } else {
-    gpr_log(GPR_DEBUG, "%s", host);
     r = gpr_malloc(sizeof(grpc_ares_request));
+    gpr_mu_init(&r->mu);
     r->ev_driver = ev_driver;
     r->on_done = on_done;
     r->addrs_out = addrs;
     r->default_port = gpr_strdup(default_port);
     r->port = gpr_strdup(port);
     r->host = gpr_strdup(host);
-    r->pending_queries = 0;
     r->success = false;
     r->error = GRPC_ERROR_NONE;
     grpc_closure_init(&r->request_closure, request_resolving_address, r);
