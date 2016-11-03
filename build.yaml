@@ -681,8 +681,6 @@ filegroups:
   deps:
   - gpr
   secure: true
-  uses:
-  - grpc_base
 - name: grpc++_base
   language: c++
   public_headers:
