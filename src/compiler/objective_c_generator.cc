@@ -73,11 +73,11 @@ static void PrintAllComments(const DescriptorType *desc, Printer *printer) {
     return;
   }
   printer->Print("/**\n");
-  for (auto it = comments.begin(); it != comments.end(); ++it) {
+  for (auto comment : comments) {
     printer->Print(" * ");
-    size_t start_pos = it->find_first_not_of(' ');
+    size_t start_pos = comment.find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
-      printer->Print(it->c_str() + start_pos);
+      printer->Print(comment.c_str() + start_pos);
     }
     printer->Print("\n");
   }

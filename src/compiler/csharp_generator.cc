@@ -97,9 +97,8 @@ void GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
   // Note that we can't remove leading or trailing whitespace as *that's*
   // relevant in markdown too.
   // (We don't skip "just whitespace" lines, either.)
-  for (std::vector<grpc::string>::iterator it = lines.begin();
-       it != lines.end(); ++it) {
-    grpc::string line = *it;
+  for (auto it : lines) {
+    grpc::string line = it;
     if (line.empty()) {
       last_was_empty = true;
     } else {
@@ -107,7 +106,7 @@ void GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
         printer->Print("///\n");
       }
       last_was_empty = false;
-      printer->Print("/// $line$\n", "line", *it);
+      printer->Print("/// $line$\n", "line", it);
     }
   }
   printer->Print("/// </summary>\n");
