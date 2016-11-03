@@ -463,6 +463,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\dns_resolver_ares.c">
       <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_fallback.c">
+      <Filter>src\core\ext\resolver\dns\c_ares</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
       <Filter>src\core\ext\resolver\dns\c_ares</Filter>
     </ClCompile>

@@ -40,7 +40,7 @@
 
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
-                                    grpc_pollset_set *pollset_set,
+                                    grpc_ares_ev_driver *ev_driver,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
   grpc_resolve_address(exec_ctx, name, default_port, on_done, addrs);
@@ -48,7 +48,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
 
 void (*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_pollset_set *pollset_set, grpc_closure *on_done,
+    grpc_ares_ev_driver *ev_driver, grpc_closure *on_done,
     grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 grpc_error *grpc_ares_init(void) { return GRPC_ERROR_NONE; }

@@ -30,8 +30,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 #include <grpc/support/port_platform.h>
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_NATIVE_ADDRESS_RESOLVE
+
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
-#endif /* GPR_WINSOCK_SOCKET */
+struct grpc_ares_ev_driver {};
+
+void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
+                               grpc_ares_ev_driver *ev_driver) {}
+
+void *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
+  return NULL;
+}
+
+grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
+                                       grpc_pollset_set *pollset_set) {
+  return GRPC_ERROR_NONE;
+}
+
+void grpc_ares_ev_driver_destroy(grpc_exec_ctx *exec_ctx,
+                                 grpc_ares_ev_driver *ev_driver) {}
+
+#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */

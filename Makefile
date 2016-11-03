@@ -2823,6 +2823,7 @@ LIBGRPC_SRC = \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_fallback.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
@@ -3571,6 +3572,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/subchannel_index.c \
     src/core/ext/client_channel/uri_parser.c \
     src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c \
+    src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_fallback.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c \
     src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
