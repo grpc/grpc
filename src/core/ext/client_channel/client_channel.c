@@ -94,7 +94,7 @@ static int method_parameters_cmp(void *value1, void *value2) {
 static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
     gpr_free, method_parameters_copy, method_parameters_cmp};
 
-static void *method_config_convert_value(const grpc_json *json) {
+static void *method_parameters_create_from_json(const grpc_json *json) {
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
   gpr_timespec timeout = { 0, 0, GPR_TIMESPAN };
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
@@ -315,7 +315,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
       grpc_json_tree* json_tree = channel_arg->value.pointer.p;
       method_params_table = grpc_method_config_table_create_from_json(
-          json_tree->root, method_config_convert_value,
+          json_tree->root, method_parameters_create_from_json,
           &method_parameters_vtable);
     }
     grpc_channel_args_destroy(chand->resolver_result);
