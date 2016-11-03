@@ -57,18 +57,8 @@ static void* message_size_limits_copy(void* value) {
   return new_value;
 }
 
-static int message_size_limits_cmp(void* value1, void* value2) {
-  const message_size_limits* v1 = value1;
-  const message_size_limits* v2 = value2;
-  if (v1->max_send_size > v2->max_send_size) return 1;
-  if (v1->max_send_size < v2->max_send_size) return -1;
-  if (v1->max_recv_size > v2->max_recv_size) return 1;
-  if (v1->max_recv_size < v2->max_recv_size) return -1;
-  return 0;
-}
-
 static const grpc_mdstr_hash_table_vtable message_size_limits_vtable = {
-    gpr_free, message_size_limits_copy, message_size_limits_cmp};
+    gpr_free, message_size_limits_copy};
 
 static void* message_size_limits_create_from_json(const grpc_json* json) {
   int max_request_message_bytes = -1;

@@ -81,18 +81,8 @@ static void *method_parameters_copy(void *value) {
   return new_value;
 }
 
-static int method_parameters_cmp(void *value1, void *value2) {
-  const method_parameters *v1 = value1;
-  const method_parameters *v2 = value2;
-  const int retval = gpr_time_cmp(v1->timeout, v2->timeout);
-  if (retval != 0) return retval;
-  if (v1->wait_for_ready > v2->wait_for_ready) return 1;
-  if (v1->wait_for_ready < v2->wait_for_ready) return -1;
-  return 0;
-}
-
 static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
-    gpr_free, method_parameters_copy, method_parameters_cmp};
+    gpr_free, method_parameters_copy};
 
 static void *method_parameters_create_from_json(const grpc_json *json) {
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
