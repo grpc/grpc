@@ -100,7 +100,7 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   abort();
 }
 
-class ScopedProfile GRPC_FINAL {
+class ScopedProfile final {
  public:
   ScopedProfile(const char* filename, bool enable) : enable_(enable) {
     if (enable_) grpc_profiler_start(filename);
@@ -113,14 +113,14 @@ class ScopedProfile GRPC_FINAL {
   const bool enable_;
 };
 
-class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
+class WorkerServiceImpl final : public WorkerService::Service {
  public:
   WorkerServiceImpl(int server_port, QpsWorker* worker)
       : acquired_(false), server_port_(server_port), worker_(worker) {}
 
-  Status RunClient(ServerContext* ctx,
-                   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
-      GRPC_OVERRIDE {
+  Status RunClient(
+      ServerContext* ctx,
+      ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
@@ -132,9 +132,9 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     return ret;
   }
 
-  Status RunServer(ServerContext* ctx,
-                   ServerReaderWriter<ServerStatus, ServerArgs>* stream)
-      GRPC_OVERRIDE {
+  Status RunServer(
+      ServerContext* ctx,
+      ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");
@@ -147,12 +147,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
   }
 
   Status CoreCount(ServerContext* ctx, const CoreRequest*,
-                   CoreResponse* resp) GRPC_OVERRIDE {
+                   CoreResponse* resp) override {
     resp->set_cores(gpr_cpu_num_cores());
     return Status::OK;
   }
 
-  Status QuitWorker(ServerContext* ctx, const Void*, Void*) GRPC_OVERRIDE {
+  Status QuitWorker(ServerContext* ctx, const Void*, Void*) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Quitting worker busy");
