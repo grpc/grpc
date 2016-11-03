@@ -137,7 +137,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(send_limit);
-    grpc_json_tree* service_config_json = grpc_json_tree_create(
+    grpc_json_tree *service_config_json = grpc_json_tree_create(
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"
@@ -308,7 +308,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(!send_limit);
-    grpc_json_tree* service_config_json = grpc_json_tree_create(
+    grpc_json_tree *service_config_json = grpc_json_tree_create(
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"

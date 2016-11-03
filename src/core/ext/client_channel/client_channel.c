@@ -86,21 +86,21 @@ static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
 
 static void *method_parameters_create_from_json(const grpc_json *json) {
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
-  gpr_timespec timeout = { 0, 0, GPR_TIMESPAN };
-  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+  gpr_timespec timeout = {0, 0, GPR_TIMESPAN};
+  for (grpc_json *field = json->child; field != NULL; field = field->next) {
     if (field->key == NULL) continue;
     if (strcmp(field->key, "wait_for_ready") == 0) {
       if (wait_for_ready != WAIT_FOR_READY_UNSET) return NULL;  // Duplicate.
       if (field->type != GRPC_JSON_TRUE && field->type != GRPC_JSON_FALSE) {
         return NULL;
       }
-      wait_for_ready = field->type == GRPC_JSON_TRUE
-                       ? WAIT_FOR_READY_TRUE : WAIT_FOR_READY_FALSE;
+      wait_for_ready = field->type == GRPC_JSON_TRUE ? WAIT_FOR_READY_TRUE
+                                                     : WAIT_FOR_READY_FALSE;
     } else if (strcmp(field->key, "timeout") == 0) {
       if (timeout.tv_sec > 0 || timeout.tv_nsec > 0) return NULL;  // Duplicate.
       if (field->type != GRPC_JSON_OBJECT) return NULL;
       if (field->child == NULL) return NULL;
-      for (grpc_json* subfield = field->child; subfield != NULL;
+      for (grpc_json *subfield = field->child; subfield != NULL;
            subfield = subfield->next) {
         if (subfield->key == NULL) return NULL;
         if (strcmp(subfield->key, "seconds") == 0) {
@@ -303,7 +303,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-      grpc_json_tree* json_tree = channel_arg->value.pointer.p;
+      grpc_json_tree *json_tree = channel_arg->value.pointer.p;
       method_params_table = grpc_method_config_table_create_from_json(
           json_tree->root, method_parameters_create_from_json,
           &method_parameters_vtable);

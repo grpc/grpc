@@ -132,7 +132,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   grpc_channel_args *args = NULL;
   if (use_service_config) {
-    grpc_json_tree* service_config_json = grpc_json_tree_create(
+    grpc_json_tree *service_config_json = grpc_json_tree_create(
         "{\n"
         "  \"method_config\": [ {\n"
         "    \"name\": [\n"

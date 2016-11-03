@@ -80,10 +80,9 @@ static char* parse_json_method_name(grpc_json* json) {
 // Parses the method config from \a json.  Adds an entry to \a entries for
 // each name found, incrementing \a idx for each entry added.
 static bool parse_json_method_config(
-    grpc_json* json,
-    void* (*create_value)(const grpc_json* method_config_json),
+    grpc_json* json, void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable,
-    grpc_mdstr_hash_table_entry* entries, size_t *idx) {
+    grpc_mdstr_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
   if (method_config == NULL) return NULL;
@@ -135,8 +134,7 @@ grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
         num_entries += count_names_in_method_config_json(method);
       }
       // Populate method config table entries.
-      entries =
-          gpr_malloc(num_entries * sizeof(grpc_mdstr_hash_table_entry));
+      entries = gpr_malloc(num_entries * sizeof(grpc_mdstr_hash_table_entry));
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {

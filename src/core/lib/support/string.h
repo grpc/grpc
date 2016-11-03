@@ -81,7 +81,7 @@ where long is 32bit is size.*/
 int int64_ttoa(int64_t value, char *output);
 
 // Parses a non-negative number from a value string.  Returns -1 on error.
-int gpr_parse_nonnegative_number(const char* value);
+int gpr_parse_nonnegative_number(const char *value);
 
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
