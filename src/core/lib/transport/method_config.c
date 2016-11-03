@@ -181,6 +181,22 @@ void* grpc_method_config_table_get(const grpc_mdstr_hash_table* table,
   return value;
 }
 
+const char* grpc_service_config_get_lb_policy_name(
+    grpc_json_tree* service_config) {
+  grpc_json* json = service_config->root;
+  if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
+  const char* lb_policy_name = NULL;
+  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+    if (field->key == NULL) return NULL;
+    if (strcmp(field->key, "lb_policy_name") == 0) {
+      if (lb_policy_name != NULL) return NULL;  // Duplicate.
+      if (field->type != GRPC_JSON_STRING) return NULL;
+      lb_policy_name = field->value;
+    }
+  }
+  return lb_policy_name;
+}
+
 static void* copy_json_tree(void* t) { return grpc_json_tree_ref(t); }
 
 static void destroy_json_tree(void* t) { grpc_json_tree_unref(t); }
