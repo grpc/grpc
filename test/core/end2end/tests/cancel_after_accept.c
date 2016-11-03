@@ -132,19 +132,18 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   grpc_channel_args *args = NULL;
   if (use_service_config) {
-    gpr_timespec timeout = {5, 0, GPR_TIMESPAN};
-    grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
-        grpc_method_config_create(NULL, &timeout, NULL, NULL),
-    };
-    grpc_method_config_table *method_config_table =
-        grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(entry.method_name);
-    grpc_method_config_unref(entry.method_config);
-    grpc_arg arg =
-        grpc_method_config_table_create_channel_arg(method_config_table);
+    grpc_json_tree* service_config_json = grpc_json_tree_create(
+        "{\n"
+        "  \"method_config\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"timeout\": { \"seconds\": 5 }\n"
+        "  } ]\n"
+        "}");
+    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_method_config_table_unref(method_config_table);
+    grpc_json_tree_unref(service_config_json);
   }
 
   grpc_end2end_test_fixture f =

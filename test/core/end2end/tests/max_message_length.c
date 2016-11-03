@@ -137,19 +137,18 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(send_limit);
-    int32_t max_request_message_bytes = 5;
-    grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
-        grpc_method_config_create(NULL, NULL, &max_request_message_bytes, NULL),
-    };
-    grpc_method_config_table *method_config_table =
-        grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(entry.method_name);
-    grpc_method_config_unref(entry.method_config);
-    grpc_arg arg =
-        grpc_method_config_table_create_channel_arg(method_config_table);
+    grpc_json_tree* service_config_json = grpc_json_tree_create(
+        "{\n"
+        "  \"method_config\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"max_request_message_bytes\": 5\n"
+        "  } ]\n"
+        "}");
+    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-    grpc_method_config_table_unref(method_config_table);
+    grpc_json_tree_unref(service_config_json);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
@@ -309,20 +308,18 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(!send_limit);
-    int32_t max_response_message_bytes = 5;
-    grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
-        grpc_method_config_create(NULL, NULL, NULL,
-                                  &max_response_message_bytes),
-    };
-    grpc_method_config_table *method_config_table =
-        grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(entry.method_name);
-    grpc_method_config_unref(entry.method_config);
-    grpc_arg arg =
-        grpc_method_config_table_create_channel_arg(method_config_table);
+    grpc_json_tree* service_config_json = grpc_json_tree_create(
+        "{\n"
+        "  \"method_config\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"max_response_message_bytes\": 5\n"
+        "  } ]\n"
+        "}");
+    grpc_arg arg = grpc_service_config_create_channel_arg(service_config_json);
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-    grpc_method_config_table_unref(method_config_table);
+    grpc_json_tree_unref(service_config_json);
   } else {
     // Set limit via channel args.
     grpc_arg arg;

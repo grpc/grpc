@@ -234,9 +234,10 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (channel_arg != NULL) {
     GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
+    grpc_json_tree* json_tree = channel_arg->value.pointer.p;
     chand->method_limit_table = grpc_method_config_table_create_from_json(
-        (grpc_json*)channel_arg->value.pointer.p,
-        method_config_convert_value, &message_size_limits_vtable);
+        json_tree->root, method_config_convert_value,
+        &message_size_limits_vtable);
   }
 }
 

@@ -140,4 +140,6 @@ grpc_mdstr_hash_table* grpc_method_config_table_create_from_json(
     void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable);
 
+grpc_arg grpc_service_config_create_channel_arg(grpc_json_tree* service_config);
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H */
