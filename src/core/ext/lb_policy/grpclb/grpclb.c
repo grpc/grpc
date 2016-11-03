@@ -402,7 +402,7 @@ static void parse_server(const grpc_grpclb_server *server,
   } else if (ip->size == 16) {
     addr->len = sizeof(struct sockaddr_in6);
     struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr->addr;
-    addr6->sin6_family = AF_INET;
+    addr6->sin6_family = AF_INET6;
     memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
     addr6->sin6_port = netorder_port;
   }
