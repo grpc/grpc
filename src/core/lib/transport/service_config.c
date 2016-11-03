@@ -119,7 +119,7 @@ static bool parse_json_method_config(
     grpc_mdstr_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
-  if (method_config == NULL) return NULL;
+  if (method_config == NULL) return false;
   // Construct list of paths.
   bool retval = false;
   gpr_strvec paths;
