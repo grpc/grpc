@@ -347,7 +347,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
   // Clean up.
   GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
-                                "client_channel_factory_create_channel");
+                                "secure_client_channel_factory_create_channel");
   grpc_channel_args_destroy(new_args);
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);
