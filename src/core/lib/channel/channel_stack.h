@@ -158,7 +158,7 @@ typedef struct {
 
   /* Implement grpc_channel_get_info() */
   void (*get_channel_info)(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
-                           grpc_channel_info *channel_info);
+                           const grpc_channel_info *channel_info);
 
   /* The name of this filter */
   const char *name;
@@ -280,7 +280,7 @@ char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 /* Pass through a request to get_channel_info() to the next child element */
 void grpc_channel_next_get_info(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem,
-                                grpc_channel_info *channel_info);
+                                const grpc_channel_info *channel_info);
 
 /* Given the top element of a channel stack, get the channel stack itself */
 grpc_channel_stack *grpc_channel_stack_from_top_element(

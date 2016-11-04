@@ -90,7 +90,7 @@ static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
 
 static void lame_get_channel_info(grpc_exec_ctx *exec_ctx,
                                   grpc_channel_element *elem,
-                                  grpc_channel_info *channel_info) {}
+                                  const grpc_channel_info *channel_info) {}
 
 static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem,
