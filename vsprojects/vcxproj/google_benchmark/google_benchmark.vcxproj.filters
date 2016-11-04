@@ -42,6 +42,18 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark.h">
+      <Filter>third_party\google_benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark_api.h">
+      <Filter>third_party\google_benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\macros.h">
+      <Filter>third_party\google_benchmark\include\benchmark</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\reporter.h">
+      <Filter>third_party\google_benchmark\include\benchmark</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\arraysize.h">
       <Filter>third_party\google_benchmark\src</Filter>
     </ClInclude>
@@ -89,18 +101,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\timers.h">
       <Filter>third_party\google_benchmark\src</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark.h">
-      <Filter>third_party\google_benchmark\include\benchmark</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark_api.h">
-      <Filter>third_party\google_benchmark\include\benchmark</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\macros.h">
-      <Filter>third_party\google_benchmark\include\benchmark</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\reporter.h">
-      <Filter>third_party\google_benchmark\include\benchmark</Filter>
     </ClInclude>
   </ItemGroup>
 
