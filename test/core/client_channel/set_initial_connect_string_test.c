@@ -115,8 +115,8 @@ static void reset_addr_and_set_magic_string(grpc_resolved_address **addr,
   target.sin_family = AF_INET;
   target.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   target.sin_port = htons((uint16_t)server_port);
-  (*addr)->len = sizeof(target);
   *addr = (grpc_resolved_address *)gpr_malloc(sizeof(grpc_resolved_address));
+  (*addr)->len = sizeof(target);
   memcpy((*addr)->addr, &target, sizeof(target));
 }
 

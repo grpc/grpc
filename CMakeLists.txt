@@ -1121,12 +1121,6 @@ foreach(_hdr
   include/grpc++/impl/server_builder_plugin.h
   include/grpc++/impl/server_initializer.h
   include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
   include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
@@ -1174,9 +1168,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h
@@ -1287,12 +1278,6 @@ foreach(_hdr
   include/grpc++/impl/server_builder_plugin.h
   include/grpc++/impl/server_initializer.h
   include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
   include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
@@ -1340,9 +1325,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h
@@ -1491,12 +1473,6 @@ foreach(_hdr
   include/grpc++/impl/server_builder_plugin.h
   include/grpc++/impl/server_initializer.h
   include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
   include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
@@ -1544,9 +1520,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h
