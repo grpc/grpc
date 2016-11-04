@@ -341,15 +341,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");
 }
 
-const grpc_channel_filter grpc_client_auth_filter = {auth_start_transport_op,
-                                                     grpc_channel_next_op,
-                                                     sizeof(call_data),
-                                                     init_call_elem,
-                                                     set_pollset_or_pollset_set,
-                                                     destroy_call_elem,
-                                                     sizeof(channel_data),
-                                                     init_channel_elem,
-                                                     destroy_channel_elem,
-                                                     grpc_call_next_get_peer,
-                                                     grpc_channel_next_get_info,
-                                                     "client-auth"};
+const grpc_channel_filter grpc_client_auth_filter = {
+    auth_start_transport_op, grpc_channel_next_op,       sizeof(call_data),
+    init_call_elem,          set_pollset_or_pollset_set, destroy_call_elem,
+    sizeof(channel_data),    init_channel_elem,          destroy_channel_elem,
+    grpc_call_next_get_peer, grpc_channel_next_get_info, "client-auth"};
