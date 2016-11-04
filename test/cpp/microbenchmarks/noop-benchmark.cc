@@ -31,15 +31,15 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_THD_CXX11_H
-#define GRPCXX_IMPL_THD_CXX11_H
+/* This benchmark exists to ensure that the google_benchmark integration is
+ * working */
 
-#include <thread>
+#include "third_party/google_benchmark/include/benchmark/benchmark.h"
 
-namespace grpc {
+static void BM_NoOp(benchmark::State& state) {
+  while (state.KeepRunning()) {
+  }
+}
+BENCHMARK(BM_NoOp);
 
-using std::thread;
-
-}  // namespace grpc
-
-#endif  // GRPCXX_IMPL_THD_CXX11_H
+BENCHMARK_MAIN();

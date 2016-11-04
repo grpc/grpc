@@ -45,7 +45,7 @@
 
  */
 #define GRPC_XMACRO_ITEM(methodName, FlagName) \
-  @property(nonatomic, readonly) BOOL methodName;
+@property(nonatomic, readonly) BOOL methodName;
 
 #include "GRPCReachabilityFlagNames.xmacro.h"
 #undef GRPC_XMACRO_ITEM
@@ -60,19 +60,18 @@
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
 /**
- * Queue on which callbacks will be dispatched. Default is the main queue. Set
- * it before calling handleLossWithHandler:.
+ * Queue on which callbacks will be dispatched. Default is the main queue. Set it before calling
+ * handleLossWithHandler:.
  */
 // TODO(jcanizales): Default to a serial background queue instead.
 @property(nonatomic, strong, null_resettable) dispatch_queue_t queue;
 
 /**
- * Calls handler every time the connectivity to this instance's host is lost. If
- * this instance is released before that happens, the handler won't be called.
- * Only one handler is active at a time, so if this method is called again
- * before the previous handler has been called, it might never be called at all
- * (or yes, if it has already been queued).
+ * Calls handler every time the connectivity to this instance's host is lost. If this instance is
+ * released before that happens, the handler won't be called.
+ * Only one handler is active at a time, so if this method is called again before the previous
+ * handler has been called, it might never be called at all (or yes, if it has already been queued).
  */
-- (void)handleLossWithHandler:(nonnull void (^)())handler
-      wifiStatusChangeHandler:(nonnull void (^)())wifiStatusChangeHandler;
+- (void)handleLossWithHandler:(nullable void (^)())lossHandler
+      wifiStatusChangeHandler:(nullable void (^)())wifiStatusChangeHandler;
 @end
