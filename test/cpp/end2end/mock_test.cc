@@ -61,46 +61,44 @@ namespace testing {
 
 namespace {
 template <class W, class R>
-class MockClientReaderWriter GRPC_FINAL
-    : public ClientReaderWriterInterface<W, R> {
+class MockClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  public:
-  void WaitForInitialMetadata() GRPC_OVERRIDE {}
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+  void WaitForInitialMetadata() override {}
+  bool NextMessageSize(uint32_t* sz) override {
     *sz = UINT_MAX;
     return true;
   }
-  bool Read(R* msg) GRPC_OVERRIDE { return true; }
-  bool Write(const W& msg) GRPC_OVERRIDE { return true; }
-  bool WritesDone() GRPC_OVERRIDE { return true; }
-  Status Finish() GRPC_OVERRIDE { return Status::OK; }
+  bool Read(R* msg) override { return true; }
+  bool Write(const W& msg) override { return true; }
+  bool WritesDone() override { return true; }
+  Status Finish() override { return Status::OK; }
 };
 template <>
-class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
+class MockClientReaderWriter<EchoRequest, EchoResponse> final
     : public ClientReaderWriterInterface<EchoRequest, EchoResponse> {
  public:
   MockClientReaderWriter() : writes_done_(false) {}
-  void WaitForInitialMetadata() GRPC_OVERRIDE {}
-  bool NextMessageSize(uint32_t* sz) GRPC_OVERRIDE {
+  void WaitForInitialMetadata() override {}
+  bool NextMessageSize(uint32_t* sz) override {
     *sz = UINT_MAX;
     return true;
   }
-  bool Read(EchoResponse* msg) GRPC_OVERRIDE {
+  bool Read(EchoResponse* msg) override {
     if (writes_done_) return false;
     msg->set_message(last_message_);
     return true;
   }
 
-  bool Write(const EchoRequest& msg,
-             const WriteOptions& options) GRPC_OVERRIDE {
+  bool Write(const EchoRequest& msg, const WriteOptions& options) override {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
     return true;
   }
-  bool WritesDone() GRPC_OVERRIDE {
+  bool WritesDone() override {
     writes_done_ = true;
     return true;
   }
-  Status Finish() GRPC_OVERRIDE { return Status::OK; }
+  Status Finish() override { return Status::OK; }
 
  private:
   bool writes_done_;
@@ -113,51 +111,51 @@ class MockStub : public EchoTestService::StubInterface {
   MockStub() {}
   ~MockStub() {}
   Status Echo(ClientContext* context, const EchoRequest& request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message(request.message());
     return Status::OK;
   }
   Status Unimplemented(ClientContext* context, const EchoRequest& request,
-                       EchoResponse* response) GRPC_OVERRIDE {
+                       EchoResponse* response) override {
     return Status::OK;
   }
 
  private:
   ClientAsyncResponseReaderInterface<EchoResponse>* AsyncEchoRaw(
       ClientContext* context, const EchoRequest& request,
-      CompletionQueue* cq) GRPC_OVERRIDE {
+      CompletionQueue* cq) override {
     return nullptr;
   }
   ClientWriterInterface<EchoRequest>* RequestStreamRaw(
-      ClientContext* context, EchoResponse* response) GRPC_OVERRIDE {
+      ClientContext* context, EchoResponse* response) override {
     return nullptr;
   }
   ClientAsyncWriterInterface<EchoRequest>* AsyncRequestStreamRaw(
       ClientContext* context, EchoResponse* response, CompletionQueue* cq,
-      void* tag) GRPC_OVERRIDE {
+      void* tag) override {
     return nullptr;
   }
   ClientReaderInterface<EchoResponse>* ResponseStreamRaw(
-      ClientContext* context, const EchoRequest& request) GRPC_OVERRIDE {
+      ClientContext* context, const EchoRequest& request) override {
     return nullptr;
   }
   ClientAsyncReaderInterface<EchoResponse>* AsyncResponseStreamRaw(
       ClientContext* context, const EchoRequest& request, CompletionQueue* cq,
-      void* tag) GRPC_OVERRIDE {
+      void* tag) override {
     return nullptr;
   }
   ClientReaderWriterInterface<EchoRequest, EchoResponse>* BidiStreamRaw(
-      ClientContext* context) GRPC_OVERRIDE {
+      ClientContext* context) override {
     return new MockClientReaderWriter<EchoRequest, EchoResponse>();
   }
   ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>*
   AsyncBidiStreamRaw(ClientContext* context, CompletionQueue* cq,
-                     void* tag) GRPC_OVERRIDE {
+                     void* tag) override {
     return nullptr;
   }
   ClientAsyncResponseReaderInterface<EchoResponse>* AsyncUnimplementedRaw(
       ClientContext* context, const EchoRequest& request,
-      CompletionQueue* cq) GRPC_OVERRIDE {
+      CompletionQueue* cq) override {
     return nullptr;
   }
 };
@@ -216,14 +214,14 @@ class FakeClient {
 class TestServiceImpl : public EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message(request->message());
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -239,7 +237,7 @@ class MockTest : public ::testing::Test {
  protected:
   MockTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -250,7 +248,7 @@ class MockTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
+  void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =
