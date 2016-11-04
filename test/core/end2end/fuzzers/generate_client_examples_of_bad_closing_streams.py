@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,34 +28,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Creates a standard jenkins worker on GCE.
+import os
+import sys
 
-set -ex
+os.chdir(os.path.dirname(sys.argv[0]))
 
-cd $(dirname $0)
+streams = {
+  'server_hanging_response_1_header': (
+    [0,0,0,4,0,0,0,0,0] + # settings frame
+    [0,0,0,1,5,0,0,0,1] # trailers
+  ),
+  'server_hanging_response_2_header2': (
+    [0,0,0,4,0,0,0,0,0] + # settings frame
+    [0,0,0,1,4,0,0,0,1] + # headers
+    [0,0,0,1,5,0,0,0,1] # trailers
+  ),
+}
 
-CLOUD_PROJECT=grpc-testing
-ZONE=us-central1-a
-
-INSTANCE_NAME="${1:-grpc-jenkins-worker1}"
-
-gcloud compute instances create $INSTANCE_NAME \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    --machine-type n1-standard-16 \
-    --image=ubuntu-1510 \
-    --image-project=grpc-testing \
-    --boot-disk-size 1000
-
-echo 'Created GCE instance, waiting 60 seconds for it to come online.'
-sleep 60
-
-gcloud compute copy-files \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    jenkins_master.pub linux_worker_init.sh ${INSTANCE_NAME}:~
-
-gcloud compute ssh \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    $INSTANCE_NAME --command "./linux_worker_init.sh"
+for name, stream in streams.items():
+  open('client_fuzzer_corpus/%s' % name, 'w').write(bytearray(stream))
