@@ -129,10 +129,11 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/
 #ifdef GRPC_TCP_REFCOUNT_DEBUG
-#define TCP_UNREF(exec_ctx, tcp, reason) tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
+#define TCP_UNREF(exec_ctx, tcp, reason) \
+  tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp, const char *reason, const char *file,
-                      int line) {
+static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                      const char *reason, const char *file, int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
           reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref(&tcp->refcount)) {
