@@ -305,10 +305,12 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
       grpc_service_config* service_config =
           grpc_service_config_create(channel_arg->value.string);
-      method_params_table = grpc_service_config_create_method_config_table(
-          service_config, method_parameters_create_from_json,
-          &method_parameters_vtable);
-      grpc_service_config_destroy(service_config);
+      if (service_config != NULL) {
+        method_params_table = grpc_service_config_create_method_config_table(
+            service_config, method_parameters_create_from_json,
+            &method_parameters_vtable);
+        grpc_service_config_destroy(service_config);
+      }
     }
     // Clean up.
     grpc_channel_args_destroy(chand->resolver_result);

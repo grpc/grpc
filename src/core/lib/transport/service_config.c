@@ -42,27 +42,60 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/mdstr_hash_table.h"
 
+// The main purpose of the code here is to parse the service config in
+// JSON form, which will look like this:
+//
+// {
+//   "lb_policy_name": "string",  // optional
+//   "method_config": [  // array of one or more method_config objects
+//     {
+//       "name": [  // array of one or more name objects
+//         {
+//           "service": "string",  // required
+//           "method": "string",  // optional
+//         }
+//       ],
+//       // remaining fields are optional
+//       "wait_for_ready": bool,
+//       "timeout": {
+//         // one or both of these fields may be specified
+//         "seconds": number,
+//         "nanos": number,
+//       },
+//       "max_request_message_bytes": number,
+//       "max_response_message_bytes": number
+//     }
+//   ]
+// }
+
 struct grpc_service_config {
-  char* string;
-  grpc_json* json;
+  char* json_string;  // Underlying storage for json_tree.
+  grpc_json* json_tree;
 };
 
 grpc_service_config* grpc_service_config_create(const char* json_string) {
   grpc_service_config* service_config = gpr_malloc(sizeof(*service_config));
-  service_config->string = gpr_strdup(json_string);
-  service_config->json = grpc_json_parse_string(service_config->string);
+  service_config->json_string = gpr_strdup(json_string);
+  service_config->json_tree =
+      grpc_json_parse_string(service_config->json_string);
+  if (service_config->json_tree == NULL) {
+    gpr_log(GPR_INFO, "failed to parse JSON for service config");
+    gpr_free(service_config->json_string);
+    gpr_free(service_config);
+    return NULL;
+  }
   return service_config;
 }
 
 void grpc_service_config_destroy(grpc_service_config* service_config) {
-  grpc_json_destroy(service_config->json);
-  gpr_free(service_config->string);
+  grpc_json_destroy(service_config->json_tree);
+  gpr_free(service_config->json_string);
   gpr_free(service_config);
 }
 
 const char* grpc_service_config_get_lb_policy_name(
     const grpc_service_config* service_config) {
-  const grpc_json* json = service_config->json;
+  const grpc_json* json = service_config->json_tree;
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
   const char* lb_policy_name = NULL;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
@@ -85,7 +118,7 @@ static size_t count_names_in_method_config_json(grpc_json* json) {
   return num_names;
 }
 
-// Returns a path string for the name specified by \a json.
+// Returns a path string for the JSON name object specified by \a json.
 // Returns NULL on error.  Caller takes ownership of result.
 static char* parse_json_method_name(grpc_json* json) {
   if (json->type != GRPC_JSON_OBJECT) return NULL;
@@ -113,6 +146,7 @@ static char* parse_json_method_name(grpc_json* json) {
 
 // Parses the method config from \a json.  Adds an entry to \a entries for
 // each name found, incrementing \a idx for each entry added.
+// Returns false on error.
 static bool parse_json_method_config(
     grpc_json* json, void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable,
@@ -121,7 +155,7 @@ static bool parse_json_method_config(
   void* method_config = create_value(json);
   if (method_config == NULL) return false;
   // Construct list of paths.
-  bool retval = false;
+  bool success = false;
   gpr_strvec paths;
   gpr_strvec_init(&paths);
   for (grpc_json* child = json->child; child != NULL; child = child->next) {
@@ -142,18 +176,18 @@ static bool parse_json_method_config(
     entries[*idx].vtable = vtable;
     ++*idx;
   }
-  retval = true;
+  success = true;
 done:
   vtable->destroy_value(method_config);
   gpr_strvec_destroy(&paths);
-  return retval;
+  return success;
 }
 
 grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
     const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
     const grpc_mdstr_hash_table_vtable* vtable) {
-  const grpc_json* json = service_config->json;
+  const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
   size_t num_entries = 0;

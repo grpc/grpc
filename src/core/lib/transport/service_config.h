@@ -59,7 +59,7 @@ grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
     const grpc_mdstr_hash_table_vtable* vtable);
 
 /// A helper function for looking up values in the table returned by
-/// grpc_service_config_create_method_config_table().
+/// \a grpc_service_config_create_method_config_table().
 /// Gets the method config for the specified \a path, which should be of
 /// the form "/service/method".
 /// Returns NULL if the method has no config.
