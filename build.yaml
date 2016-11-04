@@ -3203,6 +3203,13 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: noop-benchmark
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/noop-benchmark.cc
+  deps:
+  - google_benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -3696,6 +3703,8 @@ defaults:
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
     LDFLAGS: -g
+  google_benchmark:
+    CPPFLAGS: -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
