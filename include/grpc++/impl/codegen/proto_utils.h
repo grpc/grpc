@@ -40,9 +40,8 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/slice.h>
 
 namespace grpc {
@@ -53,7 +52,7 @@ namespace internal {
 
 const int kGrpcBufferWriterMaxBufferLength = 8192;
 
-class GrpcBufferWriter GRPC_FINAL
+class GrpcBufferWriter final
     : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   explicit GrpcBufferWriter(grpc_byte_buffer** bp, int block_size)
@@ -62,13 +61,13 @@ class GrpcBufferWriter GRPC_FINAL
     slice_buffer_ = &(*bp)->data.raw.slice_buffer;
   }
 
-  ~GrpcBufferWriter() GRPC_OVERRIDE {
+  ~GrpcBufferWriter() override {
     if (have_backup_) {
       g_core_codegen_interface->gpr_slice_unref(backup_slice_);
     }
   }
 
-  bool Next(void** data, int* size) GRPC_OVERRIDE {
+  bool Next(void** data, int* size) override {
     if (have_backup_) {
       slice_ = backup_slice_;
       have_backup_ = false;
@@ -83,7 +82,7 @@ class GrpcBufferWriter GRPC_FINAL
     return true;
   }
 
-  void BackUp(int count) GRPC_OVERRIDE {
+  void BackUp(int count) override {
     g_core_codegen_interface->gpr_slice_buffer_pop(slice_buffer_);
     if (count == block_size_) {
       backup_slice_ = slice_;
@@ -96,7 +95,7 @@ class GrpcBufferWriter GRPC_FINAL
     byte_count_ -= count;
   }
 
-  grpc::protobuf::int64 ByteCount() const GRPC_OVERRIDE { return byte_count_; }
+  grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
 
  private:
   const int block_size_;
@@ -107,7 +106,7 @@ class GrpcBufferWriter GRPC_FINAL
   gpr_slice slice_;
 };
 
-class GrpcBufferReader GRPC_FINAL
+class GrpcBufferReader final
     : public ::grpc::protobuf::io::ZeroCopyInputStream {
  public:
   explicit GrpcBufferReader(grpc_byte_buffer* buffer)
@@ -118,11 +117,11 @@ class GrpcBufferReader GRPC_FINAL
                        "Couldn't initialize byte buffer reader");
     }
   }
-  ~GrpcBufferReader() GRPC_OVERRIDE {
+  ~GrpcBufferReader() override {
     g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader_);
   }
 
-  bool Next(const void** data, int* size) GRPC_OVERRIDE {
+  bool Next(const void** data, int* size) override {
     if (!status_.ok()) {
       return false;
     }
@@ -148,9 +147,9 @@ class GrpcBufferReader GRPC_FINAL
 
   Status status() const { return status_; }
 
-  void BackUp(int count) GRPC_OVERRIDE { backup_count_ = count; }
+  void BackUp(int count) override { backup_count_ = count; }
 
-  bool Skip(int count) GRPC_OVERRIDE {
+  bool Skip(int count) override {
     const void* data;
     int size;
     while (Next(&data, &size)) {
@@ -165,7 +164,7 @@ class GrpcBufferReader GRPC_FINAL
     return false;
   }
 
-  grpc::protobuf::int64 ByteCount() const GRPC_OVERRIDE {
+  grpc::protobuf::int64 ByteCount() const override {
     return byte_count_ - backup_count_;
   }
 
@@ -205,7 +204,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
 
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
-                            int max_message_size) {
+                            int max_receive_message_size) {
     if (buffer == nullptr) {
       return Status(StatusCode::INTERNAL, "No payload");
     }
@@ -216,8 +215,9 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
         return reader.status();
       }
       ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-      if (max_message_size > 0) {
-        decoder.SetTotalBytesLimit(max_message_size, max_message_size);
+      if (max_receive_message_size > 0) {
+        decoder.SetTotalBytesLimit(max_receive_message_size,
+                                   max_receive_message_size);
       }
       if (!msg->ParseFromCodedStream(&decoder)) {
         result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());

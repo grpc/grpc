@@ -51,6 +51,17 @@ grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
                                                   const grpc_arg *to_add,
                                                   size_t num_to_add);
 
+/** Copies the arguments in \a src except for those whose keys are in
+    \a to_remove. */
+grpc_channel_args *grpc_channel_args_copy_and_remove(
+    const grpc_channel_args *src, const char **to_remove, size_t num_to_remove);
+
+/** Copies the arguments from \a src except for those whose keys are in
+    \a to_remove and appends the arguments in \a to_add. */
+grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
+    const grpc_channel_args *src, const char **to_remove, size_t num_to_remove,
+    const grpc_arg *to_add, size_t num_to_add);
+
 /** Concatenate args from \a a and \a b into a new instance */
 grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
                                            const grpc_channel_args *b);
@@ -88,5 +99,17 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
 
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
+
+/** Returns the value of argument \a name from \a args, or NULL if not found. */
+const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
+                                       const char *name);
+
+typedef struct grpc_integer_options {
+  int default_value;  // Return this if value is outside of expected bounds.
+  int min_value;
+  int max_value;
+} grpc_integer_options;
+/** Returns the value of \a arg, subject to the contraints in \a options. */
+int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

@@ -60,7 +60,7 @@ typedef struct call_data {
   /** If true, contents of \a compression_algorithm are authoritative */
   int has_compression_algorithm;
 
-  grpc_transport_stream_op send_op;
+  grpc_transport_stream_op *send_op;
   uint32_t send_length;
   uint32_t send_flags;
   gpr_slice incoming_slice;
@@ -199,11 +199,11 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
                                 calld->send_flags);
-  calld->send_op.send_message = &calld->replacement_stream.base;
-  calld->post_send = calld->send_op.on_complete;
-  calld->send_op.on_complete = &calld->send_done;
+  calld->send_op->send_message = &calld->replacement_stream.base;
+  calld->post_send = calld->send_op->on_complete;
+  calld->send_op->on_complete = &calld->send_done;
 
-  grpc_call_next_op(exec_ctx, elem, &calld->send_op);
+  grpc_call_next_op(exec_ctx, elem, calld->send_op);
 }
 
 static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
@@ -220,7 +220,7 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  while (grpc_byte_stream_next(exec_ctx, calld->send_op.send_message,
+  while (grpc_byte_stream_next(exec_ctx, calld->send_op->send_message,
                                &calld->incoming_slice, ~(size_t)0,
                                &calld->got_slice)) {
     gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
@@ -243,7 +243,7 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   }
   if (op->send_message != NULL && !skip_compression(elem) &&
       0 == (op->send_message->flags & GRPC_WRITE_NO_COMPRESS)) {
-    calld->send_op = *op;
+    calld->send_op = op;
     calld->send_length = op->send_message->length;
     calld->send_flags = op->send_message->flags;
     continue_send_message(exec_ctx, elem);

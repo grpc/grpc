@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -171,7 +176,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = expect_ok ? GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY : 0;
+  op->flags = expect_ok ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -353,3 +358,9 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

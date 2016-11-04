@@ -33,8 +33,8 @@
 
 #include <string.h>
 
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -183,7 +183,7 @@ void grpc_handshake_manager_do_handshake(
     gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
     grpc_handshaker_done_cb cb, void* user_data) {
   grpc_channel_args* args_copy = grpc_channel_args_copy(args);
-  gpr_slice_buffer* read_buffer = malloc(sizeof(*read_buffer));
+  gpr_slice_buffer* read_buffer = gpr_malloc(sizeof(*read_buffer));
   gpr_slice_buffer_init(read_buffer);
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done

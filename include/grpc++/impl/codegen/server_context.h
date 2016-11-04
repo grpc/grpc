@@ -43,9 +43,7 @@
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/time.h>
 
-struct gpr_timespec;
 struct grpc_metadata;
 struct grpc_call;
 struct census_context;
@@ -87,6 +85,7 @@ class ServerInterface;
 
 namespace testing {
 class InteropServerContextInspector;
+class ServerContextTestSpouse;
 }  // namespace testing
 
 // Interface of server side rpc context.
@@ -95,11 +94,9 @@ class ServerContext {
   ServerContext();  // for async calls
   ~ServerContext();
 
-#ifndef GRPC_CXX0X_NO_CHRONO
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
   gpr_timespec raw_deadline() const { return deadline_; }
 
@@ -174,6 +171,7 @@ class ServerContext {
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
+  friend class ::grpc::testing::ServerContextTestSpouse;
   friend class ::grpc::ServerInterface;
   friend class ::grpc::Server;
   template <class W, class R>

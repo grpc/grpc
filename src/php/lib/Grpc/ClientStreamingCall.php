@@ -62,7 +62,7 @@ class ClientStreamingCall extends AbstractCall
      */
     public function write($data, array $options = [])
     {
-        $message_array = ['message' => $data->serialize()];
+        $message_array = ['message' => $this->serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
