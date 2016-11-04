@@ -281,6 +281,9 @@ extern grpc_census_call_get_context_type grpc_census_call_get_context_import;
 typedef char *(*grpc_channel_get_target_type)(grpc_channel *channel);
 extern grpc_channel_get_target_type grpc_channel_get_target_import;
 #define grpc_channel_get_target grpc_channel_get_target_import
+typedef void(*grpc_channel_get_info_type)(grpc_channel *channel, const grpc_channel_info *channel_info);
+extern grpc_channel_get_info_type grpc_channel_get_info_import;
+#define grpc_channel_get_info grpc_channel_get_info_import
 typedef grpc_channel *(*grpc_insecure_channel_create_type)(const char *target, const grpc_channel_args *args, void *reserved);
 extern grpc_insecure_channel_create_type grpc_insecure_channel_create_import;
 #define grpc_insecure_channel_create grpc_insecure_channel_create_import
