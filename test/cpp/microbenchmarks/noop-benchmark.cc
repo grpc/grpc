@@ -31,42 +31,15 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
-#define GRPC_TEST_CORE_END2END_END2END_TESTS_H
+/* This benchmark exists to ensure that the google_benchmark integration is
+ * working */
 
-#include <grpc/grpc.h>
+#include "third_party/google_benchmark/include/benchmark/benchmark.h"
 
-typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
-typedef struct grpc_end2end_test_config grpc_end2end_test_config;
+static void BM_NoOp(benchmark::State& state) {
+  while (state.KeepRunning()) {
+  }
+}
+BENCHMARK(BM_NoOp);
 
-#define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
-#define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 8
-#define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 16
-
-#define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
-
-struct grpc_end2end_test_fixture {
-  grpc_completion_queue *cq;
-  grpc_server *server;
-  grpc_channel *client;
-  void *fixture_data;
-};
-
-struct grpc_end2end_test_config {
-  const char *name;
-  uint32_t feature_mask;
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
-                                              grpc_channel_args *server_args);
-  void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
-  void (*init_server)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture *f);
-};
-
-void grpc_end2end_tests_pre_init(void);
-void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config);
-
-#endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */
+BENCHMARK_MAIN();
