@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
 /* \file Simple PID controller.
-   Implements a proportial-integral-derivative controller.
+   Implements a proportional-integral-derivative controller.
    Used when we want to iteratively control a variable to converge some other
    observed value to a 'set-point'.
    Gains can be set to adjust sensitivity to current error (p), the integral
