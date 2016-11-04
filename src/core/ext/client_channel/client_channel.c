@@ -303,7 +303,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-      grpc_service_config* service_config =
+      grpc_service_config *service_config =
           grpc_service_config_create(channel_arg->value.string);
       if (service_config != NULL) {
         method_params_table = grpc_service_config_create_method_config_table(
