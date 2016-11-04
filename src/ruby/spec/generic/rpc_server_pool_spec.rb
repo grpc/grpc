@@ -55,7 +55,7 @@ describe GRPC::Pool do
     it 'it stops being ready after all workers jobs waiting or running' do
       p = Pool.new(5)
       p.start
-      job = proc { sleep(5) } # sleep so workers busy when done scheduling
+      job = proc { sleep(3) } # sleep so workers busy when done scheduling
       5.times do
         expect(p.ready_for_work?).to be(true)
         p.schedule(&job)
