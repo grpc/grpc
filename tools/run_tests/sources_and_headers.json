@@ -2820,6 +2820,20 @@
   }, 
   {
     "deps": [
+      "google_benchmark"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "noop-benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/noop-benchmark.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc", 
@@ -4059,24 +4073,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_fake_resolver_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_fake_resolver.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "h2_fakesec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_fakesec.c"
@@ -4386,24 +4382,6 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_fake_resolver_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_fake_resolver.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6115,6 +6093,37 @@
   {
     "deps": [], 
     "headers": [
+      "third_party/google_benchmark/include/benchmark/benchmark.h", 
+      "third_party/google_benchmark/include/benchmark/benchmark_api.h", 
+      "third_party/google_benchmark/include/benchmark/macros.h", 
+      "third_party/google_benchmark/include/benchmark/reporter.h", 
+      "third_party/google_benchmark/src/arraysize.h", 
+      "third_party/google_benchmark/src/benchmark_api_internal.h", 
+      "third_party/google_benchmark/src/check.h", 
+      "third_party/google_benchmark/src/colorprint.h", 
+      "third_party/google_benchmark/src/commandlineflags.h", 
+      "third_party/google_benchmark/src/complexity.h", 
+      "third_party/google_benchmark/src/cycleclock.h", 
+      "third_party/google_benchmark/src/internal_macros.h", 
+      "third_party/google_benchmark/src/log.h", 
+      "third_party/google_benchmark/src/mutex.h", 
+      "third_party/google_benchmark/src/re.h", 
+      "third_party/google_benchmark/src/sleep.h", 
+      "third_party/google_benchmark/src/stat.h", 
+      "third_party/google_benchmark/src/string_util.h", 
+      "third_party/google_benchmark/src/sysinfo.h", 
+      "third_party/google_benchmark/src/timers.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "google_benchmark", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
       "third_party/zlib/gzguts.h", 
@@ -7405,8 +7414,7 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "grpc_base"
+      "gpr"
     ], 
     "headers": [
       "src/core/lib/tsi/fake_transport_security.h", 
