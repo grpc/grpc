@@ -90,12 +90,13 @@ _KILLED = object()
 
 
 _COLORS = {
-    'red': [ 31, 0 ],
-    'green': [ 32, 0 ],
-    'yellow': [ 33, 0 ],
-    'lightgray': [ 37, 0],
-    'gray': [ 30, 1 ],
-    'purple': [ 35, 0 ],
+    'red': [31, 0],
+    'green': [32, 0],
+    'yellow': [33, 0],
+    'lightgray': [37, 0],
+    'gray': [30, 1],
+    'purple': [35, 0],
+    'blue': [34, 0],
     }
 
 
@@ -114,6 +115,7 @@ _TAG_COLOR = {
     'WAITING': 'yellow',
     'SUCCESS': 'green',
     'IDLE': 'gray',
+    'FINISHED': 'blue'  # finished with or without error
     }
 
 
@@ -272,10 +274,11 @@ class Job(object):
           self.start()
         else:
           self._state = _FAILURE
-          if not self._suppress_failure_message:
-            message('FAILED', '%s [ret=%d, pid=%d]' % (
-                self._spec.shortname, self._process.returncode, self._process.pid),
-                stdout(), do_newline=True)
+          message('FAILED' if not self._suppress_failure_message else 'FINISHED',
+                  '%s [ret=%d, pid=%d]' % (
+                      self._spec.shortname, self._process.returncode,
+                      self._process.pid),
+                  stdout(), do_newline=True)
           self.result.state = 'FAILED'
           self.result.num_failures += 1
           self.result.returncode = self._process.returncode
