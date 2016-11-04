@@ -211,10 +211,10 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 // that needs to be tested here.
 class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
-  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+  void UpdateArguments(ChannelArguments* arg) override {}
 
-  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
-      GRPC_OVERRIDE {
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
     plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
                                   plugin_has_sync_methods),
                    plugins->end());
@@ -246,7 +246,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   AsyncEnd2endTest() { GetParam().Log(); }
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
 
     port_ = grpc_pick_unused_port_or_die();
@@ -269,7 +269,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     gpr_tls_set(&g_is_async_end2end_test, 1);
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
