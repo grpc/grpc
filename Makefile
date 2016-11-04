@@ -3740,6 +3740,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3926,6 +3927,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -4448,6 +4450,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
