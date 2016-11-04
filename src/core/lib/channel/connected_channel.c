@@ -137,7 +137,7 @@ static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
 /* No-op. */
 static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
-                                 grpc_channel_info *channel_info) {}
+                                 const grpc_channel_info *channel_info) {}
 
 static const grpc_channel_filter connected_channel_filter = {
     con_start_transport_stream_op,

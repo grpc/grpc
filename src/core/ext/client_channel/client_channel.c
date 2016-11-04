@@ -243,7 +243,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_POLICY_NAME);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-      lb_policy_name = gpr_strdup(channel_arg->value.string);
+      lb_policy_name = channel_arg->value.string;
     }
     // Special case: If all of the addresses are balancer addresses,
     // assume that we should use the grpclb policy, regardless of what the
@@ -267,14 +267,13 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
                   "addresses, no backend addresses -- forcing use of grpclb LB "
                   "policy",
                   lb_policy_name);
-          gpr_free(lb_policy_name);
         }
-        lb_policy_name = gpr_strdup("grpclb");
+        lb_policy_name = "grpclb";
       }
     }
     // Use pick_first if nothing was specified and we didn't select grpclb
     // above.
-    if (lb_policy_name == NULL) lb_policy_name = gpr_strdup("pick_first");
+    if (lb_policy_name == NULL) lb_policy_name = "pick_first";
 
     lb_policy =
         grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
@@ -292,6 +291,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
           (grpc_method_config_table *)channel_arg->value.pointer.p,
           method_config_convert_value, &method_parameters_vtable);
     }
+    // Before we clean up, save a copy of lb_policy_name, since it might
+    // be pointing to data inside chand->resolver_result.
+    // The copy will be saved in chand->lb_policy_name below.
+    lb_policy_name = gpr_strdup(lb_policy_name);
     grpc_channel_args_destroy(chand->resolver_result);
     chand->resolver_result = NULL;
   }
@@ -435,7 +438,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem,
-                                grpc_channel_info *info) {
+                                const grpc_channel_info *info) {
   channel_data *chand = elem->channel_data;
   gpr_mu_lock(&chand->mu);
   if (info->lb_policy_name != NULL) {

@@ -176,7 +176,7 @@ char *grpc_channel_get_target(grpc_channel *channel) {
 }
 
 void grpc_channel_get_info(grpc_channel *channel,
-                           grpc_channel_info *channel_info) {
+                           const grpc_channel_info *channel_info) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_element *elem =
       grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
