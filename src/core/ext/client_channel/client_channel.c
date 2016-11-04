@@ -124,7 +124,7 @@ typedef struct client_channel_channel_data {
   /** mutex protecting all variables below in this data structure */
   gpr_mu mu;
   /** currently active load balancer */
-  char* lb_policy_name;
+  char *lb_policy_name;
   grpc_lb_policy *lb_policy;
   /** maps method names to method_parameters structs */
   grpc_mdstr_hash_table *method_params_table;
@@ -443,7 +443,8 @@ static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&chand->mu);
   if (info->lb_policy_name != NULL) {
     *info->lb_policy_name = chand->lb_policy_name == NULL
-                                ? NULL : gpr_strdup(chand->lb_policy_name);
+                                ? NULL
+                                : gpr_strdup(chand->lb_policy_name);
   }
   gpr_mu_unlock(&chand->mu);
 }
