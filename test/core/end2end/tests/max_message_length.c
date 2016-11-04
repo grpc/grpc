@@ -41,6 +41,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/method_config.h"
+
 #include "test/core/end2end/cq_verifier.h"
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -48,8 +53,7 @@ static void *tag(intptr_t t) { return (void *)t; }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args,
-                                            const char *query_args) {
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   // We intentionally do not pass the client and server args to
@@ -57,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   // proxy, only on the backend server.
   f = config.create_fixture(NULL, NULL);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, query_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -109,8 +113,6 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
           send_limit, use_service_config);
 
   grpc_end2end_test_fixture f;
-  grpc_arg channel_arg;
-  grpc_channel_args channel_args;
   grpc_call *c = NULL;
   grpc_call *s = NULL;
   cq_verifier *cqv;
@@ -130,32 +132,44 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  char *query_args = NULL;
   grpc_channel_args *client_args = NULL;
   grpc_channel_args *server_args = NULL;
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(send_limit);
-    query_args =
-        "method_name=/service/method"
-        "&max_request_message_bytes=5";
+    int32_t max_request_message_bytes = 5;
+    grpc_method_config_table_entry entry = {
+        grpc_mdstr_from_string("/service/method"),
+        grpc_method_config_create(NULL, NULL, &max_request_message_bytes, NULL),
+    };
+    grpc_method_config_table *method_config_table =
+        grpc_method_config_table_create(1, &entry);
+    GRPC_MDSTR_UNREF(entry.method_name);
+    grpc_method_config_unref(entry.method_config);
+    grpc_arg arg =
+        grpc_method_config_table_create_channel_arg(method_config_table);
+    client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+    grpc_method_config_table_unref(method_config_table);
   } else {
     // Set limit via channel args.
-    channel_arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
-                                 : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
-    channel_arg.type = GRPC_ARG_INTEGER;
-    channel_arg.value.integer = 5;
-    channel_args.num_args = 1;
-    channel_args.args = &channel_arg;
+    grpc_arg arg;
+    arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
+                         : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
+    arg.type = GRPC_ARG_INTEGER;
+    arg.value.integer = 5;
+    grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
     if (send_limit) {
-      client_args = &channel_args;
+      client_args = args;
     } else {
-      server_args = &channel_args;
+      server_args = args;
     }
   }
 
   f = begin_test(config, "test_max_request_message_length", client_args,
-                 server_args, query_args);
+                 server_args);
+  if (client_args != NULL) grpc_channel_args_destroy(client_args);
+  if (server_args != NULL) grpc_channel_args_destroy(server_args);
+
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -270,8 +284,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
           send_limit, use_service_config);
 
   grpc_end2end_test_fixture f;
-  grpc_arg channel_arg;
-  grpc_channel_args channel_args;
   grpc_call *c = NULL;
   grpc_call *s = NULL;
   cq_verifier *cqv;
@@ -292,32 +304,45 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  char *query_args = NULL;
   grpc_channel_args *client_args = NULL;
   grpc_channel_args *server_args = NULL;
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(!send_limit);
-    query_args =
-        "method_name=/service/method"
-        "&max_response_message_bytes=5";
+    int32_t max_response_message_bytes = 5;
+    grpc_method_config_table_entry entry = {
+        grpc_mdstr_from_string("/service/method"),
+        grpc_method_config_create(NULL, NULL, NULL,
+                                  &max_response_message_bytes),
+    };
+    grpc_method_config_table *method_config_table =
+        grpc_method_config_table_create(1, &entry);
+    GRPC_MDSTR_UNREF(entry.method_name);
+    grpc_method_config_unref(entry.method_config);
+    grpc_arg arg =
+        grpc_method_config_table_create_channel_arg(method_config_table);
+    client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+    grpc_method_config_table_unref(method_config_table);
   } else {
     // Set limit via channel args.
-    channel_arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
-                                 : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
-    channel_arg.type = GRPC_ARG_INTEGER;
-    channel_arg.value.integer = 5;
-    channel_args.num_args = 1;
-    channel_args.args = &channel_arg;
+    grpc_arg arg;
+    arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
+                         : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
+    arg.type = GRPC_ARG_INTEGER;
+    arg.value.integer = 5;
+    grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
     if (send_limit) {
-      server_args = &channel_args;
+      server_args = args;
     } else {
-      client_args = &channel_args;
+      client_args = args;
     }
   }
 
   f = begin_test(config, "test_max_response_message_length", client_args,
-                 server_args, query_args);
+                 server_args);
+  if (client_args != NULL) grpc_channel_args_destroy(client_args);
+  if (server_args != NULL) grpc_channel_args_destroy(server_args);
+
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -435,12 +460,10 @@ void max_message_length(grpc_end2end_test_config config) {
                                       false /* use_service_config */);
   test_max_message_length_on_response(config, true /* send_limit */,
                                       false /* use_service_config */);
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_QUERY_ARGS) {
-    test_max_message_length_on_request(config, true /* send_limit */,
-                                       true /* use_service_config */);
-    test_max_message_length_on_response(config, false /* send_limit */,
-                                        true /* use_service_config */);
-  }
+  test_max_message_length_on_request(config, true /* send_limit */,
+                                     true /* use_service_config */);
+  test_max_message_length_on_response(config, false /* send_limit */,
+                                      true /* use_service_config */);
 }
 
 void max_message_length_pre_init(void) {}
