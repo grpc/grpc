@@ -44,8 +44,8 @@ out['libs'] = [{
     'language': 'c++',
     'secure': 'no',
     'defaults': 'google_benchmark',
-    'src': glob.glob('third_party/google_benchmark/src/*.cc'),
-    'headers': glob.glob('third_party/google_benchmark/src/*.h') + glob.glob('third_party/google_benchmark/include/benchmark/*.h'),
+    'src': sorted(glob.glob('third_party/google_benchmark/src/*.cc')),
+    'headers': sorted(glob.glob('third_party/google_benchmark/src/*.h') + glob.glob('third_party/google_benchmark/include/benchmark/*.h')),
 }]
 
 print yaml.dump(out)
