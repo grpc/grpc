@@ -55,7 +55,7 @@ describe GRPC::Pool do
     it 'it stops being ready after all workers jobs waiting or running' do
       p = Pool.new(5)
       p.start
-      job = proc { sleep(3) } # sleep so workers busy when done scheduling
+      job = proc { sleep(5) } # sleep so workers busy when done scheduling
       5.times do
         expect(p.ready_for_work?).to be(true)
         p.schedule(&job)
@@ -63,7 +63,7 @@ describe GRPC::Pool do
       expect(p.ready_for_work?).to be(false)
     end
 
-    it 'it decreases as jobs are run' do
+    it 'it becomes ready again after jobs complete' do
       p = Pool.new(5)
       p.start
       job = proc {}
@@ -72,7 +72,7 @@ describe GRPC::Pool do
         p.schedule(&job)
       end
       expect(p.ready_for_work?).to be(false)
-      sleep 2 # give the pool time do get at least one task done
+      sleep 5 # give the pool time do get at least one task done
       expect(p.ready_for_work?).to be(true)
     end
   end
@@ -95,7 +95,7 @@ describe GRPC::Pool do
       p.stop
     end
 
-    it 'it throws an error if all opf the workers have tasks to do' do
+    it 'it throws an error if all of the workers have tasks to do' do
       p = Pool.new(5)
       p.start
       job = proc {}
@@ -129,16 +129,6 @@ describe GRPC::Pool do
   end
 
   describe '#start' do
-    it 'runs pre-scheduled jobs' do
-      p = Pool.new(5)
-      p.start
-      o, q = Object.new, Queue.new
-      n = 5  # arbitrary
-      n.times { p.schedule(o, &q.method(:push)) }
-      n.times { expect(q.pop).to be(o) }
-      p.stop
-    end
-
     it 'runs jobs as they are scheduled' do
       p = Pool.new(5)
       o, q = Object.new, Queue.new
