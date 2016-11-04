@@ -53,7 +53,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -137,17 +137,22 @@ void resource_quota_server(grpc_end2end_test_config config) {
    * will be verified on completion. */
   gpr_slice request_payload_slice = generate_random_slice();
 
-  grpc_call *client_calls[NUM_CALLS];
-  grpc_call *server_calls[NUM_CALLS];
-  grpc_metadata_array initial_metadata_recv[NUM_CALLS];
-  grpc_metadata_array trailing_metadata_recv[NUM_CALLS];
-  grpc_metadata_array request_metadata_recv[NUM_CALLS];
-  grpc_call_details call_details[NUM_CALLS];
-  grpc_status_code status[NUM_CALLS];
-  char *details[NUM_CALLS];
-  size_t details_capacity[NUM_CALLS];
-  grpc_byte_buffer *request_payload_recv[NUM_CALLS];
-  int was_cancelled[NUM_CALLS];
+  grpc_call **client_calls = malloc(sizeof(grpc_call *) * NUM_CALLS);
+  grpc_call **server_calls = malloc(sizeof(grpc_call *) * NUM_CALLS);
+  grpc_metadata_array *initial_metadata_recv =
+      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_metadata_array *trailing_metadata_recv =
+      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_metadata_array *request_metadata_recv =
+      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_call_details *call_details =
+      malloc(sizeof(grpc_call_details) * NUM_CALLS);
+  grpc_status_code *status = malloc(sizeof(grpc_status_code) * NUM_CALLS);
+  char **details = malloc(sizeof(char *) * NUM_CALLS);
+  size_t *details_capacity = malloc(sizeof(size_t) * NUM_CALLS);
+  grpc_byte_buffer **request_payload_recv =
+      malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
+  int *was_cancelled = malloc(sizeof(int) * NUM_CALLS);
   grpc_call_error error;
   int pending_client_calls = 0;
   int pending_server_start_calls = 0;
@@ -355,6 +360,18 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(request_payload);
   gpr_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
+
+  free(client_calls);
+  free(server_calls);
+  free(initial_metadata_recv);
+  free(trailing_metadata_recv);
+  free(request_metadata_recv);
+  free(call_details);
+  free(status);
+  free(details);
+  free(details_capacity);
+  free(request_payload_recv);
+  free(was_cancelled);
 
   end_test(&f);
   config.tear_down_data(&f);

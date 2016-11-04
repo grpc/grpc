@@ -83,13 +83,13 @@ class QpsGauge {
   std::mutex num_queries_mu_;
 };
 
-class MetricsServiceImpl GRPC_FINAL : public MetricsService::Service {
+class MetricsServiceImpl final : public MetricsService::Service {
  public:
   grpc::Status GetAllGauges(ServerContext* context, const EmptyMessage* request,
-                            ServerWriter<GaugeResponse>* writer) GRPC_OVERRIDE;
+                            ServerWriter<GaugeResponse>* writer) override;
 
   grpc::Status GetGauge(ServerContext* context, const GaugeRequest* request,
-                        GaugeResponse* response) GRPC_OVERRIDE;
+                        GaugeResponse* response) override;
 
   // Create a QpsGauge with name 'name'. is_present is set to true if the Gauge
   // is already present in the map.
