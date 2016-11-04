@@ -102,7 +102,7 @@ typedef struct {
 
   char *peer_string;
 
-  grpc_resource_user resource_user;
+  grpc_resource_user *resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
 } grpc_tcp;
 
@@ -110,28 +110,18 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                             grpc_error *error);
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                              grpc_error *error);
-static void tcp_unref_closure(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                              grpc_error *error);
-
-static void tcp_maybe_shutdown_resource_user(grpc_exec_ctx *exec_ctx,
-                                             grpc_tcp *tcp) {
-  if (gpr_atm_full_fetch_add(&tcp->shutdown_count, 1) == 0) {
-    grpc_resource_user_shutdown(exec_ctx, &tcp->resource_user,
-                                grpc_closure_create(tcp_unref_closure, tcp));
-  }
-}
 
 static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
   grpc_fd_shutdown(exec_ctx, tcp->em_fd);
+  grpc_resource_user_shutdown(exec_ctx, tcp->resource_user);
 }
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
-  grpc_resource_user_destroy(exec_ctx, &tcp->resource_user);
+  grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
 }
@@ -168,15 +158,9 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
-static void tcp_unref_closure(grpc_exec_ctx *exec_ctx, void *arg,
-                              grpc_error *error) {
-  TCP_UNREF(exec_ctx, arg, "resource_user");
-}
-
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
   gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
@@ -515,7 +499,7 @@ static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
 
 static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  return &tcp->resource_user;
+  return tcp->resource_user;
 }
 
 static const grpc_endpoint_vtable vtable = {tcp_read,
@@ -543,9 +527,8 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   tcp->slice_size = slice_size;
   tcp->iov_size = 1;
   tcp->finished_edge = true;
-  /* paired with unref in grpc_tcp_destroy, and with the shutdown for our
-   * resource_user */
-  gpr_ref_init(&tcp->refcount, 2);
+  /* paired with unref in grpc_tcp_destroy */
+  gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   tcp->read_closure.cb = tcp_handle_read;
@@ -553,10 +536,9 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_resource_user_init(&tcp->resource_user, resource_quota, peer_string);
-  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
-                                          &tcp->resource_user,
-                                          tcp_read_allocation_done, tcp);
+  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
+  grpc_resource_user_slice_allocator_init(
+      &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
   /* Tell network status tracker about new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
 
@@ -576,7 +558,6 @@ void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;
-  tcp_maybe_shutdown_resource_user(exec_ctx, tcp);
   gpr_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
