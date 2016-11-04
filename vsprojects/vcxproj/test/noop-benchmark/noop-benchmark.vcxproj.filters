@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\microbenchmarks\noop-benchmark.cc">
+      <Filter>test\cpp\microbenchmarks</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{d56f990b-c6e5-d80a-9e07-4bcbfbb7d97e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{15ba47e8-9d93-ffaf-d4e2-49262cfb4996}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\microbenchmarks">
+      <UniqueIdentifier>{d31456e0-6846-00f7-082a-30479a8b8a4f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

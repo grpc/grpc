@@ -61,7 +61,7 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
   explicit ErrorPrinter(ProtoFileParser* parser) : parser_(parser) {}
 
   void AddError(const grpc::string& filename, int line, int column,
-                const grpc::string& message) GRPC_OVERRIDE {
+                const grpc::string& message) override {
     std::ostringstream oss;
     oss << "error " << filename << " " << line << " " << column << " "
         << message << "\n";
@@ -69,7 +69,7 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
   }
 
   void AddWarning(const grpc::string& filename, int line, int column,
-                  const grpc::string& message) GRPC_OVERRIDE {
+                  const grpc::string& message) override {
     std::cerr << "warning " << filename << " " << line << " " << column << " "
               << message << std::endl;
   }

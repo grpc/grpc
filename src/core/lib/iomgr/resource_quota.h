@@ -221,4 +221,9 @@ void grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator *slice_allocator, size_t length,
     size_t count, gpr_slice_buffer *dest);
 
+/* Allocate one slice of length \a size synchronously. */
+gpr_slice grpc_resource_user_slice_malloc(grpc_exec_ctx *exec_ctx,
+                                          grpc_resource_user *resource_user,
+                                          size_t size);
+
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

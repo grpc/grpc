@@ -31,15 +31,15 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_SYNC_H
-#define GRPCXX_IMPL_CODEGEN_SYNC_H
+/* This benchmark exists to ensure that the google_benchmark integration is
+ * working */
 
-#include <grpc++/impl/codegen/config.h>
+#include "third_party/google_benchmark/include/benchmark/benchmark.h"
 
-#ifdef GRPC_CXX0X_NO_THREAD
-#include <grpc++/impl/codegen/sync_no_cxx11.h>
-#else
-#include <grpc++/impl/codegen/sync_cxx11.h>
-#endif
+static void BM_NoOp(benchmark::State& state) {
+  while (state.KeepRunning()) {
+  }
+}
+BENCHMARK(BM_NoOp);
 
-#endif  // GRPCXX_IMPL_CODEGEN_SYNC_H
+BENCHMARK_MAIN();

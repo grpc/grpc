@@ -332,6 +332,8 @@ class CLanguage(object):
       return ('wheezy', self._gcc_make_options(version_suffix='-4.4'))
     elif compiler == 'gcc4.6':
       return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
+    elif compiler == 'gcc4.8':
+      return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':
@@ -1061,7 +1063,7 @@ argp.add_argument('--arch',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
                   choices=['default',
-                           'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
+                           'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
