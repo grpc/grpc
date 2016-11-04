@@ -74,7 +74,7 @@ void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
-/* Get the file descriptor used by \a ep. Return -1 if \a ep is not using a fd.
+/* Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
    */
 int grpc_endpoint_get_fd(grpc_endpoint *ep);
 
