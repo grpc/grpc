@@ -154,7 +154,6 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
     grpc_mdelem *orig = l->md;
     grpc_mdelem *filt = filter(user_data, orig);
     next = l->next;
-    gpr_log(GPR_DEBUG, "FILT: %p %p->%p", l, orig, filt);
     if (filt == NULL) {
       if (l->prev) {
         l->prev->next = l->next;
