@@ -94,11 +94,9 @@ class ServerContext {
   ServerContext();  // for async calls
   ~ServerContext();
 
-#ifndef GRPC_CXX0X_NO_CHRONO
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
   gpr_timespec raw_deadline() const { return deadline_; }
 
