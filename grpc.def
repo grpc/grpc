@@ -72,6 +72,7 @@ EXPORTS
     grpc_census_call_set_context
     grpc_census_call_get_context
     grpc_channel_get_target
+    grpc_channel_get_info
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
