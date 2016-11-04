@@ -33,14 +33,14 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_channel/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
   grpc_channel *chan;
   /* avoid default prefix */
   grpc_resolver_registry_shutdown();
-  grpc_resolver_registry_init("");
+  grpc_resolver_registry_init();
 
   chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
   GPR_ASSERT(chan != NULL);

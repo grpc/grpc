@@ -34,8 +34,8 @@
 #ifndef GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
 #define GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
 
-#include <grpc/impl/codegen/port_platform.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

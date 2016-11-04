@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <winsock2.h>
 
@@ -84,7 +84,7 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char *utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s",
+    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
             utf8_message);
     gpr_free(utf8_message);
   }
@@ -156,4 +156,4 @@ void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
   if (should_destroy) destroy(socket);
 }
 
-#endif /* GPR_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

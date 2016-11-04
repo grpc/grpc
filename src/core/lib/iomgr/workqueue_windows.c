@@ -42,15 +42,17 @@
 // context, which is at least correct, if not performant or in the spirit of
 // workqueues.
 
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
-
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
-                        const char *reason) {}
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
+  return workqueue;
+}
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                           const char *file, int line, const char *reason) {}
 #else
-void grpc_workqueue_ref(grpc_workqueue *workqueue) {}
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  return workqueue;
+}
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
 #endif
 

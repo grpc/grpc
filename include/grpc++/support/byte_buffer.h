@@ -47,7 +47,7 @@
 namespace grpc {
 
 /// A sequence of bytes.
-class ByteBuffer GRPC_FINAL {
+class ByteBuffer final {
  public:
   /// Constuct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}
@@ -96,7 +96,7 @@ template <>
 class SerializationTraits<ByteBuffer, void> {
  public:
   static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest,
-                            int max_message_size) {
+                            int max_receive_message_size) {
     dest->set_buffer(byte_buffer);
     return Status::OK;
   }

@@ -41,7 +41,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -113,7 +113,8 @@ void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack_compression", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+    {"chttp2/fullstack_compression", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+                                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
      chttp2_create_fixture_fullstack_compression,
      chttp2_init_client_fullstack_compression,
      chttp2_init_server_fullstack_compression,

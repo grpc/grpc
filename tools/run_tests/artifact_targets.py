@@ -109,8 +109,8 @@ class PythonArtifact:
       # TODO(atash) get better platform-detection support in core so we don't
       # need to do this manually...
       environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
-      environ['BUILD_HEALTH_CHECKING'] = 'TRUE'
-      environ['BUILD_MANYLINUX_WHEEL'] = 'TRUE'
+      environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
+      environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
       return create_docker_jobspec(self.name,
           'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',

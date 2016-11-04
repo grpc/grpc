@@ -95,7 +95,7 @@ static grpc_security_status ssl_create_security_connector(
 }
 
 static grpc_channel_credentials_vtable ssl_vtable = {
-    ssl_destruct, ssl_create_security_connector};
+    ssl_destruct, ssl_create_security_connector, NULL};
 
 static void ssl_build_config(const char *pem_root_certs,
                              grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,

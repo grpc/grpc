@@ -39,6 +39,7 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
@@ -58,13 +59,15 @@ struct grpc_endpoint_vtable {
                              grpc_pollset_set *pollset);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+  grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
   char *(*get_peer)(grpc_endpoint *ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
    Callback success indicates that the endpoint can accept more reads, failure
    indicates the endpoint is closed.
-   Valid slices may be placed into \a slices even on callback success == 0. */
+   Valid slices may be placed into \a slices even when the callback is
+   invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         gpr_slice_buffer *slices, grpc_closure *cb);
 
@@ -98,6 +101,8 @@ void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
                                       grpc_endpoint *ep,
                                       grpc_pollset_set *pollset_set);
+
+grpc_resource_user *grpc_endpoint_get_resource_user(grpc_endpoint *endpoint);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;

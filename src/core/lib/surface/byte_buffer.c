@@ -72,8 +72,9 @@ grpc_byte_buffer *grpc_raw_byte_buffer_from_reader(
 grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
   switch (bb->type) {
     case GRPC_BB_RAW:
-      return grpc_raw_byte_buffer_create(bb->data.raw.slice_buffer.slices,
-                                         bb->data.raw.slice_buffer.count);
+      return grpc_raw_compressed_byte_buffer_create(
+          bb->data.raw.slice_buffer.slices, bb->data.raw.slice_buffer.count,
+          bb->data.raw.compression);
   }
   GPR_UNREACHABLE_CODE(return NULL);
 }

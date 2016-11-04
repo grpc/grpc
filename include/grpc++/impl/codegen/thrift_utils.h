@@ -40,10 +40,8 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/status_code_enum.h>
 #include <grpc++/impl/codegen/thrift_serializer.h>
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/slice_buffer.h>
 #include <cstdint>
 #include <cstdlib>
 
@@ -66,7 +64,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   }
 
   static Status Deserialize(grpc_byte_buffer* buffer, T* msg,
-                            int max_message_size) {
+                            int max_receive_message_size) {
     if (!buffer) {
       return Status(StatusCode::INTERNAL, "No payload");
     }

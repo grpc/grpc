@@ -45,6 +45,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -83,7 +84,7 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
       auto stub = WorkerService::NewStub(
           CreateChannel(*it, InsecureChannelCredentials()));
       grpc::ClientContext ctx;
-      ctx.set_fail_fast(false);
+      ctx.set_wait_for_ready(true);
       CoreRequest dummy;
       CoreResponse cores;
       grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
@@ -131,7 +132,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   Histogram histogram;
   histogram.MergeProto(result->latencies());
 
-  auto qps = histogram.Count() / average(result->client_stats(), WallTime);
+  auto time_estimate = average(result->client_stats(), WallTime);
+  auto qps = histogram.Count() / time_estimate;
   auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
 
   result->mutable_summary()->set_qps(qps);
@@ -156,6 +158,23 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   result->mutable_summary()->set_server_user_time(server_user_time);
   result->mutable_summary()->set_client_system_time(client_system_time);
   result->mutable_summary()->set_client_user_time(client_user_time);
+
+  if (result->request_results_size() > 0) {
+    int64_t successes = 0;
+    int64_t failures = 0;
+    for (int i = 0; i < result->request_results_size(); i++) {
+      RequestResultCount rrc = result->request_results(i);
+      if (rrc.status_code() == 0) {
+        successes += rrc.count();
+      } else {
+        failures += rrc.count();
+      }
+    }
+    result->mutable_summary()->set_successful_requests_per_second(
+        successes / time_estimate);
+    result->mutable_summary()->set_failed_requests_per_second(failures /
+                                                              time_estimate);
+  }
 }
 
 // Namespace for classes and functions used only in RunScenario
@@ -167,7 +186,7 @@ namespace runsc {
 static ClientContext* AllocContext(list<ClientContext>* contexts) {
   contexts->emplace_back();
   auto context = &contexts->back();
-  context->set_fail_fast(false);
+  context->set_wait_for_ready(true);
   return context;
 }
 
@@ -366,9 +385,34 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!clients[i].stream->Write(args)) {
       gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
     }
+  }
+
+  for (size_t i = 0; i < num_clients; i++) {
     ClientStatus init_status;
     if (!clients[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Client %zu did not yield initial status", i);
+    }
+  }
+
+  // Send an initial mark: clients can use this to know that everything is ready
+  // to start
+  gpr_log(GPR_INFO, "Initiating");
+  ServerArgs server_mark;
+  server_mark.mutable_mark()->set_reset(true);
+  ClientArgs client_mark;
+  client_mark.mutable_mark()->set_reset(true);
+  ServerStatus server_status;
+  ClientStatus client_status;
+  for (size_t i = 0; i < num_clients; i++) {
+    auto client = &clients[i];
+    if (!client->stream->Write(client_mark)) {
+      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+    }
+  }
+  for (size_t i = 0; i < num_clients; i++) {
+    auto client = &clients[i];
+    if (!client->stream->Read(&client_status)) {
+      gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
     }
   }
 
@@ -380,10 +424,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Start a run
   gpr_log(GPR_INFO, "Starting");
-  ServerArgs server_mark;
-  server_mark.mutable_mark()->set_reset(true);
-  ClientArgs client_mark;
-  client_mark.mutable_mark()->set_reset(true);
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
@@ -396,8 +436,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
     }
   }
-  ServerStatus server_status;
-  ClientStatus client_status;
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Read(&server_status)) {
@@ -419,9 +457,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
       start,
       gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
+  gpr_timer_set_enabled(0);
+
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   Histogram merged_latencies;
+  std::unordered_map<int, int64_t> merged_statuses;
 
   gpr_log(GPR_INFO, "Finishing clients");
   for (size_t i = 0; i < num_clients; i++) {
@@ -440,6 +481,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_INFO, "Received final status from client %zu", i);
       const auto& stats = client_status.stats();
       merged_latencies.MergeProto(stats.latencies());
+      for (int i = 0; i < stats.request_results_size(); i++) {
+        merged_statuses[stats.request_results(i).status_code()] +=
+            stats.request_results(i).count();
+      }
       result->add_client_stats()->CopyFrom(stats);
       // That final status should be the last message on the client stream
       GPR_ASSERT(!client->stream->Read(&client_status));
@@ -459,6 +504,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
   delete[] clients;
 
   merged_latencies.FillProto(result->mutable_latencies());
+  for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
+       it != merged_statuses.end(); ++it) {
+    RequestResultCount* rrc = result->add_request_results();
+    rrc->set_status_code(it->first);
+    rrc->set_count(it->second);
+  }
 
   gpr_log(GPR_INFO, "Finishing servers");
   for (size_t i = 0; i < num_servers; i++) {
@@ -508,7 +559,7 @@ bool RunQuit() {
         CreateChannel(workers[i], InsecureChannelCredentials()));
     Void dummy;
     grpc::ClientContext ctx;
-    ctx.set_fail_fast(false);
+    ctx.set_wait_for_ready(true);
     Status s = stub->QuitWorker(&ctx, dummy, &dummy);
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
