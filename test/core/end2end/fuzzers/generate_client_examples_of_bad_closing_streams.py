@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,16 +28,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import os
+import sys
 
-# change to root directory
-cd $(dirname $0)/../..
+os.chdir(os.path.dirname(sys.argv[0]))
 
-# build grpc_check_generated_pb_files docker image
-docker build -t grpc_check_generated_pb_files tools/dockerfile/grpc_check_generated_pb_files
+streams = {
+  'server_hanging_response_1_header': (
+    [0,0,0,4,0,0,0,0,0] + # settings frame
+    [0,0,0,1,5,0,0,0,1] # trailers
+  ),
+  'server_hanging_response_2_header2': (
+    [0,0,0,4,0,0,0,0,0] + # settings frame
+    [0,0,0,1,4,0,0,0,1] + # headers
+    [0,0,0,1,5,0,0,0,1] # trailers
+  ),
+}
 
-# run check_pb_files against the checked out codebase
-docker run -e TEST=$TEST --rm=true -v ${HOST_GIT_ROOT:-`pwd`}:/var/local/jenkins/grpc -t grpc_check_generated_pb_files /var/local/jenkins/grpc/tools/dockerfile/grpc_check_generated_pb_files/check_pb_files.sh
-
-# If the test fails, please make sure your protobuf submodule is up-to-date and run
-# tools/codegen/extensions/gen_reflection_proto.sh to update the generated files.
+for name, stream in streams.items():
+  open('client_fuzzer_corpus/%s' % name, 'w').write(bytearray(stream))

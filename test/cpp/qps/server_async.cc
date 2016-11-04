@@ -58,7 +58,7 @@ namespace testing {
 
 template <class RequestType, class ResponseType, class ServiceType,
           class ServerContextType>
-class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
+class AsyncQpsServerTest final : public grpc::testing::Server {
  public:
   AsyncQpsServerTest(
       const ServerConfig &config,
@@ -196,7 +196,7 @@ class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
     return reinterpret_cast<ServerRpcContext *>(tag);
   }
 
-  class ServerRpcContextUnaryImpl GRPC_FINAL : public ServerRpcContext {
+  class ServerRpcContextUnaryImpl final : public ServerRpcContext {
    public:
     ServerRpcContextUnaryImpl(
         std::function<void(ServerContextType *, RequestType *,
@@ -213,11 +213,9 @@ class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
       request_method_(srv_ctx_.get(), &req_, &response_writer_,
                       AsyncQpsServerTest::tag(this));
     }
-    ~ServerRpcContextUnaryImpl() GRPC_OVERRIDE {}
-    bool RunNextState(bool ok) GRPC_OVERRIDE {
-      return (this->*next_state_)(ok);
-    }
-    void Reset() GRPC_OVERRIDE {
+    ~ServerRpcContextUnaryImpl() override {}
+    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
+    void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
       response_writer_ =
@@ -257,7 +255,7 @@ class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
     grpc::ServerAsyncResponseWriter<ResponseType> response_writer_;
   };
 
-  class ServerRpcContextStreamingImpl GRPC_FINAL : public ServerRpcContext {
+  class ServerRpcContextStreamingImpl final : public ServerRpcContext {
    public:
     ServerRpcContextStreamingImpl(
         std::function<void(
@@ -273,11 +271,9 @@ class AsyncQpsServerTest GRPC_FINAL : public grpc::testing::Server {
           stream_(srv_ctx_.get()) {
       request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
     }
-    ~ServerRpcContextStreamingImpl() GRPC_OVERRIDE {}
-    bool RunNextState(bool ok) GRPC_OVERRIDE {
-      return (this->*next_state_)(ok);
-    }
-    void Reset() GRPC_OVERRIDE {
+    ~ServerRpcContextStreamingImpl() override {}
+    bool RunNextState(bool ok) override { return (this->*next_state_)(ok); }
+    void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
       stream_ = grpc::ServerAsyncReaderWriter<ResponseType, RequestType>(
