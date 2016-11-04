@@ -1110,7 +1110,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1148,7 +1148,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
