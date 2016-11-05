@@ -118,26 +118,6 @@ ul.keywordmatches li.goodmatch a {
     font-weight: bold;
 }
 
-/* -- index page ------------------------------------------------------------ */
-
-table.contentstable {
-    width: 90%;
-}
-
-table.contentstable p.biglink {
-    line-height: 150%;
-}
-
-a.biglink {
-    font-size: 1.3em;
-}
-
-span.linkdescr {
-    font-style: italic;
-    padding-top: 5px;
-    font-size: 90%;
-}
-
 /* -- general index --------------------------------------------------------- */
 
 table.indextable {
