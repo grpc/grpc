@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc package &mdash; grpcio 1.0.1rc1 documentation</title>
+  <title>grpc package &mdash; grpcio 1.0.1 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.0.1rc1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.0.1 documentation" href="index.html"/>
         <link rel="next" title="grpc.beta package" href="grpc.beta.html"/>
         <link rel="prev" title="Welcome to grpcio’s documentation!" href="index.html"/> 
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                1.0.1rc1
+                1.0.1
               </div>
             
           
@@ -214,14 +214,14 @@
 <dl class="exception">
 <dt id="grpc.FutureTimeoutError">
 <em class="property">exception </em><code class="descclassname">grpc.</code><code class="descname">FutureTimeoutError</code><a class="reference internal" href="_modules/grpc.html#FutureTimeoutError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.FutureTimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
 <p>Indicates that a method call on a Future timed out.</p>
 </dd></dl>
 
 <dl class="exception">
 <dt id="grpc.FutureCancelledError">
 <em class="property">exception </em><code class="descclassname">grpc.</code><code class="descname">FutureCancelledError</code><a class="reference internal" href="_modules/grpc.html#FutureCancelledError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.FutureCancelledError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
 <p>Indicates that the computation underlying a Future was cancelled.</p>
 </dd></dl>
 
@@ -471,31 +471,6 @@ recover.</p>
 <dd><p>The channel has seen a failure from which it cannot recover.</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">CONNECTING</code><em class="property"> = &lt;ChannelConnectivity.CONNECTING: (1, 'connecting')&gt;</em></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">IDLE</code><em class="property"> = &lt;ChannelConnectivity.IDLE: (0, 'idle')&gt;</em></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">READY</code><em class="property"> = &lt;ChannelConnectivity.READY: (2, 'ready')&gt;</em></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">SHUTDOWN</code><em class="property"> = &lt;ChannelConnectivity.SHUTDOWN: (4, 'shutdown')&gt;</em></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">TRANSIENT_FAILURE</code><em class="property"> = &lt;ChannelConnectivity.TRANSIENT_FAILURE: (3, 'transient failure')&gt;</em></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
@@ -503,97 +478,12 @@ recover.</p>
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">StatusCode</code><a class="reference internal" href="_modules/grpc.html#StatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StatusCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Mirrors grpc_status_code in the gRPC Core.</p>
-<dl class="attribute">
-<dt id="grpc.StatusCode.ABORTED">
-<code class="descname">ABORTED</code><em class="property"> = &lt;StatusCode.ABORTED: (10, 'aborted')&gt;</em><a class="headerlink" href="#grpc.StatusCode.ABORTED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.ALREADY_EXISTS">
-<code class="descname">ALREADY_EXISTS</code><em class="property"> = &lt;StatusCode.ALREADY_EXISTS: (6, 'already exists')&gt;</em><a class="headerlink" href="#grpc.StatusCode.ALREADY_EXISTS" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.CANCELLED">
-<code class="descname">CANCELLED</code><em class="property"> = &lt;StatusCode.CANCELLED: (1, 'cancelled')&gt;</em><a class="headerlink" href="#grpc.StatusCode.CANCELLED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.DATA_LOSS">
-<code class="descname">DATA_LOSS</code><em class="property"> = &lt;StatusCode.DATA_LOSS: (15, 'data loss')&gt;</em><a class="headerlink" href="#grpc.StatusCode.DATA_LOSS" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.DEADLINE_EXCEEDED">
-<code class="descname">DEADLINE_EXCEEDED</code><em class="property"> = &lt;StatusCode.DEADLINE_EXCEEDED: (4, 'deadline exceeded')&gt;</em><a class="headerlink" href="#grpc.StatusCode.DEADLINE_EXCEEDED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.FAILED_PRECONDITION">
-<code class="descname">FAILED_PRECONDITION</code><em class="property"> = &lt;StatusCode.FAILED_PRECONDITION: (9, 'failed precondition')&gt;</em><a class="headerlink" href="#grpc.StatusCode.FAILED_PRECONDITION" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.INTERNAL">
-<code class="descname">INTERNAL</code><em class="property"> = &lt;StatusCode.INTERNAL: (13, 'internal')&gt;</em><a class="headerlink" href="#grpc.StatusCode.INTERNAL" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.INVALID_ARGUMENT">
-<code class="descname">INVALID_ARGUMENT</code><em class="property"> = &lt;StatusCode.INVALID_ARGUMENT: (3, 'invalid argument')&gt;</em><a class="headerlink" href="#grpc.StatusCode.INVALID_ARGUMENT" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.NOT_FOUND">
-<code class="descname">NOT_FOUND</code><em class="property"> = &lt;StatusCode.NOT_FOUND: (5, 'not found')&gt;</em><a class="headerlink" href="#grpc.StatusCode.NOT_FOUND" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.OK">
-<code class="descname">OK</code><em class="property"> = &lt;StatusCode.OK: (0, 'ok')&gt;</em><a class="headerlink" href="#grpc.StatusCode.OK" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.OUT_OF_RANGE">
-<code class="descname">OUT_OF_RANGE</code><em class="property"> = &lt;StatusCode.OUT_OF_RANGE: (11, 'out of range')&gt;</em><a class="headerlink" href="#grpc.StatusCode.OUT_OF_RANGE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.PERMISSION_DENIED">
-<code class="descname">PERMISSION_DENIED</code><em class="property"> = &lt;StatusCode.PERMISSION_DENIED: (7, 'permission denied')&gt;</em><a class="headerlink" href="#grpc.StatusCode.PERMISSION_DENIED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.RESOURCE_EXHAUSTED">
-<code class="descname">RESOURCE_EXHAUSTED</code><em class="property"> = &lt;StatusCode.RESOURCE_EXHAUSTED: (8, 'resource exhausted')&gt;</em><a class="headerlink" href="#grpc.StatusCode.RESOURCE_EXHAUSTED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.UNAUTHENTICATED">
-<code class="descname">UNAUTHENTICATED</code><em class="property"> = &lt;StatusCode.UNAUTHENTICATED: (16, 'unauthenticated')&gt;</em><a class="headerlink" href="#grpc.StatusCode.UNAUTHENTICATED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.UNAVAILABLE">
-<code class="descname">UNAVAILABLE</code><em class="property"> = &lt;StatusCode.UNAVAILABLE: (14, 'unavailable')&gt;</em><a class="headerlink" href="#grpc.StatusCode.UNAVAILABLE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.UNIMPLEMENTED">
-<code class="descname">UNIMPLEMENTED</code><em class="property"> = &lt;StatusCode.UNIMPLEMENTED: (12, 'unimplemented')&gt;</em><a class="headerlink" href="#grpc.StatusCode.UNIMPLEMENTED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="grpc.StatusCode.UNKNOWN">
-<code class="descname">UNKNOWN</code><em class="property"> = &lt;StatusCode.UNKNOWN: (2, 'unknown')&gt;</em><a class="headerlink" href="#grpc.StatusCode.UNKNOWN" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="exception">
 <dt id="grpc.RpcError">
 <em class="property">exception </em><code class="descclassname">grpc.</code><code class="descname">RpcError</code><a class="reference internal" href="_modules/grpc.html#RpcError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
 <p>Raised by the gRPC library to indicate non-OK-status RPC termination.</p>
 </dd></dl>
 
@@ -1992,7 +1882,7 @@ the key must end with &#8216;-bin&#8217;, i.e.
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.1rc1',
+            VERSION:'1.0.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
