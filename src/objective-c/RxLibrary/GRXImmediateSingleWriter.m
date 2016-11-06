@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,35 +31,48 @@
  *
  */
 
-#import "GRXWriter+Immediate.h"
-
-#import "GRXImmediateWriter.h"
 #import "GRXImmediateSingleWriter.h"
 
-@implementation GRXWriter (Immediate)
-
-+ (instancetype)writerWithEnumerator:(NSEnumerator *)enumerator {
-  return [GRXImmediateWriter writerWithEnumerator:enumerator];
+@implementation GRXImmediateSingleWriter {
+  id _value;
+  NSError *_errorOrNil;
+  id<GRXWriteable> _writeable;
 }
 
-+ (instancetype)writerWithValueSupplier:(id (^)())block {
-  return [GRXImmediateWriter writerWithValueSupplier:block];
+@synthesize state = _state;
+
+- (instancetype)initWithValue:(id)value error:(NSError *)errorOrNil {
+  if (self = [super init]) {
+    _value = value;
+    _errorOrNil = errorOrNil;
+    _state = GRXWriterStateNotStarted;
+  }
+  return self;
 }
 
-+ (instancetype)writerWithContainer:(id<NSFastEnumeration>)container {
-  return [GRXImmediateWriter writerWithContainer:container];
++ (GRXWriter *)writerWithValue:(id)value {
+  return [[self alloc] initWithValue:value error:nil];
 }
 
-+ (instancetype)writerWithValue:(id)value {
-  return [GRXImmediateSingleWriter writerWithValue:value];
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  _state = GRXWriterStateStarted;
+  _writeable = writeable;
+  [writeable writeValue:_value];
+  [self finishWithError:_errorOrNil];
 }
 
-+ (instancetype)writerWithError:(NSError *)error {
-  return [GRXImmediateWriter writerWithError:error];
+- (void)finishWithError:(NSError *)errorOrNil {
+  _state = GRXWriterStateFinished;
+  _errorOrNil = nil;
+  _value = nil;
+  id<GRXWriteable> writeable = _writeable;
+  _writeable = nil;
+  [writeable writesFinishedWithError:errorOrNil];
 }
 
-+ (instancetype)emptyWriter {
-  return [GRXImmediateWriter emptyWriter];
+- (void)setState:(GRXWriterState)newState {
+  // Manual state transition is not allowed
+  return;
 }
 
 @end

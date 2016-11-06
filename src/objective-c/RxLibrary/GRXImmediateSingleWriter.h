@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,35 +31,20 @@
  *
  */
 
-#import "GRXWriter+Immediate.h"
+#import <Foundation/Foundation.h>
 
 #import "GRXImmediateWriter.h"
-#import "GRXImmediateSingleWriter.h"
 
-@implementation GRXWriter (Immediate)
+/**
+ * Utility to construct GRXWriter instances from values that are immediately available when
+ * required.
+ */
+@interface GRXImmediateSingleWriter : GRXImmediateWriter
 
-+ (instancetype)writerWithEnumerator:(NSEnumerator *)enumerator {
-  return [GRXImmediateWriter writerWithEnumerator:enumerator];
-}
-
-+ (instancetype)writerWithValueSupplier:(id (^)())block {
-  return [GRXImmediateWriter writerWithValueSupplier:block];
-}
-
-+ (instancetype)writerWithContainer:(id<NSFastEnumeration>)container {
-  return [GRXImmediateWriter writerWithContainer:container];
-}
-
-+ (instancetype)writerWithValue:(id)value {
-  return [GRXImmediateSingleWriter writerWithValue:value];
-}
-
-+ (instancetype)writerWithError:(NSError *)error {
-  return [GRXImmediateWriter writerWithError:error];
-}
-
-+ (instancetype)emptyWriter {
-  return [GRXImmediateWriter emptyWriter];
-}
+/**
+ * Returns a writer that sends the passed value to its writeable and then finishes (releasing the
+ * value).
+ */
++ (GRXWriter *)writerWithValue:(id)value;
 
 @end
