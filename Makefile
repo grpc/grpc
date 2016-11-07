@@ -1038,6 +1038,7 @@ alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
+channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
 client_crash_test: $(BINDIR)/$(CONFIG)/client_crash_test
 client_crash_test_server: $(BINDIR)/$(CONFIG)/client_crash_test_server
@@ -1422,6 +1423,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
+  $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
@@ -1513,6 +1515,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
+  $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
@@ -1816,6 +1819,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
+	$(E) "[RUN]     Testing channel_filter_test"
+	$(Q) $(BINDIR)/$(CONFIG)/channel_filter_test || ( echo test channel_filter_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cli_call_test || ( echo test cli_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_crash_test"
@@ -11435,6 +11440,49 @@ deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHANNEL_FILTER_TEST_SRC = \
+    test/cpp/common/channel_filter_test.cc \
+
+CHANNEL_FILTER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_FILTER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/channel_filter_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/channel_filter_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/channel_filter_test: $(PROTOBUF_DEP) $(CHANNEL_FILTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_FILTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channel_filter_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/common/channel_filter_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_channel_filter_test: $(CHANNEL_FILTER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHANNEL_FILTER_TEST_OBJS:.o=.dep)
 endif
 endif
 
