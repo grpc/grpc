@@ -41,6 +41,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/method_config.h"
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
@@ -49,13 +54,12 @@ static void *tag(intptr_t t) { return (void *)t; }
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args,
-                                            const char *query_args) {
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, query_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -126,14 +130,25 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  const char *query_args = NULL;
+  grpc_channel_args *args = NULL;
   if (use_service_config) {
-    query_args =
-        "method_name=/service/method"
-        "&timeout_seconds=5";
+    gpr_timespec timeout = {5, 0, GPR_TIMESPAN};
+    grpc_method_config_table_entry entry = {
+        grpc_mdstr_from_string("/service/method"),
+        grpc_method_config_create(NULL, &timeout, NULL, NULL),
+    };
+    grpc_method_config_table *method_config_table =
+        grpc_method_config_table_create(1, &entry);
+    GRPC_MDSTR_UNREF(entry.method_name);
+    grpc_method_config_unref(entry.method_config);
+    grpc_arg arg =
+        grpc_method_config_table_create_channel_arg(method_config_table);
+    args = grpc_channel_args_copy_and_add(args, &arg, 1);
+    grpc_method_config_table_unref(method_config_table);
   }
+
   grpc_end2end_test_fixture f =
-      begin_test(config, "cancel_after_accept", NULL, NULL, query_args);
+      begin_test(config, "cancel_after_accept", args, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -233,6 +248,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
+  if (args != NULL) grpc_channel_args_destroy(args);
+
   cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
@@ -244,15 +261,10 @@ void cancel_after_accept(grpc_end2end_test_config config) {
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
     test_cancel_after_accept(config, cancellation_modes[i],
                              false /* use_service_config */);
-  }
-
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_QUERY_ARGS) {
-    for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-      if (cancellation_modes[i].expect_status ==
-          GRPC_STATUS_DEADLINE_EXCEEDED) {
-        test_cancel_after_accept(config, cancellation_modes[i],
-                                 true /* use_service_config */);
-      }
+    if (config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL &&
+        cancellation_modes[i].expect_status == GRPC_STATUS_DEADLINE_EXCEEDED) {
+      test_cancel_after_accept(config, cancellation_modes[i],
+                               true /* use_service_config */);
     }
   }
 }
