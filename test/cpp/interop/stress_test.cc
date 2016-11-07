@@ -40,7 +40,6 @@
 #include <gflags/gflags.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
-#include <grpc++/impl/thd.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -321,7 +320,7 @@ int main(int argc, char** argv) {
 
   gpr_log(GPR_INFO, "Starting test(s)..");
 
-  std::vector<grpc::thread> test_threads;
+  std::vector<std::thread> test_threads;
 
   // Create and start the test threads.
   // Note that:
@@ -361,7 +360,7 @@ int main(int argc, char** argv) {
                       "/stress_test/server_%d/channel_%d/stub_%d/qps",
                       server_idx, channel_idx, stub_idx);
 
-        test_threads.emplace_back(grpc::thread(
+        test_threads.emplace_back(std::thread(
             &StressTestInteropClient::MainLoop, client,
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 

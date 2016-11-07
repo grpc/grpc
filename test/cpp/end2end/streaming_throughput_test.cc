@@ -121,9 +121,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   // Only implement the one method we will be calling for brevity.
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
@@ -147,7 +147,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
 class End2endTest : public ::testing::Test {
  protected:
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -158,7 +158,7 @@ class End2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
+  void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =

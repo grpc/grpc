@@ -43,7 +43,7 @@
 #include "test/cpp/util/test_config.h"
 
 namespace grpc {
-class ThreadManagerTest GRPC_FINAL : public grpc::ThreadManager {
+class ThreadManagerTest final : public grpc::ThreadManager {
  public:
   ThreadManagerTest()
       : ThreadManager(kMinPollers, kMaxPollers),
@@ -51,9 +51,8 @@ class ThreadManagerTest GRPC_FINAL : public grpc::ThreadManager {
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
-  grpc::ThreadManager::WorkStatus PollForWork(void **tag,
-                                              bool *ok) GRPC_OVERRIDE;
-  void DoWork(void *tag, bool ok) GRPC_OVERRIDE;
+  grpc::ThreadManager::WorkStatus PollForWork(void **tag, bool *ok) override;
+  void DoWork(void *tag, bool ok) override;
   void PerformTest();
 
  private:
