@@ -133,7 +133,7 @@ static void test_request(grpc_end2end_test_config config) {
 
   g_client_latency = gpr_time_0(GPR_TIMESPAN);
   g_server_latency = gpr_time_0(GPR_TIMESPAN);
-  const gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC); 
+  const gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline, NULL);
@@ -250,15 +250,17 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void client_destroy_call_elem(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    const grpc_call_final_info *final_info, void *and_free_memory) {
+static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_element *elem,
+                                     const grpc_call_final_info *final_info,
+                                     void *and_free_memory) {
   g_client_latency = final_info->stats.latency;
 }
 
-static void server_destroy_call_elem(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    const grpc_call_final_info *final_info, void *and_free_memory) {
+static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_element *elem,
+                                     const grpc_call_final_info *final_info,
+                                     void *and_free_memory) {
   g_server_latency = final_info->stats.latency;
 }
 
@@ -300,7 +302,7 @@ static const grpc_channel_filter test_server_filter = {
  */
 
 static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
-  grpc_channel_filter* filter = arg;
+  grpc_channel_filter *filter = arg;
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
@@ -309,8 +311,8 @@ static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
     grpc_channel_stack_builder_iterator *it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, filter, NULL, NULL);
+    const bool retval =
+        grpc_channel_stack_builder_add_filter_before(it, filter, NULL, NULL);
     grpc_channel_stack_builder_iterator_destroy(it);
     return retval;
   } else {
@@ -320,9 +322,11 @@ static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
 
 static void init_plugin(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter, (void*)&test_client_filter);
+                                   maybe_add_filter,
+                                   (void *)&test_client_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_filter, (void*)&test_server_filter);
+                                   maybe_add_filter,
+                                   (void *)&test_server_filter);
 }
 
 static void destroy_plugin(void) {}
