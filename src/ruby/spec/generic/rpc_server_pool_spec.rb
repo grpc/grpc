@@ -29,6 +29,8 @@
 
 require 'grpc'
 
+Thread.abort_on_exception = true
+
 describe GRPC::Pool do
   Pool = GRPC::Pool
 
@@ -44,32 +46,34 @@ describe GRPC::Pool do
     end
   end
 
-  describe '#jobs_waiting' do
-    it 'at start, it is zero' do
+  describe '#ready_for_work?' do
+    it 'before start it is not ready' do
       p = Pool.new(1)
-      expect(p.jobs_waiting).to be(0)
+      expect(p.ready_for_work?).to be(false)
     end
 
-    it 'it increases, with each scheduled job if the pool is not running' do
-      p = Pool.new(1)
-      job = proc {}
-      expect(p.jobs_waiting).to be(0)
-      5.times do |i|
-        p.schedule(&job)
-        expect(p.jobs_waiting).to be(i + 1)
-      end
-    end
-
-    it 'it decreases as jobs are run' do
-      p = Pool.new(1)
-      job = proc {}
-      expect(p.jobs_waiting).to be(0)
-      3.times do
-        p.schedule(&job)
-      end
+    it 'it stops being ready after all workers jobs waiting or running' do
+      p = Pool.new(5)
       p.start
-      sleep 2
-      expect(p.jobs_waiting).to be(0)
+      job = proc { sleep(3) } # sleep so workers busy when done scheduling
+      5.times do
+        expect(p.ready_for_work?).to be(true)
+        p.schedule(&job)
+      end
+      expect(p.ready_for_work?).to be(false)
+    end
+
+    it 'it becomes ready again after jobs complete' do
+      p = Pool.new(5)
+      p.start
+      job = proc {}
+      5.times do
+        expect(p.ready_for_work?).to be(true)
+        p.schedule(&job)
+      end
+      expect(p.ready_for_work?).to be(false)
+      sleep 5 # give the pool time do get at least one task done
+      expect(p.ready_for_work?).to be(true)
     end
   end
 
@@ -89,6 +93,18 @@ describe GRPC::Pool do
       p.schedule(&job)
       expect(q.pop).to be(o)
       p.stop
+    end
+
+    it 'it throws an error if all of the workers have tasks to do' do
+      p = Pool.new(5)
+      p.start
+      job = proc {}
+      5.times do
+        expect(p.ready_for_work?).to be(true)
+        p.schedule(&job)
+      end
+      expect { p.schedule(&job) }.to raise_error
+      expect { p.schedule(&job) }.to raise_error
     end
   end
 
@@ -113,18 +129,8 @@ describe GRPC::Pool do
   end
 
   describe '#start' do
-    it 'runs pre-scheduled jobs' do
-      p = Pool.new(2)
-      o, q = Object.new, Queue.new
-      n = 5  # arbitrary
-      n.times { p.schedule(o, &q.method(:push)) }
-      p.start
-      n.times { expect(q.pop).to be(o) }
-      p.stop
-    end
-
-    it 'runs jobs as they are scheduled ' do
-      p = Pool.new(2)
+    it 'runs jobs as they are scheduled' do
+      p = Pool.new(5)
       o, q = Object.new, Queue.new
       p.start
       n = 5  # arbitrary
