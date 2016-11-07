@@ -39,6 +39,12 @@ from grpc import _grpcio_metadata
 from grpc.framework.foundation import callable_util
 from grpc._cython import cygrpc
 
+# By default, all async calls (streaming included) are managed
+# on a single background thread.  In some environments, we need
+# to partition our async calls on multiple background threads.
+# This no-arg function can be overriden to return a partition key
+ASYNC_THREAD_PARTITION_FN = lambda: 0
+
 _USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
@@ -660,26 +666,27 @@ class _ChannelCallState(object):
   def __init__(self, channel):
     self.lock = threading.Lock()
     self.channel = channel
-    self.completion_queue = cygrpc.CompletionQueue()
-    self.managed_calls = None
+    self.completion_queues = {}
+    self.managed_calls = {}
 
 
-def _run_channel_spin_thread(state):
+def _run_channel_spin_thread(state, key):
   def channel_spin():
     while True:
-      event = state.completion_queue.poll()
+      event = state.completion_queues[key].poll()
       completed_call = event.tag(event)
       if completed_call is not None:
         with state.lock:
-          state.managed_calls.remove(completed_call)
-          if not state.managed_calls:
-            state.managed_calls = None
+          state.managed_calls[key].remove(completed_call)
+          if not state.managed_calls[key]:
+            state.managed_calls[key] = None
+            state.completion_queues[key] = None
             return
 
   def stop_channel_spin(timeout):
     with state.lock:
-      if state.managed_calls is not None:
-        for call in state.managed_calls:
+      if state.managed_calls[key] is not None:
+        for call in state.managed_calls[key]:
           call.cancel()
 
   channel_spin_thread = _common.CleanupThread(
@@ -708,14 +715,17 @@ def _create_channel_managed_call(state):
     Returns:
       A cygrpc.Call with which to conduct an RPC.
     """
+    key = ASYNC_THREAD_PARTITION_FN()
     with state.lock:
+      if state.completion_queues.get(key) is None:
+        state.completion_queues[key] = cygrpc.CompletionQueue()
       call = state.channel.create_call(
-          parent, flags, state.completion_queue, method, host, deadline)
-      if state.managed_calls is None:
-        state.managed_calls = set((call,))
-        _run_channel_spin_thread(state)
+          parent, flags, state.completion_queues[key], method, host, deadline)
+      if state.managed_calls.get(key) is None:
+        state.managed_calls[key] = set((call,))
+        _run_channel_spin_thread(state, key)
       else:
-        state.managed_calls.add(call)
+        state.managed_calls[key].add(call)
       return call
   return create_channel_managed_call
 
