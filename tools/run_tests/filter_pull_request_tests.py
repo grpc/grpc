@@ -56,7 +56,6 @@ class TestSuite:
 
 
 # Create test suites
-_SANITY_TEST_SUITE = TestSuite(['sanity'])
 _CORE_TEST_SUITE = TestSuite(['c'])
 _CPP_TEST_SUITE = TestSuite(['c++'])
 _CSHARP_TEST_SUITE = TestSuite(['csharp'])
@@ -68,10 +67,10 @@ _RUBY_TEST_SUITE = TestSuite(['ruby'])
 _LINUX_TEST_SUITE = TestSuite(['linux'])
 _WINDOWS_TEST_SUITE = TestSuite(['windows'])
 _MACOS_TEST_SUITE = TestSuite(['macos'])
-_ALL_TEST_SUITES = [_SANITY_TEST_SUITE, _CORE_TEST_SUITE, _CPP_TEST_SUITE,
-                    _CSHARP_TEST_SUITE, _NODE_TEST_SUITE, _OBJC_TEST_SUITE,
-                    _PHP_TEST_SUITE, _PYTHON_TEST_SUITE, _RUBY_TEST_SUITE,
-                    _LINUX_TEST_SUITE, _WINDOWS_TEST_SUITE, _MACOS_TEST_SUITE]
+_ALL_TEST_SUITES = [_CORE_TEST_SUITE, _CPP_TEST_SUITE, _CSHARP_TEST_SUITE,
+                    _NODE_TEST_SUITE, _OBJC_TEST_SUITE, _PHP_TEST_SUITE,
+                    _PYTHON_TEST_SUITE, _RUBY_TEST_SUITE, _LINUX_TEST_SUITE,
+                    _WINDOWS_TEST_SUITE, _MACOS_TEST_SUITE]
 
 # Dictionary of whitelistable files where the key is a regex matching changed files
 # and the value is a list of tests that should be run. An empty list means that
@@ -90,7 +89,7 @@ _WHITELIST_DICT = {
   '^src/php/': [_PHP_TEST_SUITE],
   '^src/python/': [_PYTHON_TEST_SUITE],
   '^src/ruby/': [_RUBY_TEST_SUITE],
-  '^templates/': [_SANITY_TEST_SUITE],
+  '^templates/': [],
   '^test/core/': [_CORE_TEST_SUITE],
   '^test/cpp/': [_CPP_TEST_SUITE],
   '^test/distrib/cpp/': [_CPP_TEST_SUITE],

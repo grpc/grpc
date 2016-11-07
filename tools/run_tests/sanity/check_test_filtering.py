@@ -40,7 +40,7 @@ sys.path.insert(0, os.path.abspath('tools/run_tests/'))
 from run_tests_matrix import _create_test_jobs, _create_portability_test_jobs
 import filter_pull_request_tests
 
-_LIST_OF_LANGUAGE_LABELS = ['sanity', 'c', 'c++', 'csharp', 'node', 'objc', 'php', 'php7', 'python', 'ruby']
+_LIST_OF_LANGUAGE_LABELS = ['c', 'c++', 'csharp', 'node', 'objc', 'php', 'php7', 'python', 'ruby']
 _LIST_OF_PLATFORM_LABELS = ['linux', 'macos', 'windows']
 
 class TestFilteringTest(unittest.TestCase):
@@ -65,6 +65,19 @@ class TestFilteringTest(unittest.TestCase):
     print
     filtered_jobs = filter_pull_request_tests.filter_tests(all_jobs, "test")
 
+    # Make sure sanity tests aren't being filtered out
+    sanity_tests_in_all_jobs = 0
+    sanity_tests_in_filtered_jobs = 0
+    for job in all_jobs:
+      if "sanity" in job.labels:
+        sanity_tests_in_all_jobs += 1
+    all_jobs = [job for job in all_jobs if "sanity" not in job.labels]
+    for job in filtered_jobs:
+      if "sanity" in job.labels:
+        sanity_tests_in_filtered_jobs += 1
+    filtered_jobs = [job for job in filtered_jobs if "sanity" not in job.labels]
+    self.assertEquals(sanity_tests_in_all_jobs, sanity_tests_in_filtered_jobs)
+
     for label in labels:
       for job in filtered_jobs:
         self.assertNotIn(label, job.labels)
@@ -82,8 +95,6 @@ class TestFilteringTest(unittest.TestCase):
     # Changing core should trigger all tests
     self.test_filtering(['src/core/foo.bar'], [_LIST_OF_LANGUAGE_LABELS])
     # Testing individual languages
-    self.test_filtering(['templates/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
-                                                filter_pull_request_tests._SANITY_TEST_SUITE.labels])
     self.test_filtering(['test/core/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
                                                 filter_pull_request_tests._CORE_TEST_SUITE.labels])
     self.test_filtering(['src/cpp/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
@@ -102,9 +113,9 @@ class TestFilteringTest(unittest.TestCase):
                                                filter_pull_request_tests._RUBY_TEST_SUITE.labels])
 
   def test_combined_language_filters(self):
-    self.test_filtering(['templates/foo.bar', 'test/core/foo.bar'],
+    self.test_filtering(['src/cpp/foo.bar', 'test/core/foo.bar'],
                         [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
-                         filter_pull_request_tests._SANITY_TEST_SUITE.labels and label not in
+                         filter_pull_request_tests._CPP_TEST_SUITE.labels and label not in
                          filter_pull_request_tests._CORE_TEST_SUITE.labels])
     self.test_filtering(['src/node/foo.bar', 'src/cpp/foo.bar', "src/csharp/foo.bar"],
                         [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
