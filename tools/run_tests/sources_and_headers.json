@@ -2072,6 +2072,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "transport_pid_controller_test", 
+    "src": [
+      "test/core/transport/pid_controller_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "transport_security_test", 
     "src": [
       "test/core/tsi/transport_security_test.c"
@@ -2497,7 +2514,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_reflection", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_test_config", 
       "grpc_cli_libs"
     ], 
@@ -2616,8 +2633,9 @@
       "grpc", 
       "grpc++", 
       "grpc++_codegen_proto", 
-      "grpc++_config_proto", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection", 
+      "grpc++_test_util", 
       "grpc_cli_libs", 
       "grpc_test_util"
     ], 
@@ -2625,16 +2643,13 @@
       "src/proto/grpc/testing/echo.grpc.pb.h", 
       "src/proto/grpc/testing/echo.pb.h", 
       "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
-      "src/proto/grpc/testing/echo_messages.pb.h", 
-      "test/cpp/util/string_ref_helper.h"
+      "src/proto/grpc/testing/echo_messages.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "grpc_tool_test", 
     "src": [
-      "test/cpp/util/grpc_tool_test.cc", 
-      "test/cpp/util/string_ref_helper.cc", 
-      "test/cpp/util/string_ref_helper.h"
+      "test/cpp/util/grpc_tool_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2822,24 +2837,35 @@
   }, 
   {
     "deps": [
+      "google_benchmark"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "noop-benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/noop-benchmark.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [
-      "test/cpp/util/proto_reflection_descriptor_database.h"
-    ], 
+    "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "proto_server_reflection_test", 
     "src": [
-      "test/cpp/end2end/proto_server_reflection_test.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h"
+      "test/cpp/end2end/proto_server_reflection_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2984,6 +3010,25 @@
     "name": "reconnect_interop_server", 
     "src": [
       "test/cpp/interop/reconnect_interop_server.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "round_robin_end2end_test", 
+    "src": [
+      "test/cpp/end2end/round_robin_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3196,6 +3241,23 @@
       "test/cpp/interop/stress_test.cc", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "thread_manager_test", 
+    "src": [
+      "test/cpp/thread_manager/thread_manager_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4028,24 +4090,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_fake_resolver_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_fake_resolver.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "h2_fakesec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_fakesec.c"
@@ -4355,24 +4399,6 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_fake_resolver_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_fake_resolver.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5043,6 +5069,25 @@
   {
     "deps": [
       "grpc++", 
+      "grpc++_config_proto", 
+      "grpc++_reflection_proto"
+    ], 
+    "headers": [
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_proto_reflection_desc_db", 
+    "src": [
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++", 
       "grpc++_reflection_proto"
     ], 
     "headers": [
@@ -5058,19 +5103,6 @@
       "src/cpp/ext/proto_server_reflection.h", 
       "src/cpp/ext/proto_server_reflection_plugin.cc"
     ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [], 
-    "headers": [
-      "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h", 
-      "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_reflection_codegen", 
-    "src": [], 
     "third_party": false, 
     "type": "lib"
   }, 
@@ -5173,7 +5205,9 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_reflection"
+      "grpc++_config_proto", 
+      "grpc++_proto_reflection_desc_db", 
+      "grpc++_reflection_proto"
     ], 
     "headers": [
       "test/cpp/util/cli_call.h", 
@@ -5181,7 +5215,6 @@
       "test/cpp/util/config_grpc_cli.h", 
       "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.h", 
-      "test/cpp/util/proto_reflection_descriptor_database.h", 
       "test/cpp/util/service_describer.h"
     ], 
     "is_filegroup": false, 
@@ -5197,8 +5230,6 @@
       "test/cpp/util/grpc_tool.h", 
       "test/cpp/util/proto_file_parser.cc", 
       "test/cpp/util/proto_file_parser.h", 
-      "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h", 
       "test/cpp/util/service_describer.cc", 
       "test/cpp/util/service_describer.h"
     ], 
@@ -6079,6 +6110,37 @@
   {
     "deps": [], 
     "headers": [
+      "third_party/google_benchmark/include/benchmark/benchmark.h", 
+      "third_party/google_benchmark/include/benchmark/benchmark_api.h", 
+      "third_party/google_benchmark/include/benchmark/macros.h", 
+      "third_party/google_benchmark/include/benchmark/reporter.h", 
+      "third_party/google_benchmark/src/arraysize.h", 
+      "third_party/google_benchmark/src/benchmark_api_internal.h", 
+      "third_party/google_benchmark/src/check.h", 
+      "third_party/google_benchmark/src/colorprint.h", 
+      "third_party/google_benchmark/src/commandlineflags.h", 
+      "third_party/google_benchmark/src/complexity.h", 
+      "third_party/google_benchmark/src/cycleclock.h", 
+      "third_party/google_benchmark/src/internal_macros.h", 
+      "third_party/google_benchmark/src/log.h", 
+      "third_party/google_benchmark/src/mutex.h", 
+      "third_party/google_benchmark/src/re.h", 
+      "third_party/google_benchmark/src/sleep.h", 
+      "third_party/google_benchmark/src/stat.h", 
+      "third_party/google_benchmark/src/string_util.h", 
+      "third_party/google_benchmark/src/sysinfo.h", 
+      "third_party/google_benchmark/src/timers.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "google_benchmark", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
       "third_party/zlib/gzguts.h", 
@@ -6605,6 +6667,7 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/method_config.h", 
+      "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
@@ -6814,6 +6877,8 @@
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/method_config.c", 
       "src/core/lib/transport/method_config.h", 
+      "src/core/lib/transport/pid_controller.c", 
+      "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.c", 
@@ -7369,8 +7434,7 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "grpc_base"
+      "gpr"
     ], 
     "headers": [
       "src/core/lib/tsi/fake_transport_security.h", 
@@ -7421,12 +7485,6 @@
       "include/grpc++/impl/server_builder_plugin.h", 
       "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
-      "include/grpc++/impl/sync.h", 
-      "include/grpc++/impl/sync_cxx11.h", 
-      "include/grpc++/impl/sync_no_cxx11.h", 
-      "include/grpc++/impl/thd.h", 
-      "include/grpc++/impl/thd_cxx11.h", 
-      "include/grpc++/impl/thd_no_cxx11.h", 
       "include/grpc++/resource_quota.h", 
       "include/grpc++/security/auth_context.h", 
       "include/grpc++/security/auth_metadata_processor.h", 
@@ -7451,7 +7509,8 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/thread_pool_interface.h"
+      "src/cpp/server/thread_pool_interface.h", 
+      "src/cpp/thread_manager/thread_manager.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
@@ -7478,12 +7537,6 @@
       "include/grpc++/impl/server_builder_plugin.h", 
       "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
-      "include/grpc++/impl/sync.h", 
-      "include/grpc++/impl/sync_cxx11.h", 
-      "include/grpc++/impl/sync_no_cxx11.h", 
-      "include/grpc++/impl/thd.h", 
-      "include/grpc++/impl/thd_cxx11.h", 
-      "include/grpc++/impl/thd_no_cxx11.h", 
       "include/grpc++/resource_quota.h", 
       "include/grpc++/security/auth_context.h", 
       "include/grpc++/security/auth_metadata_processor.h", 
@@ -7530,6 +7583,8 @@
       "src/cpp/server/server_credentials.cc", 
       "src/cpp/server/server_posix.cc", 
       "src/cpp/server/thread_pool_interface.h", 
+      "src/cpp/thread_manager/thread_manager.cc", 
+      "src/cpp/thread_manager/thread_manager.h", 
       "src/cpp/util/byte_buffer_cc.cc", 
       "src/cpp/util/slice_cc.cc", 
       "src/cpp/util/status.cc", 
@@ -7570,9 +7625,6 @@
       "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
-      "include/grpc++/impl/codegen/sync.h", 
-      "include/grpc++/impl/codegen/sync_cxx11.h", 
-      "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
     ], 
@@ -7606,9 +7658,6 @@
       "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
-      "include/grpc++/impl/codegen/sync.h", 
-      "include/grpc++/impl/codegen/sync_cxx11.h", 
-      "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
     ], 
@@ -7661,22 +7710,15 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [
-      "grpc++_codegen_proto"
-    ], 
+    "deps": [], 
     "headers": [
-      "include/grpc++/ext/reflection.grpc.pb.h", 
-      "include/grpc++/ext/reflection.pb.h"
+      "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h", 
+      "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpc++_reflection_proto", 
-    "src": [
-      "include/grpc++/ext/reflection.grpc.pb.h", 
-      "include/grpc++/ext/reflection.pb.h", 
-      "src/cpp/ext/reflection.grpc.pb.cc", 
-      "src/cpp/ext/reflection.pb.cc"
-    ], 
+    "src": [], 
     "third_party": false, 
     "type": "filegroup"
   }, 

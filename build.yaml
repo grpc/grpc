@@ -256,6 +256,7 @@ filegroups:
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/method_config.h
+  - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -364,6 +365,7 @@ filegroups:
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
   - src/core/lib/transport/method_config.c
+  - src/core/lib/transport/pid_controller.c
   - src/core/lib/transport/static_metadata.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
@@ -684,8 +686,6 @@ filegroups:
   deps:
   - gpr
   secure: true
-  uses:
-  - grpc_base
 - name: grpc++_base
   language: c++
   public_headers:
@@ -710,12 +710,6 @@ filegroups:
   - include/grpc++/impl/server_builder_plugin.h
   - include/grpc++/impl/server_initializer.h
   - include/grpc++/impl/service_type.h
-  - include/grpc++/impl/sync.h
-  - include/grpc++/impl/sync_cxx11.h
-  - include/grpc++/impl/sync_no_cxx11.h
-  - include/grpc++/impl/thd.h
-  - include/grpc++/impl/thd_cxx11.h
-  - include/grpc++/impl/thd_no_cxx11.h
   - include/grpc++/resource_quota.h
   - include/grpc++/security/auth_context.h
   - include/grpc++/security/auth_metadata_processor.h
@@ -742,6 +736,7 @@ filegroups:
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   src:
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_context.cc
@@ -764,6 +759,7 @@ filegroups:
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
   - src/cpp/util/slice_cc.cc
   - src/cpp/util/status.cc
@@ -800,9 +796,6 @@ filegroups:
   - include/grpc++/impl/codegen/status_helper.h
   - include/grpc++/impl/codegen/string_ref.h
   - include/grpc++/impl/codegen/stub_options.h
-  - include/grpc++/impl/codegen/sync.h
-  - include/grpc++/impl/codegen/sync_cxx11.h
-  - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
   uses:
@@ -826,14 +819,8 @@ filegroups:
   - include/grpc++/impl/codegen/config_protobuf.h
 - name: grpc++_reflection_proto
   language: c++
-  public_headers:
-  - include/grpc++/ext/reflection.grpc.pb.h
-  - include/grpc++/ext/reflection.pb.h
   src:
-  - src/cpp/ext/reflection.grpc.pb.cc
-  - src/cpp/ext/reflection.pb.cc
-  uses:
-  - grpc++_codegen_proto
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: thrift_util
   language: c++
   public_headers:
@@ -1051,6 +1038,18 @@ libs:
   platforms:
   - linux
   secure: true
+- name: grpc++_proto_reflection_desc_db
+  build: private
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++
+  filegroups:
+  - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc++_reflection
   build: all
   language: c++
@@ -1065,11 +1064,6 @@ libs:
   - grpc++
   filegroups:
   - grpc++_reflection_proto
-- name: grpc++_reflection_codegen
-  build: private
-  language: c++
-  src:
-  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test
   build: private
   language: c++
@@ -1142,18 +1136,19 @@ libs:
   - test/cpp/util/config_grpc_cli.h
   - test/cpp/util/grpc_tool.h
   - test/cpp/util/proto_file_parser.h
-  - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
   - test/cpp/util/proto_file_parser.cc
-  - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
+  filegroups:
+  - grpc++_reflection_proto
+  - grpc++_config_proto
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -2675,6 +2670,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: transport_pid_controller_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/pid_controller_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: transport_security_test
   build: test
   language: c
@@ -2982,7 +2987,7 @@ targets:
   - test/cpp/util/grpc_cli.cc
   deps:
   - grpc_cli_libs
-  - grpc++_reflection
+  - grpc++_proto_reflection_desc_db
   - grpc++
   - grpc
   - gpr
@@ -3059,16 +3064,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/cpp/util/string_ref_helper.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/grpc_tool_test.cc
-  - test/cpp/util/string_ref_helper.cc
   deps:
   - grpc_cli_libs
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
@@ -3076,7 +3080,6 @@ targets:
   - gpr
   filegroups:
   - grpc++_codegen_proto
-  - grpc++_config_proto
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -3212,16 +3215,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: noop-benchmark
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/noop-benchmark.cc
+  deps:
+  - google_benchmark
 - name: proto_server_reflection_test
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/end2end/proto_server_reflection_test.cc
-  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_proto_reflection_desc_db
   - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
@@ -3335,6 +3343,19 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: round_robin_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/round_robin_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -3488,6 +3509,16 @@ targets:
   - grpc++
   - grpc
   - gpr_test_util
+  - gpr
+  - grpc++_test_config
+- name: thread_manager_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/thread_manager/thread_manager_test.cc
+  deps:
+  - grpc++
+  - grpc
   - gpr
   - grpc++_test_config
 - name: thread_stress_test
@@ -3684,6 +3715,8 @@ defaults:
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
     LDFLAGS: -g
+  google_benchmark:
+    CPPFLAGS: -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

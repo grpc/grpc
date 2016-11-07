@@ -50,7 +50,7 @@ class RpcMethodHandler : public MethodHandler {
                    ServiceType* service)
       : func_(func), service_(service) {}
 
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) final {
     RequestType req;
     Status status = SerializationTraits<RequestType>::Deserialize(
         param.request, &req, param.max_receive_message_size);
@@ -96,7 +96,7 @@ class ClientStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) final {
     ServerReader<RequestType> reader(param.call, param.server_context);
     ResponseType rsp;
     Status status = func_(service_, param.server_context, &reader, &rsp);
@@ -136,7 +136,7 @@ class ServerStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) final {
     RequestType req;
     Status status = SerializationTraits<RequestType>::Deserialize(
         param.request, &req, param.max_receive_message_size);
@@ -180,7 +180,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
       std::function<Status(ServerContext*, Streamer*)> func)
       : func_(func), write_needed_(WriteNeeded) {}
 
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) final {
     Streamer stream(param.call, param.server_context);
     Status status = func_(param.server_context, &stream);
 
@@ -266,7 +266,7 @@ class UnknownMethodHandler : public MethodHandler {
     ops->ServerSendStatus(context->trailing_metadata_, status);
   }
 
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) final {
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);

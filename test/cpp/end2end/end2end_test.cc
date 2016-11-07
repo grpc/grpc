@@ -92,12 +92,12 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
         is_blocking_(is_blocking),
         is_successful_(is_successful) {}
 
-  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+  bool IsBlocking() const override { return is_blocking_; }
 
-  Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
-                     const grpc::AuthContext& channel_auth_context,
-                     std::multimap<grpc::string, grpc::string>* metadata)
-      GRPC_OVERRIDE {
+  Status GetMetadata(
+      grpc::string_ref service_url, grpc::string_ref method_name,
+      const grpc::AuthContext& channel_auth_context,
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     EXPECT_GT(service_url.length(), 0UL);
     EXPECT_GT(method_name.length(), 0UL);
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
@@ -145,11 +145,11 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   }
 
   // Interface implementation
-  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+  bool IsBlocking() const override { return is_blocking_; }
 
   Status Process(const InputMetadata& auth_metadata, AuthContext* context,
                  OutputMetadata* consumed_auth_metadata,
-                 OutputMetadata* response_metadata) GRPC_OVERRIDE {
+                 OutputMetadata* response_metadata) override {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
@@ -185,7 +185,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
       : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     return stub_->Echo(client_context.get(), *request, response);
@@ -199,7 +199,7 @@ class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message("no package");
     return Status::OK;
   }
@@ -229,7 +229,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     GetParam().Log();
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     if (is_server_started_) {
       server_->Shutdown();
       if (proxy_server_) proxy_server_->Shutdown();
@@ -250,6 +250,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.RegisterService(&service_);
     builder.RegisterService("foo.test.youtube.com", &special_service_);
     builder.RegisterService(&dup_pkg_service_);
+
+    builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
+    builder.SetSyncServerOption(
+        ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
   }
@@ -284,6 +289,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       ServerBuilder builder;
       builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
       builder.RegisterService(proxy_service_.get());
+
+      builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
+      builder.SetSyncServerOption(
+          ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+
       proxy_server_ = builder.BuildAndStart();
 
       channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
@@ -1486,7 +1496,7 @@ class ResourceQuotaEnd2endTest : public End2endTest {
   ResourceQuotaEnd2endTest()
       : server_resource_quota_("server_resource_quota") {}
 
-  virtual void ConfigureServerBuilder(ServerBuilder* builder) GRPC_OVERRIDE {
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) override {
     builder->SetResourceQuota(server_resource_quota_);
   }
 
