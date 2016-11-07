@@ -190,7 +190,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
-    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) <= 0) {
+    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRId64 ".%09d seconds", timeout.tv_sec,
               timeout.tv_nsec);
     } else {
