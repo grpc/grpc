@@ -2072,6 +2072,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "transport_pid_controller_test", 
+    "src": [
+      "test/core/transport/pid_controller_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "transport_security_test", 
     "src": [
       "test/core/tsi/transport_security_test.c"
@@ -6649,6 +6666,7 @@
       "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
+      "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
@@ -6857,6 +6875,8 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
       "src/core/lib/transport/metadata_batch.h", 
+      "src/core/lib/transport/pid_controller.c", 
+      "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/service_config.c", 
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.c", 

@@ -277,6 +277,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\mdstr_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\service_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
@@ -527,6 +528,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\service_config.c">
     </ClCompile>
