@@ -40,7 +40,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Testing {
-  public static class BenchmarkService
+  public static partial class BenchmarkService
   {
     static readonly string __ServiceName = "grpc.testing.BenchmarkService";
 
@@ -68,7 +68,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of BenchmarkService</summary>
-    public abstract class BenchmarkServiceBase
+    public abstract partial class BenchmarkServiceBase
     {
       /// <summary>
       ///  One request followed by one response.
@@ -91,7 +91,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for BenchmarkService</summary>
-    public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>
+    public partial class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>
     {
       /// <summary>Creates a new client for BenchmarkService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -176,7 +176,7 @@ namespace Grpc.Testing {
     }
 
   }
-  public static class WorkerService
+  public static partial class WorkerService
   {
     static readonly string __ServiceName = "grpc.testing.WorkerService";
 
@@ -223,7 +223,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of WorkerService</summary>
-    public abstract class WorkerServiceBase
+    public abstract partial class WorkerServiceBase
     {
       /// <summary>
       ///  Start server with specified workload.
@@ -270,7 +270,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for WorkerService</summary>
-    public class WorkerServiceClient : ClientBase<WorkerServiceClient>
+    public partial class WorkerServiceClient : ClientBase<WorkerServiceClient>
     {
       /// <summary>Creates a new client for WorkerService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>

@@ -44,7 +44,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Testing {
-  public static class MetricsService
+  public static partial class MetricsService
   {
     static readonly string __ServiceName = "grpc.testing.MetricsService";
 
@@ -73,7 +73,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of MetricsService</summary>
-    public abstract class MetricsServiceBase
+    public abstract partial class MetricsServiceBase
     {
       /// <summary>
       ///  Returns the values of all the gauges that are currently being maintained by
@@ -95,7 +95,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for MetricsService</summary>
-    public class MetricsServiceClient : ClientBase<MetricsServiceClient>
+    public partial class MetricsServiceClient : ClientBase<MetricsServiceClient>
     {
       /// <summary>Creates a new client for MetricsService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
