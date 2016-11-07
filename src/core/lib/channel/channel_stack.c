@@ -259,7 +259,7 @@ void grpc_channel_next_get_info(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem,
                                 const grpc_channel_info *channel_info) {
   grpc_channel_element *next_elem = elem + 1;
-  return next_elem->filter->get_channel_info(exec_ctx, next_elem, channel_info);
+  next_elem->filter->get_channel_info(exec_ctx, next_elem, channel_info);
 }
 
 void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
