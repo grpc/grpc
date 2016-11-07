@@ -109,15 +109,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       grpc_server_credentials_create_security_connector(creds, &sc);
   GPR_ASSERT(status == GRPC_SECURITY_OK);
   sc->channel_args = NULL;
-  gpr_timespec deadline = gpr_time_add(
-              gpr_now(GPR_CLOCK_MONOTONIC),
-              gpr_time_from_seconds(1, GPR_TIMESPAN));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
 
   struct handshake_state state;
   state.done_callback_called = false;
-  grpc_server_security_connector_do_handshake(
-      &exec_ctx, sc, NULL, mock_endpoint, NULL, deadline,
-      on_secure_handshake_done, &state);
+  grpc_server_security_connector_do_handshake(&exec_ctx, sc, NULL,
+                                              mock_endpoint, NULL, deadline,
+                                              on_secure_handshake_done, &state);
   grpc_exec_ctx_flush(&exec_ctx);
 
   bool mock_endpoint_shutdown = false;
