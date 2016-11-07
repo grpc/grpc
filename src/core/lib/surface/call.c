@@ -122,6 +122,7 @@ struct grpc_call {
   grpc_channel *channel;
   grpc_call *parent;
   grpc_call *first_child;
+  gpr_timespec start_time;
   /* TODO(ctiller): share with cq if possible? */
   gpr_mu mu;
 
@@ -239,6 +240,7 @@ grpc_error *grpc_call_create(const grpc_call_create_args *args,
   call->channel = args->channel;
   call->cq = args->cq;
   call->parent = args->parent_call;
+  call->start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = args->server_transport_data == NULL;
@@ -314,7 +316,8 @@ grpc_error *grpc_call_create(const grpc_call_create_args *args,
   grpc_error *error =
       grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
                            call->context, args->server_transport_data, path,
-                           send_deadline, CALL_STACK_FROM_CALL(call));
+                           call->start_time, send_deadline,
+                           CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code status;
     const char *error_str;
@@ -427,6 +430,8 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
 
   get_final_status(call, set_status_value_directly,
                    &c->final_info.final_status);
+  c->final_info.stats.latency =
+      gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info, c);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
