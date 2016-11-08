@@ -632,18 +632,16 @@ class GoLanguage:
           categories=[SCALABLE])
 
       for rpc_type in ['unary', 'streaming']:
-        for synchronicity in ['sync', 'async']:
-          for channels in geometric_progression(1, 250, math.sqrt(10)):
-            for outstanding in geometric_progression(1, 2500, math.sqrt(10)):
-              if synchronicity == 'sync' and outstanding > 1200: continue
-              if outstanding < channels: continue
-              yield _ping_pong_scenario(
-                'go_protobuf_%s_%s_qps_unconstrained_%s_%d_channels_%d_outstanding' % (synchronicity, rpc_type, secstr, channels, outstanding),
-                rpc_type=rpc_type.upper(),
-                client_type='%s_CLIENT' % synchronicity.upper(),
-                server_type='%s_SERVER' % synchronicity.upper(),
-                unconstrained_client=synchronicity, secure=secure,
-                categories=[SWEEP], channels=channels, outstanding=outstanding)
+        for channels in geometric_progression(1, 250, math.sqrt(10)):
+          for outstanding in geometric_progression(1, 2500, math.sqrt(10)):
+            if outstanding < channels: continue
+            yield _ping_pong_scenario(
+              'go_protobuf_sync_%s_qps_unconstrained_%s_%d_channels_%d_outstanding' % (rpc_type, secstr, channels, outstanding),
+              rpc_type=rpc_type.upper(),
+              client_type='SYNC_CLIENT',
+              server_type='SYNC_SERVER',
+              unconstrained_client='sync', secure=secure,
+              categories=[SWEEP], channels=channels, outstanding=outstanding)
 
       # TODO(jtattermusch): add scenarios go vs C++
 
