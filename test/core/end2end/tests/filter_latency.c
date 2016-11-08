@@ -106,8 +106,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-// Simple request via a server filter that always fails to initialize
-// the call.
+// Simple request via a server filter that saves the reported latency value.
 static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -220,8 +219,8 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
   grpc_call_destroy(s);
+  grpc_call_destroy(c);
 
   const gpr_timespec end_time = gpr_now(GPR_CLOCK_MONOTONIC);
   const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);
@@ -230,6 +229,8 @@ static void test_request(grpc_end2end_test_config config) {
   GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_client_latency) < 0);
   GPR_ASSERT(gpr_time_cmp(max_latency, g_server_latency) >= 0);
   GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) < 0);
+  // Server latency should always be smaller than client latency.
+  GPR_ASSERT(gpr_time_cmp(g_server_latency, g_client_latency) < 0);
 
   cq_verifier_destroy(cqv);
 
@@ -241,7 +242,7 @@ static void test_request(grpc_end2end_test_config config) {
 }
 
 /*******************************************************************************
- * Test filter
+ * Test latency filter
  */
 
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
@@ -282,7 +283,7 @@ static const grpc_channel_filter test_client_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
-    "filter_latency"};
+    "client_filter_latency"};
 
 static const grpc_channel_filter test_server_filter = {
     grpc_call_next_op,
@@ -295,7 +296,7 @@ static const grpc_channel_filter test_server_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
-    "filter_latency"};
+    "server_filter_latency"};
 
 /*******************************************************************************
  * Registration
