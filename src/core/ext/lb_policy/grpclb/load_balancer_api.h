@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_CORE_EXT_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 
 #include "src/core/ext/client_channel/lb_policy_factory.h"
 #include "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
@@ -60,7 +60,7 @@ typedef struct grpc_grpclb_serverlist {
 grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name);
 
 /** Protocol Buffers v3-encode \a request */
-gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
+grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
 
 /** Destroy \a request */
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
@@ -68,11 +68,11 @@ void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
 /** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
  * grpc_grpclb_initial_response */
 grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
-    gpr_slice encoded_grpc_grpclb_response);
+    grpc_slice encoded_grpc_grpclb_response);
 
 /** Parse the list of servers from an encoded \a grpc_grpclb_response */
 grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
-    gpr_slice encoded_grpc_grpclb_response);
+    grpc_slice encoded_grpc_grpclb_response);
 
 /** Return a copy of \a sl. The caller is responsible for calling \a
  * grpc_grpclb_destroy_serverlist on the returned copy. */
