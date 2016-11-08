@@ -644,7 +644,9 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
 
   char *server_uri;
-  gpr_asprintf(&server_uri, "test:%s?lb_policy=grpclb&lb_enabled=1",
+  // The grpclb LB policy will be automatically selected by virtue of
+  // the fact that the returned addresses are balancer addresses.
+  gpr_asprintf(&server_uri, "test:%s?lb_enabled=1",
                tf.lb_server.servers_hostport);
   setup_client(server_uri, &tf.client);
   gpr_free(server_uri);
