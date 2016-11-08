@@ -103,7 +103,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      gpr_slice s = gpr_slice_from_copied_buffer(
+      grpc_slice s = grpc_slice_from_copied_buffer(
           buf.get(), payload_config.bytebuf_params().req_size());
       Slice slice(s, Slice::STEAL_REF);
       *req = ByteBuffer(&slice, 1);

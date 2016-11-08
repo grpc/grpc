@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <stddef.h>
 

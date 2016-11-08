@@ -43,8 +43,8 @@ typedef struct passthru_endpoint passthru_endpoint;
 typedef struct {
   grpc_endpoint base;
   passthru_endpoint *parent;
-  gpr_slice_buffer read_buffer;
-  gpr_slice_buffer *on_read_out;
+  grpc_slice_buffer read_buffer;
+  grpc_slice_buffer *on_read_out;
   grpc_closure *on_read;
   grpc_resource_user *resource_user;
 } half;
@@ -58,14 +58,14 @@ struct passthru_endpoint {
 };
 
 static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                    gpr_slice_buffer *slices, grpc_closure *cb) {
+                    grpc_slice_buffer *slices, grpc_closure *cb) {
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
     grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"),
                         NULL);
   } else if (m->read_buffer.count > 0) {
-    gpr_slice_buffer_swap(&m->read_buffer, slices);
+    grpc_slice_buffer_swap(&m->read_buffer, slices);
     grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
   } else {
     m->on_read = cb;
@@ -80,7 +80,7 @@ static half *other_half(half *h) {
 }
 
 static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     gpr_slice_buffer *slices, grpc_closure *cb) {
+                     grpc_slice_buffer *slices, grpc_closure *cb) {
   half *m = other_half((half *)ep);
   gpr_mu_lock(&m->parent->mu);
   grpc_error *error = GRPC_ERROR_NONE;
@@ -88,13 +88,13 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     error = GRPC_ERROR_CREATE("Endpoint already shutdown");
   } else if (m->on_read != NULL) {
     for (size_t i = 0; i < slices->count; i++) {
-      gpr_slice_buffer_add(m->on_read_out, gpr_slice_ref(slices->slices[i]));
+      grpc_slice_buffer_add(m->on_read_out, grpc_slice_ref(slices->slices[i]));
     }
     grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
-      gpr_slice_buffer_add(&m->read_buffer, gpr_slice_ref(slices->slices[i]));
+      grpc_slice_buffer_add(&m->read_buffer, grpc_slice_ref(slices->slices[i]));
     }
   }
   gpr_mu_unlock(&m->parent->mu);
@@ -132,8 +132,8 @@ static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
     gpr_mu_destroy(&p->mu);
-    gpr_slice_buffer_destroy(&p->client.read_buffer);
-    gpr_slice_buffer_destroy(&p->server.read_buffer);
+    grpc_slice_buffer_destroy(&p->client.read_buffer);
+    grpc_slice_buffer_destroy(&p->server.read_buffer);
     grpc_resource_user_unref(exec_ctx, p->client.resource_user);
     grpc_resource_user_unref(exec_ctx, p->server.resource_user);
     gpr_free(p);
@@ -170,7 +170,7 @@ static void half_init(half *m, passthru_endpoint *parent,
                       const char *half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
-  gpr_slice_buffer_init(&m->read_buffer);
+  grpc_slice_buffer_init(&m->read_buffer);
   m->on_read = NULL;
   char *name;
   gpr_asprintf(&name, "passthru_endpoint_%s_%" PRIxPTR, half_name,

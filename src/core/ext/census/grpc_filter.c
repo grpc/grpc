@@ -37,9 +37,9 @@
 #include <string.h>
 
 #include <grpc/census.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/census/census_interface.h"
@@ -69,7 +69,7 @@ static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
   for (m = md->list.head; m != NULL; m = m->next) {
     if (m->md->key == GRPC_MDSTR_PATH) {
       gpr_log(GPR_DEBUG, "%s",
-              (const char *)GPR_SLICE_START_PTR(m->md->value->slice));
+              (const char *)GRPC_SLICE_START_PTR(m->md->value->slice));
       /* Add method tag here */
     }
   }

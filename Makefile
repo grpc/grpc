@@ -966,9 +966,6 @@ gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
-gpr_percent_encoding_test: $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
-gpr_slice_buffer_test: $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
-gpr_slice_test: $(BINDIR)/$(CONFIG)/gpr_slice_test
 gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
 gpr_string_test: $(BINDIR)/$(CONFIG)/gpr_string_test
 gpr_sync_test: $(BINDIR)/$(CONFIG)/gpr_sync_test
@@ -1025,6 +1022,7 @@ nanopb_fuzzer_serverlist_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
 percent_decode_fuzzer: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
 percent_encode_fuzzer: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
+percent_encoding_test: $(BINDIR)/$(CONFIG)/percent_encoding_test
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
 resource_quota_test: $(BINDIR)/$(CONFIG)/resource_quota_test
 secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
@@ -1034,6 +1032,9 @@ server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
 set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
+slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
+slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
+slice_test: $(BINDIR)/$(CONFIG)/slice_test
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
@@ -1304,9 +1305,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
-  $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test \
-  $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
-  $(BINDIR)/$(CONFIG)/gpr_slice_test \
   $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
   $(BINDIR)/$(CONFIG)/gpr_string_test \
   $(BINDIR)/$(CONFIG)/gpr_sync_test \
@@ -1351,6 +1349,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
+  $(BINDIR)/$(CONFIG)/percent_encoding_test \
   $(BINDIR)/$(CONFIG)/resolve_address_test \
   $(BINDIR)/$(CONFIG)/resource_quota_test \
   $(BINDIR)/$(CONFIG)/secure_channel_create_test \
@@ -1359,6 +1358,9 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_test \
   $(BINDIR)/$(CONFIG)/set_initial_connect_string_test \
+  $(BINDIR)/$(CONFIG)/slice_buffer_test \
+  $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
+  $(BINDIR)/$(CONFIG)/slice_test \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
@@ -1662,12 +1664,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_mpscq_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_percent_encoding_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test || ( echo test gpr_percent_encoding_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_slice_buffer_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_slice_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_test || ( echo test gpr_slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_stack_lockfree_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test || ( echo test gpr_stack_lockfree_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
@@ -1742,6 +1738,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/murmur_hash_test || ( echo test murmur_hash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing no_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing percent_encoding_test"
+	$(Q) $(BINDIR)/$(CONFIG)/percent_encoding_test || ( echo test percent_encoding_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_test"
 	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resource_quota_test"
@@ -1758,6 +1756,12 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing set_initial_connect_string_test"
 	$(Q) $(BINDIR)/$(CONFIG)/set_initial_connect_string_test || ( echo test set_initial_connect_string_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_buffer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_buffer_test || ( echo test slice_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_string_helpers_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_string_helpers_test || ( echo test slice_string_helpers_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_test || ( echo test slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_resolver_test || ( echo test sockaddr_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_utils_test"
@@ -2481,9 +2485,6 @@ LIBGPR_SRC = \
     src/core/lib/support/log_windows.c \
     src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
-    src/core/lib/support/percent_encoding.c \
-    src/core/lib/support/slice.c \
-    src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
@@ -2521,8 +2522,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
-    include/grpc/support/slice.h \
-    include/grpc/support/slice_buffer.h \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
@@ -2691,6 +2690,10 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -2828,6 +2831,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -2982,6 +2987,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3091,6 +3100,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -3264,6 +3275,10 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3301,6 +3316,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -3475,6 +3492,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3583,6 +3604,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -8538,102 +8561,6 @@ endif
 endif
 
 
-GPR_PERCENT_ENCODING_TEST_SRC = \
-    test/core/support/percent_encoding_test.c \
-
-GPR_PERCENT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_PERCENT_ENCODING_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_percent_encoding_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_percent_encoding_test: $(GPR_PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encoding_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_percent_encoding_test: $(GPR_PERCENT_ENCODING_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_PERCENT_ENCODING_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_SLICE_BUFFER_TEST_SRC = \
-    test/core/support/slice_buffer_test.c \
-
-GPR_SLICE_BUFFER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/slice_buffer_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_SLICE_TEST_SRC = \
-    test/core/support/slice_test.c \
-
-GPR_SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_slice_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_slice_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/slice_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_slice_test: $(GPR_SLICE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_SLICE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_STACK_LOCKFREE_TEST_SRC = \
     test/core/support/stack_lockfree_test.c \
 
@@ -10363,7 +10290,7 @@ endif
 
 
 PERCENT_DECODE_FUZZER_SRC = \
-    test/core/support/percent_decode_fuzzer.c \
+    test/core/slice/percent_decode_fuzzer.c \
 
 PERCENT_DECODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10383,7 +10310,7 @@ $(BINDIR)/$(CONFIG)/percent_decode_fuzzer: $(PERCENT_DECODE_FUZZER_OBJS) $(LIBDI
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_percent_decode_fuzzer: $(PERCENT_DECODE_FUZZER_OBJS:.o=.dep)
 
@@ -10395,7 +10322,7 @@ endif
 
 
 PERCENT_ENCODE_FUZZER_SRC = \
-    test/core/support/percent_encode_fuzzer.c \
+    test/core/slice/percent_encode_fuzzer.c \
 
 PERCENT_ENCODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10415,13 +10342,45 @@ $(BINDIR)/$(CONFIG)/percent_encode_fuzzer: $(PERCENT_ENCODE_FUZZER_OBJS) $(LIBDI
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_percent_encode_fuzzer: $(PERCENT_ENCODE_FUZZER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(PERCENT_ENCODE_FUZZER_OBJS:.o=.dep)
+endif
+endif
+
+
+PERCENT_ENCODING_TEST_SRC = \
+    test/core/slice/percent_encoding_test.c \
+
+PERCENT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODING_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/percent_encoding_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/percent_encoding_test: $(PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/percent_encoding_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_encoding_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_percent_encoding_test: $(PERCENT_ENCODING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PERCENT_ENCODING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10710,6 +10669,102 @@ deps_set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_BUFFER_TEST_SRC = \
+    test/core/slice/slice_buffer_test.c \
+
+SLICE_BUFFER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_BUFFER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_buffer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_buffer_test: $(SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_buffer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_buffer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_buffer_test: $(SLICE_BUFFER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_BUFFER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_STRING_HELPERS_TEST_SRC = \
+    test/core/slice/slice_string_helpers_test.c \
+
+SLICE_STRING_HELPERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_STRING_HELPERS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_string_helpers_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_string_helpers_test: $(SLICE_STRING_HELPERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_STRING_HELPERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_string_helpers_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_string_helpers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_string_helpers_test: $(SLICE_STRING_HELPERS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_STRING_HELPERS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_TEST_SRC = \
+    test/core/slice/slice_test.c \
+
+SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_test: $(SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_test: $(SLICE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -16184,7 +16239,7 @@ endif
 
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/support/percent_decode_fuzzer.c \
+    test/core/slice/percent_decode_fuzzer.c \
     test/core/util/one_corpus_entry_fuzzer.c \
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC))))
@@ -16205,7 +16260,7 @@ $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry: $(PERCENT_DECODE_FUZZER_ONE
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -16219,7 +16274,7 @@ endif
 
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/support/percent_encode_fuzzer.c \
+    test/core/slice/percent_encode_fuzzer.c \
     test/core/util/one_corpus_entry_fuzzer.c \
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC))))
@@ -16240,7 +16295,7 @@ $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry: $(PERCENT_ENCODE_FUZZER_ONE
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 

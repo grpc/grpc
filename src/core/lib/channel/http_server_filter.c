@@ -68,7 +68,7 @@ typedef struct call_data {
   grpc_closure *recv_message_ready;
   grpc_closure *on_complete;
   grpc_byte_stream **pp_recv_message;
-  gpr_slice_buffer read_slice_buffer;
+  grpc_slice_buffer read_slice_buffer;
   grpc_slice_buffer_stream read_stream;
 
   /** Receive closures are chained: we inject this closure as the on_done_recv
@@ -162,8 +162,8 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
-    gpr_slice_buffer_add(&calld->read_slice_buffer,
-                         gpr_slice_ref(md->value->slice));
+    grpc_slice_buffer_add(&calld->read_slice_buffer,
+                          grpc_slice_ref(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;
@@ -313,7 +313,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
   grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem);
   grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem);
-  gpr_slice_buffer_init(&calld->read_slice_buffer);
+  grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;
 }
 
@@ -322,7 +322,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
   call_data *calld = elem->call_data;
-  gpr_slice_buffer_destroy(&calld->read_slice_buffer);
+  grpc_slice_buffer_destroy(&calld->read_slice_buffer);
 }
 
 /* Constructor for channel_data */
