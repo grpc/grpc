@@ -13,7 +13,5 @@ number:
 
 - remove `GRPC_ARG_MAX_MESSAGE_LENGTH` channel arg from
   `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
-- remove `ServerBuilder::SetMaxMessageSize()` method from
-  `include/grpc++/server_builder.h` (commit `6980362`)
-- remove `GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY` macro from
-  `include/grpc/impl/codegen/grpc_types.h` (commit `59c9f90`)
+  (cannot be done until after next grpc release, so that TensorFlow can
+  use the same code both internally and externally)
