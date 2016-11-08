@@ -45,6 +45,8 @@ extern "C" {
 typedef struct {
   /** Mutates the socket opitons of \a fd */
   bool (*mutate_fd)(int fd, grpc_socket_mutator *mutator);
+  /** Compare socket mutator \a a and \a b */
+  int (*compare)(grpc_socket_mutator *a, grpc_socket_mutator *b);
   /** Destroys the socket mutator instance */
   void (*destory)(grpc_socket_mutator *mutator);
 } grpc_socket_mutator_vtable;
@@ -64,6 +66,9 @@ grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator *mutator);
 
 /** Perform the file descriptor mutation operation of \a mutator on \a fd */
 bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator *mutator, int fd);
+
+/** Compare if \a a and \a b are the same mutator or have same settings */
+int grpc_socket_mutator_compare(grpc_socket_mutator *a, grpc_socket_mutator *b);
 
 grpc_socket_mutator *grpc_socket_mutator_ref(grpc_socket_mutator *mutator);
 void grpc_socket_mutator_unref(grpc_socket_mutator *mutator);
