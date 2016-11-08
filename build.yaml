@@ -461,6 +461,20 @@ filegroups:
   plugin: grpc_load_reporting_plugin
   uses:
   - grpc_base
+- name: grpc_resolver_dns_ares
+  headers:
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h
+  src:
+  - src/core/ext/resolver/dns/c_ares/dns_resolver_ares.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_fallback.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.c
+  - src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c
+  plugin: grpc_resolver_dns_ares
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c
@@ -864,6 +878,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -956,6 +971,7 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -3707,6 +3723,11 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
+  ares:
+    CFLAGS: -Wno-sign-conversion -Wno-invalid-source-encoding
+    CPPFLAGS: -Ithird_party/c-ares -Isrc/c-ares $(if $(subst Linux,,$(SYSTEM)),,-Isrc/c-ares/config_linux)
+      $(if $(subst Darwin,,$(SYSTEM)),,-Isrc/c-ares/config_darwin) -fvisibility=hidden
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
       -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
@@ -3794,11 +3815,13 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z
 ruby_gem:
   deps:
   - grpc
   - gpr
+  - ares
   - boringssl
   - z

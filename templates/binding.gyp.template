@@ -51,7 +51,8 @@
         ['OS == "win"', {
           "include_dirs": [
             "third_party/boringssl/include",
-            "third_party/zlib"
+            "third_party/zlib",
+            "third_party/c-ares"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -89,7 +90,8 @@
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
-            '<(node_root_dir)/deps/zlib'
+            '<(node_root_dir)/deps/zlib',
+            '<(node_root_dir)/deps/cares/include',
           ],
           'conditions': [
             ['config=="gcov"', {
@@ -174,6 +176,13 @@
       }]
     ],
     'targets': [
+  <%
+      for lib in libs:
+        if 'grpc' in lib.transitive_deps or lib.name == 'grpc':
+          lib.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+      for module in node_modules:
+        module.deps.append('node_modules/cares/deps/cares/cares.gyp:cares')
+  %>
       % for module in node_modules:
       % for lib in libs:
       % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):

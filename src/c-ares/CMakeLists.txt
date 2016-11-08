@@ -1,6 +1,8 @@
-#!/bin/sh
-
-# Copyright 2015, Google Inc.
+# c-ares cmake file for gRPC
+#
+# This is currently very experimental, and unsupported.
+#
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,28 +31,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+string(TOLOWER ${CMAKE_SYSTEM_NAME} cares_system_name)
 
-set -e
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/c-ares)
 
-export TEST=true
+if(${cares_system_name} MATCHES windows)
+  add_definitions(-DCARES_STATICLIB=1)
+  add_definitions(-DWIN32_LEAN_AND_MEAN=1)
+else()
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/config_${cares_system_name})
+  add_definitions(-DHAVE_CONFIG_H=1)
+endif()
 
-cd `dirname $0`/../../..
-
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
-
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (version_for_cocoapods_2.0-100-gc880e42)
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- 44c25c892a6229b20db7cd9dc05584ea865896de third_party/google_benchmark (v0.1.0-343-g44c25c8)
- c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- a428e42072765993ff674fda72863c9f1aa2d268 third_party/protobuf (v3.1.0)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
- e7fe2744db383c4489b7adc2b74f8ec3069367e4 third_party/c-ares (1.11.0)
- bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift
-EOF
-
-diff -u $submodules $want_submodules
-
-rm $submodules $want_submodules
+file(GLOB lib_sources ../../third_party/c-ares/*.c)
+add_library(cares ${lib_sources})

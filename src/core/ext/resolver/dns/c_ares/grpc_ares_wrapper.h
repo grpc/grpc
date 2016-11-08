@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,45 +31,35 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
+#ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
+#define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
-#include <stddef.h>
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-
-#define GRPC_MAX_SOCKADDR_SIZE 128
-
-typedef struct {
-  char addr[GRPC_MAX_SOCKADDR_SIZE];
-  size_t len;
-} grpc_resolved_address;
-
-typedef struct {
-  size_t naddrs;
-  grpc_resolved_address *addrs;
-} grpc_resolved_addresses;
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 /* Asynchronously resolve addr. Use default_port if a port isn't designated
-   in addr, otherwise use the port in addr. */
-/* TODO(ctiller): add a timeout here */
-extern void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
-                                    const char *default_port,
-                                    grpc_closure *on_done,
-                                    grpc_resolved_addresses **addresses);
-/* Destroy resolved addresses */
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
+   in addr, otherwise use the port in addr. grpc_ares_init() must be called
+   at least once before this function . */
+extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
+                                         const char *addr,
+                                         const char *default_port,
+                                         grpc_ares_ev_driver *ev_driver,
+                                         grpc_closure *on_done,
+                                         grpc_resolved_addresses **addresses);
 
-/* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
-   result must be freed with grpc_resolved_addresses_destroy. */
-extern grpc_error *(*grpc_blocking_resolve_address)(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses);
+/* Initialize gRPC ares wrapper. Must be called at least once before
+   grpc_resolve_address_ares(). */
+grpc_error *grpc_ares_init(void);
 
-/* Returns 0 by default. If it's overriden and returns value other than 0,
-   grpc_resolve_address will use its result. Result must be freed with
-   grpc_resolved_addresses_destroy. */
-extern int (*grpc_customized_resolve_address)(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses, grpc_error **error);
+/* Uninitialized gRPC ares wrapper. If there was more than one previous call to
+   grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
+   it is the call matching the call to grpc_ares_init() which initialized the
+   wrapper. */
+void grpc_ares_cleanup(void);
 
-#endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */
+#endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */
