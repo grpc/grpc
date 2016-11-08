@@ -76,10 +76,22 @@ extern "C" {
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
 // - Test reception of invalid serverlist
 // - Test pinging
-// - Test against a non-LB server. That server should return UNIMPLEMENTED and
-//   the call should fail.
+// - Test against a non-LB server.
 // - Random LB server closing the stream unexpectedly.
 // - Test using DNS-resolvable names (localhost?)
+//
+// Findings from end to end testing to be covered here:
+// - Handling of LB servers restart, including reconnection after backing-off
+//   retries.
+// - Destruction of load balanced channel (and therefore of grpclb instance)
+//   while:
+//   1) the internal LB call is still active. This should work by virtue
+//   of the weak reference the LB call holds. The call should be terminated as
+//   part of the grpclb shutdown process.
+//   2) the retry timer is active. Again, the weak reference it holds should
+//   prevent a premature call to \a glb_destroy.
+// - Restart of backend servers with no changes to serverlist. This exercises
+//   the RR handover mechanism.
 
 namespace grpc {
 namespace {
@@ -144,7 +156,6 @@ static gpr_slice build_response_payload_slice(
     // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
     // have a version for int but does have one for long long int.
     string token_data = "token" + std::to_string((long long int)ports[i]);
-    token_data.resize(64, '-');
     server->set_load_balance_token(token_data);
   }
   const grpc::string &enc_resp = response.SerializeAsString();
@@ -333,7 +344,6 @@ static void start_backend_server(server_fixture *sf) {
     // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
     // have a version for int but does have one for long long int.
     string expected_token = "token" + std::to_string((long long int)sf->port);
-    expected_token.resize(64, '-');
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
@@ -633,7 +643,9 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
 
   char *server_uri;
-  gpr_asprintf(&server_uri, "test:%s?lb_policy=grpclb&lb_enabled=1",
+  // The grpclb LB policy will be automatically selected by virtue of
+  // the fact that the returned addresses are balancer addresses.
+  gpr_asprintf(&server_uri, "test:%s?lb_enabled=1",
                tf.lb_server.servers_hostport);
   setup_client(server_uri, &tf.client);
   gpr_free(server_uri);

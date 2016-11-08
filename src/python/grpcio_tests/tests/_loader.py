@@ -84,11 +84,9 @@ class Loader(object):
         along.
     """
     for importer, module_name, is_package in (
-        pkgutil.iter_modules(package_paths)):
+        pkgutil.walk_packages(package_paths)):
       module = importer.find_module(module_name).load_module(module_name)
       self.visit_module(module)
-      if is_package:
-        self.walk_packages(module.__path__)
 
   def visit_module(self, module):
     """Visits the module, adding discovered tests to the test suite.
