@@ -100,7 +100,7 @@ def _generate_jobs(languages, configs, platforms,
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
         for extra_env in extra_envs:
-          name += '_%s=%s' % (extra_env, extra_envs[extra_env])
+          name += '_%s_%s' % (extra_env, extra_envs[extra_env])
 
         runtests_args += extra_args
         if platform == 'linux':
