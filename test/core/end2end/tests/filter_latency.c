@@ -325,6 +325,9 @@ static void init_plugin(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
                                    maybe_add_filter,
                                    (void *)&test_client_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   maybe_add_filter,
+                                   (void *)&test_client_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_filter,
                                    (void *)&test_server_filter);
