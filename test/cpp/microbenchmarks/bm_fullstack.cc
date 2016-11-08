@@ -218,12 +218,114 @@ class InProcessCHTTP2 : public EndpointPairFixture {
 };
 
 /*******************************************************************************
+ * CONTEXT MUTATORS
+ */
+
+static const int kPregenerateKeyCount = 10000000;
+
+template <class F>
+auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {
+  std::vector<decltype(f())> out;
+  out.reserve(length);
+  for (size_t i = 0; i < length; i++) {
+    out.push_back(f());
+  }
+  return out;
+}
+
+class NoOpMutator {
+ public:
+  template <class ContextType>
+  NoOpMutator(ContextType* context) {}
+};
+
+template <int length>
+class RandomBinaryMetadata {
+ public:
+  static const grpc::string& Key() { return kKey; }
+
+  static const grpc::string& Value() {
+    return kValues[rand() % kValues.size()];
+  }
+
+ private:
+  static const grpc::string kKey;
+  static const std::vector<grpc::string> kValues;
+
+  static grpc::string GenerateOneString() {
+    grpc::string s;
+    s.reserve(length + 1);
+    for (int i = 0; i < length; i++) {
+      s += (char)rand();
+    }
+    return s;
+  }
+};
+
+template <int length>
+const grpc::string RandomBinaryMetadata<length>::kKey = "foo-bin";
+
+template <int length>
+const std::vector<grpc::string> RandomBinaryMetadata<length>::kValues =
+    MakeVector(kPregenerateKeyCount, GenerateOneString);
+
+template <int length>
+class RandomAsciiMetadata {
+ public:
+  static const grpc::string& Key() { return kKey; }
+
+  static const grpc::string& Value() {
+    return kValues[rand() % kValues.size()];
+  }
+
+ private:
+  static const grpc::string kKey;
+  static const std::vector<grpc::string> kValues;
+
+  static grpc::string GenerateOneString() {
+    grpc::string s;
+    s.reserve(length + 1);
+    for (int i = 0; i < length; i++) {
+      s += (char)(rand() % 26 + 'a');
+    }
+    return s;
+  }
+};
+
+template <int length>
+const grpc::string RandomAsciiMetadata<length>::kKey = "foo";
+
+template <int length>
+const std::vector<grpc::string> RandomAsciiMetadata<length>::kValues =
+    MakeVector(kPregenerateKeyCount, GenerateOneString);
+
+template <class Generator, int kNumKeys>
+class Client_AddMetadata : public NoOpMutator {
+ public:
+  Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
+    for (int i = 0; i < kNumKeys; i++) {
+      context->AddMetadata(Generator::Key(), Generator::Value());
+    }
+  }
+};
+
+template <class Generator, int kNumKeys>
+class Server_AddInitialMetadata : public NoOpMutator {
+ public:
+  Server_AddInitialMetadata(ServerContext* context) : NoOpMutator(context) {
+    for (int i = 0; i < kNumKeys; i++) {
+      context->AddInitialMetadata(Generator::Key(), Generator::Value());
+    }
+  }
+};
+
+/*******************************************************************************
  * BENCHMARKING KERNELS
  */
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-template <class Fixture>
+template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_UnaryPingPong(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
@@ -253,6 +355,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
       EchoTestService::NewStub(fixture->channel()));
   while (state.KeepRunning()) {
     ClientContext cli_ctx;
+    ClientContextMutator cli_ctx_mut(&cli_ctx);
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
@@ -262,6 +365,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
+    ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
@@ -287,10 +391,47 @@ static void BM_UnaryPingPong(benchmark::State& state) {
  * CONFIGURATIONS
  */
 
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
+                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>,
+                   NoOpMutator);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>);
+BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>);
 
 }  // namespace testing
 }  // namespace grpc
