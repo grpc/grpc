@@ -111,9 +111,13 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static int skip_compression(grpc_call_element *elem) {
+static int skip_compression(grpc_call_element *elem, uint32_t flags) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
+
+  if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {
+    return 1;
+  }
   if (calld->has_compression_algorithm) {
     if (calld->compression_algorithm == GRPC_COMPRESS_NONE) {
       return 1;
@@ -241,8 +245,8 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   if (op->send_initial_metadata) {
     process_send_initial_metadata(elem, op->send_initial_metadata);
   }
-  if (op->send_message != NULL && !skip_compression(elem) &&
-      0 == (op->send_message->flags & GRPC_WRITE_NO_COMPRESS)) {
+  if (op->send_message != NULL &&
+      !skip_compression(elem, op->send_message->flags)) {
     calld->send_op = op;
     calld->send_length = op->send_message->length;
     calld->send_flags = op->send_message->flags;
