@@ -52,6 +52,20 @@ bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator *mutator, int fd) {
   return mutator->vtable->mutate_fd(fd, mutator);
 }
 
+int grpc_socket_mutator_compare(grpc_socket_mutator *a,
+                                grpc_socket_mutator *b) {
+  int c = GPR_ICMP(a, b);
+  if (c != 0) {
+    grpc_socket_mutator *sma = a;
+    grpc_socket_mutator *smb = b;
+    c = GPR_ICMP(sma->vtable, smb->vtable);
+    if (c == 0) {
+      c = sma->vtable->compare(sma, smb);
+    }
+  }
+  return c;
+}
+
 void grpc_socket_mutator_unref(grpc_socket_mutator *mutator) {
   if (gpr_unref(&mutator->refcount)) {
     mutator->vtable->destory(mutator);
@@ -66,7 +80,10 @@ static void socket_mutator_arg_destroy(void *p) {
   grpc_socket_mutator_unref(p);
 }
 
-static int socket_mutator_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+static int socket_mutator_cmp(void *a, void *b) {
+  return grpc_socket_mutator_compare((grpc_socket_mutator *)a,
+                                     (grpc_socket_mutator *)b);
+}
 
 static const grpc_arg_pointer_vtable socket_mutator_arg_vtable = {
     socket_mutator_arg_copy, socket_mutator_arg_destroy, socket_mutator_cmp};

@@ -45,6 +45,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "test/core/util/test_config.h"
 
@@ -76,8 +77,15 @@ static void destroy_test_mutator(grpc_socket_mutator *mutator) {
   gpr_free(m);
 }
 
-static const grpc_socket_mutator_vtable mutator_vtable = {mutate_fd,
-                                                          destroy_test_mutator};
+static int compare_test_mutator(grpc_socket_mutator *a,
+                                grpc_socket_mutator *b) {
+  struct test_socket_mutator *ma = (struct test_socket_mutator *)a;
+  struct test_socket_mutator *mb = (struct test_socket_mutator *)b;
+  return GPR_ICMP(ma->option_value, mb->option_value);
+}
+
+static const grpc_socket_mutator_vtable mutator_vtable = {
+    mutate_fd, compare_test_mutator, destroy_test_mutator};
 
 int main(int argc, char **argv) {
   int sock;
