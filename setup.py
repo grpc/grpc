@@ -52,6 +52,7 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -259,6 +260,7 @@ setuptools.setup(
   name='grpcio',
   version=grpc_version.VERSION,
   license=LICENSE,
+  long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,

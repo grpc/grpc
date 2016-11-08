@@ -279,12 +279,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_builder_plugin.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_initializer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\service_type.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync_no_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\thd.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\thd_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\thd_no_cxx11.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\resource_quota.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\security\auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\security\auth_metadata_processor.h" />
@@ -332,9 +326,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_cxx11.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_no_cxx11.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
@@ -394,6 +385,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\resource_quota_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\version_cc.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
