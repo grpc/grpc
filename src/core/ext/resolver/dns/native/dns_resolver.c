@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
 #define BACKOFF_MULTIPLIER 1.6
@@ -304,7 +305,12 @@ static grpc_resolver_factory *dns_resolver_factory_create() {
 }
 
 void grpc_resolver_dns_native_init(void) {
-  grpc_register_resolver_type(dns_resolver_factory_create());
+  char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (resolver != NULL && gpr_stricmp(resolver, "native") == 0) {
+    gpr_log(GPR_DEBUG, "Using native dns resolver");
+    grpc_register_resolver_type(dns_resolver_factory_create());
+  }
+  gpr_free(resolver);
 }
 
 void grpc_resolver_dns_native_shutdown(void) {}
