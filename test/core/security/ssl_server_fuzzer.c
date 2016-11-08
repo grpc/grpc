@@ -50,7 +50,7 @@ bool leak_check = false;
 #define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
 
-static void discard_write(gpr_slice slice) {}
+static void discard_write(grpc_slice slice) {}
 
 static void dont_log(gpr_log_func_args *args) {}
 
@@ -86,20 +86,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
-      gpr_slice_from_copied_buffer((const char *)data, size));
+      grpc_slice_from_copied_buffer((const char *)data, size));
 
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  gpr_slice ca_slice, cert_slice, key_slice;
+  grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char *ca_cert = (const char *)GPR_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
+  const char *ca_cert = (const char *)GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
       ca_cert, &pem_key_cert_pair, 1, 0, NULL);
 
@@ -133,9 +133,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "test");
   grpc_server_credentials_release(creds);
-  gpr_slice_unref(cert_slice);
-  gpr_slice_unref(key_slice);
-  gpr_slice_unref(ca_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   // grpc_endpoint_destroy has been called in handshake failure handling code.
   if (!mock_endpoint_shutdown) {
     grpc_endpoint_shutdown(&exec_ctx, mock_endpoint);
