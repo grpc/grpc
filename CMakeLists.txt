@@ -1069,6 +1069,7 @@ add_library(grpc++
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1226,6 +1227,7 @@ add_library(grpc++_cronet
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1421,6 +1423,7 @@ add_library(grpc++_unsecure
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
