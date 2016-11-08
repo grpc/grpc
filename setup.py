@@ -52,16 +52,13 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
-<<<<<<< HEAD
 CARES_INCLUDE = (
     os.path.join('third_party', 'c-ares'), os.path.join('src', 'c-ares'),)
 if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('src', 'c-ares', 'config_linux'),)
 if 'darwin' in sys.platform:
   CARES_INCLUDE += (os.path.join('src', 'c-ares', 'config_darwin'),)
-=======
 README = os.path.join(PYTHON_STEM, 'README.rst')
->>>>>>> upstream/master
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
