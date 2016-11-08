@@ -1155,11 +1155,11 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
     }
     gpr_mu_unlock(&glb_policy->mu);
   } else { /* empty payload: call cancelled. */
-           /* dispose of the "lb_on_response_received" weak ref taken in
-            * query_for_backends_locked() and reused in every reception loop */
-           gpr_mu_unlock(&glb_policy->mu);
-           GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                                     "lb_on_response_received_empty_payload");
+    /* dispose of the "lb_on_response_received" weak ref taken in
+     * query_for_backends_locked() and reused in every reception loop */
+    gpr_mu_unlock(&glb_policy->mu);
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                              "lb_on_response_received_empty_payload");
   }
 }
 
