@@ -756,6 +756,18 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_policy->pending_picks = NULL;
   pending_ping *pping = glb_policy->pending_pings;
   glb_policy->pending_pings = NULL;
+  if (glb_policy->rr_policy) {
+    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
+  }
+  if (glb_policy->started_picking) {
+    if (glb_policy->lb_call != NULL) {
+      grpc_call_cancel(glb_policy->lb_call, NULL);
+      /* lb_on_server_status_received will pick up the cancel and clean up */
+    }
+  }
+  grpc_connectivity_state_set(
+      exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
+      GRPC_ERROR_CREATE("Channel Shutdown"), "glb_shutdown");
   gpr_mu_unlock(&glb_policy->mu);
 
   while (pp != NULL) {
@@ -772,22 +784,6 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
                         GRPC_ERROR_NONE, NULL);
     pping = next;
   }
-
-  if (glb_policy->rr_policy) {
-    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
-  }
-
-  if (glb_policy->started_picking) {
-    if (glb_policy->lb_call != NULL) {
-      grpc_call_cancel(glb_policy->lb_call, NULL);
-      /* lb_on_server_status_received will pick up the cancellation and clean up
-       */
-    }
-  }
-
-  grpc_connectivity_state_set(
-      exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE("Channel Shutdown"), "glb_shutdown");
 }
 
 static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
@@ -994,7 +990,7 @@ static void lb_call_init(glb_lb_policy *glb_policy) {
                    BACKOFF_MAX_SECONDS * 1000);
 }
 
-static void lb_call_destroy(glb_lb_policy *glb_policy) {
+static void lb_call_destroy_locked(glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_call != NULL);
   grpc_call_destroy(glb_policy->lb_call);
   glb_policy->lb_call = NULL;
@@ -1199,7 +1195,7 @@ static void lb_on_server_status_received(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   /* We need to performe cleanups no matter what. */
-  lb_call_destroy(glb_policy);
+  lb_call_destroy_locked(glb_policy);
 
   if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */

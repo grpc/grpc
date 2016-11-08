@@ -43,7 +43,8 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
 #define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 8
-#define FEATURE_MASK_SUPPORTS_QUERY_ARGS 16
+#define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 16
+#define FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER 32
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -60,7 +61,7 @@ struct grpc_end2end_test_config {
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
                                               grpc_channel_args *server_args);
   void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args, const char *query_args);
+                      grpc_channel_args *client_args);
   void (*init_server)(grpc_end2end_test_fixture *f,
                       grpc_channel_args *server_args);
   void (*tear_down_data)(grpc_end2end_test_fixture *f);
@@ -68,5 +69,11 @@ struct grpc_end2end_test_config {
 
 void grpc_end2end_tests_pre_init(void);
 void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config);
+
+const char *get_host_override_string(const char *str,
+                                     grpc_end2end_test_config config);
+
+void validate_host_override_string(const char *pattern, const char *str,
+                                   grpc_end2end_test_config config);
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

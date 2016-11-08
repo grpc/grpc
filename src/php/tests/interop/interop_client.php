@@ -477,10 +477,10 @@ function statusCodeAndMessage($stub)
     list($result, $status) = $call->wait();
 
     hardAssert($status->code === 2,
-               'Received unexpected UnaryCall status code: ' .
+               'Received unexpected UnaryCall status code: '.
                $status->code);
     hardAssert($status->details === 'test status message',
-               'Received unexpected UnaryCall status details: ' .
+               'Received unexpected UnaryCall status details: '.
                $status->details);
 
     $streaming_call = $stub->FullDuplexCall();
@@ -493,10 +493,10 @@ function statusCodeAndMessage($stub)
 
     $status = $streaming_call->getStatus();
     hardAssert($status->code === 2,
-               'Received unexpected FullDuplexCall status code: ' .
+               'Received unexpected FullDuplexCall status code: '.
                $status->code);
     hardAssert($status->details === 'test status message',
-               'Received unexpected FullDuplexCall status details: ' .
+               'Received unexpected FullDuplexCall status details: '.
                $status->details);
 }
 
