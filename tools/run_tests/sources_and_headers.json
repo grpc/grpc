@@ -6238,6 +6238,7 @@
     "language": "c", 
     "name": "end2end_tests", 
     "src": [
+      "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.c", 
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/bad_hostname.c", 
@@ -6306,6 +6307,7 @@
     "name": "end2end_nosec_tests", 
     "src": [
       "test/core/end2end/end2end_nosec_tests.c", 
+      "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/bad_hostname.c", 
       "test/core/end2end/tests/binary_metadata.c", 
