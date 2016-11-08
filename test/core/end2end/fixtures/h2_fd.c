@@ -31,6 +31,11 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <fcntl.h>
@@ -106,9 +111,9 @@ static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fd", 0, chttp2_create_fixture_socketpair,
-     chttp2_init_client_socketpair, chttp2_init_server_socketpair,
-     chttp2_tear_down_socketpair},
+    {"chttp2/fd", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     chttp2_create_fixture_socketpair, chttp2_init_client_socketpair,
+     chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
 };
 
 int main(int argc, char **argv) {
@@ -126,3 +131,9 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+#else /* GRPC_POSIX_SOCKET */
+
+int main(int argc, char **argv) { return 1; }
+
+#endif /* GRPC_POSIX_SOCKET */

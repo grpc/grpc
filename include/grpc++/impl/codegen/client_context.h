@@ -51,6 +51,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <grpc++/impl/codegen/config.h>
@@ -59,7 +60,6 @@
 #include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
-#include <grpc++/impl/codegen/sync.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -235,12 +235,10 @@ class ClientContext {
   /// DEPRECATED: Use set_wait_for_ready() instead.
   void set_fail_fast(bool fail_fast) { set_wait_for_ready(!fail_fast); }
 
-#ifndef GRPC_CXX0X_NO_CHRONO
   /// Return the deadline for the client call.
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-#endif  // !GRPC_CXX0X_NO_CHRONO
 
   /// Return a \a gpr_timespec representation of the client call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
@@ -368,7 +366,7 @@ class ClientContext {
   bool idempotent_;
   bool cacheable_;
   std::shared_ptr<Channel> channel_;
-  grpc::mutex mu_;
+  std::mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;

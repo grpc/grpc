@@ -224,8 +224,12 @@ class ChannelData {
   const char *peer() const { return peer_; }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
+
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem, TransportOp *op);
+
+  virtual void GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                       const grpc_channel_info *channel_info);
 
  protected:
   /// Takes ownership of \a peer.
@@ -268,7 +272,7 @@ namespace internal {
 // Members of this class correspond to the members of the C
 // grpc_channel_filter struct.
 template <typename ChannelDataType, typename CallDataType>
-class ChannelFilter GRPC_FINAL {
+class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
@@ -294,6 +298,13 @@ class ChannelFilter GRPC_FINAL {
     ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     TransportOp op_wrapper(op);
     channel_data->StartTransportOp(exec_ctx, elem, &op_wrapper);
+  }
+
+  static void GetChannelInfo(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_element *elem,
+                             const grpc_channel_info *channel_info) {
+    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    channel_data->GetInfo(exec_ctx, elem, channel_info);
   }
 
   static const size_t call_data_size = sizeof(CallDataType);
@@ -376,7 +387,8 @@ void RegisterChannelFilter(
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
        FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetPeer, name}};
+       FilterType::DestroyChannelElement, FilterType::GetPeer,
+       FilterType::GetChannelInfo, name}};
   internal::channel_filters->push_back(filter_record);
 }
 

@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <stddef.h>
 
@@ -237,6 +237,13 @@ GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
     created for. */
 GRPCAPI char *grpc_channel_get_target(grpc_channel *channel);
 
+/** Request info about the channel.
+    \a channel_info indicates what information is being requested and
+    how that information will be returned.
+    \a channel_info is owned by the caller. */
+GRPCAPI void grpc_channel_get_info(grpc_channel *channel,
+                                   const grpc_channel_info *channel_info);
+
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
     clients will want to simply pass NULL. See grpc_channel_args definition for
@@ -400,6 +407,23 @@ GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
+
+/** Create a buffer pool */
+GRPCAPI grpc_resource_quota *grpc_resource_quota_create(const char *trace_name);
+
+/** Add a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_ref(grpc_resource_quota *resource_quota);
+
+/** Drop a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota *resource_quota);
+
+/** Update the size of a buffer pool */
+GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota *resource_quota,
+                                        size_t new_size);
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
+ */
+GRPCAPI const grpc_arg_pointer_vtable *grpc_resource_quota_arg_vtable(void);
 
 #ifdef __cplusplus
 }

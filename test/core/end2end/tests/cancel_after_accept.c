@@ -41,6 +41,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/method_config.h"
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
@@ -98,15 +103,15 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after accept, no payload */
 static void test_cancel_after_accept(grpc_end2end_test_config config,
-                                     cancellation_mode mode) {
+                                     cancellation_mode mode,
+                                     bool use_service_config) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
   grpc_call *s;
-  grpc_end2end_test_fixture f =
-      begin_test(config, "cancel_after_accept", NULL, NULL);
-  gpr_timespec deadline = five_seconds_time();
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  gpr_timespec deadline = use_service_config
+                              ? gpr_inf_future(GPR_CLOCK_MONOTONIC)
+                              : five_seconds_time();
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -117,16 +122,41 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   size_t details_capacity = 0;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  grpc_channel_args *args = NULL;
+  if (use_service_config) {
+    gpr_timespec timeout = {5, 0, GPR_TIMESPAN};
+    grpc_method_config_table_entry entry = {
+        grpc_mdstr_from_string("/service/method"),
+        grpc_method_config_create(NULL, &timeout, NULL, NULL),
+    };
+    grpc_method_config_table *method_config_table =
+        grpc_method_config_table_create(1, &entry);
+    GRPC_MDSTR_UNREF(entry.method_name);
+    grpc_method_config_unref(entry.method_config);
+    grpc_arg arg =
+        grpc_method_config_table_create_channel_arg(method_config_table);
+    args = grpc_channel_args_copy_and_add(args, &arg, 1);
+    grpc_method_config_table_unref(method_config_table);
+  }
+
+  grpc_end2end_test_fixture f =
+      begin_test(config, "cancel_after_accept", args, NULL);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
+
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/service/method",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -221,6 +251,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
+  if (args != NULL) grpc_channel_args_destroy(args);
+
   cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
@@ -230,7 +262,13 @@ void cancel_after_accept(grpc_end2end_test_config config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-    test_cancel_after_accept(config, cancellation_modes[i]);
+    test_cancel_after_accept(config, cancellation_modes[i],
+                             false /* use_service_config */);
+    if (config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL &&
+        cancellation_modes[i].expect_status == GRPC_STATUS_DEADLINE_EXCEEDED) {
+      test_cancel_after_accept(config, cancellation_modes[i],
+                               true /* use_service_config */);
+    }
   }
 }
 

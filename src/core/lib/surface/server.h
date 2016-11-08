@@ -40,6 +40,9 @@
 
 extern const grpc_channel_filter grpc_server_top_filter;
 
+/** Lightweight tracing of server channel state */
+extern int grpc_server_channel_trace;
+
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
 void grpc_server_add_listener(

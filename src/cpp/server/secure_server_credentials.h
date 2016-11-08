@@ -44,7 +44,7 @@
 
 namespace grpc {
 
-class AuthMetadataProcessorAyncWrapper GRPC_FINAL {
+class AuthMetadataProcessorAyncWrapper final {
  public:
   static void Destroy(void* wrapper);
 
@@ -64,19 +64,18 @@ class AuthMetadataProcessorAyncWrapper GRPC_FINAL {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
-class SecureServerCredentials GRPC_FINAL : public ServerCredentials {
+class SecureServerCredentials final : public ServerCredentials {
  public:
   explicit SecureServerCredentials(grpc_server_credentials* creds)
       : creds_(creds) {}
-  ~SecureServerCredentials() GRPC_OVERRIDE {
+  ~SecureServerCredentials() override {
     grpc_server_credentials_release(creds_);
   }
 
-  int AddPortToServer(const grpc::string& addr,
-                      grpc_server* server) GRPC_OVERRIDE;
+  int AddPortToServer(const grpc::string& addr, grpc_server* server) override;
 
   void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& processor) GRPC_OVERRIDE;
+      const std::shared_ptr<AuthMetadataProcessor>& processor) override;
 
  private:
   grpc_server_credentials* creds_;

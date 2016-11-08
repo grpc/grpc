@@ -34,6 +34,8 @@
 
 #include <sstream>
 
+#include <grpc++/grpc++.h>
+#include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/channel/channel_args.h"
@@ -41,10 +43,8 @@
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {
-  std::ostringstream user_agent_prefix;
-  user_agent_prefix << "grpc-c++/" << grpc_version_string();
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix.str());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
@@ -113,6 +113,18 @@ void ChannelArguments::SetUserAgentPrefix(
   }
 }
 
+void ChannelArguments::SetResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
+  SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
+                       resource_quota.c_resource_quota(),
+                       grpc_resource_quota_arg_vtable());
+}
+
+void ChannelArguments::SetLoadBalancingPolicyName(
+    const grpc::string& lb_policy_name) {
+  SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
+}
+
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
@@ -127,12 +139,18 @@ void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};
+  SetPointerWithVtable(key, value, &vtable);
+}
+
+void ChannelArguments::SetPointerWithVtable(
+    const grpc::string& key, void* value,
+    const grpc_arg_pointer_vtable* vtable) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
   arg.value.pointer.p = value;
-  arg.value.pointer.vtable = &vtable;
+  arg.value.pointer.vtable = vtable;
   args_.push_back(arg);
 }
 

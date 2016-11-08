@@ -34,21 +34,22 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 /* base64 encode a slice. Returns a new slice, does not take ownership of the
    input */
-gpr_slice grpc_chttp2_base64_encode(gpr_slice input);
+grpc_slice grpc_chttp2_base64_encode(grpc_slice input);
 
 /* Compress a slice with the static huffman encoder detailed in the hpack
    standard. Returns a new slice, does not take ownership of the input */
-gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
+grpc_slice grpc_chttp2_huffman_compress(grpc_slice input);
 
 /* equivalent to:
-   gpr_slice x = grpc_chttp2_base64_encode(input);
-   gpr_slice y = grpc_chttp2_huffman_compress(x);
-   gpr_slice_unref(x);
+   grpc_slice x = grpc_chttp2_base64_encode(input);
+   grpc_slice y = grpc_chttp2_huffman_compress(x);
+   grpc_slice_unref(x);
    return y; */
-gpr_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(gpr_slice input);
+grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(
+    grpc_slice input);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H */
