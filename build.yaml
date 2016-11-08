@@ -2088,7 +2088,7 @@ targets:
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/http/corpus
+  - test/core/http/request_corpus
   maxlen: 2048
 - name: http_response_fuzzer_test
   build: fuzzer
@@ -2101,7 +2101,7 @@ targets:
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/http/corpus
+  - test/core/http/response_corpus
   maxlen: 2048
 - name: httpcli_format_request_test
   build: test

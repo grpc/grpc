@@ -162,7 +162,6 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
-    grpc_slice_buffer_init(&calld->read_slice_buffer);
     grpc_slice_buffer_add(&calld->read_slice_buffer,
                           grpc_slice_ref(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
@@ -314,13 +313,17 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
   grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem);
   grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem);
+  grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {}
+                              void *ignored) {
+  call_data *calld = elem->call_data;
+  grpc_slice_buffer_destroy(&calld->read_slice_buffer);
+}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
