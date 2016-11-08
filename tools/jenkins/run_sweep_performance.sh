@@ -31,6 +31,9 @@
 # This script is invoked by Jenkins and runs full performance test suite.
 set -ex
 
+SERVER_HOST=${1:-grpc-performance-server-32core}
+CLIENT_HOST1=${2:-grpc-performance-client-32core}
+CLIENT_HOST2=${3:-grpc-performance-client2-32core}
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
@@ -39,7 +42,7 @@ tools/run_tests/run_performance_tests.py \
     -l c++ \
     --category sweep \
     --bq_result_table performance_test.performance_experiment_32core \
-    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
+    --remote_worker_host ${SERVER_HOST} ${CLIENT_HOST1} ${CLIENT_HOST2} \
     || EXIT_CODE=1
 
 exit $EXIT_CODE

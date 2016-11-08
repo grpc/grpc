@@ -30,6 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -38,9 +39,9 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -48,6 +49,7 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -183,7 +185,7 @@ struct grpc_call {
   grpc_slice_buffer_stream sending_stream;
   grpc_byte_stream *receiving_stream;
   grpc_byte_buffer **receiving_buffer;
-  gpr_slice receiving_slice;
+  grpc_slice receiving_slice;
   grpc_closure receiving_slice_ready;
   grpc_closure receiving_stream_ready;
   grpc_closure receiving_initial_metadata_ready;
@@ -223,33 +225,37 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call_stack,
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   grpc_error *error);
 
-grpc_call *grpc_call_create(
-    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *cq, grpc_pollset_set *pollset_set_alternative,
-    const void *server_transport_data, grpc_mdelem **add_initial_metadata,
-    size_t add_initial_metadata_count, gpr_timespec send_deadline) {
+grpc_error *grpc_call_create(const grpc_call_create_args *args,
+                             grpc_call **out_call) {
   size_t i, j;
-  grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack(channel);
+  grpc_channel_stack *channel_stack =
+      grpc_channel_get_channel_stack(args->channel);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call *call;
   GPR_TIMER_BEGIN("grpc_call_create", 0);
   call = gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
+  *out_call = call;
   memset(call, 0, sizeof(grpc_call));
   gpr_mu_init(&call->mu);
-  call->channel = channel;
-  call->cq = cq;
-  call->parent = parent_call;
+  call->channel = args->channel;
+  call->cq = args->cq;
+  call->parent = args->parent_call;
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
-  call->is_client = server_transport_data == NULL;
+  call->is_client = args->server_transport_data == NULL;
+  grpc_mdstr *path = NULL;
   if (call->is_client) {
-    GPR_ASSERT(add_initial_metadata_count < MAX_SEND_EXTRA_METADATA_COUNT);
-    for (i = 0; i < add_initial_metadata_count; i++) {
-      call->send_extra_metadata[i].md = add_initial_metadata[i];
+    GPR_ASSERT(args->add_initial_metadata_count <
+               MAX_SEND_EXTRA_METADATA_COUNT);
+    for (i = 0; i < args->add_initial_metadata_count; i++) {
+      call->send_extra_metadata[i].md = args->add_initial_metadata[i];
+      if (args->add_initial_metadata[i]->key == GRPC_MDSTR_PATH) {
+        path = GRPC_MDSTR_REF(args->add_initial_metadata[i]->value);
+      }
     }
-    call->send_extra_metadata_count = (int)add_initial_metadata_count;
+    call->send_extra_metadata_count = (int)args->add_initial_metadata_count;
   } else {
-    GPR_ASSERT(add_initial_metadata_count == 0);
+    GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
   for (i = 0; i < 2; i++) {
@@ -257,84 +263,87 @@ grpc_call *grpc_call_create(
       call->metadata_batch[i][j].deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
     }
   }
-  send_deadline = gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
+  gpr_timespec send_deadline =
+      gpr_convert_clock_type(args->send_deadline, GPR_CLOCK_MONOTONIC);
 
-  if (parent_call != NULL) {
-    GRPC_CALL_INTERNAL_REF(parent_call, "child");
+  if (args->parent_call != NULL) {
+    GRPC_CALL_INTERNAL_REF(args->parent_call, "child");
     GPR_ASSERT(call->is_client);
-    GPR_ASSERT(!parent_call->is_client);
+    GPR_ASSERT(!args->parent_call->is_client);
 
-    gpr_mu_lock(&parent_call->mu);
+    gpr_mu_lock(&args->parent_call->mu);
 
-    if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
+    if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
       send_deadline = gpr_time_min(
           gpr_convert_clock_type(send_deadline,
-                                 parent_call->send_deadline.clock_type),
-          parent_call->send_deadline);
+                                 args->parent_call->send_deadline.clock_type),
+          args->parent_call->send_deadline);
     }
     /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
      * GRPC_PROPAGATE_STATS_CONTEXT */
     /* TODO(ctiller): This should change to use the appropriate census start_op
      * call. */
-    if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
-      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
-      grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
-                            parent_call->context[GRPC_CONTEXT_TRACING].value,
-                            NULL);
+    if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
+      GPR_ASSERT(args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
+      grpc_call_context_set(
+          call, GRPC_CONTEXT_TRACING,
+          args->parent_call->context[GRPC_CONTEXT_TRACING].value, NULL);
     } else {
-      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
+      GPR_ASSERT(args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
     }
-    if (propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
+    if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
     }
 
-    if (parent_call->first_child == NULL) {
-      parent_call->first_child = call;
+    if (args->parent_call->first_child == NULL) {
+      args->parent_call->first_child = call;
       call->sibling_next = call->sibling_prev = call;
     } else {
-      call->sibling_next = parent_call->first_child;
-      call->sibling_prev = parent_call->first_child->sibling_prev;
+      call->sibling_next = args->parent_call->first_child;
+      call->sibling_prev = args->parent_call->first_child->sibling_prev;
       call->sibling_next->sibling_prev = call->sibling_prev->sibling_next =
           call;
     }
 
-    gpr_mu_unlock(&parent_call->mu);
+    gpr_mu_unlock(&args->parent_call->mu);
   }
 
   call->send_deadline = send_deadline;
 
-  GRPC_CHANNEL_INTERNAL_REF(channel, "call");
+  GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_error *error = grpc_call_stack_init(
-      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
-      server_transport_data, send_deadline, CALL_STACK_FROM_CALL(call));
+  grpc_error *error =
+      grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
+                           call->context, args->server_transport_data, path,
+                           send_deadline, CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code status;
     const char *error_str;
     grpc_error_get_status(error, &status, &error_str);
     close_with_status(&exec_ctx, call, status, error_str);
-    GRPC_ERROR_UNREF(error);
   }
-  if (cq != NULL) {
+  if (args->cq != NULL) {
     GPR_ASSERT(
-        pollset_set_alternative == NULL &&
+        args->pollset_set_alternative == NULL &&
         "Only one of 'cq' and 'pollset_set_alternative' should be non-NULL.");
-    GRPC_CQ_INTERNAL_REF(cq, "bind");
+    GRPC_CQ_INTERNAL_REF(args->cq, "bind");
     call->pollent =
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq));
   }
-  if (pollset_set_alternative != NULL) {
-    call->pollent =
-        grpc_polling_entity_create_from_pollset_set(pollset_set_alternative);
+  if (args->pollset_set_alternative != NULL) {
+    call->pollent = grpc_polling_entity_create_from_pollset_set(
+        args->pollset_set_alternative);
   }
   if (!grpc_polling_entity_is_empty(&call->pollent)) {
     grpc_call_stack_set_pollset_or_pollset_set(
         &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
   }
 
+  if (path != NULL) GRPC_MDSTR_UNREF(path);
+
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_TIMER_END("grpc_call_create", 0);
-  return call;
+  return error;
 }
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
@@ -485,8 +494,8 @@ static void destroy_encodings_accepted_by_peer(void *p) { return; }
 static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
   size_t i;
   grpc_compression_algorithm algorithm;
-  gpr_slice_buffer accept_encoding_parts;
-  gpr_slice accept_encoding_slice;
+  grpc_slice_buffer accept_encoding_parts;
+  grpc_slice accept_encoding_slice;
   void *accepted_user_data;
 
   accepted_user_data =
@@ -498,23 +507,23 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
   }
 
   accept_encoding_slice = mdel->value->slice;
-  gpr_slice_buffer_init(&accept_encoding_parts);
-  gpr_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
+  grpc_slice_buffer_init(&accept_encoding_parts);
+  grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
   /* No need to zero call->encodings_accepted_by_peer: grpc_call_create already
    * zeroes the whole grpc_call */
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
-    const gpr_slice *accept_encoding_entry_slice =
+    const grpc_slice *accept_encoding_entry_slice =
         &accept_encoding_parts.slices[i];
     if (grpc_compression_algorithm_parse(
-            (const char *)GPR_SLICE_START_PTR(*accept_encoding_entry_slice),
-            GPR_SLICE_LENGTH(*accept_encoding_entry_slice), &algorithm)) {
+            (const char *)GRPC_SLICE_START_PTR(*accept_encoding_entry_slice),
+            GRPC_SLICE_LENGTH(*accept_encoding_entry_slice), &algorithm)) {
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
       char *accept_encoding_entry_str =
-          gpr_dump_slice(*accept_encoding_entry_slice, GPR_DUMP_ASCII);
+          grpc_dump_slice(*accept_encoding_entry_slice, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR,
               "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
               accept_encoding_entry_str);
@@ -522,7 +531,7 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
     }
   }
 
-  gpr_slice_buffer_destroy(&accept_encoding_parts);
+  grpc_slice_buffer_destroy(&accept_encoding_parts);
 
   grpc_mdelem_set_user_data(
       mdel, destroy_encodings_accepted_by_peer,
@@ -543,14 +552,14 @@ static void get_final_details(grpc_call *call, char **out_details,
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (call->status[i].is_set) {
       if (call->status[i].details) {
-        gpr_slice details = call->status[i].details->slice;
-        size_t len = GPR_SLICE_LENGTH(details);
+        grpc_slice details = call->status[i].details->slice;
+        size_t len = GRPC_SLICE_LENGTH(details);
         if (len + 1 > *out_details_capacity) {
           *out_details_capacity =
               GPR_MAX(len + 1, *out_details_capacity * 3 / 2);
           *out_details = gpr_realloc(*out_details, *out_details_capacity);
         }
-        memcpy(*out_details, GPR_SLICE_START_PTR(details), len);
+        memcpy(*out_details, GRPC_SLICE_START_PTR(details), len);
         (*out_details)[len] = 0;
       } else {
         goto no_details;
@@ -892,7 +901,7 @@ static uint32_t decode_status(grpc_mdelem *md) {
     status = ((uint32_t)(intptr_t)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
-                                   GPR_SLICE_LENGTH(md->value->slice),
+                                   GRPC_SLICE_LENGTH(md->value->slice),
                                    &status)) {
       status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
     }
@@ -945,7 +954,7 @@ static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
   mdusr = &dest->metadata[dest->count++];
   mdusr->key = grpc_mdstr_as_c_string(elem->key);
   mdusr->value = grpc_mdstr_as_c_string(elem->value);
-  mdusr->value_length = GPR_SLICE_LENGTH(elem->value->slice);
+  mdusr->value_length = GRPC_SLICE_LENGTH(elem->value->slice);
   GPR_TIMER_END("publish_app_metadata", 0);
   return elem;
 }
@@ -1038,9 +1047,14 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
 static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
+  grpc_error *error = bctl->error;
+  if (bctl->recv_final_op) {
+    GRPC_ERROR_UNREF(error);
+    error = GRPC_ERROR_NONE;
+  }
   if (bctl->is_notify_tag_closure) {
     /* unrefs bctl->error */
-    grpc_exec_ctx_sched(exec_ctx, bctl->notify_tag, bctl->error, NULL);
+    grpc_closure_run(exec_ctx, bctl->notify_tag, error);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (uint8_t)(bctl->call->used_batches &
@@ -1049,7 +1063,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
     /* unrefs bctl->error */
-    grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, bctl->error,
+    grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, error,
                    finish_batch_completion, bctl, &bctl->cq_completion);
   }
 }
@@ -1072,8 +1086,8 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
     if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
                               &call->receiving_slice, remaining,
                               &call->receiving_slice_ready)) {
-      gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                           call->receiving_slice);
+      grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                            call->receiving_slice);
     } else {
       return;
     }
@@ -1086,8 +1100,8 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
 
   if (error == GRPC_ERROR_NONE) {
-    gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                         call->receiving_slice);
+    grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                          call->receiving_slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
     if (grpc_trace_operation_failures) {
@@ -1198,6 +1212,14 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void add_batch_error(batch_control *bctl, grpc_error *error) {
+  if (error == GRPC_ERROR_NONE) return;
+  if (bctl->error == GRPC_ERROR_NONE) {
+    bctl->error = GRPC_ERROR_CREATE("Call batch operation failed");
+  }
+  bctl->error = grpc_error_add_child(bctl->error, error);
+}
+
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                              void *bctlp, grpc_error *error) {
   batch_control *bctl = bctlp;
@@ -1205,9 +1227,8 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&call->mu);
 
-  if (error != GRPC_ERROR_NONE) {
-    bctl->error = GRPC_ERROR_REF(error);
-  } else {
+  add_batch_error(bctl, GRPC_ERROR_REF(error));
+  if (error == GRPC_ERROR_NONE) {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
     grpc_metadata_batch_filter(md, recv_initial_filter, call);
@@ -1304,8 +1325,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
-  GRPC_ERROR_UNREF(bctl->error);
-  bctl->error = GRPC_ERROR_REF(error);
+  add_batch_error(bctl, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
@@ -1341,6 +1361,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   grpc_transport_stream_op *stream_op = &bctl->op;
   memset(stream_op, 0, sizeof(*stream_op));
+  stream_op->covered_by_poller = true;
 
   if (nops == 0) {
     GRPC_CALL_INTERNAL_REF(call, "completion");
@@ -1441,6 +1462,12 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         grpc_slice_buffer_stream_init(
             &call->sending_stream,
             &op->data.send_message->data.raw.slice_buffer, op->flags);
+        /* If the outgoing buffer is already compressed, mark it as so in the
+           flags. These will be picked up by the compression filter and further
+           (wasteful) attempts at compression skipped. */
+        if (op->data.send_message->data.raw.compression > GRPC_COMPRESS_NONE) {
+          call->sending_stream.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+        }
         stream_op->send_message = &call->sending_stream.base;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -1496,8 +1523,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
               call, STATUS_FROM_API_OVERRIDE,
               GRPC_MDSTR_REF(call->send_extra_metadata[1].md->value));
         }
-        set_status_code(call, STATUS_FROM_API_OVERRIDE,
-                        (uint32_t)op->data.send_status_from_server.status);
+        if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
+          set_status_code(call, STATUS_FROM_API_OVERRIDE,
+                          (uint32_t)op->data.send_status_from_server.status);
+        }
         if (!prepare_application_metadata(
                 call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,

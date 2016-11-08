@@ -107,6 +107,9 @@ typedef struct {
       grpc_channel_credentials *c, grpc_call_credentials *call_creds,
       const char *target, const grpc_channel_args *args,
       grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+
+  grpc_channel_credentials *(*duplicate_without_call_credentials)(
+      grpc_channel_credentials *c);
 } grpc_channel_credentials_vtable;
 
 struct grpc_channel_credentials {
@@ -128,11 +131,18 @@ grpc_security_status grpc_channel_credentials_create_security_connector(
     const grpc_channel_args *args, grpc_channel_security_connector **sc,
     grpc_channel_args **new_args);
 
+/* Creates a version of the channel credentials without any attached call
+   credentials. This can be used in order to open a channel to a non-trusted
+   gRPC load balancer. */
+grpc_channel_credentials *
+grpc_channel_credentials_duplicate_without_call_credentials(
+    grpc_channel_credentials *creds);
+
 /* --- grpc_credentials_md. --- */
 
 typedef struct {
-  gpr_slice key;
-  gpr_slice value;
+  grpc_slice key;
+  grpc_slice value;
 } grpc_credentials_md;
 
 typedef struct {
@@ -147,7 +157,7 @@ grpc_credentials_md_store *grpc_credentials_md_store_create(
 
 /* Will ref key and value. */
 void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   gpr_slice key, gpr_slice value);
+                                   grpc_slice key, grpc_slice value);
 void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
                                             const char *key, const char *value);
 grpc_credentials_md_store *grpc_credentials_md_store_ref(

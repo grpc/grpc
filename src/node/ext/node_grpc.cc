@@ -42,6 +42,13 @@
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
 
+// TODO(murgatroid99): Remove this when the endpoint API becomes public
+#ifdef GRPC_UV
+extern "C" {
+#include "src/core/lib/iomgr/pollset_uv.h"
+}
+#endif
+
 #include "call.h"
 #include "call_credentials.h"
 #include "channel.h"
@@ -50,6 +57,7 @@
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
 #include "timeval.h"
+#include "completion_queue.h"
 
 using v8::FunctionTemplate;
 using v8::Local;
@@ -261,10 +269,10 @@ void InitLogConstants(Local<Object> exports) {
   Nan::HandleScope scope;
   Local<Object> log_verbosity = Nan::New<Object>();
   Nan::Set(exports, Nan::New("logVerbosity").ToLocalChecked(), log_verbosity);
-  Local<Value> DEBUG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
-  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG);
-  Local<Value> INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
-  Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), INFO);
+  Local<Value> LOG_DEBUG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
+  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), LOG_DEBUG);
+  Local<Value> LOG_INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
+  Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), LOG_INFO);
   Local<Value> LOG_ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
   Nan::Set(log_verbosity, Nan::New("ERROR").ToLocalChecked(), LOG_ERROR);
 }
@@ -428,13 +436,18 @@ void init(Local<Object> exports) {
   InitWriteFlags(exports);
   InitLogConstants(exports);
 
+#ifdef GRPC_UV
+  grpc_pollset_work_run_loop = 0;
+#endif
+
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);
   grpc::node::Channel::Init(exports);
   grpc::node::ChannelCredentials::Init(exports);
   grpc::node::Server::Init(exports);
-  grpc::node::CompletionQueueAsyncWorker::Init(exports);
   grpc::node::ServerCredentials::Init(exports);
+
+  grpc::node::CompletionQueueInit(exports);
 
   // Attach a few utility functions directly to the module
   Nan::Set(exports, Nan::New("metadataKeyIsLegal").ToLocalChecked(),

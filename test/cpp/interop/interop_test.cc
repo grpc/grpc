@@ -44,16 +44,20 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
+#include "test/cpp/util/test_config.h"
 
 extern "C" {
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/support/string.h"
 }
+
+DEFINE_string(extra_server_flags, "", "Extra flags to pass to server.");
 
 int test_client(const char* root, const char* host, int port) {
   int status;
@@ -80,6 +84,7 @@ int test_client(const char* root, const char* host, int port) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
   char root[1024];
@@ -105,15 +110,19 @@ int main(int argc, char** argv) {
   /* start the server */
   svr = fork();
   if (svr == 0) {
-    char* binary_path;
-    char* port_arg;
-    gpr_asprintf(&binary_path, "%s/interop_server", root);
-    gpr_asprintf(&port_arg, "--port=%d", port);
-
-    execl(binary_path, binary_path, port_arg, NULL);
-
-    gpr_free(binary_path);
-    gpr_free(port_arg);
+    const size_t num_args = 3 + !FLAGS_extra_server_flags.empty();
+    char** args = (char**)gpr_malloc(sizeof(char*) * num_args);
+    memset(args, 0, sizeof(char*) * num_args);
+    gpr_asprintf(&args[0], "%s/interop_server", root);
+    gpr_asprintf(&args[1], "--port=%d", port);
+    if (!FLAGS_extra_server_flags.empty()) {
+      args[2] = gpr_strdup(FLAGS_extra_server_flags.c_str());
+    }
+    execv(args[0], args);
+    for (size_t i = 0; i < num_args - 1; ++i) {
+      gpr_free(args[i]);
+    }
+    gpr_free(args);
     return 1;
   }
   /* wait a little */

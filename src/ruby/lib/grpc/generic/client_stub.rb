@@ -168,6 +168,7 @@ module GRPC
 
       # return the operation view of the active_call; define #execute as a
       # new method for this instance that invokes #request_response.
+      c.merge_metadata_to_send(metadata)
       op = c.operation
       op.define_singleton_method(:execute) do
         c.request_response(req, metadata: metadata)
@@ -231,9 +232,10 @@ module GRPC
 
       # return the operation view of the active_call; define #execute as a
       # new method for this instance that invokes #client_streamer.
+      c.merge_metadata_to_send(metadata)
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.client_streamer(requests, metadata: metadata)
+        c.client_streamer(requests)
       end
       op
     end
@@ -309,9 +311,10 @@ module GRPC
 
       # return the operation view of the active_call; define #execute
       # as a new method for this instance that invokes #server_streamer
+      c.merge_metadata_to_send(metadata)
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.server_streamer(req, metadata: metadata, &blk)
+        c.server_streamer(req, &blk)
       end
       op
     end
@@ -417,15 +420,15 @@ module GRPC
                           deadline: deadline,
                           parent: parent,
                           credentials: credentials)
-
       return c.bidi_streamer(requests, metadata: metadata,
                              &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
       # as a new method for this instance that invokes #bidi_streamer
+      c.merge_metadata_to_send(metadata)
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.bidi_streamer(requests, metadata: metadata, &blk)
+        c.bidi_streamer(requests, &blk)
       end
       op
     end
@@ -445,7 +448,6 @@ module GRPC
                         deadline: nil,
                         parent: nil,
                         credentials: nil)
-
       deadline = from_relative_time(@timeout) if deadline.nil?
       # Provide each new client call with its own completion queue
       call = @ch.create_call(parent, # parent call

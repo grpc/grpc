@@ -108,10 +108,10 @@ class SynchronousClient
   std::vector<SimpleResponse> responses_;
 
  private:
-  void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL { EndThreads(); }
+  void DestroyMultithreading() override final { EndThreads(); }
 };
 
-class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
+class SynchronousUnaryClient final : public SynchronousClient {
  public:
   SynchronousUnaryClient(const ClientConfig& config)
       : SynchronousClient(config) {
@@ -119,7 +119,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   }
   ~SynchronousUnaryClient() {}
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override {
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
@@ -130,11 +130,12 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     entry->set_value((UsageTimer::Now() - start) * 1e9);
-    return s.ok();
+    entry->set_status(s.error_code());
+    return true;
   }
 };
 
-class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
+class SynchronousStreamingClient final : public SynchronousClient {
  public:
   SynchronousStreamingClient(const ClientConfig& config)
       : SynchronousClient(config) {
@@ -164,7 +165,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     delete[] context_;
   }
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override {
     if (!WaitToIssue(thread_idx)) {
       return true;
     }

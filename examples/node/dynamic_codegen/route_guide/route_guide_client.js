@@ -55,6 +55,7 @@ function runGetFeature(callback) {
   function featureCallback(error, feature) {
     if (error) {
       callback(error);
+      return;
     }
     if (feature.name === '') {
       console.log('Found no feature at ' +
@@ -117,13 +118,17 @@ function runRecordRoute(callback) {
     string: 'db_path'
   });
   fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) callback(err);
+    if (err) {
+      callback(err);
+      return;
+    }
     var feature_list = JSON.parse(data);
 
     var num_points = 10;
     var call = client.recordRoute(function(error, stats) {
       if (error) {
         callback(error);
+        return;
       }
       console.log('Finished trip with', stats.point_count, 'points');
       console.log('Passed', stats.feature_count, 'features');

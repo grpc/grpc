@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_IOMGR_H
 #define GRPC_CORE_LIB_IOMGR_IOMGR_H
 
+#include "src/core/lib/iomgr/port.h"
+
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);
 

@@ -121,14 +121,13 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void request_response_with_payload(grpc_end2end_test_fixture f,
-                                          const char *method_name,
-                                          const char *request_msg,
-                                          const char *response_msg,
-                                          grpc_metadata *initial_lr_metadata,
-                                          grpc_metadata *trailing_lr_metadata) {
-  gpr_slice request_payload_slice = gpr_slice_from_static_string(request_msg);
-  gpr_slice response_payload_slice = gpr_slice_from_static_string(response_msg);
+static void request_response_with_payload(
+    grpc_end2end_test_config config, grpc_end2end_test_fixture f,
+    const char *method_name, const char *request_msg, const char *response_msg,
+    grpc_metadata *initial_lr_metadata, grpc_metadata *trailing_lr_metadata) {
+  grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
+  grpc_slice response_payload_slice =
+      grpc_slice_from_static_string(response_msg);
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
@@ -151,9 +150,10 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               method_name, "foo.test.google.fr", deadline,
-                               NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, method_name,
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -295,20 +295,21 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_metadata initial_lr_metadata;
   grpc_metadata trailing_lr_metadata;
 
-  initial_lr_metadata.key = GRPC_LOAD_REPORTING_INITIAL_MD_KEY;
+  initial_lr_metadata.key = GRPC_LB_TOKEN_MD_KEY;
   initial_lr_metadata.value = "client-token";
   initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
   memset(&initial_lr_metadata.internal_data, 0,
          sizeof(initial_lr_metadata.internal_data));
 
-  trailing_lr_metadata.key = GRPC_LOAD_REPORTING_TRAILING_MD_KEY;
+  trailing_lr_metadata.key = GRPC_LB_COST_MD_KEY;
   trailing_lr_metadata.value = "server-token";
   trailing_lr_metadata.value_length = strlen(trailing_lr_metadata.value);
   memset(&trailing_lr_metadata.internal_data, 0,
          sizeof(trailing_lr_metadata.internal_data));
 
-  request_response_with_payload(f, method_name, request_msg, response_msg,
-                                &initial_lr_metadata, &trailing_lr_metadata);
+  request_response_with_payload(config, f, method_name, request_msg,
+                                response_msg, &initial_lr_metadata,
+                                &trailing_lr_metadata);
   end_test(&f);
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);

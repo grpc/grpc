@@ -42,6 +42,8 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
+extern int grpc_http_trace;
+
 typedef struct call_data {
   uint8_t seen_path;
   uint8_t seen_method;
@@ -66,7 +68,7 @@ typedef struct call_data {
   grpc_closure *recv_message_ready;
   grpc_closure *on_complete;
   grpc_byte_stream **pp_recv_message;
-  gpr_slice_buffer read_slice_buffer;
+  grpc_slice_buffer read_slice_buffer;
   grpc_slice_buffer_stream read_stream;
 
   /** Receive closures are chained: we inject this closure as the on_done_recv
@@ -160,9 +162,8 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
-    gpr_slice_buffer_init(&calld->read_slice_buffer);
-    gpr_slice_buffer_add(&calld->read_slice_buffer,
-                         gpr_slice_ref(md->value->slice));
+    grpc_slice_buffer_add(&calld->read_slice_buffer,
+                          grpc_slice_ref(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;
@@ -209,6 +210,11 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
             err, GRPC_ERROR_CREATE("Missing te: trailers header"));
       }
       /* Error this call out */
+      if (grpc_http_trace) {
+        const char *error_str = grpc_error_string(err);
+        gpr_log(GPR_ERROR, "Invalid http2 headers: %s", error_str);
+        grpc_error_free_string(error_str);
+      }
       grpc_call_element_send_cancel(exec_ctx, elem);
     }
   } else {
@@ -307,13 +313,17 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
   grpc_closure_init(&calld->hs_on_complete, hs_on_complete, elem);
   grpc_closure_init(&calld->hs_recv_message_ready, hs_recv_message_ready, elem);
+  grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {}
+                              void *ignored) {
+  call_data *calld = elem->call_data;
+  grpc_slice_buffer_destroy(&calld->read_slice_buffer);
+}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
@@ -337,4 +347,5 @@ const grpc_channel_filter grpc_http_server_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "http-server"};
