@@ -6941,6 +6941,7 @@ endif
 
 LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
+    test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/call_creds.c \
@@ -7025,6 +7026,7 @@ endif
 
 LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
+    test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/cancel_after_accept.c \
