@@ -687,7 +687,7 @@ cc_library(
     "src/core/lib/transport/timeout_encoding.h",
     "src/core/lib/transport/transport.h",
     "src/core/lib/transport/transport_impl.h",
-    "third_party/objective_c/Cronet/cronet_c_for_grpc.h",
+    "third_party/Cronet/bidirectional_stream_c.h",
     "src/core/ext/transport/chttp2/transport/bin_decoder.h",
     "src/core/ext/transport/chttp2/transport/bin_encoder.h",
     "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
