@@ -739,51 +739,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "gpr_percent_encoding_test", 
-    "src": [
-      "test/core/support/percent_encoding_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_slice_buffer_test", 
-    "src": [
-      "test/core/support/slice_buffer_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_slice_test", 
-    "src": [
-      "test/core/support/slice_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "gpr_stack_lockfree_test", 
     "src": [
       "test/core/support/stack_lockfree_test.c"
@@ -1682,7 +1637,7 @@
     "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
-      "test/core/support/percent_decode_fuzzer.c"
+      "test/core/slice/percent_decode_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1699,7 +1654,24 @@
     "language": "c", 
     "name": "percent_encode_fuzzer", 
     "src": [
-      "test/core/support/percent_encode_fuzzer.c"
+      "test/core/slice/percent_encode_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "percent_encoding_test", 
+    "src": [
+      "test/core/slice/percent_encoding_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1854,6 +1826,57 @@
     "name": "set_initial_connect_string_test", 
     "src": [
       "test/core/client_channel/set_initial_connect_string_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "slice_buffer_test", 
+    "src": [
+      "test/core/slice/slice_buffer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "slice_string_helpers_test", 
+    "src": [
+      "test/core/slice/slice_string_helpers_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "slice_test", 
+    "src": [
+      "test/core/slice/slice_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2072,6 +2095,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "transport_pid_controller_test", 
+    "src": [
+      "test/core/transport/pid_controller_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "transport_security_test", 
     "src": [
       "test/core/tsi/transport_security_test.c"
@@ -2216,6 +2256,22 @@
     "name": "channel_arguments_test", 
     "src": [
       "test/cpp/common/channel_arguments_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channel_filter_test", 
+    "src": [
+      "test/cpp/common/channel_filter_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2814,6 +2870,20 @@
     "name": "mock_test", 
     "src": [
       "test/cpp/end2end/mock_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "google_benchmark"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "noop-benchmark", 
+    "src": [
+      "test/cpp/microbenchmarks/noop-benchmark.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4059,24 +4129,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_fake_resolver_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_fake_resolver.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "h2_fakesec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_fakesec.c"
@@ -4386,24 +4438,6 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_fake_resolver_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_fake_resolver.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4762,7 +4796,7 @@
     "language": "c", 
     "name": "percent_decode_fuzzer_one_entry", 
     "src": [
-      "test/core/support/percent_decode_fuzzer.c", 
+      "test/core/slice/percent_decode_fuzzer.c", 
       "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
@@ -4780,7 +4814,7 @@
     "language": "c", 
     "name": "percent_encode_fuzzer_one_entry", 
     "src": [
-      "test/core/support/percent_encode_fuzzer.c", 
+      "test/core/slice/percent_encode_fuzzer.c", 
       "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
@@ -6116,6 +6150,16 @@
   }, 
   {
     "deps": [], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "google_benchmark", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
     "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
@@ -6230,6 +6274,7 @@
     "language": "c", 
     "name": "end2end_tests", 
     "src": [
+      "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.c", 
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/bad_hostname.c", 
@@ -6298,6 +6343,7 @@
     "name": "end2end_nosec_tests", 
     "src": [
       "test/core/end2end/end2end_nosec_tests.c", 
+      "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/bad_hostname.c", 
       "test/core/end2end/tests/binary_metadata.c", 
@@ -6420,8 +6466,6 @@
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
-      "include/grpc/support/slice.h", 
-      "include/grpc/support/slice_buffer.h", 
       "include/grpc/support/string_util.h", 
       "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
@@ -6441,7 +6485,6 @@
       "src/core/lib/support/env.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
-      "src/core/lib/support/percent_encoding.h", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -6466,8 +6509,6 @@
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
-      "include/grpc/support/slice.h", 
-      "include/grpc/support/slice_buffer.h", 
       "include/grpc/support/string_util.h", 
       "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
@@ -6509,10 +6550,6 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.c", 
       "src/core/lib/support/murmur_hash.h", 
-      "src/core/lib/support/percent_encoding.c", 
-      "src/core/lib/support/percent_encoding.h", 
-      "src/core/lib/support/slice.c", 
-      "src/core/lib/support/slice_buffer.c", 
       "src/core/lib/support/stack_lockfree.c", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.c", 
@@ -6591,6 +6628,8 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/slice.h", 
+      "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -6665,6 +6704,8 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -6682,6 +6723,7 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/method_config.h", 
+      "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
@@ -6697,6 +6739,8 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/slice.h", 
+      "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
@@ -6850,6 +6894,12 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
+      "src/core/lib/slice/percent_encoding.c", 
+      "src/core/lib/slice/percent_encoding.h", 
+      "src/core/lib/slice/slice.c", 
+      "src/core/lib/slice/slice_buffer.c", 
+      "src/core/lib/slice/slice_string_helpers.c", 
+      "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/surface/alarm.c", 
       "src/core/lib/surface/api_trace.c", 
       "src/core/lib/surface/api_trace.h", 
@@ -6891,6 +6941,8 @@
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/method_config.c", 
       "src/core/lib/transport/method_config.h", 
+      "src/core/lib/transport/pid_controller.c", 
+      "src/core/lib/transport/pid_controller.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.c", 
@@ -7471,8 +7523,7 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "grpc_base"
+      "gpr"
     ], 
     "headers": [
       "src/core/lib/tsi/fake_transport_security.h", 
@@ -7523,12 +7574,6 @@
       "include/grpc++/impl/server_builder_plugin.h", 
       "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
-      "include/grpc++/impl/sync.h", 
-      "include/grpc++/impl/sync_cxx11.h", 
-      "include/grpc++/impl/sync_no_cxx11.h", 
-      "include/grpc++/impl/thd.h", 
-      "include/grpc++/impl/thd_cxx11.h", 
-      "include/grpc++/impl/thd_no_cxx11.h", 
       "include/grpc++/resource_quota.h", 
       "include/grpc++/security/auth_context.h", 
       "include/grpc++/security/auth_metadata_processor.h", 
@@ -7581,12 +7626,6 @@
       "include/grpc++/impl/server_builder_plugin.h", 
       "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
-      "include/grpc++/impl/sync.h", 
-      "include/grpc++/impl/sync_cxx11.h", 
-      "include/grpc++/impl/sync_no_cxx11.h", 
-      "include/grpc++/impl/thd.h", 
-      "include/grpc++/impl/thd_cxx11.h", 
-      "include/grpc++/impl/thd_no_cxx11.h", 
       "include/grpc++/resource_quota.h", 
       "include/grpc++/security/auth_context.h", 
       "include/grpc++/security/auth_metadata_processor.h", 
@@ -7623,6 +7662,7 @@
       "src/cpp/common/core_codegen.cc", 
       "src/cpp/common/resource_quota_cc.cc", 
       "src/cpp/common/rpc_method.cc", 
+      "src/cpp/common/version_cc.cc", 
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
@@ -7675,9 +7715,6 @@
       "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
-      "include/grpc++/impl/codegen/sync.h", 
-      "include/grpc++/impl/codegen/sync_cxx11.h", 
-      "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
     ], 
@@ -7711,9 +7748,6 @@
       "include/grpc++/impl/codegen/status_helper.h", 
       "include/grpc++/impl/codegen/string_ref.h", 
       "include/grpc++/impl/codegen/stub_options.h", 
-      "include/grpc++/impl/codegen/sync.h", 
-      "include/grpc++/impl/codegen/sync_cxx11.h", 
-      "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
     ], 

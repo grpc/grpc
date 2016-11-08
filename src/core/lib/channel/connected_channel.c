@@ -38,9 +38,9 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
@@ -134,6 +134,11 @@ static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return grpc_transport_get_peer(exec_ctx, chand->transport);
 }
 
+/* No-op. */
+static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem,
+                                 const grpc_channel_info *channel_info) {}
+
 static const grpc_channel_filter connected_channel_filter = {
     con_start_transport_stream_op,
     con_start_transport_op,
@@ -145,6 +150,7 @@ static const grpc_channel_filter connected_channel_filter = {
     init_channel_elem,
     destroy_channel_elem,
     con_get_peer,
+    con_get_channel_info,
     "connected",
 };
 

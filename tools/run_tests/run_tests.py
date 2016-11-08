@@ -336,7 +336,7 @@ class CLanguage(object):
     elif compiler == 'gcc4.6':
       return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
     elif compiler == 'gcc4.8':
-      return ('ubuntu1604', self._gcc_make_options(version_suffix='-4.8'))
+      return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':

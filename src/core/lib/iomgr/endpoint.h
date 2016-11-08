@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -49,9 +49,9 @@ typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-               gpr_slice_buffer *slices, grpc_closure *cb);
+               grpc_slice_buffer *slices, grpc_closure *cb);
   void (*write)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                gpr_slice_buffer *slices, grpc_closure *cb);
+                grpc_slice_buffer *slices, grpc_closure *cb);
   grpc_workqueue *(*get_workqueue)(grpc_endpoint *ep);
   void (*add_to_pollset)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          grpc_pollset *pollset);
@@ -69,7 +69,7 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                        gpr_slice_buffer *slices, grpc_closure *cb);
+                        grpc_slice_buffer *slices, grpc_closure *cb);
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
@@ -87,7 +87,7 @@ grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
    it is a valid slice buffer.
    */
 void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                         gpr_slice_buffer *slices, grpc_closure *cb);
+                         grpc_slice_buffer *slices, grpc_closure *cb);
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */

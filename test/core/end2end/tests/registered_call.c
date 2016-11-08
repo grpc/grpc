@@ -55,7 +55,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -97,7 +97,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f, void *rc) {
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -186,7 +187,8 @@ static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
@@ -204,10 +206,11 @@ static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
 static void test_invoke_simple_request(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_simple_request", NULL, NULL);
-  void *rc = grpc_channel_register_call(f.client, "/foo",
-                                        "foo.test.google.fr:1234", NULL);
+  void *rc = grpc_channel_register_call(
+      f.client, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), NULL);
 
-  simple_request_body(f, rc);
+  simple_request_body(config, f, rc);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -216,11 +219,12 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   int i;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_10_simple_requests", NULL, NULL);
-  void *rc = grpc_channel_register_call(f.client, "/foo",
-                                        "foo.test.google.fr:1234", NULL);
+  void *rc = grpc_channel_register_call(
+      f.client, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), NULL);
 
   for (i = 0; i < 10; i++) {
-    simple_request_body(f, rc);
+    simple_request_body(config, f, rc);
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
   end_test(&f);

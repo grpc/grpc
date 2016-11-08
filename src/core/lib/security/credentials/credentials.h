@@ -141,8 +141,8 @@ grpc_channel_credentials_duplicate_without_call_credentials(
 /* --- grpc_credentials_md. --- */
 
 typedef struct {
-  gpr_slice key;
-  gpr_slice value;
+  grpc_slice key;
+  grpc_slice value;
 } grpc_credentials_md;
 
 typedef struct {
@@ -157,7 +157,7 @@ grpc_credentials_md_store *grpc_credentials_md_store_create(
 
 /* Will ref key and value. */
 void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   gpr_slice key, gpr_slice value);
+                                   grpc_slice key, grpc_slice value);
 void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
                                             const char *key, const char *value);
 grpc_credentials_md_store *grpc_credentials_md_store_ref(

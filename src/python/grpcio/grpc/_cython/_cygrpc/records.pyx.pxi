@@ -242,19 +242,19 @@ cdef class ByteBuffer:
       return
 
     cdef char *c_data = data
-    cdef gpr_slice data_slice
+    cdef grpc_slice data_slice
     cdef size_t data_length = len(data)
     with nogil:
-      data_slice = gpr_slice_from_copied_buffer(c_data, data_length)
+      data_slice = grpc_slice_from_copied_buffer(c_data, data_length)
     with nogil:
       self.c_byte_buffer = grpc_raw_byte_buffer_create(
           &data_slice, 1)
     with nogil:
-      gpr_slice_unref(data_slice)
+      grpc_slice_unref(data_slice)
 
   def bytes(self):
     cdef grpc_byte_buffer_reader reader
-    cdef gpr_slice data_slice
+    cdef grpc_slice data_slice
     cdef size_t data_slice_length
     cdef void *data_slice_pointer
     cdef bint reader_status
@@ -267,11 +267,11 @@ cdef class ByteBuffer:
       result = bytearray()
       with nogil:
         while grpc_byte_buffer_reader_next(&reader, &data_slice):
-          data_slice_pointer = gpr_slice_start_ptr(data_slice)
-          data_slice_length = gpr_slice_length(data_slice)
+          data_slice_pointer = grpc_slice_start_ptr(data_slice)
+          data_slice_length = grpc_slice_length(data_slice)
           with gil:
             result += (<char *>data_slice_pointer)[:data_slice_length]
-          gpr_slice_unref(data_slice)
+          grpc_slice_unref(data_slice)
       with nogil:
         grpc_byte_buffer_reader_destroy(&reader)
       return bytes(result)

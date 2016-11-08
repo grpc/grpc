@@ -217,9 +217,6 @@ add_library(gpr
   src/core/lib/support/log_windows.c
   src/core/lib/support/mpscq.c
   src/core/lib/support/murmur_hash.c
-  src/core/lib/support/percent_encoding.c
-  src/core/lib/support/slice.c
-  src/core/lib/support/slice_buffer.c
   src/core/lib/support/stack_lockfree.c
   src/core/lib/support/string.c
   src/core/lib/support/string_posix.c
@@ -270,8 +267,6 @@ foreach(_hdr
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
-  include/grpc/support/slice.h
-  include/grpc/support/slice_buffer.h
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
@@ -395,6 +390,10 @@ add_library(grpc
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/percent_encoding.c
+  src/core/lib/slice/slice.c
+  src/core/lib/slice/slice_buffer.c
+  src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
   src/core/lib/surface/byte_buffer.c
@@ -419,6 +418,7 @@ add_library(grpc
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/method_config.c
+  src/core/lib/transport/pid_controller.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -556,6 +556,8 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
@@ -675,6 +677,10 @@ add_library(grpc_cronet
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/percent_encoding.c
+  src/core/lib/slice/slice.c
+  src/core/lib/slice/slice_buffer.c
+  src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
   src/core/lib/surface/byte_buffer.c
@@ -699,6 +705,7 @@ add_library(grpc_cronet
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/method_config.c
+  src/core/lib/transport/pid_controller.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -801,6 +808,8 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
@@ -921,6 +930,10 @@ add_library(grpc_unsecure
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
+  src/core/lib/slice/percent_encoding.c
+  src/core/lib/slice/slice.c
+  src/core/lib/slice/slice_buffer.c
+  src/core/lib/slice/slice_string_helpers.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
   src/core/lib/surface/byte_buffer.c
@@ -945,6 +958,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/method_config.c
+  src/core/lib/transport/pid_controller.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -1050,6 +1064,8 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
@@ -1109,6 +1125,7 @@ add_library(grpc++
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1166,12 +1183,6 @@ foreach(_hdr
   include/grpc++/impl/server_builder_plugin.h
   include/grpc++/impl/server_initializer.h
   include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
   include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
@@ -1219,9 +1230,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h
@@ -1277,6 +1285,7 @@ add_library(grpc++_cronet
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1334,12 +1343,6 @@ foreach(_hdr
   include/grpc++/impl/server_builder_plugin.h
   include/grpc++/impl/server_initializer.h
   include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
   include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
@@ -1387,9 +1390,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h
@@ -1485,6 +1485,7 @@ add_library(grpc++_unsecure
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -1542,12 +1543,6 @@ foreach(_hdr
   include/grpc++/impl/server_builder_plugin.h
   include/grpc++/impl/server_initializer.h
   include/grpc++/impl/service_type.h
-  include/grpc++/impl/sync.h
-  include/grpc++/impl/sync_cxx11.h
-  include/grpc++/impl/sync_no_cxx11.h
-  include/grpc++/impl/thd.h
-  include/grpc++/impl/thd_cxx11.h
-  include/grpc++/impl/thd_no_cxx11.h
   include/grpc++/resource_quota.h
   include/grpc++/security/auth_context.h
   include/grpc++/security/auth_metadata_processor.h
@@ -1595,9 +1590,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/status_helper.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync.h
-  include/grpc++/impl/codegen/sync_cxx11.h
-  include/grpc++/impl/codegen/sync_no_cxx11.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer_reader.h

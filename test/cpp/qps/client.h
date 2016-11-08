@@ -103,7 +103,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      gpr_slice s = gpr_slice_from_copied_buffer(
+      grpc_slice s = grpc_slice_from_copied_buffer(
           buf.get(), payload_config.bytebuf_params().req_size());
       Slice slice(s, Slice::STEAL_REF);
       *req = ByteBuffer(&slice, 1);
@@ -113,7 +113,7 @@ class ClientRequestCreator<ByteBuffer> {
   }
 };
 
-class HistogramEntry GRPC_FINAL {
+class HistogramEntry final {
  public:
   HistogramEntry() : value_used_(false), status_used_(false) {}
   bool value_used() const { return value_used_; }

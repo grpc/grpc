@@ -35,6 +35,7 @@
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/slice.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
@@ -60,7 +61,7 @@ typedef struct grpc_byte_buffer {
     } reserved;
     struct {
       grpc_compression_algorithm compression;
-      gpr_slice_buffer slice_buffer;
+      grpc_slice_buffer slice_buffer;
     } raw;
   } data;
 } grpc_byte_buffer;
@@ -469,6 +470,13 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+/** Information requested from the channel. */
+typedef struct {
+  /* If non-NULL, will be set to point to a string indicating the LB
+   * policy name.  Caller takes ownership. */
+  char **lb_policy_name;
+} grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;
 

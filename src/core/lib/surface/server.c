@@ -264,13 +264,13 @@ static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
 
 struct shutdown_cleanup_args {
   grpc_closure closure;
-  gpr_slice slice;
+  grpc_slice slice;
 };
 
 static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
   struct shutdown_cleanup_args *a = arg;
-  gpr_slice_unref(a->slice);
+  grpc_slice_unref(a->slice);
   gpr_free(a);
 }
 
@@ -283,7 +283,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
 
   op->send_goaway = send_goaway;
   op->set_accept_stream = true;
-  sc->slice = gpr_slice_from_copied_string("Server shutdown");
+  sc->slice = grpc_slice_from_copied_string("Server shutdown");
   op->goaway_message = &sc->slice;
   op->goaway_status = GRPC_STATUS_OK;
   op->disconnect_with_error = send_disconnect;
@@ -459,8 +459,8 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
 }
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
-  gpr_slice slice = value->slice;
-  size_t len = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = value->slice;
+  size_t len = GRPC_SLICE_LENGTH(slice);
 
   if (len + 1 > *capacity) {
     *capacity = GPR_MAX(len + 1, *capacity * 2);
@@ -965,6 +965,7 @@ const grpc_channel_filter grpc_server_top_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "server",
 };
 
