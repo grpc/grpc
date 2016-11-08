@@ -67,4 +67,8 @@
 #include <grpc++/server_posix.h>
 // IWYU pragma: end_exports
 
+namespace grpc {
+grpc::string Version();
+}  // namespace grpc
+
 #endif  // GRPCXX_GRPCXX_H

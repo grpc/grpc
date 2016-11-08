@@ -33,6 +33,7 @@
 
 #include <grpc++/support/channel_arguments.h>
 
+#include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
@@ -53,7 +54,7 @@ class ChannelArgumentsTest : public ::testing::Test {
 
   grpc::string GetDefaultUserAgentPrefix() {
     std::ostringstream user_agent_prefix;
-    user_agent_prefix << "grpc-c++/" << grpc_version_string();
+    user_agent_prefix << "grpc-c++/" << Version();
     return user_agent_prefix.str();
   }
 

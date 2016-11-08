@@ -114,12 +114,15 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   char *details = NULL;
   size_t details_capacity = 0;
   grpc_byte_buffer *response_payload_recv = NULL;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_cancel(c, NULL));

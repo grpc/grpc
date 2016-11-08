@@ -153,6 +153,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
@@ -261,6 +263,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
@@ -482,6 +486,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
     </ClCompile>

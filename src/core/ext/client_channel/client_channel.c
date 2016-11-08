@@ -39,6 +39,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
@@ -141,6 +142,7 @@ typedef struct client_channel_channel_data {
   /** mutex protecting all variables below in this data structure */
   gpr_mu mu;
   /** currently active load balancer */
+  char *lb_policy_name;
   grpc_lb_policy *lb_policy;
   /** maps method names to method_parameters structs */
   grpc_mdstr_hash_table *method_params_table;
@@ -241,6 +243,7 @@ static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
 static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                        grpc_error *error) {
   channel_data *chand = arg;
+  char *lb_policy_name = NULL;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
   grpc_mdstr_hash_table *method_params_table = NULL;
@@ -250,7 +253,6 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
-    const char *lb_policy_name = NULL;
     const grpc_arg *channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
     if (channel_arg != NULL) {
@@ -312,7 +314,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_service_config_destroy(service_config);
       }
     }
-    // Clean up.
+    // Before we clean up, save a copy of lb_policy_name, since it might
+    // be pointing to data inside chand->resolver_result.
+    // The copy will be saved in chand->lb_policy_name below.
+    lb_policy_name = gpr_strdup(lb_policy_name);
     grpc_channel_args_destroy(chand->resolver_result);
     chand->resolver_result = NULL;
   }
@@ -323,6 +328,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   gpr_mu_lock(&chand->mu);
+  if (lb_policy_name != NULL) {
+    gpr_free(chand->lb_policy_name);
+    chand->lb_policy_name = lb_policy_name;
+  }
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
   if (chand->method_params_table != NULL) {
@@ -450,6 +459,19 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&chand->mu);
 }
 
+static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
+                                grpc_channel_element *elem,
+                                const grpc_channel_info *info) {
+  channel_data *chand = elem->channel_data;
+  gpr_mu_lock(&chand->mu);
+  if (info->lb_policy_name != NULL) {
+    *info->lb_policy_name = chand->lb_policy_name == NULL
+                                ? NULL
+                                : gpr_strdup(chand->lb_policy_name);
+  }
+  gpr_mu_unlock(&chand->mu);
+}
+
 /* Constructor for channel_data */
 static void cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
@@ -489,6 +511,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
+  gpr_free(chand->lb_policy_name);
   if (chand->method_params_table != NULL) {
     grpc_mdstr_hash_table_unref(chand->method_params_table);
   }
@@ -1076,6 +1099,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
     cc_init_channel_elem,
     cc_destroy_channel_elem,
     cc_get_peer,
+    cc_get_channel_info,
     "client-channel",
 };
 

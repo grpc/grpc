@@ -41,6 +41,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/util/parse_hexstring.h"
@@ -60,9 +61,9 @@ size_t cap_to_delete = 0;
    hexstring passed in */
 static void verify(size_t window_available, int eof, size_t expect_window_used,
                    const char *expected, size_t nheaders, ...) {
-  gpr_slice_buffer output;
-  gpr_slice merged;
-  gpr_slice expect = parse_hexstring(expected);
+  grpc_slice_buffer output;
+  grpc_slice merged;
+  grpc_slice expect = parse_hexstring(expected);
   size_t i;
   va_list l;
   grpc_linked_mdelem *e = gpr_malloc(sizeof(*e) * nheaders);
@@ -93,19 +94,19 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
   }
   to_delete[num_to_delete++] = e;
 
-  gpr_slice_buffer_init(&output);
+  grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
   memset(&stats, 0, sizeof(stats));
   grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, eof, 16384, &stats,
                             &output);
   merged = grpc_slice_merge(output.slices, output.count);
-  gpr_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy(&output);
   grpc_metadata_batch_destroy(&b);
 
-  if (0 != gpr_slice_cmp(merged, expect)) {
-    char *expect_str = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *got_str = gpr_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  if (0 != grpc_slice_cmp(merged, expect)) {
+    char *expect_str = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *got_str = grpc_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "mismatched output for %s", expected);
     gpr_log(GPR_ERROR, "EXPECT: %s", expect_str);
     gpr_log(GPR_ERROR, "GOT:    %s", got_str);
@@ -114,8 +115,8 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
     g_failure = 1;
   }
 
-  gpr_slice_unref(merged);
-  gpr_slice_unref(expect);
+  grpc_slice_unref(merged);
+  grpc_slice_unref(expect);
 }
 
 static void test_basic_headers(void) {
@@ -186,7 +187,7 @@ static void test_decode_table_overflow(void) {
 
 static void verify_table_size_change_match_elem_size(const char *key,
                                                      const char *value) {
-  gpr_slice_buffer output;
+  grpc_slice_buffer output;
   grpc_mdelem *elem = grpc_mdelem_from_strings(key, value);
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
   size_t initial_table_size = g_compressor.table_size;
@@ -198,13 +199,13 @@ static void verify_table_size_change_match_elem_size(const char *key,
   e[0].next = NULL;
   b.list.head = &e[0];
   b.list.tail = &e[0];
-  gpr_slice_buffer_init(&output);
+  grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
   memset(&stats, 0, sizeof(stats));
   grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, 0, 16384, &stats,
                             &output);
-  gpr_slice_buffer_destroy(&output);
+  grpc_slice_buffer_destroy(&output);
   grpc_metadata_batch_destroy(&b);
 
   GPR_ASSERT(g_compressor.table_size == elem_size + initial_table_size);

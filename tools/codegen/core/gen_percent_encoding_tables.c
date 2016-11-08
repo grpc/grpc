@@ -71,14 +71,14 @@ int main(void) {
   legal('_');
   legal('.');
   legal('~');
-  dump("gpr_url_percent_encoding_unreserved_bytes");
+  dump("grpc_url_percent_encoding_unreserved_bytes");
 
   clear();
   for (i = 32; i <= 126; i++) {
     if (i == '%') continue;
     legal(i);
   }
-  dump("gpr_compatible_percent_encoding_unreserved_bytes");
+  dump("grpc_compatible_percent_encoding_unreserved_bytes");
 
   return 0;
 }
