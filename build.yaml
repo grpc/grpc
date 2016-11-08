@@ -1028,6 +1028,7 @@ libs:
   - src/cpp/server/insecure_server_credentials.cc
   deps:
   - gpr
+  - grpc
   - grpc_cronet
   baselib: true
   dll: true

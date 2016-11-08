@@ -1256,6 +1256,7 @@ target_link_libraries(grpc++_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
   gpr
+  grpc
   grpc_cronet
 )
 

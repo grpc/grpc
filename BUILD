@@ -1625,6 +1625,7 @@ cc_library(
   deps = [
     "//external:libssl",
     ":gpr",
+    ":grpc",
     ":grpc_cronet",
   ],
 )
