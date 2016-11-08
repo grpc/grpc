@@ -162,7 +162,6 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
-    gpr_slice_buffer_init(&calld->read_slice_buffer);
     gpr_slice_buffer_add(&calld->read_slice_buffer,
                          gpr_slice_ref(md->value->slice));
     grpc_slice_buffer_stream_init(&calld->read_stream,

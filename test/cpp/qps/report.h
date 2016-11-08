@@ -82,10 +82,10 @@ class CompositeReporter : public Reporter {
   /** Adds a \a reporter to the composite. */
   void add(std::unique_ptr<Reporter> reporter);
 
-  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
 
  private:
   std::vector<std::unique_ptr<Reporter> > reporters_;
@@ -97,10 +97,10 @@ class GprLogReporter : public Reporter {
   GprLogReporter(const string& name) : Reporter(name) {}
 
  private:
-  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
 };
 
 /** Dumps the report to a JSON file. */
@@ -110,10 +110,10 @@ class JsonReporter : public Reporter {
       : Reporter(name), report_file_(report_file) {}
 
  private:
-  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
 
   const string report_file_;
 };

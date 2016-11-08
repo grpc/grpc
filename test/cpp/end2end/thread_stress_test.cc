@@ -86,12 +86,12 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   TestServiceImpl() : signal_client_(false) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message(request->message());
     MaybeEchoDeadline(context, request, response);
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {
-        unique_lock<mutex> lock(mu_);
+        std::unique_lock<std::mutex> lock(mu_);
         signal_client_ = true;
       }
       while (!context->IsCancelled()) {
@@ -118,7 +118,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) GRPC_OVERRIDE {
+                       EchoResponse* response) override {
     EchoRequest request;
     response->set_message("");
     while (reader->Read(&request)) {
@@ -130,7 +130,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   // Return 3 messages.
   // TODO(yangg) make it generic by adding a parameter into EchoRequest
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
+                        ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     response.set_message(request->message() + "0");
     writer->Write(response);
@@ -142,9 +142,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -156,20 +156,20 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   bool signal_client() {
-    unique_lock<mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
 
  private:
   bool signal_client_;
-  mutex mu_;
+  std::mutex mu_;
 };
 
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message("no package");
     return Status::OK;
   }
@@ -215,12 +215,12 @@ class CommonStressTest {
 
 class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
  public:
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     ServerBuilder builder;
     SetUpStart(&builder, &service_);
     SetUpEnd(&builder);
   }
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     TearDownStart();
     TearDownEnd();
   }
@@ -232,7 +232,7 @@ class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
 class CommonStressTestAsyncServer
     : public CommonStressTest<grpc::testing::EchoTestService::AsyncService> {
  public:
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     shutting_down_ = false;
     ServerBuilder builder;
     SetUpStart(&builder, &service_);
@@ -247,9 +247,9 @@ class CommonStressTestAsyncServer
           new std::thread(&CommonStressTestAsyncServer::ProcessRpcs, this));
     }
   }
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     {
-      unique_lock<mutex> l(mu_);
+      std::unique_lock<std::mutex> l(mu_);
       TearDownStart();
       shutting_down_ = true;
       cq_->Shutdown();
@@ -292,7 +292,7 @@ class CommonStressTestAsyncServer
     }
   }
   void RefreshContext(int i) {
-    unique_lock<mutex> l(mu_);
+    std::unique_lock<std::mutex> l(mu_);
     if (!shutting_down_) {
       contexts_[i].state = Context::READY;
       contexts_[i].srv_ctx.reset(new ServerContext);
@@ -315,7 +315,7 @@ class CommonStressTestAsyncServer
   ::grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
-  mutex mu_;
+  std::mutex mu_;
   std::vector<std::thread*> server_threads_;
 };
 
@@ -323,8 +323,8 @@ template <class Common>
 class End2endTest : public ::testing::Test {
  protected:
   End2endTest() {}
-  void SetUp() GRPC_OVERRIDE { common_.SetUp(); }
-  void TearDown() GRPC_OVERRIDE { common_.TearDown(); }
+  void SetUp() override { common_.SetUp(); }
+  void TearDown() override { common_.TearDown(); }
   void ResetStub() { common_.ResetStub(); }
 
   Common common_;
@@ -369,8 +369,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
  protected:
   AsyncClientEnd2endTest() : rpcs_outstanding_(0) {}
 
-  void SetUp() GRPC_OVERRIDE { common_.SetUp(); }
-  void TearDown() GRPC_OVERRIDE {
+  void SetUp() override { common_.SetUp(); }
+  void TearDown() override {
     void* ignored_tag;
     bool ignored_ok;
     while (cq_.Next(&ignored_tag, &ignored_ok))
@@ -379,7 +379,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   }
 
   void Wait() {
-    unique_lock<mutex> l(mu_);
+    std::unique_lock<std::mutex> l(mu_);
     while (rpcs_outstanding_ != 0) {
       cv_.wait(l);
     }
@@ -404,7 +404,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       call->response_reader->Finish(&call->response, &call->status,
                                     (void*)call);
 
-      unique_lock<mutex> l(mu_);
+      std::unique_lock<std::mutex> l(mu_);
       rpcs_outstanding_++;
     }
   }
@@ -422,7 +422,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
       bool notify;
       {
-        unique_lock<mutex> l(mu_);
+        std::unique_lock<std::mutex> l(mu_);
         rpcs_outstanding_--;
         notify = (rpcs_outstanding_ == 0);
       }
@@ -434,8 +434,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
   Common common_;
   CompletionQueue cq_;
-  mutex mu_;
-  condition_variable cv_;
+  std::mutex mu_;
+  std::condition_variable cv_;
   int rpcs_outstanding_;
 };
 
