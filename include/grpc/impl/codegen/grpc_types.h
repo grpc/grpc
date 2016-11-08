@@ -471,6 +471,13 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+/** Information requested from the channel. */
+typedef struct {
+  /* If non-NULL, will be set to point to a string indicating the LB
+   * policy name.  Caller takes ownership. */
+  char **lb_policy_name;
+} grpc_channel_info;
+
 typedef struct grpc_resource_quota grpc_resource_quota;
 
 #ifdef __cplusplus
