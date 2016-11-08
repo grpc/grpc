@@ -39,6 +39,8 @@ extern void grpc_client_channel_init(void);
 extern void grpc_client_channel_shutdown(void);
 extern void grpc_resolver_dns_ares_init(void);
 extern void grpc_resolver_dns_ares_shutdown(void);
+extern void grpc_resolver_dns_native_init(void);
+extern void grpc_resolver_dns_native_shutdown(void);
 extern void grpc_resolver_sockaddr_init(void);
 extern void grpc_resolver_sockaddr_shutdown(void);
 extern void grpc_load_reporting_plugin_init(void);
@@ -59,6 +61,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
+  grpc_register_plugin(grpc_resolver_dns_native_init,
+                       grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
                        grpc_resolver_sockaddr_shutdown);
   grpc_register_plugin(grpc_load_reporting_plugin_init,

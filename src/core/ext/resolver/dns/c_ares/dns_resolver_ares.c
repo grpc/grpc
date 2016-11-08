@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
 #define BACKOFF_MULTIPLIER 1.6
@@ -339,7 +340,11 @@ static grpc_resolver_factory *dns_ares_resolver_factory_create() {
 }
 
 void grpc_resolver_dns_ares_init(void) {
-  grpc_register_resolver_type(dns_ares_resolver_factory_create());
+  char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (resolver == NULL || gpr_stricmp(resolver, "ares") == 0) {
+    grpc_register_resolver_type(dns_ares_resolver_factory_create());
+  }
+  gpr_free(resolver);
 }
 
 void grpc_resolver_dns_ares_shutdown(void) {}
