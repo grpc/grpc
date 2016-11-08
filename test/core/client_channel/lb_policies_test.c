@@ -48,7 +48,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/fake_resolver.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -501,7 +500,7 @@ void run_spec(const test_spec *spec) {
   request_data rdata;
   servers_fixture *f;
   grpc_channel_args args;
-  grpc_arg arg;
+  grpc_arg arg_array[2];
   rdata.call_details =
       gpr_malloc(sizeof(grpc_call_details) * spec->num_servers);
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
@@ -509,14 +508,16 @@ void run_spec(const test_spec *spec) {
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "test:%s?lb_policy=round_robin",
-               servers_hostports_str);
+  gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = RETRY_TIMEOUT;
-  args.num_args = 1;
-  args.args = &arg;
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
+  arg_array[0].value.integer = RETRY_TIMEOUT;
+  arg_array[1].type = GRPC_ARG_STRING;
+  arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
+  arg_array[1].value.string = "round_robin";
+  args.num_args = 2;
+  args.args = arg_array;
 
   client = grpc_insecure_channel_create(client_hostport, &args, NULL);
 
@@ -540,19 +541,21 @@ static grpc_channel *create_client(const servers_fixture *f) {
   grpc_channel *client;
   char *client_hostport;
   char *servers_hostports_str;
-  grpc_arg arg;
+  grpc_arg arg_array[2];
   grpc_channel_args args;
 
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "test:%s?lb_policy=round_robin",
-               servers_hostports_str);
+  gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = RETRY_TIMEOUT;
-  args.num_args = 1;
-  args.args = &arg;
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
+  arg_array[0].value.integer = RETRY_TIMEOUT;
+  arg_array[1].type = GRPC_ARG_STRING;
+  arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
+  arg_array[1].value.string = "round_robin";
+  args.num_args = 2;
+  args.args = arg_array;
 
   client = grpc_insecure_channel_create(client_hostport, &args, NULL);
   gpr_free(client_hostport);
@@ -875,7 +878,6 @@ int main(int argc, char **argv) {
   const size_t NUM_SERVERS = 4;
 
   grpc_test_init(argc, argv);
-  grpc_fake_resolver_init();
   grpc_init();
   grpc_tracer_set_enabled("round_robin", 1);
 

@@ -55,7 +55,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -97,7 +97,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_call *c;
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -112,9 +113,10 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
 
   gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -170,7 +172,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
 
   f = begin_test(config, "test_invoke_simple_request", NULL, NULL);
-  simple_request_body(f, num_ops);
+  simple_request_body(config, f, num_ops);
   end_test(&f);
   config.tear_down_data(&f);
 }

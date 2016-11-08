@@ -687,6 +687,11 @@ size_t grpc_mdstr_length(const grpc_mdstr *s) { return GRPC_MDSTR_LENGTH(s); }
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   if (is_mdstr_static(gs)) return gs;
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR   REF:%p:%zu->%zu: '%s'",
+          (void *)s, gpr_atm_no_barrier_load(&s->refcnt),
+          gpr_atm_no_barrier_load(&s->refcnt) + 1, grpc_mdstr_as_c_string(gs));
+#endif
   GPR_ASSERT(gpr_atm_full_fetch_add(&s->refcnt, 1) > 0);
   return gs;
 }
@@ -694,6 +699,11 @@ grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
 void grpc_mdstr_unref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   if (is_mdstr_static(gs)) return;
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR UNREF:%p:%zu->%zu: '%s'",
+          (void *)s, gpr_atm_no_barrier_load(&s->refcnt),
+          gpr_atm_no_barrier_load(&s->refcnt) - 1, grpc_mdstr_as_c_string(gs));
+#endif
   if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
     strtab_shard *shard =
         &g_strtab_shard[SHARD_IDX(s->hash, LOG2_STRTAB_SHARD_COUNT)];
