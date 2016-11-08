@@ -424,3 +424,16 @@ void grpc_end2end_tests(int argc, char **argv,
     abort();
   }
 }
+
+const char *get_host_override_string(const char *str,
+                                     grpc_end2end_test_config config) {
+  return (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER ? str
+                                                                       : NULL);
+}
+
+void validate_host_override_string(const char *pattern, const char *str,
+                                   grpc_end2end_test_config config) {
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
+    GPR_ASSERT(0 == strcmp(str, pattern));
+  }
+}

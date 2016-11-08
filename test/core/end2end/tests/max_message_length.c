@@ -172,9 +172,10 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
 
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/service/method", "foo.test.google.fr:1234",
-                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/service/method",
+      get_host_override_string("foo.test.google.fr:1234", config),
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -247,7 +248,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   GPR_ASSERT(0 == strcmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
 done:
