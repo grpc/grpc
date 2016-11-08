@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{085ACF7D-D7CE-A9F1-576D-1AF901409FA4}</ProjectGuid>
+    <ProjectGuid>{54B15DF6-42BA-5347-C9B8-2D7F1F2921C6}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -53,21 +53,23 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)\..\vsprojects\cpptest.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\openssl.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protobuf.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\zlib.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>h2_fake_resolver_test</TargetName>
+    <TargetName>round_robin_end2end_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>h2_fake_resolver_test</TargetName>
+    <TargetName>round_robin_end2end_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -158,15 +160,18 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\h2_fake_resolver.c">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\round_robin_end2end_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\test/end2end/tests\end2end_tests\end2end_tests.vcxproj">
-      <Project>{1F1F9084-2A93-B80E-364F-5754894AFAB4}</Project>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
+      <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
+      <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
       <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>

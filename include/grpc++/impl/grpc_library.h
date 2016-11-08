@@ -44,17 +44,17 @@
 namespace grpc {
 
 namespace internal {
-class GrpcLibrary GRPC_FINAL : public GrpcLibraryInterface {
+class GrpcLibrary final : public GrpcLibraryInterface {
  public:
-  void init() GRPC_OVERRIDE { grpc_init(); }
-  void shutdown() GRPC_OVERRIDE { grpc_shutdown(); }
+  void init() override { grpc_init(); }
+  void shutdown() override { grpc_shutdown(); }
 };
 
 static GrpcLibrary g_gli;
 static CoreCodegen g_core_codegen;
 
 /// Instantiating this class ensures the proper initialization of gRPC.
-class GrpcLibraryInitializer GRPC_FINAL {
+class GrpcLibraryInitializer final {
  public:
   GrpcLibraryInitializer() {
     if (grpc::g_glip == nullptr) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,34 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_THD_CXX11_H
-#define GRPCXX_IMPL_THD_CXX11_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
+#define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
-#include <thread>
+/* \file Simple PID controller.
+   Implements a proportional-integral-derivative controller.
+   Used when we want to iteratively control a variable to converge some other
+   observed value to a 'set-point'.
+   Gains can be set to adjust sensitivity to current error (p), the integral
+   of error (i), and the derivative of error (d). */
 
-namespace grpc {
+typedef struct {
+  double gain_p;
+  double gain_i;
+  double gain_d;
+  double last_error;
+  double error_integral;
+} grpc_pid_controller;
 
-using std::thread;
+/** Initialize the controller */
+void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
+                              double gain_p, double gain_i, double gain_d);
 
-}  // namespace grpc
+/** Reset the controller: useful when things have changed significantly */
+void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
 
-#endif  // GRPCXX_IMPL_THD_CXX11_H
+/** Update the controller: given a current error estimate, and the time since
+    the last update, returns a delta to the control value */
+double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
+                                  double error, double dt);
+
+#endif

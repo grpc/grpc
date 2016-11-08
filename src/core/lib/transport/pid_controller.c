@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,27 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_SYNC_H
-#define GRPCXX_IMPL_SYNC_H
+#include "src/core/lib/transport/pid_controller.h"
 
-#include <grpc++/impl/codegen/sync.h>
+void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
+                              double gain_p, double gain_i, double gain_d) {
+  pid_controller->gain_p = gain_p;
+  pid_controller->gain_i = gain_i;
+  pid_controller->gain_d = gain_d;
+  grpc_pid_controller_reset(pid_controller);
+}
 
-#endif  // GRPCXX_IMPL_SYNC_H
+void grpc_pid_controller_reset(grpc_pid_controller *pid_controller) {
+  pid_controller->last_error = 0.0;
+  pid_controller->error_integral = 0.0;
+}
+
+double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
+                                  double error, double dt) {
+  pid_controller->error_integral += error * dt;
+  double diff_error = (error - pid_controller->last_error) / dt;
+  pid_controller->last_error = error;
+  return dt * (pid_controller->gain_p * error +
+               pid_controller->gain_i * pid_controller->error_integral +
+               pid_controller->gain_d * diff_error);
+}

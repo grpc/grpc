@@ -609,6 +609,7 @@ static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         grpc_subchannel_get_connected_subchannel(selected->subchannel),
         "picked");
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "picked");
   } else {
     gpr_mu_unlock(&p->mu);
     grpc_exec_ctx_sched(exec_ctx, closure,
@@ -678,8 +679,10 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
       sd->index = subchannel_idx;
       sd->subchannel = subchannel;
       sd->user_data_vtable = addresses->user_data_vtable;
-      sd->user_data =
-          sd->user_data_vtable->copy(addresses->addresses[i].user_data);
+      if (sd->user_data_vtable != NULL) {
+        sd->user_data =
+            sd->user_data_vtable->copy(addresses->addresses[i].user_data);
+      }
       ++subchannel_idx;
       grpc_closure_init(&sd->connectivity_changed_closure,
                         rr_connectivity_changed, sd);

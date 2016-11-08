@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,47 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_SYNC_CXX11_H
-#define GRPCXX_IMPL_CODEGEN_SYNC_CXX11_H
+#include "src/core/lib/transport/pid_controller.h"
 
-#include <condition_variable>
-#include <mutex>
+#include <math.h>
 
-namespace grpc {
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
+#include "test/core/util/test_config.h"
 
-using std::condition_variable;
-using std::mutex;
-using std::lock_guard;
-using std::unique_lock;
+static void test_noop(void) {
+  gpr_log(GPR_INFO, "test_noop");
+  grpc_pid_controller pid;
+  grpc_pid_controller_init(&pid, 1, 1, 1);
+}
 
-}  // namespace grpc
+static void test_simple_convergence(double gain_p, double gain_i, double gain_d,
+                                    double dt, double set_point, double start) {
+  gpr_log(GPR_INFO,
+          "test_simple_convergence(p=%lf, i=%lf, d=%lf); dt=%lf set_point=%lf "
+          "start=%lf",
+          gain_p, gain_i, gain_d, dt, set_point, start);
+  grpc_pid_controller pid;
+  grpc_pid_controller_init(&pid, 0.2, 0.1, 0.1);
 
-#endif  // GRPCXX_IMPL_CODEGEN_SYNC_CXX11_H
+  double current = start;
+
+  for (int i = 0; i < 1000; i++) {
+    current += grpc_pid_controller_update(&pid, set_point - current, 1);
+  }
+
+  GPR_ASSERT(fabs(set_point - current) < 0.1);
+  GPR_ASSERT(fabs(pid.error_integral) < 0.1);
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_noop();
+  test_simple_convergence(0.2, 0, 0, 1, 100, 0);
+  test_simple_convergence(0.2, 0.1, 0, 1, 100, 0);
+  test_simple_convergence(0.2, 0.1, 0.1, 1, 100, 0);
+  return 0;
+}
