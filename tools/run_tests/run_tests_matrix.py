@@ -100,7 +100,7 @@ def _generate_jobs(languages, configs, platforms,
           runtests_args += ['--arch', arch,
                             '--compiler', compiler]
         for extra_env in extra_envs:
-          name += '_%s=%s' % (extra_env, extra_envs[extra_env])
+          name += '_%s_%s' % (extra_env, extra_envs[extra_env])
 
         runtests_args += extra_args
         if platform == 'linux':
@@ -220,11 +220,16 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                   extra_args=extra_args,
                                   inner_jobs=inner_jobs)
 
-  # Test c and C++ with the native DNS resolver 
+  # C and C++ with the native DNS resolver on Linux
   test_jobs += _generate_jobs(languages=['c', 'c++'],
-                              configs=['dbg'], platforms=['linux', 'windows'],
-                              arch='default',
-                              compiler='default',
+                              configs=['dbg'], platforms=['linux'],
+                              labels=['portability'],
+                              extra_args=extra_args,
+                              extra_envs={'GRPC_DNS_RESOLVER': 'native'})
+
+  # C with the native DNS resolver on Windonws
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg'], platforms=['windows'],
                               labels=['portability'],
                               extra_args=extra_args,
                               extra_envs={'GRPC_DNS_RESOLVER': 'native'})
