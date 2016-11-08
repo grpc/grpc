@@ -57,6 +57,11 @@ void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
   grpc_channel_next_op(exec_ctx, elem, op->op());
 }
 
+void ChannelData::GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                          const grpc_channel_info *channel_info) {
+  grpc_channel_next_get_info(exec_ctx, elem, channel_info);
+}
+
 // CallData
 
 void CallData::StartTransportStreamOp(grpc_exec_ctx *exec_ctx,

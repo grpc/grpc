@@ -59,7 +59,7 @@ typedef struct grpc_handshaker grpc_handshaker;
 typedef void (*grpc_handshaker_done_cb)(grpc_exec_ctx* exec_ctx,
                                         grpc_endpoint* endpoint,
                                         grpc_channel_args* args,
-                                        gpr_slice_buffer* read_buffer,
+                                        grpc_slice_buffer* read_buffer,
                                         void* user_data, grpc_error* error);
 
 struct grpc_handshaker_vtable {
@@ -77,7 +77,7 @@ struct grpc_handshaker_vtable {
   /// \a acceptor will be NULL for client-side handshakers.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
                        grpc_endpoint* endpoint, grpc_channel_args* args,
-                       gpr_slice_buffer* read_buffer, gpr_timespec deadline,
+                       grpc_slice_buffer* read_buffer, gpr_timespec deadline,
                        grpc_tcp_server_acceptor* acceptor,
                        grpc_handshaker_done_cb cb, void* user_data);
 };
@@ -103,7 +103,7 @@ void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_handshaker* handshaker,
                                   grpc_endpoint* endpoint,
                                   grpc_channel_args* args,
-                                  gpr_slice_buffer* read_buffer,
+                                  grpc_slice_buffer* read_buffer,
                                   gpr_timespec deadline,
                                   grpc_tcp_server_acceptor* acceptor,
                                   grpc_handshaker_done_cb cb, void* user_data);

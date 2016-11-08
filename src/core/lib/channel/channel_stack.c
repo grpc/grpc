@@ -255,6 +255,13 @@ char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx,
   return next_elem->filter->get_peer(exec_ctx, next_elem);
 }
 
+void grpc_channel_next_get_info(grpc_exec_ctx *exec_ctx,
+                                grpc_channel_element *elem,
+                                const grpc_channel_info *channel_info) {
+  grpc_channel_element *next_elem = elem + 1;
+  next_elem->filter->get_channel_info(exec_ctx, next_elem, channel_info);
+}
+
 void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                           grpc_transport_op *op) {
   grpc_channel_element *next_elem = elem + 1;
@@ -288,7 +295,7 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
 void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_element *elem,
                                                 grpc_status_code status,
-                                                gpr_slice *optional_message) {
+                                                grpc_slice *optional_message) {
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
   op->on_complete = grpc_closure_create(destroy_op, op);
@@ -300,7 +307,7 @@ void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
 void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
                                                grpc_call_element *elem,
                                                grpc_status_code status,
-                                               gpr_slice *optional_message) {
+                                               grpc_slice *optional_message) {
   grpc_transport_stream_op *op = gpr_malloc(sizeof(*op));
   memset(op, 0, sizeof(*op));
   op->on_complete = grpc_closure_create(destroy_op, op);

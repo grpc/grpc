@@ -187,14 +187,14 @@ static void test_add_to_empty_md_store(void) {
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(0);
   const char *key_str = "hello";
   const char *value_str = "there blah blah blah blah blah blah blah";
-  gpr_slice key = gpr_slice_from_copied_string(key_str);
-  gpr_slice value = gpr_slice_from_copied_string(value_str);
+  grpc_slice key = grpc_slice_from_copied_string(key_str);
+  grpc_slice value = grpc_slice_from_copied_string(value_str);
   grpc_credentials_md_store_add(store, key, value);
   GPR_ASSERT(store->num_entries == 1);
-  GPR_ASSERT(gpr_slice_cmp(key, store->entries[0].key) == 0);
-  GPR_ASSERT(gpr_slice_cmp(value, store->entries[0].value) == 0);
-  gpr_slice_unref(key);
-  gpr_slice_unref(value);
+  GPR_ASSERT(grpc_slice_cmp(key, store->entries[0].key) == 0);
+  GPR_ASSERT(grpc_slice_cmp(value, store->entries[0].value) == 0);
+  grpc_slice_unref(key);
+  grpc_slice_unref(value);
   grpc_credentials_md_store_unref(store);
 }
 
@@ -204,8 +204,8 @@ static void test_add_cstrings_to_empty_md_store(void) {
   const char *value_str = "there blah blah blah blah blah blah blah";
   grpc_credentials_md_store_add_cstrings(store, key_str, value_str);
   GPR_ASSERT(store->num_entries == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(store->entries[0].key, key_str) == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(store->entries[0].value, value_str) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(store->entries[0].key, key_str) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(store->entries[0].value, value_str) == 0);
   grpc_credentials_md_store_unref(store);
 }
 
@@ -227,8 +227,8 @@ static void test_add_abunch_to_md_store(void) {
     grpc_credentials_md_store_add_cstrings(store, key_str, value_str);
   }
   for (i = 0; i < num_entries; i++) {
-    GPR_ASSERT(gpr_slice_str_cmp(store->entries[i].key, key_str) == 0);
-    GPR_ASSERT(gpr_slice_str_cmp(store->entries[i].value, value_str) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(store->entries[i].key, key_str) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(store->entries[i].value, value_str) == 0);
   }
   grpc_credentials_md_store_unref(store);
 }
@@ -243,9 +243,10 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   GPR_ASSERT(token_lifetime.tv_sec == 3599);
   GPR_ASSERT(token_lifetime.tv_nsec == 0);
   GPR_ASSERT(token_md->num_entries == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(token_md->entries[0].key, "authorization") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(token_md->entries[0].value,
-                               "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
+  GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].key, "authorization") ==
+             0);
+  GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].value,
+                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   grpc_credentials_md_store_unref(token_md);
   grpc_http_response_destroy(&response);
@@ -333,8 +334,8 @@ static void check_metadata(expected_md *expected, grpc_credentials_md *md_elems,
   for (i = 0; i < num_md; i++) {
     size_t j;
     for (j = 0; j < num_md; j++) {
-      if (0 == gpr_slice_str_cmp(md_elems[j].key, expected[i].key)) {
-        GPR_ASSERT(gpr_slice_str_cmp(md_elems[j].value, expected[i].value) ==
+      if (0 == grpc_slice_str_cmp(md_elems[j].key, expected[i].key)) {
+        GPR_ASSERT(grpc_slice_str_cmp(md_elems[j].value, expected[i].value) ==
                    0);
         break;
       }
@@ -528,9 +529,9 @@ static void on_oauth2_creds_get_metadata_success(
   GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].key, "authorization") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].value,
-                               "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].key, "authorization") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].value,
+                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   GPR_ASSERT(user_data != NULL);
   GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
@@ -781,8 +782,8 @@ static void on_jwt_creds_get_metadata_success(
   GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].key, "authorization") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].value, expected_md_value) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].key, "authorization") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].value, expected_md_value) == 0);
   GPR_ASSERT(user_data != NULL);
   GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
   gpr_free(expected_md_value);
@@ -1057,8 +1058,8 @@ static void on_plugin_metadata_received_success(
   GPR_ASSERT(md_elems != NULL);
   GPR_ASSERT(num_md == GPR_ARRAY_SIZE(plugin_md));
   for (i = 0; i < num_md; i++) {
-    GPR_ASSERT(gpr_slice_str_cmp(md_elems[i].key, plugin_md[i].key) == 0);
-    GPR_ASSERT(gpr_slice_str_cmp(md_elems[i].value, plugin_md[i].value) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(md_elems[i].key, plugin_md[i].key) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(md_elems[i].value, plugin_md[i].value) == 0);
   }
 }
 

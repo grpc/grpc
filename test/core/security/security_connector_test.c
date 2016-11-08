@@ -42,6 +42,7 @@
 
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
@@ -368,9 +369,9 @@ static void test_default_ssl_roots(void) {
      value. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
-  gpr_slice roots = grpc_get_default_ssl_roots_for_testing();
-  char *roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
-  gpr_slice_unref(roots);
+  grpc_slice roots = grpc_get_default_ssl_roots_for_testing();
+  char *roots_contents = grpc_dump_slice(roots, GPR_DUMP_ASCII);
+  grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
   gpr_free(roots_contents);
 
@@ -378,8 +379,8 @@ static void test_default_ssl_roots(void) {
      instead. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
   roots = grpc_get_default_ssl_roots_for_testing();
-  roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
-  gpr_slice_unref(roots);
+  roots_contents = grpc_dump_slice(roots, GPR_DUMP_ASCII);
+  grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_env_var) == 0);
   gpr_free(roots_contents);
 
@@ -387,8 +388,8 @@ static void test_default_ssl_roots(void) {
      the api. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
   roots = grpc_get_default_ssl_roots_for_testing();
-  roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
-  gpr_slice_unref(roots);
+  roots_contents = grpc_dump_slice(roots, GPR_DUMP_ASCII);
+  grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
   gpr_free(roots_contents);
 
@@ -396,7 +397,7 @@ static void test_default_ssl_roots(void) {
      an empty slice. */
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_get_default_ssl_roots_for_testing();
-  GPR_ASSERT(GPR_SLICE_IS_EMPTY(roots));
+  GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));
 
   /* Cleanup. */
   remove(roots_env_var_file_path);
