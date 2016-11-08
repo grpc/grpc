@@ -122,8 +122,10 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -212,7 +214,8 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   // Expected behavior of a RPC when network is lost.
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

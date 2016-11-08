@@ -252,7 +252,7 @@ class BaseStub
      *
      * @param string   $method      The name of the method to call
      * @param array    $arguments   An array or Traversable of arguments to stream to the
-     *     server
+     *                              server
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
      *
