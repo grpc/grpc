@@ -251,7 +251,8 @@ static void test_send_messages_at_the_same_time() {
   gpr_log(GPR_INFO, "test_send_messages_at_the_same_time");
 
   grpc_op *op;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   prepare_test(1);

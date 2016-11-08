@@ -59,11 +59,11 @@ grpc_credentials_md_store *grpc_credentials_md_store_create(
 }
 
 void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   gpr_slice key, gpr_slice value) {
+                                   grpc_slice key, grpc_slice value) {
   if (store == NULL) return;
   store_ensure_capacity(store);
-  store->entries[store->num_entries].key = gpr_slice_ref(key);
-  store->entries[store->num_entries].value = gpr_slice_ref(value);
+  store->entries[store->num_entries].key = grpc_slice_ref(key);
+  store->entries[store->num_entries].value = grpc_slice_ref(value);
   store->num_entries++;
 }
 
@@ -72,9 +72,9 @@ void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
                                             const char *value) {
   if (store == NULL) return;
   store_ensure_capacity(store);
-  store->entries[store->num_entries].key = gpr_slice_from_copied_string(key);
+  store->entries[store->num_entries].key = grpc_slice_from_copied_string(key);
   store->entries[store->num_entries].value =
-      gpr_slice_from_copied_string(value);
+      grpc_slice_from_copied_string(value);
   store->num_entries++;
 }
 
@@ -91,8 +91,8 @@ void grpc_credentials_md_store_unref(grpc_credentials_md_store *store) {
     if (store->entries != NULL) {
       size_t i;
       for (i = 0; i < store->num_entries; i++) {
-        gpr_slice_unref(store->entries[i].key);
-        gpr_slice_unref(store->entries[i].value);
+        grpc_slice_unref(store->entries[i].key);
+        grpc_slice_unref(store->entries[i].value);
       }
       gpr_free(store->entries);
     }

@@ -37,7 +37,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/grpc.h>
@@ -59,9 +59,9 @@
 #endif
 
 grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(buffer, len);
+  grpc_slice slice = grpc_slice_from_copied_buffer(buffer, len);
   grpc_byte_buffer *bb = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return bb;
 }
 
@@ -282,18 +282,18 @@ GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
     const grpcsharp_batch_context *ctx, char *buffer, size_t buffer_len) {
   grpc_byte_buffer_reader reader;
-  gpr_slice slice;
+  grpc_slice slice;
   size_t offset = 0;
 
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, ctx->recv_message));
 
   while (grpc_byte_buffer_reader_next(&reader, &slice)) {
-    size_t len = GPR_SLICE_LENGTH(slice);
+    size_t len = GRPC_SLICE_LENGTH(slice);
     GPR_ASSERT(offset + len <= buffer_len);
-    memcpy(buffer + offset, GPR_SLICE_START_PTR(slice),
-           GPR_SLICE_LENGTH(slice));
+    memcpy(buffer + offset, GRPC_SLICE_START_PTR(slice),
+           GRPC_SLICE_LENGTH(slice));
     offset += len;
-    gpr_slice_unref(slice);
+    grpc_slice_unref(slice);
   }
 
   grpc_byte_buffer_reader_destroy(&reader);

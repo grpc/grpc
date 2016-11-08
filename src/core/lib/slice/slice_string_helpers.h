@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,36 +31,28 @@
  *
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
+#define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <stddef.h>
 
-#include "src/core/lib/support/percent_encoding.h"
-#include "test/core/util/memory_counters.h"
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
-bool squelch = true;
-bool leak_check = true;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  struct grpc_memory_counters counters;
-  grpc_memory_counters_init();
-  gpr_slice input = gpr_slice_from_copied_buffer((const char *)data, size);
-  gpr_slice output;
-  if (gpr_strict_percent_decode_slice(
-          input, gpr_url_percent_encoding_unreserved_bytes, &output)) {
-    gpr_slice_unref(output);
-  }
-  if (gpr_strict_percent_decode_slice(
-          input, gpr_compatible_percent_encoding_unreserved_bytes, &output)) {
-    gpr_slice_unref(output);
-  }
-  gpr_slice_unref(gpr_permissive_percent_decode_slice(input));
-  gpr_slice_unref(input);
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  GPR_ASSERT(counters.total_size_relative == 0);
-  return 0;
+/* Calls gpr_dump on a slice. */
+char *grpc_dump_slice(grpc_slice slice, uint32_t flags);
+
+/** Split \a str by the separator \a sep. Results are stored in \a dst, which
+ * should be a properly initialized instance. */
+void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */

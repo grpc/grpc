@@ -41,19 +41,19 @@
 typedef struct grpc_mock_endpoint {
   grpc_endpoint base;
   gpr_mu mu;
-  void (*on_write)(gpr_slice slice);
-  gpr_slice_buffer read_buffer;
-  gpr_slice_buffer *on_read_out;
+  void (*on_write)(grpc_slice slice);
+  grpc_slice_buffer read_buffer;
+  grpc_slice_buffer *on_read_out;
   grpc_closure *on_read;
   grpc_resource_user *resource_user;
 } grpc_mock_endpoint;
 
 static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                    gpr_slice_buffer *slices, grpc_closure *cb) {
+                    grpc_slice_buffer *slices, grpc_closure *cb) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
-    gpr_slice_buffer_swap(&m->read_buffer, slices);
+    grpc_slice_buffer_swap(&m->read_buffer, slices);
     grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
   } else {
     m->on_read = cb;
@@ -63,7 +63,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                     gpr_slice_buffer *slices, grpc_closure *cb) {
+                     grpc_slice_buffer *slices, grpc_closure *cb) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
@@ -91,7 +91,7 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
-  gpr_slice_buffer_destroy(&m->read_buffer);
+  grpc_slice_buffer_destroy(&m->read_buffer);
   grpc_resource_user_unref(exec_ctx, m->resource_user);
   gpr_free(m);
 }
@@ -119,7 +119,7 @@ static const grpc_endpoint_vtable vtable = {
     me_get_peer,
 };
 
-grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
+grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota *resource_quota) {
   grpc_mock_endpoint *m = gpr_malloc(sizeof(*m));
   m->base.vtable = &vtable;
@@ -127,7 +127,7 @@ grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
   gpr_asprintf(&name, "mock_endpoint_%" PRIxPTR, (intptr_t)m);
   m->resource_user = grpc_resource_user_create(resource_quota, name);
   gpr_free(name);
-  gpr_slice_buffer_init(&m->read_buffer);
+  grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;
   m->on_read = NULL;
@@ -135,15 +135,15 @@ grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice),
 }
 
 void grpc_mock_endpoint_put_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                 gpr_slice slice) {
+                                 grpc_slice slice) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read != NULL) {
-    gpr_slice_buffer_add(m->on_read_out, slice);
+    grpc_slice_buffer_add(m->on_read_out, slice);
     grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
     m->on_read = NULL;
   } else {
-    gpr_slice_buffer_add(&m->read_buffer, slice);
+    grpc_slice_buffer_add(&m->read_buffer, slice);
   }
   gpr_mu_unlock(&m->mu);
 }

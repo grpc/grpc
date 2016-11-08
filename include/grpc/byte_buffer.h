@@ -35,7 +35,7 @@
 #define GRPC_BYTE_BUFFER_H
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +45,7 @@ extern "C" {
  *
  * Increases the reference count for all \a slices processed. The user is
  * responsible for invoking grpc_byte_buffer_destroy on the returned instance.*/
-GRPCAPI grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+GRPCAPI grpc_byte_buffer *grpc_raw_byte_buffer_create(grpc_slice *slices,
                                                       size_t nslices);
 
 /** Returns a *compressed* RAW byte buffer instance over the given slices (up to
@@ -55,7 +55,7 @@ GRPCAPI grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
  * Increases the reference count for all \a slices processed. The user is
  * responsible for invoking grpc_byte_buffer_destroy on the returned instance.*/
 GRPCAPI grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
-    gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression);
+    grpc_slice *slices, size_t nslices, grpc_compression_algorithm compression);
 
 /** Copies input byte buffer \a bb.
  *
@@ -83,12 +83,12 @@ GRPCAPI void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 
 /** Updates \a slice with the next piece of data from from \a reader and returns
  * 1. Returns 0 at the end of the stream. Caller is responsible for calling
- * gpr_slice_unref on the result. */
+ * grpc_slice_unref on the result. */
 GRPCAPI int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                         gpr_slice *slice);
+                                         grpc_slice *slice);
 
 /** Merge all data from \a reader into single slice */
-GRPCAPI gpr_slice
+GRPCAPI grpc_slice
 grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader);
 
 /** Returns a RAW byte buffer instance from the output of \a reader. */

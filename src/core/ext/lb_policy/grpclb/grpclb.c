@@ -116,6 +116,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
@@ -971,10 +972,10 @@ static void lb_call_init(glb_lb_policy *glb_policy) {
 
   grpc_grpclb_request *request =
       grpc_grpclb_request_create(glb_policy->server_name);
-  gpr_slice request_payload_slice = grpc_grpclb_request_encode(request);
+  grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
   glb_policy->lb_request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_grpclb_request_destroy(request);
 
   glb_policy->lb_call_status_details = NULL;
@@ -1086,13 +1087,13 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
      * glb_policy->lb_response_payload, for a serverlist. */
     grpc_byte_buffer_reader bbr;
     grpc_byte_buffer_reader_init(&bbr, glb_policy->lb_response_payload);
-    gpr_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
+    grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
     grpc_byte_buffer_destroy(glb_policy->lb_response_payload);
     grpc_grpclb_serverlist *serverlist =
         grpc_grpclb_response_parse_serverlist(response_slice);
     if (serverlist != NULL) {
       GPR_ASSERT(glb_policy->lb_call != NULL);
-      gpr_slice_unref(response_slice);
+      grpc_slice_unref(response_slice);
       if (grpc_lb_glb_trace) {
         gpr_log(GPR_INFO, "Serverlist with %lu servers received",
                 (unsigned long)serverlist->num_servers);
@@ -1134,8 +1135,8 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
       }
     } else { /* serverlist == NULL */
       gpr_log(GPR_ERROR, "Invalid LB response received: '%s'. Ignoring.",
-              gpr_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
-      gpr_slice_unref(response_slice);
+              grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
+      grpc_slice_unref(response_slice);
     }
 
     if (!glb_policy->shutting_down) {
