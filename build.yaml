@@ -2818,6 +2818,16 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: channel_filter_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/channel_filter_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: cli_call_test
   gtest: true
   build: test
