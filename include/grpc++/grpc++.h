@@ -68,7 +68,7 @@
 // IWYU pragma: end_exports
 
 namespace grpc {
-std::string Version();
+grpc::string Version();
 }  // namespace grpc
 
 #endif  // GRPCXX_GRPCXX_H

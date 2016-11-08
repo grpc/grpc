@@ -39,5 +39,5 @@
   #include <grpc++/grpc++.h>
 
   namespace grpc {
-  std::string Version() { return "${settings.cpp_version}"; }
+  grpc::string Version() { return "${settings.cpp_version}"; }
   }
