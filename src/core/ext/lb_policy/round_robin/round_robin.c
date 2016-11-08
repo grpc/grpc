@@ -59,7 +59,6 @@
  *   the subchannel by the caller.
  */
 
-#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -401,7 +400,7 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
      * to signal an undefined previous state. We won't be referring to this
      * value again and it'll be overwritten after the first call to
      * rr_connectivity_changed */
-    sd->prev_connectivity_state = INT_MAX;
+    sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
     sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
     GRPC_LB_POLICY_WEAK_REF(&p->base, "rr_connectivity");
     grpc_subchannel_notify_on_state_change(
@@ -553,6 +552,8 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
     return;
   }
   switch (sd->curr_connectivity_state) {
+    case GRPC_CHANNEL_INIT:
+      GPR_UNREACHABLE_CODE();
     case GRPC_CHANNEL_READY:
       /* add the newly connected subchannel to the list of connected ones.
        * Note that it goes to the "end of the line". */
