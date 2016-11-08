@@ -151,6 +151,8 @@ typedef struct {
 /** Maximum message length that the channel can receive. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
+/** \deprecated For backward compatibility. */
+#define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
