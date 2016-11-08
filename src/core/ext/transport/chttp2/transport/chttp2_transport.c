@@ -38,9 +38,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -51,6 +51,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -143,12 +144,12 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
 
   grpc_endpoint_destroy(exec_ctx, t->ep);
 
-  gpr_slice_buffer_destroy(&t->qbuf);
+  grpc_slice_buffer_destroy(&t->qbuf);
 
-  gpr_slice_buffer_destroy(&t->outbuf);
+  grpc_slice_buffer_destroy(&t->outbuf);
   grpc_chttp2_hpack_compressor_destroy(&t->hpack_compressor);
 
-  gpr_slice_buffer_destroy(&t->read_buffer);
+  grpc_slice_buffer_destroy(&t->read_buffer);
   grpc_chttp2_hpack_parser_destroy(&t->hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->goaway_parser);
 
@@ -243,9 +244,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
       is_client ? "client_transport" : "server_transport");
 
-  gpr_slice_buffer_init(&t->qbuf);
+  grpc_slice_buffer_init(&t->qbuf);
 
-  gpr_slice_buffer_init(&t->outbuf);
+  grpc_slice_buffer_init(&t->outbuf);
   grpc_chttp2_hpack_compressor_init(&t->hpack_compressor);
 
   grpc_closure_init(&t->write_action_begin_locked, write_action_begin_locked,
@@ -264,7 +265,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->hpack_parser);
 
-  gpr_slice_buffer_init(&t->read_buffer);
+  grpc_slice_buffer_init(&t->read_buffer);
 
   /* 8 is a random stab in the dark as to a good initial size: it's small enough
      that it shouldn't waste memory for infrequently used connections, yet
@@ -286,8 +287,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->sent_local_settings = 0;
 
   if (is_client) {
-    gpr_slice_buffer_add(&t->outbuf, gpr_slice_from_copied_string(
-                                         GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+    grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
+                                          GRPC_CHTTP2_CLIENT_CONNECT_STRING));
     grpc_chttp2_initiate_write(exec_ctx, t, false, "initial_write");
   }
 
@@ -471,7 +472,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1]);
   grpc_chttp2_data_parser_init(&s->data_parser);
-  gpr_slice_buffer_init(&s->flow_controlled_buffer);
+  grpc_slice_buffer_init(&s->flow_controlled_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_closure_init(&s->complete_fetch, complete_fetch, s);
   grpc_closure_init(&s->complete_fetch_locked, complete_fetch_locked, s);
@@ -531,7 +532,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_chttp2_data_parser_destroy(exec_ctx, &s->data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[1]);
-  gpr_slice_buffer_destroy(&s->flow_controlled_buffer);
+  grpc_slice_buffer_destroy(&s->flow_controlled_buffer);
   GRPC_ERROR_UNREF(s->read_closed_error);
   GRPC_ERROR_UNREF(s->write_closed_error);
 
@@ -756,11 +757,11 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      uint32_t goaway_error,
-                                     gpr_slice goaway_text) {
-  char *msg = gpr_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+                                     grpc_slice goaway_text) {
+  char *msg = grpc_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
-  gpr_slice_unref(goaway_text);
+  grpc_slice_unref(goaway_text);
   t->seen_goaway = 1;
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
@@ -884,8 +885,8 @@ static void add_fetched_slice_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s) {
   s->fetched_send_message_length +=
-      (uint32_t)GPR_SLICE_LENGTH(s->fetching_slice);
-  gpr_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
+      (uint32_t)GRPC_SLICE_LENGTH(s->fetching_slice);
+  grpc_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
   if (s->id != 0) {
     grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
   }
@@ -1056,7 +1057,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     } else {
       GPR_ASSERT(s->fetching_send_message == NULL);
       uint8_t *frame_hdr =
-          gpr_slice_buffer_tiny_add(&s->flow_controlled_buffer, 5);
+          grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer, 5);
       uint32_t flags = op->send_message->flags;
       frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
       size_t len = op->send_message->length;
@@ -1196,7 +1197,7 @@ static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   p->id[7] = (uint8_t)(t->ping_counter & 0xff);
   t->ping_counter++;
   p->on_recv = on_recv;
-  gpr_slice_buffer_add(&t->qbuf, grpc_chttp2_ping_create(0, p->id));
+  grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_ping_create(0, p->id));
   grpc_chttp2_initiate_write(exec_ctx, t, true, "send_ping");
 }
 
@@ -1220,7 +1221,7 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 }
 
 static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                        grpc_chttp2_error_code error, gpr_slice data) {
+                        grpc_chttp2_error_code error, grpc_slice data) {
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)error, data,
                             &t->qbuf);
@@ -1243,7 +1244,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   if (op->send_goaway) {
     send_goaway(exec_ctx, t,
                 grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
-                gpr_slice_ref(*op->goaway_message));
+                grpc_slice_ref(*op->goaway_message));
   }
 
   if (op->set_accept_stream) {
@@ -1432,7 +1433,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
                             &grpc_status);
 
     if (s->id != 0) {
-      gpr_slice_buffer_add(
+      grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(s->id, (uint32_t)http_error,
                                                   &s->stats.outgoing));
       grpc_chttp2_initiate_write(exec_ctx, t, false, "rst_stream");
@@ -1445,7 +1446,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
       free_msg = true;
       msg = grpc_error_string(due_to_error);
     }
-    gpr_slice msg_slice = gpr_slice_from_copied_string(msg);
+    grpc_slice msg_slice = grpc_slice_from_copied_string(msg);
     grpc_chttp2_fake_status(exec_ctx, t, s, grpc_status, &msg_slice);
     if (free_msg) grpc_error_free_string(msg);
   }
@@ -1458,7 +1459,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_chttp2_stream *s, grpc_status_code status,
-                             gpr_slice *slice) {
+                             grpc_slice *slice) {
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
@@ -1481,13 +1482,13 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           &s->metadata_buffer[1],
           grpc_mdelem_from_metadata_strings(
               GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
+              grpc_mdstr_from_slice(grpc_slice_ref(*slice))));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
   }
   if (slice) {
-    gpr_slice_unref(*slice);
+    grpc_slice_unref(*slice);
   }
 }
 
@@ -1584,9 +1585,9 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
 
 static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            grpc_chttp2_stream *s, grpc_error *error) {
-  gpr_slice hdr;
-  gpr_slice status_hdr;
-  gpr_slice message_pfx;
+  grpc_slice hdr;
+  grpc_slice status_hdr;
+  grpc_slice message_pfx;
   uint8_t *p;
   uint32_t len = 0;
   grpc_status_code grpc_status;
@@ -1605,8 +1606,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
        time we got around to sending this, so instead we ignore HPACK
        compression
        and just write the uncompressed bytes onto the wire. */
-    status_hdr = gpr_slice_malloc(15 + (grpc_status >= 10));
-    p = GPR_SLICE_START_PTR(status_hdr);
+    status_hdr = grpc_slice_malloc(15 + (grpc_status >= 10));
+    p = GRPC_SLICE_START_PTR(status_hdr);
     *p++ = 0x40; /* literal header */
     *p++ = 11;   /* len(grpc-status) */
     *p++ = 'g';
@@ -1628,8 +1629,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       *p++ = (uint8_t)('0' + (grpc_status / 10));
       *p++ = (uint8_t)('0' + (grpc_status % 10));
     }
-    GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
-    len += (uint32_t)GPR_SLICE_LENGTH(status_hdr);
+    GPR_ASSERT(p == GRPC_SLICE_END_PTR(status_hdr));
+    len += (uint32_t)GRPC_SLICE_LENGTH(status_hdr);
 
     const char *optional_message =
         grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE);
@@ -1637,8 +1638,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     if (optional_message != NULL) {
       size_t msg_len = strlen(optional_message);
       GPR_ASSERT(msg_len < 127);
-      message_pfx = gpr_slice_malloc(15);
-      p = GPR_SLICE_START_PTR(message_pfx);
+      message_pfx = grpc_slice_malloc(15);
+      p = GRPC_SLICE_START_PTR(message_pfx);
       *p++ = 0x40;
       *p++ = 12; /* len(grpc-message) */
       *p++ = 'g';
@@ -1654,13 +1655,13 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       *p++ = 'g';
       *p++ = 'e';
       *p++ = (uint8_t)msg_len;
-      GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
-      len += (uint32_t)GPR_SLICE_LENGTH(message_pfx);
+      GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
+      len += (uint32_t)GRPC_SLICE_LENGTH(message_pfx);
       len += (uint32_t)msg_len;
     }
 
-    hdr = gpr_slice_malloc(9);
-    p = GPR_SLICE_START_PTR(hdr);
+    hdr = grpc_slice_malloc(9);
+    p = GRPC_SLICE_START_PTR(hdr);
     *p++ = (uint8_t)(len >> 16);
     *p++ = (uint8_t)(len >> 8);
     *p++ = (uint8_t)(len);
@@ -1670,16 +1671,16 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     *p++ = (uint8_t)(s->id >> 16);
     *p++ = (uint8_t)(s->id >> 8);
     *p++ = (uint8_t)(s->id);
-    GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
+    GPR_ASSERT(p == GRPC_SLICE_END_PTR(hdr));
 
-    gpr_slice_buffer_add(&t->qbuf, hdr);
-    gpr_slice_buffer_add(&t->qbuf, status_hdr);
+    grpc_slice_buffer_add(&t->qbuf, hdr);
+    grpc_slice_buffer_add(&t->qbuf, status_hdr);
     if (optional_message) {
-      gpr_slice_buffer_add(&t->qbuf, message_pfx);
-      gpr_slice_buffer_add(&t->qbuf,
-                           gpr_slice_from_copied_string(optional_message));
+      grpc_slice_buffer_add(&t->qbuf, message_pfx);
+      grpc_slice_buffer_add(&t->qbuf,
+                            grpc_slice_from_copied_string(optional_message));
     }
-    gpr_slice_buffer_add(
+    grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_CHTTP2_NO_ERROR,
                                                 &s->stats.outgoing));
   }
@@ -1690,7 +1691,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     free_msg = true;
     msg = grpc_error_string(error);
   }
-  gpr_slice msg_slice = gpr_slice_from_copied_string(msg);
+  grpc_slice msg_slice = grpc_slice_from_copied_string(msg);
   grpc_chttp2_fake_status(exec_ctx, t, s, grpc_status, &msg_slice);
   if (free_msg) grpc_error_free_string(msg);
 
@@ -1861,7 +1862,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     keep_reading = true;
     GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
   }
-  gpr_slice_buffer_reset_and_unref(&t->read_buffer);
+  grpc_slice_buffer_reset_and_unref(&t->read_buffer);
 
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer, &t->read_action_begin);
@@ -1915,7 +1916,7 @@ static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_incoming_byte_stream *bs) {
   if (gpr_unref(&bs->refs)) {
     GRPC_ERROR_UNREF(bs->error);
-    gpr_slice_buffer_destroy(&bs->slices);
+    grpc_slice_buffer_destroy(&bs->slices);
     gpr_mu_destroy(&bs->slice_mu);
     gpr_free(bs);
   }
@@ -1977,7 +1978,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   }
   gpr_mu_lock(&bs->slice_mu);
   if (bs->slices.count > 0) {
-    *bs->next_action.slice = gpr_slice_buffer_take_first(&bs->slices);
+    *bs->next_action.slice = grpc_slice_buffer_take_first(&bs->slices);
     grpc_closure_run(exec_ctx, bs->next_action.on_complete, GRPC_ERROR_NONE);
   } else if (bs->error != GRPC_ERROR_NONE) {
     grpc_closure_run(exec_ctx, bs->next_action.on_complete,
@@ -1992,7 +1993,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
 
 static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
                                      grpc_byte_stream *byte_stream,
-                                     gpr_slice *slice, size_t max_size_hint,
+                                     grpc_slice *slice, size_t max_size_hint,
                                      grpc_closure *on_complete) {
   GPR_TIMER_BEGIN("incoming_byte_stream_next", 0);
   grpc_chttp2_incoming_byte_stream *bs =
@@ -2045,19 +2046,19 @@ static void incoming_byte_stream_publish_error(
 
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
-                                           gpr_slice slice) {
+                                           grpc_slice slice) {
   gpr_mu_lock(&bs->slice_mu);
-  if (bs->remaining_bytes < GPR_SLICE_LENGTH(slice)) {
+  if (bs->remaining_bytes < GRPC_SLICE_LENGTH(slice)) {
     incoming_byte_stream_publish_error(
         exec_ctx, bs, GRPC_ERROR_CREATE("Too many bytes in stream"));
   } else {
-    bs->remaining_bytes -= (uint32_t)GPR_SLICE_LENGTH(slice);
+    bs->remaining_bytes -= (uint32_t)GRPC_SLICE_LENGTH(slice);
     if (bs->on_next != NULL) {
       *bs->next = slice;
       grpc_exec_ctx_sched(exec_ctx, bs->on_next, GRPC_ERROR_NONE, NULL);
       bs->on_next = NULL;
     } else {
-      gpr_slice_buffer_add(&bs->slices, slice);
+      grpc_slice_buffer_add(&bs->slices, slice);
     }
   }
   gpr_mu_unlock(&bs->slice_mu);
@@ -2095,7 +2096,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->transport = t;
   incoming_byte_stream->stream = s;
   gpr_ref(&incoming_byte_stream->stream->active_streams);
-  gpr_slice_buffer_init(&incoming_byte_stream->slices);
+  grpc_slice_buffer_init(&incoming_byte_stream->slices);
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
   incoming_byte_stream->error = GRPC_ERROR_NONE;
@@ -2163,7 +2164,7 @@ static void benign_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
               t->peer_string);
     }
     send_goaway(exec_ctx, t, GRPC_CHTTP2_ENHANCE_YOUR_CALM,
-                gpr_slice_from_static_string("Buffers full"));
+                grpc_slice_from_static_string("Buffers full"));
   } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace) {
     gpr_log(GPR_DEBUG,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
@@ -2314,12 +2315,12 @@ grpc_transport *grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
-                                         gpr_slice_buffer *read_buffer) {
+                                         grpc_slice_buffer *read_buffer) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)transport;
   GRPC_CHTTP2_REF_TRANSPORT(
       t, "reading_action"); /* matches unref inside reading_action */
   if (read_buffer != NULL) {
-    gpr_slice_buffer_move_into(read_buffer, &t->read_buffer);
+    grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
   read_action_begin(exec_ctx, t, GRPC_ERROR_NONE);
