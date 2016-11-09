@@ -122,6 +122,7 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['clientSuccess'] = json.dumps(scenario_result['clientSuccess'])
   scenario_result['serverSuccess'] = json.dumps(scenario_result['serverSuccess'])
   scenario_result['requestResults'] = json.dumps(scenario_result.get('requestResults', []))
+  scenario_result['summary'].pop('serverCpuUsage', None)
   scenario_result['summary'].pop('successfulRequestsPerSecond', None)
   scenario_result['summary'].pop('failedRequestsPerSecond', None)
 
