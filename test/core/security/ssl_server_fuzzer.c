@@ -119,12 +119,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                                               on_secure_handshake_done, &state);
   grpc_exec_ctx_flush(&exec_ctx);
 
-  bool mock_endpoint_shutdown = false;
   // If the given string happens to be part of the correct client hello, the
   // server will wait for more data. Explicitly fail the server by shutting down
   // the endpoint.
   if (!state.done_callback_called) {
-    mock_endpoint_shutdown = true;
     grpc_endpoint_shutdown(&exec_ctx, mock_endpoint);
     grpc_exec_ctx_flush(&exec_ctx);
   }
@@ -136,11 +134,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);
   grpc_slice_unref(ca_slice);
-  // grpc_endpoint_destroy has been called in handshake failure handling code.
-  if (!mock_endpoint_shutdown) {
-    grpc_endpoint_shutdown(&exec_ctx, mock_endpoint);
-    grpc_exec_ctx_flush(&exec_ctx);
-  }
   grpc_exec_ctx_flush(&exec_ctx);
 
   grpc_shutdown();
