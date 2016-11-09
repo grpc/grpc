@@ -991,7 +991,11 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
     grpc_credentials_plugin_metadata_cb cb,
     void *user_data, grpc_metadata_array *metadata,
   grpc_status_code status, const char *error_details) {
-  cb(user_data, metadata->metadata, metadata->count, status, error_details);
+  if (metadata) {
+    cb(user_data, metadata->metadata, metadata->count, status, error_details);
+  } else {
+    cb(user_data, NULL, 0, status, error_details);
+  }
 }
 
 typedef void(GPR_CALLTYPE *grpcsharp_metadata_interceptor_func)(
