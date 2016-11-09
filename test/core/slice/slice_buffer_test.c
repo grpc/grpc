@@ -68,7 +68,7 @@ void test_slice_buffer_add() {
   }
   GPR_ASSERT(buf.count == 0);
   GPR_ASSERT(buf.length == 0);
-  grpc_slice_buffer_destroy_internal(exec_ctx, &buf);
+  grpc_slice_buffer_destroy(&buf);
 }
 
 void test_slice_buffer_move_first() {

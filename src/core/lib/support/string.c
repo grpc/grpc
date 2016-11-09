@@ -266,3 +266,6 @@ int gpr_stricmp(const char *a, const char *b) {
   } while (ca == cb && ca && cb);
   return ca - cb;
 }
+
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs) {}

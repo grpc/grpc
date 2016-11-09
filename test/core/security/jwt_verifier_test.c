@@ -185,7 +185,8 @@ static void test_claims_success(void) {
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   GPR_ASSERT(json != NULL);
-  claims = grpc_jwt_claims_from_json(json, s);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  claims = grpc_jwt_claims_from_json(&exec_ctx, json, s);
   GPR_ASSERT(claims != NULL);
   GPR_ASSERT(grpc_jwt_claims_json(claims) == json);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), "https://foo.com") == 0);
@@ -194,7 +195,8 @@ static void test_claims_success(void) {
   GPR_ASSERT(strcmp(grpc_jwt_claims_id(claims), "jwtuniqueid") == 0);
   GPR_ASSERT(grpc_jwt_claims_check(claims, "https://foo.com") ==
              GRPC_JWT_VERIFIER_OK);
-  grpc_jwt_claims_destroy(claims);
+  grpc_jwt_claims_destroy(&exec_ctx, claims);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_expired_claims_failure(void) {
@@ -206,7 +208,8 @@ static void test_expired_claims_failure(void) {
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_nbf = {60, 0, GPR_CLOCK_REALTIME};
   GPR_ASSERT(json != NULL);
-  claims = grpc_jwt_claims_from_json(json, s);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  claims = grpc_jwt_claims_from_json(&exec_ctx, json, s);
   GPR_ASSERT(claims != NULL);
   GPR_ASSERT(grpc_jwt_claims_json(claims) == json);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), "https://foo.com") == 0);
@@ -219,14 +222,17 @@ static void test_expired_claims_failure(void) {
 
   GPR_ASSERT(grpc_jwt_claims_check(claims, "https://foo.com") ==
              GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE);
-  grpc_jwt_claims_destroy(claims);
+  grpc_jwt_claims_destroy(&exec_ctx, claims);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_invalid_claims_failure(void) {
   grpc_slice s = grpc_slice_from_copied_string(invalid_claims);
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
-  GPR_ASSERT(grpc_jwt_claims_from_json(json, s) == NULL);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(grpc_jwt_claims_from_json(&exec_ctx, json, s) == NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_bad_audience_claims_failure(void) {
@@ -235,11 +241,13 @@ static void test_bad_audience_claims_failure(void) {
   grpc_json *json = grpc_json_parse_string_with_len(
       (char *)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   GPR_ASSERT(json != NULL);
-  claims = grpc_jwt_claims_from_json(json, s);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  claims = grpc_jwt_claims_from_json(&exec_ctx, json, s);
   GPR_ASSERT(claims != NULL);
   GPR_ASSERT(grpc_jwt_claims_check(claims, "https://bar.com") ==
              GRPC_JWT_VERIFIER_BAD_AUDIENCE);
-  grpc_jwt_claims_destroy(claims);
+  grpc_jwt_claims_destroy(&exec_ctx, claims);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static char *json_key_str(const char *last_part) {
@@ -305,7 +313,9 @@ static void on_verification_success(void *user_data,
   GPR_ASSERT(claims != NULL);
   GPR_ASSERT(user_data == (void *)expected_user_data);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), expected_audience) == 0);
-  grpc_jwt_claims_destroy(claims);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_jwt_claims_destroy(&exec_ctx, claims);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_jwt_verifier_google_email_issuer_success(void) {
@@ -483,7 +493,11 @@ static void corrupt_jwt_sig(char *jwt) {
   uint8_t *sig_bytes;
   char *last_dot = strrchr(jwt, '.');
   GPR_ASSERT(last_dot != NULL);
-  sig = grpc_base64_decode(last_dot + 1, 1);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    sig = grpc_base64_decode(&exec_ctx, last_dot + 1, 1);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(sig));
   sig_bytes = GRPC_SLICE_START_PTR(sig);
   (*sig_bytes)++; /* Corrupt first byte. */

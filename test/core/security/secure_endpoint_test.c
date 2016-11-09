@@ -42,6 +42,7 @@
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
@@ -170,8 +171,8 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_slice_unref(s);
-  grpc_slice_buffer_destroy_internal(exec_ctx, &incoming);
+  grpc_slice_unref_internal(&exec_ctx, s);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
 
   clean_up();
 }
