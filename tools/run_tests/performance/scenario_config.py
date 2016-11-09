@@ -700,12 +700,12 @@ class NodeExpressLanguage:
     #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
-        'node_protobuf_unary_ping_pong', rpc_type='UNARY',
+        'node_express_json_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         categories=[SCALABLE, SMOKETEST])
 
     yield _ping_pong_scenario(
-        'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+        'node_express_json_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         unconstrained_client='async',
         categories=[SCALABLE, SMOKETEST])
