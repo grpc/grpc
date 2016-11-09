@@ -435,7 +435,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     /* readily available, report right away */
     *target = GRPC_CONNECTED_SUBCHANNEL_REF(
         grpc_subchannel_get_connected_subchannel(selected->subchannel),
-        "picked");
+        "rr_picked");
 
     if (user_data != NULL) {
       *user_data = selected->user_data;
@@ -584,24 +584,24 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
         gpr_free(pp);
       }
+      update_lb_connectivity_status(exec_ctx, sd, error);
+      sd->prev_connectivity_state = sd->curr_connectivity_state;
       /* renew notification: reuses the "rr_connectivity" weak ref */
       grpc_subchannel_notify_on_state_change(
           exec_ctx, sd->subchannel, p->base.interested_parties,
           &sd->curr_connectivity_state, &sd->connectivity_changed_closure);
-      update_lb_connectivity_status(exec_ctx, sd, error);
-      sd->prev_connectivity_state = sd->curr_connectivity_state;
       break;
     case GRPC_CHANNEL_IDLE:
       ++p->num_idle;
     /* fallthrough */
     case GRPC_CHANNEL_CONNECTING:
       update_state_counters(sd);
+      update_lb_connectivity_status(exec_ctx, sd, error);
+      sd->prev_connectivity_state = sd->curr_connectivity_state;
       /* renew notification: reuses the "rr_connectivity" weak ref */
       grpc_subchannel_notify_on_state_change(
           exec_ctx, sd->subchannel, p->base.interested_parties,
           &sd->curr_connectivity_state, &sd->connectivity_changed_closure);
-      update_lb_connectivity_status(exec_ctx, sd, error);
-      sd->prev_connectivity_state = sd->curr_connectivity_state;
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       ++p->num_transient_failures;
@@ -610,12 +610,12 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         remove_disconnected_sc_locked(p, sd->ready_list_node);
         sd->ready_list_node = NULL;
       }
+      update_lb_connectivity_status(exec_ctx, sd, error);
+      sd->prev_connectivity_state = sd->curr_connectivity_state;
       /* renew notification: reuses the "rr_connectivity" weak ref */
       grpc_subchannel_notify_on_state_change(
           exec_ctx, sd->subchannel, p->base.interested_parties,
           &sd->curr_connectivity_state, &sd->connectivity_changed_closure);
-      update_lb_connectivity_status(exec_ctx, sd, error);
-      sd->prev_connectivity_state = sd->curr_connectivity_state;
       break;
     case GRPC_CHANNEL_SHUTDOWN:
       update_state_counters(sd);
