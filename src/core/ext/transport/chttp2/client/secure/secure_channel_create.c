@@ -91,7 +91,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     /* c->initial_string_buffer does not need to be destroyed */
-    grpc_channel_args_destroy(c->tmp_args);
+    grpc_channel_args_destroy(exec_ctx, c->tmp_args);
     grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
     gpr_free(c);
   }
@@ -240,7 +240,7 @@ static void client_channel_factory_unref(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory) {
   client_channel_factory *f = (client_channel_factory *)cc_factory;
   if (gpr_unref(&f->refs)) {
-    GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
+    GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &f->security_connector->base,
                                   "client_channel_factory");
     gpr_free(f);
   }
@@ -276,7 +276,7 @@ static grpc_channel *client_channel_factory_create_channel(
   client_channel_factory *f = (client_channel_factory *)cc_factory;
   grpc_channel *channel =
       grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
-  grpc_resolver *resolver = grpc_resolver_create(target, args);
+  grpc_resolver *resolver = grpc_resolver_create(exec_ctx, target, args);
   if (resolver != NULL) {
     grpc_client_channel_finish_initialization(
         exec_ctx, grpc_channel_get_channel_stack(channel), resolver, &f->base);
@@ -320,8 +320,8 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   grpc_channel_security_connector *security_connector;
   grpc_channel_args *new_args_from_connector;
   if (grpc_channel_credentials_create_security_connector(
-          creds, target, args, &security_connector, &new_args_from_connector) !=
-      GRPC_SECURITY_OK) {
+          &exec_ctx, creds, target, args, &security_connector,
+          &new_args_from_connector) != GRPC_SECURITY_OK) {
     grpc_exec_ctx_finish(&exec_ctx);
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INTERNAL, "Failed to create security connector.");
@@ -332,7 +332,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg, 1);
   if (new_args_from_connector != NULL) {
-    grpc_channel_args_destroy(new_args_from_connector);
+    grpc_channel_args_destroy(&exec_ctx, new_args_from_connector);
   }
   // Create client channel factory.
   client_channel_factory *f = gpr_malloc(sizeof(*f));
@@ -346,9 +346,9 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
   // Clean up.
-  GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
-                                "client_channel_factory_create_channel");
-  grpc_channel_args_destroy(new_args);
+  GRPC_SECURITY_CONNECTOR_UNREF(&exec_ctx, &f->security_connector->base,
+                                "secure_client_channel_factory_create_channel");
+  grpc_channel_args_destroy(&exec_ctx, new_args);
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);
   return channel; /* may be NULL */

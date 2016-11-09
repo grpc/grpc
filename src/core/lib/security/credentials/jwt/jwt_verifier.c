@@ -90,7 +90,7 @@ static grpc_json *parse_json_part_from_jwt(grpc_exec_ctx *exec_ctx,
                                            grpc_slice *buffer) {
   grpc_json *json;
 
-  *buffer = grpc_base64_decode_with_len(str, len, 1);
+  *buffer = grpc_base64_decode_with_len(exec_ctx, str, len, 1);
   if (GRPC_SLICE_IS_EMPTY(*buffer)) {
     gpr_log(GPR_ERROR, "Invalid base64.");
     return NULL;
@@ -456,7 +456,7 @@ static BIGNUM *bignum_from_base64(grpc_exec_ctx *exec_ctx, const char *b64) {
   grpc_slice bin;
 
   if (b64 == NULL) return NULL;
-  bin = grpc_base64_decode(b64, 1);
+  bin = grpc_base64_decode(exec_ctx, b64, 1);
   if (GRPC_SLICE_IS_EMPTY(bin)) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return NULL;
@@ -833,7 +833,7 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 
   signed_jwt_len = (size_t)(dot - jwt);
   cur = dot + 1;
-  signature = grpc_base64_decode(cur, 1);
+  signature = grpc_base64_decode(exec_ctx, cur, 1);
   if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
   retrieve_key_and_verify(
       exec_ctx,

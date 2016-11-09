@@ -39,6 +39,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
@@ -91,8 +92,12 @@ static int method_parameters_cmp(void *value1, void *value2) {
   return 0;
 }
 
+static void method_parameters_del(grpc_exec_ctx *exec_ctx, void *p) {
+  gpr_free(p);
+}
+
 static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
-    gpr_free, method_parameters_copy, method_parameters_cmp};
+    method_parameters_del, method_parameters_copy, method_parameters_cmp};
 
 static void *method_config_convert_value(
     const grpc_method_config *method_config) {
@@ -123,6 +128,7 @@ typedef struct client_channel_channel_data {
   /** mutex protecting all variables below in this data structure */
   gpr_mu mu;
   /** currently active load balancer */
+  char *lb_policy_name;
   grpc_lb_policy *lb_policy;
   /** maps method names to method_parameters structs */
   grpc_mdstr_hash_table *method_params_table;
@@ -223,6 +229,7 @@ static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
 static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                        grpc_error *error) {
   channel_data *chand = arg;
+  char *lb_policy_name = NULL;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
   grpc_mdstr_hash_table *method_params_table = NULL;
@@ -236,7 +243,6 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
 
     // Find LB policy name.
-    const char *lb_policy_name = NULL;
     const grpc_arg *channel_arg =
         grpc_channel_args_find(lb_policy_args.args, GRPC_ARG_LB_POLICY_NAME);
     if (channel_arg != NULL) {
@@ -286,10 +292,14 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
       method_params_table = grpc_method_config_table_convert(
-          (grpc_method_config_table *)channel_arg->value.pointer.p,
+          exec_ctx, (grpc_method_config_table *)channel_arg->value.pointer.p,
           method_config_convert_value, &method_parameters_vtable);
     }
-    grpc_channel_args_destroy(chand->resolver_result);
+    // Before we clean up, save a copy of lb_policy_name, since it might
+    // be pointing to data inside chand->resolver_result.
+    // The copy will be saved in chand->lb_policy_name below.
+    lb_policy_name = gpr_strdup(lb_policy_name);
+    grpc_channel_args_destroy(exec_ctx, chand->resolver_result);
     chand->resolver_result = NULL;
   }
 
@@ -299,10 +309,14 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   gpr_mu_lock(&chand->mu);
+  if (lb_policy_name != NULL) {
+    gpr_free(chand->lb_policy_name);
+    chand->lb_policy_name = lb_policy_name;
+  }
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(chand->method_params_table);
+    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   chand->method_params_table = method_params_table;
   if (lb_policy != NULL) {
@@ -426,6 +440,19 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&chand->mu);
 }
 
+static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
+                                grpc_channel_element *elem,
+                                const grpc_channel_info *info) {
+  channel_data *chand = elem->channel_data;
+  gpr_mu_lock(&chand->mu);
+  if (info->lb_policy_name != NULL) {
+    *info->lb_policy_name = chand->lb_policy_name == NULL
+                                ? NULL
+                                : gpr_strdup(chand->lb_policy_name);
+  }
+  gpr_mu_unlock(&chand->mu);
+}
+
 /* Constructor for channel_data */
 static void cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
@@ -465,8 +492,9 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
+  gpr_free(chand->lb_policy_name);
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(chand->method_params_table);
+    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -906,8 +934,8 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&chand->mu);
     // If the method config table was present, use it.
     if (method_params_table != NULL) {
-      const method_parameters *method_params =
-          grpc_method_config_table_get(method_params_table, calld->path);
+      const method_parameters *method_params = grpc_method_config_table_get(
+          exec_ctx, method_params_table, calld->path);
       if (method_params != NULL) {
         const bool have_method_timeout =
             gpr_time_cmp(method_params->timeout, gpr_time_0(GPR_TIMESPAN)) != 0;
@@ -930,7 +958,7 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_mu_unlock(&calld->mu);
         }
       }
-      grpc_mdstr_hash_table_unref(method_params_table);
+      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
     }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
@@ -971,8 +999,8 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
       grpc_mdstr_hash_table *method_params_table =
           grpc_mdstr_hash_table_ref(chand->method_params_table);
       gpr_mu_unlock(&chand->mu);
-      method_parameters *method_params =
-          grpc_method_config_table_get(method_params_table, args->path);
+      method_parameters *method_params = grpc_method_config_table_get(
+          exec_ctx, method_params_table, args->path);
       if (method_params != NULL) {
         if (gpr_time_cmp(method_params->timeout,
                          gpr_time_0(GPR_CLOCK_MONOTONIC)) != 0) {
@@ -985,7 +1013,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
               method_params->wait_for_ready;
         }
       }
-      grpc_mdstr_hash_table_unref(method_params_table);
+      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
     } else {
       gpr_mu_unlock(&chand->mu);
     }
@@ -1013,7 +1041,7 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                  void *and_free_memory) {
   call_data *calld = elem->call_data;
   grpc_deadline_state_destroy(exec_ctx, elem);
-  GRPC_MDSTR_UNREF(calld->path);
+  GRPC_MDSTR_UNREF(exec_ctx, calld->path);
   GRPC_ERROR_UNREF(calld->cancel_error);
   grpc_subchannel_call *call = GET_CALL(calld);
   if (call != NULL && call != CANCELLED_CALL) {
@@ -1052,6 +1080,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
     cc_init_channel_elem,
     cc_destroy_channel_elem,
     cc_get_peer,
+    cc_get_channel_info,
     "client-channel",
 };
 

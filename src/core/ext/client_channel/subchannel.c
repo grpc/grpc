@@ -205,7 +205,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   grpc_subchannel *c = arg;
   gpr_free((void *)c->filters);
-  grpc_channel_args_destroy(c->args);
+  grpc_channel_args_destroy(exec_ctx, c->args);
   gpr_free(c->addr);
   grpc_slice_unref_internal(exec_ctx, c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
@@ -539,7 +539,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   /* construct channel stack */
   grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
   grpc_channel_stack_builder_set_channel_arguments(
-      builder, c->connecting_result.channel_args);
+      exec_ctx, builder, c->connecting_result.channel_args);
   grpc_channel_stack_builder_set_transport(builder,
                                            c->connecting_result.transport);
 
@@ -548,7 +548,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
     con = grpc_channel_stack_builder_finish(exec_ctx, builder, 0, 1,
                                             connection_destroy, NULL);
   } else {
-    grpc_channel_stack_builder_destroy(builder);
+    grpc_channel_stack_builder_destroy(exec_ctx, builder);
     abort(); /* TODO(ctiller): what to do here (previously we just crashed) */
   }
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
@@ -651,7 +651,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   }
   gpr_mu_unlock(&c->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
-  grpc_channel_args_destroy(delete_channel_args);
+  grpc_channel_args_destroy(exec_ctx, delete_channel_args);
 }
 
 /*

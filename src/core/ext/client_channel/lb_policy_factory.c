@@ -112,11 +112,13 @@ int grpc_lb_addresses_cmp(const grpc_lb_addresses* addresses1,
   return 0;
 }
 
-void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses) {
+void grpc_lb_addresses_destroy(grpc_exec_ctx* exec_ctx,
+                               grpc_lb_addresses* addresses) {
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     gpr_free(addresses->addresses[i].balancer_name);
     if (addresses->addresses[i].user_data != NULL) {
-      addresses->user_data_vtable->destroy(addresses->addresses[i].user_data);
+      addresses->user_data_vtable->destroy(exec_ctx,
+                                           addresses->addresses[i].user_data);
     }
   }
   gpr_free(addresses->addresses);
@@ -126,8 +128,8 @@ void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses) {
 static void* lb_addresses_copy(void* addresses) {
   return grpc_lb_addresses_copy(addresses);
 }
-static void lb_addresses_destroy(void* addresses) {
-  grpc_lb_addresses_destroy(addresses);
+static void lb_addresses_destroy(grpc_exec_ctx* exec_ctx, void* addresses) {
+  grpc_lb_addresses_destroy(exec_ctx, addresses);
 }
 static int lb_addresses_cmp(void* addresses1, void* addresses2) {
   return grpc_lb_addresses_cmp(addresses1, addresses2);

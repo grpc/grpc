@@ -212,11 +212,11 @@ void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void connector_pointer_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
-  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, "connector_pointer_arg");
+  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, "connector_pointer_arg_destroy");
 }
 
 static void *connector_pointer_arg_copy(void *p) {
-  return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg");
+  return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg_copy");
 }
 
 static int connector_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }

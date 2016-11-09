@@ -80,7 +80,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     grpc_chttp2_transport_start_reading(exec_ctx, transport, read_buffer);
   }
   // Clean up.
-  grpc_channel_args_destroy(args);
+  grpc_channel_args_destroy(exec_ctx, args);
   grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
   gpr_free(state);
 }

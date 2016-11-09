@@ -33,15 +33,18 @@
 
 #include "test/core/bad_client/bad_client.h"
 
+#include <stdio.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <stdio.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -181,7 +184,7 @@ void grpc_run_bad_client_test(
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(
           gpr_event_wait(&args.read_done, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
-      grpc_slice_buffer_destroy_internal(exec_ctx, &args.incoming);
+      grpc_slice_buffer_destroy_internal(&exec_ctx, &args.incoming);
     }
     // Shutdown.
     grpc_endpoint_shutdown(&exec_ctx, sfd.client);
@@ -194,7 +197,7 @@ void grpc_run_bad_client_test(
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
-  grpc_slice_buffer_destroy_internal(exec_ctx, &outgoing);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);
 
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

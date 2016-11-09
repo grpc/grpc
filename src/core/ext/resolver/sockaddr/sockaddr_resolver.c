@@ -132,8 +132,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_lb_addresses_destroy(r->addresses);
-  grpc_channel_args_destroy(r->channel_args);
+  grpc_lb_addresses_destroy(exec_ctx, r->addresses);
+  grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
 }
 
@@ -193,7 +193,7 @@ static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
   grpc_slice_buffer_destroy_internal(exec_ctx, &path_parts);
   grpc_slice_unref_internal(exec_ctx, path_slice);
   if (errors_found) {
-    grpc_lb_addresses_destroy(addresses);
+    grpc_lb_addresses_destroy(exec_ctx, addresses);
     return NULL;
   }
   /* Instantiate resolver. */

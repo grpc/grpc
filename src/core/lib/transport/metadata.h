@@ -37,6 +37,8 @@
 #include <grpc/slice.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
