@@ -571,7 +571,8 @@ class PythonLanguage(object):
     return 'tools/dockerfile/test/python_%s_%s' % (self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
   def python_manager_name(self):
-    return 'pyenv' if self.args.compiler in ['python3.5', 'python3.6'] else 'jessie'
+    return 'pyenv' if self.args.compiler in ['python3.5', 'python3.6',
+                                             'pypy'] else 'jessie'
 
   def _get_pythons(self, args):
     if args.arch == 'x86':
