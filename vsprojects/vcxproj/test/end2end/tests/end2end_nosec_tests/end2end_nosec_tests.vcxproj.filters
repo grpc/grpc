@@ -4,6 +4,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_nosec_tests.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_test_utils.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

@@ -641,6 +641,26 @@ static void test_pending_calls(size_t concurrent_calls) {
   test_spec_destroy(spec);
 }
 
+static void test_get_channel_info() {
+  grpc_channel *channel = grpc_insecure_channel_create(
+      "test:127.0.0.1:1234?lb_policy=round_robin", NULL, NULL);
+  // Ensures that resolver returns.
+  grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
+  // Use grpc_channel_get_info() to get LB policy name.
+  char *lb_policy_name = NULL;
+  grpc_channel_info channel_info;
+  channel_info.lb_policy_name = &lb_policy_name;
+  grpc_channel_get_info(channel, &channel_info);
+  GPR_ASSERT(lb_policy_name != NULL);
+  GPR_ASSERT(strcmp(lb_policy_name, "round_robin") == 0);
+  gpr_free(lb_policy_name);
+  // Try again without requesting anything.  This is a no-op.
+  channel_info.lb_policy_name = NULL;
+  grpc_channel_get_info(channel, &channel_info);
+  // Clean up.
+  grpc_channel_destroy(channel);
+}
+
 static void print_failed_expectations(const int *expected_connection_sequence,
                                       const int *actual_connection_sequence,
                                       const size_t expected_seq_length,
@@ -935,6 +955,7 @@ int main(int argc, char **argv) {
 
   test_pending_calls(4);
   test_ping();
+  test_get_channel_info();
 
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

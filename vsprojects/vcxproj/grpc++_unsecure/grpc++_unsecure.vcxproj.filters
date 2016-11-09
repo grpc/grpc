@@ -49,6 +49,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\version_cc.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>

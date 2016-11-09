@@ -34,6 +34,7 @@
 
 #include <sstream>
 
+#include <grpc++/grpc++.h>
 #include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -42,10 +43,8 @@
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {
-  std::ostringstream user_agent_prefix;
-  user_agent_prefix << "grpc-c++/" << grpc_version_string();
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix.str());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)

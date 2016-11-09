@@ -12,6 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
+  core_version: 2.0.0-dev
   g_stands_for: good
   version: 1.1.0-dev
 filegroups:
@@ -64,8 +65,6 @@ filegroups:
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
-  - include/grpc/support/slice.h
-  - include/grpc/support/slice_buffer.h
   - include/grpc/support/string_util.h
   - include/grpc/support/subprocess.h
   - include/grpc/support/sync.h
@@ -86,7 +85,6 @@ filegroups:
   - src/core/lib/support/env.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
-  - src/core/lib/support/percent_encoding.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
@@ -116,9 +114,6 @@ filegroups:
   - src/core/lib/support/log_windows.c
   - src/core/lib/support/mpscq.c
   - src/core/lib/support/murmur_hash.c
-  - src/core/lib/support/percent_encoding.c
-  - src/core/lib/support/slice.c
-  - src/core/lib/support/slice_buffer.c
   - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
@@ -164,6 +159,8 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -239,6 +236,8 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -341,6 +340,10 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
+  - src/core/lib/slice/percent_encoding.c
+  - src/core/lib/slice/slice.c
+  - src/core/lib/slice/slice_buffer.c
+  - src/core/lib/slice/slice_string_helpers.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
   - src/core/lib/surface/byte_buffer.c
@@ -751,6 +754,7 @@ filegroups:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
@@ -1792,30 +1796,6 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_percent_encoding_test
-  build: test
-  language: c
-  src:
-  - test/core/support/percent_encoding_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_slice_buffer_test
-  build: test
-  language: c
-  src:
-  - test/core/support/slice_buffer_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_slice_test
-  build: test
-  language: c
-  src:
-  - test/core/support/slice_test.c
-  deps:
-  - gpr_test_util
-  - gpr
 - name: gpr_stack_lockfree_test
   cpu_cost: 7
   build: test
@@ -2108,7 +2088,7 @@ targets:
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/http/corpus
+  - test/core/http/request_corpus
   maxlen: 2048
 - name: http_response_fuzzer_test
   build: fuzzer
@@ -2121,7 +2101,7 @@ targets:
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/http/corpus
+  - test/core/http/response_corpus
   maxlen: 2048
 - name: httpcli_format_request_test
   build: test
@@ -2393,28 +2373,38 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/support/percent_decode_fuzzer.c
+  - test/core/slice/percent_decode_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/support/percent_decode_corpus
+  - test/core/slice/percent_decode_corpus
   maxlen: 32
 - name: percent_encode_fuzzer
   build: fuzzer
   language: c
   src:
-  - test/core/support/percent_encode_fuzzer.c
+  - test/core/slice/percent_encode_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
   corpus_dirs:
-  - test/core/support/percent_encode_corpus
+  - test/core/slice/percent_encode_corpus
   maxlen: 32
+- name: percent_encoding_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/percent_encoding_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: resolve_address_test
   build: test
   language: c
@@ -2520,6 +2510,36 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: slice_buffer_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_buffer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: slice_string_helpers_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_string_helpers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: slice_test
+  build: test
+  language: c
+  src:
+  - test/core/slice/slice_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: sockaddr_resolver_test
   build: test
   language: c
@@ -2794,6 +2814,16 @@ targets:
   language: c++
   src:
   - test/cpp/common/channel_arguments_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+- name: channel_filter_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/channel_filter_test.cc
   deps:
   - grpc++
   - grpc
