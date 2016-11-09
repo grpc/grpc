@@ -241,105 +241,110 @@ def _allowed_labels():
   return sorted(all_labels)
 
 
-argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
-argp.add_argument('-j', '--jobs',
-                  default=multiprocessing.cpu_count()/_DEFAULT_INNER_JOBS,
-                  type=int,
-                  help='Number of concurrent run_tests.py instances.')
-argp.add_argument('-f', '--filter',
-                  choices=_allowed_labels(),
-                  nargs='+',
-                  default=[],
-                  help='Filter targets to run by label with AND semantics.')
-argp.add_argument('--build_only',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Pass --build_only flag to run_tests.py instances.')
-argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
-                  help='Pass --force_default_poller to run_tests.py instances.')
-argp.add_argument('--dry_run',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Only print what would be run.')
-argp.add_argument('--filter_pr_tests',
-	          default=False,
-		  action='store_const',	
-		  const=True,	  
-		  help='Filters out tests irrelavant to pull request changes.')
-argp.add_argument('--base_branch',
-                  default='origin/master',
-                  type=str,
-                  help='Branch that pull request is requesting to merge into')
-argp.add_argument('--inner_jobs',
-                  default=_DEFAULT_INNER_JOBS,
-                  type=int,
-                  help='Number of jobs in each run_tests.py instance')
-args = argp.parse_args()
+if __name__ == "__main__":
+  argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
+  argp.add_argument('-j', '--jobs',
+                    default=multiprocessing.cpu_count()/_DEFAULT_INNER_JOBS,
+                    type=int,
+                    help='Number of concurrent run_tests.py instances.')
+  argp.add_argument('-f', '--filter',
+                    choices=_allowed_labels(),
+                    nargs='+',
+                    default=[],
+                    help='Filter targets to run by label with AND semantics.')
+  argp.add_argument('--build_only',
+                    default=False,
+                    action='store_const',
+                    const=True,
+                    help='Pass --build_only flag to run_tests.py instances.')
+  argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
+                    help='Pass --force_default_poller to run_tests.py instances.')
+  argp.add_argument('--dry_run',
+                    default=False,
+                    action='store_const',
+                    const=True,
+                    help='Only print what would be run.')
+  argp.add_argument('--filter_pr_tests',
+                    default=False,
+                    action='store_const',
+                    const=True,
+                    help='Filters out tests irrelavant to pull request changes.')
+  argp.add_argument('--base_branch',
+                    default='origin/master',
+                    type=str,
+                    help='Branch that pull request is requesting to merge into')
+  argp.add_argument('--inner_jobs',
+                    default=_DEFAULT_INNER_JOBS,
+                    type=int,
+                    help='Number of jobs in each run_tests.py instance')
+  args = argp.parse_args()
 
+  extra_args = []
+  if args.build_only:
+    extra_args.append('--build_only')
+  if args.force_default_poller:
+    extra_args.append('--force_default_poller')
 
-extra_args = []
-if args.build_only:
-  extra_args.append('--build_only')
-if args.force_default_poller:
-  extra_args.append('--force_default_poller')
+  all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
+             _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
 
-all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
-           _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
+  jobs = []
+  for job in all_jobs:
+    if not args.filter or all(filter in job.labels for filter in args.filter):
+      jobs.append(job)
 
-jobs = []
-for job in all_jobs:
-  if not args.filter or all(filter in job.labels for filter in args.filter):
-    jobs.append(job)
+  if not jobs:
+    jobset.message('FAILED', 'No test suites match given criteria.',
+                   do_newline=True)
+    sys.exit(1)
 
-if not jobs:
-  jobset.message('FAILED', 'No test suites match given criteria.',
-                 do_newline=True)
-  sys.exit(1)
+  print('IMPORTANT: The changes you are testing need to be locally committed')
+  print('because only the committed changes in the current branch will be')
+  print('copied to the docker environment or into subworkspaces.')
 
-print('IMPORTANT: The changes you are testing need to be locally committed')
-print('because only the committed changes in the current branch will be')
-print('copied to the docker environment or into subworkspaces.')
+  skipped_jobs = []
 
-print
-print 'Will run these tests:'
-for job in jobs:
+  if args.filter_pr_tests:
+    print('Looking for irrelevant tests to skip...')
+    relevant_jobs = filter_tests(jobs, args.base_branch)
+    if len(relevant_jobs) == len(jobs):
+      print('No tests will be skipped.')
+    else:
+      print('These tests will be skipped:')
+      skipped_jobs = [job for job in jobs if job not in relevant_jobs]
+      for job in list(skipped_jobs):
+        print('  %s' % job.shortname)
+    jobs = relevant_jobs
+
+  print('Will run these tests:')
+  for job in jobs:
+    if args.dry_run:
+      print('  %s: "%s"' % (job.shortname, ' '.join(job.cmdline)))
+    else:
+      print('  %s' % job.shortname)
+  print
+
   if args.dry_run:
-    print '  %s: "%s"' % (job.shortname, ' '.join(job.cmdline))
+    print('--dry_run was used, exiting')
+    sys.exit(1)
+
+  jobset.message('START', 'Running test matrix.', do_newline=True)
+  num_failures, resultset = jobset.run(jobs,
+                                       newline_on_success=True,
+                                       travis=True,
+                                       maxjobs=args.jobs)
+  # Merge skipped tests into results to show skipped tests on report.xml
+  if skipped_jobs:
+    skipped_results = jobset.run(skipped_jobs,
+                                 skip_jobs=True)
+    resultset.update(skipped_results)
+  report_utils.render_junit_xml_report(resultset, 'report.xml',
+                                       suite_name='aggregate_tests')
+
+  if num_failures == 0:
+    jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',
+                   do_newline=True)
   else:
-    print '  %s' % job.shortname
-print
-
-if args.filter_pr_tests:
-  print 'IMPORTANT: Test filtering is not active; this is only for testing.'
-  relevant_jobs = filter_tests(jobs, args.base_branch)
-  # todo(mattkwong): add skipped tests to report.xml
-  print
-  if len(relevant_jobs) == len(jobs):
-    print '(TESTING) No tests will be skipped.'
-  else:
-    print '(TESTING) These tests will be skipped:'
-    for job in list(set(jobs) - set(relevant_jobs)):
-      print '  %s' % job.shortname
-  print
-
-if args.dry_run:
-  print '--dry_run was used, exiting'
-  sys.exit(1)
-
-jobset.message('START', 'Running test matrix.', do_newline=True)
-num_failures, resultset = jobset.run(jobs,
-                                     newline_on_success=True,
-                                     travis=True,
-                                     maxjobs=args.jobs)
-report_utils.render_junit_xml_report(resultset, 'report.xml',
-                                     suite_name='aggregate_tests')
-
-if num_failures == 0:
-  jobset.message('SUCCESS', 'All run_tests.py instance finished successfully.',
-                 do_newline=True)
-else:
-  jobset.message('FAILED', 'Some run_tests.py instance have failed.',
-                 do_newline=True)
-  sys.exit(1)
+    jobset.message('FAILED', 'Some run_tests.py instance have failed.',
+                   do_newline=True)
+    sys.exit(1)
