@@ -46,8 +46,8 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
-
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -125,17 +125,17 @@ void test_connect(const char *server_host, const char *client_host, int port,
   if (client_host[0] == 'i') {
     /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
     size_t i;
-    gpr_slice uri_slice;
-    gpr_slice_buffer uri_parts;
+    grpc_slice uri_slice;
+    grpc_slice_buffer uri_parts;
     char **hosts_with_port;
 
     uri_slice =
-        gpr_slice_new((char *)client_host, strlen(client_host), do_nothing);
-    gpr_slice_buffer_init(&uri_parts);
-    gpr_slice_split(uri_slice, ",", &uri_parts);
+        grpc_slice_new((char *)client_host, strlen(client_host), do_nothing);
+    grpc_slice_buffer_init(&uri_parts);
+    grpc_slice_split(uri_slice, ",", &uri_parts);
     hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
-      char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
+      char *uri_part_str = grpc_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
       gpr_free(uri_part_str);
     }
@@ -145,8 +145,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
       gpr_free(hosts_with_port[i]);
     }
     gpr_free(hosts_with_port);
-    gpr_slice_buffer_destroy(&uri_parts);
-    gpr_slice_unref(uri_slice);
+    grpc_slice_buffer_destroy(&uri_parts);
+    grpc_slice_unref(uri_slice);
   } else {
     gpr_join_host_port(&client_hostport, client_host, port);
   }

@@ -74,6 +74,8 @@ def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
         ET.SubElement(xml_test, 'failure', message='Failure')
       elif result.state == 'TIMEOUT':
         ET.SubElement(xml_test, 'error', message='Timeout')
+      elif result.state == 'SKIPPED':
+        ET.SubElement(xml_test, 'skipped', message='Skipped')
   tree = ET.ElementTree(root)
   tree.write(xml_report, encoding='UTF-8')
 

@@ -175,6 +175,15 @@ char *grpc_channel_get_target(grpc_channel *channel) {
   return gpr_strdup(channel->target);
 }
 
+void grpc_channel_get_info(grpc_channel *channel,
+                           const grpc_channel_info *channel_info) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_channel_element *elem =
+      grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
+  elem->filter->get_channel_info(&exec_ctx, elem, channel_info);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *cq, grpc_pollset_set *pollset_set_alternative,

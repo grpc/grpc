@@ -100,7 +100,7 @@ struct grpc_subchannel {
   grpc_subchannel_key *key;
 
   /** initial string to send to peer */
-  gpr_slice initial_connect_string;
+  grpc_slice initial_connect_string;
 
   /** set during connection */
   grpc_connect_out_args connecting_result;
@@ -206,7 +206,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(c->args);
   gpr_free(c->addr);
-  gpr_slice_unref(c->initial_connect_string);
+  grpc_slice_unref(c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(c->pollset_set);

@@ -52,7 +52,7 @@ typedef struct {
   const grpc_resolved_address *addr;
   size_t addr_len;
   /** initial connect string to send */
-  gpr_slice initial_connect_string;
+  grpc_slice initial_connect_string;
   /** deadline for connection */
   gpr_timespec deadline;
   /** channel arguments (to be passed to transport) */

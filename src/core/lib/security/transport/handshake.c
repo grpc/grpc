@@ -36,9 +36,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
@@ -54,9 +54,9 @@ typedef struct {
   size_t handshake_buffer_size;
   grpc_endpoint *wrapped_endpoint;
   grpc_endpoint *secure_endpoint;
-  gpr_slice_buffer left_overs;
-  gpr_slice_buffer incoming;
-  gpr_slice_buffer outgoing;
+  grpc_slice_buffer left_overs;
+  grpc_slice_buffer incoming;
+  grpc_slice_buffer outgoing;
   grpc_security_handshake_done_cb cb;
   void *user_data;
   grpc_closure on_handshake_data_sent_to_peer;
@@ -104,9 +104,9 @@ static void unref_handshake(grpc_security_handshake *h) {
   if (gpr_unref(&h->refs)) {
     if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
     if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
-    gpr_slice_buffer_destroy(&h->left_overs);
-    gpr_slice_buffer_destroy(&h->outgoing);
-    gpr_slice_buffer_destroy(&h->incoming);
+    grpc_slice_buffer_destroy(&h->left_overs);
+    grpc_slice_buffer_destroy(&h->outgoing);
+    grpc_slice_buffer_destroy(&h->incoming);
     GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
     GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
     gpr_free(h);
@@ -125,7 +125,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
           h->auth_context);
   } else {
     const char *msg = grpc_error_string(error);
-    gpr_log(GPR_ERROR, "Security handshake failed: %s", msg);
+    gpr_log(GPR_INFO, "Security handshake failed: %s", msg);
     grpc_error_free_string(msg);
 
     if (h->secure_endpoint != NULL) {
@@ -190,7 +190,7 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
                                          grpc_security_handshake *h) {
   size_t offset = 0;
   tsi_result result = TSI_OK;
-  gpr_slice to_send;
+  grpc_slice to_send;
 
   do {
     size_t to_send_size = h->handshake_buffer_size - offset;
@@ -212,9 +212,9 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
   }
 
   to_send =
-      gpr_slice_from_copied_buffer((const char *)h->handshake_buffer, offset);
-  gpr_slice_buffer_reset_and_unref(&h->outgoing);
-  gpr_slice_buffer_add(&h->outgoing, to_send);
+      grpc_slice_from_copied_buffer((const char *)h->handshake_buffer, offset);
+  grpc_slice_buffer_reset_and_unref(&h->outgoing);
+  grpc_slice_buffer_add(&h->outgoing, to_send);
   /* TODO(klempner,jboeuf): This should probably use the client setup
      deadline */
   grpc_endpoint_write(exec_ctx, h->wrapped_endpoint, &h->outgoing,
@@ -239,9 +239,9 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   }
 
   for (i = 0; i < h->incoming.count; i++) {
-    consumed_slice_size = GPR_SLICE_LENGTH(h->incoming.slices[i]);
+    consumed_slice_size = GRPC_SLICE_LENGTH(h->incoming.slices[i]);
     result = tsi_handshaker_process_bytes_from_peer(
-        h->handshaker, GPR_SLICE_START_PTR(h->incoming.slices[i]),
+        h->handshaker, GRPC_SLICE_START_PTR(h->incoming.slices[i]),
         &consumed_slice_size);
     if (!tsi_handshaker_is_in_progress(h->handshaker)) break;
   }
@@ -267,7 +267,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 
   /* Handshake is done and successful this point. */
   has_left_overs_in_current_slice =
-      (consumed_slice_size < GPR_SLICE_LENGTH(h->incoming.slices[i]));
+      (consumed_slice_size < GRPC_SLICE_LENGTH(h->incoming.slices[i]));
   num_left_overs =
       (has_left_overs_in_current_slice ? 1 : 0) + h->incoming.count - i - 1;
   if (num_left_overs == 0) {
@@ -277,13 +277,13 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 
   /* Put the leftovers in our buffer (ownership transfered). */
   if (has_left_overs_in_current_slice) {
-    gpr_slice_buffer_add(
+    grpc_slice_buffer_add(
         &h->left_overs,
-        gpr_slice_split_tail(&h->incoming.slices[i], consumed_slice_size));
-    gpr_slice_unref(
+        grpc_slice_split_tail(&h->incoming.slices[i], consumed_slice_size));
+    grpc_slice_unref(
         h->incoming.slices[i]); /* split_tail above increments refcount. */
   }
-  gpr_slice_buffer_addn(
+  grpc_slice_buffer_addn(
       &h->left_overs, &h->incoming.slices[i + 1],
       num_left_overs - (size_t)has_left_overs_in_current_slice);
   check_peer(exec_ctx, h);
@@ -325,7 +325,7 @@ static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 void grpc_do_security_handshake(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector, bool is_client_side,
-    grpc_endpoint *nonsecure_endpoint, gpr_slice_buffer *read_buffer,
+    grpc_endpoint *nonsecure_endpoint, grpc_slice_buffer *read_buffer,
     gpr_timespec deadline, grpc_security_handshake_done_cb cb,
     void *user_data) {
   grpc_security_connector_handshake_list *handshake_node;
@@ -344,11 +344,11 @@ void grpc_do_security_handshake(
                     on_handshake_data_sent_to_peer, h);
   grpc_closure_init(&h->on_handshake_data_received_from_peer,
                     on_handshake_data_received_from_peer, h);
-  gpr_slice_buffer_init(&h->left_overs);
-  gpr_slice_buffer_init(&h->outgoing);
-  gpr_slice_buffer_init(&h->incoming);
+  grpc_slice_buffer_init(&h->left_overs);
+  grpc_slice_buffer_init(&h->outgoing);
+  grpc_slice_buffer_init(&h->incoming);
   if (read_buffer != NULL) {
-    gpr_slice_buffer_move_into(read_buffer, &h->incoming);
+    grpc_slice_buffer_move_into(read_buffer, &h->incoming);
     gpr_free(read_buffer);
   }
   if (!is_client_side) {
