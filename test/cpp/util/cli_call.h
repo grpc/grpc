@@ -43,7 +43,7 @@
 namespace grpc {
 namespace testing {
 
-class CliCall GRPC_FINAL {
+class CliCall final {
  public:
   typedef std::multimap<grpc::string, grpc::string> OutgoingMetadataContainer;
   typedef std::multimap<grpc::string_ref, grpc::string_ref>

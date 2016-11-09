@@ -98,7 +98,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
                               grpc_error *error) {
   connector *c = user_data;
   if (error != GRPC_ERROR_NONE) {
-    grpc_channel_args_destroy(args);
+    grpc_channel_args_destroy(exec_ctx, args);
     gpr_free(read_buffer);
   } else {
     c->result->transport =
@@ -197,7 +197,7 @@ static grpc_channel *client_channel_factory_create_channel(
     const grpc_channel_args *args) {
   grpc_channel *channel =
       grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
-  grpc_resolver *resolver = grpc_resolver_create(target, args);
+  grpc_resolver *resolver = grpc_resolver_create(exec_ctx, target, args);
   if (!resolver) {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
                                 "client_channel_factory_create_channel");

@@ -106,11 +106,11 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
 }
 
 namespace {
-class TagSaver GRPC_FINAL : public CompletionQueueTag {
+class TagSaver final : public CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
-  ~TagSaver() GRPC_OVERRIDE {}
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+  ~TagSaver() override {}
+  bool FinalizeResult(void** tag, bool* status) override {
     *tag = tag_;
     delete this;
     return true;

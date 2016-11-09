@@ -191,6 +191,7 @@ const grpc_channel_filter grpc_client_census_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
@@ -204,4 +205,5 @@ const grpc_channel_filter grpc_server_census_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "census-server"};

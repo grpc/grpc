@@ -59,6 +59,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -111,10 +112,12 @@ static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
       grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
     grpc_pollset_set_destroy(conn->pollset_set);
     grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_read_buffer);
-    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_deferred_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx,
+                                       &conn->client_deferred_write_buffer);
     grpc_slice_buffer_destroy_internal(exec_ctx, &conn->client_write_buffer);
     grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_read_buffer);
-    grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_deferred_write_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx,
+                                       &conn->server_deferred_write_buffer);
     grpc_slice_buffer_destroy_internal(exec_ctx, &conn->server_write_buffer);
     grpc_http_parser_destroy(&conn->http_parser);
     grpc_http_request_destroy(&conn->http_request);
@@ -468,7 +471,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_tcp_server_shutdown_listeners(&exec_ctx, proxy->server);
   grpc_tcp_server_unref(&exec_ctx, proxy->server);
   gpr_free(proxy->proxy_name);
-  grpc_channel_args_destroy(proxy->channel_args);
+  grpc_channel_args_destroy(&exec_ctx, proxy->channel_args);
   grpc_closure destroyed;
   grpc_closure_init(&destroyed, destroy_pollset, proxy->pollset);
   grpc_pollset_shutdown(&exec_ctx, proxy->pollset, &destroyed);

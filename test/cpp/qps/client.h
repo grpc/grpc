@@ -113,7 +113,7 @@ class ClientRequestCreator<ByteBuffer> {
   }
 };
 
-class HistogramEntry GRPC_FINAL {
+class HistogramEntry final {
  public:
   HistogramEntry() : value_used_(false), status_used_(false) {}
   bool value_used() const { return value_used_; }

@@ -56,7 +56,6 @@ END2END_FIXTURES = {
     'h2_census': default_unsecure_fixture_options,
     'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
-    'h2_fake_resolver': default_unsecure_fixture_options,
     'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,
     'h2_full+pipe': default_unsecure_fixture_options._replace(
@@ -191,7 +190,8 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': True,
-              'src': ['test/core/end2end/end2end_tests.c'] + [
+              'src': ['test/core/end2end/end2end_tests.c',
+                      'test/core/end2end/end2end_test_utils.c'] + [
                   'test/core/end2end/tests/%s.c' % t
                   for t in sorted(END2END_TESTS.keys())],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
@@ -205,7 +205,8 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': False,
-              'src': ['test/core/end2end/end2end_nosec_tests.c'] + [
+              'src': ['test/core/end2end/end2end_nosec_tests.c',
+                      'test/core/end2end/end2end_test_utils.c'] + [
                   'test/core/end2end/tests/%s.c' % t
                   for t in sorted(END2END_TESTS.keys())
                   if not END2END_TESTS[t].secure],

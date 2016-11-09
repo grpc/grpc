@@ -44,6 +44,7 @@
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/env.h"
 
 typedef struct http_connect_handshaker {
@@ -72,7 +73,8 @@ typedef struct http_connect_handshaker {
 } http_connect_handshaker;
 
 // Unref and clean up handshaker.
-static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
+static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
+                                          http_connect_handshaker* handshaker) {
   if (gpr_unref(&handshaker->refcount)) {
     gpr_free(handshaker->proxy_server);
     gpr_free(handshaker->server_name);
@@ -89,7 +91,7 @@ static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled.
     grpc_endpoint_shutdown(exec_ctx, handshaker->endpoint);
   }
-  http_connect_handshaker_unref(handshaker);
+  http_connect_handshaker_unref(exec_ctx, handshaker);
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
@@ -159,7 +161,8 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // complete (e.g., handling chunked transfer encoding or looking
   // at the Content-Length: header).
   if (handshaker->http_parser.state != GRPC_HTTP_BODY) {
-    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, handshaker->read_buffer);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                               handshaker->read_buffer);
     grpc_endpoint_read(exec_ctx, handshaker->endpoint, handshaker->read_buffer,
                        &handshaker->response_read_closure);
     return;
@@ -186,7 +189,7 @@ done:
 static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                                             grpc_handshaker* handshaker_in) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
-  http_connect_handshaker_unref(handshaker);
+  http_connect_handshaker_unref(exec_ctx, handshaker);
 }
 
 static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,

@@ -107,6 +107,7 @@ static void test_create_channel_stack(void) {
       channel_init_func,
       channel_destroy_func,
       get_peer,
+      grpc_channel_next_get_info,
       "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;

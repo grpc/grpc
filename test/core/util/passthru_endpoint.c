@@ -38,6 +38,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 typedef struct passthru_endpoint passthru_endpoint;
 
 typedef struct {
@@ -46,7 +48,7 @@ typedef struct {
   grpc_slice_buffer read_buffer;
   grpc_slice_buffer *on_read_out;
   grpc_closure *on_read;
-  grpc_resource_user resource_user;
+  grpc_resource_user *resource_user;
 } half;
 
 struct passthru_endpoint {
@@ -123,10 +125,10 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);
+  grpc_resource_user_shutdown(exec_ctx, m->resource_user);
 }
 
-static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
-                              grpc_error *error) {
+static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   passthru_endpoint *p = ((half *)ep)->parent;
   gpr_mu_lock(&p->mu);
   if (0 == --p->halves) {
@@ -134,16 +136,12 @@ static void me_really_destroy(grpc_exec_ctx *exec_ctx, void *ep,
     gpr_mu_destroy(&p->mu);
     grpc_slice_buffer_destroy_internal(exec_ctx, &p->client.read_buffer);
     grpc_slice_buffer_destroy_internal(exec_ctx, &p->server.read_buffer);
+    grpc_resource_user_unref(exec_ctx, p->client.resource_user);
+    grpc_resource_user_unref(exec_ctx, p->server.resource_user);
     gpr_free(p);
   } else {
     gpr_mu_unlock(&p->mu);
   }
-}
-
-static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
-  half *m = (half *)ep;
-  grpc_resource_user_shutdown(exec_ctx, &m->resource_user,
-                              grpc_closure_create(me_really_destroy, m));
 }
 
 static char *me_get_peer(grpc_endpoint *ep) {
@@ -154,7 +152,7 @@ static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
 static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
   half *m = (half *)ep;
-  return &m->resource_user;
+  return m->resource_user;
 }
 
 static const grpc_endpoint_vtable vtable = {
@@ -179,7 +177,7 @@ static void half_init(half *m, passthru_endpoint *parent,
   char *name;
   gpr_asprintf(&name, "passthru_endpoint_%s_%" PRIxPTR, half_name,
                (intptr_t)parent);
-  grpc_resource_user_init(&m->resource_user, resource_quota, name);
+  m->resource_user = grpc_resource_user_create(resource_quota, name);
   gpr_free(name);
 }
 
