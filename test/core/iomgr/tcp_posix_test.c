@@ -50,6 +50,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -212,7 +214,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(exec_ctx, &state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_endpoint_destroy(&exec_ctx, ep);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -263,7 +265,7 @@ static void large_read_test(size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(exec_ctx, &state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_endpoint_destroy(&exec_ctx, ep);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -404,7 +406,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   }
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(exec_ctx, &outgoing);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);
   grpc_endpoint_destroy(&exec_ctx, ep);
   gpr_free(slices);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -472,7 +474,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(exec_ctx, &state.incoming);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &state.incoming);
   grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
   grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(g_mu);

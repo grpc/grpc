@@ -744,7 +744,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args *args = read_args(&inp);
           g_channel = grpc_insecure_channel_create(target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           gpr_free(target_uri);
           gpr_free(target);
         } else {
@@ -768,7 +772,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args *args = read_args(&inp);
           g_server = grpc_server_create(args, NULL);
           GPR_ASSERT(g_server != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           grpc_server_register_completion_queue(g_server, cq, NULL);
           grpc_server_start(g_server);
           server_shutdown = false;
@@ -1104,7 +1112,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_credentials *creds = read_channel_creds(&inp);
           g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
-          grpc_channel_args_destroy(args);
+          {
+            grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+            grpc_channel_args_destroy(&exec_ctx, args);
+            grpc_exec_ctx_finish(&exec_ctx);
+          }
           gpr_free(target_uri);
           gpr_free(target);
           grpc_channel_credentials_release(creds);
