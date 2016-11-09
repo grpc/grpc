@@ -110,7 +110,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
@@ -283,6 +284,7 @@ static const grpc_channel_filter test_client_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "client_filter_latency"};
 
 static const grpc_channel_filter test_server_filter = {
@@ -296,6 +298,7 @@ static const grpc_channel_filter test_server_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "server_filter_latency"};
 
 /*******************************************************************************
