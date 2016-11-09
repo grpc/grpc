@@ -116,6 +116,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/string.h"
@@ -975,7 +976,7 @@ static void lb_call_init(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy) {
   grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
   glb_policy->lb_request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref_internal(exec_ctx, request_payload_slice);
   grpc_grpclb_request_destroy(request);
 
   glb_policy->lb_call_status_details = NULL;
@@ -1093,7 +1094,7 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_grpclb_response_parse_serverlist(response_slice);
     if (serverlist != NULL) {
       GPR_ASSERT(glb_policy->lb_call != NULL);
-      grpc_slice_unref(response_slice);
+      grpc_slice_unref_internal(exec_ctx, response_slice);
       if (grpc_lb_glb_trace) {
         gpr_log(GPR_INFO, "Serverlist with %lu servers received",
                 (unsigned long)serverlist->num_servers);
@@ -1136,7 +1137,7 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
     } else { /* serverlist == NULL */
       gpr_log(GPR_ERROR, "Invalid LB response received: '%s'. Ignoring.",
               grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
-      grpc_slice_unref(response_slice);
+      grpc_slice_unref_internal(exec_ctx, response_slice);
     }
 
     if (!glb_policy->shutting_down) {
