@@ -228,6 +228,10 @@ static char *roots_filename;
 
 // TODO(mxyan): Use NSStringFromSelector(_cmd) to acquire test name from the
 // test case method name, so that bodies of test cases can stay identical
+- (void)testAuthorityNotSupported {
+  [self testIndividualCase:"authority_not_supported"];
+}
+
 - (void)testBadHostname {
   [self testIndividualCase:"bad_hostname"];
 }
