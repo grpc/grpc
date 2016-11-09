@@ -141,6 +141,15 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              extra_args=extra_args,
                              inner_jobs=inner_jobs)
 
+  for compiler in ['python3.6', 'python3.4']:
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                compiler=compiler,
+                                labels=['basictests'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
+
   # supported on linux and mac.
   test_jobs += _generate_jobs(languages=['c++', 'ruby', 'php'],
                               configs=['dbg', 'opt'],
@@ -252,7 +261,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               arch='default',
-                              compiler='python3.4',
+                              compiler='python3.5',
                               labels=['portability'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
