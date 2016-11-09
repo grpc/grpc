@@ -45,9 +45,9 @@ typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver);
 
-/* Returns a pointer of ares_channel. This channel is owned by \a ev_driver. To
-   bind a c-ares query to\a ev_driver, use this channel as the arg of the query.
-   */
+/* Returns the ares_channel owned by \a ev_driver. To bind a c-ares query to
+   \a ev_driver, use the ares_channel owned by \a ev_driver as the arg of the
+   query. */
 void *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver);
 
 /* Creates a new grpc_ares_ev_driver. Returns GRPC_ERROR_NONE if \a ev_driver is
@@ -55,9 +55,9 @@ void *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver);
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set);
 
-/* Destroys \a ev_driver asynchronously. Pending lookups lookups made on this
-   ev_driver will be cancelled and their on done callbacks will be invoked with
-   a status of ARES_ECANCELLED. */
+/* Destroys \a ev_driver asynchronously. Pending lookups made on \a ev_driver
+   will be cancelled and their on_done callbacks will be invoked with a status
+   of ARES_ECANCELLED. */
 void grpc_ares_ev_driver_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_ares_ev_driver *ev_driver);
 

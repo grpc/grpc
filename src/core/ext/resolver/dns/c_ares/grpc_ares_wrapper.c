@@ -61,27 +61,22 @@ static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 
 typedef struct grpc_ares_request {
-  /** host to resolve, parsed from the name to resolve, set in
-      grpc_resolve_address_ares_impl */
+  /** following members are set in grpc_resolve_address_ares_impl */
+  /** host to resolve, parsed from the name to resolve */
   char *host;
-  /** port to fill in sockaddr_in, parsed from the name to resolve, set in
-      grpc_resolve_address_ares_impl */
+  /** port to fill in sockaddr_in, parsed from the name to resolve */
   char *port;
-  /** default port to use, set in grpc_resolve_address_ares_impl */
+  /** default port to use */
   char *default_port;
-  /** closure to call when the request completes, set in
-      grpc_resolve_address_ares_impl */
+  /** closure to call when the request completes */
   grpc_closure *on_done;
-  /** the pointer to receive the resolved addresses, set in
-      grpc_resolve_address_ares_impl */
+  /** the pointer to receive the resolved addresses */
   grpc_resolved_addresses **addrs_out;
-  /** the evernt driver used by this request, set in
-      grpc_resolve_address_ares_impl */
+  /** the evernt driver used by this request */
   grpc_ares_ev_driver *ev_driver;
-  /** the closure wraps request_resolving_address, initialized in
-      grpc_resolve_address_ares_impl */
+  /** the closure wraps request_resolving_address */
   grpc_closure request_closure;
-  /** number of ongoing queries, set in grpc_resolve_address_ares_impl */
+  /** number of ongoing queries */
   gpr_refcount pending_queries;
 
   /** mutex guarding the rest of the state */
@@ -94,10 +89,17 @@ typedef struct grpc_ares_request {
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
-static void destroy_request(grpc_ares_request *request) {
-  gpr_free(request->host);
-  gpr_free(request->port);
-  gpr_free(request->default_port);
+static void ares_request_unref(grpc_ares_request *r) {
+  if (gpr_unref(&r->pending_queries)) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_destroy(&r->mu);
+    gpr_free(r->host);
+    gpr_free(r->port);
+    gpr_free(r->default_port);
+    gpr_free(r);
+  }
 }
 
 static uint16_t strhtons(const char *port) {
@@ -178,14 +180,7 @@ static void on_done_cb(void *arg, int status, int timeouts,
     }
   }
   gpr_mu_unlock(&r->mu);
-  if (gpr_unref(&r->pending_queries)) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
-    grpc_exec_ctx_flush(&exec_ctx);
-    grpc_exec_ctx_finish(&exec_ctx);
-    destroy_request(r);
-    gpr_free(r);
-  }
+  ares_request_unref(r);
 }
 
 static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
@@ -203,47 +198,12 @@ static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_ares_ev_driver_start(exec_ctx, ev_driver);
 }
 
-static int try_sockaddr_resolve(const char *name, const char *port,
-                                grpc_resolved_addresses **addresses) {
-  struct sockaddr_in sa;
-  struct sockaddr_in6 sa6;
-  memset(&sa, 0, sizeof(struct sockaddr_in));
-  memset(&sa6, 0, sizeof(struct sockaddr_in6));
-  if (0 != ares_inet_pton(AF_INET, name, &(sa.sin_addr))) {
-    *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-    (*addresses)->naddrs = 1;
-    (*addresses)->addrs =
-        gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
-    (*addresses)->addrs[0].len = sizeof(struct sockaddr_in);
-    sa.sin_family = AF_INET;
-    sa.sin_port = strhtons(port);
-    memcpy(&(*addresses)->addrs[0].addr, &sa, sizeof(struct sockaddr_in));
-    return 1;
-  }
-  if (0 != ares_inet_pton(AF_INET6, name, &(sa6.sin6_addr))) {
-    *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
-    (*addresses)->naddrs = 1;
-    (*addresses)->addrs =
-        gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
-    (*addresses)->addrs[0].len = sizeof(struct sockaddr_in6);
-    sa6.sin6_family = AF_INET6;
-    sa6.sin6_port = strhtons(port);
-    memcpy(&(*addresses)->addrs[0].addr, &sa6, sizeof(struct sockaddr_in6));
-    return 1;
-  }
-  return 0;
-}
-
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
                                     grpc_ares_ev_driver *ev_driver,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
-  char *host;
-  char *port;
   grpc_error *err;
-  grpc_ares_request *r = NULL;
-
   if (grpc_customized_resolve_address(name, default_port, addrs, &err) != 0) {
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
     return;
@@ -252,40 +212,39 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   err = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
+  char *host;
+  char *port;
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {
     err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
                              GRPC_ERROR_STR_TARGET_ADDRESS, name);
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-    goto done;
+    goto error_cleanup;
   } else if (port == NULL) {
     if (default_port == NULL) {
       err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
                                GRPC_ERROR_STR_TARGET_ADDRESS, name);
       grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-      goto done;
+      goto error_cleanup;
     }
     port = gpr_strdup(default_port);
   }
 
-  if (try_sockaddr_resolve(host, port, addrs)) {
-    grpc_exec_ctx_sched(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
-  } else {
-    r = gpr_malloc(sizeof(grpc_ares_request));
-    gpr_mu_init(&r->mu);
-    r->ev_driver = ev_driver;
-    r->on_done = on_done;
-    r->addrs_out = addrs;
-    r->default_port = gpr_strdup(default_port);
-    r->port = gpr_strdup(port);
-    r->host = gpr_strdup(host);
-    r->success = false;
-    r->error = GRPC_ERROR_NONE;
-    grpc_closure_init(&r->request_closure, request_resolving_address, r);
-    grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
-  }
+  grpc_ares_request *r = gpr_malloc(sizeof(grpc_ares_request));
+  gpr_mu_init(&r->mu);
+  r->ev_driver = ev_driver;
+  r->on_done = on_done;
+  r->addrs_out = addrs;
+  r->default_port = gpr_strdup(default_port);
+  r->port = port;
+  r->host = host;
+  r->success = false;
+  r->error = GRPC_ERROR_NONE;
+  grpc_closure_init(&r->request_closure, request_resolving_address, r);
+  grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
+  return;
 
-done:
+error_cleanup:
   gpr_free(host);
   gpr_free(port);
 }

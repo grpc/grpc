@@ -58,8 +58,7 @@ grpc_error *grpc_ares_init(void);
 
 /* Uninitialized gRPC ares wrapper. If there was more than one previous call to
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
-   it is the call matching the call to grpc_ares_init() which initialized the
-   wrapper. */
+   it has been called the same number of times as grpc_ares_init(). */
 void grpc_ares_cleanup(void);
 
 #endif /* GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H */

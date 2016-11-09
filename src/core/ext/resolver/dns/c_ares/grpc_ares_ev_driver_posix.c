@@ -32,8 +32,7 @@
  */
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/iomgr/port.h"
-#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
-#ifdef GRPC_POSIX_SOCKET
+#if !defined(GRPC_NATIVE_ADDRESS_RESOLVE) && defined(GRPC_POSIX_SOCKET)
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
@@ -154,7 +153,7 @@ static void grpc_ares_ev_driver_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
 
 void grpc_ares_ev_driver_destroy(grpc_exec_ctx *exec_ctx,
                                  grpc_ares_ev_driver *ev_driver) {
-  // Shutdowe all the working fds, invoke their resgistered on_readable_cb and
+  // Shutdown all the working fds, invoke their registered on_readable_cb and
   // on_writable_cb.
   gpr_mu_lock(&ev_driver->mu);
   fd_node *fdn;
@@ -172,16 +171,13 @@ void grpc_ares_ev_driver_destroy(grpc_exec_ctx *exec_ctx,
 
 // Search fd in the fd_node list head. This is an O(n) search, the max possible
 // value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
-static fd_node *get_fd(fd_node **head, int fd) {
+static fd_node *pop_fd_node(fd_node **head, int fd) {
   fd_node dummy_head;
-  fd_node *node;
-  fd_node *ret;
-
   dummy_head.next = *head;
-  node = &dummy_head;
+  fd_node *node = &dummy_head;
   while (node->next != NULL) {
     if (grpc_fd_wrapped_fd(node->next->grpc_fd) == fd) {
-      ret = node->next;
+      fd_node *ret = node->next;
       node->next = node->next->next;
       *head = dummy_head.next;
       return ret;
@@ -206,7 +202,7 @@ static void on_readable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
-    // by the following ares_canncel() and the on done callbacks will be invoked
+    // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
     // ev_driver will be cleaned up in the follwing
     // grpc_ares_notify_on_event_locked().
@@ -233,7 +229,7 @@ static void on_writable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
-    // by the following ares_canncel() and the on done callbacks will be invoked
+    // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
     // ev_driver will be cleaned up in the follwing
     // grpc_ares_notify_on_event_locked().
@@ -254,15 +250,13 @@ void *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
 static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
                                              grpc_ares_ev_driver *ev_driver) {
   fd_node *new_list = NULL;
-  gpr_log(GPR_DEBUG, "notify_on_event\n");
   ares_socket_t socks[ARES_GETSOCK_MAXNUM];
   int socks_bitmask =
       ares_getsock(ev_driver->channel, socks, ARES_GETSOCK_MAXNUM);
-  size_t i;
-  for (i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
+  for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
     if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
         ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
-      fd_node *fdn = get_fd(&ev_driver->fds, socks[i]);
+      fd_node *fdn = pop_fd_node(&ev_driver->fds, socks[i]);
       // Create a new fd_node if sock[i] is not in the fd_node list.
       if (fdn == NULL) {
         char *fd_name;
@@ -306,6 +300,9 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
       gpr_mu_unlock(&fdn->mu);
     }
   }
+  // Any remaining fds in ev_driver->fds was not returned by ares_getsock() and
+  // is therefore no longer in use, so they can be shut donw and removed from
+  // the list.
   while (ev_driver->fds != NULL) {
     fd_node *cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
@@ -314,7 +311,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
   }
   ev_driver->fds = new_list;
   // If the ev driver has no working fd, all the tasks are done.
-  if (!new_list) {
+  if (new_list == NULL) {
     ev_driver->working = false;
     gpr_log(GPR_DEBUG, "ev driver stop working");
   }
@@ -323,14 +320,11 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
 void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver) {
   gpr_mu_lock(&ev_driver->mu);
-  if (ev_driver->working) {
-    gpr_mu_unlock(&ev_driver->mu);
-    return;
+  if (!ev_driver->working) {
+    ev_driver->working = true;
+    grpc_ares_notify_on_event_locked(exec_ctx, ev_driver);
   }
-  ev_driver->working = true;
-  grpc_ares_notify_on_event_locked(exec_ctx, ev_driver);
   gpr_mu_unlock(&ev_driver->mu);
 }
 
-#endif /* GRPC_POSIX_SOCKET */
-#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
+#endif /* !GRPC_NATIVE_ADDRESS_RESOLVE && GRPC_POSIX_SOCKET */
