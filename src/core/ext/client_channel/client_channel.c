@@ -144,6 +144,8 @@ typedef struct client_channel_channel_data {
   /** currently active load balancer */
   char *lb_policy_name;
   grpc_lb_policy *lb_policy;
+  /** service config in JSON form */
+  char *service_config_json;
   /** maps method names to method_parameters structs */
   grpc_mdstr_hash_table *method_params_table;
   /** incoming resolver result - set by resolver.next() */
@@ -250,6 +252,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
+  char *service_config_json = NULL;
 
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
@@ -305,8 +308,9 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
     if (channel_arg != NULL) {
       GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+      service_config_json = gpr_strdup(channel_arg->value.string);
       grpc_service_config *service_config =
-          grpc_service_config_create(channel_arg->value.string);
+          grpc_service_config_create(service_config_json);
       if (service_config != NULL) {
         method_params_table = grpc_service_config_create_method_config_table(
             service_config, method_parameters_create_from_json,
@@ -334,6 +338,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
+  if (service_config_json != NULL) {
+    gpr_free(chand->service_config_json);
+    chand->service_config_json = service_config_json;
+  }
   if (chand->method_params_table != NULL) {
     grpc_mdstr_hash_table_unref(chand->method_params_table);
   }
@@ -469,6 +477,11 @@ static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
                                 ? NULL
                                 : gpr_strdup(chand->lb_policy_name);
   }
+  if (info->service_config_json != NULL) {
+    *info->service_config_json = chand->service_config_json == NULL
+                                     ? NULL
+                                     : gpr_strdup(chand->service_config_json);
+  }
   gpr_mu_unlock(&chand->mu);
 }
 
@@ -512,6 +525,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
   gpr_free(chand->lb_policy_name);
+  gpr_free(chand->service_config_json);
   if (chand->method_params_table != NULL) {
     grpc_mdstr_hash_table_unref(chand->method_params_table);
   }
