@@ -125,7 +125,8 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['summary'].pop('serverCpuUsage', None)
   scenario_result['summary'].pop('successfulRequestsPerSecond', None)
   scenario_result['summary'].pop('failedRequestsPerSecond', None)
-
+  scenario_result['stats'].pop('totalCpuTime', None)
+  scenario_result['stats'].pop('idleCpuTime', None)
 
 def _populate_metadata_inplace(scenario_result):
   """Populates metadata based on environment variables set by Jenkins."""
