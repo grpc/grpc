@@ -324,7 +324,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
   call_data *calld = elem->call_data;
-  grpc_slice_buffer_destroy(&calld->read_slice_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &calld->read_slice_buffer);
 }
 
 /* Constructor for channel_data */
