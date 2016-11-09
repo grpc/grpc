@@ -44,6 +44,7 @@
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
@@ -67,8 +68,14 @@ typedef struct {
   /** the event driver to drive the lookups */
   grpc_ares_ev_driver *ev_driver;
 
-  /** mutex guarding the rest of the state */
-  gpr_mu mu;
+  /** Closures used by the combiner */
+  grpc_closure dns_ares_shutdown_locked;
+  grpc_closure dns_ares_channel_saw_error_locked;
+  grpc_closure dns_ares_on_retry_timer_locked;
+  grpc_closure dns_ares_on_resolved_locked;
+
+  /** Combiner guarding the rest of the state */
+  grpc_combiner *lock;
   /** are we currently resolving? */
   bool resolving;
   /** which version of the result have we published? */
@@ -109,10 +116,10 @@ static const grpc_resolver_vtable dns_ares_resolver_vtable = {
     dns_ares_destroy, dns_ares_shutdown, dns_ares_channel_saw_error,
     dns_ares_next};
 
-static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx,
-                              grpc_resolver *resolver) {
-  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
+static void dns_ares_shutdown_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                     grpc_error *error) {
+  ares_dns_resolver *r = arg;
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (r->have_retry_timer) {
     grpc_timer_cancel(exec_ctx, &r->retry_timer);
   }
@@ -122,39 +129,60 @@ static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx,
                         GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
     r->next_completion = NULL;
   }
-  gpr_mu_unlock(&r->mu);
+  GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "dns-ares-shutdown");
+}
+
+static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx,
+                              grpc_resolver *resolver) {
+  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
+  GRPC_RESOLVER_REF(&r->base, "dns-ares-shutdown");
+  grpc_combiner_execute(exec_ctx, r->lock, &r->dns_ares_shutdown_locked,
+                        GRPC_ERROR_NONE, false);
+}
+
+static void dns_ares_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
+                                              void *arg, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  ares_dns_resolver *r = arg;
+  if (!r->resolving) {
+    gpr_backoff_reset(&r->backoff_state);
+    dns_ares_start_resolving_locked(exec_ctx, r);
+  }
+  GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "ares-channel-saw-error");
 }
 
 static void dns_ares_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *resolver) {
   ares_dns_resolver *r = (ares_dns_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
-  if (!r->resolving) {
-    gpr_backoff_reset(&r->backoff_state);
-    dns_ares_start_resolving_locked(exec_ctx, r);
-  }
-  gpr_mu_unlock(&r->mu);
+  GRPC_RESOLVER_REF(&r->base, "ares-channel-saw-error");
+  grpc_combiner_execute(exec_ctx, r->lock,
+                        &r->dns_ares_channel_saw_error_locked, GRPC_ERROR_NONE,
+                        false);
 }
 
-static void dns_ares_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
-                                    grpc_error *error) {
+static void dns_ares_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                           grpc_error *error) {
   ares_dns_resolver *r = arg;
-  gpr_mu_lock(&r->mu);
   r->have_retry_timer = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
       dns_ares_start_resolving_locked(exec_ctx, r);
     }
   }
-  gpr_mu_unlock(&r->mu);
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "retry-timer");
 }
 
-static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
-                                 grpc_error *error) {
+static void dns_ares_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
+                                    grpc_error *error) {
+  ares_dns_resolver *r = arg;
+  grpc_combiner_execute(exec_ctx, r->lock, &r->dns_ares_on_retry_timer_locked,
+                        GRPC_ERROR_REF(error), false);
+}
+
+static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   ares_dns_resolver *r = arg;
   grpc_channel_args *result = NULL;
-  gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
   r->resolving = false;
   if (r->addresses != NULL) {
@@ -171,16 +199,16 @@ static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_resolved_addresses_destroy(r->addresses);
     grpc_lb_addresses_destroy(addresses);
   } else {
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
-    gpr_timespec timeout = gpr_time_sub(next_try, now);
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     grpc_error_free_string(msg);
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
+    gpr_timespec timeout = gpr_time_sub(next_try, now);
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
-    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) <= 0) {
+    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRId64 ".%09d seconds", timeout.tv_sec,
               timeout.tv_nsec);
     } else {
@@ -195,33 +223,54 @@ static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   r->resolved_result = result;
   r->resolved_version++;
   dns_ares_maybe_finish_next_locked(exec_ctx, r);
-  gpr_mu_unlock(&r->mu);
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "dns-resolving");
+}
+
+static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  ares_dns_resolver *r = arg;
+  grpc_combiner_execute(exec_ctx, r->lock, &r->dns_ares_on_resolved_locked,
+                        GRPC_ERROR_REF(error), false);
+}
+
+typedef struct dns_ares_next_locked_args {
+  grpc_resolver *resolver;
+  grpc_channel_args **target_result;
+  grpc_closure *on_complete;
+} dns_ares_next_locked_args;
+
+static void dns_ares_next_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  dns_ares_next_locked_args *args = arg;
+  ares_dns_resolver *r = (ares_dns_resolver *)args->resolver;
+  gpr_log(GPR_DEBUG, "dns_ares_next is called.");
+  GPR_ASSERT(!r->next_completion);
+  r->next_completion = args->on_complete;
+  r->target_result = args->target_result;
+  gpr_free(arg);
+  if (r->resolved_version == 0 && !r->resolving) {
+    gpr_backoff_reset(&r->backoff_state);
+    dns_ares_start_resolving_locked(exec_ctx, r);
+  } else {
+    dns_ares_maybe_finish_next_locked(exec_ctx, r);
+  }
+  GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "ares-next");
 }
 
 static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                           grpc_channel_args **target_result,
                           grpc_closure *on_complete) {
   ares_dns_resolver *r = (ares_dns_resolver *)resolver;
-  gpr_mu_lock(&r->mu);
-  gpr_log(GPR_DEBUG, "dns_ares_next is called.");
-  GPR_ASSERT(!r->next_completion);
-  r->next_completion = on_complete;
-  r->target_result = target_result;
-  if (r->resolved_version == 0 && !r->resolving) {
-    gpr_backoff_reset(&r->backoff_state);
-    dns_ares_start_resolving_locked(exec_ctx, r);
-    // GRPC_RESOLVER_REF(&r->base, "dns-resolving");
-    // GPR_ASSERT(!r->resolving);
-    // r->resolving = true;
-    // r->addresses = NULL;
-    // grpc_resolve_address_ares(
-    //     exec_ctx, r->name_to_resolve, r->default_port, r->ev_driver,
-    //     grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);
-  } else {
-    dns_ares_maybe_finish_next_locked(exec_ctx, r);
-  }
-  gpr_mu_unlock(&r->mu);
+  dns_ares_next_locked_args *args =
+      gpr_malloc(sizeof(dns_ares_next_locked_args));
+  args->target_result = target_result;
+  args->on_complete = on_complete;
+  args->resolver = resolver;
+  GRPC_RESOLVER_REF(resolver, "ares-next");
+  grpc_combiner_execute(exec_ctx, r->lock,
+                        grpc_closure_create(dns_ares_next_locked, args),
+                        GRPC_ERROR_NONE, false);
 }
 
 static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
@@ -252,7 +301,7 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
   grpc_ares_ev_driver_destroy(exec_ctx, r->ev_driver);
-  gpr_mu_destroy(&r->mu);
+  grpc_combiner_destroy(exec_ctx, r->lock);
   grpc_ares_cleanup();
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(r->resolved_result);
@@ -296,7 +345,7 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
     gpr_free(r);
     return NULL;
   }
-  gpr_mu_init(&r->mu);
+  r->lock = grpc_combiner_create(NULL);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
   grpc_arg server_name_arg;
@@ -307,6 +356,13 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
       grpc_channel_args_copy_and_add(args->args, &server_name_arg, 1);
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
+  grpc_closure_init(&r->dns_ares_shutdown_locked, dns_ares_shutdown_locked, r);
+  grpc_closure_init(&r->dns_ares_channel_saw_error_locked,
+                    dns_ares_channel_saw_error_locked, r);
+  grpc_closure_init(&r->dns_ares_on_retry_timer_locked,
+                    dns_ares_on_retry_timer_locked, r);
+  grpc_closure_init(&r->dns_ares_on_resolved_locked,
+                    dns_ares_on_resolved_locked, r);
   return &r->base;
 }
 
