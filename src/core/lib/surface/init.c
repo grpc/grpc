@@ -240,7 +240,7 @@ void grpc_shutdown(void) {
       }
     }
     grpc_mdctx_global_shutdown(&exec_ctx);
-    grpc_slice_intern_shutdown(&exec_ctx);
+    grpc_slice_intern_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
   grpc_exec_ctx_finish(&exec_ctx);

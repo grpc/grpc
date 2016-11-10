@@ -432,6 +432,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.c" role="src" />

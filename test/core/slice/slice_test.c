@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
@@ -249,6 +250,26 @@ static void test_slice_from_copied_string_works(void) {
   grpc_slice_unref(slice);
 }
 
+static void test_slice_interning(void) {
+  LOG_TEST_NAME("test_slice_interning");
+
+  grpc_init();
+  grpc_slice src1 = grpc_slice_from_copied_string("hello");
+  grpc_slice src2 = grpc_slice_from_copied_string("hello");
+  GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+  grpc_slice interned1 = grpc_slice_intern(src1);
+  grpc_slice interned2 = grpc_slice_intern(src2);
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
+             GRPC_SLICE_START_PTR(interned2));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) != GRPC_SLICE_START_PTR(src1));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned2) != GRPC_SLICE_START_PTR(src2));
+  grpc_slice_unref(src1);
+  grpc_slice_unref(src2);
+  grpc_slice_unref(interned1);
+  grpc_slice_unref(interned2);
+  grpc_shutdown();
+}
+
 int main(int argc, char **argv) {
   unsigned length;
   grpc_test_init(argc, argv);
@@ -262,5 +283,6 @@ int main(int argc, char **argv) {
     test_slice_split_tail_works(length);
   }
   test_slice_from_copied_string_works();
+  test_slice_interning();
   return 0;
 }

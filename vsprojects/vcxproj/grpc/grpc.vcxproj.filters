@@ -250,6 +250,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_intern.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
       <Filter>src\core\lib\slice</Filter>
     </ClCompile>

@@ -488,6 +488,9 @@ extern grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
 typedef grpc_slice(*grpc_slice_malloc_type)(size_t length);
 extern grpc_slice_malloc_type grpc_slice_malloc_import;
 #define grpc_slice_malloc grpc_slice_malloc_import
+typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
+extern grpc_slice_intern_type grpc_slice_intern_import;
+#define grpc_slice_intern grpc_slice_intern_import
 typedef grpc_slice(*grpc_slice_from_copied_string_type)(const char *source);
 extern grpc_slice_from_copied_string_type grpc_slice_from_copied_string_import;
 #define grpc_slice_from_copied_string grpc_slice_from_copied_string_import

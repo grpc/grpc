@@ -137,9 +137,8 @@ static grpc_slice materialize(interned_slice_refcount *s) {
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
   interned_slice_refcount *s;
-  uint32_t hash =
-      gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice),
-                       g_forced_hash_seed);
+  uint32_t hash = gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice),
+                                   GRPC_SLICE_LENGTH(slice), g_hash_seed);
   slice_shard *shard = &g_shards[SHARD_IDX(hash)];
 
   gpr_mu_lock(&shard->mu);
@@ -147,7 +146,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   /* search for an existing string */
   size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
-    if (s->hash == hash && grpc_slice_cmp(slice, materialize(s))) {
+    if (s->hash == hash && grpc_slice_cmp(slice, materialize(s)) == 0) {
       if (gpr_atm_no_barrier_fetch_add(&s->refcnt, 1) == 0) {
         /* If we get here, we've added a ref to something that was about to
          * die - drop it immediately.
