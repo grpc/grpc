@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/iomgr/sockaddr.h"
 
 typedef struct grpc_mock_endpoint {
   grpc_endpoint base;
@@ -105,6 +106,8 @@ static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
   return m->resource_user;
 }
 
+static int me_get_fd(grpc_endpoint *ep) { return -1; }
+
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
 static const grpc_endpoint_vtable vtable = {
@@ -117,6 +120,7 @@ static const grpc_endpoint_vtable vtable = {
     me_destroy,
     me_get_resource_user,
     me_get_peer,
+    me_get_fd,
 };
 
 grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),

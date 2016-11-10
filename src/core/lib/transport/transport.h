@@ -37,6 +37,7 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -294,6 +295,10 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 /* Get the transports peer */
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
                               grpc_transport *transport);
+
+/* Get the endpoint used by \a transport */
+grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
+                                           grpc_transport *transport);
 
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
