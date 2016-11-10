@@ -642,6 +642,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_intern.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">

@@ -157,6 +157,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/slice/percent_encoding.c',
   'src/core/lib/slice/slice.c',
   'src/core/lib/slice/slice_buffer.c',
+  'src/core/lib/slice/slice_intern.c',
   'src/core/lib/slice/slice_string_helpers.c',
   'src/core/lib/surface/alarm.c',
   'src/core/lib/surface/api_trace.c',

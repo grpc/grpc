@@ -425,6 +425,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/percent_encoding.c )
   s.files += %w( src/core/lib/slice/slice.c )
   s.files += %w( src/core/lib/slice/slice_buffer.c )
+  s.files += %w( src/core/lib/slice/slice_intern.c )
   s.files += %w( src/core/lib/slice/slice_string_helpers.c )
   s.files += %w( src/core/lib/surface/alarm.c )
   s.files += %w( src/core/lib/surface/api_trace.c )

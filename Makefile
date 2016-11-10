@@ -2698,6 +2698,7 @@ LIBGRPC_SRC = \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_intern.c \
     src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
@@ -2995,6 +2996,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_intern.c \
     src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
@@ -3283,6 +3285,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_intern.c \
     src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
@@ -3500,6 +3503,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/percent_encoding.c \
     src/core/lib/slice/slice.c \
     src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_intern.c \
     src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
@@ -6970,6 +6974,7 @@ endif
 LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
     test/core/end2end/end2end_test_utils.c \
+    test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/call_creds.c \
@@ -7015,7 +7020,6 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
-    test/core/end2end/tests/authority_not_supported.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -7056,6 +7060,7 @@ endif
 LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
     test/core/end2end/end2end_test_utils.c \
+    test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/cancel_after_accept.c \
@@ -7100,7 +7105,6 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
-    test/core/end2end/tests/authority_not_supported.c \
 
 PUBLIC_HEADERS_C += \
 

@@ -141,6 +141,7 @@ EXPORTS
     grpc_slice_new_with_user_data
     grpc_slice_new_with_len
     grpc_slice_malloc
+    grpc_slice_intern
     grpc_slice_from_copied_string
     grpc_slice_from_copied_buffer
     grpc_slice_from_static_string
