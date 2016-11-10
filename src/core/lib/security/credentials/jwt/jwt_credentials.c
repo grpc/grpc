@@ -145,31 +145,25 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 }
 
 static char *redact_private_key(const char *json_key) {
-  const char *json_key_end = json_key + strlen(json_key);
-  const char *begin_cue = "BEGIN PRIVATE KEY";
-  const char *end_cue = "END PRIVATE KEY";
-  const char *redacted = " <redacted> ";
-  const char *begin_redact = strstr(json_key, begin_cue);
-  const char *end_redact = strstr(json_key, end_cue);
-  if (!begin_redact) {
-    begin_redact = json_key;
-  } else {
-    begin_redact += strlen(begin_cue);
+  char *json_copy = gpr_strdup(json_key);
+  grpc_json *json = grpc_json_parse_string(json_copy);
+  if (!json) {
+    gpr_free(json_copy);
+    return gpr_strdup("<Json failed to parse.>");
   }
-  if (!end_redact) {
-    end_redact = json_key_end;
+  const char *redacted = "<redacted>";
+  grpc_json *current = json->child;
+  while (current) {
+    if (current->type == GRPC_JSON_STRING &&
+        strcmp(current->key, "private_key") == 0) {
+      current->value = (char *)redacted;
+      break;
+    }
+    current = current->next;
   }
-  GPR_ASSERT(end_redact - begin_redact >= 0);
-  size_t result_length =
-      strlen(json_key) - (size_t)(end_redact - begin_redact) + strlen(redacted);
-  char *clean_json = (char *)gpr_malloc(result_length + 1);
-  clean_json[result_length] = 0;
-  char *current = clean_json;
-  memcpy(current, json_key, (size_t)(begin_redact - json_key));
-  current += (begin_redact - json_key);
-  memcpy(current, redacted, strlen(redacted));
-  current += strlen(redacted);
-  memcpy(current, end_redact, (size_t)(json_key_end - end_redact));
+  char *clean_json = grpc_json_dump_to_string(json, 2);
+  gpr_free(json_copy);
+  grpc_json_destroy(json);
   return clean_json;
 }
 
