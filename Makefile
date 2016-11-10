@@ -411,7 +411,7 @@ DEFINES += _INCLUDE_STDC__SOURCE_199901 _REENTRANT _INCLUDE_XOPEN_SOURCE_EXTENDE
 ARCH_FLAGS += -mlp64 -gdwarf-2
 PROTOBUF_LDFLAGS_EXTRA  += $(ARCH_FLAGS)
 PROTOBUF_CPPFLAGS_EXTRA += $(ARCH_FLAGS) $(addprefix -D, $(DEFINES))
-PROTOBUF_CFLAGS_EXTRA += $(PROTOBUF_CPPFLAGS_EXTRA)
+PROTOBUF_CXXFLAGS_EXTRA += $(PROTOBUF_CPPFLAGS_EXTRA)
 endif
 
 #
@@ -1233,7 +1233,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS_$(CONFIG)) -g $(PROTOBUF_CFLAGS_EXTRA)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS_$(CONFIG)) -g $(PROTOBUF_CXXFLAGS_EXTRA)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
