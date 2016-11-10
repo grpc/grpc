@@ -656,25 +656,23 @@ TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, true));
+    threads.emplace_back(SendRpc, stub_.get(), 10, true);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
 TEST_P(End2endTest, MultipleRpcs) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+    threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
@@ -1058,13 +1056,12 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+    threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
