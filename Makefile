@@ -6856,6 +6856,19 @@ endif
 
 
 LIBGOOGLE_BENCHMARK_SRC = \
+    third_party/google_benchmark/src/benchmark.cc \
+    third_party/google_benchmark/src/benchmark_register.cc \
+    third_party/google_benchmark/src/colorprint.cc \
+    third_party/google_benchmark/src/commandlineflags.cc \
+    third_party/google_benchmark/src/complexity.cc \
+    third_party/google_benchmark/src/console_reporter.cc \
+    third_party/google_benchmark/src/csv_reporter.cc \
+    third_party/google_benchmark/src/json_reporter.cc \
+    third_party/google_benchmark/src/reporter.cc \
+    third_party/google_benchmark/src/sleep.cc \
+    third_party/google_benchmark/src/string_util.cc \
+    third_party/google_benchmark/src/sysinfo.cc \
+    third_party/google_benchmark/src/timers.cc \
 
 PUBLIC_HEADERS_CXX += \
 
