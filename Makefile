@@ -407,6 +407,8 @@ CXX = g++
 LD = g++
 LIBS = pthread dl rt m nsl unwind
 LDFLAGS += -pthread
+DEFINES += _INCLUDE_STDC__SOURCE_199901 _REENTRANT _INCLUDE_XOPEN_SOURCE_EXTENDED              _INCLUDE_HPUX_SOURCE _INCLUDE_XOPEN_SOURCE_520 _INCLUDE_XOPEN_SOURCE_600            _GLIBCXX_USE_C99
+ARCH_FLAGS += -mlp64 -gdwarf2
 endif
 
 #
@@ -2591,7 +2593,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
 else
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.2 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
 endif
@@ -2914,7 +2916,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 endif
@@ -3188,7 +3190,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 endif
@@ -3686,7 +3688,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 endif
@@ -3953,7 +3955,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
 else
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
 endif
@@ -4144,7 +4146,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
 else
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_cronet.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
 endif
@@ -4271,7 +4273,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
 else
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
 endif
@@ -4665,7 +4667,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
 else
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
 endif
@@ -5159,7 +5161,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT_CSHARP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
 ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,+b,$(INSTALL_PREFIX)/lib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
 	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 endif
