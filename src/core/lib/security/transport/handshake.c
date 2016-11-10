@@ -54,6 +54,7 @@ typedef struct {
   size_t handshake_buffer_size;
   grpc_endpoint *wrapped_endpoint;
   grpc_endpoint *secure_endpoint;
+  bool cleanup_endpoints;
   grpc_slice_buffer left_overs;
   grpc_slice_buffer incoming;
   grpc_slice_buffer outgoing;
@@ -100,13 +101,23 @@ static void security_connector_remove_handshake(grpc_security_handshake *h) {
   gpr_mu_unlock(&sc->mu);
 }
 
-static void unref_handshake(grpc_security_handshake *h) {
+static void unref_handshake(grpc_exec_ctx *exec_ctx,
+                            grpc_security_handshake *h) {
   if (gpr_unref(&h->refs)) {
     if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
     if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
     grpc_slice_buffer_destroy(&h->left_overs);
     grpc_slice_buffer_destroy(&h->outgoing);
     grpc_slice_buffer_destroy(&h->incoming);
+
+    if (h->cleanup_endpoints) {
+      if (h->secure_endpoint != NULL) {
+        grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
+        grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
+      } else {
+        grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
+      }
+    }
     GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
     GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
     gpr_free(h);
@@ -128,15 +139,10 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_INFO, "Security handshake failed: %s", msg);
     grpc_error_free_string(msg);
 
-    if (h->secure_endpoint != NULL) {
-      grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
-      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
-    } else {
-      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
-    }
+    h->cleanup_endpoints = true;
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   }
-  unref_handshake(h);
+  unref_handshake(exec_ctx, h);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -319,7 +325,7 @@ static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_shutdown(exec_ctx, h->wrapped_endpoint);
   }
-  unref_handshake(h);
+  unref_handshake(exec_ctx, h);
 }
 
 void grpc_do_security_handshake(
