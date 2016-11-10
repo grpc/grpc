@@ -112,6 +112,7 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
 
             var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { }));
+            // StatusCode.Unknown as the server-side handler throws an exception after not receiving the authorization header.
             Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
         }
 
