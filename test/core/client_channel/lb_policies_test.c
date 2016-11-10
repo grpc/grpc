@@ -554,7 +554,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
   arg_array[0].value.integer = RETRY_TIMEOUT;
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
-  arg_array[1].value.string = "round_robin";
+  arg_array[1].value.string = "ROUND_ROBIN";
   args.num_args = 2;
   args.args = arg_array;
 
@@ -669,7 +669,7 @@ static void test_get_channel_info() {
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVICE_CONFIG;
-  arg.value.string = "{\"lb_policy_name\": \"round_robin\"}";
+  arg.value.string = "{\"loadBalancingPolicy\": \"ROUND_ROBIN\"}";
   grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, NULL);
   grpc_channel_args_destroy(args);
