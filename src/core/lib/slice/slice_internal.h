@@ -46,4 +46,7 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx *exec_ctx,
 void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_slice_buffer *sb);
 
+void grpc_slice_intern_init(void);
+void grpc_slice_intern_shutdown(void);
+
 #endif

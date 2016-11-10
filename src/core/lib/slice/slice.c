@@ -352,6 +352,10 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
 }
 
 int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
+  if (GRPC_SLICE_START_PTR(a) == GRPC_SLICE_START_PTR(b) &&
+      GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b)) {
+    return 0;
+  }
   int d = (int)(GRPC_SLICE_LENGTH(a) - GRPC_SLICE_LENGTH(b));
   if (d != 0) return d;
   return memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
