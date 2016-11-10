@@ -442,7 +442,9 @@ E = @echo
 Q = @
 endif
 
-VERSION = 1.1.0-dev
+CORE_VERSION = 2.0.0-dev
+CPP_VERSION = 1.1.0-dev
+CSHARP_VERSION = 1.1.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -478,20 +480,36 @@ ifeq ($(HAS_PKG_CONFIG), true)
 CACHE_MK += HAS_PKG_CONFIG = true,
 endif
 
-PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CORE_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CORE_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+
+CPP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CPP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+
+CSHARP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CSHARP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
 ifeq ($(SYSTEM),MINGW32)
-SHARED_EXT = dll
+SHARED_EXT_CORE = dll
+SHARED_EXT_CPP = dll
+SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION = -1
+SHARED_VERSION_CORE = -2
+SHARED_VERSION_CPP = -1
+SHARED_VERSION_CSHARP = -1
 else ifeq ($(SYSTEM),Darwin)
-SHARED_EXT = dylib
+SHARED_EXT_CORE = dylib
+SHARED_EXT_CPP = dylib
+SHARED_EXT_CSHARP = dylib
 SHARED_PREFIX = lib
-SHARED_VERSION =
+SHARED_VERSION_CORE =
+SHARED_VERSION_CPP =
+SHARED_VERSION_CSHARP =
 else
-SHARED_EXT = so.$(VERSION)
+SHARED_EXT_CORE = so.$(CORE_VERSION)
+SHARED_EXT_CPP = so.$(CPP_VERSION)
+SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
 SHARED_PREFIX = lib
-SHARED_VERSION =
+SHARED_VERSION_CORE =
+SHARED_VERSION_CPP =
+SHARED_VERSION_CSHARP =
 endif
 
 ifeq ($(wildcard .git),)
@@ -726,7 +744,7 @@ PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
 PC_LIB = -lgrpc
-GRPC_PC_FILE := $(PC_TEMPLATE)
+GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
 
 # grpc_unsecure .pc file
 PC_NAME = gRPC unsecure
@@ -735,7 +753,7 @@ PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
 PC_LIB = -lgrpc
-GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
 
 PROTOBUF_PKG_CONFIG = false
 
@@ -797,7 +815,7 @@ PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
 PC_LIB = -lgrpc++
-GRPCXX_PC_FILE := $(PC_TEMPLATE)
+GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
 
 # grpc++_unsecure .pc file
 PC_NAME = gRPC++ unsecure
@@ -806,7 +824,7 @@ PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
 PC_LIB = -lgrpc++
-GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
@@ -956,9 +974,6 @@ gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
-gpr_percent_encoding_test: $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
-gpr_slice_buffer_test: $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
-gpr_slice_test: $(BINDIR)/$(CONFIG)/gpr_slice_test
 gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
 gpr_string_test: $(BINDIR)/$(CONFIG)/gpr_string_test
 gpr_sync_test: $(BINDIR)/$(CONFIG)/gpr_sync_test
@@ -1015,6 +1030,7 @@ nanopb_fuzzer_serverlist_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
 percent_decode_fuzzer: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer
 percent_encode_fuzzer: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer
+percent_encoding_test: $(BINDIR)/$(CONFIG)/percent_encoding_test
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
 resource_quota_test: $(BINDIR)/$(CONFIG)/resource_quota_test
 secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
@@ -1024,6 +1040,9 @@ server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
 set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
+slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
+slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
+slice_test: $(BINDIR)/$(CONFIG)/slice_test
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
@@ -1046,6 +1065,7 @@ alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
+channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
 client_crash_test: $(BINDIR)/$(CONFIG)/client_crash_test
 client_crash_test_server: $(BINDIR)/$(CONFIG)/client_crash_test_server
@@ -1225,10 +1245,10 @@ static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(L
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)
-shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 
-shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
+shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
 grpc_csharp_ext: shared_csharp
 
 plugins: $(PROTOC_PLUGINS)
@@ -1294,9 +1314,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
-  $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test \
-  $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
-  $(BINDIR)/$(CONFIG)/gpr_slice_test \
   $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
   $(BINDIR)/$(CONFIG)/gpr_string_test \
   $(BINDIR)/$(CONFIG)/gpr_sync_test \
@@ -1341,6 +1358,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
+  $(BINDIR)/$(CONFIG)/percent_encoding_test \
   $(BINDIR)/$(CONFIG)/resolve_address_test \
   $(BINDIR)/$(CONFIG)/resource_quota_test \
   $(BINDIR)/$(CONFIG)/secure_channel_create_test \
@@ -1349,6 +1367,9 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_test \
   $(BINDIR)/$(CONFIG)/set_initial_connect_string_test \
+  $(BINDIR)/$(CONFIG)/slice_buffer_test \
+  $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
+  $(BINDIR)/$(CONFIG)/slice_test \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
@@ -1430,6 +1451,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
+  $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
@@ -1521,6 +1543,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
+  $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
@@ -1652,12 +1675,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_mpscq_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_percent_encoding_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test || ( echo test gpr_percent_encoding_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_slice_buffer_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_slice_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_test || ( echo test gpr_slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_stack_lockfree_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test || ( echo test gpr_stack_lockfree_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
@@ -1732,6 +1749,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/murmur_hash_test || ( echo test murmur_hash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing no_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing percent_encoding_test"
+	$(Q) $(BINDIR)/$(CONFIG)/percent_encoding_test || ( echo test percent_encoding_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_test"
 	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resource_quota_test"
@@ -1748,6 +1767,12 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing set_initial_connect_string_test"
 	$(Q) $(BINDIR)/$(CONFIG)/set_initial_connect_string_test || ( echo test set_initial_connect_string_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_buffer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_buffer_test || ( echo test slice_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_string_helpers_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_string_helpers_test || ( echo test slice_string_helpers_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_test || ( echo test slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_resolver_test || ( echo test sockaddr_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_utils_test"
@@ -1824,6 +1849,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
+	$(E) "[RUN]     Testing channel_filter_test"
+	$(Q) $(BINDIR)/$(CONFIG)/channel_filter_test || ( echo test channel_filter_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cli_call_test || ( echo test cli_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_crash_test"
@@ -1948,32 +1975,32 @@ endif
 
 strip-shared_c: shared_c
 ifeq ($(CONFIG),opt)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 endif
 
 strip-shared_cxx: shared_cxx
 ifeq ($(CONFIG),opt)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 endif
 
 strip-shared_csharp: shared_csharp
 ifeq ($(CONFIG),opt)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
 endif
 
 cache.mk::
@@ -2298,41 +2325,41 @@ install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 
 
 install-shared_c: shared_c strip-shared_c install-pkg-config_c
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT_CORE)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr-imp.a $(prefix)/lib/libgpr-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgpr.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgpr.so
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT_CORE)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc-imp.a $(prefix)/lib/libgrpc-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT_CORE)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_cronet-imp.a $(prefix)/lib/libgrpc_cronet-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_cronet.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_cronet.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT_CORE)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure-imp.a $(prefix)/lib/libgrpc_unsecure-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -2342,41 +2369,41 @@ endif
 
 
 install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT_CPP)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++-imp.a $(prefix)/lib/libgrpc++-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT_CPP)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet-imp.a $(prefix)/lib/libgrpc++_cronet-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_cronet.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_cronet.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT_CPP)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection-imp.a $(prefix)/lib/libgrpc++_reflection-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_reflection.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_reflection.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT_CPP)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure-imp.a $(prefix)/lib/libgrpc++_unsecure-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -2386,14 +2413,14 @@ endif
 
 
 install-shared_csharp: shared_csharp strip-shared_csharp
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)"
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT_CSHARP)
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a $(prefix)/lib/libgrpc_csharp_ext-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -2472,9 +2499,6 @@ LIBGPR_SRC = \
     src/core/lib/support/log_windows.c \
     src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
-    src/core/lib/support/percent_encoding.c \
-    src/core/lib/support/slice.c \
-    src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_hpux.c \
@@ -2515,8 +2539,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
-    include/grpc/support/slice.h \
-    include/grpc/support/slice_buffer.h \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
@@ -2557,26 +2579,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION).$(SHARED_EXT): $(LIBGPR_OBJS)  $(ZLIB_DEP)
+$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared gpr.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared gpr.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).$(SHARED_EXT): $(LIBGPR_OBJS)  $(ZLIB_DEP)
+$(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OBJS)  $(ZLIB_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).so
-else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.1 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION).so
-endif
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.2 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.2
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
 
@@ -2692,6 +2708,10 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -2829,6 +2849,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -2859,7 +2881,7 @@ ifeq ($(NO_SECURE),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc.a: openssl_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): openssl_dep_error
 
 else
 
@@ -2876,26 +2898,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).so
-else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION).so
-endif
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
 
@@ -2990,6 +3006,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3099,6 +3119,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -3129,7 +3151,7 @@ ifeq ($(NO_SECURE),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a: openssl_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): openssl_dep_error
 
 else
 
@@ -3146,26 +3168,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_cronet.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_cronet.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CRONET_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).so
-else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION).so
-endif
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so
 endif
 endif
 
@@ -3279,6 +3295,10 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3316,6 +3336,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -3491,6 +3513,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/slice/percent_encoding.c \
+    src/core/lib/slice/slice.c \
+    src/core/lib/slice/slice_buffer.c \
+    src/core/lib/slice/slice_string_helpers.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3599,6 +3625,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -3634,26 +3662,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a
+$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).so
-else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION).so
-endif
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.2
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
 
@@ -3762,6 +3784,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3876,7 +3899,7 @@ ifeq ($(NO_SECURE),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++.a: openssl_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): openssl_dep_error
 
 else
 
@@ -3886,7 +3909,7 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++.a: protobuf_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): protobuf_dep_error
 
 else
 
@@ -3902,26 +3925,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).so
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION).so
-endif
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP).so
 endif
 endif
 
@@ -3954,6 +3971,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -4068,7 +4086,7 @@ ifeq ($(NO_SECURE),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a: openssl_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): openssl_dep_error
 
 else
 
@@ -4078,7 +4096,7 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a: protobuf_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): protobuf_dep_error
 
 else
 
@@ -4094,26 +4112,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CRONET_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc_cronet.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_CRONET_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/grpc_cronet.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_cronet.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_cronet-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_cronet.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_cronet-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CRONET_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_CRONET_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.$(SHARED_EXT_CORE) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).so
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_cronet.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION).so
-endif
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_cronet.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_CRONET_OBJS) $(LDLIBS) $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_cronet
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP).so
 endif
 endif
 
@@ -4197,7 +4209,7 @@ ifeq ($(NO_SECURE),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: openssl_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): openssl_dep_error
 
 else
 
@@ -4207,7 +4219,7 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: protobuf_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): protobuf_dep_error
 
 else
 
@@ -4223,26 +4235,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_reflection.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_reflection.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_REFLECTION_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT_CPP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).so
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION).so
-endif
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_reflection.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_REFLECTION_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc++
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP).so
 endif
 endif
 
@@ -4488,6 +4494,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -4602,7 +4609,7 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: protobuf_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): protobuf_dep_error
 
 else
 
@@ -4618,26 +4625,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT_CORE)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so
-endif
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP).so
 endif
 endif
 
@@ -5097,7 +5098,7 @@ ifeq ($(NO_SECURE),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: openssl_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): openssl_dep_error
 
 else
 
@@ -5114,26 +5115,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared grpc_csharp_ext.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared grpc_csharp_ext.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT_CSHARP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
 else
-ifeq ($(SYSTEM),HP-UX)
-	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -Wl,-E -Wl,+s -Wl,+b,/usr/local/lib -shared -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).so
-else
-	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).so.1
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION).so
-endif
+	$(Q) $(LD) $(LDFLAGS) $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.2 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT_CSHARP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT_CSHARP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP).so
 endif
 endif
 
@@ -6990,6 +6985,8 @@ endif
 
 LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
+    test/core/end2end/end2end_test_utils.c \
+    test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/call_creds.c \
@@ -7074,6 +7071,8 @@ endif
 
 LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
+    test/core/end2end/end2end_test_utils.c \
+    test/core/end2end/tests/authority_not_supported.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/binary_metadata.c \
     test/core/end2end/tests/cancel_after_accept.c \
@@ -8581,102 +8580,6 @@ deps_gpr_mpscq_test: $(GPR_MPSCQ_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_MPSCQ_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_PERCENT_ENCODING_TEST_SRC = \
-    test/core/support/percent_encoding_test.c \
-
-GPR_PERCENT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_PERCENT_ENCODING_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_percent_encoding_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_percent_encoding_test: $(GPR_PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_percent_encoding_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encoding_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_percent_encoding_test: $(GPR_PERCENT_ENCODING_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_PERCENT_ENCODING_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_SLICE_BUFFER_TEST_SRC = \
-    test/core/support/slice_buffer_test.c \
-
-GPR_SLICE_BUFFER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/slice_buffer_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_SLICE_TEST_SRC = \
-    test/core/support/slice_test.c \
-
-GPR_SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_slice_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_slice_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/slice_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_slice_test: $(GPR_SLICE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_SLICE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10410,7 +10313,7 @@ endif
 
 
 PERCENT_DECODE_FUZZER_SRC = \
-    test/core/support/percent_decode_fuzzer.c \
+    test/core/slice/percent_decode_fuzzer.c \
 
 PERCENT_DECODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10430,7 +10333,7 @@ $(BINDIR)/$(CONFIG)/percent_decode_fuzzer: $(PERCENT_DECODE_FUZZER_OBJS) $(LIBDI
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_percent_decode_fuzzer: $(PERCENT_DECODE_FUZZER_OBJS:.o=.dep)
 
@@ -10442,7 +10345,7 @@ endif
 
 
 PERCENT_ENCODE_FUZZER_SRC = \
-    test/core/support/percent_encode_fuzzer.c \
+    test/core/slice/percent_encode_fuzzer.c \
 
 PERCENT_ENCODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10462,13 +10365,45 @@ $(BINDIR)/$(CONFIG)/percent_encode_fuzzer: $(PERCENT_ENCODE_FUZZER_OBJS) $(LIBDI
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_percent_encode_fuzzer: $(PERCENT_ENCODE_FUZZER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(PERCENT_ENCODE_FUZZER_OBJS:.o=.dep)
+endif
+endif
+
+
+PERCENT_ENCODING_TEST_SRC = \
+    test/core/slice/percent_encoding_test.c \
+
+PERCENT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODING_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/percent_encoding_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/percent_encoding_test: $(PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(PERCENT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/percent_encoding_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_encoding_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_percent_encoding_test: $(PERCENT_ENCODING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PERCENT_ENCODING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10757,6 +10692,102 @@ deps_set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SET_INITIAL_CONNECT_STRING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_BUFFER_TEST_SRC = \
+    test/core/slice/slice_buffer_test.c \
+
+SLICE_BUFFER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_BUFFER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_buffer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_buffer_test: $(SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_buffer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_buffer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_buffer_test: $(SLICE_BUFFER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_BUFFER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_STRING_HELPERS_TEST_SRC = \
+    test/core/slice/slice_string_helpers_test.c \
+
+SLICE_STRING_HELPERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_STRING_HELPERS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_string_helpers_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_string_helpers_test: $(SLICE_STRING_HELPERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_STRING_HELPERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_string_helpers_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_string_helpers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_string_helpers_test: $(SLICE_STRING_HELPERS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_STRING_HELPERS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_TEST_SRC = \
+    test/core/slice/slice_test.c \
+
+SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/slice_test: $(SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_test: $(SLICE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -11505,6 +11536,49 @@ deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHANNEL_FILTER_TEST_SRC = \
+    test/cpp/common/channel_filter_test.cc \
+
+CHANNEL_FILTER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_FILTER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/channel_filter_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/channel_filter_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/channel_filter_test: $(PROTOBUF_DEP) $(CHANNEL_FILTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_FILTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channel_filter_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/common/channel_filter_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_channel_filter_test: $(CHANNEL_FILTER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHANNEL_FILTER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -16231,7 +16305,7 @@ endif
 
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/support/percent_decode_fuzzer.c \
+    test/core/slice/percent_decode_fuzzer.c \
     test/core/util/one_corpus_entry_fuzzer.c \
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC))))
@@ -16252,7 +16326,7 @@ $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry: $(PERCENT_DECODE_FUZZER_ONE
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_decode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -16266,7 +16340,7 @@ endif
 
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/support/percent_encode_fuzzer.c \
+    test/core/slice/percent_encode_fuzzer.c \
     test/core/util/one_corpus_entry_fuzzer.c \
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC))))
@@ -16287,7 +16361,7 @@ $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry: $(PERCENT_ENCODE_FUZZER_ONE
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/percent_encode_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 

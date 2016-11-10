@@ -121,7 +121,7 @@ typedef struct test_fixture {
 
 static void *tag(intptr_t t) { return (void *)t; }
 
-static gpr_slice build_response_payload_slice(
+static grpc_slice build_response_payload_slice(
     const char *host, int *ports, size_t nports,
     int64_t expiration_interval_secs, int32_t expiration_interval_nanos) {
   // server_list {
@@ -159,7 +159,7 @@ static gpr_slice build_response_payload_slice(
     server->set_load_balance_token(token_data);
   }
   const grpc::string &enc_resp = response.SerializeAsString();
-  return gpr_slice_from_copied_buffer(enc_resp.data(), enc_resp.size());
+  return grpc_slice_from_copied_buffer(enc_resp.data(), enc_resp.size());
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -221,17 +221,17 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   // validate initial request.
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, request_payload_recv);
-  gpr_slice request_payload_slice = grpc_byte_buffer_reader_readall(&bbr);
+  grpc_slice request_payload_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc::lb::v1::LoadBalanceRequest request;
-  request.ParseFromArray(GPR_SLICE_START_PTR(request_payload_slice),
-                         GPR_SLICE_LENGTH(request_payload_slice));
+  request.ParseFromArray(GRPC_SLICE_START_PTR(request_payload_slice),
+                         GRPC_SLICE_LENGTH(request_payload_slice));
   GPR_ASSERT(request.has_initial_request());
   GPR_ASSERT(request.initial_request().name() == sf->servers_hostport);
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(request_payload_recv);
 
-  gpr_slice response_payload_slice;
+  grpc_slice response_payload_slice;
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -275,7 +275,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
             sf->servers_hostport, i);
 
     grpc_byte_buffer_destroy(response_payload);
-    gpr_slice_unref(response_payload_slice);
+    grpc_slice_unref(response_payload_slice);
   }
   gpr_log(GPR_INFO, "LB Server[%s] shutting down", sf->servers_hostport);
 
@@ -365,7 +365,7 @@ static void start_backend_server(server_fixture *sf) {
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
     bool exit = false;
-    gpr_slice response_payload_slice = gpr_slice_from_copied_string(PAYLOAD);
+    grpc_slice response_payload_slice = grpc_slice_from_copied_string(PAYLOAD);
     while (!exit) {
       op = ops;
       op->op = GRPC_OP_RECV_MESSAGE;
@@ -424,7 +424,7 @@ static void start_backend_server(server_fixture *sf) {
     ++sf->num_calls_serviced;
 
     gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP", sf->servers_hostport);
-    gpr_slice_unref(response_payload_slice);
+    grpc_slice_unref(response_payload_slice);
 
     op = ops;
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -466,7 +466,8 @@ static void perform_request(client_fixture *cf) {
   int i;
 
   memset(ops, 0, sizeof(ops));
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
@@ -525,7 +526,7 @@ static void perform_request(client_fixture *cf) {
     grpc_byte_buffer_destroy(response_payload_recv);
   }
 
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
 
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;

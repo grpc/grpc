@@ -120,11 +120,6 @@ char *gpr_dump(const char *buf, size_t len, uint32_t flags) {
   return out.data;
 }
 
-char *gpr_dump_slice(gpr_slice s, uint32_t flags) {
-  return gpr_dump((const char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s),
-                  flags);
-}
-
 int gpr_parse_bytes_to_uint32(const char *buf, size_t len, uint32_t *result) {
   uint32_t out = 0;
   uint32_t new;
@@ -237,50 +232,6 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
     *final_length = out_length;
   }
   return out;
-}
-
-/** Finds the initial (\a begin) and final (\a end) offsets of the next
- * substring from \a str + \a read_offset until the next \a sep or the end of \a
- * str.
- *
- * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
-static int slice_find_separator_offset(const gpr_slice str, const char *sep,
-                                       const size_t read_offset, size_t *begin,
-                                       size_t *end) {
-  size_t i;
-  const uint8_t *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
-  const size_t str_len = GPR_SLICE_LENGTH(str) - read_offset;
-  const size_t sep_len = strlen(sep);
-  if (str_len < sep_len) {
-    return 0;
-  }
-
-  for (i = 0; i <= str_len - sep_len; i++) {
-    if (memcmp(str_ptr + i, sep, sep_len) == 0) {
-      *begin = read_offset;
-      *end = read_offset + i;
-      return 1;
-    }
-  }
-  return 0;
-}
-
-void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst) {
-  const size_t sep_len = strlen(sep);
-  size_t begin, end;
-
-  GPR_ASSERT(sep_len > 0);
-
-  if (slice_find_separator_offset(str, sep, 0, &begin, &end) != 0) {
-    do {
-      gpr_slice_buffer_add_indexed(dst, gpr_slice_sub(str, begin, end));
-    } while (slice_find_separator_offset(str, sep, end + sep_len, &begin,
-                                         &end) != 0);
-    gpr_slice_buffer_add_indexed(
-        dst, gpr_slice_sub(str, end + sep_len, GPR_SLICE_LENGTH(str)));
-  } else { /* no sep found, add whole input */
-    gpr_slice_buffer_add_indexed(dst, gpr_slice_ref(str));
-  }
 }
 
 void gpr_strvec_init(gpr_strvec *sv) { memset(sv, 0, sizeof(*sv)); }

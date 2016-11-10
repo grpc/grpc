@@ -38,18 +38,18 @@ namespace grpc {
 
 ByteBuffer::ByteBuffer(const Slice* slices, size_t nslices) {
   // The following assertions check that the representation of a grpc::Slice is
-  // identical to that of a gpr_slice:  it has a gpr_slice field, and nothing
+  // identical to that of a grpc_slice:  it has a grpc_slice field, and nothing
   // else.
-  static_assert(std::is_same<decltype(slices[0].slice_), gpr_slice>::value,
-                "Slice must have same representation as gpr_slice");
-  static_assert(sizeof(Slice) == sizeof(gpr_slice),
-                "Slice must have same representation as gpr_slice");
+  static_assert(std::is_same<decltype(slices[0].slice_), grpc_slice>::value,
+                "Slice must have same representation as grpc_slice");
+  static_assert(sizeof(Slice) == sizeof(grpc_slice),
+                "Slice must have same representation as grpc_slice");
   // The const_cast is legal if grpc_raw_byte_buffer_create() does no more
   // than its advertised side effect of increasing the reference count of the
   // slices it processes, and such an increase does not affect the semantics
   // seen by the caller of this constructor.
   buffer_ = grpc_raw_byte_buffer_create(
-      reinterpret_cast<gpr_slice*>(const_cast<Slice*>(slices)), nslices);
+      reinterpret_cast<grpc_slice*>(const_cast<Slice*>(slices)), nslices);
 }
 
 ByteBuffer::~ByteBuffer() {
@@ -75,7 +75,7 @@ Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
     return Status(StatusCode::INTERNAL,
                   "Couldn't initialize byte buffer reader");
   }
-  gpr_slice s;
+  grpc_slice s;
   while (grpc_byte_buffer_reader_next(&reader, &s)) {
     slices->push_back(Slice(s, Slice::STEAL_REF));
   }

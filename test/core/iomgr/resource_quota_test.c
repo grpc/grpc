@@ -620,8 +620,8 @@ static void test_one_slice(void) {
   int num_allocs = 0;
   grpc_resource_user_slice_allocator_init(&alloc, usr, inc_int_cb, &num_allocs);
 
-  gpr_slice_buffer buffer;
-  gpr_slice_buffer_init(&buffer);
+  grpc_slice_buffer buffer;
+  grpc_slice_buffer_init(&buffer);
 
   {
     const int start_allocs = num_allocs;
@@ -631,7 +631,7 @@ static void test_one_slice(void) {
     GPR_ASSERT(num_allocs == start_allocs + 1);
   }
 
-  gpr_slice_buffer_destroy(&buffer);
+  grpc_slice_buffer_destroy(&buffer);
   destroy_user(usr);
   grpc_resource_quota_unref(q);
 }
@@ -649,8 +649,8 @@ static void test_one_slice_deleted_late(void) {
   int num_allocs = 0;
   grpc_resource_user_slice_allocator_init(&alloc, usr, inc_int_cb, &num_allocs);
 
-  gpr_slice_buffer buffer;
-  gpr_slice_buffer_init(&buffer);
+  grpc_slice_buffer buffer;
+  grpc_slice_buffer_init(&buffer);
 
   {
     const int start_allocs = num_allocs;
@@ -667,7 +667,7 @@ static void test_one_slice_deleted_late(void) {
   }
 
   grpc_resource_quota_unref(q);
-  gpr_slice_buffer_destroy(&buffer);
+  grpc_slice_buffer_destroy(&buffer);
 }
 
 int main(int argc, char **argv) {

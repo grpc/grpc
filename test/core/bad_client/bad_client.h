@@ -45,7 +45,7 @@ typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
                                                       void *registered_method);
 
 typedef void (*grpc_bad_client_client_stream_validator)(
-    gpr_slice_buffer *incoming);
+    grpc_slice_buffer *incoming);
 
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 

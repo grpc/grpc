@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <stdbool.h>
 
 struct grpc_base64_decode_context {
@@ -55,12 +55,12 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx);
 
 /* base64 decode a slice with pad chars. Returns a new slice, does not take
    ownership of the input. Returns an empty slice if decoding is failed. */
-gpr_slice grpc_chttp2_base64_decode(gpr_slice input);
+grpc_slice grpc_chttp2_base64_decode(grpc_slice input);
 
 /* base64 decode a slice without pad chars, data length is needed. Returns a new
    slice, does not take ownership of the input. Returns an empty slice if
    decoding is failed. */
-gpr_slice grpc_chttp2_base64_decode_with_length(gpr_slice input,
-                                                size_t output_length);
+grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
+                                                 size_t output_length);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H */

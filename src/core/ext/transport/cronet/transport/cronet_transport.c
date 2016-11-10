@@ -34,10 +34,10 @@
 #include <string.h>
 
 #include <grpc/impl/codegen/port_platform.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -130,7 +130,7 @@ struct read_state {
 
   /* vars for holding data destined for the application */
   struct grpc_slice_buffer_stream sbs;
-  gpr_slice_buffer read_slice_buffer;
+  grpc_slice_buffer read_slice_buffer;
 
   /* vars for trailing metadata */
   grpc_chttp2_incoming_metadata_buffer trailing_metadata;
@@ -517,11 +517,11 @@ static void on_response_trailers_received(
  Utility function that takes the data from s->write_slice_buffer and assembles
  into a contiguous byte stream with 5 byte gRPC header prepended.
 */
-static void create_grpc_frame(gpr_slice_buffer *write_slice_buffer,
+static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
                               char **pp_write_buffer,
                               size_t *p_write_buffer_size) {
-  gpr_slice slice = gpr_slice_buffer_take_first(write_slice_buffer);
-  size_t length = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = grpc_slice_buffer_take_first(write_slice_buffer);
+  size_t length = GRPC_SLICE_LENGTH(slice);
   *p_write_buffer_size = length + GRPC_HEADER_SIZE_IN_BYTES;
   /* This is freed in the on_write_completed callback */
   char *write_buffer = gpr_malloc(length + GRPC_HEADER_SIZE_IN_BYTES);
@@ -534,7 +534,7 @@ static void create_grpc_frame(gpr_slice_buffer *write_slice_buffer,
   *p++ = (uint8_t)(length >> 8);
   *p++ = (uint8_t)(length);
   /* append actual data */
-  memcpy(p, GPR_SLICE_START_PTR(slice), length);
+  memcpy(p, GRPC_SLICE_START_PTR(slice), length);
 }
 
 /*
@@ -608,6 +608,16 @@ static int parse_grpc_header(const uint8_t *data) {
   length |= ((uint8_t)*p++) << 8;
   length |= ((uint8_t)*p++);
   return length;
+}
+
+static bool header_has_authority(grpc_linked_mdelem *head) {
+  while (head != NULL) {
+    if (head->md->key == GRPC_MDSTR_AUTHORITY) {
+      return true;
+    }
+    head = head->next;
+  }
+  return false;
 }
 
 /*
@@ -817,9 +827,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       result = NO_ACTION_POSSIBLE;
       CRONET_LOG(GPR_DEBUG, "Stream is either cancelled or failed.");
     } else {
-      gpr_slice_buffer write_slice_buffer;
-      gpr_slice slice;
-      gpr_slice_buffer_init(&write_slice_buffer);
+      grpc_slice_buffer write_slice_buffer;
+      grpc_slice slice;
+      grpc_slice_buffer_init(&write_slice_buffer);
       grpc_byte_stream_next(NULL, stream_op->send_message, &slice,
                             stream_op->send_message->length, NULL);
       /* Check that compression flag is OFF. We don't support compression yet.
@@ -828,7 +838,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         gpr_log(GPR_ERROR, "Compression is not supported");
         GPR_ASSERT(stream_op->send_message->flags == 0);
       }
-      gpr_slice_buffer_add(&write_slice_buffer, slice);
+      grpc_slice_buffer_add(&write_slice_buffer, slice);
       if (write_slice_buffer.count != 1) {
         /* Empty request not handled yet */
         gpr_log(GPR_ERROR, "Empty request is not supported");
@@ -891,7 +901,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         } else {
           stream_state->rs.remaining_bytes = 0;
           CRONET_LOG(GPR_DEBUG, "read operation complete. Empty response.");
-          gpr_slice_buffer_init(&stream_state->rs.read_slice_buffer);
+          grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
           grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
                                         &stream_state->rs.read_slice_buffer, 0);
           *((grpc_byte_buffer **)stream_op->recv_message) =
@@ -918,15 +928,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       }
     } else if (stream_state->rs.remaining_bytes == 0) {
       CRONET_LOG(GPR_DEBUG, "read operation complete");
-      gpr_slice read_data_slice =
-          gpr_slice_malloc((uint32_t)stream_state->rs.length_field);
-      uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
+      grpc_slice read_data_slice =
+          grpc_slice_malloc((uint32_t)stream_state->rs.length_field);
+      uint8_t *dst_p = GRPC_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);
       free_read_buffer(s);
-      gpr_slice_buffer_init(&stream_state->rs.read_slice_buffer);
-      gpr_slice_buffer_add(&stream_state->rs.read_slice_buffer,
-                           read_data_slice);
+      grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
+      grpc_slice_buffer_add(&stream_state->rs.read_slice_buffer,
+                            read_data_slice);
       grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
                                     &stream_state->rs.read_slice_buffer, 0);
       *((grpc_byte_buffer **)stream_op->recv_message) =
@@ -981,11 +991,18 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
   } else if (stream_op->on_complete &&
              op_can_be_run(stream_op, stream_state, &oas->state,
                            OP_ON_COMPLETE)) {
-    /* All actions in this stream_op are complete. Call the on_complete callback
-     */
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
-    grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
-                        NULL);
+    if (stream_state->state_op_done[OP_CANCEL_ERROR] ||
+        stream_state->state_callback_received[OP_FAILED]) {
+      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete,
+                          GRPC_ERROR_CANCELLED, NULL);
+    } else {
+      /* All actions in this stream_op are complete. Call the on_complete
+       * callback
+       */
+      grpc_exec_ctx_sched(exec_ctx, stream_op->on_complete, GRPC_ERROR_NONE,
+                          NULL);
+    }
     oas->state.state_op_done[OP_ON_COMPLETE] = true;
     oas->done = true;
     /* reset any send message state, only if this ON_COMPLETE is about a send.
@@ -1042,7 +1059,31 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   s->curr_gs = gs;
   memcpy(&s->curr_ct, gt, sizeof(grpc_cronet_transport));
   add_to_storage(s, op);
-  execute_from_storage(s);
+  if (op->send_initial_metadata &&
+      header_has_authority(op->send_initial_metadata->list.head)) {
+    /* Cronet does not support :authority header field. We cancel the call when
+       this field is present in metadata */
+    cronet_bidirectional_stream_header_array header_array;
+    cronet_bidirectional_stream_header *header;
+    cronet_bidirectional_stream cbs;
+    CRONET_LOG(GPR_DEBUG,
+               ":authority header is provided but not supported;"
+               " cancel operations");
+    /* Notify application that operation is cancelled by forging trailers */
+    header_array.count = 1;
+    header_array.capacity = 1;
+    header_array.headers =
+        gpr_malloc(sizeof(cronet_bidirectional_stream_header));
+    header = (cronet_bidirectional_stream_header *)header_array.headers;
+    header->key = "grpc-status";
+    header->value = "1"; /* Return status GRPC_STATUS_CANCELLED */
+    cbs.annotation = (void *)s;
+    s->state.state_op_done[OP_CANCEL_ERROR] = true;
+    on_response_trailers_received(&cbs, &header_array);
+    gpr_free(header_array.headers);
+  } else {
+    execute_from_storage(s);
+  }
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
