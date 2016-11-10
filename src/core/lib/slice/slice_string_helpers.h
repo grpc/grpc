@@ -40,6 +40,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/support/string.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
