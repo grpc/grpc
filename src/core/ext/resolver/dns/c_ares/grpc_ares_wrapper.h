@@ -34,8 +34,6 @@
 #ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -44,7 +42,7 @@
 
 /* Asynchronously resolve addr. Use default_port if a port isn't designated
    in addr, otherwise use the port in addr. grpc_ares_init() must be called
-   at least once before this function . */
+   at least once before this function. */
 extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          const char *addr,
                                          const char *default_port,
