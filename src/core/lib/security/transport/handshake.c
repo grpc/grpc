@@ -125,7 +125,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
           h->auth_context);
   } else {
     const char *msg = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Security handshake failed: %s", msg);
+    gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
     grpc_error_free_string(msg);
 
     if (h->secure_endpoint != NULL) {
