@@ -139,11 +139,11 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
     arg.key = GRPC_ARG_SERVICE_CONFIG;
     arg.value.string =
         "{\n"
-        "  \"method_config\": [ {\n"
+        "  \"methodConfig\": [ {\n"
         "    \"name\": [\n"
         "      { \"service\": \"service\", \"method\": \"method\" }\n"
         "    ],\n"
-        "    \"timeout\": { \"seconds\": 5 }\n"
+        "    \"timeout\": \"5s\"\n"
         "  } ]\n"
         "}";
     args = grpc_channel_args_copy_and_add(args, &arg, 1);

@@ -46,8 +46,8 @@
 // JSON form, which will look like this:
 //
 // {
-//   "lb_policy_name": "string",  // optional
-//   "method_config": [  // array of one or more method_config objects
+//   "loadBalancingPolicy": "string",  // optional
+//   "methodConfig": [  // array of one or more method_config objects
 //     {
 //       "name": [  // array of one or more name objects
 //         {
@@ -55,15 +55,13 @@
 //           "method": "string",  // optional
 //         }
 //       ],
-//       // remaining fields are optional
-//       "wait_for_ready": bool,
-//       "timeout": {
-//         // one or both of these fields may be specified
-//         "seconds": number,
-//         "nanos": number,
-//       },
-//       "max_request_message_bytes": number,
-//       "max_response_message_bytes": number
+//       // remaining fields are optional.
+//       // see https://developers.google.com/protocol-buffers/docs/proto3#json
+//       // for format details.
+//       "waitForReady": bool,
+//       "timeout": "duration_string",
+//       "maxRequestMessageBytes": "int64_string",
+//       "maxResponseMessageBytes": "int64_string",
 //     }
 //   ]
 // }
@@ -100,7 +98,7 @@ const char* grpc_service_config_get_lb_policy_name(
   const char* lb_policy_name = NULL;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
     if (field->key == NULL) return NULL;
-    if (strcmp(field->key, "lb_policy_name") == 0) {
+    if (strcmp(field->key, "loadBalancingPolicy") == 0) {
       if (lb_policy_name != NULL) return NULL;  // Duplicate.
       if (field->type != GRPC_JSON_STRING) return NULL;
       lb_policy_name = field->value;
@@ -194,7 +192,7 @@ grpc_mdstr_hash_table* grpc_service_config_create_method_config_table(
   grpc_mdstr_hash_table_entry* entries = NULL;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
     if (field->key == NULL) return NULL;
-    if (strcmp(field->key, "method_config") == 0) {
+    if (strcmp(field->key, "methodConfig") == 0) {
       if (entries != NULL) return NULL;  // Duplicate.
       if (field->type != GRPC_JSON_ARRAY) return NULL;
       // Find number of entries.
