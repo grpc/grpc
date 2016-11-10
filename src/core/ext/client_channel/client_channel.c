@@ -102,9 +102,9 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
       if (field->type != GRPC_JSON_STRING) return NULL;
       size_t len = strlen(field->value);
       if (field->value[len - 1] != 's') return NULL;
-      char* buf = gpr_strdup(field->value);
+      char *buf = gpr_strdup(field->value);
       buf[len - 1] = '\0';  // Remove trailing 's'.
-      char* decimal_point = strchr(buf, '.');
+      char *decimal_point = strchr(buf, '.');
       if (decimal_point != NULL) {
         *decimal_point = '\0';
         timeout.tv_nsec = gpr_parse_nonnegative_int(decimal_point + 1);
