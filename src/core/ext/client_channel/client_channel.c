@@ -90,7 +90,7 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
   gpr_timespec timeout = {0, 0, GPR_TIMESPAN};
   for (grpc_json *field = json->child; field != NULL; field = field->next) {
     if (field->key == NULL) continue;
-    if (strcmp(field->key, "wait_for_ready") == 0) {
+    if (strcmp(field->key, "waitForReady") == 0) {
       if (wait_for_ready != WAIT_FOR_READY_UNSET) return NULL;  // Duplicate.
       if (field->type != GRPC_JSON_TRUE && field->type != GRPC_JSON_FALSE) {
         return NULL;
@@ -99,26 +99,39 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
                                                      : WAIT_FOR_READY_FALSE;
     } else if (strcmp(field->key, "timeout") == 0) {
       if (timeout.tv_sec > 0 || timeout.tv_nsec > 0) return NULL;  // Duplicate.
-      if (field->type != GRPC_JSON_OBJECT) return NULL;
-      if (field->child == NULL) return NULL;
-      for (grpc_json *subfield = field->child; subfield != NULL;
-           subfield = subfield->next) {
-        if (subfield->key == NULL) return NULL;
-        if (strcmp(subfield->key, "seconds") == 0) {
-          if (timeout.tv_sec > 0) return NULL;  // Duplicate.
-          if (subfield->type != GRPC_JSON_NUMBER) return NULL;
-          timeout.tv_sec = gpr_parse_nonnegative_number(subfield->value);
-          if (timeout.tv_sec == -1) return NULL;
-        } else if (strcmp(subfield->key, "nanos") == 0) {
-          if (timeout.tv_nsec > 0) return NULL;  // Duplicate.
-          if (subfield->type != GRPC_JSON_NUMBER) return NULL;
-          timeout.tv_nsec = gpr_parse_nonnegative_number(subfield->value);
-          if (timeout.tv_nsec == -1) return NULL;
-        } else {
-          // Unknown key.
+      if (field->type != GRPC_JSON_STRING) return NULL;
+      size_t len = strlen(field->value);
+      if (field->value[len - 1] != 's') return NULL;
+      char* buf = gpr_strdup(field->value);
+      buf[len - 1] = '\0';  // Remove trailing 's'.
+      char* decimal_point = strchr(buf, '.');
+      if (decimal_point != NULL) {
+        *decimal_point = '\0';
+        timeout.tv_nsec = gpr_parse_nonnegative_int(decimal_point + 1);
+        if (timeout.tv_nsec == -1) {
+          gpr_free(buf);
           return NULL;
         }
+        // There should always be exactly 3, 6, or 9 fractional digits.
+        int multiplier = 1;
+        switch (strlen(decimal_point + 1)) {
+          case 9:
+            break;
+          case 6:
+            multiplier *= 1000;
+            break;
+          case 3:
+            multiplier *= 1000000;
+            break;
+          default:  // Unsupported number of digits.
+            gpr_free(buf);
+            return NULL;
+        }
+        timeout.tv_nsec *= multiplier;
       }
+      timeout.tv_sec = gpr_parse_nonnegative_int(buf);
+      if (timeout.tv_sec == -1) return NULL;
+      gpr_free(buf);
     }
   }
   method_parameters *value = gpr_malloc(sizeof(method_parameters));

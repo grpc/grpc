@@ -143,11 +143,11 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     arg.key = GRPC_ARG_SERVICE_CONFIG;
     arg.value.string =
         "{\n"
-        "  \"method_config\": [ {\n"
+        "  \"methodConfig\": [ {\n"
         "    \"name\": [\n"
         "      { \"service\": \"service\", \"method\": \"method\" }\n"
         "    ],\n"
-        "    \"max_request_message_bytes\": 5\n"
+        "    \"maxRequestMessageBytes\": \"5\"\n"
         "  } ]\n"
         "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
@@ -317,11 +317,11 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     arg.key = GRPC_ARG_SERVICE_CONFIG;
     arg.value.string =
         "{\n"
-        "  \"method_config\": [ {\n"
+        "  \"methodConfig\": [ {\n"
         "    \"name\": [\n"
         "      { \"service\": \"service\", \"method\": \"method\" }\n"
         "    ],\n"
-        "    \"max_response_message_bytes\": 5\n"
+        "    \"maxResponseMessageBytes\": \"5\"\n"
         "  } ]\n"
         "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);

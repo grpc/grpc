@@ -81,11 +81,11 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
     arg.key = GRPC_ARG_SERVICE_CONFIG;
     arg.value.string =
         "{\n"
-        "  \"method_config\": [ {\n"
+        "  \"methodConfig\": [ {\n"
         "    \"name\": [\n"
         "      { \"service\": \"service\", \"method\": \"method\" }\n"
         "    ],\n"
-        "    \"wait_for_ready\": true\n"
+        "    \"waitForReady\": true\n"
         "  } ]\n"
         "}";
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
