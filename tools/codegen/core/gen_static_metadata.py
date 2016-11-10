@@ -31,8 +31,11 @@
 
 import hashlib
 import itertools
+import collections
 import os
 import sys
+import subprocess
+import re
 
 # configuration: a list of either strings or 2-tuples of strings
 # a single string represents a static grpc_mdstr
@@ -281,12 +284,43 @@ print >>C, '#include "src/core/lib/transport/static_metadata.h"'
 print >>C
 
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
-print >>H, 'extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];'
+print >>H, 'extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];'
 for i, elem in enumerate(all_strs):
   print >>H, '/* "%s" */' % elem
-  print >>H, '#define %s (&grpc_static_mdstr_table[%d])' % (mangle(elem).upper(), i)
+  print >>H, '#define %s (&grpc_static_slice_table[%d])' % (mangle(elem).upper(), i)
 print >>H
-print >>C, 'grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];'
+print >>H, 'bool grpc_is_static_metadata_string(grpc_slice slice);'
+print >>H
+print >>C, 'static uint8_t g_raw_bytes[] = {%s};' % (','.join('%d' % ord(c) for c in ''.join(all_strs)))
+print >>C
+print >>C, 'static void static_ref(void *unused) {}'
+print >>C, 'static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}'
+print >>C, 'static grpc_slice_refcount g_refcnt = {static_ref, static_unref};'
+print >>C
+print >>C, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
+print >>C, '  return slice.refcount != NULL && slice.refcount->ref == static_ref;'
+print >>C, '};'
+print >>C
+print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'
+str_ofs = 0
+revmap = {}
+zero_length_idx = None
+for i, elem in enumerate(all_strs):
+  print >>C, '{.refcount = &g_refcnt, .data.refcounted = {.bytes = g_raw_bytes+%d, .length=%d}},' % (str_ofs, len(elem))
+  revmap[str_ofs] = i
+  if len(elem) == 0: zero_length_idx = i
+  str_ofs += len(elem);
+print >>C, '};'
+print >>C
+print >>C, 'static const uint8_t g_revmap[] = {%s};' % ','.join('%d' % (revmap[i] if i in revmap else 255) for i in range(0, str_ofs))
+print >>C
+print >>C, 'int grpc_static_metadata_index(grpc_slice slice) {'
+print >>C, '  if (GRPC_SLICE_LENGTH(slice) == 0) return %d;' % zero_length_idx
+print >>C, '  size_t ofs = (size_t)(GRPC_SLICE_START_PTR(slice) - g_raw_bytes);'
+print >>C, '  if (ofs > sizeof(g_revmap)) return -1;'
+print >>C, '  uint8_t id = g_revmap[ofs];'
+print >>C, '  return id == 255 ? -1 : id;'
+print >>C, '};'
 print >>C
 
 print >>D, '# hpack fuzzing dictionary'
@@ -319,15 +353,69 @@ def md_idx(m):
     if m == m2:
       return i
 
+def perfect_hash(keys, name):
+    tmp = open('/tmp/keys.txt', 'w')
+    tmp.write(''.join('%d\n' % (x - min(keys)) for x in keys))
+    tmp.close()
+    cmd = '%s/perfect/run.sh %s -ds' % (os.path.dirname(sys.argv[0]), tmp.name)
+    subprocess.check_call(cmd, shell=True)
+
+    code = ''
+
+    results = {}
+    with open('%s/perfect/phash.h' % os.path.dirname(sys.argv[0])) as f:
+        txt = f.read()
+        for var in ('PHASHLEN', 'PHASHNKEYS', 'PHASHRANGE', 'PHASHSALT'):
+            val = re.search(r'#define %s ([0-9a-zA-Z]+)' % var, txt).group(1)
+            code += '#define %s_%s %s\n' % (name.upper(), var, val)
+            results[var] = val
+    code += '\n'
+    pycode = 'def f(val):\n'
+    pycode += '  val -= %d\n' % min(keys)
+    with open('%s/perfect/phash.c' % os.path.dirname(sys.argv[0])) as f:
+        txt = f.read()
+        tabdata = re.search(r'ub1 tab\[\] = \{([^}]+)\}', txt, re.MULTILINE).group(1)
+        code += 'static const uint8_t %s_tab[] = {%s};\n\n' % (name, tabdata)
+        func_body = re.search(r'ub4 phash\(val\)\nub4 val;\n\{([^}]+)\}', txt, re.MULTILINE).group(1).replace('ub4', 'uint32_t')
+        code += 'static uint32_t %s_phash(uint32_t val) {\nval -= %d;\n%s}\n' % (name,
+            min(keys), func_body.replace('tab', '%s_tab' % name))
+        pycode += '  tab=(%s)' % tabdata.replace('\n', '')
+        pycode += '\n'.join('  %s' % s.strip() for s in func_body.splitlines()[2:])
+    g = {}
+    exec pycode in g
+    pyfunc = g['f']
+
+    results['code'] = code
+    results['pyfunc'] = pyfunc
+    return results
+
+elem_keys = [str_idx(elem[0]) * len(all_strs) + str_idx(elem[1]) for elem in all_elems]
+elem_hash = perfect_hash(elem_keys, "elems")
+print >>C, elem_hash['code']
+
+keys = [0] * int(elem_hash['PHASHRANGE'])
+idxs = [-1] * int(elem_hash['PHASHNKEYS'])
+for i, k in enumerate(elem_keys):
+    h = elem_hash['pyfunc'](k)
+    assert keys[h] == 0
+    keys[h] = k
+    idxs[h] = i
+print >>C, 'static const uint16_t elem_keys[] = {%s};' % ','.join('%d' % k for k in keys)
+print >>C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join('%d' % i for i in idxs)
+print >>C
+
+print >>H, 'grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b);'
+print >>C, 'grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b) {'
+print >>C, '  if (a == -1 || b == -1) return NULL;'
+print >>C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
+print >>C, '  uint32_t h = elems_phash(k);'
+print >>C, '  return elem_keys[h] == k ? &grpc_static_mdelem_table[elem_idxs[h]] : NULL;'
+print >>C, '}'
+print >>C
+
 print >>H, 'extern const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
 print >>C, 'const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
 print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
-print >>C, '};'
-print >>C
-
-print >>H, 'extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];'
-print >>C, 'const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {'
-print >>C, '%s' % ',\n'.join('  "%s"' % s for s in all_strs)
 print >>C, '};'
 print >>C
 
