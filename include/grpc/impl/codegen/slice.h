@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct grpc_exec_ctx grpc_exec_ctx;
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 
 /* Slice API
 
