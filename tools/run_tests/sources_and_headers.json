@@ -1942,6 +1942,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "ssl_server_fuzzer", 
+    "src": [
+      "test/core/security/ssl_server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "tcp_client_posix_test", 
     "src": [
       "test/core/iomgr/tcp_client_posix_test.c"
@@ -4848,6 +4865,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "ssl_server_fuzzer_one_entry", 
+    "src": [
+      "test/core/security/ssl_server_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "uri_fuzzer_test_one_entry", 
     "src": [
       "test/core/client_channel/uri_fuzzer_test.c", 
@@ -6257,6 +6292,7 @@
       "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.c", 
       "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/call_creds.c", 
@@ -6325,6 +6361,7 @@
       "test/core/end2end/end2end_nosec_tests.c", 
       "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/cancel_after_accept.c", 
