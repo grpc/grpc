@@ -37,7 +37,7 @@
 #include <nan.h>
 #include "grpc/grpc.h"
 #include "grpc/byte_buffer_reader.h"
-#include "grpc/support/slice.h"
+#include "grpc/slice.h"
 
 #include "byte_buffer.h"
 
