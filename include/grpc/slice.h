@@ -79,7 +79,7 @@ GPRAPI grpc_slice grpc_slice_malloc(size_t length);
 /* Intern a slice:
 
    The return value for two invocations of this function with  the same sequence
-   of bytes is a slice which points to the same memory */
+   of bytes is a slice which points to the same memory. */
 GPRAPI grpc_slice grpc_slice_intern(grpc_slice slice);
 
 /* Create a slice by copying a string.
