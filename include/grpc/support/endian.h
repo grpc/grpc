@@ -36,13 +36,6 @@
 
 #include <grpc/support/port_platform.h>
 
-/* Only for HPUX now */
-#ifdef GPR_HPUX
-#define GPR_BIG_ENDIAN
-#else
-#define GPR_LITTLE_ENDIAN
-#endif
-
 #ifdef GPR_BIG_ENDIAN
  #if defined(__GNUC__) && (__GNUC__>4 || (__GNUC__==4 && __GNUC_MINOR__>=3))
   #define GPR_WORD_TO_NATIVE(N, W32)   N = __builtin_bswap32(W32)

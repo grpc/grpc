@@ -89,7 +89,9 @@
 #define GPR_ARCH_32 1
 #endif
 #define GPR_PLATFORM_STRING "windows"
+#define GPR_LITTLE_ENDIAN 1
 #define GPR_WINDOWS 1
+#define GPR_LITTLE_ENDIAN 1
 #define GPR_WINDOWS_SUBPROCESS 1
 #define GPR_WINDOWS_ENV
 #ifdef __MSYS__
@@ -117,6 +119,7 @@
 // TODO(atash): manylinux1 is just another __linux__ but with ancient
 // libraries; it should be integrated with the `__linux__` definitions below.
 #define GPR_PLATFORM_STRING "manylinux"
+#define GPR_LITTLE_ENDIAN 1
 #define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
@@ -138,6 +141,7 @@
 #endif /* _LP64 */
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
+#define GPR_LITTLE_ENDIAN 1
 #define GPR_ANDROID 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -159,6 +163,7 @@
 #elif defined(__linux__)
 #define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
+#define GPR_LITTLE_ENDIAN 1
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -196,10 +201,12 @@
 #if TARGET_OS_IPHONE
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #define GPR_PLATFORM_STRING "ios"
+#define GPR_LITTLE_ENDIAN 1
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
+#define GPR_LITTLE_ENDIAN 1
 #ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
 #if __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7
 #define GPR_CPU_IPHONE 1
@@ -232,6 +239,7 @@
 #endif /* _LP64 */
 #elif defined(__FreeBSD__)
 #define GPR_PLATFORM_STRING "freebsd"
+#define GPR_LITTLE_ENDIAN 1
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -255,6 +263,7 @@
 #endif /* _LP64 */
 #elif defined(__native_client__)
 #define GPR_PLATFORM_STRING "nacl"
+#define GPR_LITTLE_ENDIAN 1
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -283,6 +292,7 @@
 #endif /* _LP64 */
 #elif defined(__hpux)
 #define GPR_PLATFORM_STRING "HP-UX"
+#define GPR_BIG_ENDIAN 1
 #define GPR_HPUX 1
 #define GPR_CPU_HPUX 1
 #define GPR_GCC_ATOMIC 1
@@ -360,6 +370,10 @@ typedef unsigned __int64 uint64_t;
 
 #if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
+#endif
+
+#if defined(GPR_LITTLE_ENDIAN) + defined(GPR_BIG_ENDIAN) != 1
+#error Must define exactly one of GPR_LITTLE_ENDIAN, GPR_BIG_ENDIAN
 #endif
 
 #if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \
