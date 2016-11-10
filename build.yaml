@@ -2582,6 +2582,19 @@ targets:
   - mac
   - linux
   - posix
+- name: ssl_server_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/security/ssl_server_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/security/corpus/ssl_server_corpus
+  maxlen: 2048
 - name: tcp_client_posix_test
   cpu_cost: 0.5
   build: test
