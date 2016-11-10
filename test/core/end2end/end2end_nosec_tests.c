@@ -43,6 +43,8 @@
 
 static bool g_pre_init_called = false;
 
+extern void authority_not_supported(grpc_end2end_test_config config);
+extern void authority_not_supported_pre_init(void);
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
@@ -135,6 +137,7 @@ extern void trailing_metadata_pre_init(void);
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
+  authority_not_supported_pre_init();
   bad_hostname_pre_init();
   binary_metadata_pre_init();
   cancel_after_accept_pre_init();
@@ -188,6 +191,7 @@ void grpc_end2end_tests(int argc, char **argv,
   GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
+    authority_not_supported(config);
     bad_hostname(config);
     binary_metadata(config);
     cancel_after_accept(config);
@@ -236,6 +240,10 @@ void grpc_end2end_tests(int argc, char **argv,
   }
 
   for (i = 1; i < argc; i++) {
+    if (0 == strcmp("authority_not_supported", argv[i])) {
+      authority_not_supported(config);
+      continue;
+    }
     if (0 == strcmp("bad_hostname", argv[i])) {
       bad_hostname(config);
       continue;
