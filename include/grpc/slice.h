@@ -127,6 +127,8 @@ GPRAPI grpc_slice gpr_empty_slice(void);
 GPRAPI int grpc_slice_cmp(grpc_slice a, grpc_slice b);
 GPRAPI int grpc_slice_str_cmp(grpc_slice a, const char *b);
 
+GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
+
 #ifdef __cplusplus
 }
 #endif
