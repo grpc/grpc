@@ -75,7 +75,7 @@ typedef struct {
   grpc_closure dns_ares_on_resolved_locked;
 
   /** Combiner guarding the rest of the state */
-  grpc_combiner *lock;
+  grpc_combiner *combiner;
   /** are we currently resolving? */
   bool resolving;
   /** which version of the result have we published? */
@@ -136,7 +136,7 @@ static void dns_ares_shutdown(grpc_exec_ctx *exec_ctx,
                               grpc_resolver *resolver) {
   ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   GRPC_RESOLVER_REF(&r->base, "dns-ares-shutdown");
-  grpc_combiner_execute(exec_ctx, r->lock, &r->dns_ares_shutdown_locked,
+  grpc_combiner_execute(exec_ctx, r->combiner, &r->dns_ares_shutdown_locked,
                         GRPC_ERROR_NONE, false);
 }
 
@@ -155,7 +155,7 @@ static void dns_ares_channel_saw_error(grpc_exec_ctx *exec_ctx,
                                        grpc_resolver *resolver) {
   ares_dns_resolver *r = (ares_dns_resolver *)resolver;
   GRPC_RESOLVER_REF(&r->base, "ares-channel-saw-error");
-  grpc_combiner_execute(exec_ctx, r->lock,
+  grpc_combiner_execute(exec_ctx, r->combiner,
                         &r->dns_ares_channel_saw_error_locked, GRPC_ERROR_NONE,
                         false);
 }
@@ -175,7 +175,8 @@ static void dns_ares_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static void dns_ares_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error) {
   ares_dns_resolver *r = arg;
-  grpc_combiner_execute(exec_ctx, r->lock, &r->dns_ares_on_retry_timer_locked,
+  grpc_combiner_execute(exec_ctx, r->combiner,
+                        &r->dns_ares_on_retry_timer_locked,
                         GRPC_ERROR_REF(error), false);
 }
 
@@ -229,7 +230,7 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static void dns_ares_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_error *error) {
   ares_dns_resolver *r = arg;
-  grpc_combiner_execute(exec_ctx, r->lock, &r->dns_ares_on_resolved_locked,
+  grpc_combiner_execute(exec_ctx, r->combiner, &r->dns_ares_on_resolved_locked,
                         GRPC_ERROR_REF(error), false);
 }
 
@@ -268,7 +269,7 @@ static void dns_ares_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
   args->on_complete = on_complete;
   args->resolver = resolver;
   GRPC_RESOLVER_REF(resolver, "ares-next");
-  grpc_combiner_execute(exec_ctx, r->lock,
+  grpc_combiner_execute(exec_ctx, r->combiner,
                         grpc_closure_create(dns_ares_next_locked, args),
                         GRPC_ERROR_NONE, false);
 }
@@ -301,7 +302,7 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
   grpc_ares_ev_driver_destroy(exec_ctx, r->ev_driver);
-  grpc_combiner_destroy(exec_ctx, r->lock);
+  grpc_combiner_destroy(exec_ctx, r->combiner);
   grpc_ares_cleanup();
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(r->resolved_result);
@@ -345,7 +346,7 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
     gpr_free(r);
     return NULL;
   }
-  r->lock = grpc_combiner_create(NULL);
+  r->combiner = grpc_combiner_create(NULL);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);
   grpc_arg server_name_arg;

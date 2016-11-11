@@ -292,8 +292,8 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
       gpr_mu_unlock(&fdn->mu);
     }
   }
-  // Any remaining fds in ev_driver->fds was not returned by ares_getsock() and
-  // is therefore no longer in use, so they can be shut donw and removed from
+  // Any remaining fds in ev_driver->fds were not returned by ares_getsock() and
+  // are therefore no longer in use, so they can be shut down and removed from
   // the list.
   while (ev_driver->fds != NULL) {
     fd_node *cur = ev_driver->fds;

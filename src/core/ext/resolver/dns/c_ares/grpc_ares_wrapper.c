@@ -74,8 +74,6 @@ typedef struct grpc_ares_request {
   grpc_resolved_addresses **addrs_out;
   /** the evernt driver used by this request */
   grpc_ares_ev_driver *ev_driver;
-  /** the closure wraps request_resolving_address */
-  grpc_closure request_closure;
   /** number of ongoing queries */
   gpr_refcount pending_queries;
 
@@ -88,19 +86,6 @@ typedef struct grpc_ares_request {
 } grpc_ares_request;
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
-
-static void ares_request_unref(grpc_ares_request *r) {
-  if (gpr_unref(&r->pending_queries)) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
-    grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_destroy(&r->mu);
-    gpr_free(r->host);
-    gpr_free(r->port);
-    gpr_free(r->default_port);
-    gpr_free(r);
-  }
-}
 
 static uint16_t strhtons(const char *port) {
   if (strcmp(port, "http") == 0) {
@@ -180,22 +165,23 @@ static void on_done_cb(void *arg, int status, int timeouts,
     }
   }
   gpr_mu_unlock(&r->mu);
-  ares_request_unref(r);
-}
-
-static void request_resolving_address(grpc_exec_ctx *exec_ctx, void *arg,
-                                      grpc_error *error) {
-  grpc_ares_request *r = (grpc_ares_request *)arg;
-  grpc_ares_ev_driver *ev_driver = r->ev_driver;
-  ares_channel *channel =
-      (ares_channel *)grpc_ares_ev_driver_get_channel(ev_driver);
-  gpr_ref_init(&r->pending_queries, 1);
-  if (grpc_ipv6_loopback_available()) {
-    gpr_ref(&r->pending_queries);
-    ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
+  // If there are no pending queries, invoke on_done callback and destroy the
+  // request
+  if (gpr_unref(&r->pending_queries)) {
+    // A new exec_ctx is created here, as the c-ares interface does not provide
+    // one in this callback. It's safe to schedule on_done with the newly
+    // created exec_ctx, since the caller has been warned not to acquire locks
+    // in on_done. ares_dns_resolver is using combiner to protect resources
+    // needed by on_done.
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_destroy(&r->mu);
+    gpr_free(r->host);
+    gpr_free(r->port);
+    gpr_free(r->default_port);
+    gpr_free(r);
   }
-  ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
-  grpc_ares_ev_driver_start(exec_ctx, ev_driver);
 }
 
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
@@ -240,8 +226,15 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r->host = host;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
-  grpc_closure_init(&r->request_closure, request_resolving_address, r);
-  grpc_exec_ctx_sched(exec_ctx, &r->request_closure, GRPC_ERROR_NONE, NULL);
+  ares_channel *channel =
+      (ares_channel *)grpc_ares_ev_driver_get_channel(r->ev_driver);
+  gpr_ref_init(&r->pending_queries, 1);
+  if (grpc_ipv6_loopback_available()) {
+    gpr_ref(&r->pending_queries);
+    ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
+  }
+  ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
+  grpc_ares_ev_driver_start(exec_ctx, ev_driver);
   return;
 
 error_cleanup:

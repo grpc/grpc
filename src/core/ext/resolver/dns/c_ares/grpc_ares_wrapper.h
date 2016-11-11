@@ -40,9 +40,11 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-/* Asynchronously resolve addr. Use default_port if a port isn't designated
-   in addr, otherwise use the port in addr. grpc_ares_init() must be called
-   at least once before this function. */
+/* Asynchronously resolve addr. Use default_port if a port isn't designated in
+   addr, otherwise use the port in addr. grpc_ares_init() must be called at
+   least once before this function. \a on_done may be called directly in this
+   function without being scheduled with \a exec_ctx, it should not try to
+   acquire locks that are being held by the caller. */
 extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
                                          const char *addr,
                                          const char *default_port,
