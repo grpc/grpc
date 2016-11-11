@@ -248,6 +248,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
@@ -262,7 +263,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/method_config.h" role="src" />
@@ -434,6 +434,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm.c" role="src" />
@@ -456,7 +457,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/mdstr_hash_table.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/method_config.c" role="src" />

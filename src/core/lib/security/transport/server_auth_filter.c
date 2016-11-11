@@ -68,8 +68,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
   for (l = batch->list.head; l != NULL; l = l->next) {
     grpc_metadata *usr_md = NULL;
     grpc_mdelem *md = l->md;
-    grpc_mdstr *key = md->key;
-    grpc_mdstr *value = md->value;
+    grpc_slice key = md->key;
+    grpc_slice value = md->value;
     if (result.count == result.capacity) {
       result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
       result.metadata =

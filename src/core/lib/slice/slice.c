@@ -41,7 +41,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-grpc_slice gpr_empty_slice(void) {
+grpc_slice grpc_empty_slice(void) {
   grpc_slice out;
   out.refcount = 0;
   out.data.inlined.length = 0;

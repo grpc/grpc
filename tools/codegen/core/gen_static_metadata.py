@@ -287,7 +287,7 @@ print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
 print >>H, 'extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];'
 for i, elem in enumerate(all_strs):
   print >>H, '/* "%s" */' % elem
-  print >>H, '#define %s (&grpc_static_slice_table[%d])' % (mangle(elem).upper(), i)
+  print >>H, '#define %s (grpc_static_slice_table[%d])' % (mangle(elem).upper(), i)
 print >>H
 print >>H, 'bool grpc_is_static_metadata_string(grpc_slice slice);'
 print >>H

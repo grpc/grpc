@@ -45,6 +45,7 @@
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -88,21 +89,23 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  if (md->key == GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST) {
-    const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST) == 0) {
+    if (!grpc_compression_algorithm_parse(md->value,
                                           &calld->compression_algorithm)) {
+      char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR,
-              "Invalid compression algorithm: '%s' (unknown). Ignoring.",
-              md_c_str);
+              "Invalid compression algorithm: '%s' (unknown). Ignoring.", val);
+      gpr_free(val);
       calld->compression_algorithm = GRPC_COMPRESS_NONE;
     }
     if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
                     calld->compression_algorithm)) {
+      char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (previously disabled). "
               "Ignoring.",
-              md_c_str);
+              val);
+      gpr_free(val);
       calld->compression_algorithm = GRPC_COMPRESS_NONE;
     }
     calld->has_compression_algorithm = 1;

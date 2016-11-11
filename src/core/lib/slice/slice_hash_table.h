@@ -40,54 +40,54 @@
  * (https://en.wikipedia.org/wiki/Open_addressing) with quadratic
  * probing (https://en.wikipedia.org/wiki/Quadratic_probing).
  *
- * The keys are \a grpc_mdstr objects.  The values are arbitrary pointers
+ * The keys are \a grpc_slice objects.  The values are arbitrary pointers
  * with a common vtable.
  *
  * Hash tables are intentionally immutable, to avoid the need for locking.
  */
 
-typedef struct grpc_mdstr_hash_table grpc_mdstr_hash_table;
+typedef struct grpc_slice_hash_table grpc_slice_hash_table;
 
-typedef struct grpc_mdstr_hash_table_vtable {
-  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
-  void* (*copy_value)(void* value);
-  int (*compare_value)(void* value1, void* value2);
-} grpc_mdstr_hash_table_vtable;
+typedef struct grpc_slice_hash_table_vtable {
+  void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value);
+  void *(*copy_value)(void *value);
+  int (*compare_value)(void *value1, void *value2);
+} grpc_slice_hash_table_vtable;
 
-typedef struct grpc_mdstr_hash_table_entry {
-  grpc_mdstr* key;
-  void* value; /* Must not be NULL. */
-  const grpc_mdstr_hash_table_vtable* vtable;
-} grpc_mdstr_hash_table_entry;
+typedef struct grpc_slice_hash_table_entry {
+  grpc_slice key;
+  void *value; /* Must not be NULL. */
+  const grpc_slice_hash_table_vtable *vtable;
+} grpc_slice_hash_table_entry;
 
 /** Creates a new hash table of containing \a entries, which is an array
     of length \a num_entries.
     Creates its own copy of all keys and values from \a entries. */
-grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
-    size_t num_entries, grpc_mdstr_hash_table_entry* entries);
+grpc_slice_hash_table *grpc_slice_hash_table_create(
+    size_t num_entries, grpc_slice_hash_table_entry *entries);
 
-grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table);
+grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
 /** Returns 1 when \a table is destroyed. */
-int grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
-                                grpc_mdstr_hash_table* table);
+int grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
+                                grpc_slice_hash_table *table);
 
 /** Returns the number of entries in \a table. */
-size_t grpc_mdstr_hash_table_num_entries(const grpc_mdstr_hash_table* table);
+size_t grpc_slice_hash_table_num_entries(const grpc_slice_hash_table *table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
-void* grpc_mdstr_hash_table_get(const grpc_mdstr_hash_table* table,
-                                const grpc_mdstr* key);
+void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
+                                const grpc_slice key);
 
 /** Compares two hash tables.
     The sort order is stable but undefined. */
-int grpc_mdstr_hash_table_cmp(const grpc_mdstr_hash_table* table1,
-                              const grpc_mdstr_hash_table* table2);
+int grpc_slice_hash_table_cmp(const grpc_slice_hash_table *table1,
+                              const grpc_slice_hash_table *table2);
 
 /** Iterates over the entries in \a table, calling \a func for each entry. */
-void grpc_mdstr_hash_table_iterate(
-    const grpc_mdstr_hash_table* table,
-    void (*func)(const grpc_mdstr_hash_table_entry* entry, void* user_data),
-    void* user_data);
+void grpc_slice_hash_table_iterate(
+    const grpc_slice_hash_table *table,
+    void (*func)(const grpc_slice_hash_table_entry *entry, void *user_data),
+    void *user_data);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H */

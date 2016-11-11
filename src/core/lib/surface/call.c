@@ -94,7 +94,7 @@ typedef enum {
 typedef struct {
   uint8_t is_set;
   grpc_status_code code;
-  grpc_mdstr *details;
+  grpc_slice details;
 } received_status;
 
 typedef struct batch_control {
@@ -244,7 +244,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = args->server_transport_data == NULL;
-  grpc_mdstr *path = NULL;
+  grpc_slice path = NULL;
   if (call->is_client) {
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
@@ -443,7 +443,7 @@ static void set_status_code(grpc_call *call, status_source source,
 }
 
 static void set_status_details(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                               status_source source, grpc_mdstr *status) {
+                               status_source source, grpc_slice status) {
   if (call->status[source].details != NULL) {
     GRPC_MDSTR_UNREF(exec_ctx, status);
   } else {

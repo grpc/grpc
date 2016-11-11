@@ -232,5 +232,5 @@ grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx *exec_ctx, const char *b64,
 
 fail:
   grpc_slice_unref_internal(exec_ctx, result);
-  return gpr_empty_slice();
+  return grpc_empty_slice();
 }

@@ -37,7 +37,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/transport/mdstr_hash_table.h"
+#include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/transport/metadata.h"
 
 /// Per-method configuration.
@@ -55,70 +55,70 @@ typedef struct grpc_method_config grpc_method_config;
 /// \a max_request_message_bytes and \a max_response_message_bytes
 /// indicate the maximum sizes of the request (checked when sending) and
 /// response (checked when receiving) messages.
-grpc_method_config* grpc_method_config_create(
-    bool* wait_for_ready, gpr_timespec* timeout,
-    int32_t* max_request_message_bytes, int32_t* max_response_message_bytes);
+grpc_method_config *grpc_method_config_create(
+    bool *wait_for_ready, gpr_timespec *timeout,
+    int32_t *max_request_message_bytes, int32_t *max_response_message_bytes);
 
-grpc_method_config* grpc_method_config_ref(grpc_method_config* method_config);
-void grpc_method_config_unref(grpc_exec_ctx* exec_ctx,
-                              grpc_method_config* method_config);
+grpc_method_config *grpc_method_config_ref(grpc_method_config *method_config);
+void grpc_method_config_unref(grpc_exec_ctx *exec_ctx,
+                              grpc_method_config *method_config);
 
 /// Compares two grpc_method_configs.
 /// The sort order is stable but undefined.
-int grpc_method_config_cmp(const grpc_method_config* method_config1,
-                           const grpc_method_config* method_config2);
+int grpc_method_config_cmp(const grpc_method_config *method_config1,
+                           const grpc_method_config *method_config2);
 
 /// These methods return NULL if the requested field is unset.
 /// The caller does NOT take ownership of the result.
-const bool* grpc_method_config_get_wait_for_ready(
-    const grpc_method_config* method_config);
-const gpr_timespec* grpc_method_config_get_timeout(
-    const grpc_method_config* method_config);
-const int32_t* grpc_method_config_get_max_request_message_bytes(
-    const grpc_method_config* method_config);
-const int32_t* grpc_method_config_get_max_response_message_bytes(
-    const grpc_method_config* method_config);
+const bool *grpc_method_config_get_wait_for_ready(
+    const grpc_method_config *method_config);
+const gpr_timespec *grpc_method_config_get_timeout(
+    const grpc_method_config *method_config);
+const int32_t *grpc_method_config_get_max_request_message_bytes(
+    const grpc_method_config *method_config);
+const int32_t *grpc_method_config_get_max_response_message_bytes(
+    const grpc_method_config *method_config);
 
 /// A table of method configs.
-typedef grpc_mdstr_hash_table grpc_method_config_table;
+typedef grpc_slice_hash_table grpc_method_config_table;
 
 typedef struct grpc_method_config_table_entry {
   /// The name is of one of the following forms:
   ///   service/method -- specifies exact service and method name
   ///   service/*      -- matches all methods for the specified service
-  grpc_mdstr* method_name;
-  grpc_method_config* method_config;
+  grpc_slice method_name;
+  grpc_method_config *method_config;
 } grpc_method_config_table_entry;
 
 /// Takes new references to all keys and values in \a entries.
-grpc_method_config_table* grpc_method_config_table_create(
-    size_t num_entries, grpc_method_config_table_entry* entries);
+grpc_method_config_table *grpc_method_config_table_create(
+    size_t num_entries, grpc_method_config_table_entry *entries);
 
-grpc_method_config_table* grpc_method_config_table_ref(
-    grpc_method_config_table* table);
-void grpc_method_config_table_unref(grpc_exec_ctx* exec_ctx,
-                                    grpc_method_config_table* table);
+grpc_method_config_table *grpc_method_config_table_ref(
+    grpc_method_config_table *table);
+void grpc_method_config_table_unref(grpc_exec_ctx *exec_ctx,
+                                    grpc_method_config_table *table);
 
 /// Compares two grpc_method_config_tables.
 /// The sort order is stable but undefined.
-int grpc_method_config_table_cmp(const grpc_method_config_table* table1,
-                                 const grpc_method_config_table* table2);
+int grpc_method_config_table_cmp(const grpc_method_config_table *table1,
+                                 const grpc_method_config_table *table2);
 
 /// Gets the method config for the specified \a path, which should be of
 /// the form "/service/method".
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
 ///
-/// Note: This returns a void* instead of a grpc_method_config* so that
+/// Note: This returns a void *instead of a grpc_method_config *so that
 /// it can also be used for tables constructed via
 /// grpc_method_config_table_convert().
-void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
-                                   const grpc_mdstr_hash_table* table,
-                                   const grpc_mdstr* path);
+void *grpc_method_config_table_get(grpc_exec_ctx *exec_ctx,
+                                   const grpc_slice_hash_table *table,
+                                   const grpc_slice path);
 
 /// Returns a channel arg containing \a table.
 grpc_arg grpc_method_config_table_create_channel_arg(
-    grpc_method_config_table* table);
+    grpc_method_config_table *table);
 
 /// Generates a new table from \a table whose values are converted to a
 /// new form via the \a convert_value function.  The new table will use
@@ -131,9 +131,9 @@ grpc_arg grpc_method_config_table_create_channel_arg(
 /// will return a new instance of the struct containing the values from
 /// the grpc_method_config, and \a vtable provides the methods for
 /// operating on the struct type.
-grpc_mdstr_hash_table* grpc_method_config_table_convert(
-    grpc_exec_ctx* exec_ctx, const grpc_method_config_table* table,
-    void* (*convert_value)(const grpc_method_config* method_config),
-    const grpc_mdstr_hash_table_vtable* vtable);
+grpc_slice_hash_table *grpc_method_config_table_convert(
+    grpc_exec_ctx *exec_ctx, const grpc_method_config_table *table,
+    void *(*convert_value)(const grpc_method_config *method_config),
+    const grpc_slice_hash_table_vtable *vtable);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METHOD_CONFIG_H */

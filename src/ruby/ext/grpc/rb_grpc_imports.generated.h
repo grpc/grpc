@@ -176,7 +176,7 @@ extern census_resource_id_type census_resource_id_import;
 typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
 extern census_record_values_type census_record_values_import;
 #define census_record_values census_record_values_import
-typedef int(*grpc_compression_algorithm_parse_type)(const char *name, size_t name_length, grpc_compression_algorithm *algorithm);
+typedef int(*grpc_compression_algorithm_parse_type)(grpc_slice value, grpc_compression_algorithm *algorithm);
 extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 #define grpc_compression_algorithm_parse grpc_compression_algorithm_parse_import
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
@@ -512,15 +512,24 @@ extern grpc_slice_split_tail_type grpc_slice_split_tail_import;
 typedef grpc_slice(*grpc_slice_split_head_type)(grpc_slice *s, size_t split);
 extern grpc_slice_split_head_type grpc_slice_split_head_import;
 #define grpc_slice_split_head grpc_slice_split_head_import
-typedef grpc_slice(*gpr_empty_slice_type)(void);
-extern gpr_empty_slice_type gpr_empty_slice_import;
-#define gpr_empty_slice gpr_empty_slice_import
+typedef grpc_slice(*grpc_empty_slice_type)(void);
+extern grpc_empty_slice_type grpc_empty_slice_import;
+#define grpc_empty_slice grpc_empty_slice_import
 typedef int(*grpc_slice_cmp_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_cmp_type grpc_slice_cmp_import;
 #define grpc_slice_cmp grpc_slice_cmp_import
 typedef int(*grpc_slice_str_cmp_type)(grpc_slice a, const char *b);
 extern grpc_slice_str_cmp_type grpc_slice_str_cmp_import;
 #define grpc_slice_str_cmp grpc_slice_str_cmp_import
+typedef int(*grpc_slice_buf_cmp_type)(grpc_slice a, const void *b, size_t blen);
+extern grpc_slice_buf_cmp_type grpc_slice_buf_cmp_import;
+#define grpc_slice_buf_cmp grpc_slice_buf_cmp_import
+typedef int(*grpc_slice_buf_start_eq_type)(grpc_slice a, const void *b, size_t blen);
+extern grpc_slice_buf_start_eq_type grpc_slice_buf_start_eq_import;
+#define grpc_slice_buf_start_eq grpc_slice_buf_start_eq_import
+typedef uint32_t(*grpc_slice_hash_type)(grpc_slice s);
+extern grpc_slice_hash_type grpc_slice_hash_import;
+#define grpc_slice_hash grpc_slice_hash_import
 typedef void(*grpc_slice_buffer_init_type)(grpc_slice_buffer *sb);
 extern grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 #define grpc_slice_buffer_init grpc_slice_buffer_init_import

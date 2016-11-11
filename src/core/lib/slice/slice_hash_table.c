@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "src/core/lib/transport/mdstr_hash_table.h"
+#include "src/core/lib/slice/slice_hash_table.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -37,72 +37,88 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 
-struct grpc_mdstr_hash_table {
+static grpc_slice_refcount terminal_slice_refcount = {0};
+static const grpc_slice terminal_slice = {&terminal_slice_refcount,
+                                          .data.refcounted = {0, 0}};
+
+struct grpc_slice_hash_table {
   gpr_refcount refs;
   size_t num_entries;
   size_t size;
-  grpc_mdstr_hash_table_entry* entries;
+  grpc_slice_hash_table_entry* entries;
 };
+
+static bool is_terminal(grpc_slice slice) {
+  return slice.refcount == &terminal_slice_refcount;
+}
 
 // Helper function for insert and get operations that performs quadratic
 // probing (https://en.wikipedia.org/wiki/Quadratic_probing).
-static size_t grpc_mdstr_hash_table_find_index(
-    const grpc_mdstr_hash_table* table, const grpc_mdstr* key,
-    bool find_empty) {
+static size_t grpc_slice_hash_table_find_index(
+    const grpc_slice_hash_table* table, const grpc_slice key, bool find_empty) {
+  size_t hash = grpc_slice_hash(key);
   for (size_t i = 0; i < table->size; ++i) {
-    const size_t idx = (key->hash + i * i) % table->size;
-    if (table->entries[idx].key == NULL) return find_empty ? idx : table->size;
-    if (table->entries[idx].key == key) return idx;
+    const size_t idx = (hash + i * i) % table->size;
+    if (is_terminal(table->entries[idx].key)) {
+      return find_empty ? idx : table->size;
+    }
+    if (grpc_slice_cmp(table->entries[idx].key, key) == 0) {
+      return idx;
+    }
   }
   return table->size;  // Not found.
 }
 
-static void grpc_mdstr_hash_table_add(
-    grpc_mdstr_hash_table* table, grpc_mdstr* key, void* value,
-    const grpc_mdstr_hash_table_vtable* vtable) {
+static void grpc_slice_hash_table_add(
+    grpc_slice_hash_table* table, grpc_slice key, void* value,
+    const grpc_slice_hash_table_vtable* vtable) {
   GPR_ASSERT(value != NULL);
   const size_t idx =
-      grpc_mdstr_hash_table_find_index(table, key, true /* find_empty */);
+      grpc_slice_hash_table_find_index(table, key, true /* find_empty */);
   GPR_ASSERT(idx != table->size);  // Table should never be full.
-  grpc_mdstr_hash_table_entry* entry = &table->entries[idx];
-  entry->key = GRPC_MDSTR_REF(key);
+  grpc_slice_hash_table_entry* entry = &table->entries[idx];
+  entry->key = grpc_slice_ref(key);
   entry->value = vtable->copy_value(value);
   entry->vtable = vtable;
 }
 
-grpc_mdstr_hash_table* grpc_mdstr_hash_table_create(
-    size_t num_entries, grpc_mdstr_hash_table_entry* entries) {
-  grpc_mdstr_hash_table* table = gpr_malloc(sizeof(*table));
+grpc_slice_hash_table* grpc_slice_hash_table_create(
+    size_t num_entries, grpc_slice_hash_table_entry* entries) {
+  grpc_slice_hash_table* table = gpr_malloc(sizeof(*table));
   memset(table, 0, sizeof(*table));
   gpr_ref_init(&table->refs, 1);
   table->num_entries = num_entries;
   // Quadratic probing gets best performance when the table is no more
   // than half full.
   table->size = num_entries * 2;
-  const size_t entry_size = sizeof(grpc_mdstr_hash_table_entry) * table->size;
+  const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
   table->entries = gpr_malloc(entry_size);
   memset(table->entries, 0, entry_size);
   for (size_t i = 0; i < num_entries; ++i) {
-    grpc_mdstr_hash_table_entry* entry = &entries[i];
-    grpc_mdstr_hash_table_add(table, entry->key, entry->value, entry->vtable);
+    table->entries[i].key = terminal_slice;
+  }
+  for (size_t i = 0; i < num_entries; ++i) {
+    grpc_slice_hash_table_entry* entry = &entries[i];
+    grpc_slice_hash_table_add(table, entry->key, entry->value, entry->vtable);
   }
   return table;
 }
 
-grpc_mdstr_hash_table* grpc_mdstr_hash_table_ref(grpc_mdstr_hash_table* table) {
+grpc_slice_hash_table* grpc_slice_hash_table_ref(grpc_slice_hash_table* table) {
   if (table != NULL) gpr_ref(&table->refs);
   return table;
 }
 
-int grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
-                                grpc_mdstr_hash_table* table) {
+int grpc_slice_hash_table_unref(grpc_exec_ctx* exec_ctx,
+                                grpc_slice_hash_table* table) {
   if (table != NULL && gpr_unref(&table->refs)) {
     for (size_t i = 0; i < table->size; ++i) {
-      grpc_mdstr_hash_table_entry* entry = &table->entries[i];
-      if (entry->key != NULL) {
-        GRPC_MDSTR_UNREF(exec_ctx, entry->key);
+      grpc_slice_hash_table_entry* entry = &table->entries[i];
+      if (!is_terminal(entry->key)) {
+        grpc_slice_unref_internal(exec_ctx, entry->key);
         entry->vtable->destroy_value(exec_ctx, entry->value);
       }
     }
@@ -113,29 +129,29 @@ int grpc_mdstr_hash_table_unref(grpc_exec_ctx* exec_ctx,
   return 0;
 }
 
-size_t grpc_mdstr_hash_table_num_entries(const grpc_mdstr_hash_table* table) {
+size_t grpc_slice_hash_table_num_entries(const grpc_slice_hash_table* table) {
   return table->num_entries;
 }
 
-void* grpc_mdstr_hash_table_get(const grpc_mdstr_hash_table* table,
-                                const grpc_mdstr* key) {
+void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
+                                const grpc_slice key) {
   const size_t idx =
-      grpc_mdstr_hash_table_find_index(table, key, false /* find_empty */);
+      grpc_slice_hash_table_find_index(table, key, false /* find_empty */);
   if (idx == table->size) return NULL;  // Not found.
   return table->entries[idx].value;
 }
 
-int grpc_mdstr_hash_table_cmp(const grpc_mdstr_hash_table* table1,
-                              const grpc_mdstr_hash_table* table2) {
+int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* table1,
+                              const grpc_slice_hash_table* table2) {
   // Compare by num_entries.
   if (table1->num_entries < table2->num_entries) return -1;
   if (table1->num_entries > table2->num_entries) return 1;
   for (size_t i = 0; i < table1->num_entries; ++i) {
-    grpc_mdstr_hash_table_entry* e1 = &table1->entries[i];
-    grpc_mdstr_hash_table_entry* e2 = &table2->entries[i];
+    grpc_slice_hash_table_entry* e1 = &table1->entries[i];
+    grpc_slice_hash_table_entry* e2 = &table2->entries[i];
     // Compare keys by hash value.
-    if (e1->key->hash < e2->key->hash) return -1;
-    if (e1->key->hash > e2->key->hash) return 1;
+    int cmp = grpc_slice_cmp(e1->key, e2->key);
+    if (cmp != 0) return cmp;
     // Compare by vtable (pointer equality).
     if (e1->vtable < e2->vtable) return -1;
     if (e1->vtable > e2->vtable) return 1;
@@ -146,12 +162,12 @@ int grpc_mdstr_hash_table_cmp(const grpc_mdstr_hash_table* table1,
   return 0;
 }
 
-void grpc_mdstr_hash_table_iterate(
-    const grpc_mdstr_hash_table* table,
-    void (*func)(const grpc_mdstr_hash_table_entry* entry, void* user_data),
+void grpc_slice_hash_table_iterate(
+    const grpc_slice_hash_table* table,
+    void (*func)(const grpc_slice_hash_table_entry* entry, void* user_data),
     void* user_data) {
   for (size_t i = 0; i < table->size; ++i) {
-    if (table->entries[i].key != NULL) {
+    if (!is_terminal(table->entries[i].key)) {
       func(&table->entries[i], user_data);
     }
   }

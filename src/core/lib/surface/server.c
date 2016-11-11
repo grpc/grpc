@@ -98,8 +98,8 @@ typedef struct requested_call {
 typedef struct channel_registered_method {
   registered_method *server_registered_method;
   uint32_t flags;
-  grpc_mdstr *method;
-  grpc_mdstr *host;
+  grpc_slice method;
+  grpc_slice host;
 } channel_registered_method;
 
 struct channel_data {
@@ -144,8 +144,8 @@ struct call_data {
   /** the current state of a call - see call_state */
   call_state state;
 
-  grpc_mdstr *path;
-  grpc_mdstr *host;
+  grpc_slice path;
+  grpc_slice host;
   gpr_timespec deadline;
 
   grpc_completion_queue *cq_new;
@@ -459,7 +459,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
                        op);
 }
 
-static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
+static void cpstr(char **dest, size_t *capacity, grpc_slice value) {
   grpc_slice slice = value->slice;
   size_t len = GRPC_SLICE_LENGTH(slice);
 
@@ -1136,8 +1136,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   channel_registered_method *crm;
   grpc_channel *channel;
   channel_data *chand;
-  grpc_mdstr *host;
-  grpc_mdstr *method;
+  grpc_slice host;
+  grpc_slice method;
   uint32_t hash;
   size_t slots;
   uint32_t probes;

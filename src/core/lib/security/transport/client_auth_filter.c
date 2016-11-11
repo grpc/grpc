@@ -54,8 +54,8 @@
 /* We can have a per-call credentials. */
 typedef struct {
   grpc_call_credentials *creds;
-  grpc_mdstr *host;
-  grpc_mdstr *method;
+  grpc_slice host;
+  grpc_slice method;
   /* pollset{_set} bound to this call; if we need to make external
      network requests, they should be done under a pollset added to this
      pollset_set so that work can progress when this call wants work to progress
