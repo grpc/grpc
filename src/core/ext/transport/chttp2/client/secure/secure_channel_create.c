@@ -129,14 +129,13 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
 }
 
-static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args,
-                              grpc_slice_buffer *read_buffer, void *user_data,
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  connector *c = user_data;
-  c->tmp_args = args;
+  grpc_handshaker_args *args = arg;
+  connector *c = args->user_data;
+  c->tmp_args = args->args;
   if (error != GRPC_ERROR_NONE) {
-    gpr_free(read_buffer);
+    gpr_free(args->read_buffer);
     grpc_closure *notify = c->notify;
     c->notify = NULL;
     grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
@@ -145,9 +144,10 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     // handshake API, and then move the code from on_secure_handshake_done()
     // into this function.
     grpc_channel_security_connector_do_handshake(
-        exec_ctx, c->security_connector, endpoint, read_buffer,
+        exec_ctx, c->security_connector, args->endpoint, args->read_buffer,
         c->args.deadline, on_secure_handshake_done, c);
   }
+  gpr_free(args);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,

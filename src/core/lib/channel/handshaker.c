@@ -43,32 +43,29 @@
 // grpc_handshaker
 //
 
-void grpc_handshaker_init(const struct grpc_handshaker_vtable* vtable,
+void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
                           grpc_handshaker* handshaker) {
   handshaker->vtable = vtable;
 }
 
-void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
-                             grpc_handshaker* handshaker) {
+static void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_handshaker* handshaker) {
   handshaker->vtable->destroy(exec_ctx, handshaker);
 }
 
-void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                              grpc_handshaker* handshaker) {
+static void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                                     grpc_handshaker* handshaker) {
   handshaker->vtable->shutdown(exec_ctx, handshaker);
 }
 
-void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
-                                  grpc_handshaker* handshaker,
-                                  grpc_endpoint* endpoint,
-                                  grpc_channel_args* args,
-                                  grpc_slice_buffer* read_buffer,
-                                  gpr_timespec deadline,
-                                  grpc_tcp_server_acceptor* acceptor,
-                                  grpc_handshaker_done_cb cb, void* user_data) {
-  handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, args,
-                                   read_buffer, deadline, acceptor, cb,
-                                   user_data);
+static void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                         grpc_handshaker* handshaker,
+                                         gpr_timespec deadline,
+                                         grpc_tcp_server_acceptor* acceptor,
+                                         grpc_iomgr_cb_func on_handshake_done,
+                                         grpc_handshaker_args* args) {
+  handshaker->vtable->do_handshake(exec_ctx, handshaker, deadline, acceptor,
+                                   on_handshake_done, args);
 }
 
 //
@@ -84,8 +81,10 @@ struct grpc_handshaker_state {
   // The acceptor to call the handshakers with.
   grpc_tcp_server_acceptor* acceptor;
   // The final callback and user_data to invoke after the last handshaker.
-  grpc_handshaker_done_cb final_cb;
-  void* final_user_data;
+  grpc_iomgr_cb_func on_handshake_done;
+  void* user_data;
+  // Next closure to call.
+  grpc_closure next_cb;
 };
 
 struct grpc_handshake_manager {
@@ -143,61 +142,61 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 
 // A function used as the handshaker-done callback when chaining
 // handshakers together.
-static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
-                                 grpc_endpoint* endpoint,
-                                 grpc_channel_args* args,
-                                 grpc_slice_buffer* read_buffer,
-                                 void* user_data, grpc_error* error) {
-  grpc_handshake_manager* mgr = user_data;
+static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
+                                 grpc_error* error) {
+  grpc_handshaker_args* args = arg;
+  grpc_handshake_manager* mgr = args->user_data;
   GPR_ASSERT(mgr->state != NULL);
-  GPR_ASSERT(mgr->state->index < mgr->count);
+  GPR_ASSERT(mgr->state->index <= mgr->count);
   // If we got an error, skip all remaining handshakers and invoke the
   // caller-supplied callback immediately.
-  if (error != GRPC_ERROR_NONE) {
-    mgr->state->final_cb(exec_ctx, endpoint, args, read_buffer,
-                         mgr->state->final_user_data, error);
+  // Otherwise, if this is the last handshaker, then call the final
+  // callback instead of chaining back to this function again.
+  if (error != GRPC_ERROR_NONE || mgr->state->index == mgr->count) {
+    args->user_data = mgr->state->user_data;
+    grpc_closure_init(&mgr->state->next_cb, mgr->state->on_handshake_done,
+                      args);
+    grpc_exec_ctx_sched(exec_ctx, &mgr->state->next_cb, GRPC_ERROR_REF(error),
+                        NULL);
     return;
   }
-  grpc_handshaker_done_cb cb = call_next_handshaker;
-  // If this is the last handshaker, use the caller-supplied callback
-  // and user_data instead of chaining back to this function again.
-  if (mgr->state->index == mgr->count - 1) {
-    cb = mgr->state->final_cb;
-    user_data = mgr->state->final_user_data;
-  }
-  // Invoke handshaker.
+  // Call the next handshaker.
   grpc_handshaker_do_handshake(
-      exec_ctx, mgr->handshakers[mgr->state->index], endpoint, args,
-      read_buffer, mgr->state->deadline, mgr->state->acceptor, cb, user_data);
-  ++mgr->state->index;
+      exec_ctx, mgr->handshakers[mgr->state->index], mgr->state->deadline,
+      mgr->state->acceptor, call_next_handshaker, args);
   // If this is the last handshaker, clean up state.
   if (mgr->state->index == mgr->count) {
     gpr_free(mgr->state);
     mgr->state = NULL;
+  } else {
+    ++mgr->state->index;
   }
 }
 
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
-    grpc_endpoint* endpoint, const grpc_channel_args* args,
+    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
     gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_handshaker_done_cb cb, void* user_data) {
-  grpc_channel_args* args_copy = grpc_channel_args_copy(args);
-  grpc_slice_buffer* read_buffer = gpr_malloc(sizeof(*read_buffer));
-  grpc_slice_buffer_init(read_buffer);
-  if (mgr->count == 0) {
-    // No handshakers registered, so we just immediately call the done
-    // callback with the passed-in endpoint.
-    cb(exec_ctx, endpoint, args_copy, read_buffer, user_data, GRPC_ERROR_NONE);
-  } else {
-    GPR_ASSERT(mgr->state == NULL);
-    mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
-    memset(mgr->state, 0, sizeof(*mgr->state));
-    mgr->state->deadline = deadline;
-    mgr->state->acceptor = acceptor;
-    mgr->state->final_cb = cb;
-    mgr->state->final_user_data = user_data;
-    call_next_handshaker(exec_ctx, endpoint, args_copy, read_buffer, mgr,
-                         GRPC_ERROR_NONE);
-  }
+    grpc_iomgr_cb_func on_handshake_done, void* user_data) {
+  // Construct state.
+  GPR_ASSERT(mgr->state == NULL);
+  mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
+  memset(mgr->state, 0, sizeof(*mgr->state));
+  mgr->state->deadline = deadline;
+  mgr->state->acceptor = acceptor;
+  mgr->state->on_handshake_done = on_handshake_done;
+  mgr->state->user_data = user_data;
+  // Construct handshaker args.  These will be passed through all
+  // handshakers and eventually be freed by the final callback.
+  grpc_handshaker_args* args = gpr_malloc(sizeof(*args));
+  args->endpoint = endpoint;
+  args->args = grpc_channel_args_copy(channel_args);
+  args->read_buffer = gpr_malloc(sizeof(*args->read_buffer));
+  grpc_slice_buffer_init(args->read_buffer);
+  // While chaining between handshakers, we use args->user_data to
+  // store a pointer to the handshake manager.  This will be
+  // changed to point to the caller-supplied user_data before calling
+  // the final callback.
+  args->user_data = mgr;
+  call_next_handshaker(exec_ctx, args, GRPC_ERROR_NONE);
 }
