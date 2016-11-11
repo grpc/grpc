@@ -325,16 +325,13 @@
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
 
-  NSArray *requests = @[@27182, @8, @1828, @45904];
-  NSArray *responses = @[@31415, @9, @2653, @58979];
-
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
   __block int index = 0;
 
   RMTStreamingOutputCallRequest *request =
-      [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                      requestedResponseSize:responses[index]];
+      [RMTStreamingOutputCallRequest messageWithPayloadSize:@256
+                                      requestedResponseSize:@256];
 
   [requestsBuffer writeValue:request];
 
@@ -347,13 +344,13 @@
         XCTAssertNotNil(response, @"Event handler called without an event.");
         XCTAssertFalse(done);
 
-        id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+        id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:@256];
         XCTAssertEqualObjects(response, expected);
         index += 1;
 
         RMTStreamingOutputCallRequest *request =
-        [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                        requestedResponseSize:responses[index]];
+        [RMTStreamingOutputCallRequest messageWithPayloadSize:@256
+                                        requestedResponseSize:@0];
         RMTEchoStatus *status = [RMTEchoStatus message];
         status.code = 7;
         status.message = @"Error message!";

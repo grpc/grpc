@@ -301,10 +301,10 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
             &transport_writing->outbuf);
       }
       if (!transport_writing->is_client && !stream_writing->read_closed) {
-        gpr_slice_buffer_add(&transport_writing->outbuf,
+/*        gpr_slice_buffer_add(&transport_writing->outbuf,
                              grpc_chttp2_rst_stream_create(
                                  stream_writing->id, GRPC_CHTTP2_NO_ERROR,
-                                 &stream_writing->stats));
+                                 &stream_writing->stats)); */
       }
       stream_writing->send_trailing_metadata = NULL;
       stream_writing->sent_trailing_metadata = 1;
