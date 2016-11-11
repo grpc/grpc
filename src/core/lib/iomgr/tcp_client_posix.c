@@ -299,8 +299,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
     addr = &addr4_copy;
   }
-  if ((error = prepare_socket(addr, fd, channel_args)) !=
-      GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
     grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
     return;
   }
