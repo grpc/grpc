@@ -68,7 +68,7 @@ static int message_size_limits_cmp(void* value1, void* value2) {
 
 static void free_mem(grpc_exec_ctx* exec_ctx, void* p) { gpr_free(p); }
 
-static const grpc_mdstr_hash_table_vtable message_size_limits_vtable = {
+static const grpc_slice_hash_table_vtable message_size_limits_vtable = {
     free_mem, message_size_limits_copy, message_size_limits_cmp};
 
 static void* method_config_convert_value(
@@ -102,7 +102,7 @@ typedef struct channel_data {
   int max_send_size;
   int max_recv_size;
   // Maps path names to message_size_limits structs.
-  grpc_mdstr_hash_table* method_limit_table;
+  grpc_slice_hash_table* method_limit_table;
 } channel_data;
 
 // Callback invoked when we receive a message.  Here we check the max
@@ -236,7 +236,7 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_element* elem) {
   channel_data* chand = elem->channel_data;
-  grpc_mdstr_hash_table_unref(exec_ctx, chand->method_limit_table);
+  grpc_slice_hash_table_unref(exec_ctx, chand->method_limit_table);
 }
 
 const grpc_channel_filter grpc_message_size_filter = {

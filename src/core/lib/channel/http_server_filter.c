@@ -38,6 +38,7 @@
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -108,7 +109,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     } else if (md == GRPC_MDELEM_METHOD_GET) {
       calld->seen_method = 1;
       *calld->recv_cacheable_request = true;
-    } else if (md->key == GRPC_MDSTR_SCHEME) {
+    } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_SCHEME)) {
       calld->seen_scheme = 1;
     } else if (md == GRPC_MDELEM_TE_TRAILERS) {
       calld->seen_te_trailers = 1;
@@ -116,12 +117,12 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* TODO(klempner): Track that we've seen all the headers we should
        require */
     return NULL;
-  } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
-    const char *value_str = grpc_mdstr_as_c_string(md->value);
-    if (strncmp(value_str, EXPECTED_CONTENT_TYPE,
-                EXPECTED_CONTENT_TYPE_LENGTH) == 0 &&
-        (value_str[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
-         value_str[EXPECTED_CONTENT_TYPE_LENGTH] == ';')) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_CONTENT_TYPE)) {
+    if (grpc_slice_buf_start_eq(md->value, EXPECTED_CONTENT_TYPE,
+                                EXPECTED_CONTENT_TYPE_LENGTH) &&
+        (GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
+         GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] ==
+             ';')) {
       /* Although the C implementation doesn't (currently) generate them,
          any custom +-suffix is explicitly valid. */
       /* TODO(klempner): We should consider preallocating common values such
@@ -130,41 +131,47 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     } else {
       /* TODO(klempner): We're currently allowing this, but we shouldn't
          see it without a proxy so log for now. */
-      gpr_log(GPR_INFO, "Unexpected content-type '%s'", value_str);
+      char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
+      gpr_free(val);
     }
     return NULL;
-  } else if (md->key == GRPC_MDSTR_TE || md->key == GRPC_MDSTR_METHOD ||
-             md->key == GRPC_MDSTR_SCHEME) {
-    gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
-            grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_TE) == 0 ||
+             grpc_slice_cmp(md->key, GRPC_MDSTR_METHOD) == 0 ||
+             grpc_slice_cmp(md->key, GRPC_MDSTR_SCHEME) == 0) {
+    char *key = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
+    char *value = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+    gpr_log(GPR_ERROR, "Invalid %s: header: '%s'", key, value);
     /* swallow it and error everything out. */
     /* TODO(klempner): We ought to generate more descriptive error messages
        on the wire here. */
     grpc_call_element_send_cancel(a->exec_ctx, elem);
+    gpr_free(key);
+    gpr_free(value);
     return NULL;
-  } else if (md->key == GRPC_MDSTR_PATH) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {
     if (calld->seen_path) {
       gpr_log(GPR_ERROR, "Received :path twice");
       return NULL;
     }
     calld->seen_path = 1;
     return md;
-  } else if (md->key == GRPC_MDSTR_AUTHORITY) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_AUTHORITY) == 0) {
     calld->seen_authority = 1;
     return md;
-  } else if (md->key == GRPC_MDSTR_HOST) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_HOST) == 0) {
     /* translate host to :authority since :authority may be
        omitted */
-    grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-        a->exec_ctx, GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
+    grpc_mdelem *authority = grpc_mdelem_from_slices(
+        a->exec_ctx, GRPC_MDSTR_AUTHORITY, grpc_slice_ref(md->value));
     calld->seen_authority = 1;
     return authority;
-  } else if (md->key == GRPC_MDSTR_GRPC_PAYLOAD_BIN) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_PAYLOAD_BIN) == 0) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
     grpc_slice_buffer_add(&calld->read_slice_buffer,
-                          grpc_slice_ref_internal(md->value->slice));
+                          grpc_slice_ref_internal(md->value));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
     return NULL;

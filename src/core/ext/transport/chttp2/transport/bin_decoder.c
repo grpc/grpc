@@ -157,7 +157,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_exec_ctx *exec_ctx,
             "grpc_chttp2_base64_decode has a length of %d, which is not a "
             "multiple of 4.\n",
             (int)input_length);
-    return gpr_empty_slice();
+    return grpc_empty_slice();
   }
 
   if (input_length > 0) {
@@ -182,7 +182,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref_internal(exec_ctx, output);
-    return gpr_empty_slice();
+    return grpc_empty_slice();
   }
   GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
   GPR_ASSERT(ctx.input_cur == GRPC_SLICE_END_PTR(input));
@@ -204,7 +204,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx *exec_ctx,
             "has a tail of 1 byte.\n",
             (int)input_length);
     grpc_slice_unref_internal(exec_ctx, output);
-    return gpr_empty_slice();
+    return grpc_empty_slice();
   }
 
   if (output_length > input_length / 4 * 3 + tail_xtra[input_length % 4]) {
@@ -214,7 +214,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx *exec_ctx,
             (int)output_length,
             (int)(input_length / 4 * 3 + tail_xtra[input_length % 4]));
     grpc_slice_unref_internal(exec_ctx, output);
-    return gpr_empty_slice();
+    return grpc_empty_slice();
   }
 
   ctx.input_cur = GRPC_SLICE_START_PTR(input);
@@ -228,7 +228,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref_internal(exec_ctx, output);
-    return gpr_empty_slice();
+    return grpc_empty_slice();
   }
   GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
   GPR_ASSERT(ctx.input_cur <= GRPC_SLICE_END_PTR(input));

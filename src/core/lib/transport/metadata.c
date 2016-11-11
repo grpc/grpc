@@ -137,7 +137,7 @@ void grpc_mdctx_global_init(void) {
   memset(g_static_mdtab, 0, sizeof(g_static_mdtab));
   memset(g_static_strtab, 0, sizeof(g_static_strtab));
   for (i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_mdstr *elem = &grpc_static_mdstr_table[i];
+    grpc_slice elem = &grpc_static_mdstr_table[i];
     const char *str = grpc_static_metadata_strings[i];
     uint32_t hash = gpr_murmur_hash3(str, strlen(str), g_hash_seed);
     *(grpc_slice *)&elem->slice = grpc_slice_from_static_string(str);
@@ -155,13 +155,13 @@ void grpc_mdctx_global_init(void) {
   }
   for (i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
     grpc_mdelem *elem = &grpc_static_mdelem_table[i];
-    grpc_mdstr *key =
+    grpc_slice key =
         &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 0]];
-    grpc_mdstr *value =
+    grpc_slice value =
         &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 1]];
     uint32_t hash = GRPC_MDSTR_KV_HASH(key->hash, value->hash);
-    *(grpc_mdstr **)&elem->key = key;
-    *(grpc_mdstr **)&elem->value = value;
+    *(grpc_slice *)&elem->key = key;
+    *(grpc_slice *)&elem->value = value;
     for (j = 0;; j++) {
       size_t idx = (hash + j) % GPR_ARRAY_SIZE(g_static_mdtab);
       if (g_static_mdtab[idx] == NULL) {
@@ -216,8 +216,8 @@ static void ref_md_locked(mdtab_shard *shard,
           "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           gpr_atm_no_barrier_load(&md->refcnt) + 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+          grpc_mdstr_as_c_string((grpc_slice)md->key),
+          grpc_mdstr_as_c_string((grpc_slice)md->value));
 #endif
   if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
     gpr_atm_no_barrier_fetch_add(&shard->free_estimate, -1);
@@ -351,8 +351,8 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(GPR_DEBUG, "ELM   NEW:%p:%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+          grpc_mdstr_as_c_string((grpc_slice)md->key),
+          grpc_mdstr_as_c_string((grpc_slice)md->value));
 #endif
   shard->count++;
 
@@ -391,8 +391,8 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
           "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           gpr_atm_no_barrier_load(&md->refcnt) + 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+          grpc_mdstr_as_c_string((grpc_slice)md->key),
+          grpc_mdstr_as_c_string((grpc_slice)md->value));
 #endif
   /* we can assume the ref count is >= 1 as the application is calling
      this function - meaning that no adjustment to mdtab_free is necessary,
@@ -412,8 +412,8 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *gmd DEBUG_ARGS) {
           "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
           gpr_atm_no_barrier_load(&md->refcnt),
           gpr_atm_no_barrier_load(&md->refcnt) - 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+          grpc_mdstr_as_c_string((grpc_slice)md->key),
+          grpc_mdstr_as_c_string((grpc_slice)md->value));
 #endif
   uint32_t hash =
       GRPC_MDSTR_KV_HASH(grpc_slice_hash(md->key), grpc_slice_hash(md->value));

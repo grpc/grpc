@@ -37,6 +37,7 @@
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -98,23 +99,24 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   client_recv_filter_args *a = user_data;
   if (md == GRPC_MDELEM_STATUS_200) {
     return NULL;
-  } else if (md->key == GRPC_MDSTR_STATUS) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_STATUS) == 0) {
     char *message_string;
-    gpr_asprintf(&message_string, "Received http2 header with status: %s",
-                 grpc_mdstr_as_c_string(md->value));
+    char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+    gpr_asprintf(&message_string, "Received http2 header with status: %s", val);
     grpc_slice message = grpc_slice_from_copied_string(message_string);
     gpr_free(message_string);
+    gpr_free(val);
     grpc_call_element_send_close_with_message(a->exec_ctx, a->elem,
                                               GRPC_STATUS_CANCELLED, &message);
     return NULL;
   } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     return NULL;
-  } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
-    const char *value_str = grpc_mdstr_as_c_string(md->value);
-    if (strncmp(value_str, EXPECTED_CONTENT_TYPE,
-                EXPECTED_CONTENT_TYPE_LENGTH) == 0 &&
-        (value_str[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
-         value_str[EXPECTED_CONTENT_TYPE_LENGTH] == ';')) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_CONTENT_TYPE) == 0) {
+    if (grpc_slice_buf_start_eq(md->value, EXPECTED_CONTENT_TYPE,
+                                EXPECTED_CONTENT_TYPE_LENGTH) &&
+        (GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
+         GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] ==
+             ';')) {
       /* Although the C implementation doesn't (currently) generate them,
          any custom +-suffix is explicitly valid. */
       /* TODO(klempner): We should consider preallocating common values such
@@ -123,7 +125,9 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
     } else {
       /* TODO(klempner): We're currently allowing this, but we shouldn't
          see it without a proxy so log for now. */
-      gpr_log(GPR_INFO, "Unexpected content-type '%s'", value_str);
+      char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
+      gpr_free(val);
     }
     return NULL;
   }
@@ -162,11 +166,11 @@ static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
   /* eat the things we'd like to set ourselves */
-  if (md->key == GRPC_MDSTR_METHOD) return NULL;
-  if (md->key == GRPC_MDSTR_SCHEME) return NULL;
-  if (md->key == GRPC_MDSTR_TE) return NULL;
-  if (md->key == GRPC_MDSTR_CONTENT_TYPE) return NULL;
-  if (md->key == GRPC_MDSTR_USER_AGENT) return NULL;
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_METHOD) == 0) return NULL;
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_SCHEME) == 0) return NULL;
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_TE) == 0) return NULL;
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_CONTENT_TYPE) == 0) return NULL;
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_USER_AGENT) == 0) return NULL;
   return md;
 }
 
@@ -244,10 +248,10 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       if (calld->send_message_blocked == false) {
         /* when all the send_message data is available, then create a MDELEM and
         append to headers */
-        grpc_mdelem *payload_bin = grpc_mdelem_from_metadata_strings(
+        grpc_mdelem *payload_bin = grpc_mdelem_from_slices(
             exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
-            grpc_mdstr_from_buffer(calld->payload_bytes,
-                                   op->send_message->length));
+            grpc_slice_from_copied_buffer((const char *)calld->payload_bytes,
+                                          op->send_message->length));
         grpc_metadata_batch_add_tail(op->send_initial_metadata,
                                      &calld->payload_bin, payload_bin);
         calld->on_complete = op->on_complete;
@@ -338,8 +342,8 @@ static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
       if (args->args[i].type == GRPC_ARG_STRING &&
           strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
         for (j = 0; j < GPR_ARRAY_SIZE(valid_schemes); j++) {
-          if (0 == strcmp(grpc_mdstr_as_c_string(valid_schemes[j]->value),
-                          args->args[i].value.string)) {
+          if (0 == grpc_slice_str_cmp(valid_schemes[j]->value,
+                                      args->args[i].value.string)) {
             return valid_schemes[j];
           }
         }
@@ -365,13 +369,13 @@ static size_t max_payload_size_from_args(const grpc_channel_args *args) {
   return kMaxPayloadSizeForGet;
 }
 
-static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args,
-                                        const char *transport_name) {
+static grpc_slice user_agent_from_args(const grpc_channel_args *args,
+                                       const char *transport_name) {
   gpr_strvec v;
   size_t i;
   int is_first = 1;
   char *tmp;
-  grpc_mdstr *result;
+  grpc_slice result;
 
   gpr_strvec_init(&v);
 
@@ -409,7 +413,7 @@ static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args,
 
   tmp = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
-  result = grpc_mdstr_from_string(tmp);
+  result = grpc_slice_intern(grpc_slice_from_static_string(tmp));
   gpr_free(tmp);
 
   return result;
@@ -425,7 +429,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->static_scheme = scheme_from_args(args->channel_args);
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);
-  chand->user_agent = grpc_mdelem_from_metadata_strings(
+  chand->user_agent = grpc_mdelem_from_slices(
       exec_ctx, GRPC_MDSTR_USER_AGENT,
       user_agent_from_args(args->channel_args,
                            args->optional_transport->vtable->name));

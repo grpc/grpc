@@ -200,7 +200,7 @@ grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
         return err;
       }
       if (t->incoming_frame_size == 0) {
-        err = parse_frame_slice(exec_ctx, t, gpr_empty_slice(), 1);
+        err = parse_frame_slice(exec_ctx, t, grpc_empty_slice(), 1);
         if (err != GRPC_ERROR_NONE) {
           return err;
         }

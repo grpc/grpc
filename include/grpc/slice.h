@@ -119,13 +119,16 @@ GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice *s, size_t split);
    Requires s intialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_head(grpc_slice *s, size_t split);
 
-GPRAPI grpc_slice gpr_empty_slice(void);
+GPRAPI grpc_slice grpc_empty_slice(void);
 
 /* Returns <0 if a < b, ==0 if a == b, >0 if a > b
    The order is arbitrary, and is not guaranteed to be stable across different
    versions of the API. */
 GPRAPI int grpc_slice_cmp(grpc_slice a, grpc_slice b);
 GPRAPI int grpc_slice_str_cmp(grpc_slice a, const char *b);
+GPRAPI int grpc_slice_buf_cmp(grpc_slice a, const void *b, size_t blen);
+
+GPRAPI int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t blen);
 
 GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
 

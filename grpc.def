@@ -149,9 +149,12 @@ EXPORTS
     grpc_slice_sub_no_ref
     grpc_slice_split_tail
     grpc_slice_split_head
-    gpr_empty_slice
+    grpc_empty_slice
     grpc_slice_cmp
     grpc_slice_str_cmp
+    grpc_slice_buf_cmp
+    grpc_slice_buf_start_eq
+    grpc_slice_hash
     grpc_slice_buffer_init
     grpc_slice_buffer_destroy
     grpc_slice_buffer_add

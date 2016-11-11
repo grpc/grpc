@@ -681,9 +681,9 @@ static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_mdstr *take_string(grpc_chttp2_hpack_parser *p,
+static grpc_slice take_string(grpc_chttp2_hpack_parser *p,
                                grpc_chttp2_hpack_parser_string *str) {
-  grpc_mdstr *s = grpc_mdstr_from_buffer((uint8_t *)str->str, str->length);
+  grpc_slice s = grpc_mdstr_from_buffer((uint8_t *)str->str, str->length);
   str->length = 0;
   return s;
 }

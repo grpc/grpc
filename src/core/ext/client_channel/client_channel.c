@@ -96,7 +96,7 @@ static void method_parameters_del(grpc_exec_ctx *exec_ctx, void *p) {
   gpr_free(p);
 }
 
-static const grpc_mdstr_hash_table_vtable method_parameters_vtable = {
+static const grpc_slice_hash_table_vtable method_parameters_vtable = {
     method_parameters_del, method_parameters_copy, method_parameters_cmp};
 
 static void *method_config_convert_value(
@@ -131,7 +131,7 @@ typedef struct client_channel_channel_data {
   char *lb_policy_name;
   grpc_lb_policy *lb_policy;
   /** maps method names to method_parameters structs */
-  grpc_mdstr_hash_table *method_params_table;
+  grpc_slice_hash_table *method_params_table;
   /** incoming resolver result - set by resolver.next() */
   grpc_channel_args *resolver_result;
   /** a list of closures that are all waiting for config to come in */
@@ -232,7 +232,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   char *lb_policy_name = NULL;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
-  grpc_mdstr_hash_table *method_params_table = NULL;
+  grpc_slice_hash_table *method_params_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
   grpc_error *state_error = GRPC_ERROR_CREATE("No load balancing policy");
@@ -316,7 +316,7 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
+    grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   chand->method_params_table = method_params_table;
   if (lb_policy != NULL) {
@@ -494,7 +494,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   }
   gpr_free(chand->lb_policy_name);
   if (chand->method_params_table != NULL) {
-    grpc_mdstr_hash_table_unref(exec_ctx, chand->method_params_table);
+    grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -529,7 +529,7 @@ typedef struct client_channel_call_data {
   // to avoid this without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
 
-  grpc_mdstr *path;  // Request path.
+  grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
   wait_for_ready_value wait_for_ready_from_service_config;
@@ -926,10 +926,10 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
   if (error == GRPC_ERROR_NONE) {
     // Get the method config table from channel data.
     gpr_mu_lock(&chand->mu);
-    grpc_mdstr_hash_table *method_params_table = NULL;
+    grpc_slice_hash_table *method_params_table = NULL;
     if (chand->method_params_table != NULL) {
       method_params_table =
-          grpc_mdstr_hash_table_ref(chand->method_params_table);
+          grpc_slice_hash_table_ref(chand->method_params_table);
     }
     gpr_mu_unlock(&chand->mu);
     // If the method config table was present, use it.
@@ -958,7 +958,7 @@ static void read_service_config(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_mu_unlock(&calld->mu);
         }
       }
-      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
+      grpc_slice_hash_table_unref(exec_ctx, method_params_table);
     }
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "read_service_config");
@@ -996,8 +996,8 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   if (chand->lb_policy != NULL) {
     // We already have a resolver result, so check for service config.
     if (chand->method_params_table != NULL) {
-      grpc_mdstr_hash_table *method_params_table =
-          grpc_mdstr_hash_table_ref(chand->method_params_table);
+      grpc_slice_hash_table *method_params_table =
+          grpc_slice_hash_table_ref(chand->method_params_table);
       gpr_mu_unlock(&chand->mu);
       method_parameters *method_params = grpc_method_config_table_get(
           exec_ctx, method_params_table, args->path);
@@ -1013,7 +1013,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
               method_params->wait_for_ready;
         }
       }
-      grpc_mdstr_hash_table_unref(exec_ctx, method_params_table);
+      grpc_slice_hash_table_unref(exec_ctx, method_params_table);
     } else {
       gpr_mu_unlock(&chand->mu);
     }
