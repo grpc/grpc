@@ -92,22 +92,22 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
   connector_unref(exec_ctx, arg);
 }
 
-static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args,
-                              grpc_slice_buffer *read_buffer, void *user_data,
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  connector *c = user_data;
+  grpc_handshaker_args *args = arg;
+  connector *c = args->user_data;
   if (error != GRPC_ERROR_NONE) {
-    grpc_channel_args_destroy(args);
-    gpr_free(read_buffer);
+    grpc_channel_args_destroy(args->args);
+    gpr_free(args->read_buffer);
   } else {
     c->result->transport =
-        grpc_create_chttp2_transport(exec_ctx, args, endpoint, 1);
+        grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 1);
     GPR_ASSERT(c->result->transport);
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport,
-                                        read_buffer);
-    c->result->channel_args = args;
+                                        args->read_buffer);
+    c->result->channel_args = args->args;
   }
+  gpr_free(args);
   grpc_closure *notify = c->notify;
   c->notify = NULL;
   grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);

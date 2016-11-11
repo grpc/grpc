@@ -115,18 +115,19 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
   gpr_free(connection_state);
 }
 
-static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args,
-                              grpc_slice_buffer *read_buffer, void *user_data,
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  server_secure_connect *connection_state = user_data;
+  grpc_handshaker_args* args = arg;
+  server_secure_connect *connection_state = args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    GRPC_ERROR_UNREF(error);
-    grpc_channel_args_destroy(args);
-    gpr_free(read_buffer);
+// FIXME: remove?
+//    GRPC_ERROR_UNREF(error);
+    grpc_channel_args_destroy(args->args);
+    gpr_free(args->read_buffer);
+    gpr_free(args);
     grpc_handshake_manager_shutdown(exec_ctx, connection_state->handshake_mgr);
     grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
     grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
@@ -138,11 +139,12 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
   // TODO(roth, jboeuf): Convert security connector handshaking to use new
   // handshake API, and then move the code from on_secure_handshake_done()
   // into this function.
-  connection_state->args = args;
+  connection_state->args = args->args;
   grpc_server_security_connector_do_handshake(
       exec_ctx, connection_state->server_state->sc, connection_state->acceptor,
-      endpoint, read_buffer, connection_state->deadline,
+      args->endpoint, args->read_buffer, connection_state->deadline,
       on_secure_handshake_done, connection_state);
+  gpr_free(args);
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
