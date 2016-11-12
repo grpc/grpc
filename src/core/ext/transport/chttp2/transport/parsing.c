@@ -253,8 +253,16 @@ void grpc_chttp2_publish_reads(
     }
 
     if (stream_parsing->received_close) {
-      grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
-                                     1, 0, GRPC_ERROR_NONE);
+      if (transport_global->is_client && !stream_global->write_closed) {
+        gpr_slice_buffer_add(&transport_global->qbuf,
+                             grpc_chttp2_rst_stream_create(transport_parsing->incoming_stream_id, GRPC_CHTTP2_NO_ERROR, &stream_parsing->stats.outgoing));
+        grpc_chttp2_initiate_write(exec_ctx, transport_global, false, "rst");
+        grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
+                                       1, 1, GRPC_ERROR_NONE);
+      } else {
+        grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
+                                       1, 0, GRPC_ERROR_NONE);
+      }
     }
   }
 }
