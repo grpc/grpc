@@ -150,9 +150,10 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
 
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
-static void call_next_handshaker_locked(
-    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
-    grpc_handshaker_args* args, grpc_error* error) {
+static void call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
+                                        grpc_handshake_manager* mgr,
+                                        grpc_handshaker_args* args,
+                                        grpc_error* error) {
   GPR_ASSERT(mgr->index <= mgr->count);
   // If we got an error, skip all remaining handshakers and invoke the
   // caller-supplied callback immediately.
