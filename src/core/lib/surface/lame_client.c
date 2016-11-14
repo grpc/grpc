@@ -44,6 +44,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 typedef struct {
   grpc_linked_mdelem status;
@@ -61,9 +62,11 @@ static void fill_metadata(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
-  calld->status.md = grpc_mdelem_from_strings(exec_ctx, "grpc-status", tmp);
-  calld->details.md =
-      grpc_mdelem_from_strings(exec_ctx, "grpc-message", chand->error_message);
+  calld->status.md = grpc_mdelem_from_slices(
+      exec_ctx, GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_copied_string(tmp));
+  calld->details.md = grpc_mdelem_from_slices(
+      exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+      grpc_slice_from_copied_string(chand->error_message));
   calld->status.prev = calld->details.next = NULL;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;

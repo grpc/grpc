@@ -92,8 +92,8 @@ static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
                         const char *value) {
   size_t i;
   for (i = 0; i < count; i++) {
-    if (0 == strcmp(key, md[i].key) && strlen(value) == md[i].value_length &&
-        0 == memcmp(md[i].value, value, md[i].value_length)) {
+    if (0 == grpc_slice_str_cmp(md[i].key, key) &&
+        0 == grpc_slice_str_cmp(md[i].value, value)) {
       return 1;
     }
   }

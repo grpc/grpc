@@ -113,11 +113,9 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
 void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *md);
 #endif
 
-#define GRPC_MDSTR_LENGTH(s) (GRPC_SLICE_LENGTH(s->slice))
-
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
 #define GRPC_MDELEM_LENGTH(e) \
-  (GRPC_MDSTR_LENGTH((e)->key) + GRPC_MDSTR_LENGTH((e)->value) + 32)
+  (GRPC_SLICE_LENGTH((e)->key) + GRPC_SLICE_LENGTH((e)->value) + 32)
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
