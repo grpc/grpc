@@ -110,7 +110,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(args);
   grpc_closure *notify = c->notify;
   c->notify = NULL;
-  grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

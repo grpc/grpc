@@ -49,8 +49,10 @@
 /// In general, handshakers should be used via a handshake manager.
 
 ///
-/// grpc_handshaker_state
+/// grpc_handshaker
 ///
+
+typedef struct grpc_handshaker grpc_handshaker;
 
 /// Arguments passed through handshakers and to the on_handshake_done callback.
 /// All data members are owned by the struct.
@@ -60,12 +62,6 @@ typedef struct {
   void* user_data;
   grpc_slice_buffer* read_buffer;
 } grpc_handshaker_args;
-
-///
-/// grpc_handshaker
-///
-
-typedef struct grpc_handshaker grpc_handshaker;
 
 typedef struct {
   /// Destroys the handshaker.
