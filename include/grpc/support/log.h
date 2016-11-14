@@ -75,7 +75,7 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
 /* Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
 GPRAPI void gpr_log(const char *file, int line, gpr_log_severity severity,
-                    const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
+                    const char *format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 
 GPRAPI void gpr_log_message(const char *file, int line,
                             gpr_log_severity severity, const char *message);
