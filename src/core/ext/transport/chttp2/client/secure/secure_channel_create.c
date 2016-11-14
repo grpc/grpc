@@ -138,7 +138,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_free(args->read_buffer);
     grpc_closure *notify = c->notify;
     c->notify = NULL;
-    grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
   } else {
     // TODO(roth, jboeuf): Convert security connector handshaking to use new
     // handshake API, and then move the code from on_secure_handshake_done()
