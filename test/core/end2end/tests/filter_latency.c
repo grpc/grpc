@@ -51,6 +51,7 @@
 enum { TIMEOUT = 200000 };
 
 static bool g_enable_filter = false;
+static gpr_mu g_mu;
 static gpr_timespec g_client_latency;
 static gpr_timespec g_server_latency;
 
@@ -131,8 +132,10 @@ static void test_request(grpc_end2end_test_config config) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
+  gpr_mu_lock(&g_mu);
   g_client_latency = gpr_time_0(GPR_TIMESPAN);
   g_server_latency = gpr_time_0(GPR_TIMESPAN);
+  gpr_mu_unlock(&g_mu);
   const gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -226,12 +229,14 @@ static void test_request(grpc_end2end_test_config config) {
   const gpr_timespec end_time = gpr_now(GPR_CLOCK_MONOTONIC);
   const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);
 
+  gpr_mu_lock(&g_mu);
   GPR_ASSERT(gpr_time_cmp(max_latency, g_client_latency) >= 0);
   GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_client_latency) < 0);
   GPR_ASSERT(gpr_time_cmp(max_latency, g_server_latency) >= 0);
   GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) < 0);
   // Server latency should always be smaller than client latency.
   GPR_ASSERT(gpr_time_cmp(g_server_latency, g_client_latency) < 0);
+  gpr_mu_unlock(&g_mu);
 
   cq_verifier_destroy(cqv);
 
@@ -256,14 +261,18 @@ static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_final_info *final_info,
                                      void *and_free_memory) {
+  gpr_mu_lock(&g_mu);
   g_client_latency = final_info->stats.latency;
+  gpr_mu_unlock(&g_mu);
 }
 
 static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_final_info *final_info,
                                      void *and_free_memory) {
+  gpr_mu_lock(&g_mu);
   g_server_latency = final_info->stats.latency;
+  gpr_mu_unlock(&g_mu);
 }
 
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
@@ -325,6 +334,7 @@ static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
 }
 
 static void init_plugin(void) {
+  gpr_mu_init(&g_mu);
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
                                    maybe_add_filter,
                                    (void *)&test_client_filter);
@@ -336,7 +346,9 @@ static void init_plugin(void) {
                                    (void *)&test_server_filter);
 }
 
-static void destroy_plugin(void) {}
+static void destroy_plugin(void) {
+  gpr_mu_destroy(&g_mu);
+}
 
 void filter_latency(grpc_end2end_test_config config) {
   g_enable_filter = true;
