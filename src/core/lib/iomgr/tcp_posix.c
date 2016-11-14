@@ -380,6 +380,11 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
         tcp->outgoing_slice_idx = unwind_slice_idx;
         tcp->outgoing_byte_idx = unwind_byte_idx;
         return false;
+      } else if (errno == EPIPE) {
+        *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
+                                    GRPC_ERROR_INT_GRPC_STATUS,
+                                    GRPC_STATUS_UNAVAILABLE);
+        return true;
       } else {
         *error = GRPC_OS_ERROR(errno, "sendmsg");
         return true;
