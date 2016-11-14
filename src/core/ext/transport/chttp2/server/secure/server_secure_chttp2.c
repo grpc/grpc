@@ -117,14 +117,12 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  grpc_handshaker_args* args = arg;
+  grpc_handshaker_args *args = arg;
   server_secure_connect *connection_state = args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-// FIXME: remove?
-//    GRPC_ERROR_UNREF(error);
     grpc_channel_args_destroy(args->args);
     gpr_free(args->read_buffer);
     gpr_free(args);

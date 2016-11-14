@@ -172,9 +172,8 @@ static void call_next_handshaker_locked(
     return;
   }
   // Call the next handshaker.
-  grpc_handshaker_do_handshake(
-      exec_ctx, mgr->handshakers[mgr->index], mgr->acceptor,
-      &mgr->call_next_handshaker, args);
+  grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->index],
+                               mgr->acceptor, &mgr->call_next_handshaker, args);
   ++mgr->index;
 }
 
