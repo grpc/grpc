@@ -31,29 +31,50 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
+#define GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/time.h>
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/support/sync.h>
 
-/* Channel arg (integer) setting how large a slice to try and read from the wire
-   each time recvmsg (or equivalent) is called */
-#define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Asynchronously connect to an address (specified as (addr, len)), and call
-   cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure).
-   interested_parties points to a set of pollsets that would be interested
-   in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
-                             grpc_endpoint **endpoint,
-                             grpc_pollset_set *interested_parties,
-                             const grpc_channel_args *channel_args,
-                             const grpc_resolved_address *addr,
-                             gpr_timespec deadline);
+/** The virtual table of grpc_socket_mutator */
+typedef struct {
+  /** Mutates the socket opitons of \a fd */
+  bool (*mutate_fd)(int fd, grpc_socket_mutator *mutator);
+  /** Compare socket mutator \a a and \a b */
+  int (*compare)(grpc_socket_mutator *a, grpc_socket_mutator *b);
+  /** Destroys the socket mutator instance */
+  void (*destory)(grpc_socket_mutator *mutator);
+} grpc_socket_mutator_vtable;
 
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */
+/** The Socket Mutator interface allows changes on socket options */
+struct grpc_socket_mutator {
+  const grpc_socket_mutator_vtable *vtable;
+  gpr_refcount refcount;
+};
+
+/** called by concrete implementations to initialize the base struct */
+void grpc_socket_mutator_init(grpc_socket_mutator *mutator,
+                              const grpc_socket_mutator_vtable *vtable);
+
+/** Wrap \a mutator as a grpc_arg */
+grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator *mutator);
+
+/** Perform the file descriptor mutation operation of \a mutator on \a fd */
+bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator *mutator, int fd);
+
+/** Compare if \a a and \a b are the same mutator or have same settings */
+int grpc_socket_mutator_compare(grpc_socket_mutator *a, grpc_socket_mutator *b);
+
+grpc_socket_mutator *grpc_socket_mutator_ref(grpc_socket_mutator *mutator);
+void grpc_socket_mutator_unref(grpc_socket_mutator *mutator);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H */
