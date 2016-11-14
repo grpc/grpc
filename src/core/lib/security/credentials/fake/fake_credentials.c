@@ -43,6 +43,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#define FAKE_CREDENTIALS_TOKEN_FETCH_SECONDS 1
+
 /* -- Fake transport security credentials. -- */
 
 static grpc_security_status fake_transport_security_create_security_connector(
@@ -119,15 +121,15 @@ static void md_only_test_get_request_metadata(
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
   if (c->is_async) {
-    simulated_token_fetch_args *cb_arg =
-        gpr_malloc(sizeof(simulated_token_fetch_args));
+    simulated_token_fetch_args *cb_arg = gpr_malloc(sizeof(*cb_arg));
     cb_arg->md_request =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    grpc_timer_init(exec_ctx, &cb_arg->timer,
-                    gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_micros(100, GPR_TIMESPAN)),
-                    on_simulated_token_fetch_done, cb_arg,
-                    gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_timer_init(
+        exec_ctx, &cb_arg->timer,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_seconds(FAKE_CREDENTIALS_TOKEN_FETCH_SECONDS,
+                                           GPR_TIMESPAN)),
+        on_simulated_token_fetch_done, cb_arg, gpr_now(GPR_CLOCK_MONOTONIC));
   } else {
     cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, NULL);
   }
