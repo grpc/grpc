@@ -50,7 +50,7 @@ namespace Grpc.Core
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
 
         readonly object myLock = new object();
-        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+        readonly internal AtomicCounter activeCallCounter = new AtomicCounter();  // Accessed in tests.
         readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
 
         readonly string target;
@@ -138,8 +138,8 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Returned tasks completes once channel state has become different from 
-        /// given lastObservedState. 
+        /// Returned tasks completes once channel state has become different from
+        /// given lastObservedState.
         /// If deadline is reached or and error occurs, returned task is cancelled.
         /// </summary>
         public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)

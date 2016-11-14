@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -77,7 +77,7 @@ namespace Grpc.Core.Internal
             this.injectedNativeCall = injectedNativeCall;
         }
 
-        // TODO: this method is not Async, so it shouldn't be in AsyncCall class, but 
+        // TODO: this method is not Async, so it shouldn't be in AsyncCall class, but
         // it is reusing fair amount of code in this class, so we are leaving it here.
         /// <summary>
         /// Blocking unary request - unary response call.
@@ -123,7 +123,7 @@ namespace Grpc.Core.Internal
                         Logger.Error(e, "Exception occured while invoking completion delegate.");
                     }
                 }
-                    
+
                 // Once the blocking call returns, the result should be available synchronously.
                 // Note that GetAwaiter().GetResult() doesn't wrap exceptions in AggregateException.
                 return unaryResponseTcs.Task.GetAwaiter().GetResult();
@@ -389,7 +389,7 @@ namespace Grpc.Core.Internal
         private void Initialize(CompletionQueueSafeHandle cq)
         {
             using (Profilers.ForCurrentThread().NewScope("AsyncCall.Initialize"))
-            { 
+            {
                 var call = CreateNativeCall(cq);
 
                 details.Channel.AddCallReference(this);
@@ -401,7 +401,7 @@ namespace Grpc.Core.Internal
         private INativeCall CreateNativeCall(CompletionQueueSafeHandle cq)
         {
             using (Profilers.ForCurrentThread().NewScope("AsyncCall.CreateNativeCall"))
-            { 
+            {
                 if (injectedNativeCall != null)
                 {
                     return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
@@ -511,6 +511,7 @@ namespace Grpc.Core.Internal
 
             lock (myLock)
             {
+                readingDone = true;
                 finished = true;
                 finishedStatus = receivedStatus;
                 if (isStreamingWriteCompletionDelayed)
