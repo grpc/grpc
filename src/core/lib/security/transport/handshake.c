@@ -131,7 +131,11 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
                                     grpc_error *error) {
   grpc_timer_cancel(exec_ctx, &h->timer);
   grpc_exec_ctx_flush(exec_ctx);
-  /* wait for timer callback to finish */
+  /* Wait for timer callback to finish.
+   * Normally it has either been run in the above flush if cancelled or has
+   * timed out previously. If the timeout callback is running in another
+   * thread's completion_queue_next, we wait for its completion here.
+   * More context: https://github.com/grpc/grpc/issues/8744 */
   gpr_mu_lock(&h->timer_done_mu);
   while (!h->timer_done) {
     gpr_cv_wait(&h->timer_done_cv, &h->timer_done_mu,
