@@ -123,8 +123,9 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
             /* setting this takes precedence over anything else */
             GRPC_MDELEM_UNREF(exec_ctx, channel->default_authority);
           }
-          channel->default_authority = grpc_mdelem_from_strings(
-              exec_ctx, ":authority", args->args[i].value.string);
+          channel->default_authority = grpc_mdelem_from_slices(
+              exec_ctx, GRPC_MDSTR_AUTHORITY,
+              grpc_slice_from_copied_string(args->args[i].value.string));
         }
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
@@ -138,8 +139,9 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                     "%s ignored: default host already set some other way",
                     GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
           } else {
-            channel->default_authority = grpc_mdelem_from_strings(
-                exec_ctx, ":authority", args->args[i].value.string);
+            channel->default_authority = grpc_mdelem_from_slices(
+                exec_ctx, GRPC_MDSTR_AUTHORITY,
+                grpc_slice_from_copied_string(args->args[i].value.string));
           }
         }
       } else if (0 == strcmp(args->args[i].key,
@@ -224,27 +226,17 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
                                     uint32_t propagation_mask,
                                     grpc_completion_queue *cq,
-                                    const char *method, const char *host,
+                                    grpc_slice method, const grpc_slice *host,
                                     gpr_timespec deadline, void *reserved) {
-  GRPC_API_TRACE(
-      "grpc_channel_create_call("
-      "channel=%p, parent_call=%p, propagation_mask=%x, cq=%p, method=%s, "
-      "host=%s, "
-      "deadline=gpr_timespec { tv_sec: %" PRId64
-      ", tv_nsec: %d, clock_type: %d }, "
-      "reserved=%p)",
-      10,
-      (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
-       deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call *call = grpc_channel_create_call_internal(
       &exec_ctx, channel, parent_call, propagation_mask, cq, NULL,
-      grpc_mdelem_from_metadata_strings(&exec_ctx, GRPC_MDSTR_PATH,
-                                        grpc_mdstr_from_string(method)),
-      host ? grpc_mdelem_from_metadata_strings(&exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                               grpc_mdstr_from_string(host))
-           : NULL,
+      grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_PATH,
+                              grpc_slice_ref(method)),
+      host != NULL ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                             grpc_slice_ref(*host))
+                   : NULL,
       deadline);
   grpc_exec_ctx_finish(&exec_ctx);
   return call;
@@ -252,17 +244,16 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
 
 grpc_call *grpc_channel_create_pollset_set_call(
     grpc_exec_ctx *exec_ctx, grpc_channel *channel, grpc_call *parent_call,
-    uint32_t propagation_mask, grpc_pollset_set *pollset_set,
-    const char *method, const char *host, gpr_timespec deadline,
-    void *reserved) {
+    uint32_t propagation_mask, grpc_pollset_set *pollset_set, grpc_slice method,
+    const grpc_slice *host, gpr_timespec deadline, void *reserved) {
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       exec_ctx, channel, parent_call, propagation_mask, NULL, pollset_set,
-      grpc_mdelem_from_metadata_strings(exec_ctx, GRPC_MDSTR_PATH,
-                                        grpc_mdstr_from_string(method)),
-      host ? grpc_mdelem_from_metadata_strings(exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                               grpc_mdstr_from_string(host))
-           : NULL,
+      grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_PATH,
+                              grpc_slice_ref(method)),
+      host != NULL ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                             grpc_slice_ref(*host))
+                   : NULL,
       deadline);
 }
 
@@ -274,11 +265,14 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
       4, (channel, method, host, reserved));
   GPR_ASSERT(!reserved);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  rc->path = grpc_mdelem_from_metadata_strings(&exec_ctx, GRPC_MDSTR_PATH,
-                                               grpc_mdstr_from_string(method));
+
+  rc->path = grpc_mdelem_from_slices(
+      &exec_ctx, GRPC_MDSTR_PATH,
+      grpc_slice_intern(grpc_slice_from_copied_string(method)));
   rc->authority =
-      host ? grpc_mdelem_from_metadata_strings(&exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                               grpc_mdstr_from_string(host))
+      host ? grpc_mdelem_from_slices(
+                 &exec_ctx, GRPC_MDSTR_AUTHORITY,
+                 grpc_slice_intern(grpc_slice_from_copied_string(host)))
            : NULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
@@ -385,6 +379,6 @@ grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
       return GRPC_MDELEM_GRPC_STATUS_2;
   }
   gpr_ltoa(i, tmp);
-  return grpc_mdelem_from_metadata_strings(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
-                                           grpc_mdstr_from_string(tmp));
+  return grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
+                                 grpc_slice_from_copied_string(tmp));
 }

@@ -196,8 +196,7 @@ struct grpc_call {
   union {
     struct {
       grpc_status_code *status;
-      char **status_details;
-      size_t *status_details_capacity;
+      grpc_slice *status_details;
     } client;
     struct {
       int *cancelled;
@@ -383,7 +382,7 @@ static void get_final_status(grpc_call *call,
                              void *set_value_user_data) {
   int i;
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set) {
+    if (call->status[i].is_code_set) {
       set_value(call->status[i].code, set_value_user_data);
       return;
     }
@@ -411,8 +410,8 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   }
   gpr_mu_destroy(&c->mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (c->status[i].details) {
-      GRPC_MDSTR_UNREF(exec_ctx, c->status[i].details);
+    if (c->status[i].is_details_set) {
+      grpc_slice_unref_internal(exec_ctx, c->status[i].details);
     }
   }
   for (ii = 0; ii < c->send_extra_metadata_count; ii++) {
@@ -438,18 +437,19 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
 
 static void set_status_code(grpc_call *call, status_source source,
                             uint32_t status) {
-  if (call->status[source].is_set) return;
+  if (call->status[source].is_code_set) return;
 
-  call->status[source].is_set = 1;
+  call->status[source].is_code_set = true;
   call->status[source].code = (grpc_status_code)status;
 }
 
 static void set_status_details(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                status_source source, grpc_slice status) {
-  if (call->status[source].details != NULL) {
-    GRPC_MDSTR_UNREF(exec_ctx, status);
+  if (call->status[source].is_details_set) {
+    grpc_slice_unref_internal(exec_ctx, status);
   } else {
     call->status[source].details = status;
+    call->status[source].is_details_set = true;
   }
 }
 
@@ -459,7 +459,8 @@ static void set_status_from_error(grpc_exec_ctx *exec_ctx, grpc_call *call,
   const char *msg;
   grpc_error_get_status(error, &status, &msg);
   set_status_code(call, source, (uint32_t)status);
-  set_status_details(exec_ctx, call, source, grpc_mdstr_from_string(msg));
+  set_status_details(exec_ctx, call, source,
+                     grpc_slice_from_copied_string(msg));
 }
 
 static void set_incoming_compression_algorithm(
@@ -509,7 +510,7 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
     return;
   }
 
-  accept_encoding_slice = mdel->value->slice;
+  accept_encoding_slice = mdel->value;
   grpc_slice_buffer_init(&accept_encoding_parts);
   grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
@@ -518,15 +519,13 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
-    const grpc_slice *accept_encoding_entry_slice =
-        &accept_encoding_parts.slices[i];
-    if (grpc_compression_algorithm_parse(
-            (const char *)GRPC_SLICE_START_PTR(*accept_encoding_entry_slice),
-            GRPC_SLICE_LENGTH(*accept_encoding_entry_slice), &algorithm)) {
+    grpc_slice accept_encoding_entry_slice = accept_encoding_parts.slices[i];
+    if (grpc_compression_algorithm_parse(accept_encoding_entry_slice,
+                                         &algorithm)) {
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
       char *accept_encoding_entry_str =
-          grpc_dump_slice(*accept_encoding_entry_slice, GPR_DUMP_ASCII);
+          grpc_dump_slice(accept_encoding_entry_slice, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR,
               "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
               accept_encoding_entry_str);
@@ -549,21 +548,12 @@ uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
   return encodings_accepted_by_peer;
 }
 
-static void get_final_details(grpc_call *call, char **out_details,
-                              size_t *out_details_capacity) {
+static void get_final_details(grpc_call *call, grpc_slice *out_details) {
   int i;
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
-    if (call->status[i].is_set) {
-      if (call->status[i].details) {
-        grpc_slice details = call->status[i].details->slice;
-        size_t len = GRPC_SLICE_LENGTH(details);
-        if (len + 1 > *out_details_capacity) {
-          *out_details_capacity =
-              GPR_MAX(len + 1, *out_details_capacity * 3 / 2);
-          *out_details = gpr_realloc(*out_details, *out_details_capacity);
-        }
-        memcpy(*out_details, GRPC_SLICE_START_PTR(details), len);
-        (*out_details)[len] = 0;
+    if (call->status[i].is_code_set) {
+      if (call->status[i].is_details_set) {
+        *out_details = grpc_slice_ref(call->status[i].details);
       } else {
         goto no_details;
       }
@@ -572,11 +562,7 @@ static void get_final_details(grpc_call *call, char **out_details,
   }
 
 no_details:
-  if (0 == *out_details_capacity) {
-    *out_details_capacity = 8;
-    *out_details = gpr_malloc(*out_details_capacity);
-  }
-  **out_details = 0;
+  *out_details = grpc_empty_slice();
 }
 
 static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
@@ -605,19 +591,17 @@ static int prepare_application_metadata(
         get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(
-        exec_ctx, md->key, (const uint8_t *)md->value, md->value_length);
-    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
-                                  GRPC_MDSTR_LENGTH(l->md->key))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
-              grpc_mdstr_as_c_string(l->md->key));
+    l->md = grpc_mdelem_from_slices(exec_ctx, md->key, md->value);
+    if (!grpc_header_key_slice_is_legal(l->md->key)) {
+      char *str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
+      gpr_free(str);
       break;
-    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
-                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
-               !grpc_header_nonbin_value_is_legal(
-                   grpc_mdstr_as_c_string(l->md->value),
-                   GRPC_MDSTR_LENGTH(l->md->value))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
+    } else if (!grpc_slice_is_binary_header(l->md->key) &&
+               !grpc_header_nonbin_value_slice_is_legal(l->md->value)) {
+      char *str = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
+      gpr_free(str);
       break;
     }
   }
@@ -902,9 +886,7 @@ static uint32_t decode_status(grpc_mdelem *md) {
   if (user_data != NULL) {
     status = ((uint32_t)(intptr_t)user_data) - STATUS_OFFSET;
   } else {
-    if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
-                                   GRPC_SLICE_LENGTH(md->value->slice),
-                                   &status)) {
+    if (!grpc_parse_slice_to_uint32(md->value, &status)) {
       status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
     }
     grpc_mdelem_set_user_data(md, destroy_status,
@@ -915,13 +897,14 @@ static uint32_t decode_status(grpc_mdelem *md) {
 
 static grpc_compression_algorithm decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm =
-      grpc_compression_algorithm_from_mdstr(md->value);
+      grpc_compression_algorithm_from_slice(md->value);
   if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
-    const char *md_c_str = grpc_mdstr_as_c_string(md->value);
+    char *md_c_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR,
             "Invalid incoming compression algorithm: '%s'. Interpreting "
             "incoming data as uncompressed.",
             md_c_str);
+    gpr_free(md_c_str);
     return GRPC_COMPRESS_NONE;
   }
   return algorithm;
@@ -929,15 +912,15 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem *md) {
 
 static grpc_mdelem *recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                        grpc_mdelem *elem) {
-  if (elem->key == GRPC_MDSTR_GRPC_STATUS) {
+  if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_STATUS) == 0) {
     GPR_TIMER_BEGIN("status", 0);
     set_status_code(call, STATUS_FROM_WIRE, decode_status(elem));
     GPR_TIMER_END("status", 0);
     return NULL;
-  } else if (elem->key == GRPC_MDSTR_GRPC_MESSAGE) {
+  } else if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_MESSAGE) == 0) {
     GPR_TIMER_BEGIN("status-details", 0);
     set_status_details(exec_ctx, call, STATUS_FROM_WIRE,
-                       GRPC_MDSTR_REF(elem->value));
+                       grpc_slice_ref_internal(elem->value));
     GPR_TIMER_END("status-details", 0);
     return NULL;
   }
@@ -956,9 +939,8 @@ static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
   }
   mdusr = &dest->metadata[dest->count++];
-  mdusr->key = grpc_mdstr_as_c_string(elem->key);
-  mdusr->value = grpc_mdstr_as_c_string(elem->value);
-  mdusr->value_length = GRPC_SLICE_LENGTH(elem->value->slice);
+  mdusr->key = grpc_slice_ref(elem->key);
+  mdusr->value = grpc_slice_ref(elem->value);
   GPR_TIMER_END("publish_app_metadata", 0);
   return elem;
 }
@@ -973,12 +955,12 @@ static grpc_mdelem *recv_initial_filter(void *args, grpc_mdelem *elem) {
   elem = recv_common_filter(a->exec_ctx, a->call, elem);
   if (elem == NULL) {
     return NULL;
-  } else if (elem->key == GRPC_MDSTR_GRPC_ENCODING) {
+  } else if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_ENCODING) == 0) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
     set_incoming_compression_algorithm(a->call, decode_compression(elem));
     GPR_TIMER_END("incoming_compression_algorithm", 0);
     return NULL;
-  } else if (elem->key == GRPC_MDSTR_GRPC_ACCEPT_ENCODING) {
+  } else if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_ACCEPT_ENCODING) == 0) {
     GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(a->exec_ctx, a->call, elem);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);
@@ -1328,8 +1310,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     if (call->is_client) {
       get_final_status(call, set_status_value_directly,
                        call->final_op.client.status);
-      get_final_details(call, call->final_op.client.status_details,
-                        call->final_op.client.status_details_capacity);
+      get_final_details(call, call->final_op.client.status_details);
     } else {
       get_final_status(call, set_cancelled_value,
                        call->final_op.server.cancelled);
@@ -1427,13 +1408,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
-          char *calgo_name = NULL;
-          grpc_compression_algorithm_name(calgo, &calgo_name);
           // the following will be picked up by the compress filter and used as
           // the call's compression algorithm.
-          compression_md.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
-          compression_md.value = calgo_name;
-          compression_md.value_length = strlen(calgo_name);
+          compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+          compression_md.value = grpc_compression_algorithm_slice(calgo);
           additional_metadata_count++;
         }
 
@@ -1527,14 +1505,14 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             exec_ctx, call->channel, op->data.send_status_from_server.status);
         if (op->data.send_status_from_server.status_details != NULL) {
-          call->send_extra_metadata[1].md = grpc_mdelem_from_metadata_strings(
+          call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
               exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_mdstr_from_string(
-                  op->data.send_status_from_server.status_details));
+              grpc_slice_ref_internal(
+                  *op->data.send_status_from_server.status_details));
           call->send_extra_metadata_count++;
           set_status_details(
               exec_ctx, call, STATUS_FROM_API_OVERRIDE,
-              GRPC_MDSTR_REF(call->send_extra_metadata[1].md->value));
+              grpc_slice_ref_internal(call->send_extra_metadata[1].md->value));
         }
         if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
           set_status_code(call, STATUS_FROM_API_OVERRIDE,
@@ -1611,8 +1589,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->final_op.client.status = op->data.recv_status_on_client.status;
         call->final_op.client.status_details =
             op->data.recv_status_on_client.status_details;
-        call->final_op.client.status_details_capacity =
-            op->data.recv_status_on_client.status_details_capacity;
         bctl->recv_final_op = 1;
         stream_op->recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];

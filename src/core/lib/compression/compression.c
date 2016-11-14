@@ -81,7 +81,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
   return 0;
 }
 
-grpc_compression_algorithm grpc_compression_algorithm_from_mdstr(
+grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str) {
   if (grpc_slice_cmp(str, GRPC_MDSTR_IDENTITY) == 0) return GRPC_COMPRESS_NONE;
   if (grpc_slice_cmp(str, GRPC_MDSTR_DEFLATE) == 0)
@@ -90,7 +90,7 @@ grpc_compression_algorithm grpc_compression_algorithm_from_mdstr(
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }
 
-grpc_slice grpc_compression_algorithm_mdstr(
+grpc_slice grpc_compression_algorithm_slice(
     grpc_compression_algorithm algorithm) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:

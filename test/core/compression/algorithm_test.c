@@ -59,8 +59,8 @@ static void test_algorithm_mesh(void) {
     GPR_ASSERT(grpc_compression_algorithm_parse(name, strlen(name), &parsed));
     GPR_ASSERT((int)parsed == i);
     mdstr = grpc_mdstr_from_string(name);
-    GPR_ASSERT(mdstr == grpc_compression_algorithm_mdstr(parsed));
-    GPR_ASSERT(parsed == grpc_compression_algorithm_from_mdstr(mdstr));
+    GPR_ASSERT(mdstr == grpc_compression_algorithm_slice(parsed));
+    GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
     mdelem = grpc_compression_encoding_mdelem(parsed);
     GPR_ASSERT(mdelem->value == mdstr);
     GPR_ASSERT(mdelem->key == GRPC_MDSTR_GRPC_ENCODING);
@@ -85,11 +85,11 @@ static void test_algorithm_failure(void) {
   GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT + 1,
                                              NULL) == 0);
   mdstr = grpc_mdstr_from_string("this-is-an-invalid-algorithm");
-  GPR_ASSERT(grpc_compression_algorithm_from_mdstr(mdstr) ==
+  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
              GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(grpc_compression_algorithm_mdstr(GRPC_COMPRESS_ALGORITHMS_COUNT) ==
+  GPR_ASSERT(grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT) ==
              NULL);
-  GPR_ASSERT(grpc_compression_algorithm_mdstr(GRPC_COMPRESS_ALGORITHMS_COUNT +
+  GPR_ASSERT(grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT +
                                               1) == NULL);
   GRPC_MDSTR_UNREF(&exec_ctx, mdstr);
   grpc_exec_ctx_finish(&exec_ctx);
