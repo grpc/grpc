@@ -158,9 +158,9 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
     return;
   }
   // Call the next handshaker.
-  grpc_handshaker_do_handshake(
-      exec_ctx, mgr->handshakers[mgr->state->index], mgr->state->deadline,
-      mgr->state->acceptor, &mgr->state->call_next_handshaker, args);
+  grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->state->index],
+                               mgr->state->deadline, mgr->state->acceptor,
+                               &mgr->state->call_next_handshaker, args);
   // If this is the last handshaker, clean up state.
   if (mgr->state->index == mgr->count) {
     gpr_free(mgr->state);
