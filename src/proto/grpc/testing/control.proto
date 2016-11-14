@@ -78,6 +78,14 @@ message SecurityParams {
   string server_host_override = 2;
 }
 
+message ChannelArg {
+  string name = 1;
+  oneof value {
+    string str_value = 2;
+    int32 int_value = 3;
+  }
+}
+
 message ClientConfig {
   // List of targets to connect to. At least one target needs to be specified.
   repeated string server_targets = 1;
@@ -103,6 +111,8 @@ message ClientConfig {
 
   // If we use an OTHER_CLIENT client_type, this string gives more detail
   string other_client_api = 15;
+
+  repeated ChannelArg channel_args = 16;
 }
 
 message ClientStatus { ClientStats stats = 1; }
