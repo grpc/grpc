@@ -75,10 +75,7 @@ void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
 
 void grpc_slice_buffer_destroy(grpc_slice_buffer *sb) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, sb);
-  if (sb->slices != sb->inlined) {
-    gpr_free(sb->slices);
-  }
+  grpc_slice_buffer_destroy_internal(&exec_ctx, sb);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
