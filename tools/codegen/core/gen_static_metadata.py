@@ -43,6 +43,7 @@ import re
 # also be created)
 
 CONFIG = [
+    # metadata strings
     'grpc-timeout',
     'grpc-internal-encoding-request',
     'grpc-payload-bin',
@@ -57,6 +58,12 @@ CONFIG = [
     'grpc-tracing-bin',
     'grpc-stats-bin',
     '',
+    # channel arg keys
+    'grpc.wait_for_ready',
+    'grpc.timeout',
+    'grpc.max_request_message_bytes',
+    'grpc.max_response_message_bytes',
+    # metadata elements
     ('grpc-status', '0'),
     ('grpc-status', '1'),
     ('grpc-status', '2'),
