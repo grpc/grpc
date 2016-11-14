@@ -117,7 +117,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  grpc_handshaker_args* args = arg;
+  grpc_handshaker_args *args = arg;
   server_secure_connect *connection_state = args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *error_str = grpc_error_string(error);
