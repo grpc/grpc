@@ -92,7 +92,8 @@ typedef enum {
 } status_source;
 
 typedef struct {
-  uint8_t is_set;
+  bool is_code_set;
+  bool is_details_set;
   grpc_status_code code;
   grpc_slice details;
 } received_status;
@@ -244,14 +245,15 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = args->server_transport_data == NULL;
-  grpc_slice path = NULL;
+  grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (args->add_initial_metadata[i]->key == GRPC_MDSTR_PATH) {
-        path = GRPC_MDSTR_REF(args->add_initial_metadata[i]->value);
+      if (grpc_slice_cmp(args->add_initial_metadata[i]->key, GRPC_MDSTR_PATH) ==
+          0) {
+        path = grpc_slice_ref_internal(args->add_initial_metadata[i]->value);
       }
     }
     call->send_extra_metadata_count = (int)args->add_initial_metadata_count;
@@ -340,7 +342,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
         exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
   }
 
-  if (path != NULL) GRPC_MDSTR_UNREF(exec_ctx, path);
+  grpc_slice_unref_internal(exec_ctx, path);
 
   GPR_TIMER_END("grpc_call_create", 0);
   return error;

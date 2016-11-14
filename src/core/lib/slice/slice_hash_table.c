@@ -40,7 +40,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 
-static grpc_slice_refcount terminal_slice_refcount = {0};
+static grpc_slice_refcount terminal_slice_refcount = {NULL, NULL};
 static const grpc_slice terminal_slice = {&terminal_slice_refcount,
                                           .data.refcounted = {0, 0}};
 
