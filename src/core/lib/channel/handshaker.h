@@ -75,15 +75,14 @@ typedef struct {
   /// aborted in the middle).
   void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
-  /// Performs handshaking.
-  /// Takes ownership of \a args.
-  /// When finished, calls \a on_handshake_done with \a args, which the
-  /// callback takes ownership of.
+  /// Performs handshaking, modifying \a args as needed (e.g., to
+  /// replace \a endpoint with a wrapped endpoint).
+  /// When finished, invokes \a on_handshake_done.
   /// \a acceptor will be NULL for client-side handshakers.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
                        gpr_timespec deadline,
                        grpc_tcp_server_acceptor* acceptor,
-                       grpc_iomgr_cb_func on_handshake_done,
+                       grpc_closure* on_handshake_done,
                        grpc_handshaker_args* args);
 } grpc_handshaker_vtable;
 

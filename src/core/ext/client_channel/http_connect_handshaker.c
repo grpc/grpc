@@ -55,7 +55,7 @@ typedef struct http_connect_handshaker {
 
   // State saved while performing the handshake.
   grpc_handshaker_args* args;
-  grpc_closure cb;
+  grpc_closure* on_handshake_done;
 
   // Objects for processing the HTTP CONNECT request and response.
   grpc_slice_buffer write_buffer;
@@ -95,7 +95,8 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
   http_connect_handshaker* handshaker = arg;
   if (error != GRPC_ERROR_NONE) {
     // If the write failed, invoke the callback immediately with the error.
-    grpc_exec_ctx_sched(exec_ctx, &handshaker->cb, GRPC_ERROR_REF(error), NULL);
+    grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done,
+                        GRPC_ERROR_REF(error), NULL);
   } else {
     // Otherwise, read the response.
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
@@ -172,7 +173,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
 done:
   // Invoke handshake-done callback.
-  grpc_exec_ctx_sched(exec_ctx, &handshaker->cb, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done, error, NULL);
 }
 
 //
@@ -191,11 +192,11 @@ static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
 static void http_connect_handshaker_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker_in,
     gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_iomgr_cb_func cb, grpc_handshaker_args* args) {
+    grpc_closure* on_handshake_done, grpc_handshaker_args* args) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
   // Save state in the handshaker object.
   handshaker->args = args;
-  grpc_closure_init(&handshaker->cb, cb, args);
+  handshaker->on_handshake_done = on_handshake_done;
   // Send HTTP CONNECT request.
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s",
           handshaker->server_name, handshaker->proxy_server);
