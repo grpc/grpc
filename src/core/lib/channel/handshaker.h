@@ -80,7 +80,6 @@ typedef struct {
   /// When finished, invokes \a on_handshake_done.
   /// \a acceptor will be NULL for client-side handshakers.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
-                       gpr_timespec deadline,
                        grpc_tcp_server_acceptor* acceptor,
                        grpc_closure* on_handshake_done,
                        grpc_handshaker_args* args);
