@@ -36,6 +36,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
 
@@ -99,6 +100,13 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
 
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
+
+/** Returns a channel arg instance with socket mutator added. The socket mutator
+ * will perform its mutate_fd method on all file descriptors used by the
+ * channel.
+ * If \a a is non-MULL, its args are copied. */
+grpc_channel_args *grpc_channel_args_set_socket_mutator(
+    grpc_channel_args *a, grpc_socket_mutator *mutator);
 
 /** Returns the value of argument \a name from \a args, or NULL if not found. */
 const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
