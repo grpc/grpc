@@ -156,11 +156,7 @@ static grpc_slice build_response_payload_slice(
     server->set_port(ports[i]);
     // Missing tokens are acceptable. Test that path.
     if (strlen(token_prefix) > 0) {
-      // The following long long int cast is meant to work around the
-      // disfunctional implementation of std::to_string in gcc 4.4, which
-      // doesn't have a version for int but does have one for long long int.
-      string token_data =
-          token_prefix + std::to_string((long long int)ports[i]);
+      string token_data = token_prefix + std::to_string(ports[i]);
       server->set_load_balance_token(token_data);
     }
   }
@@ -345,14 +341,10 @@ static void start_backend_server(server_fixture *sf) {
       return;
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-
-    // The following long long int cast is meant to work around the
-    // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
-    // have a version for int but does have one for long long int.
     const string expected_token =
         strlen(sf->lb_token_prefix) == 0
             ? ""
-            : sf->lb_token_prefix + std::to_string((long long int)sf->port);
+            : sf->lb_token_prefix + std::to_string(sf->port);
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
