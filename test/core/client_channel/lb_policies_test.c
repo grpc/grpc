@@ -641,6 +641,34 @@ static void test_pending_calls(size_t concurrent_calls) {
   test_spec_destroy(spec);
 }
 
+static void test_get_channel_info() {
+  grpc_channel_args args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_STRING;
+  arg_array[0].key = GRPC_ARG_LB_POLICY_NAME;
+  arg_array[0].value.string = "round_robin";
+  args.num_args = 1;
+  args.args = arg_array;
+
+  grpc_channel *channel =
+      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", &args, NULL);
+  // Ensures that resolver returns.
+  grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
+  // Use grpc_channel_get_info() to get LB policy name.
+  char *lb_policy_name = NULL;
+  grpc_channel_info channel_info;
+  channel_info.lb_policy_name = &lb_policy_name;
+  grpc_channel_get_info(channel, &channel_info);
+  GPR_ASSERT(lb_policy_name != NULL);
+  GPR_ASSERT(strcmp(lb_policy_name, "round_robin") == 0);
+  gpr_free(lb_policy_name);
+  // Try again without requesting anything.  This is a no-op.
+  channel_info.lb_policy_name = NULL;
+  grpc_channel_get_info(channel, &channel_info);
+  // Clean up.
+  grpc_channel_destroy(channel);
+}
+
 static void print_failed_expectations(const int *expected_connection_sequence,
                                       const int *actual_connection_sequence,
                                       const size_t expected_seq_length,
@@ -935,6 +963,7 @@ int main(int argc, char **argv) {
 
   test_pending_calls(4);
   test_ping();
+  test_get_channel_info();
 
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
