@@ -950,6 +950,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   for (i = 1; i < sequences->n - 1; i++) {
     if (sequences->connectivity_states[i] == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       found_failure_status = true;
+      break;
     }
   }
   if (!found_failure_status) {
