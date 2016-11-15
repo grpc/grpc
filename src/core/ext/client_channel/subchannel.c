@@ -119,9 +119,9 @@ struct grpc_subchannel {
   gpr_mu mu;
 
   /** have we seen a disconnection? */
-  int disconnected;
+  bool disconnected;
   /** are we connecting */
-  int connecting;
+  bool connecting;
   /** connectivity state tracking */
   grpc_connectivity_state_tracker state_tracker;
 
@@ -132,7 +132,7 @@ struct grpc_subchannel {
   /** backoff state */
   gpr_backoff backoff_state;
   /** do we have an active alarm? */
-  int have_alarm;
+  bool have_alarm;
   /** our alarm */
   grpc_timer alarm;
 };
@@ -264,7 +264,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_subchannel_index_unregister(exec_ctx, c->key, c);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
-  c->disconnected = 1;
+  c->disconnected = true;
   grpc_connector_shutdown(exec_ctx, c->connector);
   con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
   if (con != NULL) {
@@ -451,7 +451,7 @@ void grpc_subchannel_notify_on_state_change(
     w->next->prev = w->prev->next = w;
     if (grpc_connectivity_state_notify_on_state_change(
             exec_ctx, &c->state_tracker, state, &w->closure)) {
-      c->connecting = 1;
+      c->connecting = true;
       /* released by connection */
       GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
       start_connect(exec_ctx, c);
@@ -575,12 +575,10 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
                     Re-evaluate if we really need this. */
   gpr_atm_full_barrier();
   GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
-  c->connecting = 0;
+  c->connecting = false;
 
   /* setup subchannel watching connected subchannel for changes; subchannel
-     ref
-     for connecting is donated
-     to the state watcher */
+     ref for connecting is donated to the state watcher */
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
@@ -595,7 +593,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
-  c->have_alarm = 0;
+  c->have_alarm = false;
   if (c->disconnected) {
     error = GRPC_ERROR_CREATE_REFERENCING("Disconnected", &error, 1);
   } else {
@@ -628,7 +626,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     GPR_ASSERT(!c->have_alarm);
-    c->have_alarm = 1;
+    c->have_alarm = true;
     grpc_connectivity_state_set(
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         grpc_error_set_int(
