@@ -190,8 +190,11 @@ void grpc_chttp2_hptbl_init(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
   tbl->ents = gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    tbl->static_ents[i - 1] = grpc_mdelem_from_strings(
-        exec_ctx, static_table[i].key, static_table[i].value);
+    tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
+        exec_ctx,
+        grpc_slice_intern(grpc_slice_from_static_string(static_table[i].key)),
+        grpc_slice_intern(
+            grpc_slice_from_static_string(static_table[i].value)));
   }
 }
 
@@ -228,8 +231,8 @@ grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
 /* Evict one element from the table */
 static void evict1(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
   grpc_mdelem *first_ent = tbl->ents[tbl->first_ent];
-  size_t elem_bytes = GRPC_SLICE_LENGTH(first_ent->key->slice) +
-                      GRPC_SLICE_LENGTH(first_ent->value->slice) +
+  size_t elem_bytes = GRPC_SLICE_LENGTH(first_ent->key) +
+                      GRPC_SLICE_LENGTH(first_ent->value) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
   tbl->mem_used -= (uint32_t)elem_bytes;
@@ -303,8 +306,8 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
 grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   /* determine how many bytes of buffer this entry represents */
-  size_t elem_bytes = GRPC_SLICE_LENGTH(md->key->slice) +
-                      GRPC_SLICE_LENGTH(md->value->slice) +
+  size_t elem_bytes = GRPC_SLICE_LENGTH(md->key) +
+                      GRPC_SLICE_LENGTH(md->value) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
@@ -359,9 +362,9 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     grpc_mdelem *ent = tbl->static_ents[i];
-    if (md->key != ent->key) continue;
+    if (grpc_slice_cmp(md->key, ent->key) != 0) continue;
     r.index = i + 1u;
-    r.has_value = md->value == ent->value;
+    r.has_value = grpc_slice_cmp(md->value, ent->value) == 0;
     if (r.has_value) return r;
   }
 
@@ -370,9 +373,9 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     uint32_t idx =
         (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
     grpc_mdelem *ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
-    if (md->key != ent->key) continue;
+    if (grpc_slice_cmp(md->key, ent->key) != 0) continue;
     r.index = idx;
-    r.has_value = md->value == ent->value;
+    r.has_value = grpc_slice_cmp(md->value, ent->value) == 0;
     if (r.has_value) return r;
   }
 
