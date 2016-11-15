@@ -47,12 +47,12 @@
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 
 grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
+  grpc_slice slice = grpc_slice_from_copied_buffer(string, length);
   grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return buffer;
 }
 
@@ -66,11 +66,11 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
     return;
   }
 
-  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
+  size_t length = GRPC_SLICE_LENGTH(slice);
   char *string = ecalloc(length + 1, sizeof(char));
-  memcpy(string, GPR_SLICE_START_PTR(slice), length);
-  gpr_slice_unref(slice);
+  memcpy(string, GRPC_SLICE_START_PTR(slice), length);
+  grpc_slice_unref(slice);
 
   *out_string = string;
   *out_length = length;

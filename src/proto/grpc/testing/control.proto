@@ -219,9 +219,12 @@ message ScenarioResultSummary
   double latency_99 = 10;
   double latency_999 = 11;
 
+  // server cpu usage percentage
+  double server_cpu_usage = 12;
+
   // Number of requests that succeeded/failed
-  double successful_requests_per_second = 12;
-  double failed_requests_per_second = 13;
+  double successful_requests_per_second = 13;
+  double failed_requests_per_second = 14;
 }
 
 // Results of a single benchmark scenario.

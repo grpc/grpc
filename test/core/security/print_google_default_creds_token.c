@@ -36,14 +36,15 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {
@@ -62,7 +63,7 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
   } else {
     char *token;
     GPR_ASSERT(num_md == 1);
-    token = gpr_dump_slice(md_elems[0].value, GPR_DUMP_ASCII);
+    token = grpc_dump_slice(md_elems[0].value, GPR_DUMP_ASCII);
     printf("\nGot token: %s\n\n", token);
     gpr_free(token);
   }
