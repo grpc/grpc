@@ -105,6 +105,23 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
   return has_metadata(array->metadata, array->count, key, value);
 }
 
+static int has_metadata_slices(const grpc_metadata *md, size_t count,
+                               grpc_slice key, grpc_slice value) {
+  size_t i;
+  for (i = 0; i < count; i++) {
+    if (0 == grpc_slice_cmp(md[i].key, key) &&
+        0 == grpc_slice_cmp(md[i].value, value)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int contains_metadata_slices(grpc_metadata_array *array, grpc_slice key,
+                             grpc_slice value) {
+  return has_metadata_slices(array->metadata, array->count, key, value);
+}
+
 static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
