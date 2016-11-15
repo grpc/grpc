@@ -113,8 +113,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -122,8 +121,9 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
-      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
 
@@ -138,7 +138,6 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -183,7 +182,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
 
   grpc_call_destroy(c);
 

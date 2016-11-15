@@ -130,6 +130,8 @@ GPRAPI int grpc_slice_buf_cmp(grpc_slice a, const void *b, size_t blen);
 
 GPRAPI int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t blen);
 
+GPRAPI int grpc_slice_rchr(grpc_slice s, char c);
+
 GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
 
 #ifdef __cplusplus

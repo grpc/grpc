@@ -71,5 +71,7 @@ int byte_buffer_eq_slice(grpc_byte_buffer *bb, grpc_slice b);
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
 int contains_metadata(grpc_metadata_array *array, const char *key,
                       const char *value);
+int contains_metadata_slices(grpc_metadata_array *array, grpc_slice key,
+                             grpc_slice value);
 
 #endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */

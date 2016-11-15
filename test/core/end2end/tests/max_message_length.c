@@ -43,6 +43,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/method_config.h"
 
@@ -129,8 +130,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
   grpc_channel_args *client_args = NULL;
@@ -141,12 +141,12 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     GPR_ASSERT(send_limit);
     int32_t max_request_message_bytes = 5;
     grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
+        grpc_slice_from_static_string("/service/method"),
         grpc_method_config_create(NULL, NULL, &max_request_message_bytes, NULL),
     };
     grpc_method_config_table *method_config_table =
         grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(&exec_ctx, entry.method_name);
+    grpc_slice_unref_internal(&exec_ctx, entry.method_name);
     grpc_method_config_unref(&exec_ctx, entry.method_config);
     grpc_arg arg =
         grpc_method_config_table_create_channel_arg(method_config_table);
@@ -180,8 +180,9 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/service/method",
-      get_host_override_string("foo.test.google.fr:1234", config),
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"),
+      get_host_override_slice("foo.test.google.fr:1234", config),
       gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(c);
 
@@ -215,7 +216,6 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -254,19 +254,20 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.method, "/service/method"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
   GPR_ASSERT(was_cancelled == 1);
 
 done:
   GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
-  GPR_ASSERT(strcmp(details,
-                    send_limit
-                        ? "Sent message larger than max (11 vs. 5)"
-                        : "Received message larger than max (11 vs. 5)") == 0);
+  GPR_ASSERT(
+      grpc_slice_str_cmp(
+          details, send_limit
+                       ? "Sent message larger than max (11 vs. 5)"
+                       : "Received message larger than max (11 vs. 5)") == 0);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -309,8 +310,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
   grpc_channel_args *client_args = NULL;
@@ -321,13 +321,13 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     GPR_ASSERT(!send_limit);
     int32_t max_response_message_bytes = 5;
     grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
+        grpc_slice_from_static_string("/service/method"),
         grpc_method_config_create(NULL, NULL, NULL,
                                   &max_response_message_bytes),
     };
     grpc_method_config_table *method_config_table =
         grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(&exec_ctx, entry.method_name);
+    grpc_slice_unref_internal(&exec_ctx, entry.method_name);
     grpc_method_config_unref(&exec_ctx, entry.method_config);
     grpc_arg arg =
         grpc_method_config_table_create_channel_arg(method_config_table);
@@ -359,9 +359,11 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   }
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/service/method", "foo.test.google.fr:1234",
-                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"),
+      get_host_override_slice("foo.test.google.fr:1234", config),
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -394,7 +396,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -428,7 +429,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -439,16 +441,18 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
+  GPR_ASSERT(0 ==
+             grpc_slice_str_cmp(call_details.host, "foo.test.google.fr:1234"));
 
   GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
-  GPR_ASSERT(strcmp(details,
-                    send_limit
-                        ? "Sent message larger than max (11 vs. 5)"
-                        : "Received message larger than max (11 vs. 5)") == 0);
+  GPR_ASSERT(
+      grpc_slice_str_cmp(
+          details, send_limit
+                       ? "Sent message larger than max (11 vs. 5)"
+                       : "Received message larger than max (11 vs. 5)") == 0);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
