@@ -876,7 +876,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 static bool contains_non_ok_status(grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    if (l->md->key == GRPC_MDSTR_GRPC_STATUS &&
+    if (grpc_slice_cmp(l->md->key, GRPC_MDSTR_GRPC_STATUS) == 0 &&
         l->md != GRPC_MDELEM_GRPC_STATUS_0) {
       return true;
     }
@@ -1477,16 +1477,14 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     grpc_chttp2_incoming_metadata_buffer_add(
-        &s->metadata_buffer[1], grpc_mdelem_from_metadata_strings(
-                                    exec_ctx, GRPC_MDSTR_GRPC_STATUS,
-                                    grpc_mdstr_from_string(status_string)));
+        &s->metadata_buffer[1],
+        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_STATUS,
+                                grpc_slice_from_copied_string(status_string)));
     if (slice) {
       grpc_chttp2_incoming_metadata_buffer_add(
           &s->metadata_buffer[1],
-          grpc_mdelem_from_metadata_strings(
-              exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_mdstr_from_slice(exec_ctx,
-                                    grpc_slice_ref_internal(*slice))));
+          grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+                                  grpc_slice_ref_internal(*slice)));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
