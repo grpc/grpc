@@ -642,8 +642,16 @@ static void test_pending_calls(size_t concurrent_calls) {
 }
 
 static void test_get_channel_info() {
-  grpc_channel *channel = grpc_insecure_channel_create(
-      "test:127.0.0.1:1234?lb_policy=round_robin", NULL, NULL);
+  grpc_channel_args args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_STRING;
+  arg_array[0].key = GRPC_ARG_LB_POLICY_NAME;
+  arg_array[0].value.string = "round_robin";
+  args.num_args = 1;
+  args.args = arg_array;
+
+  grpc_channel *channel =
+      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", &args, NULL);
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
   // Use grpc_channel_get_info() to get LB policy name.
