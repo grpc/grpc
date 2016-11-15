@@ -69,7 +69,7 @@ static void test_code(void) {
   grpc_transport_perform_op(&transport, NULL, NULL);
   grpc_transport_ping(&transport, NULL);
   grpc_transport_goaway(&transport, GRPC_STATUS_UNAVAILABLE,
-                        gpr_slice_malloc(0));
+                        grpc_slice_malloc(0));
   grpc_transport_close(&transport);
   grpc_transport_destroy(&transport, NULL);
   GPR_ASSERT("xyz" == grpc_transport_get_peer(&transport, NULL));

@@ -141,6 +141,7 @@ END2END_TESTS = {
     'simple_request': default_test_options,
     'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
+    'authority_not_supported': default_test_options,
 }
 
 
@@ -190,7 +191,8 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': True,
-              'src': ['test/core/end2end/end2end_tests.c'] + [
+              'src': ['test/core/end2end/end2end_tests.c',
+                      'test/core/end2end/end2end_test_utils.c'] + [
                   'test/core/end2end/tests/%s.c' % t
                   for t in sorted(END2END_TESTS.keys())],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
@@ -204,7 +206,8 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': False,
-              'src': ['test/core/end2end/end2end_nosec_tests.c'] + [
+              'src': ['test/core/end2end/end2end_nosec_tests.c',
+                      'test/core/end2end/end2end_test_utils.c'] + [
                   'test/core/end2end/tests/%s.c' % t
                   for t in sorted(END2END_TESTS.keys())
                   if not END2END_TESTS[t].secure],

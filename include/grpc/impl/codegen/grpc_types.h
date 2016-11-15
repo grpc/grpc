@@ -35,6 +35,7 @@
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/slice.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
@@ -60,7 +61,7 @@ typedef struct grpc_byte_buffer {
     } reserved;
     struct {
       grpc_compression_algorithm compression;
-      gpr_slice_buffer slice_buffer;
+      grpc_slice_buffer slice_buffer;
     } raw;
   } data;
 } grpc_byte_buffer;
@@ -82,6 +83,9 @@ typedef struct grpc_server grpc_server;
     allowing properties to be set until it is invoked. After invoke, the Call
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
+
+/** The Socket Mutator interface allows changes on socket options */
+typedef struct grpc_socket_mutator grpc_socket_mutator;
 
 /** Type specifier for grpc_arg */
 typedef enum {
@@ -214,6 +218,8 @@ typedef struct {
 /** Resolved addresses in a form used by the LB policy.
     Not intended for external use. */
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+/** The grpc_socket_mutator instance that set the socket options. A pointer. */
+#define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -271,9 +277,6 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
-/** DEPRECATED: for backward compatibility */
-#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY \
-  GRPC_INITIAL_METADATA_WAIT_FOR_READY
 /** Signal that the call is cacheable. GRPC is free to use GET verb */
 #define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
@@ -469,6 +472,13 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+/** Information requested from the channel. */
+typedef struct {
+  /* If non-NULL, will be set to point to a string indicating the LB
+   * policy name.  Caller takes ownership. */
+  char **lb_policy_name;
+} grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;
 

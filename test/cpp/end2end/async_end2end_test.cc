@@ -352,15 +352,13 @@ void ServerWait(Server* server, int* notify) {
 }
 TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   int notify = 0;
-  std::thread* wait_thread =
-      new std::thread(&ServerWait, server_.get(), &notify);
+  std::thread wait_thread(&ServerWait, server_.get(), &notify);
   ResetStub();
   SendRpc(1);
   EXPECT_EQ(0, notify);
   server_->Shutdown();
-  wait_thread->join();
+  wait_thread.join();
   EXPECT_EQ(1, notify);
-  delete wait_thread;
 }
 
 TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
@@ -991,7 +989,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_server_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1027,7 +1025,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
@@ -1112,7 +1110,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1150,7 +1148,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
@@ -1252,7 +1250,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_cq_result = false;
     }
 
-    std::thread* server_try_cancel_thd = NULL;
+    std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
 
@@ -1332,7 +1330,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 8);
     }
 
-    if (server_try_cancel_thd != NULL) {
+    if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
     }
