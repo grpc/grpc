@@ -346,9 +346,7 @@ static void init_plugin(void) {
                                    (void *)&test_server_filter);
 }
 
-static void destroy_plugin(void) {
-  gpr_mu_destroy(&g_mu);
-}
+static void destroy_plugin(void) { gpr_mu_destroy(&g_mu); }
 
 void filter_latency(grpc_end2end_test_config config) {
   g_enable_filter = true;
