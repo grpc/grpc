@@ -135,6 +135,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   connector *c = args->user_data;
   c->tmp_args = args->args;
   if (error != GRPC_ERROR_NONE) {
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
     gpr_free(args->read_buffer);
     grpc_closure *notify = c->notify;
     c->notify = NULL;
@@ -147,7 +148,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, c->security_connector, args->endpoint, args->read_buffer,
         c->args.deadline, on_secure_handshake_done, c);
   }
-  gpr_free(args);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,

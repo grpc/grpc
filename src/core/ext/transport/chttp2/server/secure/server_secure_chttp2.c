@@ -123,17 +123,14 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
     grpc_channel_args_destroy(args->args);
     gpr_free(args->read_buffer);
-    gpr_free(args);
-    grpc_handshake_manager_shutdown(exec_ctx, connection_state->handshake_mgr);
     grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
     grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
     gpr_free(connection_state);
     return;
   }
-  grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
-  connection_state->handshake_mgr = NULL;
   // TODO(roth, jboeuf): Convert security connector handshaking to use new
   // handshake API, and then move the code from on_secure_handshake_done()
   // into this function.
@@ -142,7 +139,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       exec_ctx, connection_state->server_state->sc, connection_state->acceptor,
       args->endpoint, args->read_buffer, connection_state->deadline,
       on_secure_handshake_done, connection_state);
-  gpr_free(args);
+  grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
+  connection_state->handshake_mgr = NULL;
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,

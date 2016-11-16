@@ -97,6 +97,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_handshaker_args *args = arg;
   connector *c = args->user_data;
   if (error != GRPC_ERROR_NONE) {
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
     grpc_channel_args_destroy(args->args);
     gpr_free(args->read_buffer);
   } else {
@@ -107,7 +108,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                         args->read_buffer);
     c->result->channel_args = args->args;
   }
-  gpr_free(args);
   grpc_closure *notify = c->notify;
   c->notify = NULL;
   grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
