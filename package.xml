@@ -195,7 +195,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_linux.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_and_epoll_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
@@ -219,6 +218,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
@@ -374,7 +374,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_linux.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_and_epoll_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.c" role="src" />
@@ -396,6 +395,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.c" role="src" />
