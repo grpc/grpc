@@ -111,6 +111,7 @@ END2END_TESTS = {
     'empty_batch': default_test_options,
     'filter_causes_close': default_test_options,
     'filter_call_init_fails': default_test_options,
+    'filter_latency': default_test_options,
     'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False),
@@ -141,6 +142,7 @@ END2END_TESTS = {
     'simple_request': default_test_options,
     'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
+    'authority_not_supported': default_test_options,
 }
 
 

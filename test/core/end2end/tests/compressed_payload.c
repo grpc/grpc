@@ -110,7 +110,7 @@ static void request_for_disabled_algorithm(
     grpc_status_code expected_error, grpc_metadata *client_metadata) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice;
+  grpc_slice request_payload_slice;
   grpc_byte_buffer *request_payload;
   gpr_timespec deadline = five_seconds_time();
   grpc_channel_args *client_args;
@@ -133,7 +133,7 @@ static void request_for_disabled_algorithm(
 
   memset(str, 'x', 1023);
   str[1023] = '\0';
-  request_payload_slice = gpr_slice_from_copied_string(str);
+  request_payload_slice = grpc_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
   client_args = grpc_channel_args_set_compression_algorithm(
@@ -258,7 +258,7 @@ static void request_for_disabled_algorithm(
 
   cq_verifier_destroy(cqv);
 
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
 
@@ -280,7 +280,7 @@ static void request_with_payload_template(
     grpc_compression_level server_compression_level) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice;
+  grpc_slice request_payload_slice;
   grpc_byte_buffer *request_payload;
   gpr_timespec deadline = five_seconds_time();
   grpc_channel_args *client_args;
@@ -310,8 +310,9 @@ static void request_with_payload_template(
   memset(response_str, 'y', 1023);
   response_str[1023] = '\0';
 
-  request_payload_slice = gpr_slice_from_copied_string(request_str);
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string(response_str);
+  request_payload_slice = grpc_slice_from_copied_string(request_str);
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string(response_str);
 
   client_args = grpc_channel_args_set_compression_algorithm(
       NULL, default_client_channel_compression_algorithm);
@@ -463,8 +464,8 @@ static void request_with_payload_template(
     grpc_byte_buffer_destroy(response_payload_recv);
   }
 
-  gpr_slice_unref(request_payload_slice);
-  gpr_slice_unref(response_payload_slice);
+  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref(response_payload_slice);
 
   memset(ops, 0, sizeof(ops));
   op = ops;

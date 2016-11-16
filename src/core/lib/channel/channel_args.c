@@ -298,6 +298,12 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
   }
 }
 
+grpc_channel_args *grpc_channel_args_set_socket_mutator(
+    grpc_channel_args *a, grpc_socket_mutator *mutator) {
+  grpc_arg tmp = grpc_socket_mutator_to_arg(mutator);
+  return grpc_channel_args_copy_and_add(a, &tmp, 1);
+}
+
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b) {
   int c = GPR_ICMP(a->num_args, b->num_args);

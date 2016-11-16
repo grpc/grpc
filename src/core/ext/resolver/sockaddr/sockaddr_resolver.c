@@ -47,6 +47,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {
@@ -169,17 +170,17 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
     return NULL;
   }
   /* Construct addresses. */
-  gpr_slice path_slice =
-      gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
-  gpr_slice_buffer path_parts;
-  gpr_slice_buffer_init(&path_parts);
-  gpr_slice_split(path_slice, ",", &path_parts);
+  grpc_slice path_slice =
+      grpc_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
+  grpc_slice_buffer path_parts;
+  grpc_slice_buffer_init(&path_parts);
+  grpc_slice_split(path_slice, ",", &path_parts);
   grpc_lb_addresses *addresses =
       grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
-    char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
+    char *part_str = grpc_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
     if (!parse(&ith_uri, &addresses->addresses[i].address)) {
       errors_found = true; /* GPR_TRUE */
@@ -187,8 +188,8 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
     gpr_free(part_str);
     if (errors_found) break;
   }
-  gpr_slice_buffer_destroy(&path_parts);
-  gpr_slice_unref(path_slice);
+  grpc_slice_buffer_destroy(&path_parts);
+  grpc_slice_unref(path_slice);
   if (errors_found) {
     grpc_lb_addresses_destroy(addresses);
     return NULL;

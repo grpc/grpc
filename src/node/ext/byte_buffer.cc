@@ -37,7 +37,7 @@
 #include <nan.h>
 #include "grpc/grpc.h"
 #include "grpc/byte_buffer_reader.h"
-#include "grpc/support/slice.h"
+#include "grpc/slice.h"
 
 #include "byte_buffer.h"
 
@@ -56,10 +56,10 @@ grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   Nan::HandleScope scope;
   int length = ::node::Buffer::Length(buffer);
   char *data = ::node::Buffer::Data(buffer);
-  gpr_slice slice = gpr_slice_malloc(length);
-  memcpy(GPR_SLICE_START_PTR(slice), data, length);
+  grpc_slice slice = grpc_slice_malloc(length);
+  memcpy(GRPC_SLICE_START_PTR(slice), data, length);
   grpc_byte_buffer *byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return byte_buffer;
 }
 
@@ -77,11 +77,11 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     Nan::ThrowError("Error initializing byte buffer reader.");
     return scope.Escape(Nan::Undefined());
   }
-  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GPR_SLICE_LENGTH(slice);
+  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
+  size_t length = GRPC_SLICE_LENGTH(slice);
   char *result = new char[length];
-  memcpy(result, GPR_SLICE_START_PTR(slice), length);
-  gpr_slice_unref(slice);
+  memcpy(result, GRPC_SLICE_START_PTR(slice), length);
+  grpc_slice_unref(slice);
   return scope.Escape(MakeFastBuffer(
       Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
 }
