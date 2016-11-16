@@ -54,6 +54,11 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
+typedef struct pending_handshake_manager_node {
+  grpc_handshake_manager* handshake_mgr;
+  struct pending_handshake_manager_node *next;
+} pending_handshake_manager_node;
+
 typedef struct server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
@@ -63,6 +68,7 @@ typedef struct server_secure_state {
   gpr_mu mu;
   grpc_closure tcp_server_shutdown_complete;
   grpc_closure *server_destroy_listener_done;
+  pending_handshake_manager_node *pending_handshake_mgrs;
 } server_secure_state;
 
 typedef struct server_secure_connect {
@@ -70,49 +76,41 @@ typedef struct server_secure_connect {
   grpc_pollset *accepting_pollset;
   grpc_tcp_server_acceptor *acceptor;
   grpc_handshake_manager *handshake_mgr;
-  // TODO(roth): Remove the following two fields when we eliminate
-  // grpc_server_security_connector_do_handshake().
-  gpr_timespec deadline;
-  grpc_channel_args *args;
 } server_secure_connect;
 
-static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
-                                     grpc_security_status status,
-                                     grpc_endpoint *secure_endpoint,
-                                     grpc_auth_context *auth_context) {
-  server_secure_connect *connection_state = statep;
-  if (status == GRPC_SECURITY_OK) {
-    if (secure_endpoint) {
-      gpr_mu_lock(&connection_state->server_state->mu);
-      if (!connection_state->server_state->is_shutdown) {
-        grpc_transport *transport = grpc_create_chttp2_transport(
-            exec_ctx, grpc_server_get_channel_args(
-                          connection_state->server_state->server),
-            secure_endpoint, 0);
-        grpc_arg args_to_add[2];
-        args_to_add[0] = grpc_server_credentials_to_arg(
-            connection_state->server_state->creds);
-        args_to_add[1] = grpc_auth_context_to_arg(auth_context);
-        grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
-            connection_state->args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
-        grpc_server_setup_transport(
-            exec_ctx, connection_state->server_state->server, transport,
-            connection_state->accepting_pollset, args_copy);
-        grpc_channel_args_destroy(args_copy);
-        grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
-      } else {
-        /* We need to consume this here, because the server may already have
-         * gone away. */
-        grpc_endpoint_destroy(exec_ctx, secure_endpoint);
-      }
-      gpr_mu_unlock(&connection_state->server_state->mu);
+static void pending_handshake_manager_add_locked(
+    server_secure_state* state, grpc_handshake_manager* handshake_mgr) {
+  pending_handshake_manager_node* node = gpr_malloc(sizeof(*node));
+  node->handshake_mgr = handshake_mgr;
+  node->next = state->pending_handshake_mgrs;
+  state->pending_handshake_mgrs = node;
+}
+
+static void pending_handshake_manager_remove_locked(
+    server_secure_state* state, grpc_handshake_manager* handshake_mgr) {
+  pending_handshake_manager_node** prev_node = &state->pending_handshake_mgrs;
+  for (pending_handshake_manager_node* node = state->pending_handshake_mgrs;
+       node != NULL; node = node->next) {
+    if (node->handshake_mgr == handshake_mgr) {
+      *prev_node = node->next;
+      gpr_free(node);
+      break;
     }
-  } else {
-    gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
+    prev_node = &node->next;
   }
-  grpc_channel_args_destroy(connection_state->args);
-  grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
-  gpr_free(connection_state);
+}
+
+static void pending_handshake_manager_shutdown_locked(
+    grpc_exec_ctx* exec_ctx, server_secure_state* state) {
+  pending_handshake_manager_node* prev_node = NULL;
+  for (pending_handshake_manager_node* node = state->pending_handshake_mgrs;
+       node != NULL; node = node->next) {
+    grpc_handshake_manager_shutdown(exec_ctx, node->handshake_mgr);
+    gpr_free(prev_node);
+    prev_node = node;
+  }
+  gpr_free(prev_node);
+  state->pending_handshake_mgrs = NULL;
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
@@ -123,25 +121,39 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    grpc_channel_args_destroy(args->args);
     gpr_free(args->read_buffer);
-    gpr_free(args);
-    grpc_handshake_manager_shutdown(exec_ctx, connection_state->handshake_mgr);
-    grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
-    grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
-    gpr_free(connection_state);
-    return;
+    if (args->endpoint != NULL) {
+      grpc_endpoint_destroy(exec_ctx, args->endpoint);
+    }
+    gpr_mu_lock(&connection_state->server_state->mu);
+  } else {
+    gpr_mu_lock(&connection_state->server_state->mu);
+    if (!connection_state->server_state->is_shutdown) {
+      grpc_arg channel_arg = grpc_server_credentials_to_arg(
+          connection_state->server_state->creds);
+      grpc_channel_args *args_copy =
+          grpc_channel_args_copy_and_add(args->args, &channel_arg, 1);
+      grpc_transport *transport = grpc_create_chttp2_transport(
+          exec_ctx, args_copy, args->endpoint, 0);
+      grpc_server_setup_transport(
+          exec_ctx, connection_state->server_state->server, transport,
+          connection_state->accepting_pollset, args_copy);
+      grpc_channel_args_destroy(args_copy);
+      grpc_chttp2_transport_start_reading(exec_ctx, transport,
+                                          args->read_buffer);
+    } else {
+      /* We need to consume this here, because the server may already have
+       * gone away. */
+      grpc_endpoint_destroy(exec_ctx, args->endpoint);
+    }
   }
+  pending_handshake_manager_remove_locked(
+      connection_state->server_state, connection_state->handshake_mgr);
+  gpr_mu_unlock(&connection_state->server_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
-  connection_state->handshake_mgr = NULL;
-  // TODO(roth, jboeuf): Convert security connector handshaking to use new
-  // handshake API, and then move the code from on_secure_handshake_done()
-  // into this function.
-  connection_state->args = args->args;
-  grpc_server_security_connector_do_handshake(
-      exec_ctx, connection_state->server_state->sc, connection_state->acceptor,
-      args->endpoint, args->read_buffer, connection_state->deadline,
-      on_secure_handshake_done, connection_state);
+  grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
+  gpr_free(connection_state);
+  grpc_channel_args_destroy(args->args);
   gpr_free(args);
 }
 
@@ -149,29 +161,32 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
                       grpc_pollset *accepting_pollset,
                       grpc_tcp_server_acceptor *acceptor) {
   server_secure_state *server_state = statep;
-  server_secure_connect *connection_state = NULL;
   gpr_mu_lock(&server_state->mu);
   if (server_state->is_shutdown) {
     gpr_mu_unlock(&server_state->mu);
     grpc_endpoint_destroy(exec_ctx, tcp);
     return;
   }
+  grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
+  pending_handshake_manager_add_locked(server_state, handshake_mgr);
   gpr_mu_unlock(&server_state->mu);
   grpc_tcp_server_ref(server_state->tcp);
-  connection_state = gpr_malloc(sizeof(*connection_state));
+  server_secure_connect *connection_state =
+      gpr_malloc(sizeof(*connection_state));
   connection_state->server_state = server_state;
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
-  connection_state->handshake_mgr = grpc_handshake_manager_create();
+  connection_state->handshake_mgr = handshake_mgr;
+  grpc_server_security_connector_create_handshakers(
+      exec_ctx, server_state->sc, connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
-  connection_state->deadline = gpr_time_add(
+  gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
   grpc_handshake_manager_do_handshake(
       exec_ctx, connection_state->handshake_mgr, tcp,
       grpc_server_get_channel_args(connection_state->server_state->server),
-      connection_state->deadline, acceptor, on_handshake_done,
-      connection_state);
+      deadline, acceptor, on_handshake_done, connection_state);
 }
 
 /* Server callback: start listening on our ports */
@@ -193,9 +208,8 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *statep,
   gpr_mu_lock(&server_state->mu);
   grpc_closure *destroy_done = server_state->server_destroy_listener_done;
   GPR_ASSERT(server_state->is_shutdown);
+  pending_handshake_manager_shutdown_locked(exec_ctx, server_state);
   gpr_mu_unlock(&server_state->mu);
-  /* clean up */
-  grpc_server_security_connector_shutdown(exec_ctx, server_state->sc);
 
   /* Flush queued work before a synchronous unref. */
   grpc_exec_ctx_flush(exec_ctx);
@@ -260,7 +274,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     gpr_free(msg);
     goto error;
   }
-  sc->channel_args = grpc_server_get_channel_args(server);
 
   /* resolve address */
   err = grpc_blocking_resolve_address(addr, "https", &resolved);
