@@ -229,9 +229,9 @@ void grpc_shutdown(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    grpc_executor_shutdown();
+    grpc_executor_shutdown(&exec_ctx);
     grpc_cq_global_shutdown();
-    grpc_iomgr_shutdown();
+    grpc_iomgr_shutdown(&exec_ctx);
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     for (i = g_number_of_plugins; i >= 0; i--) {

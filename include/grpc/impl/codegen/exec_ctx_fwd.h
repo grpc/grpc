@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef GRPC_EXEC_CTX_H
-#define GRPC_EXEC_CTX_H
+#ifndef GRPC_IMPL_CODEGEN_EXEC_CTX_FWD_H
+#define GRPC_IMPL_CODEGEN_EXEC_CTX_FWD_H
 
 /* forward declaration for exec_ctx.h */
 struct grpc_exec_ctx;
 typedef struct grpc_exec_ctx grpc_exec_ctx;
 
-#endif
+#endif /* GRPC_IMPL_CODEGEN_EXEC_CTX_FWD_H */

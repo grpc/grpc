@@ -48,7 +48,7 @@
 static void test_code(void) {
   /* iomgr.h */
   grpc_iomgr_init();
-  grpc_iomgr_shutdown();
+  grpc_iomgr_shutdown(NULL);
 
   /* closure.h */
   grpc_closure closure;
@@ -85,7 +85,8 @@ static void test_code(void) {
                                  grpc_endpoint_shutdown,
                                  grpc_endpoint_destroy,
                                  grpc_endpoint_get_resource_user,
-                                 grpc_endpoint_get_peer};
+                                 grpc_endpoint_get_peer,
+                                 grpc_endpoint_get_fd};
   endpoint.vtable = &vtable;
 
   grpc_endpoint_read(&exec_ctx, &endpoint, NULL, NULL);
@@ -99,7 +100,7 @@ static void test_code(void) {
   /* executor.h */
   grpc_executor_init();
   grpc_executor_push(&closure, GRPC_ERROR_CREATE("Phi"));
-  grpc_executor_shutdown();
+  grpc_executor_shutdown(NULL);
 
   /* pollset.h */
   grpc_pollset_size();

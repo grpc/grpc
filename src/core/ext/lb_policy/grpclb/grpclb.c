@@ -762,17 +762,24 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   if (glb_policy->rr_policy) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
   }
-  if (glb_policy->started_picking) {
-    if (glb_policy->lb_call != NULL) {
-      grpc_call_cancel(glb_policy->lb_call, NULL);
-      /* lb_on_server_status_received will pick up the cancel and clean up */
-    }
-  }
   grpc_connectivity_state_set(
       exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
       GRPC_ERROR_CREATE("Channel Shutdown"), "glb_shutdown");
+  /* We need a copy of the lb_call pointer because we can't cancell the call
+   * while holding glb_policy->mu: lb_on_server_status_received, invoked due to
+   * the cancel, needs to acquire that same lock */
+  grpc_call *lb_call = glb_policy->lb_call;
+  glb_policy->lb_call = NULL;
   gpr_mu_unlock(&glb_policy->mu);
 
+  /* glb_policy->lb_call and this local lb_call must be consistent at this point
+   * because glb_policy->lb_call is only assigned in lb_call_init_locked as part
+   * of query_for_backends_locked, which can only be invoked while
+   * glb_policy->shutting_down is false. */
+  if (lb_call != NULL) {
+    grpc_call_cancel(lb_call, NULL);
+    /* lb_on_server_status_received will pick up the cancel and clean up */
+  }
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
@@ -956,9 +963,11 @@ static void lb_on_server_status_received(grpc_exec_ctx *exec_ctx, void *arg,
                                          grpc_error *error);
 static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_error *error);
-static void lb_call_init(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy) {
+static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
+                                glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->server_name != NULL);
   GPR_ASSERT(glb_policy->server_name[0] != '\0');
+  GPR_ASSERT(!glb_policy->shutting_down);
 
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling
@@ -1011,7 +1020,9 @@ static void lb_call_destroy_locked(glb_lb_policy *glb_policy) {
 static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
                                       glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_channel != NULL);
-  lb_call_init(exec_ctx, glb_policy);
+  if (glb_policy->shutting_down) return;
+
+  lb_call_init_locked(exec_ctx, glb_policy);
 
   if (grpc_lb_glb_trace) {
     gpr_log(GPR_INFO, "Query for backends (grpclb: %p, lb_call: %p)",
@@ -1156,8 +1167,8 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
     }
     gpr_mu_unlock(&glb_policy->mu);
   } else { /* empty payload: call cancelled. */
-    /* dispose of the "lb_on_response_received" weak ref taken in
-     * query_for_backends_locked() and reused in every reception loop */
+           /* dispose of the "lb_on_response_received" weak ref taken in
+            * query_for_backends_locked() and reused in every reception loop */
     gpr_mu_unlock(&glb_policy->mu);
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                               "lb_on_response_received_empty_payload");
