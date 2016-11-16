@@ -728,8 +728,8 @@ void *grpc_mdelem_get_user_data(grpc_mdelem *md, void (*destroy_func)(void *)) {
   return result;
 }
 
-void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
-                               void *user_data) {
+void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
+                                void *user_data) {
   internal_metadata *im = (internal_metadata *)md;
   GPR_ASSERT(!is_mdelem_static(md));
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
@@ -740,11 +740,12 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
     if (destroy_func != NULL) {
       destroy_func(user_data);
     }
-    return;
+    return (void *)gpr_atm_no_barrier_load(&im->user_data);
   }
   gpr_atm_no_barrier_store(&im->user_data, (gpr_atm)user_data);
   gpr_atm_rel_store(&im->destroy_user_data, (gpr_atm)destroy_func);
   gpr_mu_unlock(&im->mu_user_data);
+  return user_data;
 }
 
 grpc_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
