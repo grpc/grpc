@@ -62,7 +62,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    grpc_handshake_manager_shutdown(exec_ctx, state->handshake_mgr);
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
     gpr_free(args->read_buffer);
   } else {
     // Beware that the call to grpc_create_chttp2_transport() has to happen
@@ -79,7 +79,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   }
   // Clean up.
   grpc_channel_args_destroy(args->args);
-  gpr_free(args);
   grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
   gpr_free(state);
 }
