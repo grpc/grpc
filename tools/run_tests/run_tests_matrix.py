@@ -311,7 +311,9 @@ if __name__ == "__main__":
       print('No tests will be skipped.')
     else:
       print('These tests will be skipped:')
-      skipped_jobs = [job for job in jobs if job not in relevant_jobs]
+      skipped_jobs = list(set(jobs) - set(relevant_jobs))
+      # Sort by shortnames to make printing of skipped tests consistent
+      skipped_jobs.sort(key=lambda job: job.shortname)
       for job in list(skipped_jobs):
         print('  %s' % job.shortname)
     jobs = relevant_jobs

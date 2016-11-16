@@ -402,6 +402,8 @@ static grpc_resource_user *win_get_resource_user(grpc_endpoint *ep) {
   return tcp->resource_user;
 }
 
+static int win_get_fd(grpc_endpoint *ep) { return -1; }
+
 static grpc_endpoint_vtable vtable = {win_read,
                                       win_write,
                                       win_get_workqueue,
@@ -410,7 +412,8 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_shutdown,
                                       win_destroy,
                                       win_get_resource_user,
-                                      win_get_peer};
+                                      win_get_peer,
+                                      win_get_fd};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket,
                                grpc_resource_quota *resource_quota,
