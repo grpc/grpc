@@ -270,7 +270,7 @@ int gpr_stricmp(const char *a, const char *b) {
 static void add_string_to_split(const char *beg, const char *end, char ***strs,
                                 size_t *nstrs, size_t *capstrs) {
   char *out = gpr_malloc((size_t)(end - beg) + 1);
-  memcpy(out, beg, end - beg);
+  memcpy(out, beg, (size_t)(end - beg));
   out[end - beg] = 0;
   if (*nstrs == *capstrs) {
     *capstrs = GPR_MAX(8, 2 * *capstrs);
