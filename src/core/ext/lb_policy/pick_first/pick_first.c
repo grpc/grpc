@@ -292,6 +292,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
   loop:
     switch (p->checking_connectivity) {
+      case GRPC_CHANNEL_INIT:
+        GPR_UNREACHABLE_CODE(return );
       case GRPC_CHANNEL_READY:
         grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                     GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
