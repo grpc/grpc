@@ -121,9 +121,8 @@ void grpc_executor_push(grpc_closure *closure, grpc_error *error) {
   gpr_mu_unlock(&g_executor.mu);
 }
 
-void grpc_executor_shutdown() {
+void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
   int pending_join;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock(&g_executor.mu);
   pending_join = g_executor.pending_join;
@@ -133,8 +132,7 @@ void grpc_executor_shutdown() {
    * list below because we aren't accepting new work */
 
   /* Execute pending callbacks, some may be performing cleanups */
-  grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_enqueue_list(exec_ctx, &g_executor.closures, NULL);
   GPR_ASSERT(grpc_closure_list_empty(g_executor.closures));
   if (pending_join) {
     gpr_thd_join(g_executor.tid);
