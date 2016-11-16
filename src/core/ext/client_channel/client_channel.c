@@ -336,7 +336,10 @@ static void on_resolver_result_changed(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     if (lb_policy != NULL) {
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
-      GRPC_LB_POLICY_WEAK_REF(lb_policy, "on_resolver_results_changed");
+      /* the lb policy in chand has to survive until the
+       * chand->on_resolver_result_changed closure in gprc_resolver_next is
+       * called */
+      GRPC_LB_POLICY_WEAK_REF(chand->lb_policy, "on_resolver_results_changed");
     }
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
     grpc_resolver_next(exec_ctx, chand->resolver, &chand->resolver_result,
@@ -1099,9 +1102,6 @@ void grpc_client_channel_finish_initialization(
       chand->exit_idle_when_lb_policy_arrives) {
     chand->started_resolving = true;
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    if (chand->lb_policy != NULL) {
-      GRPC_LB_POLICY_WEAK_REF(chand->lb_policy, "on_resolver_results_changed");
-    }
     grpc_resolver_next(exec_ctx, resolver, &chand->resolver_result,
                        &chand->on_resolver_result_changed);
   }
