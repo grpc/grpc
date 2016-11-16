@@ -1564,12 +1564,6 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
       "send_initial_metadata_finished");
 
   s->send_trailing_metadata = NULL;
-  if (s->send_trailing_metadata_finished) {
-    const char *why = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "cancel send_trailing_metadata: writing=%d %s",
-            t->write_state, why);
-    grpc_error_free_string(why);
-  }
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_trailing_metadata_finished,
       GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
