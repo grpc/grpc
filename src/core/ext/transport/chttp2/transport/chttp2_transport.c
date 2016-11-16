@@ -1037,7 +1037,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                                       "op.send_initial_metadata");
         }
       } else {
-        s->send_trailing_metadata = NULL;
+        s->send_initial_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_initial_metadata_finished,
             GRPC_ERROR_CREATE(
@@ -1523,13 +1523,17 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_error *error) {
   error =
       removal_error(error, s, "Pending writes failed due to stream closure");
-  s->fetching_send_message = NULL;
+  s->send_initial_metadata = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_REF(error),
       "send_initial_metadata_finished");
+
+  s->send_trailing_metadata = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_trailing_metadata_finished,
       GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
+
+  s->fetching_send_message = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_REF(error),
       "fetching_send_message_finished");
