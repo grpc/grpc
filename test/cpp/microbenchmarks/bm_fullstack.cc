@@ -164,7 +164,7 @@ class EndpointPairFixture {
       ChannelArguments args;
       args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
 
-      grpc_channel_args c_args = args.c_args();
+      grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
           grpc_create_chttp2_transport(&exec_ctx, &c_args, endpoints.client, 1);
       GPR_ASSERT(transport);
