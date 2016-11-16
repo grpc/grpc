@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/percent_encoding.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -90,10 +90,10 @@ typedef struct {
 static grpc_mdelem *server_filter_outgoing_metadata(void *user_data,
                                                     grpc_mdelem *md) {
   if (md->key == GRPC_MDSTR_GRPC_MESSAGE) {
-    gpr_slice pct_encoded_msg = gpr_percent_encode_slice(
-        md->value->slice, gpr_compatible_percent_encoding_unreserved_bytes);
-    if (gpr_slice_is_equivalent(pct_encoded_msg, md->value->slice)) {
-      gpr_slice_unref(pct_encoded_msg);
+    grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
+        md->value->slice, grpc_compatible_percent_encoding_unreserved_bytes);
+    if (grpc_slice_is_equivalent(pct_encoded_msg, md->value->slice)) {
+      grpc_slice_unref(pct_encoded_msg);
       return md;
     } else {
       return grpc_mdelem_from_metadata_strings(
