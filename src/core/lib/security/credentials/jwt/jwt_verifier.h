@@ -115,7 +115,8 @@ void grpc_jwt_verifier_destroy(grpc_jwt_verifier *verifier);
    is done (maybe in another thread).
    It is the responsibility of the callee to call grpc_jwt_claims_destroy on
    the claims. */
-typedef void (*grpc_jwt_verification_done_cb)(void *user_data,
+typedef void (*grpc_jwt_verification_done_cb)(grpc_exec_ctx *exec_ctx,
+                                              void *user_data,
                                               grpc_jwt_verifier_status status,
                                               grpc_jwt_claims *claims);
 

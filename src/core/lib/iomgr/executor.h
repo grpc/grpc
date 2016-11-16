@@ -48,6 +48,6 @@ void grpc_executor_init();
 void grpc_executor_push(grpc_closure *closure, grpc_error *error);
 
 /** Shutdown the executor, running all pending work as part of the call */
-void grpc_executor_shutdown();
+void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

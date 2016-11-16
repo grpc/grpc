@@ -34,10 +34,10 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
-
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
 
 #include <stddef.h>
