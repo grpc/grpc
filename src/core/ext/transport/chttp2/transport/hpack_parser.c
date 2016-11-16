@@ -1502,9 +1502,9 @@ static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
-  *is =
-      grpc_is_binary_header((const char *)GPR_SLICE_START_PTR(elem->key->slice),
-                            GPR_SLICE_LENGTH(elem->key->slice));
+  *is = grpc_is_binary_header(
+      (const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+      GRPC_SLICE_LENGTH(elem->key->slice));
   return GRPC_ERROR_NONE;
 }
 
@@ -1584,7 +1584,7 @@ static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_chttp2_stream *s = sp;
   grpc_chttp2_transport *t = s->t;
   if (!s->write_closed) {
-    gpr_slice_buffer_add(
+    grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_CHTTP2_NO_ERROR,
                                                 &s->stats.outgoing));
     grpc_chttp2_initiate_write(exec_ctx, t, false, "force_rst_stream");
@@ -1597,14 +1597,14 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *hpack_parser,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s,
-                                            gpr_slice slice, int is_last) {
+                                            grpc_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (s != NULL) {
-    s->stats.incoming.header_bytes += GPR_SLICE_LENGTH(slice);
+    s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
   grpc_error *error = grpc_chttp2_hpack_parser_parse(
-      exec_ctx, parser, GPR_SLICE_START_PTR(slice), GPR_SLICE_END_PTR(slice));
+      exec_ctx, parser, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_END_PTR(slice));
   if (error != GRPC_ERROR_NONE) {
     GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
     return error;

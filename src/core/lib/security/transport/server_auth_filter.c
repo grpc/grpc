@@ -78,7 +78,7 @@ static grpc_metadata_array metadata_batch_to_md_array(
     usr_md = &result.metadata[result.count++];
     usr_md->key = grpc_mdstr_as_c_string(key);
     usr_md->value = grpc_mdstr_as_c_string(value);
-    usr_md->value_length = GPR_SLICE_LENGTH(value->slice);
+    usr_md->value_length = GRPC_SLICE_LENGTH(value->slice);
   }
   return result;
 }
@@ -92,14 +92,14 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
     /* Maybe we could do a pointer comparison but we do not have any guarantee
        that the metadata processor used the same pointers for consumed_md in the
        callback. */
-    if (GPR_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
-        GPR_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
+    if (GRPC_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
+        GRPC_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
       continue;
     }
-    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), consumed_md->key,
-               GPR_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GPR_SLICE_START_PTR(md->value->slice), consumed_md->value,
-               GPR_SLICE_LENGTH(md->value->slice)) == 0) {
+    if (memcmp(GRPC_SLICE_START_PTR(md->key->slice), consumed_md->key,
+               GRPC_SLICE_LENGTH(md->key->slice)) == 0 &&
+        memcmp(GRPC_SLICE_START_PTR(md->value->slice), consumed_md->value,
+               GRPC_SLICE_LENGTH(md->value->slice)) == 0) {
       return NULL; /* Delete. */
     }
   }
@@ -134,14 +134,14 @@ static void on_md_processing_done(
     grpc_metadata_array_destroy(&calld->md);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
-    gpr_slice message;
+    grpc_slice message;
     grpc_transport_stream_op *close_op = gpr_malloc(sizeof(*close_op));
     memset(close_op, 0, sizeof(*close_op));
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                         ? error_details
                         : "Authentication metadata processing failed.";
-    message = gpr_slice_from_copied_string(error_details);
+    message = grpc_slice_from_copied_string(error_details);
     calld->transport_op->send_initial_metadata = NULL;
     if (calld->transport_op->send_message != NULL) {
       grpc_byte_stream_destroy(&exec_ctx, calld->transport_op->send_message);
@@ -278,4 +278,5 @@ const grpc_channel_filter grpc_server_auth_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "server-auth"};

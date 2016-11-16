@@ -36,7 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/percent_encoding.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -64,9 +64,9 @@ typedef struct call_data {
   grpc_transport_stream_op send_op;
   uint32_t send_length;
   uint32_t send_flags;
-  gpr_slice incoming_slice;
+  grpc_slice incoming_slice;
   grpc_slice_buffer_stream replacement_stream;
-  gpr_slice_buffer slices;
+  grpc_slice_buffer slices;
   /* flag that indicates that all slices of send_messages aren't availble */
   bool send_message_blocked;
 
@@ -105,16 +105,16 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
     char *message_string;
     gpr_asprintf(&message_string, "Received http2 header with status: %s",
                  grpc_mdstr_as_c_string(md->value));
-    gpr_slice message = gpr_slice_from_copied_string(message_string);
+    grpc_slice message = grpc_slice_from_copied_string(message_string);
     gpr_free(message_string);
     grpc_call_element_send_close_with_message(a->exec_ctx, a->elem,
                                               GRPC_STATUS_CANCELLED, &message);
     return NULL;
   } else if (md->key == GRPC_MDSTR_GRPC_MESSAGE) {
-    gpr_slice pct_decoded_msg =
-        gpr_permissive_percent_decode_slice(md->value->slice);
-    if (gpr_slice_is_equivalent(pct_decoded_msg, md->value->slice)) {
-      gpr_slice_unref(pct_decoded_msg);
+    grpc_slice pct_decoded_msg =
+        grpc_permissive_percent_decode_slice(md->value->slice);
+    if (grpc_slice_is_equivalent(pct_decoded_msg, md->value->slice)) {
+      grpc_slice_unref(pct_decoded_msg);
       return md;
     } else {
       return grpc_mdelem_from_metadata_strings(
@@ -183,7 +183,7 @@ static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
 static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
-  gpr_slice_buffer_reset_and_unref(&calld->slices);
+  grpc_slice_buffer_reset_and_unref(&calld->slices);
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
@@ -204,10 +204,10 @@ static void continue_send_message(grpc_exec_ctx *exec_ctx,
   while (grpc_byte_stream_next(exec_ctx, calld->send_op.send_message,
                                &calld->incoming_slice, ~(size_t)0,
                                &calld->got_slice)) {
-    memcpy(wrptr, GPR_SLICE_START_PTR(calld->incoming_slice),
-           GPR_SLICE_LENGTH(calld->incoming_slice));
-    wrptr += GPR_SLICE_LENGTH(calld->incoming_slice);
-    gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
+    memcpy(wrptr, GRPC_SLICE_START_PTR(calld->incoming_slice),
+           GRPC_SLICE_LENGTH(calld->incoming_slice));
+    wrptr += GRPC_SLICE_LENGTH(calld->incoming_slice);
+    grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
     if (calld->send_length == calld->slices.length) {
       calld->send_message_blocked = false;
       break;
@@ -219,7 +219,7 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
   calld->send_message_blocked = false;
-  gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
+  grpc_slice_buffer_add(&calld->slices, calld->incoming_slice);
   if (calld->send_length == calld->slices.length) {
     /* Pass down the original send_message op that was blocked.*/
     grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
@@ -347,7 +347,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->on_done_recv_trailing_metadata = NULL;
   calld->on_complete = NULL;
   calld->payload_bytes = NULL;
-  gpr_slice_buffer_init(&calld->slices);
+  grpc_slice_buffer_init(&calld->slices);
   grpc_closure_init(&calld->hc_on_recv_initial_metadata,
                     hc_on_recv_initial_metadata, elem);
   grpc_closure_init(&calld->hc_on_recv_trailing_metadata,
@@ -363,7 +363,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               void *ignored) {
   call_data *calld = elem->call_data;
-  gpr_slice_buffer_destroy(&calld->slices);
+  grpc_slice_buffer_destroy(&calld->slices);
 }
 
 static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
@@ -487,4 +487,5 @@ const grpc_channel_filter grpc_http_client_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_call_next_get_peer,
+    grpc_channel_next_get_info,
     "http-client"};

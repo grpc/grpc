@@ -61,7 +61,7 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
 static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_security_connector *sc,
                                      grpc_endpoint *nonsecure_endpoint,
-                                     gpr_slice_buffer *read_buffer,
+                                     grpc_slice_buffer *read_buffer,
                                      gpr_timespec deadline,
                                      grpc_security_handshake_done_cb cb,
                                      void *user_data) {

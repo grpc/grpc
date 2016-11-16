@@ -368,14 +368,14 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
-#ifndef GPRC_PRINT_FORMAT_CHECK
+#ifndef GPR_PRINT_FORMAT_CHECK
 #ifdef __GNUC__
-#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
   __attribute__((format(printf, FORMAT_STR, ARGS)))
 #else
-#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
 #endif
-#endif /* GPRC_PRINT_FORMAT_CHECK */
+#endif /* GPR_PRINT_FORMAT_CHECK */
 
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)

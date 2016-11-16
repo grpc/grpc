@@ -35,9 +35,9 @@
 
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/uri_parser.h"
@@ -60,8 +60,8 @@ typedef struct http_connect_handshaker {
   void* user_data;
 
   // Objects for processing the HTTP CONNECT request and response.
-  gpr_slice_buffer write_buffer;
-  gpr_slice_buffer* read_buffer;  // Ownership passes through this object.
+  grpc_slice_buffer write_buffer;
+  grpc_slice_buffer* read_buffer;  // Ownership passes through this object.
   grpc_closure request_done_closure;
   grpc_closure response_read_closure;
   grpc_http_parser http_parser;
@@ -76,7 +76,7 @@ static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
   if (gpr_unref(&handshaker->refcount)) {
     gpr_free(handshaker->proxy_server);
     gpr_free(handshaker->server_name);
-    gpr_slice_buffer_destroy(&handshaker->write_buffer);
+    grpc_slice_buffer_destroy(&handshaker->write_buffer);
     grpc_http_parser_destroy(&handshaker->http_parser);
     grpc_http_response_destroy(&handshaker->http_response);
     gpr_free(handshaker);
@@ -118,7 +118,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
   // Add buffer to parser.
   for (size_t i = 0; i < handshaker->read_buffer->count; ++i) {
-    if (GPR_SLICE_LENGTH(handshaker->read_buffer->slices[i]) > 0) {
+    if (GRPC_SLICE_LENGTH(handshaker->read_buffer->slices[i]) > 0) {
       size_t body_start_offset = 0;
       error = grpc_http_parser_parse(&handshaker->http_parser,
                                      handshaker->read_buffer->slices[i],
@@ -129,20 +129,20 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
         grpc_timer_cancel(exec_ctx, &handshaker->timeout_timer);
         // Remove the data we've already read from the read buffer,
         // leaving only the leftover bytes (if any).
-        gpr_slice_buffer tmp_buffer;
-        gpr_slice_buffer_init(&tmp_buffer);
+        grpc_slice_buffer tmp_buffer;
+        grpc_slice_buffer_init(&tmp_buffer);
         if (body_start_offset <
-            GPR_SLICE_LENGTH(handshaker->read_buffer->slices[i])) {
-          gpr_slice_buffer_add(
+            GRPC_SLICE_LENGTH(handshaker->read_buffer->slices[i])) {
+          grpc_slice_buffer_add(
               &tmp_buffer,
-              gpr_slice_split_tail(&handshaker->read_buffer->slices[i],
-                                   body_start_offset));
+              grpc_slice_split_tail(&handshaker->read_buffer->slices[i],
+                                    body_start_offset));
         }
-        gpr_slice_buffer_addn(&tmp_buffer,
-                              &handshaker->read_buffer->slices[i + 1],
-                              handshaker->read_buffer->count - i - 1);
-        gpr_slice_buffer_swap(handshaker->read_buffer, &tmp_buffer);
-        gpr_slice_buffer_destroy(&tmp_buffer);
+        grpc_slice_buffer_addn(&tmp_buffer,
+                               &handshaker->read_buffer->slices[i + 1],
+                               handshaker->read_buffer->count - i - 1);
+        grpc_slice_buffer_swap(handshaker->read_buffer, &tmp_buffer);
+        grpc_slice_buffer_destroy(&tmp_buffer);
         break;
       }
     }
@@ -159,7 +159,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // complete (e.g., handling chunked transfer encoding or looking
   // at the Content-Length: header).
   if (handshaker->http_parser.state != GRPC_HTTP_BODY) {
-    gpr_slice_buffer_reset_and_unref(handshaker->read_buffer);
+    grpc_slice_buffer_reset_and_unref(handshaker->read_buffer);
     grpc_endpoint_read(exec_ctx, handshaker->endpoint, handshaker->read_buffer,
                        &handshaker->response_read_closure);
     return;
@@ -195,7 +195,7 @@ static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
 static void http_connect_handshaker_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker_in,
     grpc_endpoint* endpoint, grpc_channel_args* args,
-    gpr_slice_buffer* read_buffer, gpr_timespec deadline,
+    grpc_slice_buffer* read_buffer, gpr_timespec deadline,
     grpc_tcp_server_acceptor* acceptor, grpc_handshaker_done_cb cb,
     void* user_data) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
@@ -214,8 +214,8 @@ static void http_connect_handshaker_do_handshake(
   request.http.method = "CONNECT";
   request.http.path = handshaker->server_name;
   request.handshaker = &grpc_httpcli_plaintext;
-  gpr_slice request_slice = grpc_httpcli_format_connect_request(&request);
-  gpr_slice_buffer_add(&handshaker->write_buffer, request_slice);
+  grpc_slice request_slice = grpc_httpcli_format_connect_request(&request);
+  grpc_slice_buffer_add(&handshaker->write_buffer, request_slice);
   grpc_endpoint_write(exec_ctx, endpoint, &handshaker->write_buffer,
                       &handshaker->request_done_closure);
   // Set timeout timer.  The timer gets a reference to the handshaker.
@@ -239,7 +239,7 @@ grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   handshaker->proxy_server = gpr_strdup(proxy_server);
   handshaker->server_name = gpr_strdup(server_name);
-  gpr_slice_buffer_init(&handshaker->write_buffer);
+  grpc_slice_buffer_init(&handshaker->write_buffer);
   grpc_closure_init(&handshaker->request_done_closure, on_write_done,
                     handshaker);
   grpc_closure_init(&handshaker->response_read_closure, on_read_done,
