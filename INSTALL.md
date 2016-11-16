@@ -56,6 +56,9 @@ gRPC C Core library.
  $ [sudo] make install
 ```
 
+Note that if you are interested in contributing, you must install some extra
+dependencies to run the test suites. All of these can be found in [CONTRIBUTING](CONTRIBUTING.md)
+
 ##Windows
 
 There are several ways to build under Windows, of varying complexity depending
