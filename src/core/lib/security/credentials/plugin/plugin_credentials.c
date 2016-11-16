@@ -106,6 +106,8 @@ static void plugin_md_request_metadata_ready(void *request,
         grpc_slice_unref_internal(&exec_ctx, md_array[i].value);
       }
       gpr_free(md_array);
+    } else if (num_md == 0) {
+      r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
     }
   }
   gpr_free(r);

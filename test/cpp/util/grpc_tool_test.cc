@@ -112,8 +112,6 @@ size_t ArraySize(T& a) {
           static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
 }
 
-}  // namespame
-
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
@@ -131,6 +129,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 };
+
+}  // namespace
 
 class GrpcToolTest : public ::testing::Test {
  protected:
