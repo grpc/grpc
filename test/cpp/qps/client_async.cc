@@ -177,7 +177,6 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
 
-    using namespace std::placeholders;
     int t = 0;
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {

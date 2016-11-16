@@ -70,7 +70,8 @@ class MetadataBatch {
   /// Adds metadata and returns the newly allocated storage.
   /// The caller takes ownership of the result, which must exist for the
   /// lifetime of the gRPC call.
-  grpc_linked_mdelem *AddMetadata(const string &key, const string &value);
+  grpc_linked_mdelem *AddMetadata(grpc_exec_ctx *exec_ctx, const string &key,
+                                  const string &value);
 
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {

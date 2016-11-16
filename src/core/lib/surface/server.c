@@ -196,6 +196,7 @@ struct grpc_server {
   grpc_completion_queue **cqs;
   grpc_pollset **pollsets;
   size_t cq_count;
+  size_t pollset_count;
   bool started;
 
   /* The two following mutexes control access to server-state
@@ -740,7 +741,8 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (md->key == GRPC_MDSTR_PATH) {
@@ -1087,7 +1089,7 @@ void grpc_server_start(grpc_server *server) {
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
 
   server->started = true;
-  size_t pollset_count = 0;
+  server->pollset_count = 0;
   server->pollsets = gpr_malloc(sizeof(grpc_pollset *) * server->cq_count);
   server->request_freelist_per_cq =
       gpr_malloc(sizeof(*server->request_freelist_per_cq) * server->cq_count);
@@ -1095,7 +1097,8 @@ void grpc_server_start(grpc_server *server) {
       gpr_malloc(sizeof(*server->requested_calls_per_cq) * server->cq_count);
   for (i = 0; i < server->cq_count; i++) {
     if (!grpc_cq_is_non_listening_server_cq(server->cqs[i])) {
-      server->pollsets[pollset_count++] = grpc_cq_pollset(server->cqs[i]);
+      server->pollsets[server->pollset_count++] =
+          grpc_cq_pollset(server->cqs[i]);
     }
     server->request_freelist_per_cq[i] =
         gpr_stack_lockfree_create((size_t)server->max_requested_calls_per_cq);
@@ -1114,7 +1117,8 @@ void grpc_server_start(grpc_server *server) {
   }
 
   for (l = server->listeners; l; l = l->next) {
-    l->start(&exec_ctx, server, l->arg, server->pollsets, pollset_count);
+    l->start(&exec_ctx, server, l->arg, server->pollsets,
+             server->pollset_count);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -1122,7 +1126,7 @@ void grpc_server_start(grpc_server *server) {
 
 void grpc_server_get_pollsets(grpc_server *server, grpc_pollset ***pollsets,
                               size_t *pollset_count) {
-  *pollset_count = server->cq_count;
+  *pollset_count = server->pollset_count;
   *pollsets = server->pollsets;
 }
 
