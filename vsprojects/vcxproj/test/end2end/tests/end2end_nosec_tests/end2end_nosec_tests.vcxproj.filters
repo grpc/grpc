@@ -55,6 +55,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_latency.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

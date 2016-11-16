@@ -313,7 +313,6 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
-  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -335,6 +334,7 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_hpux.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -593,7 +593,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
-  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -615,6 +614,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_hpux.c
   src/core/lib/iomgr/socket_utils_linux.c
@@ -845,7 +845,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll_linux.c
-  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
@@ -867,6 +866,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address_windows.c
   src/core/lib/iomgr/resource_quota.c
   src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_mutator.c
   src/core/lib/iomgr/socket_utils_common_posix.c
   src/core/lib/iomgr/socket_utils_hpux.c
   src/core/lib/iomgr/socket_utils_linux.c
