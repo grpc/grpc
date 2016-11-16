@@ -553,7 +553,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
   switch (sd->curr_connectivity_state) {
     case GRPC_CHANNEL_INIT:
-      GPR_UNREACHABLE_CODE();
+      GPR_UNREACHABLE_CODE(return );
     case GRPC_CHANNEL_READY:
       /* add the newly connected subchannel to the list of connected ones.
        * Note that it goes to the "end of the line". */
