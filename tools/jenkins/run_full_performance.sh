@@ -52,4 +52,12 @@ tools/run_tests/run_performance_tests.py \
     --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
     || EXIT_CODE=1
 
+# selected scenarios on Windows
+tools/run_tests/run_performance_tests.py \
+    -l csharp \
+    --category scalable \
+    --bq_result_table performance_test.performance_experiment_windows \
+    --remote_worker_host grpc-performance-windows1 grpc-performance-windows2 \
+    || EXIT_CODE=1
+
 exit $EXIT_CODE
