@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_SLICE_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_SLICE_INTERNAL_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
+#define GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -46,4 +46,4 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx *exec_ctx,
 void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_slice_buffer *sb);
 
-#endif
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */
