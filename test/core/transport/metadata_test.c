@@ -68,8 +68,8 @@ static void test_create_string(void) {
   s3 = grpc_mdstr_from_string("very much not hello");
   GPR_ASSERT(s1 == s2);
   GPR_ASSERT(s3 != s1);
-  GPR_ASSERT(gpr_slice_str_cmp(s1->slice, "hello") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(s3->slice, "very much not hello") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(s1->slice, "hello") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(s3->slice, "very much not hello") == 0);
   GRPC_MDSTR_UNREF(s1);
   GRPC_MDSTR_UNREF(s2);
   GRPC_MDSTR_UNREF(s3);
@@ -89,9 +89,9 @@ static void test_create_metadata(void) {
   GPR_ASSERT(m3 != m1);
   GPR_ASSERT(m3->key == m1->key);
   GPR_ASSERT(m3->value != m1->value);
-  GPR_ASSERT(gpr_slice_str_cmp(m1->key->slice, "a") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(m1->value->slice, "b") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(m3->value->slice, "c") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(m1->key->slice, "a") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(m1->value->slice, "b") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(m3->value->slice, "c") == 0);
   GRPC_MDELEM_UNREF(m1);
   GRPC_MDELEM_UNREF(m2);
   GRPC_MDELEM_UNREF(m3);
@@ -205,7 +205,7 @@ static void test_things_stick_around(void) {
 static void test_slices_work(void) {
   /* ensure no memory leaks when switching representation from mdstr to slice */
   grpc_mdstr *str;
-  gpr_slice slice;
+  grpc_slice slice;
 
   LOG_TEST("test_slices_work");
 
@@ -213,14 +213,14 @@ static void test_slices_work(void) {
 
   str = grpc_mdstr_from_string(
       "123456789012345678901234567890123456789012345678901234567890");
-  slice = gpr_slice_ref(str->slice);
+  slice = grpc_slice_ref(str->slice);
   GRPC_MDSTR_UNREF(str);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
 
   str = grpc_mdstr_from_string(
       "123456789012345678901234567890123456789012345678901234567890");
-  slice = gpr_slice_ref(str->slice);
-  gpr_slice_unref(slice);
+  slice = grpc_slice_ref(str->slice);
+  grpc_slice_unref(slice);
   GRPC_MDSTR_UNREF(str);
 
   grpc_shutdown();
@@ -228,8 +228,8 @@ static void test_slices_work(void) {
 
 static void test_base64_and_huffman_works(void) {
   grpc_mdstr *str;
-  gpr_slice slice1;
-  gpr_slice slice2;
+  grpc_slice slice1;
+  grpc_slice slice2;
 
   LOG_TEST("test_base64_and_huffman_works");
 
@@ -237,9 +237,9 @@ static void test_base64_and_huffman_works(void) {
   str = grpc_mdstr_from_string("abcdefg");
   slice1 = grpc_mdstr_as_base64_encoded_and_huffman_compressed(str);
   slice2 = grpc_chttp2_base64_encode_and_huffman_compress(str->slice);
-  GPR_ASSERT(0 == gpr_slice_cmp(slice1, slice2));
+  GPR_ASSERT(0 == grpc_slice_cmp(slice1, slice2));
 
-  gpr_slice_unref(slice2);
+  grpc_slice_unref(slice2);
   GRPC_MDSTR_UNREF(str);
   grpc_shutdown();
 }
@@ -276,13 +276,13 @@ static void verify_binary_header_size(const char *key, const uint8_t *value,
   grpc_mdelem *elem = grpc_mdelem_from_string_and_buffer(key, value, value_len);
   GPR_ASSERT(grpc_is_binary_header(key, strlen(key)));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
-  gpr_slice value_slice =
-      gpr_slice_from_copied_buffer((const char *)value, value_len);
-  gpr_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
-  size_t expected_size = 32 + strlen(key) + GPR_SLICE_LENGTH(base64_encoded);
+  grpc_slice value_slice =
+      grpc_slice_from_copied_buffer((const char *)value, value_len);
+  grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
+  size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
-  gpr_slice_unref(value_slice);
-  gpr_slice_unref(base64_encoded);
+  grpc_slice_unref(value_slice);
+  grpc_slice_unref(base64_encoded);
   GRPC_MDELEM_UNREF(elem);
 }
 

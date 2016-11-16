@@ -95,8 +95,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a gpr_slice containing random alphanumeric characters. */
-static gpr_slice generate_random_slice() {
+/* Creates and returns a grpc_slice containing random alphanumeric characters.
+ */
+static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char *output;
@@ -106,7 +107,7 @@ static gpr_slice generate_random_slice() {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
   output[output_size - 1] = '\0';
-  gpr_slice out = gpr_slice_from_copied_string(output);
+  grpc_slice out = grpc_slice_from_copied_string(output);
   gpr_free(output);
   return out;
 }
@@ -116,8 +117,8 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  gpr_slice request_payload_slice = generate_random_slice();
-  gpr_slice response_payload_slice = generate_random_slice();
+  grpc_slice request_payload_slice = generate_random_slice();
+  grpc_slice response_payload_slice = generate_random_slice();
 
   grpc_call *c;
   grpc_call *s;

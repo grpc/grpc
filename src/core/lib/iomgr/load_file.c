@@ -44,10 +44,10 @@
 #include "src/core/lib/support/string.h"
 
 grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
-                           gpr_slice *output) {
+                           grpc_slice *output) {
   unsigned char *contents = NULL;
   size_t contents_size = 0;
-  gpr_slice result = gpr_empty_slice();
+  grpc_slice result = gpr_empty_slice();
   FILE *file;
   size_t bytes_read = 0;
   grpc_error *error = GRPC_ERROR_NONE;
@@ -72,7 +72,7 @@ grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
   if (add_null_terminator) {
     contents[contents_size++] = 0;
   }
-  result = gpr_slice_new(contents, contents_size, gpr_free);
+  result = grpc_slice_new(contents, contents_size, gpr_free);
 
 end:
   *output = result;

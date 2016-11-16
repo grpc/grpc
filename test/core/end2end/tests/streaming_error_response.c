@@ -101,10 +101,10 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice response_payload1_slice = gpr_slice_from_copied_string("hello");
+  grpc_slice response_payload1_slice = grpc_slice_from_copied_string("hello");
   grpc_byte_buffer *response_payload1 =
       grpc_raw_byte_buffer_create(&response_payload1_slice, 1);
-  gpr_slice response_payload2_slice = gpr_slice_from_copied_string("world");
+  grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer *response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
   gpr_timespec deadline = five_seconds_time();

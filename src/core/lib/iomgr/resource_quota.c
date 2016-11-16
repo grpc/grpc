@@ -347,7 +347,7 @@ static bool rq_reclaim(grpc_exec_ctx *exec_ctx,
  */
 
 typedef struct {
-  gpr_slice_refcount base;
+  grpc_slice_refcount base;
   gpr_refcount refs;
   grpc_resource_user *resource_user;
   size_t size;
@@ -364,7 +364,7 @@ static void ru_slice_unref(void *p) {
     /* TODO(ctiller): this is dangerous, but I think safe for now:
        we have no guarantee here that we're at a safe point for creating an
        execution context, but we have no way of writing this code otherwise.
-       In the future: consider lifting gpr_slice to grpc, and offering an
+       In the future: consider lifting grpc_slice to grpc, and offering an
        internal_{ref,unref} pair that is execution context aware.
        Alternatively,
        make exec_ctx be thread local and 'do the right thing' (whatever that
@@ -377,15 +377,15 @@ static void ru_slice_unref(void *p) {
   }
 }
 
-static gpr_slice ru_slice_create(grpc_resource_user *resource_user,
-                                 size_t size) {
+static grpc_slice ru_slice_create(grpc_resource_user *resource_user,
+                                  size_t size) {
   ru_slice_refcount *rc = gpr_malloc(sizeof(ru_slice_refcount) + size);
   rc->base.ref = ru_slice_ref;
   rc->base.unref = ru_slice_unref;
   gpr_ref_init(&rc->refs, 1);
   rc->resource_user = resource_user;
   rc->size = size;
-  gpr_slice slice;
+  grpc_slice slice;
   slice.refcount = &rc->base;
   slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
   slice.data.refcounted.length = size;
@@ -483,7 +483,7 @@ static void ru_allocated_slices(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_resource_user_slice_allocator *slice_allocator = arg;
   if (error == GRPC_ERROR_NONE) {
     for (size_t i = 0; i < slice_allocator->count; i++) {
-      gpr_slice_buffer_add_indexed(
+      grpc_slice_buffer_add_indexed(
           slice_allocator->dest, ru_slice_create(slice_allocator->resource_user,
                                                  slice_allocator->length));
     }
@@ -783,7 +783,7 @@ void grpc_resource_user_slice_allocator_init(
 void grpc_resource_user_alloc_slices(
     grpc_exec_ctx *exec_ctx,
     grpc_resource_user_slice_allocator *slice_allocator, size_t length,
-    size_t count, gpr_slice_buffer *dest) {
+    size_t count, grpc_slice_buffer *dest) {
   slice_allocator->length = length;
   slice_allocator->count = count;
   slice_allocator->dest = dest;
@@ -791,9 +791,9 @@ void grpc_resource_user_alloc_slices(
                            count * length, &slice_allocator->on_allocated);
 }
 
-gpr_slice grpc_resource_user_slice_malloc(grpc_exec_ctx *exec_ctx,
-                                          grpc_resource_user *resource_user,
-                                          size_t size) {
+grpc_slice grpc_resource_user_slice_malloc(grpc_exec_ctx *exec_ctx,
+                                           grpc_resource_user *resource_user,
+                                           size_t size) {
   grpc_resource_user_alloc(exec_ctx, resource_user, size, NULL);
   return ru_slice_create(resource_user, size);
 }
