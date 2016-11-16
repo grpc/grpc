@@ -56,6 +56,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 typedef struct fd_pair {
@@ -229,12 +230,12 @@ static int blocking_write_bytes(struct thread_args *args, char *buf) {
    on the scenario we're using.
  */
 static int set_socket_nonblocking(thread_args *args) {
-  if (!grpc_set_socket_nonblocking(args->fds.read_fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to set socket nonblocking: %s", strerror(errno));
+  if (!GRPC_LOG_IF_ERROR("Unable to set read socket nonblocking",
+                         grpc_set_socket_nonblocking(args->fds.read_fd, 1))) {
     return -1;
   }
-  if (!grpc_set_socket_nonblocking(args->fds.write_fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to set socket nonblocking: %s", strerror(errno));
+  if (!GRPC_LOG_IF_ERROR("Unable to set write socket nonblocking",
+                         grpc_set_socket_nonblocking(args->fds.write_fd, 1))) {
     return -1;
   }
   return 0;
@@ -347,10 +348,16 @@ static int create_listening_socket(struct sockaddr *port, socklen_t len) {
     goto error;
   }
 
-  if (!grpc_set_socket_cloexec(fd, 1) || !grpc_set_socket_low_latency(fd, 1) ||
-      !grpc_set_socket_reuse_addr(fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
+  if (!GRPC_LOG_IF_ERROR("Failed to set listening socket cloexec",
+                         grpc_set_socket_cloexec(fd, 1))) {
+    goto error;
+  }
+  if (!GRPC_LOG_IF_ERROR("Failed to set listening socket low latency",
+                         grpc_set_socket_low_latency(fd, 1))) {
+    goto error;
+  }
+  if (!GRPC_LOG_IF_ERROR("Failed to set listening socket reuse addr",
+                         grpc_set_socket_reuse_addr(fd, 1))) {
     goto error;
   }
 
@@ -386,8 +393,12 @@ static int connect_client(struct sockaddr *addr, socklen_t len) {
     goto error;
   }
 
-  if (!grpc_set_socket_cloexec(fd, 1) || !grpc_set_socket_low_latency(fd, 1)) {
-    gpr_log(GPR_ERROR, "Failed to configure socket");
+  if (!GRPC_LOG_IF_ERROR("Failed to set connecting socket cloexec",
+                         grpc_set_socket_cloexec(fd, 1))) {
+    goto error;
+  }
+  if (!GRPC_LOG_IF_ERROR("Failed to set connecting socket low latency",
+                         grpc_set_socket_low_latency(fd, 1))) {
     goto error;
   }
 
