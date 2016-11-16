@@ -348,3 +348,11 @@ int grpc_slice_str_cmp(grpc_slice a, const char *b) {
   if (d != 0) return d;
   return memcmp(GRPC_SLICE_START_PTR(a), b, b_length);
 }
+
+int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b) {
+  if (a.refcount == NULL || b.refcount == NULL) {
+    return grpc_slice_cmp(a, b) == 0;
+  }
+  return a.data.refcounted.length == b.data.refcounted.length &&
+         a.data.refcounted.bytes == b.data.refcounted.bytes;
+}
