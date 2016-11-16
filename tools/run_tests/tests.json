@@ -2401,6 +2401,28 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "bm_fullstack", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
     "gtest": true, 
     "language": "c++", 
     "name": "channel_arguments_test", 
