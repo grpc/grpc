@@ -35,6 +35,8 @@
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H
 
 #include <grpc/grpc_security.h>
+
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
@@ -141,11 +143,9 @@ struct grpc_channel_security_connector {
                           grpc_channel_security_connector *sc, const char *host,
                           grpc_auth_context *auth_context,
                           grpc_security_call_host_check_cb cb, void *user_data);
-  void (*do_handshake)(grpc_exec_ctx *exec_ctx,
-                       grpc_channel_security_connector *sc,
-                       grpc_endpoint *nonsecure_endpoint,
-                       grpc_slice_buffer *read_buffer, gpr_timespec deadline,
-                       grpc_security_handshake_done_cb cb, void *user_data);
+  void (*create_handshakers)(
+      grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+      grpc_handshake_manager *handshake_mgr);
 };
 
 /* Checks that the host that will be set for a call is acceptable. */
@@ -154,11 +154,10 @@ void grpc_channel_security_connector_check_call_host(
     const char *host, grpc_auth_context *auth_context,
     grpc_security_call_host_check_cb cb, void *user_data);
 
-/* Handshake. */
-void grpc_channel_security_connector_do_handshake(
+/* Registers handshakers with \a handshake_mgr. */
+void grpc_channel_security_connector_create_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
-    grpc_endpoint *nonsecure_endpoint, grpc_slice_buffer *read_buffer,
-    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
+    grpc_handshake_manager *handshake_mgr);
 
 /* --- server_security_connector object. ---
 
@@ -169,25 +168,14 @@ typedef struct grpc_server_security_connector grpc_server_security_connector;
 
 struct grpc_server_security_connector {
   grpc_security_connector base;
-  gpr_mu mu;
-  grpc_security_connector_handshake_list *handshaking_handshakes;
-  const grpc_channel_args *channel_args;
-  void (*do_handshake)(grpc_exec_ctx *exec_ctx,
-                       grpc_server_security_connector *sc,
-                       grpc_tcp_server_acceptor *acceptor,
-                       grpc_endpoint *nonsecure_endpoint,
-                       grpc_slice_buffer *read_buffer, gpr_timespec deadline,
-                       grpc_security_handshake_done_cb cb, void *user_data);
+  void (*create_handshakers)(
+      grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
+      grpc_handshake_manager *handshake_mgr);
 };
 
-void grpc_server_security_connector_do_handshake(
+void grpc_server_security_connector_create_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-    grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
-    grpc_slice_buffer *read_buffer, gpr_timespec deadline,
-    grpc_security_handshake_done_cb cb, void *user_data);
-
-void grpc_server_security_connector_shutdown(
-    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *connector);
+    grpc_handshake_manager *handshake_mgr);
 
 /* --- Creation security connectors. --- */
 
