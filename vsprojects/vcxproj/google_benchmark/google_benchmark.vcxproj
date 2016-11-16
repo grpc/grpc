@@ -147,6 +147,10 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark_api.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\macros.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\reporter.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\arraysize.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\benchmark_api_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\check.h" />
@@ -163,10 +167,6 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\string_util.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\sysinfo.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\src\timers.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\benchmark_api.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\macros.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\google_benchmark\include\benchmark\reporter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\third_party\google_benchmark\src\benchmark.cc">

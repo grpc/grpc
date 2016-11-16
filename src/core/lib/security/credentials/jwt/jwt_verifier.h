@@ -37,7 +37,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 
 /* --- Constants. --- */
@@ -129,7 +129,7 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 
 /* --- TESTING ONLY exposed functions. --- */
 
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, gpr_slice buffer);
+grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
 

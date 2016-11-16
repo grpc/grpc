@@ -183,16 +183,16 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   cq_verifier_destroy(cqv);
 }
 
-static void client_validator(gpr_slice_buffer *incoming) {
+static void client_validator(grpc_slice_buffer *incoming) {
   // Get last frame from incoming slice buffer.
-  gpr_slice_buffer last_frame_buffer;
-  gpr_slice_buffer_init(&last_frame_buffer);
-  gpr_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
+  grpc_slice_buffer last_frame_buffer;
+  grpc_slice_buffer_init(&last_frame_buffer);
+  grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
-  gpr_slice last_frame = last_frame_buffer.slices[0];
+  grpc_slice last_frame = last_frame_buffer.slices[0];
   // Construct expected frame.
-  gpr_slice expected = gpr_slice_malloc(13);
-  uint8_t *p = GPR_SLICE_START_PTR(expected);
+  grpc_slice expected = grpc_slice_malloc(13);
+  uint8_t *p = GRPC_SLICE_START_PTR(expected);
   // Length.
   *p++ = 0;
   *p++ = 0;
@@ -212,8 +212,8 @@ static void client_validator(gpr_slice_buffer *incoming) {
   *p++ = 0;
   *p++ = 11;
   // Compare actual and expected.
-  GPR_ASSERT(gpr_slice_cmp(last_frame, expected) == 0);
-  gpr_slice_buffer_destroy(&last_frame_buffer);
+  GPR_ASSERT(grpc_slice_cmp(last_frame, expected) == 0);
+  grpc_slice_buffer_destroy(&last_frame_buffer);
 }
 
 int main(int argc, char **argv) {

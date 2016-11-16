@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include "src/core/lib/iomgr/resolve_address.h"
 
 void grpc_set_default_initial_connect_string(grpc_resolved_address **addr,
-                                             gpr_slice *initial_str) {}
+                                             grpc_slice *initial_str) {}

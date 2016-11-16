@@ -36,9 +36,9 @@
 #include <stdarg.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -52,16 +52,16 @@ static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
   GPR_ASSERT(ekey);
   evalue = va_arg(chk->args, char *);
   GPR_ASSERT(evalue);
-  GPR_ASSERT(gpr_slice_str_cmp(md->key->slice, ekey) == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md->value->slice, evalue) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md->key->slice, ekey) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md->value->slice, evalue) == 0);
   GRPC_MDELEM_UNREF(md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,
                         grpc_slice_split_mode mode, const char *hexstring,
                         ... /* char *key, char *value */) {
-  gpr_slice input = parse_hexstring(hexstring);
-  gpr_slice *slices;
+  grpc_slice input = parse_hexstring(hexstring);
+  grpc_slice *slices;
   size_t nslices;
   size_t i;
   test_checker chk;
@@ -72,18 +72,18 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
   parser->on_header_user_data = &chk;
 
   grpc_split_slices(mode, &input, 1, &slices, &nslices);
-  gpr_slice_unref(input);
+  grpc_slice_unref(input);
 
   for (i = 0; i < nslices; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
-                   &exec_ctx, parser, GPR_SLICE_START_PTR(slices[i]),
-                   GPR_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
+                   &exec_ctx, parser, GRPC_SLICE_START_PTR(slices[i]),
+                   GRPC_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
   for (i = 0; i < nslices; i++) {
-    gpr_slice_unref(slices[i]);
+    grpc_slice_unref(slices[i]);
   }
   gpr_free(slices);
 
