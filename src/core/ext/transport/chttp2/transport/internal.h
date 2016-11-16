@@ -409,6 +409,9 @@ struct grpc_chttp2_stream {
   grpc_error *read_closed_error;
   /** the error that resulted in this stream being write-closed */
   grpc_error *write_closed_error;
+  /** should any writes be cleared once this stream becomes non-writable */
+  bool need_fail_pending_writes_on_writes_finished;
+  grpc_error *fail_pending_writes_on_writes_finished_error;
 
   grpc_published_metadata_method published_metadata[2];
   bool final_metadata_requested;
@@ -688,5 +691,12 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                                        grpc_chttp2_transport *t,
                                                        grpc_chttp2_stream *s);
+
+void grpc_chttp2_leave_writing_lists(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s);
+void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t,
+                                     grpc_chttp2_stream *s, grpc_error *error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
