@@ -1038,6 +1038,7 @@ slice_test: $(BINDIR)/$(CONFIG)/slice_test
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
+ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
 tcp_posix_test: $(BINDIR)/$(CONFIG)/tcp_posix_test
 tcp_server_posix_test: $(BINDIR)/$(CONFIG)/tcp_server_posix_test
@@ -1056,6 +1057,7 @@ wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+bm_fullstack: $(BINDIR)/$(CONFIG)/bm_fullstack
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
@@ -1204,6 +1206,7 @@ nanopb_fuzzer_serverlist_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serve
 percent_decode_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry
 percent_encode_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry
 server_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry
+ssl_server_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry
 uri_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry
 
 run_dep_checks:
@@ -1434,6 +1437,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/percent_decode_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/percent_encode_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry \
+  $(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry \
 
 
@@ -1442,6 +1446,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bm_fullstack \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -1534,6 +1539,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bm_fullstack \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -1839,6 +1845,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_fullstack"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack || ( echo test bm_fullstack failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
@@ -2641,7 +2649,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2663,6 +2670,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
@@ -2939,7 +2947,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2961,6 +2968,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
@@ -3228,7 +3236,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3250,6 +3257,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
@@ -3446,7 +3454,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll_linux.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -3468,6 +3475,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/resource_quota.c \
     src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_mutator.c \
     src/core/lib/iomgr/socket_utils_common_posix.c \
     src/core/lib/iomgr/socket_utils_linux.c \
     src/core/lib/iomgr/socket_utils_posix.c \
@@ -6996,6 +7004,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/empty_batch.c \
     test/core/end2end/tests/filter_call_init_fails.c \
     test/core/end2end/tests/filter_causes_close.c \
+    test/core/end2end/tests/filter_latency.c \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
@@ -7081,6 +7090,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/empty_batch.c \
     test/core/end2end/tests/filter_call_init_fails.c \
     test/core/end2end/tests/filter_causes_close.c \
+    test/core/end2end/tests/filter_latency.c \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
@@ -10881,6 +10891,38 @@ endif
 endif
 
 
+SSL_SERVER_FUZZER_SRC = \
+    test/core/security/ssl_server_fuzzer.c \
+
+SSL_SERVER_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_SERVER_FUZZER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ssl_server_fuzzer: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/ssl_server_fuzzer: $(SSL_SERVER_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SSL_SERVER_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/ssl_server_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ssl_server_fuzzer: $(SSL_SERVER_FUZZER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SSL_SERVER_FUZZER_OBJS:.o=.dep)
+endif
+endif
+
+
 TCP_CLIENT_POSIX_TEST_SRC = \
     test/core/iomgr/tcp_client_posix_test.c \
 
@@ -11486,6 +11528,49 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_FULLSTACK_SRC = \
+    test/cpp/microbenchmarks/bm_fullstack.cc \
+
+BM_FULLSTACK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_FULLSTACK_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_fullstack: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bm_fullstack: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_fullstack: $(PROTOBUF_DEP) $(BM_FULLSTACK_OBJS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_OBJS) $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack.o:  $(LIBDIR)/$(CONFIG)/libgoogle_benchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bm_fullstack: $(BM_FULLSTACK_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_FULLSTACK_OBJS:.o=.dep)
 endif
 endif
 
@@ -16398,6 +16483,41 @@ deps_server_fuzzer_one_entry: $(SERVER_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
+endif
+endif
+
+
+SSL_SERVER_FUZZER_ONE_ENTRY_SRC = \
+    test/core/security/ssl_server_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.c \
+
+SSL_SERVER_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_SERVER_FUZZER_ONE_ENTRY_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry: $(SSL_SERVER_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SSL_SERVER_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ssl_server_fuzzer_one_entry
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/ssl_server_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ssl_server_fuzzer_one_entry: $(SSL_SERVER_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SSL_SERVER_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
 

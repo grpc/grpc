@@ -209,6 +209,15 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
   return GRPC_ERROR_NONE;
 }
 
+/* set a socket using a grpc_socket_mutator */
+grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator) {
+  GPR_ASSERT(mutator);
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
+    return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
+  }
+  return GRPC_ERROR_NONE;
+}
+
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
 static int g_ipv6_loopback_available;
 
