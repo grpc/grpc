@@ -206,7 +206,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   return materialize(s);
 }
 
-void grpc_test_only_set_slice_interning_hash_seed(uint32_t seed) {
+void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
   g_hash_seed = seed;
   g_forced_hash_seed = 1;
 }

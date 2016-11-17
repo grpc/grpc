@@ -48,6 +48,6 @@ void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
 
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
-void grpc_test_only_set_slice_interning_hash_seed(uint32_t key);
+void grpc_test_only_set_slice_hash_seed(uint32_t key);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

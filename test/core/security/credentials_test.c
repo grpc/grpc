@@ -1065,9 +1065,8 @@ static void plugin_get_metadata_success(void *state,
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
     memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = plugin_md[i].key;
-    md[i].value = plugin_md[i].value;
-    md[i].value_length = strlen(plugin_md[i].value);
+    md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
+    md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
   }
   cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
 }

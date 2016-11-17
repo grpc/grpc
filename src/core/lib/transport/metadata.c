@@ -375,8 +375,7 @@ static size_t get_base64_encoded_size(size_t raw_length) {
 size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
   size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(elem->key);
   size_t value_len = GRPC_SLICE_LENGTH(elem->value);
-  if (grpc_is_binary_header((const char *)GRPC_SLICE_START_PTR(elem->key),
-                            GRPC_SLICE_LENGTH(elem->key))) {
+  if (grpc_is_binary_header(elem->key)) {
     return overhead_and_key + get_base64_encoded_size(value_len);
   } else {
     return overhead_and_key + value_len;

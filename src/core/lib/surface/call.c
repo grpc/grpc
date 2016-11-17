@@ -596,13 +596,13 @@ static int prepare_application_metadata(
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_slices(exec_ctx, md->key, md->value);
-    if (!grpc_header_key_slice_is_legal(l->md->key)) {
+    if (!grpc_header_key_is_legal(l->md->key)) {
       char *str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
       gpr_free(str);
       break;
-    } else if (!grpc_slice_is_binary_header(l->md->key) &&
-               !grpc_header_nonbin_value_slice_is_legal(l->md->value)) {
+    } else if (!grpc_is_binary_header(l->md->key) &&
+               !grpc_header_nonbin_value_is_legal(l->md->value)) {
       char *str = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
       gpr_free(str);

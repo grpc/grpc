@@ -82,12 +82,16 @@ static const grpc_slice_refcount_vtable noop_refcount_vtable = {
     noop_ref, noop_unref, grpc_slice_default_hash_impl};
 static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable};
 
-grpc_slice grpc_slice_from_static_string(const char *s) {
+grpc_slice grpc_slice_from_static_buffer(const void *s, size_t len) {
   grpc_slice slice;
   slice.refcount = &noop_refcount;
   slice.data.refcounted.bytes = (uint8_t *)s;
-  slice.data.refcounted.length = strlen(s);
+  slice.data.refcounted.length = len;
   return slice;
+}
+
+grpc_slice grpc_slice_from_static_string(const char *s) {
+  return grpc_slice_from_static_buffer(s, strlen(s));
 }
 
 /* grpc_slice_new support structures - we create a refcount object extended
@@ -383,4 +387,42 @@ int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b) {
   }
   return a.data.refcounted.length == b.data.refcounted.length &&
          a.data.refcounted.bytes == b.data.refcounted.bytes;
+}
+
+int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t len) {
+  if (GRPC_SLICE_LENGTH(a) < len) return 0;
+  return 0 == memcmp(GRPC_SLICE_START_PTR(a), b, len);
+}
+
+int grpc_slice_rchr(grpc_slice s, char c) {
+  const char *b = (const char *)GRPC_SLICE_START_PTR(s);
+  int i;
+  for (i = (int)GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c; i--)
+    ;
+  return i;
+}
+
+int grpc_slice_chr(grpc_slice s, char c) {
+  const char *b = (const char *)GRPC_SLICE_START_PTR(s);
+  const char *p = memchr(b, c, GRPC_SLICE_LENGTH(s));
+  return p == NULL ? -1 : (int)(p - b);
+}
+
+int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
+  size_t haystack_len = GRPC_SLICE_LENGTH(haystack);
+  const uint8_t *haystack_bytes = GRPC_SLICE_START_PTR(haystack);
+  size_t needle_len = GRPC_SLICE_LENGTH(needle);
+  const uint8_t *needle_bytes = GRPC_SLICE_START_PTR(needle);
+
+  if (haystack_len == 0 || needle_len == 0) return -1;
+  if (haystack_len < needle_len) return -1;
+  if (needle_len == 1) return grpc_slice_chr(haystack, (char)*needle_bytes);
+
+  const uint8_t *last = haystack_bytes + haystack_len - needle_len;
+  for (const uint8_t *cur = haystack_bytes; cur != last; ++cur) {
+    if (0 == memcmp(cur, needle_bytes, needle_len)) {
+      return (int)(cur - haystack_bytes);
+    }
+  }
+  return -1;
 }
