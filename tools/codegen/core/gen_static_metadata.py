@@ -321,8 +321,12 @@ print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = 
 str_ofs = 0
 revmap = {}
 zero_length_idx = None
+id2strofs = {}
+def slice_def(i):
+  return '{.refcount = &g_refcnt, .data.refcounted = {.bytes = g_raw_bytes+%d, .length=%d}}' % (id2strofs[i], len(all_strs[i]))
 for i, elem in enumerate(all_strs):
-  print >>C, '{.refcount = &g_refcnt, .data.refcounted = {.bytes = g_raw_bytes+%d, .length=%d}},' % (str_ofs, len(elem))
+  id2strofs[i] = str_ofs
+  print >>C, slice_def(i) + ','
   revmap[str_ofs] = i
   if len(elem) == 0: zero_length_idx = i
   str_ofs += len(elem);
@@ -353,7 +357,6 @@ for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
   print >>H, '#define %s (&grpc_static_mdelem_table[%d])' % (mangle(elem).upper(), i)
 print >>H
-print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
 print >>C, 'uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
 print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
 print >>C, '};'
@@ -437,11 +440,10 @@ print >>C, '  return elem_keys[h] == k ? &grpc_static_mdelem_table[elem_idxs[h]]
 print >>C, '}'
 print >>C
 
-print >>H, 'extern const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
-print >>C, 'const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
-print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
+print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
+for a, b in all_elems:
+  print >>C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
 print >>C, '};'
-print >>C
 
 print >>H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
 print >>C, 'const uint8_t grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
