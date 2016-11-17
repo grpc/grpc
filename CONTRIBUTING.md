@@ -12,31 +12,7 @@ In order to protect both you and ourselves, you will need to sign the
 
 ### Technical requirements
 
-You will need several tools to work with this repository. In addition to all of
-the packages described in the [INSTALL](INSTALL.md) file, you will also need
-python, and the mako template renderer. To install the latter, using pip, one
-should simply be able to do `pip install mako`.
-
-In order to run all of the tests we provide, you will need valgrind and clang.
-More specifically, under debian, you will need the package libc++-dev to
-properly run all the tests.
-
-Compiling and running grpc C++ tests depend on protobuf 3.0.0, gtest and gflags.
-Although gflags is provided in third_party, you will need to manually install
-that dependency on your system to run these tests. Under a Debian or Ubuntu
-system, you can install the gtests and gflags packages using apt-get:
-
-```sh
- $ [sudo] apt-get install libgflags-dev libgtest-dev
-```
-
-If you are planning to work on any of the languages other than C and C++, you
-will also need their appropriate development environments.
-
-If you want to work under Windows, we recommend the use of Visual Studio 2013.
-The [Community or Express editions](http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
-are free and suitable for developing with grpc. Note however that our test
-environment and tools are available for Unix environments only at the moment.
+Make sure you have followed all of the steps in [INSTALL](INSTALL.md).
 
 ## Testing your changes
 
