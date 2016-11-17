@@ -30,7 +30,7 @@
 
 Pod::Spec.new do |s|
   s.name         = "CronetFramework"
-  s.version      = "0.0.3"
+  s.version      = "1.0.0"
   s.summary      = "Cronet, precompiled and used as a framework."
   s.homepage     = "http://chromium.org"
   s.license      = {
@@ -69,7 +69,7 @@ Pod::Spec.new do |s|
   s.vendored_framework = "Cronet.framework"
   s.author             = "The Chromium Authors"
   s.ios.deployment_target = "8.0"
-  s.source       = { :http => 'https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework.zip' }
+  s.source       = { :http => 'https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-1.0.0.zip' }
   s.preserve_paths = "Cronet.framework"
   s.public_header_files = "Cronet.framework/Headers/**/*{.h}"
   s.source_files = "Cronet.framework/Headers/**/*{.h}"
