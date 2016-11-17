@@ -333,8 +333,7 @@ typedef struct glb_lb_policy {
 
   /* call status code and details, set in lb_on_server_status_received() */
   grpc_status_code lb_call_status;
-  char *lb_call_status_details;
-  size_t lb_call_status_details_capacity;
+  grpc_slice lb_call_status_details;
 
   /** LB call retry backoff state */
   gpr_backoff lb_call_backoff_state;
@@ -447,10 +446,10 @@ static grpc_lb_addresses *process_serverlist(
           GPR_ARRAY_SIZE(server->load_balance_token);
       const size_t lb_token_length =
           strnlen(server->load_balance_token, lb_token_max_length);
-      grpc_slice lb_token_mdstr = grpc_mdstr_from_buffer(
-          (uint8_t *)server->load_balance_token, lb_token_length);
-      user_data = grpc_mdelem_from_metadata_strings(
-          exec_ctx, GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
+      grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
+          server->load_balance_token, lb_token_length);
+      user_data = grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN,
+                                          lb_token_mdstr);
     } else {
       gpr_log(GPR_ERROR,
               "Missing LB token for backend address '%s'. The empty token will "
@@ -972,11 +971,12 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling
    * entities from \a client_channel. */
+  grpc_slice host = grpc_slice_from_copied_string(glb_policy->server_name);
   glb_policy->lb_call = grpc_channel_create_pollset_set_call(
       exec_ctx, glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,
-      "/grpc.lb.v1.LoadBalancer/BalanceLoad", glb_policy->server_name,
-      glb_policy->deadline, NULL);
+      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
+      &host, glb_policy->deadline, NULL);
 
   grpc_metadata_array_init(&glb_policy->lb_initial_metadata_recv);
   grpc_metadata_array_init(&glb_policy->lb_trailing_metadata_recv);
@@ -989,9 +989,6 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
   grpc_slice_unref_internal(exec_ctx, request_payload_slice);
   grpc_grpclb_request_destroy(request);
 
-  glb_policy->lb_call_status_details = NULL;
-  glb_policy->lb_call_status_details_capacity = 0;
-
   grpc_closure_init(&glb_policy->lb_on_server_status_received,
                     lb_on_server_status_received, glb_policy);
   grpc_closure_init(&glb_policy->lb_on_response_received,
@@ -1002,7 +999,8 @@ static void lb_call_init_locked(grpc_exec_ctx *exec_ctx,
                    BACKOFF_MAX_SECONDS * 1000);
 }
 
-static void lb_call_destroy_locked(glb_lb_policy *glb_policy) {
+static void lb_call_destroy_locked(grpc_exec_ctx *exec_ctx,
+                                   glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->lb_call != NULL);
   grpc_call_destroy(glb_policy->lb_call);
   glb_policy->lb_call = NULL;
@@ -1011,7 +1009,7 @@ static void lb_call_destroy_locked(glb_lb_policy *glb_policy) {
   grpc_metadata_array_destroy(&glb_policy->lb_trailing_metadata_recv);
 
   grpc_byte_buffer_destroy(glb_policy->lb_request_payload);
-  gpr_free(glb_policy->lb_call_status_details);
+  grpc_slice_unref_internal(exec_ctx, glb_policy->lb_call_status_details);
 }
 
 /*
@@ -1060,8 +1058,6 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   op->data.recv_status_on_client.status = &glb_policy->lb_call_status;
   op->data.recv_status_on_client.status_details =
       &glb_policy->lb_call_status_details;
-  op->data.recv_status_on_client.status_details_capacity =
-      &glb_policy->lb_call_status_details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -1201,15 +1197,18 @@ static void lb_on_server_status_received(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(glb_policy->lb_call != NULL);
 
   if (grpc_lb_glb_trace) {
+    char *status_details =
+        grpc_dump_slice(glb_policy->lb_call_status_details, GPR_DUMP_ASCII);
     gpr_log(GPR_DEBUG,
             "Status from LB server received. Status = %d, Details = '%s', "
             "(call: %p)",
-            glb_policy->lb_call_status, glb_policy->lb_call_status_details,
+            glb_policy->lb_call_status, status_details,
             (void *)glb_policy->lb_call);
+    gpr_free(status_details);
   }
 
-  /* We need to performe cleanups no matter what. */
-  lb_call_destroy_locked(glb_policy);
+  /* We need to perform cleanups no matter what. */
+  lb_call_destroy_locked(exec_ctx, glb_policy);
 
   if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */

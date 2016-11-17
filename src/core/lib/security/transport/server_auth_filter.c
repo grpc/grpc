@@ -33,12 +33,13 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "src/core/lib/slice/slice_internal.h"
 
 typedef struct call_data {
   grpc_metadata_batch *recv_initial_metadata;
@@ -76,9 +77,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
           gpr_realloc(result.metadata, result.capacity * sizeof(grpc_metadata));
     }
     usr_md = &result.metadata[result.count++];
-    usr_md->key = grpc_mdstr_as_c_string(key);
-    usr_md->value = grpc_mdstr_as_c_string(value);
-    usr_md->value_length = GRPC_SLICE_LENGTH(value->slice);
+    usr_md->key = grpc_slice_ref_internal(key);
+    usr_md->value = grpc_slice_ref_internal(value);
   }
   return result;
 }
@@ -90,19 +90,9 @@ static grpc_mdelem *remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
     const grpc_metadata *consumed_md = &calld->consumed_md[i];
-    /* Maybe we could do a pointer comparison but we do not have any guarantee
-       that the metadata processor used the same pointers for consumed_md in the
-       callback. */
-    if (GRPC_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
-        GRPC_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
-      continue;
-    }
-    if (memcmp(GRPC_SLICE_START_PTR(md->key->slice), consumed_md->key,
-               GRPC_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GRPC_SLICE_START_PTR(md->value->slice), consumed_md->value,
-               GRPC_SLICE_LENGTH(md->value->slice)) == 0) {
-      return NULL; /* Delete. */
-    }
+    if (grpc_slice_cmp(md->key, consumed_md->key) == 0 &&
+        grpc_slice_cmp(md->value, consumed_md->value) == 0)
+      return NULL;
   }
   return md;
 }

@@ -44,7 +44,7 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_STATIC_MDSTR_COUNT 97
+#define GRPC_STATIC_MDSTR_COUNT 98
 extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* "0" */
 #define GRPC_MDSTR_0 (grpc_static_slice_table[0])
@@ -223,26 +223,29 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_SET_COOKIE (grpc_static_slice_table[85])
 /* "/" */
 #define GRPC_MDSTR_SLASH (grpc_static_slice_table[86])
+/* "/grpc.lb.v1.LoadBalancer/BalanceLoad" */
+#define GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD \
+  (grpc_static_slice_table[87])
 /* "/index.html" */
-#define GRPC_MDSTR_SLASH_INDEX_DOT_HTML (grpc_static_slice_table[87])
+#define GRPC_MDSTR_SLASH_INDEX_DOT_HTML (grpc_static_slice_table[88])
 /* ":status" */
-#define GRPC_MDSTR_STATUS (grpc_static_slice_table[88])
+#define GRPC_MDSTR_STATUS (grpc_static_slice_table[89])
 /* "strict-transport-security" */
-#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (grpc_static_slice_table[89])
+#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (grpc_static_slice_table[90])
 /* "te" */
-#define GRPC_MDSTR_TE (grpc_static_slice_table[90])
+#define GRPC_MDSTR_TE (grpc_static_slice_table[91])
 /* "trailers" */
-#define GRPC_MDSTR_TRAILERS (grpc_static_slice_table[91])
+#define GRPC_MDSTR_TRAILERS (grpc_static_slice_table[92])
 /* "transfer-encoding" */
-#define GRPC_MDSTR_TRANSFER_ENCODING (grpc_static_slice_table[92])
+#define GRPC_MDSTR_TRANSFER_ENCODING (grpc_static_slice_table[93])
 /* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (grpc_static_slice_table[93])
+#define GRPC_MDSTR_USER_AGENT (grpc_static_slice_table[94])
 /* "vary" */
-#define GRPC_MDSTR_VARY (grpc_static_slice_table[94])
+#define GRPC_MDSTR_VARY (grpc_static_slice_table[95])
 /* "via" */
-#define GRPC_MDSTR_VIA (grpc_static_slice_table[95])
+#define GRPC_MDSTR_VIA (grpc_static_slice_table[96])
 /* "www-authenticate" */
-#define GRPC_MDSTR_WWW_AUTHENTICATE (grpc_static_slice_table[96])
+#define GRPC_MDSTR_WWW_AUTHENTICATE (grpc_static_slice_table[97])
 
 bool grpc_is_static_metadata_string(grpc_slice slice);
 

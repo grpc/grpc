@@ -41,13 +41,17 @@
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */
-  char *trailing_md_string;
-  char *initial_md_string;
-  const char *service_method;
+  bool have_trailing_md_string;
+  grpc_slice trailing_md_string;
+  bool have_initial_md_string;
+  grpc_slice initial_md_string;
+  bool have_service_method;
+  grpc_slice service_method;
 
   /* stores the recv_initial_metadata op's ready closure, which we wrap with our
    * own (on_initial_md_ready) in order to capture the incoming initial metadata
@@ -74,10 +78,12 @@ static grpc_mdelem *recv_md_filter(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_call_element *elem = a->elem;
   call_data *calld = elem->call_data;
 
-  if (md->key == GRPC_MDSTR_PATH) {
-    calld->service_method = grpc_mdstr_as_c_string(md->value);
-  } else if (md->key == GRPC_MDSTR_LB_TOKEN) {
-    calld->initial_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {
+    calld->service_method = grpc_slice_ref_internal(md->value);
+    calld->have_service_method = true;
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_LB_TOKEN) == 0) {
+    calld->initial_md_string = grpc_slice_ref_internal(md->value);
+    calld->have_initial_md_string = true;
     return NULL;
   }
 
@@ -95,7 +101,7 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
     a.exec_ctx = exec_ctx;
     grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
                                recv_md_filter, &a);
-    if (calld->service_method == NULL) {
+    if (!calld->have_service_method) {
       err =
           grpc_error_add_child(err, GRPC_ERROR_CREATE("Missing :path header"));
     }
@@ -148,8 +154,8 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                                 calld->service_method};
   */
 
-  gpr_free(calld->initial_md_string);
-  gpr_free(calld->trailing_md_string);
+  grpc_slice_unref_internal(exec_ctx, calld->initial_md_string);
+  grpc_slice_unref_internal(exec_ctx, calld->trailing_md_string);
 }
 
 /* Constructor for channel_data */
@@ -195,8 +201,9 @@ static grpc_mdelem *lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
-  if (md->key == GRPC_MDSTR_LB_COST_BIN) {
-    calld->trailing_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_LB_COST_BIN) == 0) {
+    calld->trailing_md_string = grpc_slice_ref_internal(md->value);
+    calld->have_trailing_md_string = true;
     return NULL;
   }
 
