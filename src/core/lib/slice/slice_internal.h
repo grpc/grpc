@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_SLICE_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_SLICE_INTERNAL_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
+#define GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -50,4 +50,4 @@ void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
 void grpc_test_only_set_slice_interning_hash_seed(uint32_t key);
 
-#endif
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

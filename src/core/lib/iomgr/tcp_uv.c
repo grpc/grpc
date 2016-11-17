@@ -87,10 +87,12 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/
 #ifdef GRPC_TCP_REFCOUNT_DEBUG
-#define TCP_UNREF(exec_ctx, tcp, reason) tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
-#define TCP_REF(tcp, reason) tcp_ref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp, const char *reason, const char *file,
-                      int line) {
+#define TCP_UNREF(exec_ctx, tcp, reason) \
+  tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
+#define TCP_REF(tcp, reason) \
+  tcp_ref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
+static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                      const char *reason, const char *file, int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
           reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref(&tcp->refcount)) {
@@ -157,7 +159,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
       grpc_error_free_string(str);
       for (i = 0; i < tcp->read_slices->count; i++) {
         char *dump = grpc_dump_slice(tcp->read_slices->slices[i],
-                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
+                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
         gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string,
                 dump);
         gpr_free(dump);
@@ -234,7 +236,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
     for (j = 0; j < write_slices->count; j++) {
       char *data = grpc_dump_slice(write_slices->slices[j],
-                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
       gpr_free(data);
     }
@@ -323,10 +325,13 @@ static grpc_resource_user *uv_get_resource_user(grpc_endpoint *ep) {
 
 static grpc_workqueue *uv_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
+static int uv_get_fd(grpc_endpoint *ep) { return -1; }
+
 static grpc_endpoint_vtable vtable = {
     uv_endpoint_read,  uv_endpoint_write,     uv_get_workqueue,
     uv_add_to_pollset, uv_add_to_pollset_set, uv_endpoint_shutdown,
-    uv_destroy,        uv_get_resource_user,  uv_get_peer};
+    uv_destroy,        uv_get_resource_user,  uv_get_peer,
+    uv_get_fd};
 
 grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
                                grpc_resource_quota *resource_quota,

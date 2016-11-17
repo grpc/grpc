@@ -306,16 +306,14 @@ static int httpcli_get_google_keys_for_email(
   return 1;
 }
 
-static void on_verification_success(void *user_data,
+static void on_verification_success(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_jwt_verifier_status status,
                                     grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_OK);
   GPR_ASSERT(claims != NULL);
   GPR_ASSERT(user_data == (void *)expected_user_data);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), expected_audience) == 0);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_jwt_claims_destroy(&exec_ctx, claims);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_jwt_claims_destroy(exec_ctx, claims);
 }
 
 static void test_jwt_verifier_google_email_issuer_success(void) {
@@ -423,7 +421,8 @@ static void test_jwt_verifier_url_issuer_success(void) {
   grpc_httpcli_set_override(NULL, NULL);
 }
 
-static void on_verification_key_retrieval_error(void *user_data,
+static void on_verification_key_retrieval_error(grpc_exec_ctx *exec_ctx,
+                                                void *user_data,
                                                 grpc_jwt_verifier_status status,
                                                 grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR);
@@ -508,7 +507,8 @@ static void corrupt_jwt_sig(char *jwt) {
   grpc_slice_unref(sig);
 }
 
-static void on_verification_bad_signature(void *user_data,
+static void on_verification_bad_signature(grpc_exec_ctx *exec_ctx,
+                                          void *user_data,
                                           grpc_jwt_verifier_status status,
                                           grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_BAD_SIGNATURE);
@@ -549,7 +549,7 @@ static int httpcli_get_should_not_be_called(grpc_exec_ctx *exec_ctx,
   return 1;
 }
 
-static void on_verification_bad_format(void *user_data,
+static void on_verification_bad_format(grpc_exec_ctx *exec_ctx, void *user_data,
                                        grpc_jwt_verifier_status status,
                                        grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_BAD_FORMAT);

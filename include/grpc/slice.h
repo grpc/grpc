@@ -134,6 +134,10 @@ GPRAPI int grpc_slice_rchr(grpc_slice s, char c);
 
 GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
 
+/* Do two slices point at the same memory, with the same length
+   If a or b is inlined, actually compares data */
+GPRAPI int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b);
+
 #ifdef __cplusplus
 }
 #endif

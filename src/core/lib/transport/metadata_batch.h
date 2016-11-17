@@ -122,7 +122,8 @@ void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
     the element will be moved to the garbage list. */
 void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
                                 grpc_metadata_batch *batch,
-                                grpc_mdelem *(*filter)(void *user_data,
+                                grpc_mdelem *(*filter)(grpc_exec_ctx *exec_ctx,
+                                                       void *user_data,
                                                        grpc_mdelem *elem),
                                 void *user_data);
 

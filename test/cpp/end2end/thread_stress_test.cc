@@ -232,19 +232,19 @@ class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
 class CommonStressTestAsyncServer
     : public CommonStressTest<grpc::testing::EchoTestService::AsyncService> {
  public:
+  CommonStressTestAsyncServer() : contexts_(kNumAsyncServerThreads * 100) {}
   void SetUp() override {
     shutting_down_ = false;
     ServerBuilder builder;
     SetUpStart(&builder, &service_);
     cq_ = builder.AddCompletionQueue();
     SetUpEnd(&builder);
-    contexts_ = new Context[kNumAsyncServerThreads * 100];
     for (int i = 0; i < kNumAsyncServerThreads * 100; i++) {
       RefreshContext(i);
     }
     for (int i = 0; i < kNumAsyncServerThreads; i++) {
-      server_threads_.push_back(
-          new std::thread(&CommonStressTestAsyncServer::ProcessRpcs, this));
+      server_threads_.emplace_back(&CommonStressTestAsyncServer::ProcessRpcs,
+                                   this);
     }
   }
   void TearDown() override {
@@ -256,8 +256,7 @@ class CommonStressTestAsyncServer
     }
 
     for (int i = 0; i < kNumAsyncServerThreads; i++) {
-      server_threads_[i]->join();
-      delete server_threads_[i];
+      server_threads_[i].join();
     }
 
     void* ignored_tag;
@@ -265,7 +264,6 @@ class CommonStressTestAsyncServer
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
     TearDownEnd();
-    delete[] contexts_;
   }
 
  private:
@@ -311,12 +309,13 @@ class CommonStressTestAsyncServer
         response_writer;
     EchoRequest recv_request;
     enum { READY, DONE } state;
-  } * contexts_;
+  };
+  std::vector<Context> contexts_;
   ::grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
   std::mutex mu_;
-  std::vector<std::thread*> server_threads_;
+  std::vector<std::thread> server_threads_;
 };
 
 template <class Common>
@@ -353,14 +352,12 @@ typedef ::testing::Types<CommonStressTestSyncServer,
 TYPED_TEST_CASE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < kNumThreads; ++i) {
-    threads.push_back(
-        new std::thread(SendRpc, this->common_.GetStub(), kNumRpcs));
+    threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs);
   }
   for (int i = 0; i < kNumThreads; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
@@ -442,26 +439,24 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 TYPED_TEST_CASE(AsyncClientEnd2endTest, CommonTypes);
 TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
   this->common_.ResetStub();
-  std::vector<std::thread *> send_threads, completion_threads;
+  std::vector<std::thread> send_threads, completion_threads;
   for (int i = 0; i < kNumAsyncReceiveThreads; ++i) {
-    completion_threads.push_back(new std::thread(
+    completion_threads.emplace_back(
         &AsyncClientEnd2endTest_ThreadStress_Test<TypeParam>::AsyncCompleteRpc,
-        this));
+        this);
   }
   for (int i = 0; i < kNumAsyncSendThreads; ++i) {
-    send_threads.push_back(new std::thread(
+    send_threads.emplace_back(
         &AsyncClientEnd2endTest_ThreadStress_Test<TypeParam>::AsyncSendRpc,
-        this, kNumRpcs));
+        this, kNumRpcs);
   }
   for (int i = 0; i < kNumAsyncSendThreads; ++i) {
-    send_threads[i]->join();
-    delete send_threads[i];
+    send_threads[i].join();
   }
 
   this->Wait();
   for (int i = 0; i < kNumAsyncReceiveThreads; ++i) {
-    completion_threads[i]->join();
-    delete completion_threads[i];
+    completion_threads[i].join();
   }
 }
 

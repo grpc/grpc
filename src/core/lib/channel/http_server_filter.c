@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -83,14 +84,27 @@ typedef struct call_data {
 
 typedef struct channel_data { uint8_t unused; } channel_data;
 
-typedef struct {
-  grpc_call_element *elem;
-  grpc_exec_ctx *exec_ctx;
-} server_filter_args;
+static grpc_mdelem *server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
+                                                    void *user_data,
+                                                    grpc_mdelem *md) {
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_MESSAGE) == 0) {
+    grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
+        md->value, grpc_compatible_percent_encoding_unreserved_bytes);
+    if (grpc_slice_is_equivalent(pct_encoded_msg, md->value)) {
+      grpc_slice_unref_internal(exec_ctx, pct_encoded_msg);
+      return md;
+    } else {
+      return grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+                                     pct_encoded_msg);
+    }
+  } else {
+    return md;
+  }
+}
 
-static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
-  server_filter_args *a = user_data;
-  grpc_call_element *elem = a->elem;
+static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_mdelem *md) {
+  grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
   /* Check if it is one of the headers we care about. */
@@ -145,9 +159,9 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* swallow it and error everything out. */
     /* TODO(klempner): We ought to generate more descriptive error messages
        on the wire here. */
-    grpc_call_element_send_cancel(a->exec_ctx, elem);
     gpr_free(key);
     gpr_free(value);
+    grpc_call_element_send_cancel(exec_ctx, elem);
     return NULL;
   } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {
     if (calld->seen_path) {
@@ -163,7 +177,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* translate host to :authority since :authority may be
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_slices(
-        a->exec_ctx, GRPC_MDSTR_AUTHORITY, grpc_slice_ref(md->value));
+        exec_ctx, GRPC_MDSTR_AUTHORITY, grpc_slice_ref(md->value));
     calld->seen_authority = 1;
     return authority;
   } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_PAYLOAD_BIN) == 0) {
@@ -185,11 +199,8 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (err == GRPC_ERROR_NONE) {
-    server_filter_args a;
-    a.elem = elem;
-    a.exec_ctx = exec_ctx;
     grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
-                               server_filter, &a);
+                               server_filter, elem);
     /* Have we seen the required http2 transport headers?
        (:method, :scheme, content-type, with :path and :authority covered
        at the channel level right now) */
@@ -263,7 +274,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
   }
 }
 
-static void hs_mutate_op(grpc_call_element *elem,
+static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -299,6 +310,11 @@ static void hs_mutate_op(grpc_call_element *elem,
       op->on_complete = &calld->hs_on_complete;
     }
   }
+
+  if (op->send_trailing_metadata) {
+    grpc_metadata_batch_filter(exec_ctx, op->send_trailing_metadata,
+                               server_filter_outgoing_metadata, elem);
+  }
 }
 
 static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -306,7 +322,7 @@ static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   GPR_TIMER_BEGIN("hs_start_transport_op", 0);
-  hs_mutate_op(elem, op);
+  hs_mutate_op(exec_ctx, elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
   GPR_TIMER_END("hs_start_transport_op", 0);
 }

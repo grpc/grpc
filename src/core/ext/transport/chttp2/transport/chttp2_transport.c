@@ -1040,7 +1040,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                                       "op.send_initial_metadata");
         }
       } else {
-        s->send_trailing_metadata = NULL;
+        s->send_initial_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_initial_metadata_finished,
             GRPC_ERROR_CREATE(
@@ -1525,13 +1525,17 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_error *error) {
   error =
       removal_error(error, s, "Pending writes failed due to stream closure");
-  s->fetching_send_message = NULL;
+  s->send_initial_metadata = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_REF(error),
       "send_initial_metadata_finished");
+
+  s->send_trailing_metadata = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_trailing_metadata_finished,
       GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
+
+  s->fetching_send_message = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_REF(error),
       "fetching_send_message_finished");
@@ -2296,6 +2300,14 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
 }
 
+/*******************************************************************************
+ * MONITORING
+ */
+static grpc_endpoint *chttp2_get_endpoint(grpc_exec_ctx *exec_ctx,
+                                          grpc_transport *t) {
+  return ((grpc_chttp2_transport *)t)->ep;
+}
+
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
@@ -2305,7 +2317,8 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_peer};
+                                             chttp2_get_peer,
+                                             chttp2_get_endpoint};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

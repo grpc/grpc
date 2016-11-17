@@ -43,6 +43,8 @@ int grpc_connectivity_state_trace = 0;
 
 const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {
+    case GRPC_CHANNEL_INIT:
+      return "INIT";
     case GRPC_CHANNEL_IDLE:
       return "IDLE";
     case GRPC_CHANNEL_CONNECTING:
@@ -159,6 +161,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     grpc_error_free_string(error_string);
   }
   switch (state) {
+    case GRPC_CHANNEL_INIT:
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_READY:

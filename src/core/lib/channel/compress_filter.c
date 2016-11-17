@@ -84,7 +84,8 @@ typedef struct channel_data {
 /** For each \a md element from the incoming metadata, filter out the entry for
  * "grpc-encoding", using its value to populate the call data's
  * compression_algorithm field. */
-static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *compression_md_filter(grpc_exec_ctx *exec_ctx,
+                                          void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;

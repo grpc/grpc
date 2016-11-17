@@ -92,8 +92,11 @@ EXPORTS
     grpc_server_destroy
     grpc_tracer_set_enabled
     grpc_header_key_is_legal
+    grpc_header_key_slice_is_legal
     grpc_header_nonbin_value_is_legal
+    grpc_header_nonbin_value_slice_is_legal
     grpc_is_binary_header
+    grpc_slice_is_binary_header
     grpc_call_error_to_string
     grpc_resource_quota_create
     grpc_resource_quota_ref
@@ -154,7 +157,9 @@ EXPORTS
     grpc_slice_str_cmp
     grpc_slice_buf_cmp
     grpc_slice_buf_start_eq
+    grpc_slice_rchr
     grpc_slice_hash
+    grpc_slice_is_equivalent
     grpc_slice_buffer_init
     grpc_slice_buffer_destroy
     grpc_slice_buffer_add
