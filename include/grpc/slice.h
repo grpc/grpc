@@ -99,6 +99,9 @@ GPRAPI grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len);
 /* Create a slice pointing to constant memory */
 GPRAPI grpc_slice grpc_slice_from_static_string(const char *source);
 
+/* Create a slice pointing to constant memory */
+GPRAPI grpc_slice grpc_slice_from_static_buffer(const void *source, size_t len);
+
 /* Return a result slice derived from s, which shares a ref count with s, where
    result.data==s.data+begin, and result.length==end-begin.
    The ref count of s is increased by one.
@@ -130,9 +133,16 @@ GPRAPI int grpc_slice_cmp(grpc_slice a, grpc_slice b);
 GPRAPI int grpc_slice_str_cmp(grpc_slice a, const char *b);
 GPRAPI int grpc_slice_buf_cmp(grpc_slice a, const void *b, size_t blen);
 
+/* return non-zero if the first blen bytes of a are equal to b */
 GPRAPI int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t blen);
 
+/* return the index of the last instance of \a c in \a s, or -1 if not found */
 GPRAPI int grpc_slice_rchr(grpc_slice s, char c);
+GPRAPI int grpc_slice_chr(grpc_slice s, char c);
+
+/* return the index of the first occurance of \a needle in \a haystack, or -1 if
+ * it's not found */
+GPRAPI int grpc_slice_slice(grpc_slice haystack, grpc_slice needle);
 
 GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
 

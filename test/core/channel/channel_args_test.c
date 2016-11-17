@@ -151,7 +151,11 @@ static void test_set_socket_mutator(void) {
   GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_ARG_SOCKET_MUTATOR) == 0);
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
 
-  grpc_channel_args_destroy(ch_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, ch_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 int main(int argc, char **argv) {

@@ -1494,7 +1494,8 @@ static grpc_error *parse_key_string(grpc_exec_ctx *exec_ctx,
 /* check if a key represents a binary header or not */
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
-  return grpc_is_binary_header(p->key.str, p->key.length);
+  return grpc_is_binary_header(
+      grpc_slice_from_static_buffer(p->key.str, p->key.length));
 }
 
 static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
@@ -1506,7 +1507,7 @@ static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
-  *is = grpc_slice_is_binary_header(elem->key);
+  *is = grpc_is_binary_header(elem->key);
   return GRPC_ERROR_NONE;
 }
 

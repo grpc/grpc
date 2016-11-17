@@ -286,7 +286,7 @@ static void emit_indexed(grpc_chttp2_hpack_compressor *c, uint32_t elem_index,
 }
 
 static grpc_slice get_wire_value(grpc_mdelem *elem, uint8_t *huffman_prefix) {
-  if (grpc_slice_is_binary_header(elem->key)) {
+  if (grpc_is_binary_header(elem->key)) {
     *huffman_prefix = 0x80;
     return grpc_chttp2_base64_encode_and_huffman_compress(elem->value);
   }

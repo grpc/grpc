@@ -39,6 +39,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -49,7 +50,7 @@ static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
 static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_test_only_set_metadata_hash_seed(0);
+  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   grpc_chttp2_hpack_parser parser;

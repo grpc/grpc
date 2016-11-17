@@ -338,24 +338,15 @@ extern grpc_server_destroy_type grpc_server_destroy_import;
 typedef int(*grpc_tracer_set_enabled_type)(const char *name, int enabled);
 extern grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 #define grpc_tracer_set_enabled grpc_tracer_set_enabled_import
-typedef int(*grpc_header_key_is_legal_type)(const char *key, size_t length);
+typedef int(*grpc_header_key_is_legal_type)(grpc_slice slice);
 extern grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 #define grpc_header_key_is_legal grpc_header_key_is_legal_import
-typedef int(*grpc_header_key_slice_is_legal_type)(grpc_slice slice);
-extern grpc_header_key_slice_is_legal_type grpc_header_key_slice_is_legal_import;
-#define grpc_header_key_slice_is_legal grpc_header_key_slice_is_legal_import
-typedef int(*grpc_header_nonbin_value_is_legal_type)(const char *value, size_t length);
+typedef int(*grpc_header_nonbin_value_is_legal_type)(grpc_slice slice);
 extern grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 #define grpc_header_nonbin_value_is_legal grpc_header_nonbin_value_is_legal_import
-typedef int(*grpc_header_nonbin_value_slice_is_legal_type)(grpc_slice slice);
-extern grpc_header_nonbin_value_slice_is_legal_type grpc_header_nonbin_value_slice_is_legal_import;
-#define grpc_header_nonbin_value_slice_is_legal grpc_header_nonbin_value_slice_is_legal_import
-typedef int(*grpc_is_binary_header_type)(const char *key, size_t length);
+typedef int(*grpc_is_binary_header_type)(grpc_slice slice);
 extern grpc_is_binary_header_type grpc_is_binary_header_import;
 #define grpc_is_binary_header grpc_is_binary_header_import
-typedef int(*grpc_slice_is_binary_header_type)(grpc_slice slice);
-extern grpc_slice_is_binary_header_type grpc_slice_is_binary_header_import;
-#define grpc_slice_is_binary_header grpc_slice_is_binary_header_import
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
@@ -524,6 +515,9 @@ extern grpc_slice_split_head_type grpc_slice_split_head_import;
 typedef grpc_slice(*grpc_empty_slice_type)(void);
 extern grpc_empty_slice_type grpc_empty_slice_import;
 #define grpc_empty_slice grpc_empty_slice_import
+typedef uint32_t(*grpc_slice_default_hash_impl_type)(void *, grpc_slice s);
+extern grpc_slice_default_hash_impl_type grpc_slice_default_hash_impl_import;
+#define grpc_slice_default_hash_impl grpc_slice_default_hash_impl_import
 typedef int(*grpc_slice_cmp_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_cmp_type grpc_slice_cmp_import;
 #define grpc_slice_cmp grpc_slice_cmp_import

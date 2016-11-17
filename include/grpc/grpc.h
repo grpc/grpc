@@ -396,17 +396,14 @@ GRPCAPI void grpc_server_destroy(grpc_server *server);
 GRPCAPI int grpc_tracer_set_enabled(const char *name, int enabled);
 
 /** Check whether a metadata key is legal (will be accepted by core) */
-GRPCAPI int grpc_header_key_is_legal(const char *key, size_t length);
-GRPCAPI int grpc_header_key_slice_is_legal(grpc_slice slice);
+GRPCAPI int grpc_header_key_is_legal(grpc_slice slice);
 
 /** Check whether a non-binary metadata value is legal (will be accepted by
     core) */
-GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
-GRPCAPI int grpc_header_nonbin_value_slice_is_legal(grpc_slice slice);
+GRPCAPI int grpc_header_nonbin_value_is_legal(grpc_slice slice);
 
 /** Check whether a metadata key corresponds to a binary value */
-GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
-GRPCAPI int grpc_slice_is_binary_header(grpc_slice slice);
+GRPCAPI int grpc_is_binary_header(grpc_slice slice);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);

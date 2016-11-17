@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/method_config.h"
 
@@ -59,8 +60,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
 
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d use_service_config=%d",
           wait_for_ready, use_service_config);
@@ -78,12 +78,12 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(wait_for_ready);
     grpc_method_config_table_entry entry = {
-        grpc_mdstr_from_string("/service/method"),
+        grpc_slice_from_static_string("/service/method"),
         grpc_method_config_create(&wait_for_ready, NULL, NULL, NULL),
     };
     grpc_method_config_table *method_config_table =
         grpc_method_config_table_create(1, &entry);
-    GRPC_MDSTR_UNREF(&exec_ctx, entry.method_name);
+    grpc_slice_unref_internal(&exec_ctx, entry.method_name);
     grpc_method_config_unref(&exec_ctx, entry.method_config);
     grpc_arg arg =
         grpc_method_config_table_create_channel_arg(method_config_table);
@@ -98,9 +98,10 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   gpr_join_host_port(&addr, "127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr);
   chan = grpc_insecure_channel_create(addr, args, NULL);
-  call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/service/method", "nonexistant", deadline,
-                                  NULL);
+  grpc_slice host = grpc_slice_from_static_string("nonexistant");
+  call = grpc_channel_create_call(
+      chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/service/method"), &host, deadline, NULL);
 
   gpr_free(addr);
 
@@ -117,7 +118,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -143,7 +143,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   {

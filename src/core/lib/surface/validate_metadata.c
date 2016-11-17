@@ -34,13 +34,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-static int conforms_to(const char *s, size_t len, const uint8_t *legal_bits) {
-  const char *p = s;
-  const char *e = s + len;
+static int conforms_to(grpc_slice slice, const uint8_t *legal_bits) {
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *e = GRPC_SLICE_END_PTR(slice);
   for (; p != e; p++) {
-    int idx = (uint8_t)*p;
+    int idx = *p;
     int byte = idx / 8;
     int bit = idx % 8;
     if ((legal_bits[byte] & (1 << bit)) == 0) return 0;
@@ -48,26 +49,23 @@ static int conforms_to(const char *s, size_t len, const uint8_t *legal_bits) {
   return 1;
 }
 
-int grpc_header_key_is_legal(const char *key, size_t length) {
+int grpc_header_key_is_legal(grpc_slice slice) {
   static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  if (length == 0) {
-    return 0;
-  }
-  return conforms_to(key, length, legal_header_bits);
+  return GRPC_SLICE_LENGTH(slice) != 0 && conforms_to(slice, legal_header_bits);
 }
 
-int grpc_header_nonbin_value_is_legal(const char *value, size_t length) {
+int grpc_header_nonbin_value_is_legal(grpc_slice slice) {
   static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  return conforms_to(value, length, legal_header_bits);
+  return conforms_to(slice, legal_header_bits);
 }
 
-int grpc_is_binary_header(const char *key, size_t length) {
-  if (length < 5) return 0;
-  return 0 == memcmp(key + length - 4, "-bin", 4);
+int grpc_is_binary_header(grpc_slice slice) {
+  if (GRPC_SLICE_LENGTH(slice) < 5) return 0;
+  return 0 == memcmp(GRPC_SLICE_END_PTR(slice) - 4, "-bin", 4);
 }

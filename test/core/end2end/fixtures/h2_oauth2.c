@@ -59,8 +59,8 @@ static const grpc_metadata *find_metadata(const grpc_metadata *md,
                                           const char *value) {
   size_t i;
   for (i = 0; i < md_count; i++) {
-    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
-        memcmp(md[i].value, value, md[i].value_length) == 0) {
+    if (grpc_slice_str_cmp(md[i].key, key) == 0 &&
+        grpc_slice_str_cmp(md[i].value, value) == 0) {
       return &md[i];
     }
   }
