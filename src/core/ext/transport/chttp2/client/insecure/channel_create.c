@@ -86,6 +86,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     /* c->initial_string_buffer does not need to be destroyed */
+    gpr_mu_destroy(&c->mu);
     grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
     // If handshaking is not yet in progress, destroy the endpoint.
     // Otherwise, the handshaker will do this for us.
