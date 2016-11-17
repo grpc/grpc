@@ -45,9 +45,7 @@
 #include "src/core/ext/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -70,7 +68,7 @@ typedef struct {
   grpc_closure initial_string_sent;
   grpc_slice_buffer initial_string_buffer;
 
-  grpc_endpoint *tcp;  // Non-NULL until handshaking starts.
+  grpc_endpoint *endpoint;  // Non-NULL until handshaking starts.
 
   grpc_closure connected;
 
@@ -90,7 +88,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
     grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
     // If handshaking is not yet in progress, destroy the endpoint.
     // Otherwise, the handshaker will do this for us.
-    if (c->tcp != NULL) grpc_endpoint_destroy(exec_ctx, c->tcp);
+    if (c->endpoint != NULL) grpc_endpoint_destroy(exec_ctx, c->endpoint);
     gpr_free(c);
   }
 }
@@ -102,7 +100,7 @@ static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   grpc_handshake_manager_shutdown(exec_ctx, c->handshake_mgr);
   // If handshaking is not yet in progress, shutdown the endpoint.
   // Otherwise, the handshaker will do this for us.
-  if (c->tcp != NULL) grpc_endpoint_shutdown(exec_ctx, c->tcp);
+  if (c->endpoint != NULL) grpc_endpoint_shutdown(exec_ctx, c->endpoint);
   gpr_mu_unlock(&c->mu);
 }
 
@@ -157,9 +155,9 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
     connector_unref(exec_ctx, arg);
   } else {
     grpc_handshake_manager_do_handshake(
-        exec_ctx, c->handshake_mgr, c->tcp, c->args.channel_args,
+        exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
         c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
-    c->tcp = NULL;  // Endpoint handed off to handshake manager.
+    c->endpoint = NULL;  // Endpoint handed off to handshake manager.
     gpr_mu_unlock(&c->mu);
   }
 }
@@ -180,20 +178,20 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     gpr_mu_unlock(&c->mu);
     connector_unref(exec_ctx, arg);
   } else {
-    GPR_ASSERT(c->tcp != NULL);
+    GPR_ASSERT(c->endpoint != NULL);
     if (!GRPC_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
       grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
                         c);
       grpc_slice_buffer_init(&c->initial_string_buffer);
       grpc_slice_buffer_add(&c->initial_string_buffer,
                             c->args.initial_connect_string);
-      grpc_endpoint_write(exec_ctx, c->tcp, &c->initial_string_buffer,
+      grpc_endpoint_write(exec_ctx, c->endpoint, &c->initial_string_buffer,
                           &c->initial_string_sent);
     } else {
       grpc_handshake_manager_do_handshake(
-          exec_ctx, c->handshake_mgr, c->tcp, c->args.channel_args,
+          exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
           c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
-      c->tcp = NULL;  // Endpoint handed off to handshake manager.
+      c->endpoint = NULL;  // Endpoint handed off to handshake manager.
     }
     gpr_mu_unlock(&c->mu);
   }
@@ -206,14 +204,13 @@ static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
   connector *c = (connector *)con;
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == NULL);
-  GPR_ASSERT(notify->cb);
   c->notify = notify;
   c->args = *args;
   c->result = result;
-  c->tcp = NULL;
+  GPR_ASSERT(c->endpoint == NULL);
   connector_ref(con);  // Ref taken for callback.
   grpc_closure_init(&c->connected, connected, c);
-  grpc_tcp_client_connect(exec_ctx, &c->connected, &c->tcp,
+  grpc_tcp_client_connect(exec_ctx, &c->connected, &c->endpoint,
                           args->interested_parties, args->channel_args,
                           args->addr, args->deadline);
   gpr_mu_unlock(&c->mu);
@@ -260,16 +257,14 @@ static grpc_channel *client_channel_factory_create_channel(
   grpc_channel *channel =
       grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
   grpc_resolver *resolver = grpc_resolver_create(target, args);
-  if (!resolver) {
+  if (resolver == NULL) {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
                                 "client_channel_factory_create_channel");
     return NULL;
   }
-
   grpc_client_channel_finish_initialization(
       exec_ctx, grpc_channel_get_channel_stack(channel), resolver, cc_factory);
   GRPC_RESOLVER_UNREF(exec_ctx, resolver, "create_channel");
-
   return channel;
 }
 
@@ -292,16 +287,13 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
       (target, args, reserved));
-  GPR_ASSERT(!reserved);
-
+  GPR_ASSERT(reserved == NULL);
   grpc_client_channel_factory *factory =
       (grpc_client_channel_factory *)&client_channel_factory;
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, args);
-
   grpc_client_channel_factory_unref(&exec_ctx, factory);
   grpc_exec_ctx_finish(&exec_ctx);
-
   return channel != NULL ? channel : grpc_lame_client_channel_create(
                                          target, GRPC_STATUS_INTERNAL,
                                          "Failed to create client channel");
