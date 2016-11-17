@@ -190,7 +190,7 @@ static void test_things_stick_around(void) {
   size_t i, j;
   char *buffer;
   size_t nstrs = 1000;
-  grpc_slice *strs = gpr_malloc(sizeof(grpc_slice *) * nstrs);
+  grpc_slice *strs = gpr_malloc(sizeof(grpc_slice ) * nstrs);
   size_t *shuf = gpr_malloc(sizeof(size_t) * nstrs);
   grpc_slice test;
 
