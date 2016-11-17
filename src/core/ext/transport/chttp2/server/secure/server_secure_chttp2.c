@@ -71,12 +71,12 @@ typedef struct server_secure_state {
   pending_handshake_manager_node *pending_handshake_mgrs;
 } server_secure_state;
 
-typedef struct server_secure_connect {
+typedef struct server_secure_connection_state {
   server_secure_state *server_state;
   grpc_pollset *accepting_pollset;
   grpc_tcp_server_acceptor *acceptor;
   grpc_handshake_manager *handshake_mgr;
-} server_secure_connect;
+} server_secure_connection_state;
 
 static void pending_handshake_manager_add_locked(
     server_secure_state* state, grpc_handshake_manager* handshake_mgr) {
@@ -116,7 +116,7 @@ static void pending_handshake_manager_shutdown_locked(
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
-  server_secure_connect *connection_state = args->user_data;
+  server_secure_connection_state *connection_state = args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
@@ -168,7 +168,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   pending_handshake_manager_add_locked(server_state, handshake_mgr);
   gpr_mu_unlock(&server_state->mu);
   grpc_tcp_server_ref(server_state->tcp);
-  server_secure_connect *connection_state =
+  server_secure_connection_state *connection_state =
       gpr_malloc(sizeof(*connection_state));
   connection_state->server_state = server_state;
   connection_state->accepting_pollset = accepting_pollset;

@@ -313,6 +313,7 @@ cc_library(
     "src/core/ext/client_channel/subchannel.h",
     "src/core/ext/client_channel/subchannel_index.h",
     "src/core/ext/client_channel/uri_parser.h",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/lb_policy/grpclb/grpclb.h",
     "src/core/ext/lb_policy/grpclb/load_balancer_api.h",
     "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
@@ -511,6 +512,7 @@ cc_library(
     "src/core/ext/client_channel/subchannel.c",
     "src/core/ext/client_channel/subchannel_index.c",
     "src/core/ext/client_channel/uri_parser.c",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c",
     "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c",
     "src/core/ext/transport/chttp2/client/insecure/channel_create.c",
@@ -578,6 +580,8 @@ cc_library(
     "//external:libssl",
     "//external:zlib",
     ":gpr",
+    ":grpc_transport_chttp2",
+    ":grpc_base",
     "//external:nanopb",
   ],
   copts = [
@@ -748,6 +752,7 @@ cc_library(
     "src/core/lib/tsi/ssl_types.h",
     "src/core/lib/tsi/transport_security.h",
     "src/core/lib/tsi/transport_security_interface.h",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/lib/surface/init.c",
     "src/core/lib/channel/channel_args.c",
     "src/core/lib/channel/channel_stack.c",
@@ -932,6 +937,7 @@ cc_library(
     "src/core/lib/tsi/fake_transport_security.c",
     "src/core/lib/tsi/ssl_transport_security.c",
     "src/core/lib/tsi/transport_security.c",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/plugin_registry/grpc_cronet_plugin_registry.c",
   ],
   hdrs = [
@@ -971,6 +977,8 @@ cc_library(
   deps = [
     "//external:libssl",
     ":gpr",
+    ":grpc_transport_chttp2",
+    ":grpc_base",
   ],
 )
 
@@ -1112,6 +1120,7 @@ cc_library(
     "src/core/ext/client_channel/subchannel.h",
     "src/core/ext/client_channel/subchannel_index.h",
     "src/core/ext/client_channel/uri_parser.h",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/load_reporting/load_reporting.h",
     "src/core/ext/load_reporting/load_reporting_filter.h",
     "src/core/ext/lb_policy/grpclb/grpclb.h",
@@ -1286,6 +1295,7 @@ cc_library(
     "src/core/ext/client_channel/subchannel.c",
     "src/core/ext/client_channel/subchannel_index.c",
     "src/core/ext/client_channel/uri_parser.c",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/resolver/dns/native/dns_resolver.c",
     "src/core/ext/resolver/sockaddr/sockaddr_resolver.c",
     "src/core/ext/load_reporting/load_reporting.c",
@@ -1346,6 +1356,8 @@ cc_library(
   ],
   deps = [
     ":gpr",
+    ":grpc_transport_chttp2",
+    ":grpc_base",
     "//external:nanopb",
   ],
   copts = [
@@ -2172,6 +2184,7 @@ objc_library(
     "src/core/ext/client_channel/subchannel.c",
     "src/core/ext/client_channel/subchannel_index.c",
     "src/core/ext/client_channel/uri_parser.c",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c",
     "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c",
     "src/core/ext/transport/chttp2/client/insecure/channel_create.c",
@@ -2387,6 +2400,7 @@ objc_library(
     "src/core/ext/client_channel/subchannel.h",
     "src/core/ext/client_channel/subchannel_index.h",
     "src/core/ext/client_channel/uri_parser.h",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/lb_policy/grpclb/grpclb.h",
     "src/core/ext/lb_policy/grpclb/load_balancer_api.h",
     "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
@@ -2410,6 +2424,8 @@ objc_library(
   ],
   deps = [
     ":gpr_objc",
+    ":grpc_transport_chttp2_objc",
+    ":grpc_base_objc",
     "//external:libssl_objc",
     "//external:nanopb",
   ],

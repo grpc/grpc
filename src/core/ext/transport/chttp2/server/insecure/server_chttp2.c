@@ -47,17 +47,17 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-typedef struct server_connect_state {
+typedef struct server_connection_state {
   grpc_server *server;
   grpc_pollset *accepting_pollset;
   grpc_tcp_server_acceptor *acceptor;
   grpc_handshake_manager *handshake_mgr;
-} server_connect_state;
+} server_connection_state;
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
-  server_connect_state *state = args->user_data;
+  server_connection_state *state = args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
@@ -86,7 +86,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 static void on_accept(grpc_exec_ctx *exec_ctx, void *server, grpc_endpoint *tcp,
                       grpc_pollset *accepting_pollset,
                       grpc_tcp_server_acceptor *acceptor) {
-  server_connect_state *state = gpr_malloc(sizeof(server_connect_state));
+  server_connection_state *state = gpr_malloc(sizeof(server_connection_state));
   state->server = server;
   state->accepting_pollset = accepting_pollset;
   state->acceptor = acceptor;

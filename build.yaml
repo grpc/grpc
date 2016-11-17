@@ -621,6 +621,14 @@ filegroups:
   - src/core/ext/transport/chttp2/alpn/alpn.c
   deps:
   - gpr
+- name: grpc_transport_chttp2_client_connector
+  headers:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.h
+  src:
+  - src/core/ext/transport/chttp2/client/chttp2_connector.c
+  deps:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -629,6 +637,7 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_client_channel
+  - grpc_transport_chttp2_client_connector
 - name: grpc_transport_chttp2_client_secure
   src:
   - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
@@ -637,6 +646,7 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_secure
+  - grpc_transport_chttp2_client_connector
 - name: grpc_transport_chttp2_server_insecure
   src:
   - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c

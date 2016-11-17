@@ -256,6 +256,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/client_channel/subchannel.c',
   'src/core/ext/client_channel/subchannel_index.c',
   'src/core/ext/client_channel/uri_parser.c',
+  'src/core/ext/transport/chttp2/client/chttp2_connector.c',
   'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
   'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
   'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
