@@ -152,7 +152,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp);
   gpr_free(connection_state);
   grpc_channel_args_destroy(args->args);
-  gpr_free(args);
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,

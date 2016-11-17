@@ -121,7 +121,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure *notify = c->notify;
   c->notify = NULL;
   grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
-  gpr_free(args);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
