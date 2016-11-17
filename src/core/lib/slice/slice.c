@@ -50,14 +50,14 @@ grpc_slice grpc_empty_slice(void) {
 
 grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
   if (slice.refcount) {
-    slice.refcount->ref(slice.refcount);
+    slice.refcount->vtable->ref(slice.refcount);
   }
   return slice;
 }
 
 void grpc_slice_unref_internal(grpc_exec_ctx *exec_ctx, grpc_slice slice) {
   if (slice.refcount) {
-    slice.refcount->unref(exec_ctx, slice.refcount);
+    slice.refcount->vtable->unref(exec_ctx, slice.refcount);
   }
 }
 
@@ -78,7 +78,9 @@ void grpc_slice_unref(grpc_slice slice) {
 static void noop_ref(void *unused) {}
 static void noop_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 
-static grpc_slice_refcount noop_refcount = {noop_ref, noop_unref};
+static const grpc_slice_refcount_vtable noop_refcount_vtable = {
+    noop_ref, noop_unref, grpc_slice_default_hash_impl};
+static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable};
 
 grpc_slice grpc_slice_from_static_string(const char *s) {
   grpc_slice slice;
@@ -110,14 +112,16 @@ static void new_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
+static const grpc_slice_refcount_vtable new_slice_vtable = {
+    new_slice_ref, new_slice_unref, grpc_slice_default_hash_impl};
+
 grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
                                          void (*destroy)(void *),
                                          void *user_data) {
   grpc_slice slice;
   new_slice_refcount *rc = gpr_malloc(sizeof(new_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
-  rc->rc.ref = new_slice_ref;
-  rc->rc.unref = new_slice_unref;
+  rc->rc.vtable = &new_slice_vtable;
   rc->user_destroy = destroy;
   rc->user_data = user_data;
 
@@ -155,14 +159,16 @@ static void new_with_len_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
+static const grpc_slice_refcount_vtable new_with_len_vtable = {
+    new_with_len_ref, new_with_len_unref, grpc_slice_default_hash_impl};
+
 grpc_slice grpc_slice_new_with_len(void *p, size_t len,
                                    void (*destroy)(void *, size_t)) {
   grpc_slice slice;
   new_with_len_slice_refcount *rc =
       gpr_malloc(sizeof(new_with_len_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
-  rc->rc.ref = new_with_len_ref;
-  rc->rc.unref = new_with_len_unref;
+  rc->rc.vtable = &new_with_len_vtable;
   rc->user_destroy = destroy;
   rc->user_data = p;
   rc->user_length = len;
@@ -200,6 +206,9 @@ static void malloc_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
+static const grpc_slice_refcount_vtable malloc_vtable = {
+    malloc_ref, malloc_unref, grpc_slice_default_hash_impl};
+
 grpc_slice grpc_slice_malloc(size_t length) {
   grpc_slice slice;
 
@@ -219,8 +228,7 @@ grpc_slice grpc_slice_malloc(size_t length) {
        this reference. */
     gpr_ref_init(&rc->refs, 1);
 
-    rc->base.ref = malloc_ref;
-    rc->base.unref = malloc_unref;
+    rc->base.vtable = &malloc_vtable;
 
     /* Build up the slice to be returned. */
     /* The slices refcount points back to the allocated block. */
@@ -273,7 +281,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   } else {
     subset = grpc_slice_sub_no_ref(source, begin, end);
     /* Bump the refcount */
-    subset.refcount->ref(subset.refcount);
+    subset.refcount->vtable->ref(subset.refcount);
   }
   return subset;
 }
@@ -302,7 +310,7 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
       /* Build the result */
       tail.refcount = source->refcount;
       /* Bump the refcount */
-      tail.refcount->ref(tail.refcount);
+      tail.refcount->vtable->ref(tail.refcount);
       /* Point into the source array */
       tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
       tail.data.refcounted.length = tail_length;
@@ -340,7 +348,7 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
     /* Build the result */
     head.refcount = source->refcount;
     /* Bump the refcount */
-    head.refcount->ref(head.refcount);
+    head.refcount->vtable->ref(head.refcount);
     /* Point into the source array */
     head.data.refcounted.bytes = source->data.refcounted.bytes;
     head.data.refcounted.length = split;

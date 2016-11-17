@@ -100,6 +100,18 @@ static void interned_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
+static uint32_t interned_slice_hash(void *p, grpc_slice slice) {
+  interned_slice_refcount *s = p;
+  if (slice.data.refcounted.bytes == (uint8_t *)(s + 1) &&
+      slice.data.refcounted.length == s->length) {
+    return s->hash;
+  }
+  return grpc_slice_default_hash_impl(p, slice);
+}
+
+static const grpc_slice_refcount_vtable interned_slice_vtable = {
+    interned_slice_ref, interned_slice_unref, interned_slice_hash};
+
 static void grow_shard(slice_shard *shard) {
   size_t capacity = shard->capacity * 2;
   size_t i;
@@ -135,6 +147,16 @@ static grpc_slice materialize(interned_slice_refcount *s) {
   return slice;
 }
 
+uint32_t grpc_slice_default_hash_impl(void *unused_refcnt, grpc_slice s) {
+  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
+                          g_hash_seed);
+}
+
+uint32_t grpc_slice_hash(grpc_slice s) {
+  return s.refcount == NULL ? grpc_slice_default_hash_impl(NULL, s)
+                            : s.refcount->vtable->hash(s.refcount, s);
+}
+
 grpc_slice grpc_slice_intern(grpc_slice slice) {
   interned_slice_refcount *s;
   uint32_t hash = gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice),
@@ -168,8 +190,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   gpr_atm_rel_store(&s->refcnt, 1);
   s->length = GRPC_SLICE_LENGTH(slice);
   s->hash = hash;
-  s->base.ref = interned_slice_ref;
-  s->base.unref = interned_slice_unref;
+  s->base.vtable = &interned_slice_vtable;
   s->bucket_next = shard->strs[idx];
   shard->strs[idx] = s;
   memcpy(s + 1, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));

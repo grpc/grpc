@@ -64,7 +64,7 @@
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
-static grpc_slice_refcount terminal_slice_refcount = {NULL, NULL};
+static grpc_slice_refcount terminal_slice_refcount = {NULL};
 static const grpc_slice terminal_slice = {&terminal_slice_refcount,
                                           .data.refcounted = {0, 0}};
 

@@ -114,10 +114,12 @@ static uint8_t g_raw_bytes[] = {
 
 static void static_ref(void *unused) {}
 static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
-static grpc_slice_refcount g_refcnt = {static_ref, static_unref};
+static const grpc_slice_refcount_vtable static_vtable = {
+    static_ref, static_unref, grpc_slice_default_hash_impl};
+static grpc_slice_refcount g_refcnt = {&static_vtable};
 
 bool grpc_is_static_metadata_string(grpc_slice slice) {
-  return slice.refcount != NULL && slice.refcount->ref == static_ref;
+  return slice.refcount != NULL && slice.refcount->vtable == &static_vtable;
 }
 
 const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {

@@ -310,10 +310,11 @@ print >>C, 'static uint8_t g_raw_bytes[] = {%s};' % (','.join('%d' % ord(c) for 
 print >>C
 print >>C, 'static void static_ref(void *unused) {}'
 print >>C, 'static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}'
-print >>C, 'static grpc_slice_refcount g_refcnt = {static_ref, static_unref};'
+print >>C, 'static const grpc_slice_refcount_vtable static_vtable = {static_ref, static_unref, grpc_slice_default_hash_impl};';
+print >>C, 'static grpc_slice_refcount g_refcnt = {&static_vtable};'
 print >>C
 print >>C, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
-print >>C, '  return slice.refcount != NULL && slice.refcount->ref == static_ref;'
+print >>C, '  return slice.refcount != NULL && slice.refcount->vtable == &static_vtable;'
 print >>C, '}'
 print >>C
 print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'

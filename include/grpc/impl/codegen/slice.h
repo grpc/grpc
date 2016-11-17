@@ -39,6 +39,8 @@
 
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 
+typedef struct grpc_slice grpc_slice;
+
 /* Slice API
 
    A slice represents a contiguous reference counted array of bytes.
@@ -52,14 +54,19 @@
    reference ownership semantics (who should call unref?) and mutability
    constraints (is the callee allowed to modify the slice?) */
 
+typedef struct grpc_slice_refcount_vtable {
+  void (*ref)(void *);
+  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
+  uint32_t (*hash)(void *, grpc_slice slice);
+} grpc_slice_refcount_vtable;
+
 /* Reference count container for grpc_slice. Contains function pointers to
    increment and decrement reference counts. Implementations should cleanup
    when the reference count drops to zero.
    Typically client code should not touch this, and use grpc_slice_malloc,
    grpc_slice_new, or grpc_slice_new_with_len instead. */
 typedef struct grpc_slice_refcount {
-  void (*ref)(void *);
-  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
+  const grpc_slice_refcount_vtable *vtable;
 } grpc_slice_refcount;
 
 #define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
@@ -73,7 +80,7 @@ typedef struct grpc_slice_refcount {
 
    If the slice does not have a refcount, it represents an inlined small piece
    of data that is copied by value. */
-typedef struct grpc_slice {
+struct grpc_slice {
   struct grpc_slice_refcount *refcount;
   union {
     struct {
@@ -85,7 +92,7 @@ typedef struct grpc_slice {
       uint8_t bytes[GRPC_SLICE_INLINED_SIZE];
     } inlined;
   } data;
-} grpc_slice;
+};
 
 #define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 8
 
