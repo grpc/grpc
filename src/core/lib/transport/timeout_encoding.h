@@ -42,6 +42,7 @@
 /* Encode/decode timeouts to the GRPC over HTTP/2 format;
    encoding may round up arbitrarily */
 void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer);
-int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout);
+int grpc_http2_decode_timeout(const uint8_t *buffer, size_t length,
+                              gpr_timespec *timeout);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H */

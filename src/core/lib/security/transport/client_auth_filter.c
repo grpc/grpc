@@ -45,6 +45,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -54,6 +55,8 @@
 /* We can have a per-call credentials. */
 typedef struct {
   grpc_call_credentials *creds;
+  bool have_host;
+  bool have_method;
   grpc_slice host;
   grpc_slice method;
   /* pollset{_set} bound to this call; if we need to make external
@@ -133,7 +136,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
 void build_auth_metadata_context(grpc_security_connector *sc,
                                  grpc_auth_context *auth_context,
                                  call_data *calld) {
-  char *service = gpr_strdup(grpc_mdstr_as_c_string(calld->method));
+  char *service = grpc_dump_slice(calld->method, GPR_DUMP_ASCII);
   char *last_slash = strrchr(service, '/');
   char *method_name = NULL;
   char *service_url = NULL;
@@ -149,14 +152,15 @@ void build_auth_metadata_context(grpc_security_connector *sc,
     method_name = gpr_strdup(last_slash + 1);
   }
   if (method_name == NULL) method_name = gpr_strdup("");
+  char *host = grpc_dump_slice(calld->host, GPR_DUMP_ASCII);
   gpr_asprintf(&service_url, "%s://%s%s",
-               sc->url_scheme == NULL ? "" : sc->url_scheme,
-               grpc_mdstr_as_c_string(calld->host), service);
+               sc->url_scheme == NULL ? "" : sc->url_scheme, host, service);
   calld->auth_md_context.service_url = service_url;
   calld->auth_md_context.method_name = method_name;
   calld->auth_md_context.channel_auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "grpc_auth_metadata_context");
   gpr_free(service);
+  gpr_free(host);
 }
 
 static void send_security_metadata(grpc_exec_ctx *exec_ctx,
@@ -207,8 +211,10 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     send_security_metadata(exec_ctx, elem, &calld->op);
   } else {
     char *error_msg;
+    char *host = grpc_dump_slice(calld->host, GPR_DUMP_ASCII);
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
-                 grpc_mdstr_as_c_string(calld->host));
+                 host);
+    gpr_free(host);
     bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED, error_msg);
     gpr_free(error_msg);
   }
@@ -250,20 +256,27 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       grpc_mdelem *md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
-      if (md->key == GRPC_MDSTR_AUTHORITY) {
-        if (calld->host != NULL) GRPC_MDSTR_UNREF(exec_ctx, calld->host);
-        calld->host = GRPC_MDSTR_REF(md->value);
-      } else if (md->key == GRPC_MDSTR_PATH) {
-        if (calld->method != NULL) GRPC_MDSTR_UNREF(exec_ctx, calld->method);
-        calld->method = GRPC_MDSTR_REF(md->value);
+      if (grpc_slice_cmp(md->key, GRPC_MDSTR_AUTHORITY) == 0) {
+        if (calld->have_host) {
+          grpc_slice_unref_internal(exec_ctx, calld->host);
+        }
+        calld->host = grpc_slice_ref_internal(md->value);
+        calld->have_host = true;
+      } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {
+        if (calld->have_method) {
+          grpc_slice_unref_internal(exec_ctx, calld->method);
+        }
+        calld->method = grpc_slice_ref_internal(md->value);
+        calld->have_method = true;
       }
     }
-    if (calld->host != NULL) {
-      const char *call_host = grpc_mdstr_as_c_string(calld->host);
+    if (calld->have_host) {
+      char *call_host = grpc_dump_slice(calld->host, GPR_DUMP_ASCII);
       calld->op = *op; /* Copy op (originates from the caller's stack). */
       grpc_channel_security_connector_check_call_host(
           exec_ctx, chand->security_connector, call_host, chand->auth_context,
           on_host_checked, elem);
+      gpr_free(call_host);
       GPR_TIMER_END("auth_start_transport_op", 0);
       return; /* early exit */
     }
@@ -296,11 +309,11 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               void *ignored) {
   call_data *calld = elem->call_data;
   grpc_call_credentials_unref(exec_ctx, calld->creds);
-  if (calld->host != NULL) {
-    GRPC_MDSTR_UNREF(exec_ctx, calld->host);
+  if (calld->have_host) {
+    grpc_slice_unref_internal(exec_ctx, calld->host);
   }
-  if (calld->method != NULL) {
-    GRPC_MDSTR_UNREF(exec_ctx, calld->method);
+  if (calld->have_method) {
+    grpc_slice_unref_internal(exec_ctx, calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
 }
