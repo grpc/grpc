@@ -101,9 +101,10 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
     grpc_error_free_string(msg);
     if (h->secure_endpoint != NULL) {
       grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
-      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
+// FIXME: clarify who should destroy...
+//      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
     } else {
-      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
+//      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
     }
   }
   // Clear out the read buffer before it gets passed to the transport,
