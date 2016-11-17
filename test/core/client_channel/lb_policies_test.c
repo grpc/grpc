@@ -613,7 +613,7 @@ static void test_pending_calls(size_t concurrent_calls) {
 
 static void test_get_channel_info() {
   grpc_channel *channel =
-      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", &args, NULL);
+      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", NULL, NULL);
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
   // First, request no fields.  This is a no-op.
