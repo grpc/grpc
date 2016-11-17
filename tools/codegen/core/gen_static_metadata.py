@@ -63,6 +63,8 @@ CONFIG = [
     'grpc.timeout',
     'grpc.max_request_message_bytes',
     'grpc.max_response_message_bytes',
+    # well known method names
+    '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     # metadata elements
     ('grpc-status', '0'),
     ('grpc-status', '1'),
@@ -191,24 +193,30 @@ def put_banner(files, banner):
     print >>f
 
 # build a list of all the strings we need
-all_strs = set()
-all_elems = set()
+all_strs = list()
+all_elems = list()
 static_userdata = {}
 for elem in CONFIG:
   if isinstance(elem, tuple):
-    all_strs.add(elem[0])
-    all_strs.add(elem[1])
-    all_elems.add(elem)
+    if elem[0] not in all_strs:
+      all_strs.append(elem[0])
+    if elem[1] not in all_strs:
+      all_strs.append(elem[1])
+    if elem not in all_elems:
+      all_elems.append(elem)
   else:
-    all_strs.add(elem)
+    if elem not in all_strs:
+      all_strs.append(elem)
 compression_elems = []
 for mask in range(1, 1<<len(COMPRESSION_ALGORITHMS)):
   val = ','.join(COMPRESSION_ALGORITHMS[alg]
                  for alg in range(0, len(COMPRESSION_ALGORITHMS))
                  if (1 << alg) & mask)
   elem = ('grpc-accept-encoding', val)
-  all_strs.add(val)
-  all_elems.add(elem)
+  if val not in all_strs:
+    all_strs.append(val)
+  if elem not in all_elems:
+    all_elems.append(elem)
   compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
 all_strs = sorted(list(all_strs), key=mangle)
@@ -306,7 +314,7 @@ print >>C, 'static grpc_slice_refcount g_refcnt = {static_ref, static_unref};'
 print >>C
 print >>C, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
 print >>C, '  return slice.refcount != NULL && slice.refcount->ref == static_ref;'
-print >>C, '};'
+print >>C, '}'
 print >>C
 print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'
 str_ofs = 0
@@ -327,7 +335,7 @@ print >>C, '  size_t ofs = (size_t)(GRPC_SLICE_START_PTR(slice) - g_raw_bytes);'
 print >>C, '  if (ofs > sizeof(g_revmap)) return -1;'
 print >>C, '  uint8_t id = g_revmap[ofs];'
 print >>C, '  return id == 255 ? -1 : id;'
-print >>C, '};'
+print >>C, '}'
 print >>C
 
 print >>D, '# hpack fuzzing dictionary'
@@ -361,11 +369,19 @@ def md_idx(m):
       return i
 
 def perfect_hash(keys, name):
-    tmp = open('/tmp/keys.txt', 'w')
-    tmp.write(''.join('%d\n' % (x - min(keys)) for x in keys))
-    tmp.close()
-    cmd = '%s/perfect/run.sh %s -ds' % (os.path.dirname(sys.argv[0]), tmp.name)
+    ok = False
+    cmd = '%s/perfect/build.sh' % (os.path.dirname(sys.argv[0]))
     subprocess.check_call(cmd, shell=True)
+    for offset in reversed(range(0, min(keys))):
+        tmp = open('/tmp/keys.txt', 'w')
+        tmp.write(''.join('%d\n' % (x - offset) for x in keys))
+        tmp.close()
+        cmd = '%s/perfect/run.sh %s -dms' % (os.path.dirname(sys.argv[0]), tmp.name)
+        out = subprocess.check_output(cmd, shell=True)
+        if 'fatal error' not in out:
+            ok = True
+            break
+    assert ok, "Failed to find hash of keys in /tmp/keys.txt"
 
     code = ''
 
@@ -378,14 +394,14 @@ def perfect_hash(keys, name):
             results[var] = val
     code += '\n'
     pycode = 'def f(val):\n'
-    pycode += '  val -= %d\n' % min(keys)
+    pycode += '  val -= %d\n' % offset
     with open('%s/perfect/phash.c' % os.path.dirname(sys.argv[0])) as f:
         txt = f.read()
         tabdata = re.search(r'ub1 tab\[\] = \{([^}]+)\}', txt, re.MULTILINE).group(1)
         code += 'static const uint8_t %s_tab[] = {%s};\n\n' % (name, tabdata)
         func_body = re.search(r'ub4 phash\(val\)\nub4 val;\n\{([^}]+)\}', txt, re.MULTILINE).group(1).replace('ub4', 'uint32_t')
         code += 'static uint32_t %s_phash(uint32_t val) {\nval -= %d;\n%s}\n' % (name,
-            min(keys), func_body.replace('tab', '%s_tab' % name))
+            offset, func_body.replace('tab', '%s_tab' % name))
         pycode += '  tab=(%s)' % tabdata.replace('\n', '')
         pycode += '\n'.join('  %s' % s.strip() for s in func_body.splitlines()[2:])
     g = {}

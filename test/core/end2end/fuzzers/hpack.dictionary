@@ -86,6 +86,7 @@
 "\x06server"
 "\x0Aset-cookie"
 "\x01/"
+"$/grpc.lb.v1.LoadBalancer/BalanceLoad"
 "\x0B/index.html"
 "\x07:status"
 "\x19strict-transport-security"
