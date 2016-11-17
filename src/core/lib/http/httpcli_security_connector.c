@@ -40,7 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/transport/handshake.h"
+#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
 
