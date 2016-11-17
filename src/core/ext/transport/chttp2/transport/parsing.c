@@ -42,6 +42,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -451,24 +452,32 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
 
   GPR_ASSERT(s != NULL);
 
-  GRPC_CHTTP2_IF_TRACING(gpr_log(
-      GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", s->id, t->is_client ? "CLI" : "SVR",
-      grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
+  if (grpc_http_trace) {
+    char *key = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
+    char *value = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    gpr_log(GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", s->id,
+            t->is_client ? "CLI" : "SVR", key, value);
+    gpr_free(key);
+    gpr_free(value);
+  }
 
-  if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_STATUS) == 0 &&
+      md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
   }
 
-  if (md->key == GRPC_MDSTR_GRPC_TIMEOUT) {
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_TIMEOUT) == 0) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
     if (!cached_timeout) {
       /* not already parsed: parse it now, and store the result away */
       cached_timeout = gpr_malloc(sizeof(gpr_timespec));
-      if (!grpc_http2_decode_timeout(grpc_mdstr_as_c_string(md->value),
+      if (!grpc_http2_decode_timeout(GRPC_SLICE_START_PTR(md->value),
+                                     GRPC_SLICE_LENGTH(md->value),
                                      cached_timeout)) {
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
-                grpc_mdstr_as_c_string(md->value));
+        char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
+        gpr_free(val);
         *cached_timeout = gpr_inf_future(GPR_TIMESPAN);
       }
       cached_timeout =
@@ -513,11 +522,17 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
 
   GPR_ASSERT(s != NULL);
 
-  GRPC_CHTTP2_IF_TRACING(gpr_log(
-      GPR_INFO, "HTTP:%d:TRL:%s: %s: %s", s->id, t->is_client ? "CLI" : "SVR",
-      grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
+  if (grpc_http_trace) {
+    char *key = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
+    char *value = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    gpr_log(GPR_INFO, "HTTP:%d:TRL:%s: %s: %s", s->id,
+            t->is_client ? "CLI" : "SVR", key, value);
+    gpr_free(key);
+    gpr_free(value);
+  }
 
-  if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
+  if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_STATUS) == 0 &&
+      md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
   }
