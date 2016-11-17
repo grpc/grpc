@@ -428,9 +428,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\b64.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h" />
@@ -781,11 +781,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
     </ClCompile>

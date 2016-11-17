@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/security/transport/security_connector.h"
@@ -43,4 +43,4 @@ void grpc_security_create_handshakers(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector, grpc_handshake_manager *handshake_mgr);
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H */
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */
