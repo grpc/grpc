@@ -101,6 +101,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   if (error != GRPC_ERROR_NONE) {
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
     grpc_channel_args_destroy(args->args);
     gpr_free(args->read_buffer);
   } else {

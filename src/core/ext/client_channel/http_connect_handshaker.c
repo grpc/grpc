@@ -56,6 +56,8 @@ typedef struct http_connect_handshaker {
   gpr_mu mu;
 
   // State saved while performing the handshake.
+  // args will be NULL when either there is no handshake in progress or
+  // when the handshaker is shutting down.
   grpc_handshaker_args* args;
   grpc_closure* on_handshake_done;
 
@@ -84,7 +86,7 @@ static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
 static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
   http_connect_handshaker* handshaker = arg;
-  if (error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_NONE || handshaker->args == NULL) {
     // If the write failed, invoke the callback immediately with the error.
     gpr_mu_lock(&handshaker->mu);
     grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done,
@@ -96,7 +98,6 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
     // Otherwise, read the response.
     // The read callback inherits our ref to the handshaker.
     gpr_mu_lock(&handshaker->mu);
-    GPR_ASSERT(handshaker->args != NULL);
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
                        handshaker->args->read_buffer,
                        &handshaker->response_read_closure);
@@ -109,8 +110,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
   http_connect_handshaker* handshaker = arg;
   gpr_mu_lock(&handshaker->mu);
-  GPR_ASSERT(handshaker->args != NULL);
-  if (error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_NONE || handshaker->args == NULL) {
     GRPC_ERROR_REF(error);  // Take ref to pass to the handshake-done callback.
     goto done;
   }
