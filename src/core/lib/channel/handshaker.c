@@ -88,6 +88,8 @@ struct grpc_handshake_manager {
   // The final callback and user_data to invoke after the last handshaker.
   grpc_closure on_handshake_done;
   void* user_data;
+  // Handshaker args.
+  grpc_handshaker_args args;
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
@@ -205,22 +207,22 @@ void grpc_handshake_manager_do_handshake(
     grpc_iomgr_cb_func on_handshake_done, void* user_data) {
   // Construct handshaker args.  These will be passed through all
   // handshakers and eventually be freed by the on_handshake_done callback.
-  grpc_handshaker_args* args = gpr_malloc(sizeof(*args));
-  args->endpoint = endpoint;
-  args->args = grpc_channel_args_copy(channel_args);
-  args->read_buffer = gpr_malloc(sizeof(*args->read_buffer));
-  grpc_slice_buffer_init(args->read_buffer);
+  mgr->args.endpoint = endpoint;
+  mgr->args.args = grpc_channel_args_copy(channel_args);
+  mgr->args.read_buffer = gpr_malloc(sizeof(*mgr->args.read_buffer));
+  grpc_slice_buffer_init(mgr->args.read_buffer);
   // Initialize state needed for calling handshakers.
   gpr_mu_lock(&mgr->mu);
   GPR_ASSERT(mgr->index == 0);
   mgr->acceptor = acceptor;
-  grpc_closure_init(&mgr->call_next_handshaker, call_next_handshaker, args);
-  grpc_closure_init(&mgr->on_handshake_done, on_handshake_done, args);
+  grpc_closure_init(&mgr->call_next_handshaker, call_next_handshaker,
+                    &mgr->args);
+  grpc_closure_init(&mgr->on_handshake_done, on_handshake_done, &mgr->args);
   // While chaining between handshakers, we use args->user_data to
   // store a pointer to the handshake manager.  This will be
   // changed to point to the caller-supplied user_data before calling
   // the on_handshake_done callback.
-  args->user_data = mgr;
+  mgr->args.user_data = mgr;
   mgr->user_data = user_data;
   // Start deadline timer, which owns a ref.
   gpr_ref(&mgr->refs);
@@ -229,6 +231,6 @@ void grpc_handshake_manager_do_handshake(
                   on_timeout, mgr, gpr_now(GPR_CLOCK_MONOTONIC));
   // Start first handshaker, which also owns a ref.
   gpr_ref(&mgr->refs);
-  call_next_handshaker_locked(exec_ctx, mgr, args, GRPC_ERROR_NONE);
+  call_next_handshaker_locked(exec_ctx, mgr, &mgr->args, GRPC_ERROR_NONE);
   gpr_mu_unlock(&mgr->mu);
 }

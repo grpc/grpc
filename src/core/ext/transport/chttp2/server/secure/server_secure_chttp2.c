@@ -122,9 +122,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
     gpr_free(args->read_buffer);
-    if (args->endpoint != NULL) {
-      grpc_endpoint_destroy(exec_ctx, args->endpoint);
-    }
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
     gpr_mu_lock(&connection_state->server_state->mu);
   } else {
     gpr_mu_lock(&connection_state->server_state->mu);
