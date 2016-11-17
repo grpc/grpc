@@ -45,7 +45,7 @@ namespace Grpc.Testing {
   ///  A simple service to test the various types of RPCs and experiment with
   ///  performance with various types of payload.
   /// </summary>
-  public static class TestService
+  public static partial class TestService
   {
     static readonly string __ServiceName = "grpc.testing.TestService";
 
@@ -106,7 +106,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of TestService</summary>
-    public abstract class TestServiceBase
+    public abstract partial class TestServiceBase
     {
       /// <summary>
       ///  One empty request followed by one empty response.
@@ -166,7 +166,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for TestService</summary>
-    public class TestServiceClient : ClientBase<TestServiceClient>
+    public partial class TestServiceClient : ClientBase<TestServiceClient>
     {
       /// <summary>Creates a new client for TestService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -337,7 +337,7 @@ namespace Grpc.Testing {
   ///  A simple service NOT implemented at servers so clients can test for
   ///  that case.
   /// </summary>
-  public static class UnimplementedService
+  public static partial class UnimplementedService
   {
     static readonly string __ServiceName = "grpc.testing.UnimplementedService";
 
@@ -357,7 +357,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
-    public abstract class UnimplementedServiceBase
+    public abstract partial class UnimplementedServiceBase
     {
       /// <summary>
       ///  A call that no server should implement
@@ -370,7 +370,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for UnimplementedService</summary>
-    public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
+    public partial class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
     {
       /// <summary>Creates a new client for UnimplementedService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -437,7 +437,7 @@ namespace Grpc.Testing {
   /// <summary>
   ///  A service used to control reconnect server.
   /// </summary>
-  public static class ReconnectService
+  public static partial class ReconnectService
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
@@ -466,7 +466,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
-    public abstract class ReconnectServiceBase
+    public abstract partial class ReconnectServiceBase
     {
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context)
       {
@@ -481,7 +481,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for ReconnectService</summary>
-    public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
+    public partial class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
     {
       /// <summary>Creates a new client for ReconnectService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
