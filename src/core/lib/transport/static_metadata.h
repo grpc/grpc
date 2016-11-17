@@ -425,8 +425,6 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[80])
 
 grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b);
-extern const uint8_t
-    grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2];
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) \
   (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])

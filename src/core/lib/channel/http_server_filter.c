@@ -131,7 +131,7 @@ static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     /* TODO(klempner): Track that we've seen all the headers we should
        require */
     return NULL;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_CONTENT_TYPE)) {
+  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_CONTENT_TYPE) == 0) {
     if (grpc_slice_buf_start_eq(md->value, EXPECTED_CONTENT_TYPE,
                                 EXPECTED_CONTENT_TYPE_LENGTH) &&
         (GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||

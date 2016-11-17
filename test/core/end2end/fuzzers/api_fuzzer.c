@@ -107,6 +107,9 @@ static char *read_string(input_stream *inp, bool *special) {
   if (special != NULL) {
     *special = (c == 1);
   }
+  if (c == 1) {
+    str[sz-1] = 0;
+  }
   return str;
 }
 
