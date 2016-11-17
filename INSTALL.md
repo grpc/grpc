@@ -57,7 +57,8 @@ gRPC C Core library.
 ```
 
 Note that if you are interested in contributing, you must install some extra
-dependencies to run the test suites. All of these can be found in [CONTRIBUTING](CONTRIBUTING.md)
+dependencies to run the test suites. All of these can be found in the Requirements 
+for Running Tests section below.
 
 ##Windows
 
