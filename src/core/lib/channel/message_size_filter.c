@@ -34,6 +34,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -41,10 +42,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/service_config.h"
-
-#define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
-// The protobuf library will (by default) start warning at 100 megs.
-#define DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 typedef struct message_size_limits {
   int max_send_size;
@@ -201,20 +198,20 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
   memset(chand, 0, sizeof(*chand));
-  chand->max_send_size = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
-  chand->max_recv_size = DEFAULT_MAX_RECV_MESSAGE_LENGTH;
+  chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0,
-                                            INT_MAX};
+      const grpc_integer_options options = {
+          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0, INT_MAX};
       chand->max_send_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0,
-                                            INT_MAX};
+      const grpc_integer_options options = {
+          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0, INT_MAX};
       chand->max_recv_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
