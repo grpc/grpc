@@ -50,12 +50,16 @@
 
 typedef struct {
   grpc_handshaker base;
+  // args will be NULL when either there is no handshake in progress or
+  // when the handshaker is shutting down.
   grpc_handshaker_args* args;
   grpc_closure* on_handshake_done;
   grpc_security_connector *connector;
   tsi_handshaker *handshaker;
+// FIXME: add locking
   unsigned char *handshake_buffer;
   size_t handshake_buffer_size;
+// FIXME: use args->endpoint instead
   grpc_endpoint *wrapped_endpoint;
   grpc_endpoint *secure_endpoint;
   grpc_slice_buffer left_overs;
@@ -103,7 +107,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
       grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
 // FIXME: clarify who should destroy...
 //      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
-    } else {
+//    } else {
 //      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
     }
   }
@@ -144,7 +148,6 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *user_data,
   h->left_overs.count = 0;
   h->left_overs.length = 0;
   security_handshake_done(exec_ctx, h, GRPC_ERROR_NONE);
-  return;
 }
 
 static void check_peer(grpc_exec_ctx *exec_ctx, security_handshaker *h) {
@@ -299,7 +302,9 @@ static void security_handshaker_destroy(grpc_exec_ctx* exec_ctx,
 static void security_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
                                              grpc_handshaker* handshaker) {
   security_handshaker *h = (security_handshaker*)handshaker;
-  grpc_endpoint_shutdown(exec_ctx, h->wrapped_endpoint);
+  if (h->args != NULL) {
+    grpc_endpoint_shutdown(exec_ctx, h->wrapped_endpoint);
+  }
 }
 
 static void security_handshaker_do_handshake(
