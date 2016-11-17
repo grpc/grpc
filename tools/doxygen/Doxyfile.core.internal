@@ -945,6 +945,7 @@ src/core/ext/client_channel/resolver_registry.h \
 src/core/ext/client_channel/subchannel.h \
 src/core/ext/client_channel/subchannel_index.h \
 src/core/ext/client_channel/uri_parser.h \
+src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/lb_policy/grpclb/grpclb.h \
 src/core/ext/lb_policy/grpclb/load_balancer_api.h \
 src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
@@ -1147,6 +1148,7 @@ src/core/ext/client_channel/resolver_registry.c \
 src/core/ext/client_channel/subchannel.c \
 src/core/ext/client_channel/subchannel_index.c \
 src/core/ext/client_channel/uri_parser.c \
+src/core/ext/transport/chttp2/client/chttp2_connector.c \
 src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
 src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
 src/core/ext/transport/chttp2/client/insecure/channel_create.c \

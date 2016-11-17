@@ -4925,6 +4925,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_base", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -4932,6 +4933,7 @@
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
+      "grpc_transport_chttp2", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -4951,6 +4953,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_base", 
+      "grpc_transport_chttp2", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -5025,12 +5029,14 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_base", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
+      "grpc_transport_chttp2", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure"
     ], 
@@ -7407,10 +7413,31 @@
   }, 
   {
     "deps": [
+      "grpc_base", 
+      "grpc_transport_chttp2"
+    ], 
+    "headers": [
+      "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_chttp2_client_connector", 
+    "src": [
+      "src/core/ext/transport/chttp2/client/chttp2_connector.c", 
+      "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_base", 
       "grpc_client_channel", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_client_connector"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -7427,9 +7454,12 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_base", 
       "grpc_client_channel", 
       "grpc_secure", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_client_connector"
     ], 
     "headers": [], 
     "is_filegroup": true, 
