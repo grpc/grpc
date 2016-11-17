@@ -79,6 +79,9 @@ class ChannelArguments {
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
+  /// Set the socket mutator for the channel.
+  void SetSocketMutator(grpc_socket_mutator* mutator);
+
   /// The given string will be sent at the front of the user agent string.
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
@@ -104,6 +107,15 @@ class ChannelArguments {
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
 
+  /// Return (by value) a c grpc_channel_args structure which points to
+  /// arguments owned by this ChannelArguments instance
+  grpc_channel_args c_channel_args() {
+    grpc_channel_args out;
+    out.num_args = args_.size();
+    out.args = args_.empty() ? NULL : &args_[0];
+    return out;
+  }
+
  private:
   friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
@@ -111,7 +123,7 @@ class ChannelArguments {
   /// Default pointer argument operations.
   struct PointerVtableMembers {
     static void* Copy(void* in) { return in; }
-    static void Destroy(void* in) {}
+    static void Destroy(grpc_exec_ctx* exec_ctx, void* in) {}
     static int Compare(void* a, void* b) {
       if (a < b) return -1;
       if (a > b) return 1;

@@ -629,7 +629,7 @@ static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
 end:
   if (json != NULL) grpc_json_destroy(json);
   if (verification_key != NULL) EVP_PKEY_free(verification_key);
-  ctx->user_cb(ctx->user_data, status, claims);
+  ctx->user_cb(exec_ctx, ctx->user_data, status, claims);
   verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
@@ -682,7 +682,8 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
 
 error:
   if (json != NULL) grpc_json_destroy(json);
-  ctx->user_cb(ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
+  ctx->user_cb(exec_ctx, ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
+               NULL);
   verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
@@ -793,7 +794,8 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   return;
 
 error:
-  ctx->user_cb(ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, NULL);
+  ctx->user_cb(exec_ctx, ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
+               NULL);
   verifier_cb_ctx_destroy(exec_ctx, ctx);
 }
 
@@ -844,7 +846,7 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 error:
   if (header != NULL) jose_header_destroy(exec_ctx, header);
   if (claims != NULL) grpc_jwt_claims_destroy(exec_ctx, claims);
-  cb(user_data, GRPC_JWT_VERIFIER_BAD_FORMAT, NULL);
+  cb(exec_ctx, user_data, GRPC_JWT_VERIFIER_BAD_FORMAT, NULL);
 }
 
 grpc_jwt_verifier *grpc_jwt_verifier_create(

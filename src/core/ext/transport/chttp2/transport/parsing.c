@@ -471,7 +471,8 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
                 grpc_mdstr_as_c_string(md->value));
         *cached_timeout = gpr_inf_future(GPR_TIMESPAN);
       }
-      grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+      cached_timeout =
+          grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &s->metadata_buffer[0],

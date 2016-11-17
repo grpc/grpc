@@ -254,7 +254,7 @@ extern grpc_channel_check_connectivity_state_type grpc_channel_check_connectivit
 typedef void(*grpc_channel_watch_connectivity_state_type)(grpc_channel *channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 extern grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 #define grpc_channel_watch_connectivity_state grpc_channel_watch_connectivity_state_import
-typedef grpc_call *(*grpc_channel_create_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, const char *method, const char *host, gpr_timespec deadline, void *reserved);
+typedef grpc_call *(*grpc_channel_create_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, grpc_slice method, const grpc_slice *host, gpr_timespec deadline, void *reserved);
 extern grpc_channel_create_call_type grpc_channel_create_call_import;
 #define grpc_channel_create_call grpc_channel_create_call_import
 typedef void(*grpc_channel_ping_type)(grpc_channel *channel, grpc_completion_queue *cq, void *tag, void *reserved);
@@ -341,12 +341,21 @@ extern grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 typedef int(*grpc_header_key_is_legal_type)(const char *key, size_t length);
 extern grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 #define grpc_header_key_is_legal grpc_header_key_is_legal_import
+typedef int(*grpc_header_key_slice_is_legal_type)(grpc_slice slice);
+extern grpc_header_key_slice_is_legal_type grpc_header_key_slice_is_legal_import;
+#define grpc_header_key_slice_is_legal grpc_header_key_slice_is_legal_import
 typedef int(*grpc_header_nonbin_value_is_legal_type)(const char *value, size_t length);
 extern grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 #define grpc_header_nonbin_value_is_legal grpc_header_nonbin_value_is_legal_import
+typedef int(*grpc_header_nonbin_value_slice_is_legal_type)(grpc_slice slice);
+extern grpc_header_nonbin_value_slice_is_legal_type grpc_header_nonbin_value_slice_is_legal_import;
+#define grpc_header_nonbin_value_slice_is_legal grpc_header_nonbin_value_slice_is_legal_import
 typedef int(*grpc_is_binary_header_type)(const char *key, size_t length);
 extern grpc_is_binary_header_type grpc_is_binary_header_import;
 #define grpc_is_binary_header grpc_is_binary_header_import
+typedef int(*grpc_slice_is_binary_header_type)(grpc_slice slice);
+extern grpc_slice_is_binary_header_type grpc_slice_is_binary_header_import;
+#define grpc_slice_is_binary_header grpc_slice_is_binary_header_import
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
@@ -527,9 +536,15 @@ extern grpc_slice_buf_cmp_type grpc_slice_buf_cmp_import;
 typedef int(*grpc_slice_buf_start_eq_type)(grpc_slice a, const void *b, size_t blen);
 extern grpc_slice_buf_start_eq_type grpc_slice_buf_start_eq_import;
 #define grpc_slice_buf_start_eq grpc_slice_buf_start_eq_import
+typedef int(*grpc_slice_rchr_type)(grpc_slice s, char c);
+extern grpc_slice_rchr_type grpc_slice_rchr_import;
+#define grpc_slice_rchr grpc_slice_rchr_import
 typedef uint32_t(*grpc_slice_hash_type)(grpc_slice s);
 extern grpc_slice_hash_type grpc_slice_hash_import;
 #define grpc_slice_hash grpc_slice_hash_import
+typedef int(*grpc_slice_is_equivalent_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
+#define grpc_slice_is_equivalent grpc_slice_is_equivalent_import
 typedef void(*grpc_slice_buffer_init_type)(grpc_slice_buffer *sb);
 extern grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 #define grpc_slice_buffer_init grpc_slice_buffer_init_import
@@ -698,7 +713,7 @@ extern gpr_join_host_port_type gpr_join_host_port_import;
 typedef int(*gpr_split_host_port_type)(const char *name, char **host, char **port);
 extern gpr_split_host_port_type gpr_split_host_port_import;
 #define gpr_split_host_port gpr_split_host_port_import
-typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
+typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
 typedef void(*gpr_log_message_type)(const char *file, int line, gpr_log_severity severity, const char *message);
@@ -719,7 +734,7 @@ extern gpr_format_message_type gpr_format_message_import;
 typedef char *(*gpr_strdup_type)(const char *src);
 extern gpr_strdup_type gpr_strdup_import;
 #define gpr_strdup gpr_strdup_import
-typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(2, 3);
+typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...) GPR_PRINT_FORMAT_CHECK(2, 3);
 extern gpr_asprintf_type gpr_asprintf_import;
 #define gpr_asprintf gpr_asprintf_import
 typedef const char *(*gpr_subprocess_binary_extension_type)();
