@@ -768,7 +768,6 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
    * while holding glb_policy->mu: lb_on_server_status_received, invoked due to
    * the cancel, needs to acquire that same lock */
   grpc_call *lb_call = glb_policy->lb_call;
-  glb_policy->lb_call = NULL;
   gpr_mu_unlock(&glb_policy->mu);
 
   /* glb_policy->lb_call and this local lb_call must be consistent at this point
