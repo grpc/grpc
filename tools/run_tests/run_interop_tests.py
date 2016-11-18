@@ -336,13 +336,15 @@ class RubyLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/client.rb'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/client.rb'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
