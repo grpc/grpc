@@ -47,13 +47,6 @@
 
 extern const grpc_channel_filter grpc_client_channel_filter;
 
-/* Post-construction initializer to give the client channel its resolver
-   and factory. */
-void grpc_client_channel_finish_initialization(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
-    grpc_resolver *resolver,
-    grpc_client_channel_factory *client_channel_factory);
-
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
 

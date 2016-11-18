@@ -220,6 +220,8 @@ typedef struct {
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
+/** Client channel factory.  Not intended for external use. */
+#define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
