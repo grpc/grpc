@@ -47,7 +47,7 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
+static void put_metadata(gpr_strvec *b, grpc_mdelem md) {
   gpr_strvec_add(b, gpr_strdup("key="));
   gpr_strvec_add(b, grpc_dump_slice(md->key, GPR_DUMP_HEX | GPR_DUMP_ASCII));
 

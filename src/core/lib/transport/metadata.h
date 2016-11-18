@@ -78,23 +78,29 @@ typedef struct grpc_mdelem grpc_mdelem;
 
 /* if changing this, make identical changes in internal_metadata in
    metadata.c */
-struct grpc_mdelem {
+typedef struct grpc_mdelem_data {
   const grpc_slice key;
   const grpc_slice value;
   /* there is a private part to this in metadata.c */
+} grpc_mdelem_data;
+
+struct grpc_mdelem {
+  grpc_mdelem_data *payload;
 };
 
 /* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
-                                     grpc_slice value);
+grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
+                                    grpc_slice value);
 
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem);
+bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
+
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem);
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
-void *grpc_mdelem_get_user_data(grpc_mdelem *md,
+void *grpc_mdelem_get_user_data(grpc_mdelem md,
                                 void (*if_destroy_func)(void *));
-void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
+void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
                                 void *user_data);
 
 /* Reference counting */
@@ -103,19 +109,26 @@ void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
 #define GRPC_MDELEM_UNREF(exec_ctx, s) \
   grpc_mdelem_unref((exec_ctx), (s), __FILE__, __LINE__)
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md, const char *file, int line);
-void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *md,
+grpc_mdelem grpc_mdelem_ref(grpc_mdelem md, const char *file, int line);
+void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem md,
                        const char *file, int line);
 #else
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
 #define GRPC_MDELEM_UNREF(exec_ctx, s) grpc_mdelem_unref((exec_ctx), (s))
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
-void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *md);
+grpc_mdelem grpc_mdelem_ref(grpc_mdelem md);
+void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem md);
 #endif
 
+#define GRPC_MDKEY(md) ((md).payload->key)
+#define GRPC_MDVALUE(md) ((md).payload->value)
+
+#define GRPC_MDNULL ((grpc_mdelem){NULL})
+#define GRPC_MDISNULL(md) ((md).payload == NULL)
+
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
-#define GRPC_MDELEM_LENGTH(e) \
-  (GRPC_SLICE_LENGTH((e)->key) + GRPC_SLICE_LENGTH((e)->value) + 32)
+#define GRPC_MDELEM_LENGTH(e)                                                  \
+  (GRPC_SLICE_LENGTH(GRPC_MDKEY((e))) + GRPC_SLICE_LENGTH(MRPC_MDVALUE((e))) + \
+   32)
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 

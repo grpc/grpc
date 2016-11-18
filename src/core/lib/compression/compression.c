@@ -105,7 +105,7 @@ grpc_slice grpc_compression_algorithm_slice(
   return grpc_empty_slice();
 }
 
-grpc_mdelem *grpc_compression_encoding_mdelem(
+grpc_mdelem grpc_compression_encoding_mdelem(
     grpc_compression_algorithm algorithm) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
@@ -117,7 +117,7 @@ grpc_mdelem *grpc_compression_encoding_mdelem(
     default:
       break;
   }
-  return NULL;
+  return GRPC_MDNULL;
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {

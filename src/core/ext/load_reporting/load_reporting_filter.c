@@ -72,8 +72,8 @@ typedef struct {
   grpc_exec_ctx *exec_ctx;
 } recv_md_filter_args;
 
-static grpc_mdelem *recv_md_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                   grpc_mdelem *md) {
+static grpc_mdelem recv_md_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                  grpc_mdelem md) {
   recv_md_filter_args *a = user_data;
   grpc_call_element *elem = a->elem;
   call_data *calld = elem->call_data;
@@ -196,8 +196,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   */
 }
 
-static grpc_mdelem *lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
-                                          void *user_data, grpc_mdelem *md) {
+static grpc_mdelem lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
+                                         void *user_data, grpc_mdelem md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 

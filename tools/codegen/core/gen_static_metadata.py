@@ -355,11 +355,11 @@ for i, elem in enumerate(all_elems):
                               [len(elem[1])] + [ord(c) for c in elem[1]]))
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
-print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
+print >>H, 'extern grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
 print >>H, 'extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
 for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
-  print >>H, '#define %s (&grpc_static_mdelem_table[%d])' % (mangle(elem).upper(), i)
+  print >>H, '#define %s ((grpc_mdelem){&grpc_static_mdelem_table[%d]})' % (mangle(elem).upper(), i)
 print >>H
 print >>C, 'uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
 print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
@@ -435,16 +435,16 @@ print >>C, 'static const uint16_t elem_keys[] = {%s};' % ','.join('%d' % k for k
 print >>C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join('%d' % i for i in idxs)
 print >>C
 
-print >>H, 'grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b);'
-print >>C, 'grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b) {'
-print >>C, '  if (a == -1 || b == -1) return NULL;'
+print >>H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);'
+print >>C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
+print >>C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
 print >>C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
 print >>C, '  uint32_t h = elems_phash(k);'
-print >>C, '  return elem_keys[h] == k ? &grpc_static_mdelem_table[elem_idxs[h]] : NULL;'
+print >>C, '  return elem_keys[h] == k ? (grpc_mdelem){&grpc_static_mdelem_table[elem_idxs[h]]} : GRPC_MDNULL;'
 print >>C, '}'
 print >>C
 
-print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
+print >>C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
 for a, b in all_elems:
   print >>C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
 print >>C, '};'
@@ -455,7 +455,7 @@ print >>C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >>C, '};'
 print >>C
 
-print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])'
+print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) ((grpc_mdelem){&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]]})'
 
 print >>H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

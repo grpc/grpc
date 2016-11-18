@@ -252,9 +252,10 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (grpc_slice_cmp(args->add_initial_metadata[i]->key, GRPC_MDSTR_PATH) ==
-          0) {
-        path = grpc_slice_ref_internal(args->add_initial_metadata[i]->value);
+      if (grpc_slice_cmp(GRPC_MDKEY(args->add_initial_metadata[i]),
+                         GRPC_MDSTR_PATH) == 0) {
+        path = grpc_slice_ref_internal(
+            GRPC_MDVALUE(args->add_initial_metadata[i]));
       }
     }
     call->send_extra_metadata_count = (int)args->add_initial_metadata_count;
@@ -499,7 +500,7 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call *call) {
 static void destroy_encodings_accepted_by_peer(void *p) { return; }
 
 static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
-                                           grpc_call *call, grpc_mdelem *mdel) {
+                                           grpc_call *call, grpc_mdelem mdel) {
   size_t i;
   grpc_compression_algorithm algorithm;
   grpc_slice_buffer accept_encoding_parts;
@@ -514,7 +515,7 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
     return;
   }
 
-  accept_encoding_slice = mdel->value;
+  accept_encoding_slice = GRPC_MDVALUE(mdel);
   grpc_slice_buffer_init(&accept_encoding_parts);
   grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
@@ -596,13 +597,13 @@ static int prepare_application_metadata(
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_slices(exec_ctx, md->key, md->value);
-    if (!grpc_header_key_is_legal(l->md->key)) {
+    if (!grpc_header_key_is_legal(GRPC_MDKEY(l->md))) {
       char *str = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
       gpr_free(str);
       break;
-    } else if (!grpc_is_binary_header(l->md->key) &&
-               !grpc_header_nonbin_value_is_legal(l->md->value)) {
+    } else if (!grpc_is_binary_header(GRPC_MDKEY(l->md)) &&
+               !grpc_header_nonbin_value_is_legal(GRPC_MDVALUE(l->md))) {
       char *str = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
       gpr_free(str);
@@ -879,17 +880,17 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
 #define STATUS_OFFSET 1
 static void destroy_status(void *ignored) {}
 
-static uint32_t decode_status(grpc_mdelem *md) {
+static uint32_t decode_status(grpc_mdelem md) {
   uint32_t status;
   void *user_data;
-  if (md == GRPC_MDELEM_GRPC_STATUS_0) return 0;
-  if (md == GRPC_MDELEM_GRPC_STATUS_1) return 1;
-  if (md == GRPC_MDELEM_GRPC_STATUS_2) return 2;
+  if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) return 0;
+  if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_1)) return 1;
+  if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_2)) return 2;
   user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data != NULL) {
     status = ((uint32_t)(intptr_t)user_data) - STATUS_OFFSET;
   } else {
-    if (!grpc_parse_slice_to_uint32(md->value, &status)) {
+    if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(md), &status)) {
       status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
     }
     grpc_mdelem_set_user_data(md, destroy_status,
@@ -898,11 +899,11 @@ static uint32_t decode_status(grpc_mdelem *md) {
   return status;
 }
 
-static grpc_compression_algorithm decode_compression(grpc_mdelem *md) {
+static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
   grpc_compression_algorithm algorithm =
-      grpc_compression_algorithm_from_slice(md->value);
+      grpc_compression_algorithm_from_slice(GRPC_MDVALUE(md));
   if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
-    char *md_c_str = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+    char *md_c_str = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR,
             "Invalid incoming compression algorithm: '%s'. Interpreting "
             "incoming data as uncompressed.",
@@ -913,25 +914,25 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem *md) {
   return algorithm;
 }
 
-static grpc_mdelem *recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                                       grpc_mdelem *elem) {
-  if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_STATUS) == 0) {
+static grpc_mdelem recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                                      grpc_mdelem elem) {
+  if (grpc_slice_cmp(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_STATUS) == 0) {
     GPR_TIMER_BEGIN("status", 0);
     set_status_code(call, STATUS_FROM_WIRE, decode_status(elem));
     GPR_TIMER_END("status", 0);
-    return NULL;
-  } else if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_MESSAGE) == 0) {
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_MESSAGE) == 0) {
     GPR_TIMER_BEGIN("status-details", 0);
     set_status_details(exec_ctx, call, STATUS_FROM_WIRE,
-                       grpc_slice_ref_internal(elem->value));
+                       grpc_slice_ref_internal(GRPC_MDVALUE(elem)));
     GPR_TIMER_END("status-details", 0);
-    return NULL;
+    return GRPC_MDNULL;
   }
   return elem;
 }
 
-static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
-                                         int is_trailing) {
+static grpc_mdelem publish_app_metadata(grpc_call *call, grpc_mdelem elem,
+                                        int is_trailing) {
   grpc_metadata_array *dest;
   grpc_metadata *mdusr;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
@@ -942,39 +943,40 @@ static grpc_mdelem *publish_app_metadata(grpc_call *call, grpc_mdelem *elem,
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
   }
   mdusr = &dest->metadata[dest->count++];
-  mdusr->key = grpc_slice_ref(elem->key);
-  mdusr->value = grpc_slice_ref(elem->value);
+  mdusr->key = grpc_slice_ref(GRPC_MDKEY(elem));
+  mdusr->value = grpc_slice_ref(GRPC_MDVALUE(elem));
   GPR_TIMER_END("publish_app_metadata", 0);
   return elem;
 }
 
-static grpc_mdelem *recv_initial_filter(grpc_exec_ctx *exec_ctx, void *args,
-                                        grpc_mdelem *elem) {
+static grpc_mdelem recv_initial_filter(grpc_exec_ctx *exec_ctx, void *args,
+                                       grpc_mdelem elem) {
   grpc_call *call = args;
   elem = recv_common_filter(exec_ctx, call, elem);
-  if (elem == NULL) {
-    return NULL;
-  } else if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_ENCODING) == 0) {
+  if (GRPC_MDISNULL(elem)) {
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_ENCODING) == 0) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
     set_incoming_compression_algorithm(call, decode_compression(elem));
     GPR_TIMER_END("incoming_compression_algorithm", 0);
-    return NULL;
-  } else if (grpc_slice_cmp(elem->key, GRPC_MDSTR_GRPC_ACCEPT_ENCODING) == 0) {
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(elem),
+                            GRPC_MDSTR_GRPC_ACCEPT_ENCODING) == 0) {
     GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(exec_ctx, call, elem);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);
-    return NULL;
+    return GRPC_MDNULL;
   } else {
     return publish_app_metadata(call, elem, 0);
   }
 }
 
-static grpc_mdelem *recv_trailing_filter(grpc_exec_ctx *exec_ctx, void *args,
-                                         grpc_mdelem *elem) {
+static grpc_mdelem recv_trailing_filter(grpc_exec_ctx *exec_ctx, void *args,
+                                        grpc_mdelem elem) {
   grpc_call *call = args;
   elem = recv_common_filter(exec_ctx, call, elem);
-  if (elem == NULL) {
-    return NULL;
+  if (GRPC_MDISNULL(elem)) {
+    return GRPC_MDNULL;
   } else {
     return publish_app_metadata(call, elem, 1);
   }
@@ -1508,9 +1510,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
               grpc_slice_ref_internal(
                   *op->data.send_status_from_server.status_details));
           call->send_extra_metadata_count++;
-          set_status_details(
-              exec_ctx, call, STATUS_FROM_API_OVERRIDE,
-              grpc_slice_ref_internal(call->send_extra_metadata[1].md->value));
+          set_status_details(exec_ctx, call, STATUS_FROM_API_OVERRIDE,
+                             grpc_slice_ref_internal(GRPC_MDVALUE(
+                                 call->send_extra_metadata[1].md)));
         }
         if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
           set_status_code(call, STATUS_FROM_API_OVERRIDE,

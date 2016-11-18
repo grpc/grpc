@@ -68,7 +68,7 @@ static grpc_metadata_array metadata_batch_to_md_array(
   grpc_metadata_array_init(&result);
   for (l = batch->list.head; l != NULL; l = l->next) {
     grpc_metadata *usr_md = NULL;
-    grpc_mdelem *md = l->md;
+    grpc_mdelem md = l->md;
     grpc_slice key = md->key;
     grpc_slice value = md->value;
     if (result.count == result.capacity) {
@@ -83,8 +83,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
   return result;
 }
 
-static grpc_mdelem *remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
-                                       grpc_mdelem *md) {
+static grpc_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
+                                      grpc_mdelem md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   size_t i;

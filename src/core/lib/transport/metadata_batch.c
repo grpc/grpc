@@ -82,7 +82,7 @@ void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
 
 void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
-                                  grpc_mdelem *elem_to_add) {
+                                  grpc_mdelem elem_to_add) {
   GPR_ASSERT(elem_to_add);
   storage->md = elem_to_add;
   grpc_metadata_batch_link_head(batch, storage);
@@ -109,7 +109,7 @@ void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
 
 void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
-                                  grpc_mdelem *elem_to_add) {
+                                  grpc_mdelem elem_to_add) {
   GPR_ASSERT(elem_to_add);
   storage->md = elem_to_add;
   grpc_metadata_batch_link_tail(batch, storage);
@@ -143,9 +143,9 @@ void grpc_metadata_batch_move(grpc_metadata_batch *dst,
 
 void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
                                 grpc_metadata_batch *batch,
-                                grpc_mdelem *(*filter)(grpc_exec_ctx *exec_ctx,
-                                                       void *user_data,
-                                                       grpc_mdelem *elem),
+                                grpc_mdelem (*filter)(grpc_exec_ctx *exec_ctx,
+                                                      void *user_data,
+                                                      grpc_mdelem elem),
                                 void *user_data) {
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
@@ -154,8 +154,8 @@ void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
 
   assert_valid_list(&batch->list);
   for (l = batch->list.head; l; l = next) {
-    grpc_mdelem *orig = l->md;
-    grpc_mdelem *filt = filter(exec_ctx, user_data, orig);
+    grpc_mdelem orig = l->md;
+    grpc_mdelem filt = filter(exec_ctx, user_data, orig);
     next = l->next;
     if (filt == NULL) {
       if (l->prev) {
@@ -182,8 +182,8 @@ void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("grpc_metadata_batch_filter", 0);
 }
 
-static grpc_mdelem *no_metadata_for_you(grpc_exec_ctx *exec_ctx,
-                                        void *user_data, grpc_mdelem *elem) {
+static grpc_mdelem no_metadata_for_you(grpc_exec_ctx *exec_ctx, void *user_data,
+                                       grpc_mdelem elem) {
   return NULL;
 }
 

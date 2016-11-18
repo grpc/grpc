@@ -195,7 +195,7 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
                                                      const char *key,
                                                      const char *value) {
   grpc_slice_buffer output;
-  grpc_mdelem *elem =
+  grpc_mdelem elem =
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_from_copied_string(key),
                               grpc_slice_from_copied_string(value));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);

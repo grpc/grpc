@@ -669,7 +669,7 @@ static const uint8_t inverse_base64[256] = {
 
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
-                          grpc_mdelem *md, int add_to_table) {
+                          grpc_mdelem md, int add_to_table) {
   if (add_to_table) {
     grpc_error *err = grpc_chttp2_hptbl_add(exec_ctx, &p->table, md);
     if (err != GRPC_ERROR_NONE) return err;
@@ -772,7 +772,7 @@ static grpc_error *finish_indexed_field(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_hpack_parser *p,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
-  grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (md == NULL) {
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
@@ -814,7 +814,7 @@ static grpc_error *finish_lithdr_incidx(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_hpack_parser *p,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
-  grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(md != NULL); /* handled in string parsing */
   grpc_error *err =
       on_hdr(exec_ctx, p,
@@ -883,7 +883,7 @@ static grpc_error *finish_lithdr_notidx(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_hpack_parser *p,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
-  grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(md != NULL); /* handled in string parsing */
   grpc_error *err =
       on_hdr(exec_ctx, p,
@@ -952,7 +952,7 @@ static grpc_error *finish_lithdr_nvridx(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_hpack_parser *p,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
-  grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(md != NULL); /* handled in string parsing */
   grpc_error *err =
       on_hdr(exec_ctx, p,
@@ -1500,7 +1500,7 @@ static bool is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
 
 static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
                                             bool *is) {
-  grpc_mdelem *elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (!elem) {
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),

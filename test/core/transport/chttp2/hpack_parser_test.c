@@ -45,7 +45,7 @@
 
 typedef struct { va_list args; } test_checker;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
   const char *ekey, *evalue;
   test_checker *chk = ud;
   ekey = va_arg(chk->args, char *);

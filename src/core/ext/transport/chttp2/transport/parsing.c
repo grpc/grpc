@@ -336,7 +336,7 @@ static grpc_error *skip_parser(grpc_exec_ctx *exec_ctx, void *parser,
   return GRPC_ERROR_NONE;
 }
 
-static void skip_header(grpc_exec_ctx *exec_ctx, void *tp, grpc_mdelem *md) {
+static void skip_header(grpc_exec_ctx *exec_ctx, void *tp, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
@@ -444,7 +444,7 @@ error_handler:
 static void free_timeout(void *p) { gpr_free(p); }
 
 static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
-                              grpc_mdelem *md) {
+                              grpc_mdelem md) {
   grpc_chttp2_transport *t = tp;
   grpc_chttp2_stream *s = t->incoming_stream;
 
@@ -514,7 +514,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
 }
 
 static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
-                               grpc_mdelem *md) {
+                               grpc_mdelem md) {
   grpc_chttp2_transport *t = tp;
   grpc_chttp2_stream *s = t->incoming_stream;
 

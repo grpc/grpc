@@ -53,7 +53,7 @@ static void test_algorithm_mesh(void) {
     char *name;
     grpc_compression_algorithm parsed;
     grpc_slice mdstr;
-    grpc_mdelem *mdelem;
+    grpc_mdelem mdelem;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(
         grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
