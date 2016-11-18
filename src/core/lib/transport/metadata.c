@@ -107,75 +107,13 @@ typedef struct mdtab_shard {
   gpr_atm free_estimate;
 } mdtab_shard;
 
-/* hash seed: decided at initialization time */
-static uint32_t g_hash_seed;
-static int g_forced_hash_seed = 0;
-
-/* linearly probed hash tables for static element lookup */
-static grpc_mdelem *g_static_mdtab[GRPC_STATIC_MDELEM_COUNT * 2];
-static size_t g_static_strtab_maxprobe;
-static size_t g_static_mdtab_maxprobe;
-
 static mdtab_shard g_shards[SHARD_COUNT];
 
 static void gc_mdtab(grpc_exec_ctx *exec_ctx, mdtab_shard *shard);
 
-void grpc_test_only_set_metadata_hash_seed(uint32_t seed) {
-  g_hash_seed = seed;
-  g_forced_hash_seed = 1;
-}
-
 void grpc_mdctx_global_init(void) {
-  size_t i;
-  if (!g_forced_hash_seed) {
-    g_hash_seed = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
-  }
-  g_static_strtab_maxprobe = 0;
-  g_static_mdtab_maxprobe = 0;
-#if 0
-  /* build static tables */
-  memset(g_static_mdtab, 0, sizeof(g_static_mdtab));
-  memset(g_static_strtab, 0, sizeof(g_static_strtab));
-  for (i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_slice elem = &grpc_static_mdstr_table[i];
-    const char *str = grpc_static_metadata_strings[i];
-    uint32_t hash = gpr_murmur_hash3(str, strlen(str), g_hash_seed);
-    *(grpc_slice *)&elem->slice = grpc_slice_from_static_string(str);
-    *(uint32_t *)&elem->hash = hash;
-    for (j = 0;; j++) {
-      size_t idx = (hash + j) % GPR_ARRAY_SIZE(g_static_strtab);
-      if (g_static_strtab[idx] == NULL) {
-        g_static_strtab[idx] = &grpc_static_mdstr_table[i];
-        break;
-      }
-    }
-    if (j > g_static_strtab_maxprobe) {
-      g_static_strtab_maxprobe = j;
-    }
-  }
-  for (i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
-    grpc_mdelem *elem = &grpc_static_mdelem_table[i];
-    grpc_slice key =
-        &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 0]];
-    grpc_slice value =
-        &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 1]];
-    uint32_t hash = GRPC_MDSTR_KV_HASH(key->hash, value->hash);
-    *(grpc_slice *)&elem->key = key;
-    *(grpc_slice *)&elem->value = value;
-    for (j = 0;; j++) {
-      size_t idx = (hash + j) % GPR_ARRAY_SIZE(g_static_mdtab);
-      if (g_static_mdtab[idx] == NULL) {
-        g_static_mdtab[idx] = elem;
-        break;
-      }
-    }
-    if (j > g_static_mdtab_maxprobe) {
-      g_static_mdtab_maxprobe = j;
-    }
-  }
-#endif
   /* initialize shards */
-  for (i = 0; i < SHARD_COUNT; i++) {
+  for (size_t i = 0; i < SHARD_COUNT; i++) {
     mdtab_shard *shard = &g_shards[i];
     gpr_mu_init(&shard->mu);
     shard->count = 0;
@@ -187,8 +125,7 @@ void grpc_mdctx_global_init(void) {
 }
 
 void grpc_mdctx_global_shutdown(grpc_exec_ctx *exec_ctx) {
-  size_t i;
-  for (i = 0; i < SHARD_COUNT; i++) {
+  for (size_t i = 0; i < SHARD_COUNT; i++) {
     mdtab_shard *shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
     gc_mdtab(exec_ctx, shard);
@@ -298,29 +235,22 @@ static void rehash_mdtab(grpc_exec_ctx *exec_ctx, mdtab_shard *shard) {
 
 grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
                                      grpc_slice value) {
+  grpc_slice_static_intern(&key);
+  grpc_slice_static_intern(&value);
+
+  grpc_mdelem *static_elem = grpc_static_mdelem_for_static_strings(
+      grpc_static_metadata_index(key), grpc_static_metadata_index(value));
+  if (static_elem != NULL) {
+    return static_elem;
+  }
+
   uint32_t hash =
       GRPC_MDSTR_KV_HASH(grpc_slice_hash(key), grpc_slice_hash(value));
   internal_metadata *md;
   mdtab_shard *shard = &g_shards[SHARD_IDX(hash)];
-  size_t i;
   size_t idx;
 
   GPR_TIMER_BEGIN("grpc_mdelem_from_metadata_strings", 0);
-
-  if (grpc_is_static_metadata_string(key) &&
-      grpc_is_static_metadata_string(value)) {
-    for (i = 0; i <= g_static_mdtab_maxprobe; i++) {
-      grpc_mdelem *smd;
-      idx = (hash + i) % GPR_ARRAY_SIZE(g_static_mdtab);
-      smd = g_static_mdtab[idx];
-      if (smd == NULL) break;
-      if (grpc_slice_cmp(key, smd->key) == 0 &&
-          grpc_slice_cmp(value, smd->value) == 0) {
-        GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
-        return smd;
-      }
-    }
-  }
 
   gpr_mu_lock(&shard->mu);
 

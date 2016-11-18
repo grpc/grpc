@@ -426,3 +426,10 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
   }
   return -1;
 }
+
+grpc_slice grpc_slice_dup(grpc_slice a) {
+  grpc_slice copy = grpc_slice_malloc(GRPC_SLICE_LENGTH(a));
+  memcpy(GRPC_SLICE_START_PTR(copy), GRPC_SLICE_START_PTR(a),
+         GRPC_SLICE_LENGTH(a));
+  return copy;
+}

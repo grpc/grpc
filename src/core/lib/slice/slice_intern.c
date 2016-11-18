@@ -78,7 +78,7 @@ typedef struct {
 } static_metadata_hash_ent;
 
 static static_metadata_hash_ent
-    static_metadata_hash[2 * GRPC_STATIC_MDSTR_COUNT];
+    static_metadata_hash[4 * GRPC_STATIC_MDSTR_COUNT];
 static uint32_t max_static_metadata_hash_probe;
 static uint32_t static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
 
@@ -173,6 +173,24 @@ uint32_t grpc_static_slice_hash(void *unused_refcnt, grpc_slice s) {
 uint32_t grpc_slice_hash(grpc_slice s) {
   return s.refcount == NULL ? grpc_slice_default_hash_impl(NULL, s)
                             : s.refcount->vtable->hash(s.refcount, s);
+}
+
+void grpc_slice_static_intern(grpc_slice *slice) {
+  if (grpc_is_static_metadata_string(*slice)) {
+    return;
+  }
+
+  uint32_t hash = grpc_slice_hash(*slice);
+  for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
+    static_metadata_hash_ent ent =
+        static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
+    if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
+        0 == grpc_slice_cmp(grpc_static_slice_table[ent.idx], *slice)) {
+      grpc_slice_unref(*slice);
+      *slice = grpc_static_slice_table[ent.idx];
+      return;
+    }
+  }
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {

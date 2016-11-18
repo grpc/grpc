@@ -294,11 +294,8 @@ static void test_static_slice_copy_interning(void) {
   grpc_init();
 
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_slice copy =
-        grpc_slice_malloc(GRPC_SLICE_LENGTH(grpc_static_slice_table[i]));
-    memcpy(GRPC_SLICE_START_PTR(copy),
-           GRPC_SLICE_START_PTR(grpc_static_slice_table[i]),
-           GRPC_SLICE_LENGTH(grpc_static_slice_table[i]));
+    grpc_slice copy = grpc_slice_dup(grpc_static_slice_table[i]);
+    GPR_ASSERT(!grpc_slice_is_equivalent(grpc_static_slice_table[i], copy));
     GPR_ASSERT(grpc_slice_is_equivalent(grpc_static_slice_table[i],
                                         grpc_slice_intern(copy)));
     grpc_slice_unref(copy);
@@ -310,7 +307,6 @@ static void test_static_slice_copy_interning(void) {
 int main(int argc, char **argv) {
   unsigned length;
   grpc_test_init(argc, argv);
-  grpc_test_only_set_slice_hash_seed(0);
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
   test_slice_new_with_user_data();
