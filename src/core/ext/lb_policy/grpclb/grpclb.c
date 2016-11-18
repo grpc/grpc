@@ -486,20 +486,23 @@ static bool update_lb_connectivity_status_locked(
   /* The new connectivity status is a function of the previous one and the new
    * input coming from the status of the RR policy.
    *
-   *  old state (grpclb's)
+   *  current state (grpclb's)
    *  |
    *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (RR's)
    *  ===++====+=====+=====+======+======+
-   *   I || I  |  C  |  R  |  I   |  I   |
+   *   I || I  |  C  |  R  | [I]  | [I]  |
    *  ---++----+-----+-----+------+------+
-   *   C || I  |  C  |  R  |  C   |  C   |
+   *   C || I  |  C  |  R  | [C]  | [C]  |
    *  ---++----+-----+-----+------+------+
-   *   R || I  |  C  |  R  |  R   |  R   |
+   *   R || I  |  C  |  R  | [R]  | [R]  |
    *  ---++----+-----+-----+------+------+
-   *  TF || I  |  C  |  R  |  TF  |  TF  |
+   *  TF || I  |  C  |  R  | [TF] | [TF] |
    *  ---++----+-----+-----+------+------+
    *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
    *  ---++----+-----+-----+------+------+
+   *
+   * A [STATE] indicates that the old RR policy is kept. In those cases, STATE
+   * is the current state of grpclb, which is left untouched.
    *
    *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
    *  the previous RR instance.
@@ -602,26 +605,22 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
 
   if (glb_policy->shutting_down) return;
 
-  grpc_lb_policy *old_rr_policy = glb_policy->rr_policy;
-
-  glb_policy->rr_policy =
+  grpc_lb_policy *new_rr_policy =
       create_rr_locked(exec_ctx, glb_policy->serverlist, glb_policy);
-  if (glb_policy->rr_policy == NULL) {
+  if (new_rr_policy == NULL) {
     gpr_log(GPR_ERROR,
             "Failure creating a RoundRobin policy for serverlist update with "
             "%lu entries. The previous RR instance (%p), if any, will continue "
             "to be used. Future updates from the LB will attempt to create new "
             "instances.",
             (unsigned long)glb_policy->serverlist->num_servers,
-            (void *)old_rr_policy);
-    /* restore the old policy */
-    glb_policy->rr_policy = old_rr_policy;
+            (void *)glb_policy->rr_policy);
     return;
   }
 
   grpc_error *new_rr_state_error = NULL;
   const grpc_connectivity_state new_rr_state =
-      grpc_lb_policy_check_connectivity(exec_ctx, glb_policy->rr_policy,
+      grpc_lb_policy_check_connectivity(exec_ctx, new_rr_policy,
                                         &new_rr_state_error);
   /* Connectivity state is a function of the new RR policy just created */
   const bool replace_old_rr = update_lb_connectivity_status_locked(
@@ -629,15 +628,12 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
 
   if (!replace_old_rr) {
     /* dispose of the new RR policy that won't be used after all */
-    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy,
-                         "rr_handover_no_replace");
-    /* restore the old policy */
-    glb_policy->rr_policy = old_rr_policy;
+    GRPC_LB_POLICY_UNREF(exec_ctx, new_rr_policy, "rr_handover_no_replace");
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO,
               "Keeping old RR policy (%p) despite new serverlist: new RR "
               "policy was in %s connectivity state.",
-              (void *)old_rr_policy,
+              (void *)glb_policy->rr_policy,
               grpc_connectivity_state_name(new_rr_state));
     }
     return;
@@ -645,13 +641,16 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
 
   if (grpc_lb_glb_trace) {
     gpr_log(GPR_INFO, "Created RR policy (%p) to replace old RR (%p)",
-            (void *)glb_policy->rr_policy, (void *)old_rr_policy);
+            (void *)new_rr_policy, (void *)glb_policy->rr_policy);
   }
 
-  if (old_rr_policy != NULL) {
+  if (glb_policy->rr_policy != NULL) {
     /* if we are phasing out an existing RR instance, unref it. */
-    GRPC_LB_POLICY_UNREF(exec_ctx, old_rr_policy, "rr_handover");
+    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "rr_handover");
   }
+
+  /* Finally update the RR policy to the newly created one */
+  glb_policy->rr_policy = new_rr_policy;
 
   /* Add the gRPC LB's interested_parties pollset_set to that of the newly
    * created RR policy. This will make the RR policy progress upon activity on
@@ -713,7 +712,7 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   gpr_mu_lock(&glb_policy->mu);
   const bool shutting_down = glb_policy->shutting_down;
-  grpc_lb_policy *maybe_unref = NULL;
+  bool unref_needed = false;
   GRPC_ERROR_REF(error);
 
   if (rr_connectivity->state == GRPC_CHANNEL_SHUTDOWN || shutting_down) {
@@ -722,7 +721,7 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
      * be UNREF'd after releasing the lock. Otherwise, if the UNREF is the last
      * one, the policy would be destroyed, alongside the lock, which would
      * result in a use-after-free */
-    maybe_unref = &glb_policy->base;
+    unref_needed = true;
     gpr_free(rr_connectivity);
   } else { /* rr state != SHUTDOWN && !shutting down: biz as usual */
     update_lb_connectivity_status_locked(exec_ctx, glb_policy,
@@ -733,8 +732,9 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                           &rr_connectivity->on_change);
   }
   gpr_mu_unlock(&glb_policy->mu);
-  if (maybe_unref != NULL) {
-    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, maybe_unref, "rr_connectivity_cb");
+  if (unref_needed) {
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                              "rr_connectivity_cb");
   }
   GRPC_ERROR_UNREF(error);
 }
