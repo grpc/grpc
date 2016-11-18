@@ -215,12 +215,11 @@ grpc_call_element *grpc_call_stack_element(grpc_call_stack *stack, size_t i);
 size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
-grpc_error* grpc_channel_stack_init(
+grpc_error *grpc_channel_stack_init(
     grpc_exec_ctx *exec_ctx, int initial_refs, grpc_iomgr_cb_func destroy,
-    void *destroy_arg, const grpc_channel_filter **filters,
-    size_t filter_count, const grpc_channel_args *args,
-    grpc_transport *optional_transport, const char *name,
-    grpc_channel_stack *stack);
+    void *destroy_arg, const grpc_channel_filter **filters, size_t filter_count,
+    const grpc_channel_args *args, grpc_transport *optional_transport,
+    const char *name, grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_stack *stack);

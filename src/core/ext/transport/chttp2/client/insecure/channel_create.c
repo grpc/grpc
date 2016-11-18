@@ -205,9 +205,7 @@ static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
 static grpc_client_channel_factory client_channel_factory = {
     &client_channel_factory_vtable};
 
-static void *cc_factory_arg_copy(void *cc_factory) {
-  return cc_factory;
-}
+static void *cc_factory_arg_copy(void *cc_factory) { return cc_factory; }
 
 static void cc_factory_arg_destroy(void *cc_factory) {}
 

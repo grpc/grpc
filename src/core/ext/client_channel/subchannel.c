@@ -548,9 +548,9 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
     abort(); /* TODO(ctiller): what to do here (previously we just crashed) */
   }
   grpc_error *error = grpc_channel_stack_builder_finish(
-      exec_ctx, builder, 0, 1, connection_destroy, NULL, (void**)&con);
+      exec_ctx, builder, 0, 1, connection_destroy, NULL, (void **)&con);
   if (error != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(error);
+    const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s", msg);
     grpc_error_free_string(msg);
     GRPC_ERROR_UNREF(error);

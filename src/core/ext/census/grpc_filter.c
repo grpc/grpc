@@ -167,7 +167,7 @@ static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
 }
 
-static grpc_error* init_channel_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem,
                                      grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
