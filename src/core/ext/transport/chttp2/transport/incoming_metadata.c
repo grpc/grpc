@@ -57,7 +57,7 @@ void grpc_chttp2_incoming_metadata_buffer_destroy(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem) {
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem elem) {
   GPR_ASSERT(!buffer->published);
   if (buffer->capacity == buffer->count) {
     buffer->capacity = GPR_MAX(8, 2 * buffer->capacity);

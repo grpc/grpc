@@ -567,7 +567,7 @@ static void convert_metadata_to_cronet_headers(
   curr = head;
   size_t num_headers = 0;
   while (num_headers < num_headers_available) {
-    grpc_mdelem *mdelem = curr->md;
+    grpc_mdelem mdelem = curr->md;
     curr = curr->next;
     const char *key = grpc_mdstr_as_c_string(mdelem->key);
     const char *value = grpc_mdstr_as_c_string(mdelem->value);

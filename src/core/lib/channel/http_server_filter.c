@@ -84,13 +84,13 @@ typedef struct call_data {
 
 typedef struct channel_data { uint8_t unused; } channel_data;
 
-static grpc_mdelem *server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
-                                                    void *user_data,
-                                                    grpc_mdelem *md) {
-  if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_MESSAGE) == 0) {
+static grpc_mdelem server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
+                                                   void *user_data,
+                                                   grpc_mdelem md) {
+  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_MESSAGE) == 0) {
     grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
-        md->value, grpc_compatible_percent_encoding_unreserved_bytes);
-    if (grpc_slice_is_equivalent(pct_encoded_msg, md->value)) {
+        GRPC_MDVALUE(md), grpc_compatible_percent_encoding_unreserved_bytes);
+    if (grpc_slice_is_equivalent(pct_encoded_msg, GRPC_MDVALUE(md))) {
       grpc_slice_unref_internal(exec_ctx, pct_encoded_msg);
       return md;
     } else {
@@ -102,40 +102,44 @@ static grpc_mdelem *server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                  grpc_mdelem *md) {
+static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                 grpc_mdelem md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
   /* Check if it is one of the headers we care about. */
-  if (md == GRPC_MDELEM_TE_TRAILERS || md == GRPC_MDELEM_METHOD_POST ||
-      md == GRPC_MDELEM_METHOD_PUT || md == GRPC_MDELEM_METHOD_GET ||
-      md == GRPC_MDELEM_SCHEME_HTTP || md == GRPC_MDELEM_SCHEME_HTTPS ||
-      md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
+  if (grpc_mdelem_eq(md, GRPC_MDELEM_TE_TRAILERS) ||
+      grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_POST) ||
+      grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_PUT) ||
+      grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_GET) ||
+      grpc_mdelem_eq(md, GRPC_MDELEM_SCHEME_HTTP) ||
+      grpc_mdelem_eq(md, GRPC_MDELEM_SCHEME_HTTPS) ||
+      grpc_mdelem_eq(md, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
     /* swallow it */
-    if (md == GRPC_MDELEM_METHOD_POST) {
+    if (grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_POST)) {
       calld->seen_method = 1;
       *calld->recv_idempotent_request = false;
       *calld->recv_cacheable_request = false;
-    } else if (md == GRPC_MDELEM_METHOD_PUT) {
+    } else if (grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_PUT)) {
       calld->seen_method = 1;
       *calld->recv_idempotent_request = true;
-    } else if (md == GRPC_MDELEM_METHOD_GET) {
+    } else if (grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_GET)) {
       calld->seen_method = 1;
       *calld->recv_cacheable_request = true;
-    } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_SCHEME)) {
+    } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME)) {
       calld->seen_scheme = 1;
-    } else if (md == GRPC_MDELEM_TE_TRAILERS) {
+    } else if (grpc_mdelem_eq(md, GRPC_MDELEM_TE_TRAILERS)) {
       calld->seen_te_trailers = 1;
     }
     /* TODO(klempner): Track that we've seen all the headers we should
        require */
-    return NULL;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_CONTENT_TYPE) == 0) {
-    if (grpc_slice_buf_start_eq(md->value, EXPECTED_CONTENT_TYPE,
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE) == 0) {
+    if (grpc_slice_buf_start_eq(GRPC_MDVALUE(md), EXPECTED_CONTENT_TYPE,
                                 EXPECTED_CONTENT_TYPE_LENGTH) &&
-        (GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
-         GRPC_SLICE_START_PTR(md->value)[EXPECTED_CONTENT_TYPE_LENGTH] ==
+        (GRPC_SLICE_START_PTR(GRPC_MDVALUE(md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+             '+' ||
+         GRPC_SLICE_START_PTR(GRPC_MDVALUE(md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
              ';')) {
       /* Although the C implementation doesn't (currently) generate them,
          any custom +-suffix is explicitly valid. */
@@ -145,16 +149,16 @@ static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     } else {
       /* TODO(klempner): We're currently allowing this, but we shouldn't
          see it without a proxy so log for now. */
-      char *val = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+      char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
       gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
       gpr_free(val);
     }
-    return NULL;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_TE) == 0 ||
-             grpc_slice_cmp(md->key, GRPC_MDSTR_METHOD) == 0 ||
-             grpc_slice_cmp(md->key, GRPC_MDSTR_SCHEME) == 0) {
-    char *key = grpc_dump_slice(md->key, GPR_DUMP_ASCII);
-    char *value = grpc_dump_slice(md->value, GPR_DUMP_ASCII);
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_TE) == 0 ||
+             grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_METHOD) == 0 ||
+             grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME) == 0) {
+    char *key = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
+    char *value = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "Invalid %s: header: '%s'", key, value);
     /* swallow it and error everything out. */
     /* TODO(klempner): We ought to generate more descriptive error messages
@@ -162,33 +166,33 @@ static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     gpr_free(key);
     gpr_free(value);
     grpc_call_element_send_cancel(exec_ctx, elem);
-    return NULL;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_PATH) == 0) {
     if (calld->seen_path) {
       gpr_log(GPR_ERROR, "Received :path twice");
-      return NULL;
+      return GRPC_MDNULL;
     }
     calld->seen_path = 1;
     return md;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_AUTHORITY) == 0) {
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY) == 0) {
     calld->seen_authority = 1;
     return md;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_HOST) == 0) {
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_HOST) == 0) {
     /* translate host to :authority since :authority may be
        omitted */
-    grpc_mdelem *authority = grpc_mdelem_from_slices(
-        exec_ctx, GRPC_MDSTR_AUTHORITY, grpc_slice_ref(md->value));
+    grpc_mdelem authority = grpc_mdelem_from_slices(
+        exec_ctx, GRPC_MDSTR_AUTHORITY, grpc_slice_ref(GRPC_MDVALUE(md)));
     calld->seen_authority = 1;
     return authority;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_GRPC_PAYLOAD_BIN) == 0) {
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_PAYLOAD_BIN) == 0) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;
     grpc_slice_buffer_add(&calld->read_slice_buffer,
-                          grpc_slice_ref_internal(md->value));
+                          grpc_slice_ref_internal(GRPC_MDVALUE(md)));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
-    return NULL;
+    return GRPC_MDNULL;
   } else {
     return md;
   }

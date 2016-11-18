@@ -57,15 +57,15 @@
 #define NUM_CACHED_STATUS_ELEMS 3
 
 typedef struct registered_call {
-  grpc_mdelem *path;
-  grpc_mdelem *authority;
+  grpc_mdelem path;
+  grpc_mdelem authority;
   struct registered_call *next;
 } registered_call;
 
 struct grpc_channel {
   int is_client;
   grpc_compression_options compression_options;
-  grpc_mdelem *default_authority;
+  grpc_mdelem default_authority;
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
@@ -190,9 +190,9 @@ void grpc_channel_get_info(grpc_channel *channel,
 static grpc_call *grpc_channel_create_call_internal(
     grpc_exec_ctx *exec_ctx, grpc_channel *channel, grpc_call *parent_call,
     uint32_t propagation_mask, grpc_completion_queue *cq,
-    grpc_pollset_set *pollset_set_alternative, grpc_mdelem *path_mdelem,
-    grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
-  grpc_mdelem *send_metadata[2];
+    grpc_pollset_set *pollset_set_alternative, grpc_mdelem path_mdelem,
+    grpc_mdelem authority_mdelem, gpr_timespec deadline) {
+  grpc_mdelem send_metadata[2];
   size_t num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
@@ -367,7 +367,7 @@ grpc_compression_options grpc_channel_compression_options(
   return channel->compression_options;
 }
 
-grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
+grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
                                                  grpc_channel *channel, int i) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   switch (i) {

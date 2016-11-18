@@ -251,182 +251,220 @@ bool grpc_is_static_metadata_string(grpc_slice slice);
 
 int grpc_static_metadata_index(grpc_slice slice);
 #define GRPC_STATIC_MDELEM_COUNT 81
-extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
+extern grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-charset": "" */
-#define GRPC_MDELEM_ACCEPT_CHARSET_EMPTY (&grpc_static_mdelem_table[0])
+#define GRPC_MDELEM_ACCEPT_CHARSET_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[0]})
 /* "accept": "" */
-#define GRPC_MDELEM_ACCEPT_EMPTY (&grpc_static_mdelem_table[1])
+#define GRPC_MDELEM_ACCEPT_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[1]})
 /* "accept-encoding": "" */
-#define GRPC_MDELEM_ACCEPT_ENCODING_EMPTY (&grpc_static_mdelem_table[2])
+#define GRPC_MDELEM_ACCEPT_ENCODING_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[2]})
 /* "accept-encoding": "gzip, deflate" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_GZIP_COMMA_DEFLATE \
-  (&grpc_static_mdelem_table[3])
+  ((grpc_mdelem){&grpc_static_mdelem_table[3]})
 /* "accept-language": "" */
-#define GRPC_MDELEM_ACCEPT_LANGUAGE_EMPTY (&grpc_static_mdelem_table[4])
+#define GRPC_MDELEM_ACCEPT_LANGUAGE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[4]})
 /* "accept-ranges": "" */
-#define GRPC_MDELEM_ACCEPT_RANGES_EMPTY (&grpc_static_mdelem_table[5])
+#define GRPC_MDELEM_ACCEPT_RANGES_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[5]})
 /* "access-control-allow-origin": "" */
 #define GRPC_MDELEM_ACCESS_CONTROL_ALLOW_ORIGIN_EMPTY \
-  (&grpc_static_mdelem_table[6])
+  ((grpc_mdelem){&grpc_static_mdelem_table[6]})
 /* "age": "" */
-#define GRPC_MDELEM_AGE_EMPTY (&grpc_static_mdelem_table[7])
+#define GRPC_MDELEM_AGE_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[7]})
 /* "allow": "" */
-#define GRPC_MDELEM_ALLOW_EMPTY (&grpc_static_mdelem_table[8])
+#define GRPC_MDELEM_ALLOW_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[8]})
 /* ":authority": "" */
-#define GRPC_MDELEM_AUTHORITY_EMPTY (&grpc_static_mdelem_table[9])
+#define GRPC_MDELEM_AUTHORITY_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[9]})
 /* "authorization": "" */
-#define GRPC_MDELEM_AUTHORIZATION_EMPTY (&grpc_static_mdelem_table[10])
+#define GRPC_MDELEM_AUTHORIZATION_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[10]})
 /* "cache-control": "" */
-#define GRPC_MDELEM_CACHE_CONTROL_EMPTY (&grpc_static_mdelem_table[11])
+#define GRPC_MDELEM_CACHE_CONTROL_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[11]})
 /* "content-disposition": "" */
-#define GRPC_MDELEM_CONTENT_DISPOSITION_EMPTY (&grpc_static_mdelem_table[12])
+#define GRPC_MDELEM_CONTENT_DISPOSITION_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[12]})
 /* "content-encoding": "" */
-#define GRPC_MDELEM_CONTENT_ENCODING_EMPTY (&grpc_static_mdelem_table[13])
+#define GRPC_MDELEM_CONTENT_ENCODING_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[13]})
 /* "content-language": "" */
-#define GRPC_MDELEM_CONTENT_LANGUAGE_EMPTY (&grpc_static_mdelem_table[14])
+#define GRPC_MDELEM_CONTENT_LANGUAGE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[14]})
 /* "content-length": "" */
-#define GRPC_MDELEM_CONTENT_LENGTH_EMPTY (&grpc_static_mdelem_table[15])
+#define GRPC_MDELEM_CONTENT_LENGTH_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[15]})
 /* "content-location": "" */
-#define GRPC_MDELEM_CONTENT_LOCATION_EMPTY (&grpc_static_mdelem_table[16])
+#define GRPC_MDELEM_CONTENT_LOCATION_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[16]})
 /* "content-range": "" */
-#define GRPC_MDELEM_CONTENT_RANGE_EMPTY (&grpc_static_mdelem_table[17])
+#define GRPC_MDELEM_CONTENT_RANGE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[17]})
 /* "content-type": "application/grpc" */
 #define GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC \
-  (&grpc_static_mdelem_table[18])
+  ((grpc_mdelem){&grpc_static_mdelem_table[18]})
 /* "content-type": "" */
-#define GRPC_MDELEM_CONTENT_TYPE_EMPTY (&grpc_static_mdelem_table[19])
+#define GRPC_MDELEM_CONTENT_TYPE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[19]})
 /* "cookie": "" */
-#define GRPC_MDELEM_COOKIE_EMPTY (&grpc_static_mdelem_table[20])
+#define GRPC_MDELEM_COOKIE_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[20]})
 /* "date": "" */
-#define GRPC_MDELEM_DATE_EMPTY (&grpc_static_mdelem_table[21])
+#define GRPC_MDELEM_DATE_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[21]})
 /* "etag": "" */
-#define GRPC_MDELEM_ETAG_EMPTY (&grpc_static_mdelem_table[22])
+#define GRPC_MDELEM_ETAG_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[22]})
 /* "expect": "" */
-#define GRPC_MDELEM_EXPECT_EMPTY (&grpc_static_mdelem_table[23])
+#define GRPC_MDELEM_EXPECT_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[23]})
 /* "expires": "" */
-#define GRPC_MDELEM_EXPIRES_EMPTY (&grpc_static_mdelem_table[24])
+#define GRPC_MDELEM_EXPIRES_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[24]})
 /* "from": "" */
-#define GRPC_MDELEM_FROM_EMPTY (&grpc_static_mdelem_table[25])
+#define GRPC_MDELEM_FROM_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[25]})
 /* "grpc-accept-encoding": "deflate" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE (&grpc_static_mdelem_table[26])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE \
+  ((grpc_mdelem){&grpc_static_mdelem_table[26]})
 /* "grpc-accept-encoding": "deflate,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE_COMMA_GZIP \
-  (&grpc_static_mdelem_table[27])
+  ((grpc_mdelem){&grpc_static_mdelem_table[27]})
 /* "grpc-accept-encoding": "gzip" */
-#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_GZIP (&grpc_static_mdelem_table[28])
+#define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_GZIP \
+  ((grpc_mdelem){&grpc_static_mdelem_table[28]})
 /* "grpc-accept-encoding": "identity" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY \
-  (&grpc_static_mdelem_table[29])
+  ((grpc_mdelem){&grpc_static_mdelem_table[29]})
 /* "grpc-accept-encoding": "identity,deflate" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE \
-  (&grpc_static_mdelem_table[30])
+  ((grpc_mdelem){&grpc_static_mdelem_table[30]})
 /* "grpc-accept-encoding": "identity,deflate,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (&grpc_static_mdelem_table[31])
+  ((grpc_mdelem){&grpc_static_mdelem_table[31]})
 /* "grpc-accept-encoding": "identity,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
-  (&grpc_static_mdelem_table[32])
+  ((grpc_mdelem){&grpc_static_mdelem_table[32]})
 /* "grpc-encoding": "deflate" */
-#define GRPC_MDELEM_GRPC_ENCODING_DEFLATE (&grpc_static_mdelem_table[33])
+#define GRPC_MDELEM_GRPC_ENCODING_DEFLATE \
+  ((grpc_mdelem){&grpc_static_mdelem_table[33]})
 /* "grpc-encoding": "gzip" */
-#define GRPC_MDELEM_GRPC_ENCODING_GZIP (&grpc_static_mdelem_table[34])
+#define GRPC_MDELEM_GRPC_ENCODING_GZIP \
+  ((grpc_mdelem){&grpc_static_mdelem_table[34]})
 /* "grpc-encoding": "identity" */
-#define GRPC_MDELEM_GRPC_ENCODING_IDENTITY (&grpc_static_mdelem_table[35])
+#define GRPC_MDELEM_GRPC_ENCODING_IDENTITY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[35]})
 /* "grpc-status": "0" */
-#define GRPC_MDELEM_GRPC_STATUS_0 (&grpc_static_mdelem_table[36])
+#define GRPC_MDELEM_GRPC_STATUS_0 ((grpc_mdelem){&grpc_static_mdelem_table[36]})
 /* "grpc-status": "1" */
-#define GRPC_MDELEM_GRPC_STATUS_1 (&grpc_static_mdelem_table[37])
+#define GRPC_MDELEM_GRPC_STATUS_1 ((grpc_mdelem){&grpc_static_mdelem_table[37]})
 /* "grpc-status": "2" */
-#define GRPC_MDELEM_GRPC_STATUS_2 (&grpc_static_mdelem_table[38])
+#define GRPC_MDELEM_GRPC_STATUS_2 ((grpc_mdelem){&grpc_static_mdelem_table[38]})
 /* "host": "" */
-#define GRPC_MDELEM_HOST_EMPTY (&grpc_static_mdelem_table[39])
+#define GRPC_MDELEM_HOST_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[39]})
 /* "if-match": "" */
-#define GRPC_MDELEM_IF_MATCH_EMPTY (&grpc_static_mdelem_table[40])
+#define GRPC_MDELEM_IF_MATCH_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[40]})
 /* "if-modified-since": "" */
-#define GRPC_MDELEM_IF_MODIFIED_SINCE_EMPTY (&grpc_static_mdelem_table[41])
+#define GRPC_MDELEM_IF_MODIFIED_SINCE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[41]})
 /* "if-none-match": "" */
-#define GRPC_MDELEM_IF_NONE_MATCH_EMPTY (&grpc_static_mdelem_table[42])
+#define GRPC_MDELEM_IF_NONE_MATCH_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[42]})
 /* "if-range": "" */
-#define GRPC_MDELEM_IF_RANGE_EMPTY (&grpc_static_mdelem_table[43])
+#define GRPC_MDELEM_IF_RANGE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[43]})
 /* "if-unmodified-since": "" */
-#define GRPC_MDELEM_IF_UNMODIFIED_SINCE_EMPTY (&grpc_static_mdelem_table[44])
+#define GRPC_MDELEM_IF_UNMODIFIED_SINCE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[44]})
 /* "last-modified": "" */
-#define GRPC_MDELEM_LAST_MODIFIED_EMPTY (&grpc_static_mdelem_table[45])
+#define GRPC_MDELEM_LAST_MODIFIED_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[45]})
 /* "lb-cost-bin": "" */
-#define GRPC_MDELEM_LB_COST_BIN_EMPTY (&grpc_static_mdelem_table[46])
+#define GRPC_MDELEM_LB_COST_BIN_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[46]})
 /* "lb-token": "" */
-#define GRPC_MDELEM_LB_TOKEN_EMPTY (&grpc_static_mdelem_table[47])
+#define GRPC_MDELEM_LB_TOKEN_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[47]})
 /* "link": "" */
-#define GRPC_MDELEM_LINK_EMPTY (&grpc_static_mdelem_table[48])
+#define GRPC_MDELEM_LINK_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[48]})
 /* "location": "" */
-#define GRPC_MDELEM_LOCATION_EMPTY (&grpc_static_mdelem_table[49])
+#define GRPC_MDELEM_LOCATION_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[49]})
 /* "max-forwards": "" */
-#define GRPC_MDELEM_MAX_FORWARDS_EMPTY (&grpc_static_mdelem_table[50])
+#define GRPC_MDELEM_MAX_FORWARDS_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[50]})
 /* ":method": "GET" */
-#define GRPC_MDELEM_METHOD_GET (&grpc_static_mdelem_table[51])
+#define GRPC_MDELEM_METHOD_GET ((grpc_mdelem){&grpc_static_mdelem_table[51]})
 /* ":method": "POST" */
-#define GRPC_MDELEM_METHOD_POST (&grpc_static_mdelem_table[52])
+#define GRPC_MDELEM_METHOD_POST ((grpc_mdelem){&grpc_static_mdelem_table[52]})
 /* ":method": "PUT" */
-#define GRPC_MDELEM_METHOD_PUT (&grpc_static_mdelem_table[53])
+#define GRPC_MDELEM_METHOD_PUT ((grpc_mdelem){&grpc_static_mdelem_table[53]})
 /* ":path": "/" */
-#define GRPC_MDELEM_PATH_SLASH (&grpc_static_mdelem_table[54])
+#define GRPC_MDELEM_PATH_SLASH ((grpc_mdelem){&grpc_static_mdelem_table[54]})
 /* ":path": "/index.html" */
-#define GRPC_MDELEM_PATH_SLASH_INDEX_DOT_HTML (&grpc_static_mdelem_table[55])
+#define GRPC_MDELEM_PATH_SLASH_INDEX_DOT_HTML \
+  ((grpc_mdelem){&grpc_static_mdelem_table[55]})
 /* "proxy-authenticate": "" */
-#define GRPC_MDELEM_PROXY_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[56])
+#define GRPC_MDELEM_PROXY_AUTHENTICATE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[56]})
 /* "proxy-authorization": "" */
-#define GRPC_MDELEM_PROXY_AUTHORIZATION_EMPTY (&grpc_static_mdelem_table[57])
+#define GRPC_MDELEM_PROXY_AUTHORIZATION_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[57]})
 /* "range": "" */
-#define GRPC_MDELEM_RANGE_EMPTY (&grpc_static_mdelem_table[58])
+#define GRPC_MDELEM_RANGE_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[58]})
 /* "referer": "" */
-#define GRPC_MDELEM_REFERER_EMPTY (&grpc_static_mdelem_table[59])
+#define GRPC_MDELEM_REFERER_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[59]})
 /* "refresh": "" */
-#define GRPC_MDELEM_REFRESH_EMPTY (&grpc_static_mdelem_table[60])
+#define GRPC_MDELEM_REFRESH_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[60]})
 /* "retry-after": "" */
-#define GRPC_MDELEM_RETRY_AFTER_EMPTY (&grpc_static_mdelem_table[61])
+#define GRPC_MDELEM_RETRY_AFTER_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[61]})
 /* ":scheme": "grpc" */
-#define GRPC_MDELEM_SCHEME_GRPC (&grpc_static_mdelem_table[62])
+#define GRPC_MDELEM_SCHEME_GRPC ((grpc_mdelem){&grpc_static_mdelem_table[62]})
 /* ":scheme": "http" */
-#define GRPC_MDELEM_SCHEME_HTTP (&grpc_static_mdelem_table[63])
+#define GRPC_MDELEM_SCHEME_HTTP ((grpc_mdelem){&grpc_static_mdelem_table[63]})
 /* ":scheme": "https" */
-#define GRPC_MDELEM_SCHEME_HTTPS (&grpc_static_mdelem_table[64])
+#define GRPC_MDELEM_SCHEME_HTTPS ((grpc_mdelem){&grpc_static_mdelem_table[64]})
 /* "server": "" */
-#define GRPC_MDELEM_SERVER_EMPTY (&grpc_static_mdelem_table[65])
+#define GRPC_MDELEM_SERVER_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[65]})
 /* "set-cookie": "" */
-#define GRPC_MDELEM_SET_COOKIE_EMPTY (&grpc_static_mdelem_table[66])
+#define GRPC_MDELEM_SET_COOKIE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[66]})
 /* ":status": "200" */
-#define GRPC_MDELEM_STATUS_200 (&grpc_static_mdelem_table[67])
+#define GRPC_MDELEM_STATUS_200 ((grpc_mdelem){&grpc_static_mdelem_table[67]})
 /* ":status": "204" */
-#define GRPC_MDELEM_STATUS_204 (&grpc_static_mdelem_table[68])
+#define GRPC_MDELEM_STATUS_204 ((grpc_mdelem){&grpc_static_mdelem_table[68]})
 /* ":status": "206" */
-#define GRPC_MDELEM_STATUS_206 (&grpc_static_mdelem_table[69])
+#define GRPC_MDELEM_STATUS_206 ((grpc_mdelem){&grpc_static_mdelem_table[69]})
 /* ":status": "304" */
-#define GRPC_MDELEM_STATUS_304 (&grpc_static_mdelem_table[70])
+#define GRPC_MDELEM_STATUS_304 ((grpc_mdelem){&grpc_static_mdelem_table[70]})
 /* ":status": "400" */
-#define GRPC_MDELEM_STATUS_400 (&grpc_static_mdelem_table[71])
+#define GRPC_MDELEM_STATUS_400 ((grpc_mdelem){&grpc_static_mdelem_table[71]})
 /* ":status": "404" */
-#define GRPC_MDELEM_STATUS_404 (&grpc_static_mdelem_table[72])
+#define GRPC_MDELEM_STATUS_404 ((grpc_mdelem){&grpc_static_mdelem_table[72]})
 /* ":status": "500" */
-#define GRPC_MDELEM_STATUS_500 (&grpc_static_mdelem_table[73])
+#define GRPC_MDELEM_STATUS_500 ((grpc_mdelem){&grpc_static_mdelem_table[73]})
 /* "strict-transport-security": "" */
 #define GRPC_MDELEM_STRICT_TRANSPORT_SECURITY_EMPTY \
-  (&grpc_static_mdelem_table[74])
+  ((grpc_mdelem){&grpc_static_mdelem_table[74]})
 /* "te": "trailers" */
-#define GRPC_MDELEM_TE_TRAILERS (&grpc_static_mdelem_table[75])
+#define GRPC_MDELEM_TE_TRAILERS ((grpc_mdelem){&grpc_static_mdelem_table[75]})
 /* "transfer-encoding": "" */
-#define GRPC_MDELEM_TRANSFER_ENCODING_EMPTY (&grpc_static_mdelem_table[76])
+#define GRPC_MDELEM_TRANSFER_ENCODING_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[76]})
 /* "user-agent": "" */
-#define GRPC_MDELEM_USER_AGENT_EMPTY (&grpc_static_mdelem_table[77])
+#define GRPC_MDELEM_USER_AGENT_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[77]})
 /* "vary": "" */
-#define GRPC_MDELEM_VARY_EMPTY (&grpc_static_mdelem_table[78])
+#define GRPC_MDELEM_VARY_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[78]})
 /* "via": "" */
-#define GRPC_MDELEM_VIA_EMPTY (&grpc_static_mdelem_table[79])
+#define GRPC_MDELEM_VIA_EMPTY ((grpc_mdelem){&grpc_static_mdelem_table[79]})
 /* "www-authenticate": "" */
-#define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[80])
+#define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY \
+  ((grpc_mdelem){&grpc_static_mdelem_table[80]})
 
-grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b);
+grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) \
-  (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])
+  ((grpc_mdelem){&grpc_static_mdelem_table               \
+                     [grpc_static_accept_encoding_metadata[(algs)]]})
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */

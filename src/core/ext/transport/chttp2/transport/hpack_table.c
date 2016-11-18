@@ -211,7 +211,7 @@ void grpc_chttp2_hptbl_destroy(grpc_exec_ctx *exec_ctx,
   gpr_free(tbl->ents);
 }
 
-grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
+grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
                                       uint32_t tbl_index) {
   /* Static table comes first, just return an entry from it */
   if (tbl_index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
@@ -230,7 +230,7 @@ grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
 
 /* Evict one element from the table */
 static void evict1(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
-  grpc_mdelem *first_ent = tbl->ents[tbl->first_ent];
+  grpc_mdelem first_ent = tbl->ents[tbl->first_ent];
   size_t elem_bytes = GRPC_SLICE_LENGTH(first_ent->key) +
                       GRPC_SLICE_LENGTH(first_ent->value) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
@@ -242,7 +242,7 @@ static void evict1(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
 }
 
 static void rebuild_ents(grpc_chttp2_hptbl *tbl, uint32_t new_cap) {
-  grpc_mdelem **ents = gpr_malloc(sizeof(*ents) * new_cap);
+  grpc_mdelem *ents = gpr_malloc(sizeof(*ents) * new_cap);
   uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {
@@ -304,7 +304,7 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
+                                  grpc_chttp2_hptbl *tbl, grpc_mdelem md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(md->key) +
                       GRPC_SLICE_LENGTH(md->value) +
@@ -355,13 +355,13 @@ grpc_error *grpc_chttp2_hptbl_add(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
+    const grpc_chttp2_hptbl *tbl, grpc_mdelem md) {
   grpc_chttp2_hptbl_find_result r = {0, 0};
   uint32_t i;
 
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem *ent = tbl->static_ents[i];
+    grpc_mdelem ent = tbl->static_ents[i];
     if (grpc_slice_cmp(md->key, ent->key) != 0) continue;
     r.index = i + 1u;
     r.has_value = grpc_slice_cmp(md->value, ent->value) == 0;
@@ -372,7 +372,7 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   for (i = 0; i < tbl->num_ents; i++) {
     uint32_t idx =
         (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
-    grpc_mdelem *ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
+    grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
     if (grpc_slice_cmp(md->key, ent->key) != 0) continue;
     r.index = idx;
     r.has_value = grpc_slice_cmp(md->value, ent->value) == 0;

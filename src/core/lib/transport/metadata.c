@@ -80,7 +80,7 @@
 
 typedef void (*destroy_user_data_func)(void *user_data);
 
-/* Shadow structure for grpc_mdelem for non-static elements */
+/* Shadow structure for grpc_mdelem_data for non-static elements */
 typedef struct internal_metadata {
   /* must be byte compatible with grpc_mdelem */
   grpc_slice key;
@@ -141,9 +141,9 @@ void grpc_mdctx_global_shutdown(grpc_exec_ctx *exec_ctx) {
   }
 }
 
-static int is_mdelem_static(grpc_mdelem *e) {
-  return e >= &grpc_static_mdelem_table[0] &&
-         e < &grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
+static int is_mdelem_static(grpc_mdelem e) {
+  return e.payload >= &grpc_static_mdelem_table[0] &&
+         e.payload < &grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 }
 
 static void ref_md_locked(mdtab_shard *shard,
@@ -233,14 +233,14 @@ static void rehash_mdtab(grpc_exec_ctx *exec_ctx, mdtab_shard *shard) {
   }
 }
 
-grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
-                                     grpc_slice value) {
+grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
+                                    grpc_slice value) {
   grpc_slice_static_intern(&key);
   grpc_slice_static_intern(&value);
 
-  grpc_mdelem *static_elem = grpc_static_mdelem_for_static_strings(
+  grpc_mdelem static_elem = grpc_static_mdelem_for_static_strings(
       grpc_static_metadata_index(key), grpc_static_metadata_index(value));
-  if (static_elem != NULL) {
+  if (!GRPC_MDISNULL(static_elem)) {
     return static_elem;
   }
 
@@ -264,7 +264,7 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
       grpc_slice_unref_internal(exec_ctx, key);
       grpc_slice_unref_internal(exec_ctx, value);
       GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
-      return (grpc_mdelem *)md;
+      return (grpc_mdelem){(grpc_mdelem_data *)md};
     }
   }
 
@@ -294,7 +294,7 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
 
   GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
 
-  return (grpc_mdelem *)md;
+  return (grpc_mdelem){(grpc_mdelem_data *)md};
 }
 
 static size_t get_base64_encoded_size(size_t raw_length) {
@@ -302,18 +302,18 @@ static size_t get_base64_encoded_size(size_t raw_length) {
   return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
 }
 
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
-  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(elem->key);
-  size_t value_len = GRPC_SLICE_LENGTH(elem->value);
-  if (grpc_is_binary_header(elem->key)) {
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem) {
+  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
+  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
     return overhead_and_key + get_base64_encoded_size(value_len);
   } else {
     return overhead_and_key + value_len;
   }
 }
 
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
-  internal_metadata *md = (internal_metadata *)gmd;
+grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
+  internal_metadata *md = (internal_metadata *)gmd.payload;
   if (is_mdelem_static(gmd)) return gmd;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -332,8 +332,8 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
   return gmd;
 }
 
-void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *gmd DEBUG_ARGS) {
-  internal_metadata *md = (internal_metadata *)gmd;
+void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
+  internal_metadata *md = (internal_metadata *)gmd.payload;
   if (!md) return;
   if (is_mdelem_static(gmd)) return;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
@@ -356,11 +356,12 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem *gmd DEBUG_ARGS) {
   }
 }
 
-void *grpc_mdelem_get_user_data(grpc_mdelem *md, void (*destroy_func)(void *)) {
-  internal_metadata *im = (internal_metadata *)md;
+void *grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void *)) {
+  internal_metadata *im = (internal_metadata *)md.payload;
   void *result;
   if (is_mdelem_static(md)) {
-    return (void *)grpc_static_mdelem_user_data[md - grpc_static_mdelem_table];
+    return (void *)
+        grpc_static_mdelem_user_data[md.payload - grpc_static_mdelem_table];
   }
   if (gpr_atm_acq_load(&im->destroy_user_data) == (gpr_atm)destroy_func) {
     return (void *)gpr_atm_no_barrier_load(&im->user_data);
@@ -370,9 +371,9 @@ void *grpc_mdelem_get_user_data(grpc_mdelem *md, void (*destroy_func)(void *)) {
   return result;
 }
 
-void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
+void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
                                 void *user_data) {
-  internal_metadata *im = (internal_metadata *)md;
+  internal_metadata *im = (internal_metadata *)md.payload;
   GPR_ASSERT(!is_mdelem_static(md));
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
   gpr_mu_lock(&im->mu_user_data);
@@ -388,4 +389,10 @@ void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
   gpr_atm_rel_store(&im->destroy_user_data, (gpr_atm)destroy_func);
   gpr_mu_unlock(&im->mu_user_data);
   return user_data;
+}
+
+bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b) {
+  if (a.payload == b.payload) return true;
+  return 0 == grpc_slice_cmp(GRPC_MDKEY(a), GRPC_MDKEY(b)) &&
+         0 == grpc_slice_cmp(GRPC_MDVALUE(a), GRPC_MDVALUE(b));
 }

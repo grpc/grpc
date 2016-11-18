@@ -54,7 +54,7 @@ void grpc_chttp2_incoming_metadata_buffer_publish(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch);
 
 void grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem);
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem elem);
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
 

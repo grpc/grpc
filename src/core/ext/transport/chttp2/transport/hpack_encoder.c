@@ -189,7 +189,7 @@ static void evict_entry(grpc_chttp2_hpack_compressor *c) {
 
 /* add an element to the decoder table */
 static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
-                     grpc_mdelem *elem) {
+                     grpc_mdelem elem) {
   uint32_t key_hash = grpc_slice_hash(elem->key);
   uint32_t value_hash = grpc_slice_hash(elem->value);
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
@@ -285,7 +285,7 @@ static void emit_indexed(grpc_chttp2_hpack_compressor *c, uint32_t elem_index,
                            len);
 }
 
-static grpc_slice get_wire_value(grpc_mdelem *elem, uint8_t *huffman_prefix) {
+static grpc_slice get_wire_value(grpc_mdelem elem, uint8_t *huffman_prefix) {
   if (grpc_is_binary_header(elem->key)) {
     *huffman_prefix = 0x80;
     return grpc_chttp2_base64_encode_and_huffman_compress(elem->value);
@@ -296,7 +296,7 @@ static grpc_slice get_wire_value(grpc_mdelem *elem, uint8_t *huffman_prefix) {
 }
 
 static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
-                               uint32_t key_index, grpc_mdelem *elem,
+                               uint32_t key_index, grpc_mdelem elem,
                                framer_state *st) {
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 2);
   uint8_t huffman_prefix;
@@ -313,7 +313,7 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
 }
 
 static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
-                              uint32_t key_index, grpc_mdelem *elem,
+                              uint32_t key_index, grpc_mdelem elem,
                               framer_state *st) {
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
   uint8_t huffman_prefix;
@@ -330,7 +330,7 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
 }
 
 static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
-                                 grpc_mdelem *elem, framer_state *st) {
+                                 grpc_mdelem elem, framer_state *st) {
   uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(elem->key);
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
@@ -349,7 +349,7 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
 }
 
 static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
-                                grpc_mdelem *elem, framer_state *st) {
+                                grpc_mdelem elem, framer_state *st) {
   uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(elem->key);
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
@@ -382,7 +382,7 @@ static uint32_t dynidx(grpc_chttp2_hpack_compressor *c, uint32_t elem_index) {
 
 /* encode an mdelem */
 static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
-                      grpc_mdelem *elem, framer_state *st) {
+                      grpc_mdelem elem, framer_state *st) {
   uint32_t key_hash = grpc_slice_hash(elem->key);
   uint32_t value_hash = grpc_slice_hash(elem->value);
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
@@ -479,7 +479,7 @@ static void deadline_enc(grpc_exec_ctx *exec_ctx,
                          grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
                          framer_state *st) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-  grpc_mdelem *mdelem;
+  grpc_mdelem mdelem;
   grpc_http2_encode_timeout(
       gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_TIMEOUT,

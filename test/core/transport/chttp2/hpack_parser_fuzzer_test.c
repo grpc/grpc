@@ -44,7 +44,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 static void dont_log(gpr_log_func_args *args) {}

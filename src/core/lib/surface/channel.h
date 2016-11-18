@@ -62,7 +62,7 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
     status_code.
 
     The returned elem is owned by the caller. */
-grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
+grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
                                                  grpc_channel *channel,
                                                  int status_code);
 

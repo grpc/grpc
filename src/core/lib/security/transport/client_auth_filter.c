@@ -253,7 +253,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   if (op->send_initial_metadata != NULL) {
     for (l = op->send_initial_metadata->list.head; l != NULL; l = l->next) {
-      grpc_mdelem *md = l->md;
+      grpc_mdelem md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
       if (grpc_slice_cmp(md->key, GRPC_MDSTR_AUTHORITY) == 0) {

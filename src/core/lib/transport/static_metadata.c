@@ -454,14 +454,16 @@ static const uint8_t elem_idxs[] = {
     45, 22, 57, 47, 76, 80, 61, 42, 59, 2,  0,  8,  6,  50, 35, 12, 36,
     53, 14, 49, 29, 10, 38, 17, 18, 1,  32, 3,  9,  65};
 
-grpc_mdelem *grpc_static_mdelem_for_static_strings(int a, int b) {
-  if (a == -1 || b == -1) return NULL;
+grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {
+  if (a == -1 || b == -1) return GRPC_MDNULL;
   uint32_t k = (uint32_t)(a * 98 + b);
   uint32_t h = elems_phash(k);
-  return elem_keys[h] == k ? &grpc_static_mdelem_table[elem_idxs[h]] : NULL;
+  return elem_keys[h] == k
+             ? (grpc_mdelem){&grpc_static_mdelem_table[elem_idxs[h]]}
+             : GRPC_MDNULL;
 }
 
-grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
+grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
     {{.refcount = &g_refcnt,
       .data.refcounted = {.bytes = g_raw_bytes + 30, .length = 14}},
      {.refcount = &g_refcnt,

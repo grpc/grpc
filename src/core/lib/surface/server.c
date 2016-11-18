@@ -735,8 +735,8 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem *server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                  grpc_mdelem *md) {
+static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
+                                 grpc_mdelem md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {

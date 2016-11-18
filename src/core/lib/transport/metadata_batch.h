@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 typedef struct grpc_linked_mdelem {
-  grpc_mdelem *md;
+  grpc_mdelem md;
   struct grpc_linked_mdelem *next;
   struct grpc_linked_mdelem *prev;
   void *reserved;
@@ -105,7 +105,7 @@ void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
     Takes ownership of \a elem_to_add */
 void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
-                                  grpc_mdelem *elem_to_add);
+                                  grpc_mdelem elem_to_add);
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
@@ -114,7 +114,7 @@ void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
     Takes ownership of \a elem_to_add */
 void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
-                                  grpc_mdelem *elem_to_add);
+                                  grpc_mdelem elem_to_add);
 
 /** For each element in \a batch, execute \a filter.
     The return value from \a filter will be substituted for the
@@ -122,9 +122,9 @@ void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
     the element will be moved to the garbage list. */
 void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
                                 grpc_metadata_batch *batch,
-                                grpc_mdelem *(*filter)(grpc_exec_ctx *exec_ctx,
+                                grpc_mdelem (*filter)(grpc_exec_ctx *exec_ctx,
                                                        void *user_data,
-                                                       grpc_mdelem *elem),
+                                                       grpc_mdelem elem),
                                 void *user_data);
 
 #ifndef NDEBUG

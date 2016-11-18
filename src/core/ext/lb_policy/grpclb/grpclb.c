@@ -135,7 +135,7 @@ int grpc_lb_glb_trace = 0;
  * metadata */
 static void initial_metadata_add_lb_token(
     grpc_metadata_batch *initial_metadata,
-    grpc_linked_mdelem *lb_token_mdelem_storage, grpc_mdelem *lb_token) {
+    grpc_linked_mdelem *lb_token_mdelem_storage, grpc_mdelem lb_token) {
   GPR_ASSERT(lb_token_mdelem_storage != NULL);
   GPR_ASSERT(lb_token != NULL);
   grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
@@ -159,7 +159,7 @@ typedef struct wrapped_rr_closure_arg {
   grpc_connected_subchannel **target;
 
   /* the LB token associated with the pick */
-  grpc_mdelem *lb_token;
+  grpc_mdelem lb_token;
 
   /* storage for the lb token initial metadata mdelem */
   grpc_linked_mdelem *lb_token_mdelem_storage;
