@@ -150,6 +150,10 @@ GPRAPI uint32_t grpc_slice_hash(grpc_slice s);
    If a or b is inlined, actually compares data */
 GPRAPI int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b);
 
+/* Return a slice pointing to newly allocated memory that has the same contents
+ * as \a s */
+GPRAPI grpc_slice grpc_slice_dup(grpc_slice a);
+
 #ifdef __cplusplus
 }
 #endif
