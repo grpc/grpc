@@ -79,6 +79,9 @@ extern "C" {
 // - Test against a non-LB server.
 // - Random LB server closing the stream unexpectedly.
 // - Test using DNS-resolvable names (localhost?)
+// - Test handling of creation of faulty RR instance by having the LB return a
+//   serverlist with non-existent backends after having initially returned a
+//   valid one.
 //
 // Findings from end to end testing to be covered here:
 // - Handling of LB servers restart, including reconnection after backing-off
@@ -342,9 +345,8 @@ static void start_backend_server(server_fixture *sf) {
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     const string expected_token =
-        strlen(sf->lb_token_prefix) == 0
-            ? ""
-            : sf->lb_token_prefix + std::to_string(sf->port);
+        strlen(sf->lb_token_prefix) == 0 ? "" : sf->lb_token_prefix +
+                                                    std::to_string(sf->port);
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
@@ -522,6 +524,8 @@ static void perform_request(client_fixture *cf) {
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     cq_verify(cqv);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, PAYLOAD));
+    GPR_ASSERT(grpc_channel_check_connectivity_state(
+                   cf->client, 0 /* try to connect */) == GRPC_CHANNEL_READY);
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload_recv);
