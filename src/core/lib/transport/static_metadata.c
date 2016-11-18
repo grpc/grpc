@@ -396,10 +396,14 @@ static const uint8_t g_revmap[] = {
 
 int grpc_static_metadata_index(grpc_slice slice) {
   if (GRPC_SLICE_LENGTH(slice) == 0) return 33;
-  size_t ofs = (size_t)(GRPC_SLICE_START_PTR(slice) - g_raw_bytes);
+  if (slice.refcount != &g_refcnt) return -1;
+  size_t ofs = (size_t)(slice.data.refcounted.bytes - g_raw_bytes);
   if (ofs > sizeof(g_revmap)) return -1;
   uint8_t id = g_revmap[ofs];
-  return id == 255 ? -1 : id;
+  return id == 255 ? -1 : (grpc_static_slice_table[id].data.refcounted.length ==
+                                   slice.data.refcounted.length
+                               ? id
+                               : -1);
 }
 
 uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {

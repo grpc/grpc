@@ -339,10 +339,11 @@ print >>C
 print >>H, 'int grpc_static_metadata_index(grpc_slice slice);'
 print >>C, 'int grpc_static_metadata_index(grpc_slice slice) {'
 print >>C, '  if (GRPC_SLICE_LENGTH(slice) == 0) return %d;' % zero_length_idx
-print >>C, '  size_t ofs = (size_t)(GRPC_SLICE_START_PTR(slice) - g_raw_bytes);'
+print >>C, '  if (slice.refcount != &g_refcnt) return -1;'
+print >>C, '  size_t ofs = (size_t)(slice.data.refcounted.bytes - g_raw_bytes);'
 print >>C, '  if (ofs > sizeof(g_revmap)) return -1;'
 print >>C, '  uint8_t id = g_revmap[ofs];'
-print >>C, '  return id == 255 ? -1 : id;'
+print >>C, '  return id == 255 ? -1 : (grpc_static_slice_table[id].data.refcounted.length == slice.data.refcounted.length? id : -1);'
 print >>C, '}'
 print >>C
 
