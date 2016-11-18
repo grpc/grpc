@@ -186,14 +186,20 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
      * addresses failed to connect). There won't be any user_data/token
      * available */
     if (wc_arg->target != NULL) {
-      GPR_ASSERT(wc_arg->lb_token != NULL);
-      initial_metadata_add_lb_token(wc_arg->initial_metadata,
-                                    wc_arg->lb_token_mdelem_storage,
-                                    GRPC_MDELEM_REF(wc_arg->lb_token));
+      if (wc_arg->lb_token != NULL) {
+        initial_metadata_add_lb_token(wc_arg->initial_metadata,
+                                      wc_arg->lb_token_mdelem_storage,
+                                      GRPC_MDELEM_REF(wc_arg->lb_token));
+      } else {
+        gpr_log(GPR_ERROR,
+                "No LB token for connected subchannel pick %p (from RR "
+                "instance %p).",
+                (void *)*wc_arg->target, (void *)wc_arg->rr_policy);
+        abort();
+      }
     }
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
-              (intptr_t)wc_arg->rr_policy);
+      gpr_log(GPR_INFO, "Unreffing RR %p", (void *)wc_arg->rr_policy);
     }
     GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "wrapped_rr_closure");
   }
@@ -411,7 +417,7 @@ static void parse_server(const grpc_grpclb_server *server,
 }
 
 /* Returns addresses extracted from \a serverlist. */
-static grpc_lb_addresses *process_serverlist(
+static grpc_lb_addresses *process_serverlist_locked(
     const grpc_grpclb_serverlist *serverlist) {
   size_t num_valid = 0;
   /* first pass: count how many are valid in order to allocate the necessary
@@ -451,10 +457,12 @@ static grpc_lb_addresses *process_serverlist(
       user_data = grpc_mdelem_from_metadata_strings(GRPC_MDSTR_LB_TOKEN,
                                                     lb_token_mdstr);
     } else {
-      gpr_log(GPR_ERROR,
+      char *uri = grpc_sockaddr_to_uri(&addr);
+      gpr_log(GPR_INFO,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri(&addr));
+              uri);
+      gpr_free(uri);
       user_data = GRPC_MDELEM_LB_TOKEN_EMPTY;
     }
 
@@ -567,7 +575,7 @@ static grpc_lb_policy *create_rr_locked(
   grpc_lb_policy_args args;
   memset(&args, 0, sizeof(args));
   args.client_channel_factory = glb_policy->cc_factory;
-  grpc_lb_addresses *addresses = process_serverlist(serverlist);
+  grpc_lb_addresses *addresses = process_serverlist_locked(serverlist);
 
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
