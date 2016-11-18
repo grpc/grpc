@@ -292,8 +292,11 @@ typedef enum grpc_call_error {
 
 /** A single metadata element */
 typedef struct grpc_metadata {
+  /* the key, value values are expected to line up with grpc_mdelem: if changing
+     them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;
+
   uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
