@@ -137,7 +137,7 @@ static void initial_metadata_add_lb_token(
     grpc_metadata_batch *initial_metadata,
     grpc_linked_mdelem *lb_token_mdelem_storage, grpc_mdelem lb_token) {
   GPR_ASSERT(lb_token_mdelem_storage != NULL);
-  GPR_ASSERT(lb_token != NULL);
+  GPR_ASSERT(!GRPC_MDISNULL(lb_token));
   grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
                                lb_token);
 }
@@ -187,14 +187,20 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
      * addresses failed to connect). There won't be any user_data/token
      * available */
     if (wc_arg->target != NULL) {
-      GPR_ASSERT(wc_arg->lb_token != NULL);
-      initial_metadata_add_lb_token(wc_arg->initial_metadata,
-                                    wc_arg->lb_token_mdelem_storage,
-                                    GRPC_MDELEM_REF(wc_arg->lb_token));
+      if (!GRPC_MDISNULL(wc_arg->lb_token)) {
+        initial_metadata_add_lb_token(wc_arg->initial_metadata,
+                                      wc_arg->lb_token_mdelem_storage,
+                                      GRPC_MDELEM_REF(wc_arg->lb_token));
+      } else {
+        gpr_log(GPR_ERROR,
+                "No LB token for connected subchannel pick %p (from RR "
+                "instance %p).",
+                (void *)*wc_arg->target, (void *)wc_arg->rr_policy);
+        abort();
+      }
     }
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
-              (intptr_t)wc_arg->rr_policy);
+      gpr_log(GPR_INFO, "Unreffing RR %p", (void *)wc_arg->rr_policy);
     }
     GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "wrapped_rr_closure");
   }
@@ -375,10 +381,10 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
 
 /* vtable for LB tokens in grpc_lb_addresses. */
 static void *lb_token_copy(void *token) {
-  return token == NULL ? NULL : GRPC_MDELEM_REF(token);
+  return token == NULL ? NULL : GRPC_MDELEM_REF((grpc_mdelem){token}).payload;
 }
 static void lb_token_destroy(grpc_exec_ctx *exec_ctx, void *token) {
-  if (token != NULL) GRPC_MDELEM_UNREF(exec_ctx, token);
+  if (token != NULL) GRPC_MDELEM_UNREF(exec_ctx, (grpc_mdelem){token});
 }
 static int lb_token_cmp(void *token1, void *token2) {
   if (token1 > token2) return 1;
@@ -411,7 +417,7 @@ static void parse_server(const grpc_grpclb_server *server,
 }
 
 /* Returns addresses extracted from \a serverlist. */
-static grpc_lb_addresses *process_serverlist(
+static grpc_lb_addresses *process_serverlist_locked(
     grpc_exec_ctx *exec_ctx, const grpc_grpclb_serverlist *serverlist) {
   size_t num_valid = 0;
   /* first pass: count how many are valid in order to allocate the necessary
@@ -448,14 +454,17 @@ static grpc_lb_addresses *process_serverlist(
           strnlen(server->load_balance_token, lb_token_max_length);
       grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
           server->load_balance_token, lb_token_length);
-      user_data = grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN,
-                                          lb_token_mdstr);
+      user_data =
+          grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN, lb_token_mdstr)
+              .payload;
     } else {
-      gpr_log(GPR_ERROR,
+      char *uri = grpc_sockaddr_to_uri(&addr);
+      gpr_log(GPR_INFO,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri(&addr));
-      user_data = GRPC_MDELEM_LB_TOKEN_EMPTY;
+              uri);
+      gpr_free(uri);
+      user_data = GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
     }
 
     grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr, addr.len,
@@ -508,7 +517,8 @@ static grpc_lb_policy *create_rr_locked(
   grpc_lb_policy_args args;
   memset(&args, 0, sizeof(args));
   args.client_channel_factory = glb_policy->cc_factory;
-  grpc_lb_addresses *addresses = process_serverlist(exec_ctx, serverlist);
+  grpc_lb_addresses *addresses =
+      process_serverlist_locked(exec_ctx, serverlist);
 
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
@@ -768,7 +778,6 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
    * while holding glb_policy->mu: lb_on_server_status_received, invoked due to
    * the cancel, needs to acquire that same lock */
   grpc_call *lb_call = glb_policy->lb_call;
-  glb_policy->lb_call = NULL;
   gpr_mu_unlock(&glb_policy->mu);
 
   /* glb_policy->lb_call and this local lb_call must be consistent at this point

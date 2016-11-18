@@ -773,7 +773,7 @@ static grpc_error *finish_indexed_field(grpc_exec_ctx *exec_ctx,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  if (md == NULL) {
+  if (GRPC_MDISNULL(md)) {
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
@@ -815,12 +815,12 @@ static grpc_error *finish_lithdr_incidx(grpc_exec_ctx *exec_ctx,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  GPR_ASSERT(md != NULL); /* handled in string parsing */
-  grpc_error *err =
-      on_hdr(exec_ctx, p,
-             grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(md->key),
-                                     take_string(p, &p->value)),
-             1);
+  GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  grpc_error *err = on_hdr(
+      exec_ctx, p,
+      grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                              take_string(p, &p->value)),
+      1);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -884,12 +884,12 @@ static grpc_error *finish_lithdr_notidx(grpc_exec_ctx *exec_ctx,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  GPR_ASSERT(md != NULL); /* handled in string parsing */
-  grpc_error *err =
-      on_hdr(exec_ctx, p,
-             grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(md->key),
-                                     take_string(p, &p->value)),
-             0);
+  GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  grpc_error *err = on_hdr(
+      exec_ctx, p,
+      grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                              take_string(p, &p->value)),
+      0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -953,12 +953,12 @@ static grpc_error *finish_lithdr_nvridx(grpc_exec_ctx *exec_ctx,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  GPR_ASSERT(md != NULL); /* handled in string parsing */
-  grpc_error *err =
-      on_hdr(exec_ctx, p,
-             grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(md->key),
-                                     take_string(p, &p->value)),
-             0);
+  GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  grpc_error *err = on_hdr(
+      exec_ctx, p,
+      grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                              take_string(p, &p->value)),
+      0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -1501,13 +1501,13 @@ static bool is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
 static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
                                             bool *is) {
   grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  if (!elem) {
+  if (GRPC_MDISNULL(elem)) {
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
                            GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
-  *is = grpc_is_binary_header(elem->key);
+  *is = grpc_is_binary_header(GRPC_MDKEY(elem));
   return GRPC_ERROR_NONE;
 }
 

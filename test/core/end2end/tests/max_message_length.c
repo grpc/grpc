@@ -45,7 +45,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/method_config.h"
+#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 
@@ -137,22 +137,20 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   grpc_channel_args *server_args = NULL;
   if (use_service_config) {
     // We don't currently support service configs on the server side.
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(send_limit);
-    int32_t max_request_message_bytes = 5;
-    grpc_method_config_table_entry entry = {
-        grpc_slice_from_static_string("/service/method"),
-        grpc_method_config_create(NULL, NULL, &max_request_message_bytes, NULL),
-    };
-    grpc_method_config_table *method_config_table =
-        grpc_method_config_table_create(1, &entry);
-    grpc_slice_unref_internal(&exec_ctx, entry.method_name);
-    grpc_method_config_unref(&exec_ctx, entry.method_config);
-    grpc_arg arg =
-        grpc_method_config_table_create_channel_arg(method_config_table);
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
+        "{\n"
+        "  \"methodConfig\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"maxRequestMessageBytes\": \"5\"\n"
+        "  } ]\n"
+        "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-    grpc_method_config_table_unref(&exec_ctx, method_config_table);
-    grpc_exec_ctx_finish(&exec_ctx);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
@@ -317,23 +315,20 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_channel_args *server_args = NULL;
   if (use_service_config) {
     // We don't currently support service configs on the server side.
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(!send_limit);
-    int32_t max_response_message_bytes = 5;
-    grpc_method_config_table_entry entry = {
-        grpc_slice_from_static_string("/service/method"),
-        grpc_method_config_create(NULL, NULL, NULL,
-                                  &max_response_message_bytes),
-    };
-    grpc_method_config_table *method_config_table =
-        grpc_method_config_table_create(1, &entry);
-    grpc_slice_unref_internal(&exec_ctx, entry.method_name);
-    grpc_method_config_unref(&exec_ctx, entry.method_config);
-    grpc_arg arg =
-        grpc_method_config_table_create_channel_arg(method_config_table);
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string =
+        "{\n"
+        "  \"methodConfig\": [ {\n"
+        "    \"name\": [\n"
+        "      { \"service\": \"service\", \"method\": \"method\" }\n"
+        "    ],\n"
+        "    \"maxResponseMessageBytes\": \"5\"\n"
+        "  } ]\n"
+        "}";
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-    grpc_method_config_table_unref(&exec_ctx, method_config_table);
-    grpc_exec_ctx_finish(&exec_ctx);
   } else {
     // Set limit via channel args.
     grpc_arg arg;

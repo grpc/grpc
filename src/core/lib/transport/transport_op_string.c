@@ -49,10 +49,12 @@
 
 static void put_metadata(gpr_strvec *b, grpc_mdelem md) {
   gpr_strvec_add(b, gpr_strdup("key="));
-  gpr_strvec_add(b, grpc_dump_slice(md->key, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+  gpr_strvec_add(
+      b, grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 
   gpr_strvec_add(b, gpr_strdup(" value="));
-  gpr_strvec_add(b, grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+  gpr_strvec_add(
+      b, grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 }
 
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {

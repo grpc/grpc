@@ -51,7 +51,6 @@ typedef struct grpc_slice_hash_table grpc_slice_hash_table;
 typedef struct grpc_slice_hash_table_vtable {
   void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value);
   void *(*copy_value)(void *value);
-  int (*compare_value)(void *value1, void *value2);
 } grpc_slice_hash_table_vtable;
 
 typedef struct grpc_slice_hash_table_entry {
@@ -68,26 +67,12 @@ grpc_slice_hash_table *grpc_slice_hash_table_create(
 
 grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
 /** Returns 1 when \a table is destroyed. */
-int grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
-                                grpc_slice_hash_table *table);
-
-/** Returns the number of entries in \a table. */
-size_t grpc_slice_hash_table_num_entries(const grpc_slice_hash_table *table);
+void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
+                                 grpc_slice_hash_table *table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
 void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
                                 const grpc_slice key);
-
-/** Compares two hash tables.
-    The sort order is stable but undefined. */
-int grpc_slice_hash_table_cmp(const grpc_slice_hash_table *table1,
-                              const grpc_slice_hash_table *table2);
-
-/** Iterates over the entries in \a table, calling \a func for each entry. */
-void grpc_slice_hash_table_iterate(
-    const grpc_slice_hash_table *table,
-    void (*func)(const grpc_slice_hash_table_entry *entry, void *user_data),
-    void *user_data);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_MDSTR_HASH_TABLE_H */
