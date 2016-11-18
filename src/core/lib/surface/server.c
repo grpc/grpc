@@ -739,16 +739,16 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
                                  grpc_mdelem md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  if (grpc_slice_cmp(md->key, GRPC_MDSTR_PATH) == 0) {
+  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_PATH) == 0) {
     if (!calld->path_set) {
-      calld->path = grpc_slice_ref(md->value);
+      calld->path = grpc_slice_ref(GRPC_MDVALUE(md));
     }
-    return NULL;
-  } else if (grpc_slice_cmp(md->key, GRPC_MDSTR_AUTHORITY) == 0) {
+    return GRPC_MDNULL;
+  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY) == 0) {
     if (!calld->host_set) {
-      calld->host = grpc_slice_ref(md->value);
+      calld->host = grpc_slice_ref(GRPC_MDVALUE(md));
     }
-    return NULL;
+    return GRPC_MDNULL;
   }
   return md;
 }
