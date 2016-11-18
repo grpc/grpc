@@ -36,6 +36,7 @@
 
 #include "src/core/ext/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
@@ -43,6 +44,7 @@ typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 /** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
 struct grpc_resolver {
   const grpc_resolver_vtable *vtable;
+  grpc_pollset_set *pollset_set;
   gpr_refcount refs;
 };
 
