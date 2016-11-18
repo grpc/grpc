@@ -38,6 +38,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
@@ -272,9 +275,42 @@ static void test_slice_interning(void) {
   grpc_shutdown();
 }
 
+static void test_static_slice_interning(void) {
+  LOG_TEST_NAME("test_static_slice_interning");
+
+  // grpc_init/grpc_shutdown deliberately omitted: they should not be necessary
+  // to intern a static slice
+
+  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    GPR_ASSERT(grpc_slice_is_equivalent(
+        grpc_static_slice_table[i],
+        grpc_slice_intern(grpc_static_slice_table[i])));
+  }
+}
+
+static void test_static_slice_copy_interning(void) {
+  LOG_TEST_NAME("test_static_slice_copy_interning");
+
+  grpc_init();
+
+  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    grpc_slice copy =
+        grpc_slice_malloc(GRPC_SLICE_LENGTH(grpc_static_slice_table[i]));
+    memcpy(GRPC_SLICE_START_PTR(copy),
+           GRPC_SLICE_START_PTR(grpc_static_slice_table[i]),
+           GRPC_SLICE_LENGTH(grpc_static_slice_table[i]));
+    GPR_ASSERT(grpc_slice_is_equivalent(grpc_static_slice_table[i],
+                                        grpc_slice_intern(copy)));
+    grpc_slice_unref(copy);
+  }
+
+  grpc_shutdown();
+}
+
 int main(int argc, char **argv) {
   unsigned length;
   grpc_test_init(argc, argv);
+  grpc_test_only_set_slice_hash_seed(0);
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
   test_slice_new_with_user_data();
@@ -286,5 +322,7 @@ int main(int argc, char **argv) {
   }
   test_slice_from_copied_string_works();
   test_slice_interning();
+  test_static_slice_interning();
+  test_static_slice_copy_interning();
   return 0;
 }

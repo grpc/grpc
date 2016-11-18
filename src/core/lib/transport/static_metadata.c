@@ -41,6 +41,8 @@
 
 #include "src/core/lib/transport/static_metadata.h"
 
+#include "src/core/lib/slice/slice_internal.h"
+
 static uint8_t g_raw_bytes[] = {
     48,  49,  50,  50,  48,  48,  50,  48,  52,  50,  48,  54,  51,  48,  52,
     52,  48,  48,  52,  48,  52,  53,  48,  48,  97,  99,  99,  101, 112, 116,
@@ -115,7 +117,7 @@ static uint8_t g_raw_bytes[] = {
 static void static_ref(void *unused) {}
 static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 static const grpc_slice_refcount_vtable static_vtable = {
-    static_ref, static_unref, grpc_slice_default_hash_impl};
+    static_ref, static_unref, grpc_static_slice_hash};
 static grpc_slice_refcount g_refcnt = {&static_vtable};
 
 bool grpc_is_static_metadata_string(grpc_slice slice) {

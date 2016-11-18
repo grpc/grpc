@@ -249,6 +249,7 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 
 bool grpc_is_static_metadata_string(grpc_slice slice);
 
+int grpc_static_metadata_index(grpc_slice slice);
 #define GRPC_STATIC_MDELEM_COUNT 81
 extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
