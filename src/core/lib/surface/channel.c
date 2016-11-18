@@ -97,11 +97,16 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
     return NULL;
-  } else {
-    args = grpc_channel_args_copy(
-        grpc_channel_stack_builder_get_channel_arguments(builder));
-    channel = grpc_channel_stack_builder_finish(
-        exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL);
+  }
+  args = grpc_channel_args_copy(
+      grpc_channel_stack_builder_get_channel_arguments(builder));
+  grpc_error* error = grpc_channel_stack_builder_finish(
+      exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
+      (void**)&channel);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_channel_stack_destroy(exec_ctx, (grpc_channel_stack *)channel);
+    gpr_free(channel);
+    return NULL;
   }
 
   memset(channel, 0, sizeof(*channel));
