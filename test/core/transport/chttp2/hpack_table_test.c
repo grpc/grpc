@@ -54,8 +54,8 @@ static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_slice mdstr,
 static void assert_index(const grpc_chttp2_hptbl *tbl, uint32_t idx,
                          const char *key, const char *value) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(tbl, idx);
-  assert_str(tbl, md->key, key);
-  assert_str(tbl, md->value, value);
+  assert_str(tbl, GRPC_MDKEY(md), key);
+  assert_str(tbl, GRPC_MDVALUE(md), value);
 }
 
 static void test_static_lookup(void) {

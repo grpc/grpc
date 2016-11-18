@@ -69,7 +69,7 @@ static grpc_slice maybe_dup(grpc_slice in, bool dup) {
 }
 
 static void test_create_metadata(bool intern_keys, bool intern_values) {
-  grpc_mdelem m1, *m2, *m3;
+  grpc_mdelem m1, m2, m3;
 
   gpr_log(GPR_INFO, "test_create_metadata: intern_keys=%d intern_values=%d",
           intern_keys, intern_values);
@@ -85,13 +85,13 @@ static void test_create_metadata(bool intern_keys, bool intern_values) {
   m3 = grpc_mdelem_from_slices(
       &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("c"), intern_values));
-  GPR_ASSERT(m1 == m2);
-  GPR_ASSERT(m3 != m1);
-  GPR_ASSERT(grpc_slice_cmp(m3->key, m1->key) == 0);
-  GPR_ASSERT(grpc_slice_cmp(m3->value, m1->value) != 0);
-  GPR_ASSERT(grpc_slice_str_cmp(m1->key, "a") == 0);
-  GPR_ASSERT(grpc_slice_str_cmp(m1->value, "b") == 0);
-  GPR_ASSERT(grpc_slice_str_cmp(m3->value, "c") == 0);
+  GPR_ASSERT(grpc_mdelem_eq(m1, m2));
+  GPR_ASSERT(!grpc_mdelem_eq(m3, m1));
+  GPR_ASSERT(grpc_slice_cmp(GRPC_MDKEY(m3), GRPC_MDKEY(m1)) == 0);
+  GPR_ASSERT(grpc_slice_cmp(GRPC_MDVALUE(m3), GRPC_MDVALUE(m1)) != 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(m1), "a") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(m1), "b") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(m3), "c") == 0);
   GRPC_MDELEM_UNREF(&exec_ctx, m1);
   GRPC_MDELEM_UNREF(&exec_ctx, m2);
   GRPC_MDELEM_UNREF(&exec_ctx, m3);
@@ -149,7 +149,7 @@ static void test_create_many_persistant_metadata(void) {
     md = grpc_mdelem_from_slices(
         &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("a")),
         grpc_slice_intern(grpc_slice_from_copied_string(buffer)));
-    GPR_ASSERT(md == created[i]);
+    GPR_ASSERT(grpc_mdelem_eq(md, created[i]));
     GRPC_MDELEM_UNREF(&exec_ctx, md);
   }
   /* cleanup phase */
@@ -170,7 +170,7 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
 
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_mdelem a, *b, *c;
+  grpc_mdelem a, b, c;
   GRPC_MDELEM_UNREF(
       &exec_ctx,
       a = grpc_mdelem_from_slices(
@@ -189,14 +189,15 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
           &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
+  GPR_ASSERT(grpc_mdelem_eq(a, b));
+  GPR_ASSERT(grpc_mdelem_eq(a, c));
   if (intern_keys && intern_values) {
-    GPR_ASSERT(a == b);
-    GPR_ASSERT(a == c);
+    GPR_ASSERT(a.payload == b.payload);
+    GPR_ASSERT(a.payload == c.payload);
   } else {
-    // TODO(ctiller): make this true
-    // GPR_ASSERT(a != b);
-    // GPR_ASSERT(a != c);
-    // GPR_ASSERT(b != c);
+    GPR_ASSERT(a.payload != b.payload);
+    GPR_ASSERT(a.payload != c.payload);
+    GPR_ASSERT(b.payload != c.payload);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
@@ -295,7 +296,7 @@ static void verify_binary_header_size(grpc_exec_ctx *exec_ctx, const char *key,
       exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_buffer(value, value_len),
                    intern_value));
-  GPR_ASSERT(grpc_is_binary_header(elem->key));
+  GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
   grpc_slice value_slice =
       grpc_slice_from_copied_buffer((const char *)value, value_len);
@@ -343,10 +344,16 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
-    grpc_mdelem p = &grpc_static_mdelem_table[i];
-    grpc_mdelem q = grpc_mdelem_from_slices(
-        &exec_ctx, maybe_dup(p->key, dup_key), maybe_dup(p->value, dup_value));
-    GPR_ASSERT(p == q);
+    grpc_mdelem p = (grpc_mdelem){&grpc_static_mdelem_table[i]};
+    grpc_mdelem q =
+        grpc_mdelem_from_slices(&exec_ctx, maybe_dup(GRPC_MDKEY(p), dup_key),
+                                maybe_dup(GRPC_MDVALUE(p), dup_value));
+    GPR_ASSERT(grpc_mdelem_eq(p, q));
+    if (dup_key || dup_value) {
+      GPR_ASSERT(p.payload != q.payload);
+    } else {
+      GPR_ASSERT(p.payload == q.payload);
+    }
   }
 
   grpc_exec_ctx_finish(&exec_ctx);

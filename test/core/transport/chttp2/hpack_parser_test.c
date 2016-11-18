@@ -52,8 +52,8 @@ static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
   GPR_ASSERT(ekey);
   evalue = va_arg(chk->args, char *);
   GPR_ASSERT(evalue);
-  GPR_ASSERT(grpc_slice_str_cmp(md->key, ekey) == 0);
-  GPR_ASSERT(grpc_slice_str_cmp(md->value, evalue) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(md), ekey) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md), evalue) == 0);
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
