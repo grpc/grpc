@@ -190,8 +190,8 @@ static void evict_entry(grpc_chttp2_hpack_compressor *c) {
 /* add an element to the decoder table */
 static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
                      grpc_mdelem elem) {
-  uint32_t key_hash = grpc_slice_hash(elem->key);
-  uint32_t value_hash = grpc_slice_hash(elem->value);
+  uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
+  uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
   uint32_t new_index = c->tail_remote_index + c->table_elems + 1;
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
@@ -217,17 +217,18 @@ static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   c->table_elems++;
 
   /* Store this element into {entries,indices}_elem */
-  if (c->entries_elems[HASH_FRAGMENT_2(elem_hash)] == elem) {
+  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem)) {
     /* already there: update with new index */
     c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
-  } else if (c->entries_elems[HASH_FRAGMENT_3(elem_hash)] == elem) {
+  } else if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)],
+                            elem)) {
     /* already there (cuckoo): update with new index */
     c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
-  } else if (c->entries_elems[HASH_FRAGMENT_2(elem_hash)] == NULL) {
+  } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_2(elem_hash)])) {
     /* not there, but a free element: add */
     c->entries_elems[HASH_FRAGMENT_2(elem_hash)] = GRPC_MDELEM_REF(elem);
     c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
-  } else if (c->entries_elems[HASH_FRAGMENT_3(elem_hash)] == NULL) {
+  } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_3(elem_hash)])) {
     /* not there (cuckoo), but a free element: add */
     c->entries_elems[HASH_FRAGMENT_3(elem_hash)] = GRPC_MDELEM_REF(elem);
     c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
@@ -246,34 +247,34 @@ static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
 
   /* do exactly the same for the key (so we can find by that again too) */
 
-  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_2(key_hash)], elem->key) ==
-      0) {
+  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
+                     GRPC_MDKEY(elem)) == 0) {
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
   } else if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
-                            elem->key) == 0) {
+                            GRPC_MDKEY(elem)) == 0) {
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   } else if (c->entries_keys[HASH_FRAGMENT_2(key_hash)].refcount ==
              &terminal_slice_refcount) {
     c->entries_keys[HASH_FRAGMENT_2(key_hash)] =
-        grpc_slice_ref_internal(elem->key);
+        grpc_slice_ref_internal(GRPC_MDKEY(elem));
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
   } else if (c->entries_keys[HASH_FRAGMENT_3(key_hash)].refcount ==
              &terminal_slice_refcount) {
     c->entries_keys[HASH_FRAGMENT_3(key_hash)] =
-        grpc_slice_ref_internal(elem->key);
+        grpc_slice_ref_internal(GRPC_MDKEY(elem));
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   } else if (c->indices_keys[HASH_FRAGMENT_2(key_hash)] <
              c->indices_keys[HASH_FRAGMENT_3(key_hash)]) {
     grpc_slice_unref_internal(exec_ctx,
                               c->entries_keys[HASH_FRAGMENT_2(key_hash)]);
     c->entries_keys[HASH_FRAGMENT_2(key_hash)] =
-        grpc_slice_ref_internal(elem->key);
+        grpc_slice_ref_internal(GRPC_MDKEY(elem));
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
   } else {
     grpc_slice_unref_internal(exec_ctx,
                               c->entries_keys[HASH_FRAGMENT_3(key_hash)]);
     c->entries_keys[HASH_FRAGMENT_3(key_hash)] =
-        grpc_slice_ref_internal(elem->key);
+        grpc_slice_ref_internal(GRPC_MDKEY(elem));
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   }
 }
@@ -286,13 +287,13 @@ static void emit_indexed(grpc_chttp2_hpack_compressor *c, uint32_t elem_index,
 }
 
 static grpc_slice get_wire_value(grpc_mdelem elem, uint8_t *huffman_prefix) {
-  if (grpc_is_binary_header(elem->key)) {
+  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
     *huffman_prefix = 0x80;
-    return grpc_chttp2_base64_encode_and_huffman_compress(elem->value);
+    return grpc_chttp2_base64_encode_and_huffman_compress(GRPC_MDVALUE(elem));
   }
   /* TODO(ctiller): opportunistically compress non-binary headers */
   *huffman_prefix = 0x00;
-  return grpc_slice_ref(elem->value);
+  return grpc_slice_ref(GRPC_MDVALUE(elem));
 }
 
 static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
@@ -331,7 +332,7 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
 
 static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
                                  grpc_mdelem elem, framer_state *st) {
-  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(elem->key);
+  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
   uint32_t len_val = (uint32_t)GRPC_SLICE_LENGTH(value_slice);
@@ -342,7 +343,7 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
   *add_tiny_header_data(st, 1) = 0x40;
   GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
                            add_tiny_header_data(st, len_key_len), len_key_len);
-  add_header_data(st, grpc_slice_ref_internal(elem->key));
+  add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
   add_header_data(st, value_slice);
@@ -350,7 +351,7 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
 
 static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
                                 grpc_mdelem elem, framer_state *st) {
-  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(elem->key);
+  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   uint8_t huffman_prefix;
   grpc_slice value_slice = get_wire_value(elem, &huffman_prefix);
   uint32_t len_val = (uint32_t)GRPC_SLICE_LENGTH(value_slice);
@@ -361,7 +362,7 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
   *add_tiny_header_data(st, 1) = 0x00;
   GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
                            add_tiny_header_data(st, len_key_len), len_key_len);
-  add_header_data(st, grpc_slice_ref_internal(elem->key));
+  add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
   add_header_data(st, value_slice);
@@ -383,15 +384,15 @@ static uint32_t dynidx(grpc_chttp2_hpack_compressor *c, uint32_t elem_index) {
 /* encode an mdelem */
 static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
                       grpc_mdelem elem, framer_state *st) {
-  uint32_t key_hash = grpc_slice_hash(elem->key);
-  uint32_t value_hash = grpc_slice_hash(elem->value);
+  uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
+  uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
   size_t decoder_space_usage;
   uint32_t indices_key;
   int should_add_elem;
 
-  GPR_ASSERT(GRPC_SLICE_LENGTH(elem->key) > 0);
-  if (GRPC_SLICE_START_PTR(elem->key)[0] != ':') { /* regular header */
+  GPR_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
+  if (GRPC_SLICE_START_PTR(GRPC_MDKEY(elem))[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
   } else {
     GPR_ASSERT(
@@ -403,7 +404,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
 
   /* is this elem currently in the decoders table? */
 
-  if (c->entries_elems[HASH_FRAGMENT_2(elem_hash)] == elem &&
+  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
       c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
     /* HIT: complete element (first cuckoo hash) */
     emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]),
@@ -411,7 +412,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
     return;
   }
 
-  if (c->entries_elems[HASH_FRAGMENT_3(elem_hash)] == elem &&
+  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
       c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
     /* HIT: complete element (second cuckoo hash) */
     emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]),
@@ -428,8 +429,8 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   /* no hits for the elem... maybe there's a key? */
 
   indices_key = c->indices_keys[HASH_FRAGMENT_2(key_hash)];
-  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_2(key_hash)], elem->key) ==
-          0 &&
+  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
+                     GRPC_MDKEY(elem)) == 0 &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
@@ -444,8 +445,8 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   }
 
   indices_key = c->indices_keys[HASH_FRAGMENT_3(key_hash)];
-  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_3(key_hash)], elem->key) ==
-          0 &&
+  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
+                     GRPC_MDKEY(elem)) == 0 &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
@@ -512,9 +513,7 @@ void grpc_chttp2_hpack_compressor_destroy(grpc_exec_ctx *exec_ctx,
     if (c->entries_keys[i].refcount != &terminal_slice_refcount) {
       grpc_slice_unref_internal(exec_ctx, c->entries_keys[i]);
     }
-    if (c->entries_elems[i]) {
-      GRPC_MDELEM_UNREF(exec_ctx, c->entries_elems[i]);
-    }
+    GRPC_MDELEM_UNREF(exec_ctx, c->entries_elems[i]);
   }
   gpr_free(c->table_elem_size);
 }
