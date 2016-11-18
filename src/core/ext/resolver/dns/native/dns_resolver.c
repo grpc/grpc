@@ -310,6 +310,15 @@ void grpc_resolver_dns_native_init(void) {
   if (resolver != NULL && gpr_stricmp(resolver, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     grpc_register_resolver_type(dns_resolver_factory_create());
+  } else {
+    grpc_resolver_factory *existing_factory =
+        grpc_resolver_factory_lookup("dns");
+    if (existing_factory == NULL) {
+      gpr_log(GPR_DEBUG, "Using native dns resolver");
+      grpc_register_resolver_type(dns_resolver_factory_create());
+    } else {
+      grpc_resolver_factory_unref(existing_factory);
+    }
   }
   gpr_free(resolver);
 }

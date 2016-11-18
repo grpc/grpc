@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -362,7 +361,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
-                        const char *default_port, grpc_closure *on_done,
+                        const char *default_port,
+                        grpc_pollset_set *interested_parties,
+                        grpc_closure *on_done,
                         grpc_resolved_addresses **addresses) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
@@ -372,14 +373,6 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
                   gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(1, GPR_TIMESPAN)),
                   finish_resolve, r, gpr_now(GPR_CLOCK_MONOTONIC));
-}
-
-void my_resolve_address_async(grpc_exec_ctx *exec_ctx, const char *addr,
-                              const char *default_port,
-                              grpc_pollset_set *interested_parties,
-                              grpc_closure *on_done,
-                              grpc_resolved_addresses **addresses) {
-  my_resolve_address(exec_ctx, addr, default_port, on_done, addresses);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -664,8 +657,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
-  grpc_resolve_address = my_resolve_address_async;
-  grpc_resolve_address_ares = my_resolve_address_async;
+  grpc_resolve_address = my_resolve_address;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
   grpc_init();

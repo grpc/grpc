@@ -32,11 +32,10 @@
  */
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/iomgr/port.h"
-#if !defined(GRPC_NATIVE_ADDRESS_RESOLVE) && defined(GRPC_POSIX_SOCKET)
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET)
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
-#include <ares.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -236,7 +235,7 @@ static void on_writable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
-void *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
+ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver) {
   return &ev_driver->channel;
 }
 
@@ -327,4 +326,4 @@ void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
-#endif /* !GRPC_NATIVE_ADDRESS_RESOLVE && GRPC_POSIX_SOCKET */
+#endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET) */

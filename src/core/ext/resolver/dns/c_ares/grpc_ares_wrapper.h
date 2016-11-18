@@ -34,14 +34,13 @@
 #ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
-#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-/* Asynchronously resolve addr. Use default_port if a port isn't designated in
-   addr, otherwise use the port in addr. grpc_ares_init() must be called at
+/* Asynchronously resolve addr. Use \a default_port if a port isn't designated
+   in addr, otherwise use the port in addr. grpc_ares_init() must be called at
    least once before this function. \a on_done may be called directly in this
    function without being scheduled with \a exec_ctx, it must not try to acquire
    locks that are being held by the caller. */

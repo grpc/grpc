@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/port_platform.h>
-#ifndef GRPC_NATIVE_ADDRESS_RESOLVE
+#if GRPC_ARES == 1
 
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -244,8 +244,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r->host = host;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
-  ares_channel *channel =
-      (ares_channel *)grpc_ares_ev_driver_get_channel(r->ev_driver);
+  ares_channel *channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
   // An extra reference is put here to avoid destroying the request in
   // on_done_cb before calling grpc_ares_ev_driver_start.
   gpr_ref_init(&r->pending_queries, 2);
@@ -292,4 +291,4 @@ void grpc_ares_cleanup(void) {
   gpr_mu_unlock(&g_init_mu);
 }
 
-#endif /* GRPC_NATIVE_ADDRESS_RESOLVE */
+#endif /* GRPC_ARES == 1 */

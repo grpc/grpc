@@ -32,6 +32,8 @@
  */
 
 #include <grpc/support/port_platform.h>
+#if GRPC_ARES == 1
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -277,7 +279,7 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
   r->addresses = NULL;
-  grpc_resolve_address_ares(
+  grpc_resolve_address(
       exec_ctx, r->name_to_resolve, r->default_port, r->base.pollset_set,
       grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);
 }
@@ -299,7 +301,6 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
   grpc_combiner_destroy(exec_ctx, r->combiner);
-  grpc_ares_cleanup();
   if (r->resolved_result != NULL) {
     grpc_channel_args_destroy(r->resolved_result);
   }
@@ -311,29 +312,18 @@ static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
 
 static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
                                       const char *default_port) {
-  ares_dns_resolver *r;
-  grpc_error *error = GRPC_ERROR_NONE;
-  char *proxy_name;
   // Get name from args.
   const char *path = args->uri->path;
-
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
-
-  error = grpc_ares_init();
-  if (error != GRPC_ERROR_NONE) {
-    GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
-    return NULL;
-  }
-
   if (path[0] == '/') ++path;
 
   // Get proxy name, if any.
-  proxy_name = grpc_get_http_proxy_server();
+  char *proxy_name = grpc_get_http_proxy_server();
   // Create resolver.
-  r = gpr_malloc(sizeof(ares_dns_resolver));
+  ares_dns_resolver *r = gpr_malloc(sizeof(ares_dns_resolver));
   memset(r, 0, sizeof(*r));
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
   r->combiner = grpc_combiner_create(NULL);
@@ -389,9 +379,24 @@ static grpc_resolver_factory *dns_ares_resolver_factory_create() {
 void grpc_resolver_dns_ares_init(void) {
   char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver == NULL || gpr_stricmp(resolver, "ares") == 0) {
+    grpc_error *error = grpc_ares_init();
+    if (error != GRPC_ERROR_NONE) {
+      GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
+      return;
+    }
+    grpc_resolve_address = grpc_resolve_address_ares;
     grpc_register_resolver_type(dns_ares_resolver_factory_create());
   }
   gpr_free(resolver);
 }
 
+void grpc_resolver_dns_ares_shutdown(void) { grpc_ares_cleanup(); }
+
+#else /* GRPC_ARES == 1 */
+#include <grpc/support/log.h>
+
+void grpc_resolver_dns_ares_init(void) {}
+
 void grpc_resolver_dns_ares_shutdown(void) {}
+
+#endif /* GRPC_ARES == 1 */

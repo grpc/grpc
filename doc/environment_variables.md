@@ -68,6 +68,6 @@ some configuration as environment variables that can be set.
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. Available DNS resolver include:
-  - ares - a DNS resolver based around the c-ares library
+  - ares (default) - a DNS resolver based around the c-ares library
   - native - a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution

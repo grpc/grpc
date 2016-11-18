@@ -46,6 +46,11 @@ static void *tag(intptr_t i) { return (void *)i; }
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
+static void (*iomgr_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
+                                     const char *default_port,
+                                     grpc_pollset_set *interested_parties,
+                                     grpc_closure *on_done,
+                                     grpc_resolved_addresses **addresses);
 
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
@@ -53,17 +58,22 @@ static void set_resolve_port(int port) {
   gpr_mu_unlock(&g_mu);
 }
 
-static int my_resolve_address(const char *name, const char *addr,
-                              grpc_resolved_addresses **addrs,
-                              grpc_error **error) {
-  if (0 != strcmp(name, "test")) {
-    return 0;
+static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
+                               const char *default_port,
+                               grpc_pollset_set *interested_parties,
+                               grpc_closure *on_done,
+                               grpc_resolved_addresses **addrs) {
+  if (0 != strcmp(addr, "test")) {
+    iomgr_resolve_address(exec_ctx, addr, default_port, interested_parties,
+                          on_done, addrs);
+    return;
   }
 
+  grpc_error *error = GRPC_ERROR_NONE;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
-    *error = GRPC_ERROR_CREATE("Forced Failure");
+    error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     *addrs = gpr_malloc(sizeof(**addrs));
     (*addrs)->naddrs = 1;
@@ -75,9 +85,8 @@ static int my_resolve_address(const char *name, const char *addr,
     sa->sin_port = htons((uint16_t)g_resolve_port);
     (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
-    *error = GRPC_ERROR_NONE;
   }
-  return 1;
+  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
 }
 
 int main(int argc, char **argv) {
@@ -89,8 +98,9 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   gpr_mu_init(&g_mu);
-  grpc_customized_resolve_address = my_resolve_address;
   grpc_init();
+  iomgr_resolve_address = grpc_resolve_address;
+  grpc_resolve_address = my_resolve_address;
 
   int was_cancelled1;
   int was_cancelled2;

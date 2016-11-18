@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 #define GRPC_CORE_EXT_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 
+#include <ares.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -48,7 +50,7 @@ void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
 /* Returns the ares_channel owned by \a ev_driver. To bind a c-ares query to
    \a ev_driver, use the ares_channel owned by \a ev_driver as the arg of the
    query. */
-void *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver);
+ares_channel *grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver *ev_driver);
 
 /* Creates a new grpc_ares_ev_driver. Returns GRPC_ERROR_NONE if \a ev_driver is
    created successfully. */
