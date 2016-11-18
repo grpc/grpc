@@ -65,16 +65,17 @@ static void test_algorithm_mesh(void) {
                grpc_slice_cmp(mdstr, grpc_compression_algorithm_slice(parsed)));
     GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
     mdelem = grpc_compression_encoding_mdelem(parsed);
-    GPR_ASSERT(0 == grpc_slice_cmp(mdelem->value, mdstr));
-    GPR_ASSERT(0 == grpc_slice_cmp(mdelem->key, GRPC_MDSTR_GRPC_ENCODING));
+    GPR_ASSERT(0 == grpc_slice_cmp(GRPC_MDVALUE(mdelem), mdstr));
+    GPR_ASSERT(0 ==
+               grpc_slice_cmp(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
     grpc_slice_unref_internal(&exec_ctx, mdstr);
     GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
   /* test failure */
-  GPR_ASSERT(NULL ==
-             grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT));
+  GPR_ASSERT(GRPC_MDISNULL(
+      grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT)));
 }
 
 static void test_algorithm_failure(void) {
