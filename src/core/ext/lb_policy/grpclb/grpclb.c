@@ -633,12 +633,19 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
                          "rr_handover_no_replace");
     /* restore the old policy */
     glb_policy->rr_policy = old_rr_policy;
+    if (grpc_lb_glb_trace) {
+      gpr_log(GPR_INFO,
+              "Keeping old RR policy (%p) despite new serverlist: new RR "
+              "policy was in %s connectivity state.",
+              (void *)old_rr_policy,
+              grpc_connectivity_state_name(new_rr_state));
+    }
     return;
   }
 
   if (grpc_lb_glb_trace) {
-    gpr_log(GPR_INFO, "Created RR policy (%p)", (void *)glb_policy->rr_policy);
-    gpr_log(GPR_INFO, "RR handover. Old RR: %p", (void *)glb_policy->rr_policy);
+    gpr_log(GPR_INFO, "Created RR policy (%p) to replace old RR (%p)",
+            (void *)glb_policy->rr_policy, (void *)old_rr_policy);
   }
 
   if (old_rr_policy != NULL) {
