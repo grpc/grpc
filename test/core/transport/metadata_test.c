@@ -164,24 +164,33 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
 
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_mdelem *a, *b, *c;
   GRPC_MDELEM_UNREF(
       &exec_ctx,
-      grpc_mdelem_from_slices(
+      a = grpc_mdelem_from_slices(
           &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
   GRPC_MDELEM_UNREF(
       &exec_ctx,
-      grpc_mdelem_from_slices(
+      b = grpc_mdelem_from_slices(
           &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
   GRPC_MDELEM_UNREF(
       &exec_ctx,
-      grpc_mdelem_from_slices(
+      c = grpc_mdelem_from_slices(
           &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
+  if (intern_keys && intern_values) {
+    GPR_ASSERT(a == b);
+    GPR_ASSERT(a == c);
+  } else {
+    GPR_ASSERT(a != b);
+    GPR_ASSERT(a != c);
+    GPR_ASSERT(b != c);
+  }
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 }
@@ -190,7 +199,7 @@ static void test_things_stick_around(void) {
   size_t i, j;
   char *buffer;
   size_t nstrs = 1000;
-  grpc_slice *strs = gpr_malloc(sizeof(grpc_slice ) * nstrs);
+  grpc_slice *strs = gpr_malloc(sizeof(grpc_slice) * nstrs);
   size_t *shuf = gpr_malloc(sizeof(size_t) * nstrs);
   grpc_slice test;
 
@@ -261,10 +270,11 @@ static void test_user_data_works(void) {
 }
 
 static void verify_ascii_header_size(grpc_exec_ctx *exec_ctx, const char *key,
-                                     const char *value) {
+                                     const char *value, bool intern_key,
+                                     bool intern_value) {
   grpc_mdelem *elem = grpc_mdelem_from_slices(
-      exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
-      grpc_slice_intern(grpc_slice_from_static_string(value)));
+      exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
+      maybe_intern(grpc_slice_from_static_string(value), intern_value));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
   size_t expected_size = 32 + strlen(key) + strlen(value);
   GPR_ASSERT(expected_size == elem_size);
@@ -272,10 +282,12 @@ static void verify_ascii_header_size(grpc_exec_ctx *exec_ctx, const char *key,
 }
 
 static void verify_binary_header_size(grpc_exec_ctx *exec_ctx, const char *key,
-                                      const uint8_t *value, size_t value_len) {
+                                      const uint8_t *value, size_t value_len,
+                                      bool intern_key, bool intern_value) {
   grpc_mdelem *elem = grpc_mdelem_from_slices(
-      exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
-      grpc_slice_intern(grpc_slice_from_static_buffer(value, value_len)));
+      exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
+      maybe_intern(grpc_slice_from_static_buffer(value, value_len),
+                   intern_value));
   GPR_ASSERT(grpc_is_binary_header(elem->key));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
   grpc_slice value_slice =
@@ -289,8 +301,9 @@ static void verify_binary_header_size(grpc_exec_ctx *exec_ctx, const char *key,
 }
 
 #define BUFFER_SIZE 64
-static void test_mdelem_sizes_in_hpack(void) {
-  gpr_log(GPR_INFO, "test_mdelem_size");
+static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
+  gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
+          intern_key, intern_value);
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -299,13 +312,17 @@ static void test_mdelem_sizes_in_hpack(void) {
     binary_value[i] = i;
   }
 
-  verify_ascii_header_size(&exec_ctx, "hello", "world");
+  verify_ascii_header_size(&exec_ctx, "hello", "world", intern_key,
+                           intern_value);
   verify_ascii_header_size(&exec_ctx, "hello",
-                           "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-  verify_ascii_header_size(&exec_ctx, ":scheme", "http");
+                           "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", intern_key,
+                           intern_value);
+  verify_ascii_header_size(&exec_ctx, ":scheme", "http", intern_key,
+                           intern_value);
 
   for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    verify_binary_header_size(&exec_ctx, "hello-bin", binary_value, i);
+    verify_binary_header_size(&exec_ctx, "hello-bin", binary_value, i,
+                              intern_key, intern_value);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -320,11 +337,11 @@ int main(int argc, char **argv) {
       test_create_metadata(k, v);
       test_create_many_ephemeral_metadata(k, v);
       test_spin_creating_the_same_thing(k, v);
+      test_mdelem_sizes_in_hpack(k, v);
     }
   }
   test_create_many_persistant_metadata();
   test_things_stick_around();
   test_user_data_works();
-  test_mdelem_sizes_in_hpack();
   return 0;
 }
