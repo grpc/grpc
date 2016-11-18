@@ -149,18 +149,6 @@ grpc_error *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port,
     grpc_resolved_addresses **addresses) = blocking_resolve_address_impl;
 
-static int default_customized_resolve_address_impl(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses, grpc_error **error) {
-  *error = GRPC_ERROR_NONE;
-  return 0;
-}
-
-int (*grpc_customized_resolve_address)(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses,
-    grpc_error **error) = default_customized_resolve_address_impl;
-
 typedef struct {
   char *name;
   char *default_port;
@@ -196,15 +184,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_pollset_set *interested_parties,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
-  request *r;
-  grpc_error *err;
-
-  if (grpc_customized_resolve_address(name, default_port, addrs, &err) != 0) {
-    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-    return;
-  }
-
-  r = gpr_malloc(sizeof(request));
+  request *r = gpr_malloc(sizeof(request));
   grpc_closure_init(&r->request_closure, do_request_thread, r);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);

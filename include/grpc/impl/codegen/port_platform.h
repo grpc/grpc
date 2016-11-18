@@ -360,8 +360,6 @@ typedef unsigned __int64 uint64_t;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
-/* #define GRPC_ARES 0 */
-
 #ifndef GRPC_ARES
 #ifdef GPR_WINDOWS
 #define GRPC_ARES 0

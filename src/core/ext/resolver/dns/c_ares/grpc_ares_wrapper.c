@@ -200,18 +200,11 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     grpc_pollset_set *interested_parties,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
-  grpc_error *err;
-  if (grpc_customized_resolve_address(name, default_port, addrs, &err) != 0) {
-    grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
-    return;
-  }
-  GRPC_ERROR_UNREF(err);
-  err = GRPC_ERROR_NONE;
-
   /* parse name, splitting it into host and port parts */
   char *host;
   char *port;
   gpr_split_host_port(name, &host, &port);
+  grpc_error *err = GRPC_ERROR_NONE;
   if (host == NULL) {
     err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
                              GRPC_ERROR_STR_TARGET_ADDRESS, name);
