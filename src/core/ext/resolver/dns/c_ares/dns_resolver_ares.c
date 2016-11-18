@@ -41,7 +41,6 @@
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
 #include "src/core/ext/client_channel/resolver_registry.h"
-#include "src/core/ext/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -65,8 +64,6 @@ typedef struct {
   char *default_port;
   /** channel args. */
   grpc_channel_args *channel_args;
-  /** the event driver to drive the lookups */
-  grpc_ares_ev_driver *ev_driver;
 
   /** Closures used by the combiner */
   grpc_closure dns_ares_shutdown_locked;
@@ -281,7 +278,7 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->resolving = true;
   r->addresses = NULL;
   grpc_resolve_address_ares(
-      exec_ctx, r->name_to_resolve, r->default_port, r->ev_driver,
+      exec_ctx, r->name_to_resolve, r->default_port, r->base.pollset_set,
       grpc_closure_create(dns_ares_on_resolved, r), &r->addresses);
 }
 
@@ -301,7 +298,6 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
   ares_dns_resolver *r = (ares_dns_resolver *)gr;
-  grpc_ares_ev_driver_destroy(exec_ctx, r->ev_driver);
   grpc_combiner_destroy(exec_ctx, r->combiner);
   grpc_ares_cleanup();
   if (r->resolved_result != NULL) {
@@ -340,12 +336,6 @@ static grpc_resolver *dns_ares_create(grpc_resolver_args *args,
   r = gpr_malloc(sizeof(ares_dns_resolver));
   memset(r, 0, sizeof(*r));
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable);
-  error = grpc_ares_ev_driver_create(&r->ev_driver, r->base.pollset_set);
-  if (error != GRPC_ERROR_NONE) {
-    GRPC_LOG_IF_ERROR("grpc_ares_ev_driver_create() failed", error);
-    gpr_free(r);
-    return NULL;
-  }
   r->combiner = grpc_combiner_create(NULL);
   r->name_to_resolve = proxy_name == NULL ? gpr_strdup(path) : proxy_name;
   r->default_port = gpr_strdup(default_port);

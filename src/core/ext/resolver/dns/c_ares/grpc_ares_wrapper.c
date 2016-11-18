@@ -96,6 +96,32 @@ static uint16_t strhtons(const char *port) {
   return htons((unsigned short)atoi(port));
 }
 
+static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
+                                    grpc_ares_request *r) {
+  // If there are no pending queries, invoke on_done callback and destroy the
+  // request
+  if (gpr_unref(&r->pending_queries)) {
+    if (exec_ctx == NULL) {
+      // A new exec_ctx is created here, as the c-ares interface does not
+      // provide one in ares_host_callback. It's safe to schedule on_done with
+      // the newly created exec_ctx, since the caller has been warned not to
+      // acquire locks in on_done. ares_dns_resolver is using combiner to
+      // protect resources needed by on_done.
+      grpc_exec_ctx new_exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_exec_ctx_sched(&new_exec_ctx, r->on_done, r->error, NULL);
+      grpc_exec_ctx_finish(&new_exec_ctx);
+    } else {
+      grpc_exec_ctx_sched(exec_ctx, r->on_done, r->error, NULL);
+    }
+    gpr_mu_destroy(&r->mu);
+    grpc_ares_ev_driver_destroy(r->ev_driver);
+    gpr_free(r->host);
+    gpr_free(r->port);
+    gpr_free(r->default_port);
+    gpr_free(r);
+  }
+}
+
 static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
   grpc_ares_request *r = (grpc_ares_request *)arg;
@@ -165,28 +191,13 @@ static void on_done_cb(void *arg, int status, int timeouts,
     }
   }
   gpr_mu_unlock(&r->mu);
-  // If there are no pending queries, invoke on_done callback and destroy the
-  // request
-  if (gpr_unref(&r->pending_queries)) {
-    // A new exec_ctx is created here, as the c-ares interface does not provide
-    // one in this callback. It's safe to schedule on_done with the newly
-    // created exec_ctx, since the caller has been warned not to acquire locks
-    // in on_done. ares_dns_resolver is using combiner to protect resources
-    // needed by on_done.
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_exec_ctx_sched(&exec_ctx, r->on_done, r->error, NULL);
-    grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_destroy(&r->mu);
-    gpr_free(r->host);
-    gpr_free(r->port);
-    gpr_free(r->default_port);
-    gpr_free(r);
-  }
+  grpc_ares_request_unref(NULL, r);
 }
 
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
-                                    grpc_ares_ev_driver *ev_driver,
+                                    // grpc_ares_ev_driver *ev_driver,
+                                    grpc_pollset_set *interested_parties,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
   grpc_error *err;
@@ -216,6 +227,13 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
     port = gpr_strdup(default_port);
   }
 
+  grpc_ares_ev_driver *ev_driver;
+  err = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
+  if (err != GRPC_ERROR_NONE) {
+    GRPC_LOG_IF_ERROR("grpc_ares_ev_driver_create() failed", err);
+    goto error_cleanup;
+  }
+
   grpc_ares_request *r = gpr_malloc(sizeof(grpc_ares_request));
   gpr_mu_init(&r->mu);
   r->ev_driver = ev_driver;
@@ -228,13 +246,16 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r->error = GRPC_ERROR_NONE;
   ares_channel *channel =
       (ares_channel *)grpc_ares_ev_driver_get_channel(r->ev_driver);
-  gpr_ref_init(&r->pending_queries, 1);
+  // An extra reference is put here to avoid destroying the request in
+  // on_done_cb before calling grpc_ares_ev_driver_start.
+  gpr_ref_init(&r->pending_queries, 2);
   if (grpc_ipv6_loopback_available()) {
     gpr_ref(&r->pending_queries);
     ares_gethostbyname(*channel, r->host, AF_INET6, on_done_cb, r);
   }
   ares_gethostbyname(*channel, r->host, AF_INET, on_done_cb, r);
   grpc_ares_ev_driver_start(exec_ctx, ev_driver);
+  grpc_ares_request_unref(exec_ctx, r);
   return;
 
 error_cleanup:
@@ -244,7 +265,8 @@ error_cleanup:
 
 void (*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_ares_ev_driver *ev_driver, grpc_closure *on_done,
+    grpc_pollset_set *interested_parties, grpc_closure *on_done,
+    // grpc_ares_ev_driver *ev_driver, grpc_closure *on_done,
     grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 grpc_error *grpc_ares_init(void) {
