@@ -474,7 +474,7 @@ static void cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_client_channel_factory_ref(arg->value.pointer.p);
   chand->client_channel_factory = arg->value.pointer.p;
   // Instantiate resolver.
-  arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_NAME);
+  arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   chand->resolver = grpc_resolver_create(arg->value.string, args->channel_args);

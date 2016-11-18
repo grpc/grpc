@@ -213,6 +213,8 @@ typedef struct {
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
+/** Server URI. Not intended for external use. */
+#define GRPC_ARG_SERVER_URI "grpc.server_uri"
 /** Server name. Not intended for external use. */
 #define GRPC_ARG_SERVER_NAME "grpc.server_name"
 /** Resolved addresses in a form used by the LB policy.
