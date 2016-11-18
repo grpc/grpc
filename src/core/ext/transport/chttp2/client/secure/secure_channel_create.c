@@ -346,7 +346,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   // factory, and security connector.
   grpc_arg new_args[3];
   new_args[0].type = GRPC_ARG_STRING;
-  new_args[0].key = GRPC_ARG_SERVER_NAME;
+  new_args[0].key = GRPC_ARG_SERVER_URI;
   new_args[0].value.string = (char *)target;
   new_args[1].type = GRPC_ARG_POINTER;
   new_args[1].key = GRPC_ARG_CLIENT_CHANNEL_FACTORY;
