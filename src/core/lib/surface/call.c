@@ -611,7 +611,7 @@ static int prepare_application_metadata(
     l->md = grpc_mdelem_from_grpc_metadata(exec_ctx, (grpc_metadata *)md);
   }
   if (i != total_count) {
-    for (int j = 0; j <= i; j++) {
+    for (int j = 0; j < i; j++) {
       const grpc_metadata *md =
           get_md_elem(metadata, additional_metadata, j, count);
       grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
