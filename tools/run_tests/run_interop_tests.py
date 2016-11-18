@@ -254,13 +254,16 @@ class NodeLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['node', 'src/node/interop/interop_client.js'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_server.js',
+            '--use_tls=true'] + args
 
   def global_env(self):
     return {}
