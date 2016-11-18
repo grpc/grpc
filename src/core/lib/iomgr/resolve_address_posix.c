@@ -193,6 +193,7 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
 
 static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  const char *default_port,
+                                 grpc_pollset_set *interested_parties,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
   request *r;
@@ -212,9 +213,9 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   grpc_executor_push(&r->request_closure, GRPC_ERROR_NONE);
 }
 
-void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *name,
-                             const char *default_port, grpc_closure *on_done,
-                             grpc_resolved_addresses **addrs) =
-    resolve_address_impl;
+void (*grpc_resolve_address)(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *interested_parties, grpc_closure *on_done,
+    grpc_resolved_addresses **addrs) = resolve_address_impl;
 
 #endif

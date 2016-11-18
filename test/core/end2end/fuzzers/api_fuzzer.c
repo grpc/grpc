@@ -376,7 +376,7 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
 
 void my_resolve_address_async(grpc_exec_ctx *exec_ctx, const char *addr,
                               const char *default_port,
-                              grpc_ares_ev_driver *ev_driver,
+                              grpc_pollset_set *interested_parties,
                               grpc_closure *on_done,
                               grpc_resolved_addresses **addresses) {
   my_resolve_address(exec_ctx, addr, default_port, on_done, addresses);
@@ -664,7 +664,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
-  grpc_resolve_address = my_resolve_address;
+  grpc_resolve_address = my_resolve_address_async;
   grpc_resolve_address_ares = my_resolve_address_async;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;

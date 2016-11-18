@@ -218,6 +218,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   r->resolving = true;
   r->addresses = NULL;
   grpc_resolve_address(exec_ctx, r->name_to_resolve, r->default_port,
+                       r->base.pollset_set,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
