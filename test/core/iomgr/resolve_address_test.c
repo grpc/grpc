@@ -32,6 +32,7 @@
  */
 
 #include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
@@ -53,21 +54,29 @@ typedef struct args_struct {
   grpc_pollset_set *pollset_set;
 } args_struct;
 
-void args_init(args_struct *args) {
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+
+void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
   gpr_event_init(&args->ev);
+  args->pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_set_add_pollset(&exec_ctx, args->pollset_set, args->pollset);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
   args->addrs = NULL;
 }
 
-void args_finish(args_struct *args) {
+void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
   grpc_resolved_addresses_destroy(args->addrs);
+  grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
+  grpc_closure do_nothing_cb;
+  grpc_closure_init(&do_nothing_cb, do_nothing, NULL);
+  grpc_pollset_shutdown(exec_ctx, args->pollset, &do_nothing_cb);
+  // exec_ctx needs to be flushed before calling grpc_pollset_shutdown
+  grpc_exec_ctx_flush(exec_ctx);
   grpc_pollset_destroy(args->pollset);
+  gpr_free(args->pollset);
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {
@@ -78,7 +87,6 @@ static gpr_timespec n_sec_deadline(int seconds) {
 static void actually_poll(void *argsp) {
   args_struct *args = argsp;
   gpr_timespec deadline = n_sec_deadline(10);
-  grpc_pollset_worker *worker = NULL;
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
@@ -89,6 +97,7 @@ static void actually_poll(void *argsp) {
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
+    grpc_pollset_worker *worker = NULL;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR(
@@ -123,47 +132,47 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *argsp, grpc_error *err) {
 }
 
 static void test_localhost(void) {
-  args_struct args;
-  args_init(&args);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  args_struct args;
+  args_init(&exec_ctx, &args);
   poll_pollset_until_request_done(&args);
   grpc_resolve_address(&exec_ctx, "localhost:1", NULL, args.pollset_set,
                        grpc_closure_create(must_succeed, &args), &args.addrs);
+  args_finish(&exec_ctx, &args);
   grpc_exec_ctx_finish(&exec_ctx);
-  args_finish(&args);
 }
 
 static void test_default_port(void) {
-  args_struct args;
-  args_init(&args);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  args_struct args;
+  args_init(&exec_ctx, &args);
   poll_pollset_until_request_done(&args);
   grpc_resolve_address(&exec_ctx, "localhost", "1", args.pollset_set,
                        grpc_closure_create(must_succeed, &args), &args.addrs);
+  args_finish(&exec_ctx, &args);
   grpc_exec_ctx_finish(&exec_ctx);
-  args_finish(&args);
 }
 
 static void test_missing_default_port(void) {
-  args_struct args;
-  args_init(&args);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  args_struct args;
+  args_init(&exec_ctx, &args);
   poll_pollset_until_request_done(&args);
   grpc_resolve_address(&exec_ctx, "localhost", NULL, args.pollset_set,
                        grpc_closure_create(must_fail, &args), &args.addrs);
+  args_finish(&exec_ctx, &args);
   grpc_exec_ctx_finish(&exec_ctx);
-  args_finish(&args);
 }
 
 static void test_ipv6_with_port(void) {
-  args_struct args;
-  args_init(&args);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  args_struct args;
+  args_init(&exec_ctx, &args);
   poll_pollset_until_request_done(&args);
   grpc_resolve_address(&exec_ctx, "[2001:db8::1]:1", NULL, args.pollset_set,
                        grpc_closure_create(must_succeed, &args), &args.addrs);
+  args_finish(&exec_ctx, &args);
   grpc_exec_ctx_finish(&exec_ctx);
-  args_finish(&args);
 }
 
 static void test_ipv6_without_port(void) {
@@ -172,14 +181,14 @@ static void test_ipv6_without_port(void) {
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    args_struct args;
-    args_init(&args);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    args_struct args;
+    args_init(&exec_ctx, &args);
     poll_pollset_until_request_done(&args);
     grpc_resolve_address(&exec_ctx, kCases[i], "80", args.pollset_set,
                          grpc_closure_create(must_succeed, &args), &args.addrs);
+    args_finish(&exec_ctx, &args);
     grpc_exec_ctx_finish(&exec_ctx);
-    args_finish(&args);
   }
 }
 
@@ -189,14 +198,14 @@ static void test_invalid_ip_addresses(void) {
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    args_struct args;
-    args_init(&args);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    args_struct args;
+    args_init(&exec_ctx, &args);
     poll_pollset_until_request_done(&args);
     grpc_resolve_address(&exec_ctx, kCases[i], NULL, args.pollset_set,
                          grpc_closure_create(must_fail, &args), &args.addrs);
+    args_finish(&exec_ctx, &args);
     grpc_exec_ctx_finish(&exec_ctx);
-    args_finish(&args);
   }
 }
 
@@ -206,14 +215,14 @@ static void test_unparseable_hostports(void) {
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    args_struct args;
-    args_init(&args);
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    args_struct args;
+    args_init(&exec_ctx, &args);
     poll_pollset_until_request_done(&args);
     grpc_resolve_address(&exec_ctx, kCases[i], "1", args.pollset_set,
                          grpc_closure_create(must_fail, &args), &args.addrs);
+    args_finish(&exec_ctx, &args);
     grpc_exec_ctx_finish(&exec_ctx);
-    args_finish(&args);
   }
 }
 
