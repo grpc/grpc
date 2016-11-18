@@ -297,6 +297,8 @@ print >>H
 
 print >>C, '#include "src/core/lib/transport/static_metadata.h"'
 print >>C
+print >>C, '#include "src/core/lib/slice/slice_internal.h"'
+print >>C
 
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
 print >>H, 'extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];'
@@ -310,7 +312,7 @@ print >>C, 'static uint8_t g_raw_bytes[] = {%s};' % (','.join('%d' % ord(c) for 
 print >>C
 print >>C, 'static void static_ref(void *unused) {}'
 print >>C, 'static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}'
-print >>C, 'static const grpc_slice_refcount_vtable static_vtable = {static_ref, static_unref, grpc_slice_default_hash_impl};';
+print >>C, 'static const grpc_slice_refcount_vtable static_vtable = {static_ref, static_unref, grpc_static_slice_hash};';
 print >>C, 'static grpc_slice_refcount g_refcnt = {&static_vtable};'
 print >>C
 print >>C, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
@@ -334,6 +336,7 @@ print >>C, '};'
 print >>C
 print >>C, 'static const uint8_t g_revmap[] = {%s};' % ','.join('%d' % (revmap[i] if i in revmap else 255) for i in range(0, str_ofs))
 print >>C
+print >>H, 'int grpc_static_metadata_index(grpc_slice slice);'
 print >>C, 'int grpc_static_metadata_index(grpc_slice slice) {'
 print >>C, '  if (GRPC_SLICE_LENGTH(slice) == 0) return %d;' % zero_length_idx
 print >>C, '  size_t ofs = (size_t)(GRPC_SLICE_START_PTR(slice) - g_raw_bytes);'

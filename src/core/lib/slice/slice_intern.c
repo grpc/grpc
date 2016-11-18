@@ -72,6 +72,16 @@ static int g_forced_hash_seed = 0;
 
 static slice_shard g_shards[SHARD_COUNT];
 
+typedef struct {
+  uint32_t hash;
+  uint32_t idx;
+} static_metadata_hash_ent;
+
+static static_metadata_hash_ent
+    static_metadata_hash[2 * GRPC_STATIC_MDSTR_COUNT];
+static uint32_t max_static_metadata_hash_probe;
+static uint32_t static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
+
 static void interned_slice_ref(void *p) {
   interned_slice_refcount *s = p;
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&s->refcnt, 1) > 0);
@@ -152,15 +162,35 @@ uint32_t grpc_slice_default_hash_impl(void *unused_refcnt, grpc_slice s) {
                           g_hash_seed);
 }
 
+uint32_t grpc_static_slice_hash(void *unused_refcnt, grpc_slice s) {
+  int id = grpc_static_metadata_index(s);
+  if (id == -1) {
+    return grpc_slice_default_hash_impl(unused_refcnt, s);
+  }
+  return static_metadata_hash_values[id];
+}
+
 uint32_t grpc_slice_hash(grpc_slice s) {
   return s.refcount == NULL ? grpc_slice_default_hash_impl(NULL, s)
                             : s.refcount->vtable->hash(s.refcount, s);
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
+  if (grpc_is_static_metadata_string(slice)) {
+    return slice;
+  }
+
+  uint32_t hash = grpc_slice_hash(slice);
+  for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
+    static_metadata_hash_ent ent =
+        static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
+    if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
+        0 == grpc_slice_cmp(grpc_static_slice_table[ent.idx], slice)) {
+      return grpc_static_slice_table[ent.idx];
+    }
+  }
+
   interned_slice_refcount *s;
-  uint32_t hash = gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice),
-                                   GRPC_SLICE_LENGTH(slice), g_hash_seed);
   slice_shard *shard = &g_shards[SHARD_IDX(hash)];
 
   gpr_mu_lock(&shard->mu);
@@ -212,6 +242,9 @@ void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
 }
 
 void grpc_slice_intern_init(void) {
+  if (!g_forced_hash_seed) {
+    g_hash_seed = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+  }
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     slice_shard *shard = &g_shards[i];
     gpr_mu_init(&shard->mu);
@@ -219,6 +252,27 @@ void grpc_slice_intern_init(void) {
     shard->capacity = INITIAL_SHARD_CAPACITY;
     shard->strs = gpr_malloc(sizeof(*shard->strs) * shard->capacity);
     memset(shard->strs, 0, sizeof(*shard->strs) * shard->capacity);
+  }
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(static_metadata_hash); i++) {
+    static_metadata_hash[i].hash = 0;
+    static_metadata_hash[i].idx = GRPC_STATIC_MDSTR_COUNT;
+  }
+  max_static_metadata_hash_probe = 0;
+  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    static_metadata_hash_values[i] =
+        grpc_slice_default_hash_impl(NULL, grpc_static_slice_table[i]);
+    for (size_t j = 0; j < GPR_ARRAY_SIZE(static_metadata_hash); j++) {
+      size_t slot = (static_metadata_hash_values[i] + j) %
+                    GPR_ARRAY_SIZE(static_metadata_hash);
+      if (static_metadata_hash[slot].idx == GRPC_STATIC_MDSTR_COUNT) {
+        static_metadata_hash[slot].hash = static_metadata_hash_values[i];
+        static_metadata_hash[slot].idx = (uint32_t)i;
+        if (j > max_static_metadata_hash_probe) {
+          max_static_metadata_hash_probe = (uint32_t)j;
+        }
+        break;
+      }
+    }
   }
 }
 
