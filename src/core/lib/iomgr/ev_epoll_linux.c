@@ -1158,8 +1158,8 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
   gpr_mu_lock(&fd->po.mu);
-  grpc_workqueue *workqueue = GRPC_WORKQUEUE_REF(
-      (grpc_workqueue *)fd->po.pi, "fd_get_workqueue");
+  grpc_workqueue *workqueue =
+      GRPC_WORKQUEUE_REF((grpc_workqueue *)fd->po.pi, "fd_get_workqueue");
   gpr_mu_unlock(&fd->po.mu);
   return workqueue;
 }
@@ -1677,7 +1677,6 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return error;
 }
 
-#if 0
 static void add_poll_object(grpc_exec_ctx *exec_ctx, poll_obj *bag,
                             poll_obj *item, poll_obj_type bag_type,
                             poll_obj_type item_type) {
@@ -1732,8 +1731,13 @@ retry:
            getting to this branch: if they've changed, we need to throw away our
            work and figure things out again. */
         if (item->pi != NULL) {
+          GRPC_POLLING_TRACE(
+              "add_poll_object: Raced creating new polling island. pi_new: %p "
+              "(fd: %d, %s: %p)",
+              (void *)pi_new, FD_FROM_PO(item)->fd, poll_obj_string(bag_type),
+              (void *)bag);
           /* No need to lock 'pi_new' here since this is a new polling island
-           * and no one has a reference to it yet */
+            * and no one has a reference to it yet */
           polling_island_remove_all_fds_locked(pi_new, true, &error);
 
           /* Ref and unref so that the polling island gets deleted during unref
@@ -1745,6 +1749,17 @@ retry:
       } else {
         pi_new = polling_island_create(exec_ctx, NULL, &error);
       }
+
+      GRPC_POLLING_TRACE(
+          "add_poll_object: Created new polling island. pi_new: %p (%s: %p, "
+          "%s: %p)",
+          (void *)pi_new, poll_obj_string(item_type), (void *)item,
+          poll_obj_string(bag_type), (void *)bag);
+    } else {
+      GRPC_POLLING_TRACE(
+          "add_poll_object: Same polling island. pi: %p (%s, %s)",
+          (void *)pi_new, poll_obj_string(item_type),
+          poll_obj_string(bag_type));
     }
   } else if (item->pi == NULL) {
     /* GPR_ASSERT(bag->pi != NULL) */
@@ -1757,14 +1772,28 @@ retry:
     }
 
     gpr_mu_unlock(&pi_new->mu);
-
+    GRPC_POLLING_TRACE(
+        "add_poll_obj: item->pi was NULL. pi_new: %p (item(%s): %p, "
+        "bag(%s): %p)",
+        (void *)pi_new, poll_obj_string(item_type), (void *)item,
+        poll_obj_string(bag_type), (void *)bag);
   } else if (bag->pi == NULL) {
     /* GPR_ASSERT(item->pi != NULL) */
     /* Make pi_new to point to latest pi */
     pi_new = polling_island_lock(item->pi);
     gpr_mu_unlock(&pi_new->mu);
+    GRPC_POLLING_TRACE(
+        "add_poll_obj: bag->pi was NULL. pi_new: %p (item(%s): %p, "
+        "bag(%s): %p)",
+        (void *)pi_new, poll_obj_string(item_type), (void *)item,
+        poll_obj_string(bag_type), (void *)bag);
   } else {
     pi_new = polling_island_merge(item->pi, bag->pi, &error);
+    GRPC_POLLING_TRACE(
+        "add_poll_obj: polling islands merged. pi_new: %p (item(%s): %p, "
+        "bag(%s): %p)",
+        (void *)pi_new, poll_obj_string(item_type), (void *)item,
+        poll_obj_string(bag_type), (void *)bag);
   }
 
   /* At this point, pi_new is the polling island that both item->pi and bag->pi
@@ -1792,8 +1821,14 @@ retry:
   GRPC_LOG_IF_ERROR("add_poll_object", error);
   GPR_TIMER_END("add_poll_object", 0);
 }
-#endif
 
+static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_fd *fd) {
+  add_poll_object(exec_ctx, &pollset->po, &fd->po, POLL_OBJ_POLLSET,
+                  POLL_OBJ_FD);
+}
+
+#if 0
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
   GPR_TIMER_BEGIN("pollset_add_fd", 0);
@@ -1914,9 +1949,8 @@ retry:
   gpr_mu_unlock(&pollset->po.mu);
 
   GRPC_LOG_IF_ERROR("pollset_add_fd", error);
-
-  GPR_TIMER_END("pollset_add_fd", 0);
 }
+#endif
 
 /*******************************************************************************
  * Pollset-set Definitions
