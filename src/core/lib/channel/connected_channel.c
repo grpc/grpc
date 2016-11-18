@@ -114,7 +114,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem,
                                      grpc_channel_element_args *args) {
   channel_data *cd = (channel_data *)elem->channel_data;

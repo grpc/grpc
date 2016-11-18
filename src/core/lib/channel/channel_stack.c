@@ -102,7 +102,7 @@ grpc_call_element *grpc_call_stack_element(grpc_call_stack *call_stack,
   return CALL_ELEMS_FROM_STACK(call_stack) + index;
 }
 
-grpc_error* grpc_channel_stack_init(
+grpc_error *grpc_channel_stack_init(
     grpc_exec_ctx *exec_ctx, int initial_refs, grpc_iomgr_cb_func destroy,
     void *destroy_arg, const grpc_channel_filter **filters, size_t filter_count,
     const grpc_channel_args *channel_args, grpc_transport *optional_transport,

@@ -100,9 +100,9 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   }
   args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
-  grpc_error* error = grpc_channel_stack_builder_finish(
+  grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
-      (void**)&channel);
+      (void **)&channel);
   if (error != GRPC_ERROR_NONE) {
     grpc_channel_stack_destroy(exec_ctx, (grpc_channel_stack *)channel);
     gpr_free(channel);

@@ -451,7 +451,7 @@ static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for channel_data */
-static grpc_error* cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_element *elem,
                                         grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;

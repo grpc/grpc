@@ -254,7 +254,7 @@ grpc_error *grpc_channel_stack_builder_finish(
   grpc_channel_stack *channel_stack =
       (grpc_channel_stack *)(*result + prefix_bytes);
   // and initialize it
-  grpc_error* error = grpc_channel_stack_init(
+  grpc_error *error = grpc_channel_stack_init(
       exec_ctx, initial_refs, destroy,
       destroy_arg == NULL ? *result : destroy_arg, filters, num_filters,
       builder->args, builder->transport, builder->name, channel_stack);
