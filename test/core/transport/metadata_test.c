@@ -189,8 +189,39 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
           &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
+  if (intern_keys && intern_values) {
+    GPR_ASSERT(a.payload == b.payload);
+    GPR_ASSERT(a.payload == c.payload);
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
+}
+
+static void test_identity_laws(bool intern_keys, bool intern_values) {
+  gpr_log(GPR_INFO, "test_identity_laws: intern_keys=%d intern_values=%d",
+          intern_keys, intern_values);
+
+  grpc_init();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_mdelem a, b, c;
+  a = grpc_mdelem_from_slices(
+      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("b"), intern_values));
+  b = grpc_mdelem_from_slices(
+      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("b"), intern_values));
+  c = grpc_mdelem_from_slices(
+      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("b"), intern_values));
+  GPR_ASSERT(grpc_mdelem_eq(a, a));
+  GPR_ASSERT(grpc_mdelem_eq(b, b));
+  GPR_ASSERT(grpc_mdelem_eq(c, c));
   GPR_ASSERT(grpc_mdelem_eq(a, b));
+  GPR_ASSERT(grpc_mdelem_eq(b, c));
   GPR_ASSERT(grpc_mdelem_eq(a, c));
+  GPR_ASSERT(grpc_mdelem_eq(b, a));
+  GPR_ASSERT(grpc_mdelem_eq(c, b));
+  GPR_ASSERT(grpc_mdelem_eq(c, a));
   if (intern_keys && intern_values) {
     GPR_ASSERT(a.payload == b.payload);
     GPR_ASSERT(a.payload == c.payload);
@@ -199,6 +230,9 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
     GPR_ASSERT(a.payload != c.payload);
     GPR_ASSERT(b.payload != c.payload);
   }
+  GRPC_MDELEM_UNREF(&exec_ctx, a);
+  GRPC_MDELEM_UNREF(&exec_ctx, b);
+  GRPC_MDELEM_UNREF(&exec_ctx, c);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 }
@@ -344,7 +378,8 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
-    grpc_mdelem p = (grpc_mdelem){&grpc_static_mdelem_table[i]};
+    grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[i],
+                                     GRPC_MDELEM_STORAGE_STATIC);
     grpc_mdelem q =
         grpc_mdelem_from_slices(&exec_ctx, maybe_dup(GRPC_MDKEY(p), dup_key),
                                 maybe_dup(GRPC_MDVALUE(p), dup_value));
@@ -367,6 +402,7 @@ int main(int argc, char **argv) {
     for (int v = 0; v <= 1; v++) {
       test_create_metadata(k, v);
       test_create_many_ephemeral_metadata(k, v);
+      test_identity_laws(k, v);
       test_spin_creating_the_same_thing(k, v);
       test_mdelem_sizes_in_hpack(k, v);
       test_copied_static_metadata(k, v);

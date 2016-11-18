@@ -459,7 +459,8 @@ grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {
   uint32_t k = (uint32_t)(a * 98 + b);
   uint32_t h = elems_phash(k);
   return elem_keys[h] == k
-             ? (grpc_mdelem){&grpc_static_mdelem_table[elem_idxs[h]]}
+             ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]],
+                                GRPC_MDELEM_STORAGE_STATIC)
              : GRPC_MDNULL;
 }
 

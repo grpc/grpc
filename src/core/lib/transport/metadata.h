@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/useful.h>
 
@@ -76,21 +77,57 @@ extern "C" {
 /* Forward declarations */
 typedef struct grpc_mdelem grpc_mdelem;
 
-/* if changing this, make identical changes in internal_metadata in
-   metadata.c */
+/* if changing this, make identical changes in:
+   - interned_metadata, allocated_metadata in metadata.c
+   - grpc_metadata in grpc_types.h */
 typedef struct grpc_mdelem_data {
   const grpc_slice key;
   const grpc_slice value;
   /* there is a private part to this in metadata.c */
 } grpc_mdelem_data;
 
+typedef enum {
+  /* memory pointed to by grpc_mdelem::payload is owned by an external system */
+  GRPC_MDELEM_STORAGE_EXTERNAL = 0,
+  /* memory pointed to by grpc_mdelem::payload is interned by the metadata
+     system */
+  GRPC_MDELEM_STORAGE_INTERNED = 1,
+  /* memory pointed to by grpc_mdelem::payload is allocated by the metadata
+     system */
+  GRPC_MDELEM_STORAGE_ALLOCATED = 2,
+  /* memory is in the static metadata table */
+  GRPC_MDELEM_STORAGE_STATIC = 3,
+} grpc_mdelem_data_storage;
+
 struct grpc_mdelem {
-  grpc_mdelem_data *payload;
+  /* a grpc_mdelem_data* generally, with the two lower bits signalling memory
+     ownership as per grpc_mdelem_data_storage */
+  uintptr_t payload;
 };
+
+#define GRPC_MDELEM_DATA(md) \
+  ((grpc_mdelem_data *)((md).payload & ~(uintptr_t)3))
+#define GRPC_MDELEM_STORAGE(md) \
+  ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
+#define GRPC_MAKE_MDELEM(data, storage) \
+  ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage)})
 
 /* Unrefs the slices. */
 grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,
                                     grpc_slice value);
+
+/* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
+   object as backing storage (so lifetimes should align) */
+grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_exec_ctx *exec_ctx,
+                                           grpc_metadata *metadata);
+
+/* Does not unref the slices; if a new non-interned mdelem is needed, allocates
+   one if compatible_external_backing_store is NULL, or uses
+   compatible_external_backing_store if it is non-NULL (in which case it's the
+   users responsibility to ensure that it outlives usage) */
+grpc_mdelem grpc_mdelem_create(
+    grpc_exec_ctx *exec_ctx, grpc_slice key, grpc_slice value,
+    grpc_mdelem_data *compatible_external_backing_store);
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
 
@@ -119,11 +156,11 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem md);
 void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem md);
 #endif
 
-#define GRPC_MDKEY(md) ((md).payload->key)
-#define GRPC_MDVALUE(md) ((md).payload->value)
+#define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
+#define GRPC_MDVALUE(md) (GRPC_MDELEM_DATA(md)->value)
 
-#define GRPC_MDNULL ((grpc_mdelem){NULL})
-#define GRPC_MDISNULL(md) ((md).payload == NULL)
+#define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL)
+#define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
 #define GRPC_MDELEM_LENGTH(e)                                                  \

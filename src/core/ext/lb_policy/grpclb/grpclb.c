@@ -381,10 +381,14 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
 
 /* vtable for LB tokens in grpc_lb_addresses. */
 static void *lb_token_copy(void *token) {
-  return token == NULL ? NULL : GRPC_MDELEM_REF((grpc_mdelem){token}).payload;
+  return token == NULL
+             ? NULL
+             : (void *)GRPC_MDELEM_REF((grpc_mdelem){(uintptr_t)token}).payload;
 }
 static void lb_token_destroy(grpc_exec_ctx *exec_ctx, void *token) {
-  if (token != NULL) GRPC_MDELEM_UNREF(exec_ctx, (grpc_mdelem){token});
+  if (token != NULL) {
+    GRPC_MDELEM_UNREF(exec_ctx, (grpc_mdelem){(uintptr_t)token});
+  }
 }
 static int lb_token_cmp(void *token1, void *token2) {
   if (token1 > token2) return 1;
@@ -454,9 +458,9 @@ static grpc_lb_addresses *process_serverlist_locked(
           strnlen(server->load_balance_token, lb_token_max_length);
       grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
           server->load_balance_token, lb_token_length);
-      user_data =
-          grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN, lb_token_mdstr)
-              .payload;
+      user_data = (void *)grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_LB_TOKEN,
+                                                  lb_token_mdstr)
+                      .payload;
     } else {
       char *uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,
@@ -464,7 +468,7 @@ static grpc_lb_addresses *process_serverlist_locked(
               "be used instead",
               uri);
       gpr_free(uri);
-      user_data = GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
+      user_data = (void *)GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
     }
 
     grpc_lb_addresses_set_address(lb_addresses, addr_idx, &addr.addr, addr.len,

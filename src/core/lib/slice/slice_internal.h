@@ -46,6 +46,9 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx *exec_ctx,
 void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
                                         grpc_slice_buffer *sb);
 
+/* Check if a slice is interned */
+bool grpc_slice_is_interned(grpc_slice slice);
+
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
 void grpc_test_only_set_slice_hash_seed(uint32_t key);

@@ -359,7 +359,7 @@ print >>H, 'extern grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_
 print >>H, 'extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
 for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
-  print >>H, '#define %s ((grpc_mdelem){&grpc_static_mdelem_table[%d]})' % (mangle(elem).upper(), i)
+  print >>H, '#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], GRPC_MDELEM_STORAGE_STATIC))' % (mangle(elem).upper(), i)
 print >>H
 print >>C, 'uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
 print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
@@ -440,7 +440,7 @@ print >>C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
 print >>C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
 print >>C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
 print >>C, '  uint32_t h = elems_phash(k);'
-print >>C, '  return elem_keys[h] == k ? (grpc_mdelem){&grpc_static_mdelem_table[elem_idxs[h]]} : GRPC_MDNULL;'
+print >>C, '  return elem_keys[h] == k ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
 print >>C, '}'
 print >>C
 
@@ -455,7 +455,7 @@ print >>C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >>C, '};'
 print >>C
 
-print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) ((grpc_mdelem){&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]]})'
+print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >>H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

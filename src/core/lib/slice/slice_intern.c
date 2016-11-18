@@ -193,6 +193,11 @@ void grpc_slice_static_intern(grpc_slice *slice) {
   }
 }
 
+bool grpc_slice_is_interned(grpc_slice slice) {
+  return (slice.refcount && slice.refcount->vtable == &interned_slice_vtable) ||
+         grpc_is_static_metadata_string(slice);
+}
+
 grpc_slice grpc_slice_intern(grpc_slice slice) {
   if (grpc_is_static_metadata_string(slice)) {
     return slice;
