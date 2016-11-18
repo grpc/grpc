@@ -195,9 +195,9 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               void* ignored) {}
 
 // Constructor for channel_data.
-static void init_channel_elem(grpc_exec_ctx* exec_ctx,
-                              grpc_channel_element* elem,
-                              grpc_channel_element_args* args) {
+static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
+                                     grpc_channel_element* elem,
+                                     grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
   memset(chand, 0, sizeof(*chand));
@@ -228,6 +228,7 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
         (grpc_method_config_table*)channel_arg->value.pointer.p,
         method_config_convert_value, &message_size_limits_vtable);
   }
+  return GRPC_ERROR_NONE;
 }
 
 // Destructor for channel_data.

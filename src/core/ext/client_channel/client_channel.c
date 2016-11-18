@@ -451,9 +451,9 @@ static void cc_get_channel_info(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for channel_data */
-static void cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem,
-                                 grpc_channel_element_args *args) {
+static grpc_error* cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_element *elem,
+                                        grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   memset(chand, 0, sizeof(*chand));
   GPR_ASSERT(args->is_last);
@@ -478,8 +478,10 @@ static void cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   chand->resolver = grpc_resolver_create(arg->value.string, args->channel_args);
-// FIXME: return failure instead of asserting
-  GPR_ASSERT(chand->resolver != NULL);
+  if (chand->resolver == NULL) {
+    return GRPC_ERROR_CREATE("resolver creation failed");
+  }
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel_data */
