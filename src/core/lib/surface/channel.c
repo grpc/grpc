@@ -119,7 +119,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
           gpr_log(GPR_ERROR, "%s ignored: it must be a string",
                   GRPC_ARG_DEFAULT_AUTHORITY);
         } else {
-          if (channel->default_authority) {
+          if (!GRPC_MDISNULL(channel->default_authority)) {
             /* setting this takes precedence over anything else */
             GRPC_MDELEM_UNREF(exec_ctx, channel->default_authority);
           }
@@ -133,7 +133,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
           gpr_log(GPR_ERROR, "%s ignored: it must be a string",
                   GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
         } else {
-          if (channel->default_authority) {
+          if (!GRPC_MDISNULL(channel->default_authority)) {
             /* other ways of setting this (notably ssl) take precedence */
             gpr_log(GPR_ERROR,
                     "%s ignored: default host already set some other way",
@@ -199,9 +199,9 @@ static grpc_call *grpc_channel_create_call_internal(
   GPR_ASSERT(!(cq != NULL && pollset_set_alternative != NULL));
 
   send_metadata[num_metadata++] = path_mdelem;
-  if (authority_mdelem != NULL) {
+  if (!GRPC_MDISNULL(authority_mdelem)) {
     send_metadata[num_metadata++] = authority_mdelem;
-  } else if (channel->default_authority != NULL) {
+  } else if (!GRPC_MDISNULL(channel->default_authority)) {
     send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
@@ -236,7 +236,7 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                               grpc_slice_ref(method)),
       host != NULL ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
                                              grpc_slice_ref(*host))
-                   : NULL,
+                   : GRPC_MDNULL,
       deadline);
   grpc_exec_ctx_finish(&exec_ctx);
   return call;
@@ -253,7 +253,7 @@ grpc_call *grpc_channel_create_pollset_set_call(
                               grpc_slice_ref(method)),
       host != NULL ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
                                              grpc_slice_ref(*host))
-                   : NULL,
+                   : GRPC_MDNULL,
       deadline);
 }
 
@@ -273,7 +273,7 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
       host ? grpc_mdelem_from_slices(
                  &exec_ctx, GRPC_MDSTR_AUTHORITY,
                  grpc_slice_intern(grpc_slice_from_copied_string(host)))
-           : NULL;
+           : GRPC_MDNULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
@@ -301,8 +301,7 @@ grpc_call *grpc_channel_create_registered_call(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call *call = grpc_channel_create_call_internal(
       &exec_ctx, channel, parent_call, propagation_mask, completion_queue, NULL,
-      GRPC_MDELEM_REF(rc->path),
-      rc->authority ? GRPC_MDELEM_REF(rc->authority) : NULL, deadline);
+      GRPC_MDELEM_REF(rc->path), GRPC_MDELEM_REF(rc->authority), deadline);
   grpc_exec_ctx_finish(&exec_ctx);
   return call;
 }
@@ -331,14 +330,10 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
     registered_call *rc = channel->registered_calls;
     channel->registered_calls = rc->next;
     GRPC_MDELEM_UNREF(exec_ctx, rc->path);
-    if (rc->authority) {
-      GRPC_MDELEM_UNREF(exec_ctx, rc->authority);
-    }
+    GRPC_MDELEM_UNREF(exec_ctx, rc->authority);
     gpr_free(rc);
   }
-  if (channel->default_authority != NULL) {
-    GRPC_MDELEM_UNREF(exec_ctx, channel->default_authority);
-  }
+  GRPC_MDELEM_UNREF(exec_ctx, channel->default_authority);
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);
@@ -368,7 +363,7 @@ grpc_compression_options grpc_channel_compression_options(
 }
 
 grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
-                                                 grpc_channel *channel, int i) {
+                                                grpc_channel *channel, int i) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   switch (i) {
     case 0:

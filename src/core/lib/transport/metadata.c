@@ -313,8 +313,8 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem) {
 }
 
 grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
+  if (gmd.payload == NULL || is_mdelem_static(gmd)) return gmd;
   internal_metadata *md = (internal_metadata *)gmd.payload;
-  if (is_mdelem_static(gmd)) return gmd;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
           "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
@@ -333,9 +333,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
 }
 
 void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
+  if (gmd.payload == NULL || is_mdelem_static(gmd)) return;
   internal_metadata *md = (internal_metadata *)gmd.payload;
-  if (!md) return;
-  if (is_mdelem_static(gmd)) return;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
           "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
