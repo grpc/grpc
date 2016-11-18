@@ -615,6 +615,7 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   rr_connectivity_data *rr_conn_data = arg;
   glb_lb_policy *glb_policy = rr_conn_data->glb_policy;
   gpr_mu_lock(&glb_policy->mu);
+  grpc_lb_policy *maybe_unref = NULL;
 
   if (rr_conn_data->state != GRPC_CHANNEL_SHUTDOWN &&
       !glb_policy->shutting_down) {
@@ -627,11 +628,16 @@ static void glb_rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                           &rr_conn_data->state,
                                           &rr_conn_data->on_change);
   } else {
-    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                              "rr_connectivity_cb");
+    /* we need to stash away the current policy to be UNREF'd after releasing
+     * the lock. Otherwise, if the UNREF is the last one, the policy would be
+     * destroyed, alongside the lock, which would result in a use-after-free */
+    maybe_unref = &glb_policy->base;
     gpr_free(rr_conn_data);
   }
   gpr_mu_unlock(&glb_policy->mu);
+  if (maybe_unref != NULL) {
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, maybe_unref, "rr_connectivity_cb");
+  }
 }
 
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
