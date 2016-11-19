@@ -3662,7 +3662,7 @@ configs:
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG
+    DEFINES: _DEBUG DEBUG PO_DEBUG
   easan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
