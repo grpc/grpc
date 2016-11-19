@@ -257,26 +257,8 @@ struct grpc_pollset {
 /*******************************************************************************
  * Pollset-set Declarations
  */
-/* TODO: sreek - Change the pollset_set implementation such that a pollset_set
- * directly points to a polling_island (and adding an fd/pollset/pollset_set to
- * the current pollset_set would result in polling island merges. This would
- * remove the need to maintain fd_count here. This will also significantly
- * simplify the grpc_fd structure since we would no longer need to explicitly
- * maintain the orphaned state */
 struct grpc_pollset_set {
   poll_obj po;
-
-  size_t pollset_count;
-  size_t pollset_capacity;
-  grpc_pollset **pollsets;
-
-  size_t pollset_set_count;
-  size_t pollset_set_capacity;
-  struct grpc_pollset_set **pollset_sets;
-
-  size_t fd_count;
-  size_t fd_capacity;
-  grpc_fd **fds;
 };
 
 /*******************************************************************************
@@ -987,9 +969,11 @@ static grpc_fd *fd_create(int fd, const char *name) {
   return new_fd;
 }
 
+/*
 static bool fd_is_orphaned(grpc_fd *fd) {
   return (gpr_atm_acq_load(&fd->refst) & 1) == 0;
 }
+*/
 
 static int fd_wrapped_fd(grpc_fd *fd) {
   int ret_fd = -1;
@@ -1956,6 +1940,7 @@ retry:
  * Pollset-set Definitions
  */
 
+#if 0
 static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pollset_set = gpr_malloc(sizeof(*pollset_set));
   memset(pollset_set, 0, sizeof(*pollset_set));
@@ -2093,6 +2078,61 @@ static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
     }
   }
   gpr_mu_unlock(&bag->po.mu);
+}
+#endif  // Pollset_set functions
+
+static grpc_pollset_set *pollset_set_create(void) {
+  grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
+  pss->po.pi = NULL;
+  gpr_mu_init(&pss->po.mu);
+  return pss;
+}
+
+static void pollset_set_destroy(grpc_pollset_set *pss) {
+  gpr_mu_destroy(&pss->po.mu);
+
+  if (pss->po.pi != NULL) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    PI_UNREF(&exec_ctx, pss->po.pi, "pss_destroy");
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+
+  gpr_free(pss);
+}
+
+static void pollset_set_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
+                               grpc_fd *fd) {
+  add_poll_object(exec_ctx, &pss->po, &fd->po, POLL_OBJ_POLLSET_SET,
+                  POLL_OBJ_FD);
+}
+
+static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
+                               grpc_fd *fd) {
+  /* Nothing to do */
+}
+
+static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
+                                    grpc_pollset_set *pss, grpc_pollset *ps) {
+  add_poll_object(exec_ctx, &pss->po, &ps->po, POLL_OBJ_POLLSET_SET,
+                  POLL_OBJ_POLLSET);
+}
+
+static void pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
+                                    grpc_pollset_set *pss, grpc_pollset *ps) {
+  /* Nothing to do */
+}
+
+static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
+                                        grpc_pollset_set *bag,
+                                        grpc_pollset_set *item) {
+  add_poll_object(exec_ctx, &bag->po, &item->po, POLL_OBJ_POLLSET_SET,
+                  POLL_OBJ_POLLSET_SET);
+}
+
+static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
+                                        grpc_pollset_set *bag,
+                                        grpc_pollset_set *item) {
+  /* Nothing to do */
 }
 
 /* Test helper functions
