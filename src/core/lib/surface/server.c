@@ -742,11 +742,13 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
   if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_PATH) == 0) {
     if (!calld->path_set) {
       calld->path = grpc_slice_ref(GRPC_MDVALUE(md));
+      calld->path_set = true;
     }
     return GRPC_MDNULL;
   } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY) == 0) {
     if (!calld->host_set) {
       calld->host = grpc_slice_ref(GRPC_MDVALUE(md));
+      calld->host_set = true;
     }
     return GRPC_MDNULL;
   }
