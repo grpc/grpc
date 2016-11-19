@@ -848,34 +848,34 @@ include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+doc/wait-for-ready.md \
+doc/stress_test_framework.md \
 doc/binary-logging.md \
-doc/c-style-guide.md \
-doc/command_line_tool.md \
-doc/compression.md \
-doc/compression_cookbook.md \
-doc/connection-backoff-interop-test-description.md \
-doc/connection-backoff.md \
-doc/connectivity-semantics-and-api.md \
-doc/cpp-style-guide.md \
-doc/environment_variables.md \
-doc/epoll-polling-engine.md \
-doc/fail_fast.md \
+doc/load-balancing.md \
 doc/g_stands_for.md \
+doc/connectivity-semantics-and-api.md \
+doc/negative-http2-interop-test-descriptions.md \
+doc/c-style-guide.md \
+doc/fail_fast.md \
+doc/PROTOCOL-WEB.md \
+doc/server_reflection_tutorial.md \
+doc/server-reflection.md \
+doc/naming.md \
+doc/compression_cookbook.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
-doc/interop-test-descriptions.md \
-doc/load-balancing.md \
-doc/naming.md \
-doc/negative-http2-interop-test-descriptions.md \
+doc/connection-backoff-interop-test-description.md \
+doc/command_line_tool.md \
+doc/connection-backoff.md \
+doc/cpp-style-guide.md \
+doc/compression.md \
+doc/environment_variables.md \
 doc/PROTOCOL-HTTP2.md \
-doc/PROTOCOL-WEB.md \
-doc/server-reflection.md \
-doc/server_reflection_tutorial.md \
 doc/statuscodes.md \
-doc/stress_test_framework.md \
-doc/wait-for-ready.md \
-doc/cpp/pending_api_cleanups.md \
-doc/cpp/perf_notes.md
+doc/epoll-polling-engine.md \
+doc/interop-test-descriptions.md \
+doc/cpp/perf_notes.md \
+doc/cpp/pending_api_cleanups.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
