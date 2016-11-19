@@ -601,8 +601,8 @@ static int prepare_application_metadata(
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s", str);
       gpr_free(str);
       break;
-    } else if (!grpc_is_binary_header(md->value) &&
-               !grpc_header_nonbin_value_is_legal(GRPC_MDVALUE(l->md))) {
+    } else if (!grpc_is_binary_header(md->key) &&
+               !grpc_header_nonbin_value_is_legal(md->value)) {
       char *str = grpc_dump_slice(md->value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR, "attempt to send invalid metadata value: %s", str);
       gpr_free(str);
