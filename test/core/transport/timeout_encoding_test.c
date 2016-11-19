@@ -88,8 +88,8 @@ void test_encoding(void) {
 static void assert_decodes_as(const char *buffer, gpr_timespec expected) {
   gpr_timespec got;
   gpr_log(GPR_INFO, "check decoding '%s'", buffer);
-  GPR_ASSERT(1 == grpc_http2_decode_timeout((const uint8_t *)buffer,
-                                            strlen(buffer), &got));
+  GPR_ASSERT(1 == grpc_http2_decode_timeout(
+                      grpc_slice_from_static_string(buffer), &got));
   GPR_ASSERT(0 == gpr_time_cmp(got, expected));
 }
 
@@ -137,7 +137,8 @@ void test_decoding(void) {
 
 static void assert_decoding_fails(const char *s) {
   gpr_timespec x;
-  GPR_ASSERT(0 == grpc_http2_decode_timeout((const uint8_t *)s, strlen(s), &x));
+  GPR_ASSERT(0 ==
+             grpc_http2_decode_timeout(grpc_slice_from_static_string(s), &x));
 }
 
 void test_decoding_fails(void) {
