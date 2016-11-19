@@ -187,9 +187,23 @@ static void evict_entry(grpc_chttp2_hpack_compressor *c) {
   c->table_elems--;
 }
 
+static bool is_interned(grpc_mdelem elem) {
+  switch (GRPC_MDELEM_STORAGE(elem)) {
+    case GRPC_MDELEM_STORAGE_ALLOCATED:
+    case GRPC_MDELEM_STORAGE_EXTERNAL:
+      return false;
+    case GRPC_MDELEM_STORAGE_INTERNED:
+    case GRPC_MDELEM_STORAGE_STATIC:
+      return true;
+  }
+  GPR_UNREACHABLE_CODE(return false);
+}
+
 /* add an element to the decoder table */
 static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
                      grpc_mdelem elem) {
+  GPR_ASSERT(is_interned(elem));
+
   uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
   uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
@@ -384,13 +398,6 @@ static uint32_t dynidx(grpc_chttp2_hpack_compressor *c, uint32_t elem_index) {
 /* encode an mdelem */
 static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
                       grpc_mdelem elem, framer_state *st) {
-  uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
-  uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
-  uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
-  size_t decoder_space_usage;
-  uint32_t indices_key;
-  int should_add_elem;
-
   GPR_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
   if (GRPC_SLICE_START_PTR(GRPC_MDKEY(elem))[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
@@ -399,6 +406,22 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
         st->seen_regular_header == 0 &&
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
+
+  if (!is_interned(elem)) {
+    emit_lithdr_noidx_v(c, elem, st);
+    return;
+  }
+
+  uint32_t key_hash;
+  uint32_t value_hash;
+  uint32_t elem_hash;
+  size_t decoder_space_usage;
+  uint32_t indices_key;
+  int should_add_elem;
+
+  key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
+  value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
+  elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
 
   inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
 
