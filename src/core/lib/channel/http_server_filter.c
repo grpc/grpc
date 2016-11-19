@@ -126,7 +126,7 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     } else if (grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_GET)) {
       calld->seen_method = 1;
       *calld->recv_cacheable_request = true;
-    } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME)) {
+    } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME) == 0) {
       calld->seen_scheme = 1;
     } else if (grpc_mdelem_eq(md, GRPC_MDELEM_TE_TRAILERS)) {
       calld->seen_te_trailers = 1;
