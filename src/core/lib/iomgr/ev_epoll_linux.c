@@ -97,6 +97,9 @@ typedef enum {
 } poll_obj_type;
 
 typedef struct poll_obj {
+#ifdef PO_DEBUG
+  poll_obj_type obj_type;
+#endif
   gpr_mu mu;
   struct polling_island *pi;
 } poll_obj;
@@ -946,6 +949,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
    * would be holding a lock to it anyway. */
   gpr_mu_lock(&new_fd->po.mu);
   new_fd->po.pi = NULL;
+#ifdef PO_DEBUG
+  new_fd->po.obj_type = POLL_OBJ_FD;
+#endif
 
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
@@ -1281,6 +1287,9 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->po.mu);
   *mu = &pollset->po.mu;
   pollset->po.pi = NULL;
+#ifdef PO_DEBUG
+  pollset->po.obj_type = POLL_OBJ_POLLSET;
+#endif
 
   pollset->root_worker.next = pollset->root_worker.prev = &pollset->root_worker;
   pollset->kicked_without_pollers = false;
@@ -1656,9 +1665,14 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 static void add_poll_object(grpc_exec_ctx *exec_ctx, poll_obj *bag,
-                            poll_obj *item, poll_obj_type bag_type,
+                            poll_obj_type bag_type, poll_obj *item,
                             poll_obj_type item_type) {
   GPR_TIMER_BEGIN("add_poll_object", 0);
+
+#ifdef PO_DEBUG
+  GPR_ASSERT(item->obj_type == item_type);
+  GPR_ASSERT(bag->obj_type == bag_type);
+#endif
 
   grpc_error *error = GRPC_ERROR_NONE;
   polling_island *pi_new = NULL;
@@ -1802,7 +1816,7 @@ retry:
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
-  add_poll_object(exec_ctx, &pollset->po, &fd->po, POLL_OBJ_POLLSET,
+  add_poll_object(exec_ctx, &pollset->po, POLL_OBJ_POLLSET, &fd->po,
                   POLL_OBJ_FD);
 }
 
@@ -1812,8 +1826,11 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
-  pss->po.pi = NULL;
   gpr_mu_init(&pss->po.mu);
+  pss->po.pi = NULL;
+#ifdef PO_DEBUG
+  pss->po.obj_type = POLL_OBJ_POLLSET_SET;
+#endif
   return pss;
 }
 
@@ -1831,7 +1848,7 @@ static void pollset_set_destroy(grpc_pollset_set *pss) {
 
 static void pollset_set_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
                                grpc_fd *fd) {
-  add_poll_object(exec_ctx, &pss->po, &fd->po, POLL_OBJ_POLLSET_SET,
+  add_poll_object(exec_ctx, &pss->po, POLL_OBJ_POLLSET_SET, &fd->po,
                   POLL_OBJ_FD);
 }
 
@@ -1842,7 +1859,7 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
 
 static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset_set *pss, grpc_pollset *ps) {
-  add_poll_object(exec_ctx, &pss->po, &ps->po, POLL_OBJ_POLLSET_SET,
+  add_poll_object(exec_ctx, &pss->po, POLL_OBJ_POLLSET_SET, &ps->po,
                   POLL_OBJ_POLLSET);
 }
 
@@ -1854,7 +1871,7 @@ static void pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
 static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
                                         grpc_pollset_set *bag,
                                         grpc_pollset_set *item) {
-  add_poll_object(exec_ctx, &bag->po, &item->po, POLL_OBJ_POLLSET_SET,
+  add_poll_object(exec_ctx, &bag->po, POLL_OBJ_POLLSET_SET, &item->po,
                   POLL_OBJ_POLLSET_SET);
 }
 
