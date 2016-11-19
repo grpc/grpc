@@ -496,6 +496,7 @@ void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b) {
   if (a.payload == b.payload) return true;
+  if (GRPC_MDISNULL(a) || GRPC_MDISNULL(b)) return false;
   return 0 == grpc_slice_cmp(GRPC_MDKEY(a), GRPC_MDKEY(b)) &&
          0 == grpc_slice_cmp(GRPC_MDVALUE(a), GRPC_MDVALUE(b));
 }

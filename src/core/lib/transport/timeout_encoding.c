@@ -131,16 +131,15 @@ void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer) {
   }
 }
 
-static int is_all_whitespace(const char *p) {
-  while (*p == ' ') p++;
-  return *p == 0;
+static int is_all_whitespace(const char *p, const char *end) {
+  while (p != end && *p == ' ') p++;
+  return p == end;
 }
 
-int grpc_http2_decode_timeout(const uint8_t *buffer, size_t length,
-                              gpr_timespec *timeout) {
+int grpc_http2_decode_timeout(grpc_slice text, gpr_timespec *timeout) {
   int32_t x = 0;
-  const uint8_t *p = buffer;
-  const uint8_t *end = p + length;
+  const uint8_t *p = GRPC_SLICE_START_PTR(text);
+  const uint8_t *end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
   /* skip whitespace */
   for (; p != end && *p == ' '; p++)
@@ -187,5 +186,5 @@ int grpc_http2_decode_timeout(const uint8_t *buffer, size_t length,
       return 0;
   }
   p++;
-  return is_all_whitespace((const char *)p);
+  return is_all_whitespace((const char *)p, (const char *)end);
 }
