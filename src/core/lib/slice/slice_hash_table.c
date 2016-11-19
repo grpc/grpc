@@ -40,18 +40,14 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
 
-static grpc_slice_refcount terminal_slice_refcount = {NULL};
-static const grpc_slice terminal_slice = {&terminal_slice_refcount,
-                                          .data.refcounted = {0, 0}};
-
 struct grpc_slice_hash_table {
   gpr_refcount refs;
   size_t size;
   grpc_slice_hash_table_entry* entries;
 };
 
-static bool is_terminal(grpc_slice slice) {
-  return slice.refcount == &terminal_slice_refcount;
+static bool is_empty(grpc_slice_hash_table_entry *entry) {
+  return entry->vtable == NULL;
 }
 
 // Helper function for insert and get operations that performs quadratic
@@ -61,7 +57,7 @@ static size_t grpc_slice_hash_table_find_index(
   size_t hash = grpc_slice_hash(key);
   for (size_t i = 0; i < table->size; ++i) {
     const size_t idx = (hash + i * i) % table->size;
-    if (is_terminal(table->entries[idx].key)) {
+    if (is_empty(&table->entries[idx])) {
       return find_empty ? idx : table->size;
     }
     if (grpc_slice_cmp(table->entries[idx].key, key) == 0) {
@@ -96,9 +92,6 @@ grpc_slice_hash_table* grpc_slice_hash_table_create(
   table->entries = gpr_malloc(entry_size);
   memset(table->entries, 0, entry_size);
   for (size_t i = 0; i < num_entries; ++i) {
-    table->entries[i].key = terminal_slice;
-  }
-  for (size_t i = 0; i < num_entries; ++i) {
     grpc_slice_hash_table_entry* entry = &entries[i];
     grpc_slice_hash_table_add(table, entry->key, entry->value, entry->vtable);
   }
@@ -115,7 +108,7 @@ void grpc_slice_hash_table_unref(grpc_exec_ctx* exec_ctx,
   if (table != NULL && gpr_unref(&table->refs)) {
     for (size_t i = 0; i < table->size; ++i) {
       grpc_slice_hash_table_entry* entry = &table->entries[i];
-      if (!is_terminal(entry->key)) {
+      if (!is_empty(entry)) {
         grpc_slice_unref_internal(exec_ctx, entry->key);
         entry->vtable->destroy_value(exec_ctx, entry->value);
       }

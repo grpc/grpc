@@ -149,7 +149,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_call_details *call_details =
       malloc(sizeof(grpc_call_details) * NUM_CALLS);
   grpc_status_code *status = malloc(sizeof(grpc_status_code) * NUM_CALLS);
-  grpc_slice *details = malloc(sizeof(char *) * NUM_CALLS);
+  grpc_slice *details = malloc(sizeof(grpc_slice) * NUM_CALLS);
   grpc_byte_buffer **request_payload_recv =
       malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
   int *was_cancelled = malloc(sizeof(int) * NUM_CALLS);

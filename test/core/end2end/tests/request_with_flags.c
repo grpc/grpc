@@ -167,9 +167,9 @@ static void test_invoke_request_with_flags(
   if (expectation == GRPC_CALL_OK) {
     CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     cq_verify(cqv);
+    grpc_slice_unref(details);
   }
 
-  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
