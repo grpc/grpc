@@ -671,6 +671,8 @@ static const uint8_t inverse_base64[256] = {
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
   if (add_to_table) {
+    GPR_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
+               GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
     grpc_error *err = grpc_chttp2_hptbl_add(exec_ctx, &p->table, md);
     if (err != GRPC_ERROR_NONE) return err;
   }
@@ -683,8 +685,14 @@ static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
 }
 
 static grpc_slice take_string(grpc_chttp2_hpack_parser *p,
-                              grpc_chttp2_hpack_parser_string *str) {
-  grpc_slice s = grpc_slice_from_copied_buffer(str->str, str->length);
+                              grpc_chttp2_hpack_parser_string *str,
+                              bool intern) {
+  grpc_slice s;
+  if (intern) {
+    s = grpc_slice_intern(grpc_slice_from_static_buffer(str->str, str->length));
+  } else {
+    s = grpc_slice_from_copied_buffer(str->str, str->length);
+  }
   str->length = 0;
   return s;
 }
@@ -819,7 +827,7 @@ static grpc_error *finish_lithdr_incidx(grpc_exec_ctx *exec_ctx,
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                              take_string(p, &p->value)),
+                              take_string(p, &p->value, true)),
       1);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -830,10 +838,11 @@ static grpc_error *finish_lithdr_incidx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
-  grpc_error *err = on_hdr(
-      exec_ctx, p, grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key),
-                                           take_string(p, &p->value)),
-      1);
+  grpc_error *err =
+      on_hdr(exec_ctx, p,
+             grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key, true),
+                                     take_string(p, &p->value, true)),
+             1);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -888,7 +897,7 @@ static grpc_error *finish_lithdr_notidx(grpc_exec_ctx *exec_ctx,
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                              take_string(p, &p->value)),
+                              take_string(p, &p->value, false)),
       0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -899,10 +908,11 @@ static grpc_error *finish_lithdr_notidx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
-  grpc_error *err = on_hdr(
-      exec_ctx, p, grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key),
-                                           take_string(p, &p->value)),
-      0);
+  grpc_error *err =
+      on_hdr(exec_ctx, p,
+             grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key, false),
+                                     take_string(p, &p->value, false)),
+             0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -957,7 +967,7 @@ static grpc_error *finish_lithdr_nvridx(grpc_exec_ctx *exec_ctx,
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                              take_string(p, &p->value)),
+                              take_string(p, &p->value, false)),
       0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -968,10 +978,11 @@ static grpc_error *finish_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
-  grpc_error *err = on_hdr(
-      exec_ctx, p, grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key),
-                                           take_string(p, &p->value)),
-      0);
+  grpc_error *err =
+      on_hdr(exec_ctx, p,
+             grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key, false),
+                                     take_string(p, &p->value, false)),
+             0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
