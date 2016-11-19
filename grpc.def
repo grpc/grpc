@@ -145,6 +145,7 @@ EXPORTS
     grpc_slice_from_copied_string
     grpc_slice_from_copied_buffer
     grpc_slice_from_static_string
+    grpc_slice_from_static_buffer
     grpc_slice_sub
     grpc_slice_sub_no_ref
     grpc_slice_split_tail
@@ -156,8 +157,11 @@ EXPORTS
     grpc_slice_buf_cmp
     grpc_slice_buf_start_eq
     grpc_slice_rchr
+    grpc_slice_chr
+    grpc_slice_slice
     grpc_slice_hash
     grpc_slice_is_equivalent
+    grpc_slice_dup
     grpc_slice_buffer_init
     grpc_slice_buffer_destroy
     grpc_slice_buffer_add

@@ -500,6 +500,9 @@ extern grpc_slice_from_copied_buffer_type grpc_slice_from_copied_buffer_import;
 typedef grpc_slice(*grpc_slice_from_static_string_type)(const char *source);
 extern grpc_slice_from_static_string_type grpc_slice_from_static_string_import;
 #define grpc_slice_from_static_string grpc_slice_from_static_string_import
+typedef grpc_slice(*grpc_slice_from_static_buffer_type)(const void *source, size_t len);
+extern grpc_slice_from_static_buffer_type grpc_slice_from_static_buffer_import;
+#define grpc_slice_from_static_buffer grpc_slice_from_static_buffer_import
 typedef grpc_slice(*grpc_slice_sub_type)(grpc_slice s, size_t begin, size_t end);
 extern grpc_slice_sub_type grpc_slice_sub_import;
 #define grpc_slice_sub grpc_slice_sub_import
@@ -533,12 +536,21 @@ extern grpc_slice_buf_start_eq_type grpc_slice_buf_start_eq_import;
 typedef int(*grpc_slice_rchr_type)(grpc_slice s, char c);
 extern grpc_slice_rchr_type grpc_slice_rchr_import;
 #define grpc_slice_rchr grpc_slice_rchr_import
+typedef int(*grpc_slice_chr_type)(grpc_slice s, char c);
+extern grpc_slice_chr_type grpc_slice_chr_import;
+#define grpc_slice_chr grpc_slice_chr_import
+typedef int(*grpc_slice_slice_type)(grpc_slice haystack, grpc_slice needle);
+extern grpc_slice_slice_type grpc_slice_slice_import;
+#define grpc_slice_slice grpc_slice_slice_import
 typedef uint32_t(*grpc_slice_hash_type)(grpc_slice s);
 extern grpc_slice_hash_type grpc_slice_hash_import;
 #define grpc_slice_hash grpc_slice_hash_import
 typedef int(*grpc_slice_is_equivalent_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
 #define grpc_slice_is_equivalent grpc_slice_is_equivalent_import
+typedef grpc_slice(*grpc_slice_dup_type)(grpc_slice a);
+extern grpc_slice_dup_type grpc_slice_dup_import;
+#define grpc_slice_dup grpc_slice_dup_import
 typedef void(*grpc_slice_buffer_init_type)(grpc_slice_buffer *sb);
 extern grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 #define grpc_slice_buffer_init grpc_slice_buffer_init_import
