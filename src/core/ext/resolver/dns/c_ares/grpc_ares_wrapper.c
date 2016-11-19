@@ -196,7 +196,6 @@ static void on_done_cb(void *arg, int status, int timeouts,
 
 void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                     const char *default_port,
-                                    // grpc_ares_ev_driver *ev_driver,
                                     grpc_pollset_set *interested_parties,
                                     grpc_closure *on_done,
                                     grpc_resolved_addresses **addrs) {
@@ -204,16 +203,16 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   char *host;
   char *port;
   gpr_split_host_port(name, &host, &port);
-  grpc_error *err = GRPC_ERROR_NONE;
   if (host == NULL) {
-    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
-                             GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    grpc_error *err =
+        grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                           GRPC_ERROR_STR_TARGET_ADDRESS, name);
     grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
     goto error_cleanup;
   } else if (port == NULL) {
     if (default_port == NULL) {
-      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
-                               GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      grpc_error *err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                                           GRPC_ERROR_STR_TARGET_ADDRESS, name);
       grpc_exec_ctx_sched(exec_ctx, on_done, err, NULL);
       goto error_cleanup;
     }
@@ -221,7 +220,7 @@ void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx, const char *name,
   }
 
   grpc_ares_ev_driver *ev_driver;
-  err = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
+  grpc_error *err = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
   if (err != GRPC_ERROR_NONE) {
     GRPC_LOG_IF_ERROR("grpc_ares_ev_driver_create() failed", err);
     goto error_cleanup;
@@ -258,7 +257,6 @@ error_cleanup:
 void (*grpc_resolve_address_ares)(
     grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
     grpc_pollset_set *interested_parties, grpc_closure *on_done,
-    // grpc_ares_ev_driver *ev_driver, grpc_closure *on_done,
     grpc_resolved_addresses **addrs) = grpc_resolve_address_ares_impl;
 
 grpc_error *grpc_ares_init(void) {
