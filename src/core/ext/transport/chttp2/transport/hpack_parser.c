@@ -673,7 +673,7 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
-  if (!GRPC_MDELEM_IS_INTERNED(md)) {
+  if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(md)) {
     char *k = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
     char *v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
     gpr_log(
