@@ -300,6 +300,14 @@ print >>C
 print >>C, '#include "src/core/lib/slice/slice_internal.h"'
 print >>C
 
+str_ofs = 0
+id2strofs = {}
+for i, elem in enumerate(all_strs):
+  id2strofs[i] = str_ofs
+  str_ofs += len(elem);
+def slice_def(i):
+  return '{.refcount = &g_refcnts[%d].base, .data.refcounted = {g_bytes+%d, %d}}' % (i, id2strofs[i], len(all_strs[i]))
+
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
 print >>H, 'extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];'
 for i, elem in enumerate(all_strs):
@@ -308,42 +316,31 @@ for i, elem in enumerate(all_strs):
 print >>H
 print >>H, 'bool grpc_is_static_metadata_string(grpc_slice slice);'
 print >>H
-print >>C, 'static uint8_t g_raw_bytes[] = {%s};' % (','.join('%d' % ord(c) for c in ''.join(all_strs)))
+print >>C, 'static uint8_t g_bytes[] = {%s};' % (','.join('%d' % ord(c) for c in ''.join(all_strs)))
 print >>C
 print >>C, 'static void static_ref(void *unused) {}'
 print >>C, 'static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}'
 print >>C, 'static const grpc_slice_refcount_vtable static_vtable = {static_ref, static_unref, grpc_static_slice_eq, grpc_static_slice_hash};';
-print >>C, 'static grpc_slice_refcount g_refcnt = {&static_vtable};'
+print >>C, 'typedef struct { grpc_slice_refcount base; const uint16_t offset; const uint16_t length; } static_slice_refcount;'
+print >>C, 'static static_slice_refcount g_refcnts[GRPC_STATIC_MDSTR_COUNT] = {'
+for i, elem in enumerate(all_strs):
+  print >>C, '  {{&static_vtable}, %d, %d},' % (id2strofs[i], len(elem))
+print >>C, '};'
 print >>C
 print >>C, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
 print >>C, '  return slice.refcount != NULL && slice.refcount->vtable == &static_vtable;'
 print >>C, '}'
 print >>C
 print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'
-str_ofs = 0
-revmap = {}
-zero_length_idx = None
-id2strofs = {}
-def slice_def(i):
-  return '{.refcount = &g_refcnt, .data.refcounted = {.bytes = g_raw_bytes+%d, .length=%d}}' % (id2strofs[i], len(all_strs[i]))
 for i, elem in enumerate(all_strs):
-  id2strofs[i] = str_ofs
   print >>C, slice_def(i) + ','
-  revmap[str_ofs] = i
-  if len(elem) == 0: zero_length_idx = i
-  str_ofs += len(elem);
 print >>C, '};'
-print >>C
-print >>C, 'static const uint8_t g_revmap[] = {%s};' % ','.join('%d' % (revmap[i] if i in revmap else 255) for i in range(0, str_ofs))
 print >>C
 print >>H, 'int grpc_static_metadata_index(grpc_slice slice);'
 print >>C, 'int grpc_static_metadata_index(grpc_slice slice) {'
-print >>C, '  if (GRPC_SLICE_LENGTH(slice) == 0) return %d;' % zero_length_idx
-print >>C, '  if (slice.refcount != &g_refcnt) return -1;'
-print >>C, '  size_t ofs = (size_t)(slice.data.refcounted.bytes - g_raw_bytes);'
-print >>C, '  if (ofs > sizeof(g_revmap)) return -1;'
-print >>C, '  uint8_t id = g_revmap[ofs];'
-print >>C, '  return id == 255 ? -1 : (grpc_static_slice_table[id].data.refcounted.length == slice.data.refcounted.length? id : -1);'
+print >>C, '  static_slice_refcount *r = (static_slice_refcount *)slice.refcount;'
+print >>C, '  if (slice.data.refcounted.bytes == g_bytes + r->offset && slice.data.refcounted.length == r->length) return (int)(r - g_refcnts);'
+print >>C, '  return -1;'
 print >>C, '}'
 print >>C
 
