@@ -76,7 +76,7 @@ class MetadataBatch {
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
    public:
-    const grpc_mdelem &operator*() const { return *elem_->md; }
+    const grpc_mdelem &operator*() const { return elem_->md; }
     const grpc_mdelem operator->() const { return elem_->md; }
 
     const_iterator &operator++() {

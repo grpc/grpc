@@ -584,10 +584,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
       context_->client_metadata_.insert(
           std::pair<grpc::string_ref, grpc::string_ref>(
-              initial_metadata_array_.metadata[i].key,
-              grpc::string_ref(
-                  initial_metadata_array_.metadata[i].value,
-                  initial_metadata_array_.metadata[i].value_length)));
+              StringRefFromSlice(initial_metadata_array_.metadata[i].key),
+              StringRefFromSlice(initial_metadata_array_.metadata[i].value)));
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);
@@ -639,11 +637,12 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =
-        call_details_.method;
-    static_cast<GenericServerContext*>(context_)->host_ = call_details_.host;
+        StringFromCopiedSlice(call_details_.method);
+    static_cast<GenericServerContext*>(context_)->host_ =
+        StringFromCopiedSlice(call_details_.host);
   }
-  gpr_free(call_details_.method);
-  gpr_free(call_details_.host);
+  grpc_slice_unref(call_details_.method);
+  grpc_slice_unref(call_details_.host);
   return BaseAsyncRequest::FinalizeResult(tag, status);
 }
 

@@ -44,6 +44,11 @@ inline grpc::string_ref StringRefFromSlice(grpc_slice slice) {
                           GRPC_SLICE_LENGTH(slice));
 }
 
+inline grpc::string StringFromCopiedSlice(grpc_slice slice) {
+  return grpc::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
+                      GRPC_SLICE_LENGTH(slice));
+}
+
 inline grpc_slice SliceReferencingString(const grpc::string& str) {
   return g_core_codegen_interface->grpc_slice_from_static_buffer(str.data(),
                                                                  str.length());
