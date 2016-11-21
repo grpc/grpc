@@ -81,7 +81,10 @@ class CoreCodegen : public CoreCodegenInterface {
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;
   void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) override;
   void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
-
+  grpc_slice grpc_slice_from_static_buffer(const void* buffer,
+                                           size_t length) override;
+  grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
+                                           size_t length) override;
   void grpc_metadata_array_init(grpc_metadata_array* array) override;
   void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
 
