@@ -124,7 +124,10 @@ GPRAPI grpc_slice grpc_slice_split_head(grpc_slice *s, size_t split);
 
 GPRAPI grpc_slice grpc_empty_slice(void);
 
-GPRAPI uint32_t grpc_slice_default_hash_impl(void *, grpc_slice s);
+GPRAPI uint32_t grpc_slice_default_hash_impl(grpc_slice s);
+GPRAPI int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b);
+
+GPRAPI int grpc_slice_eq(grpc_slice a, grpc_slice b);
 
 /* Returns <0 if a < b, ==0 if a == b, >0 if a > b
    The order is arbitrary, and is not guaranteed to be stable across different

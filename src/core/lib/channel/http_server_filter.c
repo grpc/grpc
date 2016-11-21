@@ -87,7 +87,7 @@ typedef struct channel_data { uint8_t unused; } channel_data;
 static grpc_mdelem server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
                                                    void *user_data,
                                                    grpc_mdelem md) {
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_MESSAGE) == 0) {
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_MESSAGE)) {
     grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
         GRPC_MDVALUE(md), grpc_compatible_percent_encoding_unreserved_bytes);
     if (grpc_slice_is_equivalent(pct_encoded_msg, GRPC_MDVALUE(md))) {
@@ -126,7 +126,7 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     } else if (grpc_mdelem_eq(md, GRPC_MDELEM_METHOD_GET)) {
       calld->seen_method = 1;
       *calld->recv_cacheable_request = true;
-    } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME) == 0) {
+    } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME)) {
       calld->seen_scheme = 1;
     } else if (grpc_mdelem_eq(md, GRPC_MDELEM_TE_TRAILERS)) {
       calld->seen_te_trailers = 1;
@@ -134,7 +134,7 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     /* TODO(klempner): Track that we've seen all the headers we should
        require */
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE)) {
     if (grpc_slice_buf_start_eq(GRPC_MDVALUE(md), EXPECTED_CONTENT_TYPE,
                                 EXPECTED_CONTENT_TYPE_LENGTH) &&
         (GRPC_SLICE_START_PTR(GRPC_MDVALUE(md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
@@ -154,9 +154,9 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
       gpr_free(val);
     }
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_TE) == 0 ||
-             grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_METHOD) == 0 ||
-             grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_TE) ||
+             grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_METHOD) ||
+             grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME)) {
     char *key = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
     char *value = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "Invalid %s: header: '%s'", key, value);
@@ -167,24 +167,24 @@ static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     gpr_free(value);
     grpc_call_element_send_cancel(exec_ctx, elem);
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_PATH) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
     if (calld->seen_path) {
       gpr_log(GPR_ERROR, "Received :path twice");
       return GRPC_MDNULL;
     }
     calld->seen_path = 1;
     return md;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY)) {
     calld->seen_authority = 1;
     return md;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_HOST) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_HOST)) {
     /* translate host to :authority since :authority may be
        omitted */
     grpc_mdelem authority = grpc_mdelem_from_slices(
         exec_ctx, GRPC_MDSTR_AUTHORITY, grpc_slice_ref(GRPC_MDVALUE(md)));
     calld->seen_authority = 1;
     return authority;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_PAYLOAD_BIN) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_PAYLOAD_BIN)) {
     /* Retrieve the payload from the value of the 'grpc-internal-payload-bin'
        header field */
     calld->seen_payload_bin = 1;

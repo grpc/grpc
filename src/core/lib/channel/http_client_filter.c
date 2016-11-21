@@ -99,7 +99,7 @@ static grpc_mdelem client_recv_filter(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_call_element *elem = user_data;
   if (grpc_mdelem_eq(md, GRPC_MDELEM_STATUS_200)) {
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_STATUS) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_STATUS)) {
     char *message_string;
     char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
     gpr_asprintf(&message_string, "Received http2 header with status: %s", val);
@@ -109,7 +109,7 @@ static grpc_mdelem client_recv_filter(grpc_exec_ctx *exec_ctx, void *user_data,
     grpc_call_element_send_close_with_message(exec_ctx, elem,
                                               GRPC_STATUS_CANCELLED, &message);
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_MESSAGE) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_MESSAGE)) {
     grpc_slice pct_decoded_msg =
         grpc_permissive_percent_decode_slice(GRPC_MDVALUE(md));
     if (grpc_slice_is_equivalent(pct_decoded_msg, GRPC_MDVALUE(md))) {
@@ -122,7 +122,7 @@ static grpc_mdelem client_recv_filter(grpc_exec_ctx *exec_ctx, void *user_data,
   } else if (grpc_mdelem_eq(md,
                             GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE)) {
     if (grpc_slice_buf_start_eq(GRPC_MDVALUE(md), EXPECTED_CONTENT_TYPE,
                                 EXPECTED_CONTENT_TYPE_LENGTH) &&
         (GRPC_SLICE_START_PTR(GRPC_MDVALUE(md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
@@ -187,15 +187,12 @@ static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
 static grpc_mdelem client_strip_filter(grpc_exec_ctx *exec_ctx, void *user_data,
                                        grpc_mdelem md) {
   /* eat the things we'd like to set ourselves */
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_METHOD) == 0)
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_METHOD)) return GRPC_MDNULL;
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME)) return GRPC_MDNULL;
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_TE)) return GRPC_MDNULL;
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE))
     return GRPC_MDNULL;
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME) == 0)
-    return GRPC_MDNULL;
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_TE) == 0) return GRPC_MDNULL;
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE) == 0)
-    return GRPC_MDNULL;
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_USER_AGENT) == 0)
-    return GRPC_MDNULL;
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_USER_AGENT)) return GRPC_MDNULL;
   return md;
 }
 

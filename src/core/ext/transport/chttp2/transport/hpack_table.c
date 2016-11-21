@@ -362,9 +362,9 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     grpc_mdelem ent = tbl->static_ents[i];
-    if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDKEY(ent)) != 0) continue;
+    if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = i + 1u;
-    r.has_value = grpc_slice_cmp(GRPC_MDVALUE(md), GRPC_MDVALUE(ent)) == 0;
+    r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
     if (r.has_value) return r;
   }
 
@@ -373,9 +373,9 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     uint32_t idx =
         (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
     grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
-    if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDKEY(ent)) != 0) continue;
+    if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = idx;
-    r.has_value = grpc_slice_cmp(GRPC_MDVALUE(md), GRPC_MDVALUE(ent)) == 0;
+    r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
     if (r.has_value) return r;
   }
 

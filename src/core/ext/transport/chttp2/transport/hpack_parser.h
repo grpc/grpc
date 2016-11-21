@@ -49,9 +49,15 @@ typedef grpc_error *(*grpc_chttp2_hpack_parser_state)(
     const uint8_t *end);
 
 typedef struct {
-  char *str;
-  uint32_t length;
-  uint32_t capacity;
+  bool copied;
+  struct {
+    grpc_slice referenced;
+    struct {
+      char *str;
+      uint32_t length;
+      uint32_t capacity;
+    } copied;
+  } data;
 } grpc_chttp2_hpack_parser_string;
 
 struct grpc_chttp2_hpack_parser {
@@ -67,6 +73,8 @@ struct grpc_chttp2_hpack_parser {
   const grpc_chttp2_hpack_parser_state *next_state;
   /* what to do after skipping prioritization data */
   grpc_chttp2_hpack_parser_state after_prioritization;
+  /* the refcount of the slice that we're currently parsing */
+  grpc_slice_refcount *current_slice_refcount;
   /* the value we're currently parsing */
   union {
     uint32_t *value;
@@ -106,9 +114,9 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
 
-/* returns 1 on success, 0 on error */
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
+                                           grpc_slice_refcount *refcount,
                                            const uint8_t *beg,
                                            const uint8_t *end);
 

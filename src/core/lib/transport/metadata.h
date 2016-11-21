@@ -86,17 +86,21 @@ typedef struct grpc_mdelem_data {
   /* there is a private part to this in metadata.c */
 } grpc_mdelem_data;
 
+/* GRPC_MDELEM_STORAGE_* enum values that can be treated as interned always have
+   this bit set in their integer value */
+#define GRPC_MDELEM_STORAGE_INTERNED_BIT 1
+
 typedef enum {
   /* memory pointed to by grpc_mdelem::payload is owned by an external system */
   GRPC_MDELEM_STORAGE_EXTERNAL = 0,
   /* memory pointed to by grpc_mdelem::payload is interned by the metadata
      system */
-  GRPC_MDELEM_STORAGE_INTERNED = 1,
+  GRPC_MDELEM_STORAGE_INTERNED = GRPC_MDELEM_STORAGE_INTERNED_BIT,
   /* memory pointed to by grpc_mdelem::payload is allocated by the metadata
      system */
   GRPC_MDELEM_STORAGE_ALLOCATED = 2,
   /* memory is in the static metadata table */
-  GRPC_MDELEM_STORAGE_STATIC = 3,
+  GRPC_MDELEM_STORAGE_STATIC = 2 | GRPC_MDELEM_STORAGE_INTERNED_BIT,
 } grpc_mdelem_data_storage;
 
 struct grpc_mdelem {
@@ -111,6 +115,9 @@ struct grpc_mdelem {
   ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
 #define GRPC_MAKE_MDELEM(data, storage) \
   ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage)})
+#define GRPC_MDELEM_IS_INTERNED(md)          \
+  ((grpc_mdelem_data_storage)((md).payload & \
+                              (uintptr_t)GRPC_MDELEM_STORAGE_INTERNED_BIT))
 
 /* Unrefs the slices. */
 grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx *exec_ctx, grpc_slice key,

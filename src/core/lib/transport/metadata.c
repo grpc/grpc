@@ -279,8 +279,7 @@ grpc_mdelem grpc_mdelem_create(
   idx = TABLE_IDX(hash, shard->capacity);
   /* search for an existing pair */
   for (md = shard->elems[idx]; md; md = md->bucket_next) {
-    if (grpc_slice_cmp(key, md->key) == 0 &&
-        grpc_slice_cmp(value, md->value) == 0) {
+    if (grpc_slice_eq(key, md->key) && grpc_slice_eq(value, md->value)) {
       REF_MD_LOCKED(shard, md);
       gpr_mu_unlock(&shard->mu);
       GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
@@ -496,7 +495,8 @@ void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b) {
   if (a.payload == b.payload) return true;
+  if (GRPC_MDELEM_IS_INTERNED(a) && GRPC_MDELEM_IS_INTERNED(b)) return false;
   if (GRPC_MDISNULL(a) || GRPC_MDISNULL(b)) return false;
-  return 0 == grpc_slice_cmp(GRPC_MDKEY(a), GRPC_MDKEY(b)) &&
-         0 == grpc_slice_cmp(GRPC_MDVALUE(a), GRPC_MDVALUE(b));
+  return grpc_slice_eq(GRPC_MDKEY(a), GRPC_MDKEY(b)) &&
+         grpc_slice_eq(GRPC_MDVALUE(a), GRPC_MDVALUE(b));
 }

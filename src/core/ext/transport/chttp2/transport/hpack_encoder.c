@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -187,22 +188,10 @@ static void evict_entry(grpc_chttp2_hpack_compressor *c) {
   c->table_elems--;
 }
 
-static bool is_interned(grpc_mdelem elem) {
-  switch (GRPC_MDELEM_STORAGE(elem)) {
-    case GRPC_MDELEM_STORAGE_ALLOCATED:
-    case GRPC_MDELEM_STORAGE_EXTERNAL:
-      return false;
-    case GRPC_MDELEM_STORAGE_INTERNED:
-    case GRPC_MDELEM_STORAGE_STATIC:
-      return true;
-  }
-  GPR_UNREACHABLE_CODE(return false);
-}
-
 /* add an element to the decoder table */
 static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
                      grpc_mdelem elem) {
-  GPR_ASSERT(is_interned(elem));
+  GPR_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
 
   uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
   uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
@@ -261,11 +250,11 @@ static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
 
   /* do exactly the same for the key (so we can find by that again too) */
 
-  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
-                     GRPC_MDKEY(elem)) == 0) {
+  if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
+                    GRPC_MDKEY(elem))) {
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
-  } else if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
-                            GRPC_MDKEY(elem)) == 0) {
+  } else if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
+                           GRPC_MDKEY(elem))) {
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   } else if (c->entries_keys[HASH_FRAGMENT_2(key_hash)].refcount ==
              &terminal_slice_refcount) {
@@ -407,7 +396,19 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
-  if (!is_interned(elem)) {
+  if (grpc_http_trace && !GRPC_MDELEM_IS_INTERNED(elem)) {
+    char *k = grpc_dump_slice(GRPC_MDKEY(elem), GPR_DUMP_ASCII);
+    char *v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_ASCII);
+    gpr_log(
+        GPR_DEBUG,
+        "Encode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+        k, v, GRPC_MDELEM_IS_INTERNED(elem), GRPC_MDELEM_STORAGE(elem),
+        grpc_slice_is_interned(GRPC_MDKEY(elem)),
+        grpc_slice_is_interned(GRPC_MDVALUE(elem)));
+    gpr_free(k);
+    gpr_free(v);
+  }
+  if (!GRPC_MDELEM_IS_INTERNED(elem)) {
     emit_lithdr_noidx_v(c, elem, st);
     return;
   }
@@ -452,8 +453,8 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   /* no hits for the elem... maybe there's a key? */
 
   indices_key = c->indices_keys[HASH_FRAGMENT_2(key_hash)];
-  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
-                     GRPC_MDKEY(elem)) == 0 &&
+  if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
+                    GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
@@ -468,8 +469,8 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   }
 
   indices_key = c->indices_keys[HASH_FRAGMENT_3(key_hash)];
-  if (grpc_slice_cmp(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
-                     GRPC_MDKEY(elem)) == 0 &&
+  if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
+                    GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {

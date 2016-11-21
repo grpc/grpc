@@ -79,7 +79,8 @@ static void noop_ref(void *unused) {}
 static void noop_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 
 static const grpc_slice_refcount_vtable noop_refcount_vtable = {
-    noop_ref, noop_unref, grpc_slice_default_hash_impl};
+    noop_ref, noop_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
 static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable};
 
 grpc_slice grpc_slice_from_static_buffer(const void *s, size_t len) {
@@ -117,7 +118,8 @@ static void new_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
 }
 
 static const grpc_slice_refcount_vtable new_slice_vtable = {
-    new_slice_ref, new_slice_unref, grpc_slice_default_hash_impl};
+    new_slice_ref, new_slice_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
 
 grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
                                          void (*destroy)(void *),
@@ -164,7 +166,8 @@ static void new_with_len_unref(grpc_exec_ctx *exec_ctx, void *p) {
 }
 
 static const grpc_slice_refcount_vtable new_with_len_vtable = {
-    new_with_len_ref, new_with_len_unref, grpc_slice_default_hash_impl};
+    new_with_len_ref, new_with_len_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
 
 grpc_slice grpc_slice_new_with_len(void *p, size_t len,
                                    void (*destroy)(void *, size_t)) {
@@ -211,7 +214,8 @@ static void malloc_unref(grpc_exec_ctx *exec_ctx, void *p) {
 }
 
 static const grpc_slice_refcount_vtable malloc_vtable = {
-    malloc_ref, malloc_unref, grpc_slice_default_hash_impl};
+    malloc_ref, malloc_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl};
 
 grpc_slice grpc_slice_malloc(size_t length) {
   grpc_slice slice;
@@ -363,11 +367,20 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
   return head;
 }
 
-int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
-  if (GRPC_SLICE_START_PTR(a) == GRPC_SLICE_START_PTR(b) &&
-      GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b)) {
-    return 0;
+int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b) {
+  return GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
+         0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                     GRPC_SLICE_LENGTH(a));
+}
+
+int grpc_slice_eq(grpc_slice a, grpc_slice b) {
+  if (a.refcount && b.refcount && a.refcount->vtable == b.refcount->vtable) {
+    return a.refcount->vtable->eq(a, b);
   }
+  return grpc_slice_default_eq_impl(a, b);
+}
+
+int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
   int d = (int)(GRPC_SLICE_LENGTH(a) - GRPC_SLICE_LENGTH(b));
   if (d != 0) return d;
   return memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
@@ -383,7 +396,7 @@ int grpc_slice_str_cmp(grpc_slice a, const char *b) {
 
 int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b) {
   if (a.refcount == NULL || b.refcount == NULL) {
-    return grpc_slice_cmp(a, b) == 0;
+    return grpc_slice_eq(a, b);
   }
   return a.data.refcounted.length == b.data.refcounted.length &&
          a.data.refcounted.bytes == b.data.refcounted.bytes;

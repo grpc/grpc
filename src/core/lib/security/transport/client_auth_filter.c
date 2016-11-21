@@ -256,13 +256,13 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       grpc_mdelem md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
-      if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY) == 0) {
+      if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY)) {
         if (calld->have_host) {
           grpc_slice_unref_internal(exec_ctx, calld->host);
         }
         calld->host = grpc_slice_ref_internal(GRPC_MDVALUE(md));
         calld->have_host = true;
-      } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_PATH) == 0) {
+      } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
         if (calld->have_method) {
           grpc_slice_unref_internal(exec_ctx, calld->method);
         }

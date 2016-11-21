@@ -110,17 +110,30 @@ static void interned_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
-static uint32_t interned_slice_hash(void *p, grpc_slice slice) {
-  interned_slice_refcount *s = p;
+static uint32_t interned_slice_hash(grpc_slice slice) {
+  interned_slice_refcount *s = (interned_slice_refcount *)slice.refcount;
   if (slice.data.refcounted.bytes == (uint8_t *)(s + 1) &&
       slice.data.refcounted.length == s->length) {
     return s->hash;
   }
-  return grpc_slice_default_hash_impl(p, slice);
+  return grpc_slice_default_hash_impl(slice);
+}
+
+static int interned_slice_eq(grpc_slice a, grpc_slice b) {
+  interned_slice_refcount *sa = (interned_slice_refcount *)a.refcount;
+  interned_slice_refcount *sb = (interned_slice_refcount *)b.refcount;
+  if (a.data.refcounted.bytes == (uint8_t *)(sa + 1) &&
+      b.data.refcounted.bytes == (uint8_t *)(sb + 1)) {
+    return a.data.refcounted.length == b.data.refcounted.length &&
+           a.data.refcounted.bytes == b.data.refcounted.bytes;
+  } else {
+    return grpc_slice_default_eq_impl(a, b);
+  }
 }
 
 static const grpc_slice_refcount_vtable interned_slice_vtable = {
-    interned_slice_ref, interned_slice_unref, interned_slice_hash};
+    interned_slice_ref, interned_slice_unref, interned_slice_eq,
+    interned_slice_hash};
 
 static void grow_shard(slice_shard *shard) {
   size_t capacity = shard->capacity * 2;
@@ -157,22 +170,31 @@ static grpc_slice materialize(interned_slice_refcount *s) {
   return slice;
 }
 
-uint32_t grpc_slice_default_hash_impl(void *unused_refcnt, grpc_slice s) {
+uint32_t grpc_slice_default_hash_impl(grpc_slice s) {
   return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
                           g_hash_seed);
 }
 
-uint32_t grpc_static_slice_hash(void *unused_refcnt, grpc_slice s) {
+uint32_t grpc_static_slice_hash(grpc_slice s) {
   int id = grpc_static_metadata_index(s);
   if (id == -1) {
-    return grpc_slice_default_hash_impl(unused_refcnt, s);
+    return grpc_slice_default_hash_impl(s);
   }
   return static_metadata_hash_values[id];
 }
 
+int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
+  int id_a = grpc_static_metadata_index(a);
+  int id_b = grpc_static_metadata_index(b);
+  if (id_a == -1 || id_b == -1) {
+    return grpc_slice_default_eq_impl(a, b);
+  }
+  return id_a == id_b;
+}
+
 uint32_t grpc_slice_hash(grpc_slice s) {
-  return s.refcount == NULL ? grpc_slice_default_hash_impl(NULL, s)
-                            : s.refcount->vtable->hash(s.refcount, s);
+  return s.refcount == NULL ? grpc_slice_default_hash_impl(s)
+                            : s.refcount->vtable->hash(s);
 }
 
 void grpc_slice_static_intern(grpc_slice *slice) {
@@ -185,7 +207,7 @@ void grpc_slice_static_intern(grpc_slice *slice) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        0 == grpc_slice_cmp(grpc_static_slice_table[ent.idx], *slice)) {
+        grpc_slice_eq(grpc_static_slice_table[ent.idx], *slice)) {
       grpc_slice_unref(*slice);
       *slice = grpc_static_slice_table[ent.idx];
       return;
@@ -208,7 +230,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        0 == grpc_slice_cmp(grpc_static_slice_table[ent.idx], slice)) {
+        grpc_slice_eq(grpc_static_slice_table[ent.idx], slice)) {
       return grpc_static_slice_table[ent.idx];
     }
   }
@@ -221,7 +243,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   /* search for an existing string */
   size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
-    if (s->hash == hash && grpc_slice_cmp(slice, materialize(s)) == 0) {
+    if (s->hash == hash && grpc_slice_eq(slice, materialize(s))) {
       if (gpr_atm_no_barrier_fetch_add(&s->refcnt, 1) == 0) {
         /* If we get here, we've added a ref to something that was about to
          * die - drop it immediately.
@@ -283,7 +305,7 @@ void grpc_slice_intern_init(void) {
   max_static_metadata_hash_probe = 0;
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
     static_metadata_hash_values[i] =
-        grpc_slice_default_hash_impl(NULL, grpc_static_slice_table[i]);
+        grpc_slice_default_hash_impl(grpc_static_slice_table[i]);
     for (size_t j = 0; j < GPR_ARRAY_SIZE(static_metadata_hash); j++) {
       size_t slot = (static_metadata_hash_values[i] + j) %
                     GPR_ARRAY_SIZE(static_metadata_hash);

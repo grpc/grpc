@@ -87,8 +87,8 @@ static void test_create_metadata(bool intern_keys, bool intern_values) {
       maybe_intern(grpc_slice_from_static_string("c"), intern_values));
   GPR_ASSERT(grpc_mdelem_eq(m1, m2));
   GPR_ASSERT(!grpc_mdelem_eq(m3, m1));
-  GPR_ASSERT(grpc_slice_cmp(GRPC_MDKEY(m3), GRPC_MDKEY(m1)) == 0);
-  GPR_ASSERT(grpc_slice_cmp(GRPC_MDVALUE(m3), GRPC_MDVALUE(m1)) != 0);
+  GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(m3), GRPC_MDKEY(m1)));
+  GPR_ASSERT(!grpc_slice_eq(GRPC_MDVALUE(m3), GRPC_MDVALUE(m1)));
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(m1), "a") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(m1), "b") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(m3), "c") == 0);
