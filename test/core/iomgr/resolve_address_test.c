@@ -73,7 +73,7 @@ void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
   grpc_closure do_nothing_cb;
   grpc_closure_init(&do_nothing_cb, do_nothing, NULL);
   grpc_pollset_shutdown(exec_ctx, args->pollset, &do_nothing_cb);
-  // exec_ctx needs to be flushed before calling grpc_pollset_shutdown
+  // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
   grpc_exec_ctx_flush(exec_ctx);
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
