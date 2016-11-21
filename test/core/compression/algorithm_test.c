@@ -61,13 +61,11 @@ static void test_algorithm_mesh(void) {
         grpc_slice_from_static_string(name), &parsed));
     GPR_ASSERT((int)parsed == i);
     mdstr = grpc_slice_from_copied_string(name);
-    GPR_ASSERT(0 ==
-               grpc_slice_cmp(mdstr, grpc_compression_algorithm_slice(parsed)));
+    GPR_ASSERT(grpc_slice_eq(mdstr, grpc_compression_algorithm_slice(parsed)));
     GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
     mdelem = grpc_compression_encoding_mdelem(parsed);
-    GPR_ASSERT(0 == grpc_slice_cmp(GRPC_MDVALUE(mdelem), mdstr));
-    GPR_ASSERT(0 ==
-               grpc_slice_cmp(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDVALUE(mdelem), mdstr));
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
     grpc_slice_unref_internal(&exec_ctx, mdstr);
     GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -91,12 +89,12 @@ static void test_algorithm_failure(void) {
   mdstr = grpc_slice_from_static_string("this-is-an-invalid-algorithm");
   GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
              GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(0 == grpc_slice_cmp(grpc_compression_algorithm_slice(
-                                     GRPC_COMPRESS_ALGORITHMS_COUNT),
-                                 grpc_empty_slice()));
-  GPR_ASSERT(0 == grpc_slice_cmp(grpc_compression_algorithm_slice(
-                                     GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
-                                 grpc_empty_slice()));
+  GPR_ASSERT(grpc_slice_eq(
+      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
+      grpc_empty_slice()));
+  GPR_ASSERT(grpc_slice_eq(
+      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
+      grpc_empty_slice()));
   grpc_slice_unref_internal(&exec_ctx, mdstr);
   grpc_exec_ctx_finish(&exec_ctx);
 }

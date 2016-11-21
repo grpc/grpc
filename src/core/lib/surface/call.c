@@ -252,8 +252,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (grpc_slice_cmp(GRPC_MDKEY(args->add_initial_metadata[i]),
-                         GRPC_MDSTR_PATH) == 0) {
+      if (grpc_slice_eq(GRPC_MDKEY(args->add_initial_metadata[i]),
+                        GRPC_MDSTR_PATH)) {
         path = grpc_slice_ref_internal(
             GRPC_MDVALUE(args->add_initial_metadata[i]));
       }
@@ -916,12 +916,12 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
 
 static grpc_mdelem recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                       grpc_mdelem elem) {
-  if (grpc_slice_cmp(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_STATUS) == 0) {
+  if (grpc_slice_eq(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_STATUS)) {
     GPR_TIMER_BEGIN("status", 0);
     set_status_code(call, STATUS_FROM_WIRE, decode_status(elem));
     GPR_TIMER_END("status", 0);
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_MESSAGE) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_MESSAGE)) {
     GPR_TIMER_BEGIN("status-details", 0);
     set_status_details(exec_ctx, call, STATUS_FROM_WIRE,
                        grpc_slice_ref_internal(GRPC_MDVALUE(elem)));
@@ -955,13 +955,12 @@ static grpc_mdelem recv_initial_filter(grpc_exec_ctx *exec_ctx, void *args,
   elem = recv_common_filter(exec_ctx, call, elem);
   if (GRPC_MDISNULL(elem)) {
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_ENCODING) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_ENCODING)) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
     set_incoming_compression_algorithm(call, decode_compression(elem));
     GPR_TIMER_END("incoming_compression_algorithm", 0);
     return GRPC_MDNULL;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(elem),
-                            GRPC_MDSTR_GRPC_ACCEPT_ENCODING) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(elem), GRPC_MDSTR_GRPC_ACCEPT_ENCODING)) {
     GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(exec_ctx, call, elem);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);

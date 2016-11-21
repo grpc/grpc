@@ -48,7 +48,7 @@ static int all_ok = 1;
 
 static void expect_slice_eq(grpc_slice expected, grpc_slice slice, char *debug,
                             int line) {
-  if (0 != grpc_slice_cmp(slice, expected)) {
+  if (!grpc_slice_eq(slice, expected)) {
     char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
@@ -85,7 +85,7 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
   grpc_slice base64 = grpc_chttp2_base64_encode(input);
   grpc_slice expect = grpc_chttp2_huffman_compress(base64);
   grpc_slice got = grpc_chttp2_base64_encode_and_huffman_compress(input);
-  if (0 != grpc_slice_cmp(expect, got)) {
+  if (!grpc_slice_eq(expect, got)) {
     char *t = grpc_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *e = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *g = grpc_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);

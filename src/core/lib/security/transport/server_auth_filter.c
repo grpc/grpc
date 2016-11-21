@@ -90,8 +90,8 @@ static grpc_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
     const grpc_metadata *consumed_md = &calld->consumed_md[i];
-    if (grpc_slice_cmp(GRPC_MDKEY(md), consumed_md->key) == 0 &&
-        grpc_slice_cmp(GRPC_MDKEY(md), consumed_md->value) == 0)
+    if (grpc_slice_eq(GRPC_MDKEY(md), consumed_md->key) &&
+        grpc_slice_eq(GRPC_MDKEY(md), consumed_md->value))
       return GRPC_MDNULL;
   }
   return md;

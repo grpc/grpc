@@ -221,7 +221,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
  * CONTEXT MUTATORS
  */
 
-static const int kPregenerateKeyCount = 10000000;
+static const int kPregenerateKeyCount = 1000000;
 
 template <class F>
 auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {

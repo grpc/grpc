@@ -462,13 +462,13 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
     gpr_free(value);
   }
 
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) == 0 &&
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
       !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
   }
 
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT) == 0) {
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
     gpr_timespec timeout;
     if (cached_timeout == NULL) {
@@ -534,7 +534,7 @@ static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
     gpr_free(value);
   }
 
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) == 0 &&
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
       !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;

@@ -876,7 +876,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 static bool contains_non_ok_status(grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    if (grpc_slice_cmp(GRPC_MDKEY(l->md), GRPC_MDSTR_GRPC_STATUS) == 0 &&
+    if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDSTR_GRPC_STATUS) &&
         !grpc_mdelem_eq(l->md, GRPC_MDELEM_GRPC_STATUS_0)) {
       return true;
     }

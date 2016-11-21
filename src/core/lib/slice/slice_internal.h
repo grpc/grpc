@@ -55,6 +55,7 @@ void grpc_test_only_set_slice_hash_seed(uint32_t key);
 // if slice matches a static slice, consume it and replace it with the static
 // slice, otherwise do nothing: this is a fast interning for well known strings
 void grpc_slice_static_intern(grpc_slice *slice);
-uint32_t grpc_static_slice_hash(void *refcnt, grpc_slice s);
+uint32_t grpc_static_slice_hash(grpc_slice s);
+int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

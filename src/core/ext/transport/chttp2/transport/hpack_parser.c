@@ -55,6 +55,9 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 
+/* TODO(ctiller): remove before submission */
+#include "src/core/lib/slice/slice_string_helpers.h"
+
 extern int grpc_http_trace;
 
 typedef enum {
@@ -670,6 +673,18 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
+  if (!GRPC_MDELEM_IS_INTERNED(md)) {
+    char *k = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
+    char *v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+    gpr_log(
+        GPR_DEBUG,
+        "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+        k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
+        grpc_slice_is_interned(GRPC_MDKEY(md)),
+        grpc_slice_is_interned(GRPC_MDVALUE(md)));
+    gpr_free(k);
+    gpr_free(v);
+  }
   if (add_to_table) {
     GPR_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
                GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
@@ -684,16 +699,28 @@ static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_slice take_string(grpc_chttp2_hpack_parser *p,
+static grpc_slice take_string(grpc_exec_ctx *exec_ctx,
+                              grpc_chttp2_hpack_parser *p,
                               grpc_chttp2_hpack_parser_string *str,
                               bool intern) {
   grpc_slice s;
-  if (intern) {
-    s = grpc_slice_intern(grpc_slice_from_static_buffer(str->str, str->length));
+  if (!str->copied) {
+    if (intern) {
+      s = grpc_slice_intern(str->data.referenced);
+      grpc_slice_unref_internal(exec_ctx, str->data.referenced);
+    } else {
+      s = str->data.referenced;
+    }
+    str->copied = true;
+    str->data.referenced = grpc_empty_slice();
+  } else if (intern) {
+    s = grpc_slice_intern(grpc_slice_from_static_buffer(
+        str->data.copied.str, str->data.copied.length));
   } else {
-    s = grpc_slice_from_copied_buffer(str->str, str->length);
+    s = grpc_slice_from_copied_buffer(str->data.copied.str,
+                                      str->data.copied.length);
   }
-  str->length = 0;
+  str->data.copied.length = 0;
   return s;
 }
 
@@ -827,7 +854,7 @@ static grpc_error *finish_lithdr_incidx(grpc_exec_ctx *exec_ctx,
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                              take_string(p, &p->value, true)),
+                              take_string(exec_ctx, p, &p->value, true)),
       1);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -838,11 +865,11 @@ static grpc_error *finish_lithdr_incidx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
-  grpc_error *err =
-      on_hdr(exec_ctx, p,
-             grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key, true),
-                                     take_string(p, &p->value, true)),
-             1);
+  grpc_error *err = on_hdr(
+      exec_ctx, p,
+      grpc_mdelem_from_slices(exec_ctx, take_string(exec_ctx, p, &p->key, true),
+                              take_string(exec_ctx, p, &p->value, true)),
+      1);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -897,7 +924,7 @@ static grpc_error *finish_lithdr_notidx(grpc_exec_ctx *exec_ctx,
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                              take_string(p, &p->value, false)),
+                              take_string(exec_ctx, p, &p->value, false)),
       0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -908,11 +935,11 @@ static grpc_error *finish_lithdr_notidx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
-  grpc_error *err =
-      on_hdr(exec_ctx, p,
-             grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key, false),
-                                     take_string(p, &p->value, false)),
-             0);
+  grpc_error *err = on_hdr(
+      exec_ctx, p, grpc_mdelem_from_slices(
+                       exec_ctx, take_string(exec_ctx, p, &p->key, false),
+                       take_string(exec_ctx, p, &p->value, false)),
+      0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -967,7 +994,7 @@ static grpc_error *finish_lithdr_nvridx(grpc_exec_ctx *exec_ctx,
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                              take_string(p, &p->value, false)),
+                              take_string(exec_ctx, p, &p->value, false)),
       0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -978,11 +1005,11 @@ static grpc_error *finish_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
-  grpc_error *err =
-      on_hdr(exec_ctx, p,
-             grpc_mdelem_from_slices(exec_ctx, take_string(p, &p->key, false),
-                                     take_string(p, &p->value, false)),
-             0);
+  grpc_error *err = on_hdr(
+      exec_ctx, p, grpc_mdelem_from_slices(
+                       exec_ctx, take_string(exec_ctx, p, &p->key, false),
+                       take_string(exec_ctx, p, &p->value, false)),
+      0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
 }
@@ -1276,14 +1303,15 @@ static grpc_error *parse_string_prefix(grpc_exec_ctx *exec_ctx,
 static void append_bytes(grpc_chttp2_hpack_parser_string *str,
                          const uint8_t *data, size_t length) {
   if (length == 0) return;
-  if (length + str->length > str->capacity) {
-    GPR_ASSERT(str->length + length <= UINT32_MAX);
-    str->capacity = (uint32_t)(str->length + length);
-    str->str = gpr_realloc(str->str, str->capacity);
+  if (length + str->data.copied.length > str->data.copied.capacity) {
+    GPR_ASSERT(str->data.copied.length + length <= UINT32_MAX);
+    str->data.copied.capacity = (uint32_t)(str->data.copied.length + length);
+    str->data.copied.str =
+        gpr_realloc(str->data.copied.str, str->data.copied.capacity);
   }
-  memcpy(str->str + str->length, data, length);
-  GPR_ASSERT(length <= UINT32_MAX - str->length);
-  str->length += (uint32_t)length;
+  memcpy(str->data.copied.str + str->data.copied.length, data, length);
+  GPR_ASSERT(length <= UINT32_MAX - str->data.copied.length);
+  str->data.copied.length += (uint32_t)length;
 }
 
 static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
@@ -1366,11 +1394,9 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
       exec_ctx, p, cur, end, GRPC_ERROR_CREATE("Should never reach here")));
 }
 
-/* append a null terminator to a string */
 static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
                               grpc_chttp2_hpack_parser *p, const uint8_t *cur,
                               const uint8_t *end) {
-  uint8_t terminator = 0;
   uint8_t decoded[2];
   uint32_t bits;
   grpc_chttp2_hpack_parser_string *str = p->parsing.str;
@@ -1411,8 +1437,6 @@ static grpc_error *finish_str(grpc_exec_ctx *exec_ctx,
       append_bytes(str, decoded, 2);
       break;
   }
-  append_bytes(str, &terminator, 1);
-  p->parsing.str->length--; /* don't actually count the null terminator */
   return GRPC_ERROR_NONE;
 }
 
@@ -1487,8 +1511,18 @@ static grpc_error *begin_parse_string(grpc_exec_ctx *exec_ctx,
                                       const uint8_t *cur, const uint8_t *end,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string *str) {
+  if (!p->huff && binary == NOT_BINARY && (end - cur) >= p->strlen &&
+      p->current_slice_refcount != NULL) {
+    str->copied = false;
+    str->data.referenced.refcount = p->current_slice_refcount;
+    str->data.referenced.data.refcounted.bytes = (uint8_t *)cur;
+    str->data.referenced.data.refcounted.length = p->strlen;
+    grpc_slice_ref_internal(str->data.referenced);
+    return parse_next(exec_ctx, p, cur + p->strlen, end);
+  }
   p->strgot = 0;
-  str->length = 0;
+  str->copied = true;
+  str->data.copied.length = 0;
   p->parsing.str = str;
   p->huff_state = 0;
   p->binary = binary;
@@ -1505,8 +1539,8 @@ static grpc_error *parse_key_string(grpc_exec_ctx *exec_ctx,
 /* check if a key represents a binary header or not */
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
-  return grpc_is_binary_header(
-      grpc_slice_from_static_buffer(p->key.str, p->key.length));
+  return grpc_is_binary_header(grpc_slice_from_static_buffer(
+      p->key.data.copied.str, p->key.data.copied.length));
 }
 
 static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
@@ -1553,12 +1587,12 @@ void grpc_chttp2_hpack_parser_init(grpc_exec_ctx *exec_ctx,
   p->on_header = NULL;
   p->on_header_user_data = NULL;
   p->state = parse_begin;
-  p->key.str = NULL;
-  p->key.capacity = 0;
-  p->key.length = 0;
-  p->value.str = NULL;
-  p->value.capacity = 0;
-  p->value.length = 0;
+  p->key.data.copied.str = NULL;
+  p->key.data.copied.capacity = 0;
+  p->key.data.copied.length = 0;
+  p->value.data.copied.str = NULL;
+  p->value.data.copied.capacity = 0;
+  p->value.data.copied.length = 0;
   p->dynamic_table_update_allowed = 2;
   p->last_error = GRPC_ERROR_NONE;
   grpc_chttp2_hptbl_init(exec_ctx, &p->table);
@@ -1573,19 +1607,25 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
                                       grpc_chttp2_hpack_parser *p) {
   grpc_chttp2_hptbl_destroy(exec_ctx, &p->table);
   GRPC_ERROR_UNREF(p->last_error);
-  gpr_free(p->key.str);
-  gpr_free(p->value.str);
+  grpc_slice_unref_internal(exec_ctx, p->key.data.referenced);
+  grpc_slice_unref_internal(exec_ctx, p->value.data.referenced);
+  gpr_free(p->key.data.copied.str);
+  gpr_free(p->value.data.copied.str);
 }
 
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
+                                           grpc_slice_refcount *refcount,
                                            const uint8_t *beg,
                                            const uint8_t *end) {
   /* TODO(ctiller): limit the distance of end from beg, and perform multiple
      steps in the event of a large chunk of data to limit
      stack space usage when no tail call optimization is
      available */
-  return p->state(exec_ctx, p, beg, end);
+  p->current_slice_refcount = refcount;
+  grpc_error *error = p->state(exec_ctx, p, beg, end);
+  p->current_slice_refcount = NULL;
+  return error;
 }
 
 typedef void (*maybe_complete_func_type)(grpc_exec_ctx *exec_ctx,
@@ -1620,7 +1660,8 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
   grpc_error *error = grpc_chttp2_hpack_parser_parse(
-      exec_ctx, parser, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_END_PTR(slice));
+      exec_ctx, parser, slice.refcount, GRPC_SLICE_START_PTR(slice),
+      GRPC_SLICE_END_PTR(slice));
   if (error != GRPC_ERROR_NONE) {
     GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
     return error;

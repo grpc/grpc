@@ -90,8 +90,8 @@ static grpc_mdelem compression_md_filter(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  if (grpc_slice_cmp(GRPC_MDKEY(md),
-                     GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST) == 0) {
+  if (grpc_slice_eq(GRPC_MDKEY(md),
+                    GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST)) {
     if (!grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
                                           &calld->compression_algorithm)) {
       char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);

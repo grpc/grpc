@@ -47,13 +47,13 @@ int grpc_compression_algorithm_parse(grpc_slice name,
    * doesn't matter, given that we are comparing against string literals, but
    * because this way we needn't have "name" nil-terminated (useful for slice
    * data, for example) */
-  if (grpc_slice_cmp(name, GRPC_MDSTR_IDENTITY) == 0) {
+  if (grpc_slice_eq(name, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_COMPRESS_NONE;
     return 1;
-  } else if (grpc_slice_cmp(name, GRPC_MDSTR_GZIP) == 0) {
+  } else if (grpc_slice_eq(name, GRPC_MDSTR_GZIP)) {
     *algorithm = GRPC_COMPRESS_GZIP;
     return 1;
-  } else if (grpc_slice_cmp(name, GRPC_MDSTR_DEFLATE) == 0) {
+  } else if (grpc_slice_eq(name, GRPC_MDSTR_DEFLATE)) {
     *algorithm = GRPC_COMPRESS_DEFLATE;
     return 1;
   } else {
@@ -83,10 +83,10 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
 
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str) {
-  if (grpc_slice_cmp(str, GRPC_MDSTR_IDENTITY) == 0) return GRPC_COMPRESS_NONE;
-  if (grpc_slice_cmp(str, GRPC_MDSTR_DEFLATE) == 0)
+  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
+  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE))
     return GRPC_COMPRESS_DEFLATE;
-  if (grpc_slice_cmp(str, GRPC_MDSTR_GZIP) == 0) return GRPC_COMPRESS_GZIP;
+  if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_COMPRESS_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }
 

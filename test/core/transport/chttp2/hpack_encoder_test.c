@@ -108,7 +108,7 @@ static void verify(grpc_exec_ctx *exec_ctx, size_t window_available, int eof,
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(exec_ctx, &b);
 
-  if (0 != grpc_slice_cmp(merged, expect)) {
+  if (!grpc_slice_eq(merged, expect)) {
     char *expect_str = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *got_str = grpc_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "mismatched output for %s", expected);

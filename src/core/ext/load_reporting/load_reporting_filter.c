@@ -78,10 +78,10 @@ static grpc_mdelem recv_md_filter(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_call_element *elem = a->elem;
   call_data *calld = elem->call_data;
 
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_PATH) == 0) {
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
     calld->service_method = grpc_slice_ref_internal(GRPC_MDVALUE(md));
     calld->have_service_method = true;
-  } else if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_LB_TOKEN) == 0) {
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_TOKEN)) {
     calld->initial_md_string = grpc_slice_ref_internal(GRPC_MDVALUE(md));
     calld->have_initial_md_string = true;
     return GRPC_MDNULL;
@@ -201,7 +201,7 @@ static grpc_mdelem lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
-  if (grpc_slice_cmp(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN) == 0) {
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
     calld->trailing_md_string = grpc_slice_ref_internal(GRPC_MDVALUE(md));
     calld->have_trailing_md_string = true;
     return GRPC_MDNULL;
