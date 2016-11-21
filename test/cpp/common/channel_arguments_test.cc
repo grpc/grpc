@@ -228,7 +228,7 @@ TEST_F(ChannelArgumentsTest, SetSocketMutator) {
   EXPECT_FALSE(HasArg(arg0));
 
   // arg0 is destroyed by grpc_socket_mutator_to_arg(mutator1)
-  arg1.value.pointer.vtable->destroy(arg1.value.pointer.p);
+  arg1.value.pointer.vtable->destroy(nullptr, arg1.value.pointer.p);
 }
 
 TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {

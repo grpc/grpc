@@ -130,7 +130,8 @@ grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
 
 grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
                                                       size_t length) {
-  return ::grpc_slice_from_copied_buffer(buffer, length);
+  return ::grpc_slice_from_copied_buffer(static_cast<const char*>(buffer),
+                                         length);
 }
 
 void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb,
