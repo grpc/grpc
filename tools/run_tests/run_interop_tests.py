@@ -254,13 +254,16 @@ class NodeLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['node', 'src/node/interop/interop_client.js'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_server.js',
+            '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -333,13 +336,15 @@ class RubyLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/client.rb'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/client.rb'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -447,12 +452,11 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   return docker_cmdline
 
 
-def bash_login_cmdline(cmdline):
-  """Creates bash -l -c cmdline from args list."""
+def bash_cmdline(cmdline):
+  """Creates bash -c cmdline from args list."""
   # Use login shell:
-  # * rvm and nvm require it
   # * makes error messages clearer if executables are missing
-  return ['bash', '-l', '-c', ' '.join(cmdline)]
+  return ['bash', '-c', ' '.join(cmdline)]
 
 
 def auth_options(language, test_case):
@@ -512,7 +516,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
     auth_cmdargs, auth_env = auth_options(language, test_case)
     cmdargs += auth_cmdargs
     environ.update(auth_env)
-  cmdline = bash_login_cmdline(language.client_cmd(cmdargs))
+  cmdline = bash_cmdline(language.client_cmd(cmdargs))
   cwd = language.client_cwd
 
   if docker_image:
@@ -546,7 +550,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_login_cmdline(language.client_cmd([
+  cmdline = bash_cmdline(language.client_cmd([
       '--server_host_override=foo.test.google.fr',
       '--use_tls=true',
       '--use_test_ca=true',
@@ -583,7 +587,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
 def server_jobspec(language, docker_image):
   """Create jobspec for running a server"""
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
-  cmdline = bash_login_cmdline(
+  cmdline = bash_cmdline(
       language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT]))
   environ = language.global_env()
   docker_cmdline = docker_run_cmdline(cmdline,
