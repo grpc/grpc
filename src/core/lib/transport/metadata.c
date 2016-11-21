@@ -260,10 +260,13 @@ grpc_mdelem grpc_mdelem_create(
     return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED);
   }
 
-  grpc_mdelem static_elem = grpc_static_mdelem_for_static_strings(
-      grpc_static_metadata_index(key), grpc_static_metadata_index(value));
-  if (!GRPC_MDISNULL(static_elem)) {
-    return static_elem;
+  if (grpc_is_static_metadata_string(key) &&
+      grpc_is_static_metadata_string(value)) {
+    grpc_mdelem static_elem = grpc_static_mdelem_for_static_strings(
+        grpc_static_metadata_index(key), grpc_static_metadata_index(value));
+    if (!GRPC_MDISNULL(static_elem)) {
+      return static_elem;
+    }
   }
 
   uint32_t hash =
