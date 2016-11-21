@@ -123,6 +123,16 @@ grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_tail(s, split);
 }
 
+grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
+                                                      size_t length) {
+  return ::grpc_slice_from_static_buffer(buffer, length);
+}
+
+grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
+                                                      size_t length) {
+  return ::grpc_slice_from_copied_buffer(buffer, length);
+}
+
 void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb,
                                         grpc_slice slice) {
   ::grpc_slice_buffer_add(sb, slice);

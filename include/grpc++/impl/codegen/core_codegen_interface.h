@@ -99,6 +99,10 @@ class CoreCodegenInterface {
   virtual void grpc_slice_buffer_add(grpc_slice_buffer* sb,
                                      grpc_slice slice) = 0;
   virtual void grpc_slice_buffer_pop(grpc_slice_buffer* sb) = 0;
+  virtual grpc_slice grpc_slice_from_static_buffer(const void* buffer,
+                                                   size_t length) = 0;
+  virtual grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
+                                                   size_t length) = 0;
 
   virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
   virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;

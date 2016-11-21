@@ -45,6 +45,7 @@
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/serialization_traits.h>
+#include <grpc++/impl/codegen/slice.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/status_helper.h>
 #include <grpc++/impl/codegen/string_ref.h>
@@ -68,8 +69,8 @@ inline void FillMetadataMap(
   for (size_t i = 0; i < arr->count; i++) {
     // TODO(yangg) handle duplicates?
     metadata->insert(std::pair<grpc::string_ref, grpc::string_ref>(
-        arr->metadata[i].key, grpc::string_ref(arr->metadata[i].value,
-                                               arr->metadata[i].value_length)));
+        StringRefFromSlice(arr->metadata[i].key),
+        StringRefFromSlice(arr->metadata[i].value)));
   }
   g_core_codegen_interface->grpc_metadata_array_destroy(arr);
   g_core_codegen_interface->grpc_metadata_array_init(arr);
@@ -87,9 +88,8 @@ inline grpc_metadata* FillMetadataArray(
           metadata.size() * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
-    metadata_array[i].key = iter->first.c_str();
-    metadata_array[i].value = iter->second.c_str();
-    metadata_array[i].value_length = iter->second.size();
+    metadata_array[i].key = SliceReferencingString(iter->first);
+    metadata_array[i].value = SliceReferencingString(iter->second);
   }
   return metadata_array;
 }
@@ -451,8 +451,9 @@ class CallOpServerSendStatus {
         trailing_metadata_count_;
     op->data.send_status_from_server.trailing_metadata = trailing_metadata_;
     op->data.send_status_from_server.status = send_status_code_;
+    grpc_slice status_details = SliceReferencingString(send_status_details_);
     op->data.send_status_from_server.status_details =
-        send_status_details_.empty() ? nullptr : send_status_details_.c_str();
+        send_status_details_.empty() ? nullptr : &status_details;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -515,16 +516,12 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr) return;
     memset(&recv_trailing_metadata_arr_, 0,
            sizeof(recv_trailing_metadata_arr_));
-    status_details_ = nullptr;
-    status_details_capacity_ = 0;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata =
         &recv_trailing_metadata_arr_;
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &status_details_;
-    op->data.recv_status_on_client.status_details_capacity =
-        &status_details_capacity_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -532,10 +529,10 @@ class CallOpClientRecvStatus {
   void FinishOp(bool* status, int max_receive_message_size) {
     if (recv_status_ == nullptr) return;
     FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
-    *recv_status_ = Status(
-        static_cast<StatusCode>(status_code_),
-        status_details_ ? grpc::string(status_details_) : grpc::string());
-    g_core_codegen_interface->gpr_free(status_details_);
+    *recv_status_ = Status(static_cast<StatusCode>(status_code_),
+                           grpc::string(GRPC_SLICE_START_PTR(status_details_),
+                                        GRPC_SLICE_END_PTR(status_details_)));
+    g_core_codegen_interface->grpc_slice_unref(status_details_);
     recv_status_ = nullptr;
   }
 
@@ -544,8 +541,7 @@ class CallOpClientRecvStatus {
   Status* recv_status_;
   grpc_metadata_array recv_trailing_metadata_arr_;
   grpc_status_code status_code_;
-  char* status_details_;
-  size_t status_details_capacity_;
+  grpc_slice status_details_;
 };
 
 /// An abstract collection of CallOpSet's, to be used whenever
