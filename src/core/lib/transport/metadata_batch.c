@@ -194,6 +194,7 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
     list->head = storage;
   }
   list->tail = storage;
+  list->count++;
   assert_valid_list(list);
 }
 
