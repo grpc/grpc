@@ -35,6 +35,7 @@ require 'concurrent'
 
 # GRPC contains the General RPC module.
 module GRPC
+
   # RpcServer hosts a number of services and makes them available on the
   # network.
   class RpcServer
@@ -50,8 +51,8 @@ module GRPC
     # Default minimum size of the thread pool is 5
     DEFAULT_MIN_POOL_SIZE = 5
 
-    # Default max_waiting_requests size is 60
-    DEFAULT_MAX_WAITING_REQUESTS = 60
+    # Deprecated due to internal changes to the thread pool
+    DEFAULT_MAX_WAITING_REQUESTS = 20
 
     # Default poll period is 1s
     # Used for grpc server shutdown and thread pool shutdown timeouts
@@ -76,11 +77,11 @@ module GRPC
     # instance.
     #
     # * pool_size: the maximum size of the thread pool that the server's
-    # thread pool can reach.
+    # thread pool can reach. No more concurrent requests can be made than
+    # the size of the thread pool
     #
-    # * max_waiting_requests: the maximum number of requests that are not
-    # being handled to allow. When this limit is exceeded, the server responds
-    # with not available to new requests
+    # * max_waiting_requests: Deprecated due to internal changes to the thread
+    # pool. This is still an argument for compatibility but is ignored.
     #
     # * poll_period: when present, the server polls for new events with this
     # period
@@ -236,12 +237,8 @@ module GRPC
 
     # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)
-      jobs_count, max = @pool.queue_length, @pool.max_queue
-      GRPC.logger.info("waiting: #{jobs_count}, max: #{max}")
-
-      # remaining capacity for ThreadPoolExecutors is -1 if unbounded
-      return an_rpc if @pool.remaining_capacity != 0
-      GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
+      return an_rpc if @pool.ready_for_work?
+      GRPC.logger.warn('no free worker threads currently')
       noop = proc { |x| x }
 
       # Create a new active call that knows that metadata hasn't been
