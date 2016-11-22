@@ -44,6 +44,7 @@ import re
 
 CONFIG = [
     # metadata strings
+    'host',
     'grpc-timeout',
     'grpc-internal-encoding-request',
     'grpc-payload-bin',
@@ -52,7 +53,6 @@ CONFIG = [
     'grpc-accept-encoding',
     'user-agent',
     ':authority',
-    'host',
     'grpc-message',
     'grpc-status',
     'grpc-tracing-bin',
@@ -142,6 +142,26 @@ CONFIG = [
     ('www-authenticate', ''),
 ]
 
+METADATA_BATCH_CALLOUTS = [
+    ':path',
+    ':method',
+    ':status',
+    ':authority',
+    ':scheme',
+    'te',
+    'grpc-message',
+    'grpc-status',
+    'grpc-payload-bin',
+    'grpc-encoding',
+    'grpc-accept-encoding',
+    'content-type',
+    'grpc-internal-encoding-request',
+    'user-agent',
+    'host',
+    'lb-token',
+    'lb-cost-bin',
+]
+
 COMPRESSION_ALGORITHMS = [
     'identity',
     'deflate',
@@ -149,7 +169,7 @@ COMPRESSION_ALGORITHMS = [
 ]
 
 # utility: mangle the name of a config
-def mangle(elem):
+def mangle(elem, name=None):
   xl = {
       '-': '_',
       ':': '',
@@ -174,10 +194,14 @@ def mangle(elem):
         r += put
     if r[-1] == '_': r = r[:-1]
     return r
+  def n(default, name=name):
+    if name is None: return 'grpc_%s_' % default
+    if name == '': return ''
+    return 'grpc_%s_' % name
   if isinstance(elem, tuple):
-    return 'grpc_mdelem_%s_%s' % (m0(elem[0]), m0(elem[1]))
+    return '%s%s_%s' % (n('mdelem'), m0(elem[0]), m0(elem[1]))
   else:
-    return 'grpc_mdstr_%s' % (m0(elem))
+    return '%s%s' % (n('mdstr'), m0(elem))
 
 # utility: generate some hash value for a string
 def fake_hash(elem):
@@ -196,6 +220,9 @@ def put_banner(files, banner):
 all_strs = list()
 all_elems = list()
 static_userdata = {}
+for elem in METADATA_BATCH_CALLOUTS:
+  if elem not in all_strs:
+    all_strs.append(elem)
 for elem in CONFIG:
   if isinstance(elem, tuple):
     if elem[0] not in all_strs:
@@ -219,8 +246,6 @@ for mask in range(1, 1<<len(COMPRESSION_ALGORITHMS)):
     all_elems.append(elem)
   compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
-all_strs = sorted(list(all_strs), key=mangle)
-all_elems = sorted(list(all_elems), key=mangle)
 
 # output configuration
 args = sys.argv[1:]
@@ -308,6 +333,10 @@ for i, elem in enumerate(all_strs):
 def slice_def(i):
   return '{.refcount = &g_refcnts[%d].base, .data.refcounted = {g_bytes+%d, %d}}' % (i, id2strofs[i], len(all_strs[i]))
 
+# validate configuration
+for elem in METADATA_BATCH_CALLOUTS:
+  assert elem in all_strs
+
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
 print >>H, 'extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];'
 for i, elem in enumerate(all_strs):
@@ -373,13 +402,23 @@ def md_idx(m):
     if m == m2:
       return i
 
+def offset_trials(mink):
+  yield 0
+  for i in range(1, 100):
+    for mul in [-1, 1]:
+      yield mul * i
+
 def perfect_hash(keys, name):
     ok = False
+    print '***********'
+    print keys
     cmd = '%s/perfect/build.sh' % (os.path.dirname(sys.argv[0]))
     subprocess.check_call(cmd, shell=True)
-    for offset in reversed(range(0, min(keys))):
+    for offset in offset_trials(min(keys)):
         tmp = open('/tmp/keys.txt', 'w')
-        tmp.write(''.join('%d\n' % (x - offset) for x in keys))
+        offset_keys = [x + offset for x in keys]
+        print offset_keys
+        tmp.write(''.join('%d\n' % x for x in offset_keys))
         tmp.close()
         cmd = '%s/perfect/run.sh %s -dms' % (os.path.dirname(sys.argv[0]), tmp.name)
         out = subprocess.check_output(cmd, shell=True)
@@ -399,13 +438,13 @@ def perfect_hash(keys, name):
             results[var] = val
     code += '\n'
     pycode = 'def f(val):\n'
-    pycode += '  val -= %d\n' % offset
+    pycode += '  val += %d\n' % offset
     with open('%s/perfect/phash.c' % os.path.dirname(sys.argv[0])) as f:
         txt = f.read()
         tabdata = re.search(r'ub1 tab\[\] = \{([^}]+)\}', txt, re.MULTILINE).group(1)
         code += 'static const uint8_t %s_tab[] = {%s};\n\n' % (name, tabdata)
         func_body = re.search(r'ub4 phash\(val\)\nub4 val;\n\{([^}]+)\}', txt, re.MULTILINE).group(1).replace('ub4', 'uint32_t')
-        code += 'static uint32_t %s_phash(uint32_t val) {\nval -= %d;\n%s}\n' % (name,
+        code += 'static uint32_t %s_phash(uint32_t val) {\nval += (uint32_t)%d;\n%s}\n' % (name,
             offset, func_body.replace('tab', '%s_tab' % name))
         pycode += '  tab=(%s)' % tabdata.replace('\n', '')
         pycode += '\n'.join('  %s' % s.strip() for s in func_body.splitlines()[2:])
@@ -445,6 +484,40 @@ print >>C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] 
 for a, b in all_elems:
   print >>C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
 print >>C, '};'
+
+print >>H, 'typedef enum {'
+batch_keys = [str_idx(s) for s in METADATA_BATCH_CALLOUTS]
+batch_hash = perfect_hash(batch_keys, 'batch')
+ordered_callouts = sorted((batch_hash['pyfunc'](str_idx(elem)), elem) for elem in METADATA_BATCH_CALLOUTS)
+for _, elem in ordered_callouts:
+  print >>H, '  %s,' % mangle(elem, 'batch').upper()
+print >>H, '  GRPC_BATCH_CALLOUTS_COUNT'
+print >>H, '} grpc_metadata_batch_callouts_index;'
+print >>H
+print >>H, 'typedef union {'
+print >>H, '  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];'
+print >>H, '  struct {'
+for _, elem in ordered_callouts:
+  print >>H, '  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower()
+print >>H, '  } named;'
+print >>H, '} grpc_metadata_batch_callouts;'
+print >>H
+print >>H, 'grpc_metadata_batch_callouts_index grpc_batch_index_of(grpc_slice slice);'
+print >>H
+print >>C, batch_hash['code']
+batch_hash_to_idx = [0] * int(batch_hash['PHASHRANGE'])
+for i, elem in enumerate( METADATA_BATCH_CALLOUTS):
+  batch_hash_to_idx[batch_hash['pyfunc'](str_idx(elem))] = str_idx(elem)
+print >>C, 'static const uint8_t batch_hash_to_idx[] = {%s};' % ','.join('%d' % n for n in batch_hash_to_idx)
+print >>C
+print >>C, 'grpc_metadata_batch_callouts_index grpc_batch_index_of(grpc_slice slice) {'
+print >>C, '  if (!grpc_is_static_metadata_string(slice)) return GRPC_BATCH_CALLOUTS_COUNT;'
+print >>C, '  uint32_t idx = (uint32_t)grpc_static_metadata_index(slice);'
+print >>C, '  uint32_t hash = batch_phash(idx);'
+print >>C, '  if (hash < GPR_ARRAY_SIZE(batch_hash_to_idx) && batch_hash_to_idx[hash] == idx) return (grpc_metadata_batch_callouts_index)hash;'
+print >>C, '  return GRPC_BATCH_CALLOUTS_COUNT;'
+print >>C, '}'
+print >>C
 
 print >>H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
 print >>C, 'const uint8_t grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))

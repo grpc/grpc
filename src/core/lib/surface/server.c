@@ -735,35 +735,25 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static grpc_mdelem server_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                 grpc_mdelem md) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-    if (!calld->path_set) {
-      calld->path = grpc_slice_ref(GRPC_MDVALUE(md));
-      calld->path_set = true;
-    }
-    return GRPC_MDNULL;
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY)) {
-    if (!calld->host_set) {
-      calld->host = grpc_slice_ref(GRPC_MDVALUE(md));
-      calld->host_set = true;
-    }
-    return GRPC_MDNULL;
-  }
-  return md;
-}
-
 static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
                                             grpc_error *error) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   gpr_timespec op_deadline;
 
+  if (error == GRPC_ERROR_NONE) {
+    GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != NULL);
+    GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != NULL);
+    calld->path = grpc_slice_ref(
+        GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
+    calld->host = grpc_slice_ref(
+        GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.authority->md));
+    calld->path_set = true;
+    calld->host_set = true;
+  } else {
+    GRPC_ERROR_REF(error);
+  }
   GRPC_ERROR_REF(error);
-  grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
-                             server_filter, elem);
   op_deadline = calld->recv_initial_metadata->deadline;
   if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
     calld->deadline = op_deadline;

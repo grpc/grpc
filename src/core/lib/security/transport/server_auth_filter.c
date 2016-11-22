@@ -83,6 +83,7 @@ static grpc_metadata_array metadata_batch_to_md_array(
   return result;
 }
 
+#if 0
 static grpc_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
                                       grpc_mdelem md) {
   grpc_call_element *elem = user_data;
@@ -91,11 +92,12 @@ static grpc_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx, void *user_data,
   for (i = 0; i < calld->num_consumed_md; i++) {
     const grpc_metadata *consumed_md = &calld->consumed_md[i];
     if (grpc_slice_eq(GRPC_MDKEY(md), consumed_md->key) &&
-        grpc_slice_eq(GRPC_MDKEY(md), consumed_md->value))
+        grpc_slice_eq(GRPC_MDVALUE(md), consumed_md->value))
       return GRPC_MDNULL;
   }
   return md;
 }
+#endif
 
 static void destroy_op(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   gpr_free(arg);
@@ -120,8 +122,12 @@ static void on_md_processing_done(
   if (status == GRPC_STATUS_OK) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
+#if 0
     grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
                                remove_consumed_md, elem);
+#else
+    if (num_consumed_md) abort();
+#endif
     grpc_metadata_array_destroy(&calld->md);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {

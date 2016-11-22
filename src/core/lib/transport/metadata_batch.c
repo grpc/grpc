@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 
 static void assert_valid_list(grpc_mdelem_list *list) {
 #ifndef NDEBUG
@@ -61,6 +62,20 @@ static void assert_valid_list(grpc_mdelem_list *list) {
 #endif /* NDEBUG */
 }
 
+static void assert_valid_callouts(grpc_metadata_batch *batch) {
+#ifndef NDEBUG
+  for (grpc_linked_mdelem *l = batch->list.head; l != NULL; l = l->next) {
+    grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
+    grpc_metadata_batch_callouts_index callout_idx =
+        grpc_batch_index_of(key_interned);
+    if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
+      GPR_ASSERT(batch->idx.array[callout_idx] == l);
+    }
+    grpc_slice_unref(key_interned);
+  }
+#endif
+}
+
 #ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
   assert_valid_list(&batch->list);
@@ -68,7 +83,7 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
 #endif /* NDEBUG */
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
-  batch->list.head = batch->list.tail = NULL;
+  memset(batch, 0, sizeof(*batch));
   batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
@@ -80,12 +95,52 @@ void grpc_metadata_batch_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
-                                  grpc_linked_mdelem *storage,
-                                  grpc_mdelem elem_to_add) {
+grpc_error *grpc_attach_md_to_error(grpc_error *src, grpc_mdelem md) {
+  char *k = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_ASCII);
+  char *v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
+  grpc_error *out = grpc_error_set_str(
+      grpc_error_set_str(src, GRPC_ERROR_STR_KEY, k), GRPC_ERROR_STR_VALUE, v);
+  gpr_free(k);
+  gpr_free(v);
+  return out;
+}
+
+static grpc_error *maybe_link_callout(grpc_metadata_batch *batch,
+                                      grpc_linked_mdelem *storage)
+    GRPC_MUST_USE_RESULT;
+
+static grpc_error *maybe_link_callout(grpc_metadata_batch *batch,
+                                      grpc_linked_mdelem *storage) {
+  grpc_metadata_batch_callouts_index idx =
+      grpc_batch_index_of(GRPC_MDKEY(storage->md));
+  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
+    return GRPC_ERROR_NONE;
+  }
+  if (batch->idx.array[idx] != NULL) {
+    return grpc_attach_md_to_error(
+        GRPC_ERROR_CREATE("Unallowed duplicate metadata"), storage->md);
+  }
+  batch->idx.array[idx] = storage;
+  return GRPC_ERROR_NONE;
+}
+
+static void maybe_unlink_callout(grpc_metadata_batch *batch,
+                                 grpc_linked_mdelem *storage) {
+  grpc_metadata_batch_callouts_index idx =
+      grpc_batch_index_of(GRPC_MDKEY(storage->md));
+  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
+    return;
+  }
+  GPR_ASSERT(batch->idx.array[idx] != NULL);
+  batch->idx.array[idx] = NULL;
+}
+
+grpc_error *grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
+                                         grpc_linked_mdelem *storage,
+                                         grpc_mdelem elem_to_add) {
   GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
-  grpc_metadata_batch_link_head(batch, storage);
+  return grpc_metadata_batch_link_head(batch, storage);
 }
 
 static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
@@ -102,17 +157,25 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
-                                   grpc_linked_mdelem *storage) {
+grpc_error *grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
+                                          grpc_linked_mdelem *storage) {
+  assert_valid_callouts(batch);
+  grpc_error *err = maybe_link_callout(batch, storage);
+  if (err != GRPC_ERROR_NONE) {
+    assert_valid_callouts(batch);
+    return err;
+  }
   link_head(&batch->list, storage);
+  assert_valid_callouts(batch);
+  return GRPC_ERROR_NONE;
 }
 
-void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
-                                  grpc_linked_mdelem *storage,
-                                  grpc_mdelem elem_to_add) {
+grpc_error *grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
+                                         grpc_linked_mdelem *storage,
+                                         grpc_mdelem elem_to_add) {
   GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
-  grpc_metadata_batch_link_tail(batch, storage);
+  return grpc_metadata_batch_link_tail(batch, storage);
 }
 
 static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
@@ -130,67 +193,47 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
-                                   grpc_linked_mdelem *storage) {
-  link_tail(&batch->list, storage);
-}
-
-void grpc_metadata_batch_move(grpc_metadata_batch *dst,
-                              grpc_metadata_batch *src) {
-  *dst = *src;
-  memset(src, 0, sizeof(grpc_metadata_batch));
-}
-
-void grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
-                                grpc_metadata_batch *batch,
-                                grpc_mdelem (*filter)(grpc_exec_ctx *exec_ctx,
-                                                      void *user_data,
-                                                      grpc_mdelem elem),
-                                void *user_data) {
-  grpc_linked_mdelem *l;
-  grpc_linked_mdelem *next;
-
-  GPR_TIMER_BEGIN("grpc_metadata_batch_filter", 0);
-
-  assert_valid_list(&batch->list);
-  for (l = batch->list.head; l; l = next) {
-    grpc_mdelem orig = l->md;
-    grpc_mdelem filt = filter(exec_ctx, user_data, orig);
-    next = l->next;
-    if (GRPC_MDISNULL(filt)) {
-      if (l->prev) {
-        l->prev->next = l->next;
-      }
-      if (l->next) {
-        l->next->prev = l->prev;
-      }
-      if (batch->list.head == l) {
-        batch->list.head = l->next;
-      }
-      if (batch->list.tail == l) {
-        batch->list.tail = l->prev;
-      }
-      assert_valid_list(&batch->list);
-      GRPC_MDELEM_UNREF(exec_ctx, l->md);
-    } else if (!grpc_mdelem_eq(filt, orig)) {
-      GRPC_MDELEM_UNREF(exec_ctx, orig);
-      l->md = filt;
-    }
+grpc_error *grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
+                                          grpc_linked_mdelem *storage) {
+  assert_valid_callouts(batch);
+  grpc_error *err = maybe_link_callout(batch, storage);
+  if (err != GRPC_ERROR_NONE) {
+    assert_valid_callouts(batch);
+    return err;
   }
-  assert_valid_list(&batch->list);
-
-  GPR_TIMER_END("grpc_metadata_batch_filter", 0);
+  link_tail(&batch->list, storage);
+  assert_valid_callouts(batch);
+  return GRPC_ERROR_NONE;
 }
 
-static grpc_mdelem no_metadata_for_you(grpc_exec_ctx *exec_ctx, void *user_data,
-                                       grpc_mdelem elem) {
-  return GRPC_MDNULL;
+static void unlink_storage(grpc_mdelem_list *list,
+                           grpc_linked_mdelem *storage) {
+  assert_valid_list(list);
+  if (storage->prev != NULL) {
+    storage->prev->next = storage->next;
+  } else {
+    list->head = storage->next;
+  }
+  if (storage->next != NULL) {
+    storage->next->prev = storage->prev;
+  } else {
+    list->tail = storage->prev;
+  }
+  assert_valid_list(list);
+}
+
+void grpc_metadata_batch_remove(grpc_metadata_batch *batch,
+                                grpc_linked_mdelem *storage) {
+  assert_valid_callouts(batch);
+  maybe_unlink_callout(batch, storage);
+  unlink_storage(&batch->list, storage);
+  assert_valid_callouts(batch);
 }
 
 void grpc_metadata_batch_clear(grpc_exec_ctx *exec_ctx,
                                grpc_metadata_batch *batch) {
-  batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-  grpc_metadata_batch_filter(exec_ctx, batch, no_metadata_for_you, NULL);
+  grpc_metadata_batch_destroy(exec_ctx, batch);
+  grpc_metadata_batch_init(batch);
 }
 
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch) {
