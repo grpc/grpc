@@ -107,7 +107,6 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver *ev_driver) {
     gpr_mu_destroy(&ev_driver->mu);
     ares_destroy(ev_driver->channel);
     gpr_free(ev_driver);
-    // grpc_ares_cleanup();
   }
 }
 
@@ -126,10 +125,6 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set) {
   int status;
   grpc_error *err = GRPC_ERROR_NONE;
-  // grpc_error *err = grpc_ares_init();
-  // if (err != GRPC_ERROR_NONE) {
-  //   return err;
-  // }
   *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
   status = ares_init(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
@@ -315,14 +310,12 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
 
 void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver) {
-  grpc_ares_ev_driver_ref(ev_driver);
   gpr_mu_lock(&ev_driver->mu);
   if (!ev_driver->working) {
     ev_driver->working = true;
     grpc_ares_notify_on_event_locked(exec_ctx, ev_driver);
   }
   gpr_mu_unlock(&ev_driver->mu);
-  grpc_ares_ev_driver_unref(ev_driver);
 }
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET) */
