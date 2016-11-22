@@ -67,6 +67,9 @@ namespace Grpc.Core.Tests
             var credentials = new FakeCallCredentials();
             Assert.AreSame(credentials, options.WithCredentials(credentials).Credentials);
 
+            var flags = CallFlags.WaitForReady | CallFlags.CacheableRequest;
+            Assert.AreEqual(flags, options.WithFlags(flags).Flags);
+
             // Check that the original instance is unchanged.
             Assert.IsNull(options.Headers);
             Assert.IsNull(options.Deadline);
@@ -74,6 +77,7 @@ namespace Grpc.Core.Tests
             Assert.IsNull(options.WriteOptions);
             Assert.IsNull(options.PropagationToken);
             Assert.IsNull(options.Credentials);
+            Assert.AreEqual(default(CallFlags), options.Flags);
         }
 
         [Test]
