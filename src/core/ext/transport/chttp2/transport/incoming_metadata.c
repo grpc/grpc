@@ -80,16 +80,11 @@ void grpc_chttp2_incoming_metadata_buffer_publish(
   buffer->published = 1;
   if (buffer->count > 0) {
     size_t i;
-    for (i = 1; i < buffer->count; i++) {
-      buffer->elems[i].prev = &buffer->elems[i - 1];
+    for (i = 0; i < buffer->count; i++) {
+      GRPC_LOG_IF_ERROR(
+          "grpc_chttp2_incoming_metadata_buffer_publish",
+          grpc_metadata_batch_link_tail(batch, &buffer->elems[i]));
     }
-    for (i = 0; i < buffer->count - 1; i++) {
-      buffer->elems[i].next = &buffer->elems[i + 1];
-    }
-    buffer->elems[0].prev = NULL;
-    buffer->elems[buffer->count - 1].next = NULL;
-    batch->list.head = &buffer->elems[0];
-    batch->list.tail = &buffer->elems[buffer->count - 1];
   } else {
     batch->list.head = batch->list.tail = NULL;
   }

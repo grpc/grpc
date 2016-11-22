@@ -623,73 +623,19 @@ static int prepare_application_metadata(
     if (call->send_extra_metadata_count == 0) {
       prepend_extra_metadata = 0;
     } else {
-      for (i = 1; i < call->send_extra_metadata_count; i++) {
-        call->send_extra_metadata[i].prev = &call->send_extra_metadata[i - 1];
+      for (i = 0; i < call->send_extra_metadata_count; i++) {
+        GRPC_LOG_IF_ERROR("prepare_application_metadata",
+                          grpc_metadata_batch_link_tail(
+                              batch, &call->send_extra_metadata[i]));
       }
-      for (i = 0; i < call->send_extra_metadata_count - 1; i++) {
-        call->send_extra_metadata[i].next = &call->send_extra_metadata[i + 1];
-      }
     }
   }
-  for (i = 1; i < total_count; i++) {
+  for (i = 0; i < total_count; i++) {
     grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_metadata *prev_md =
-        get_md_elem(metadata, additional_metadata, i - 1, count);
-    linked_from_md(md)->prev = linked_from_md(prev_md);
+    GRPC_LOG_IF_ERROR("prepare_application_metadata",
+                      grpc_metadata_batch_link_tail(batch, linked_from_md(md)));
   }
-  for (i = 0; i < total_count - 1; i++) {
-    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_metadata *next_md =
-        get_md_elem(metadata, additional_metadata, i + 1, count);
-    linked_from_md(md)->next = linked_from_md(next_md);
-  }
-
-  switch (prepend_extra_metadata * 2 + (total_count != 0)) {
-    case 0:
-      /* no prepend, no metadata => nothing to do */
-      batch->list.head = batch->list.tail = NULL;
-      break;
-    case 1: {
-      /* metadata, but no prepend */
-      grpc_metadata *first_md =
-          get_md_elem(metadata, additional_metadata, 0, count);
-      grpc_metadata *last_md =
-          get_md_elem(metadata, additional_metadata, total_count - 1, count);
-      batch->list.head = linked_from_md(first_md);
-      batch->list.tail = linked_from_md(last_md);
-      batch->list.head->prev = NULL;
-      batch->list.tail->next = NULL;
-      break;
-    }
-    case 2:
-      /* prepend, but no md */
-      batch->list.head = &call->send_extra_metadata[0];
-      batch->list.tail =
-          &call->send_extra_metadata[call->send_extra_metadata_count - 1];
-      batch->list.head->prev = NULL;
-      batch->list.tail->next = NULL;
-      call->send_extra_metadata_count = 0;
-      break;
-    case 3: {
-      /* prepend AND md */
-      grpc_metadata *first_md =
-          get_md_elem(metadata, additional_metadata, 0, count);
-      grpc_metadata *last_md =
-          get_md_elem(metadata, additional_metadata, total_count - 1, count);
-      batch->list.head = &call->send_extra_metadata[0];
-      call->send_extra_metadata[call->send_extra_metadata_count - 1].next =
-          linked_from_md(first_md);
-      linked_from_md(first_md)->prev =
-          &call->send_extra_metadata[call->send_extra_metadata_count - 1];
-      batch->list.tail = linked_from_md(last_md);
-      batch->list.head->prev = NULL;
-      batch->list.tail->next = NULL;
-      call->send_extra_metadata_count = 0;
-      break;
-    }
-    default:
-      GPR_UNREACHABLE_CODE(return 0);
-  }
+  call->send_extra_metadata_count = 0;
 
   return 1;
 }
@@ -936,6 +882,7 @@ static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
 
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
                                  int is_trailing) {
+  if (b->list.count == 0) return;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
   grpc_metadata_array *dest;
   grpc_metadata *mdusr;

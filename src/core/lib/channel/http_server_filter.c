@@ -99,7 +99,11 @@ static grpc_error *server_filter_outgoing_metadata(grpc_exec_ctx *exec_ctx,
 
 static void add_error(const char *error_name, grpc_error **cumulative,
                       grpc_error *new) {
-  abort();
+  if (new == GRPC_ERROR_NONE) return;
+  if (*cumulative == GRPC_ERROR_NONE) {
+    *cumulative = GRPC_ERROR_CREATE(error_name);
+  }
+  *cumulative = grpc_error_add_child(*cumulative, new);
 }
 
 static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
@@ -145,12 +149,12 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
   }
 
   if (b->idx.named.scheme != NULL) {
-    if (!grpc_mdelem_eq(b->idx.named.te->md, GRPC_MDELEM_SCHEME_HTTP) &&
-        !grpc_mdelem_eq(b->idx.named.te->md, GRPC_MDELEM_SCHEME_HTTPS) &&
-        !grpc_mdelem_eq(b->idx.named.te->md, GRPC_MDELEM_SCHEME_GRPC)) {
+    if (!grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTP) &&
+        !grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTPS) &&
+        !grpc_mdelem_eq(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_GRPC)) {
       add_error(error_name, &error,
                 grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
-                                        b->idx.named.te->md));
+                                        b->idx.named.scheme->md));
     }
     grpc_metadata_batch_remove(b, b->idx.named.scheme);
   } else {
