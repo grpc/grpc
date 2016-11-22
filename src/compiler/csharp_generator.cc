@@ -308,12 +308,12 @@ void GenerateServiceDescriptorProperty(Printer *out,
   out->Print("\n");
 }
 
-void GenerateServerClass(Printer *out, const ServiceDescriptor *service) {
+void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
   out->Print(
       "/// <summary>Base class for server-side implementations of "
       "$servicename$</summary>\n",
       "servicename", GetServiceClassName(service));
-  out->Print("public abstract class $name$\n", "name",
+  out->Print("public abstract partial class $name$\n", "name",
              GetServerClassName(service));
   out->Print("{\n");
   out->Indent();
@@ -341,11 +341,12 @@ void GenerateServerClass(Printer *out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
-void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
-  out->Print("/// <summary>Client for $servicename$</summary>\n", "servicename",
-             GetServiceClassName(service));
-  out->Print("public class $name$ : ClientBase<$name$>\n", "name",
-             GetClientClassName(service));
+void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
+  out->Print("/// <summary>Client for $servicename$</summary>\n",
+             "servicename", GetServiceClassName(service));
+  out->Print(
+      "public partial class $name$ : ClientBase<$name$>\n",
+      "name", GetClientClassName(service));
   out->Print("{\n");
   out->Indent();
 
@@ -549,7 +550,7 @@ void GenerateService(Printer *out, const ServiceDescriptor *service,
                      bool generate_client, bool generate_server,
                      bool internal_access) {
   GenerateDocCommentBody(out, service);
-  out->Print("$access_level$ static class $classname$\n", "access_level",
+  out->Print("$access_level$ static partial class $classname$\n", "access_level",
              GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));
   out->Print("{\n");
