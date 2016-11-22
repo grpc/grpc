@@ -50,6 +50,7 @@ namespace Grpc.Core
         WriteOptions writeOptions;
         ContextPropagationToken propagationToken;
         CallCredentials credentials;
+        CallFlags flags;
 
         /// <summary>
         /// Creates a new instance of <c>CallOptions</c> struct.
@@ -60,8 +61,10 @@ namespace Grpc.Core
         /// <param name="writeOptions">Write options that will be used for this call.</param>
         /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
         /// <param name="credentials">Credentials to use for this call.</param>
+        /// <param name="flags">Flags to use for this call.</param>
         public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
-                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
+                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null,
+                           CallFlags flags = default(CallFlags))
         {
             this.headers = headers;
             this.deadline = deadline;
@@ -69,6 +72,7 @@ namespace Grpc.Core
             this.writeOptions = writeOptions;
             this.propagationToken = propagationToken;
             this.credentials = credentials;
+            this.flags = flags;
         }
 
         /// <summary>
@@ -123,6 +127,14 @@ namespace Grpc.Core
         public CallCredentials Credentials
         {
             get { return this.credentials; }
+        }
+
+        /// <summary>
+        /// Flags to use for this call.
+        /// </summary>
+        public CallFlags Flags
+        {
+            get { return this.flags; }
         }
 
         /// <summary>
@@ -194,6 +206,18 @@ namespace Grpc.Core
         {
             var newOptions = this;
             newOptions.credentials = credentials;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>Flags</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="flags">The call flags.</param>
+        public CallOptions WithFlags(CallFlags flags)
+        {
+            var newOptions = this;
+            newOptions.flags = flags;
             return newOptions;
         }
 

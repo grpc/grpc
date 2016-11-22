@@ -48,6 +48,7 @@
     <Compile Include="AsyncServerStreamingCall.cs" />
     <Compile Include="AsyncAuthInterceptor.cs" />
     <Compile Include="CallCredentials.cs" />
+    <Compile Include="CallFlags.cs" />
     <Compile Include="IClientStreamWriter.cs" />
     <Compile Include="Internal\NativeMethods.cs" />
     <Compile Include="Internal\PlatformApis.cs" />
