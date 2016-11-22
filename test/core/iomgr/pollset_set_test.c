@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -137,11 +137,6 @@ static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd tfds[],
                                 "test_fd");
     reset_test_fd(exec_ctx, &tfds[i]);
   }
-
-  /* TODO: sreek - remove this */
-  /* reset_test_fd() is the only function above that took exec_ctx. In this
-   * case, reset_test_fd() should not have queued anything on the exec_ctx */
-  GPR_ASSERT(grpc_exec_ctx_flush(exec_ctx) == false);
 }
 
 static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
@@ -184,11 +179,6 @@ static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd tfds[],
                grpc_wakeup_fd_consume_wakeup(&tfds[i].wakeup_fd));
     reset_test_fd(exec_ctx, &tfds[i]);
   }
-
-  /* TODO: sreek - remove this */
-  /* reset_test_fd() is the only function above that took exec_ctx. In this
-   * case, reset_test_fd() should not have queued anything on the exec_ctx */
-  GPR_ASSERT(grpc_exec_ctx_flush(exec_ctx) == false);
 }
 
 /*******************************************************************************
