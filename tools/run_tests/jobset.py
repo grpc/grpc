@@ -206,6 +206,15 @@ class JobResult(object):
     self.message = ''
 
 
+
+
+
+
+
+
+
+
+
 class Job(object):
   """Manages one job."""
 
