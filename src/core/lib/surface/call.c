@@ -940,8 +940,9 @@ static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
   grpc_metadata_array *dest;
   grpc_metadata *mdusr;
   dest = call->buffered_metadata[is_trailing];
-  if (dest->count + b->count > dest->capacity) {
-    dest->capacity = GPR_MAX(dest->capacity + b->count, dest->capacity * 3 / 2);
+  if (dest->count + b->list.count > dest->capacity) {
+    dest->capacity =
+        GPR_MAX(dest->capacity + b->list.count, dest->capacity * 3 / 2);
     dest->metadata =
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
   }
