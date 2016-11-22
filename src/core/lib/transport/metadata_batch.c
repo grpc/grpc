@@ -52,13 +52,16 @@ static void assert_valid_list(grpc_mdelem_list *list) {
   GPR_ASSERT(list->tail->next == NULL);
   GPR_ASSERT((list->head == list->tail) == (list->head->next == NULL));
 
+  size_t verified_count = 0;
   for (l = list->head; l; l = l->next) {
     GPR_ASSERT(!GRPC_MDISNULL(l->md));
     GPR_ASSERT((l->prev == NULL) == (l == list->head));
     GPR_ASSERT((l->next == NULL) == (l == list->tail));
     if (l->next) GPR_ASSERT(l->next->prev == l);
     if (l->prev) GPR_ASSERT(l->prev->next == l);
+    verified_count++;
   }
+  GPR_ASSERT(list->count == verified_count);
 #endif /* NDEBUG */
 }
 
@@ -154,6 +157,7 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
     list->tail = storage;
   }
   list->head = storage;
+  list->count++;
   assert_valid_list(list);
 }
 
@@ -219,6 +223,7 @@ static void unlink_storage(grpc_mdelem_list *list,
   } else {
     list->tail = storage->prev;
   }
+  list->count--;
   assert_valid_list(list);
 }
 
@@ -228,6 +233,33 @@ void grpc_metadata_batch_remove(grpc_metadata_batch *batch,
   maybe_unlink_callout(batch, storage);
   unlink_storage(&batch->list, storage);
   assert_valid_callouts(batch);
+}
+
+void grpc_metadata_batch_set_value(grpc_exec_ctx *exec_ctx,
+                                   grpc_linked_mdelem *storage,
+                                   grpc_slice value) {
+  grpc_mdelem old = storage->md;
+  grpc_mdelem new =
+      grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref(GRPC_MDKEY(old)), value);
+  storage->md = new;
+  GRPC_MDELEM_UNREF(exec_ctx, old);
+}
+
+grpc_error *grpc_metadata_batch_substitute(grpc_exec_ctx *exec_ctx,
+                                           grpc_metadata_batch *batch,
+                                           grpc_linked_mdelem *storage,
+                                           grpc_mdelem new) {
+  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_mdelem old = storage->md;
+  if (!grpc_slice_eq(GRPC_MDKEY(new), GRPC_MDKEY(old))) {
+    maybe_unlink_callout(batch, storage);
+    storage->md = new;
+    error = maybe_link_callout(batch, storage);
+  } else {
+    storage->md = new;
+  }
+  GRPC_MDELEM_UNREF(exec_ctx, old);
+  return error;
 }
 
 void grpc_metadata_batch_clear(grpc_exec_ctx *exec_ctx,

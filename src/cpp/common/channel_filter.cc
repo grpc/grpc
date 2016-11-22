@@ -49,7 +49,8 @@ grpc_linked_mdelem *MetadataBatch::AddMetadata(grpc_exec_ctx *exec_ctx,
   memset(storage, 0, sizeof(grpc_linked_mdelem));
   storage->md = grpc_mdelem_from_slices(exec_ctx, SliceFromCopiedString(key),
                                         SliceFromCopiedString(value));
-  grpc_metadata_batch_link_head(batch_, storage);
+  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata",
+                    grpc_metadata_batch_link_head(batch_, storage));
   return storage;
 }
 

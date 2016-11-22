@@ -55,13 +55,12 @@ typedef struct grpc_linked_mdelem {
 } grpc_linked_mdelem;
 
 typedef struct grpc_mdelem_list {
+  size_t count;
   grpc_linked_mdelem *head;
   grpc_linked_mdelem *tail;
 } grpc_mdelem_list;
 
 typedef struct grpc_metadata_batch {
-  /* number of elements in the batch */
-  size_t count;
   /** Metadata elements in this batch */
   grpc_mdelem_list list;
   grpc_metadata_batch_callouts idx;
@@ -86,7 +85,8 @@ void grpc_metadata_batch_remove(grpc_metadata_batch *batch,
                                 grpc_linked_mdelem *storage);
 
 /** Substitute a new mdelem for an old value */
-grpc_error *grpc_metadata_batch_substitute(grpc_metadata_batch *batch,
+grpc_error *grpc_metadata_batch_substitute(grpc_exec_ctx *exec_ctx,
+                                           grpc_metadata_batch *batch,
                                            grpc_linked_mdelem *storage,
                                            grpc_mdelem new_value);
 
