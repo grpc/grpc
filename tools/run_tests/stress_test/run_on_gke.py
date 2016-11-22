@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -27,6 +28,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import argparse
 import datetime
 import json

@@ -1,3 +1,5 @@
+#!/usr/bin/env python2.7
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -33,7 +35,6 @@ This parses the list of libraries, and generates globals "vsprojects"
 and "vsproject_dict", to be used by the visual studio generators.
 
 """
-
 
 import hashlib
 import re
