@@ -107,7 +107,6 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver *ev_driver) {
     gpr_mu_destroy(&ev_driver->mu);
     ares_destroy(ev_driver->channel);
     gpr_free(ev_driver);
-    grpc_ares_cleanup();
   }
 }
 
@@ -125,10 +124,7 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set) {
   int status;
-  grpc_error *err = grpc_ares_init();
-  if (err != GRPC_ERROR_NONE) {
-    return err;
-  }
+  grpc_error *err = GRPC_ERROR_NONE;
   *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
   status = ares_init(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
@@ -150,13 +146,12 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
   return GRPC_ERROR_NONE;
 }
 
-void grpc_ares_ev_driver_destroy(  // grpc_exec_ctx *exec_ctx,
-    grpc_ares_ev_driver *ev_driver) {
+void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver) {
   // It's not safe to shut down remaining fds here directly, becauses
   // ares_host_callback does not provide an exec_ctx. We mark the event driver
   // as being shut down. If the event driver is working,
   // grpc_ares_notify_on_event_locked will shut down the fds; if it's not
-  // working, grpc_ares_ev_driver_unref will release it directly.
+  // working, there are no fds to shut down.
   gpr_mu_lock(&ev_driver->mu);
   ev_driver->shutting_down = true;
   gpr_mu_unlock(&ev_driver->mu);
@@ -283,8 +278,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
           fdn->readable_registered = true;
         }
         // Register write_closure if the socket is writable and write_closure
-        // has
-        // not been registered with this socket.
+        // has not been registered with this socket.
         if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
             !fdn->writable_registered) {
           gpr_log(GPR_DEBUG, "notify write on: %d",
@@ -316,14 +310,12 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
 
 void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
                                grpc_ares_ev_driver *ev_driver) {
-  grpc_ares_ev_driver_ref(ev_driver);
   gpr_mu_lock(&ev_driver->mu);
   if (!ev_driver->working) {
     ev_driver->working = true;
     grpc_ares_notify_on_event_locked(exec_ctx, ev_driver);
   }
   gpr_mu_unlock(&ev_driver->mu);
-  grpc_ares_ev_driver_unref(ev_driver);
 }
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET) */

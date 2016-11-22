@@ -393,7 +393,6 @@ void grpc_resolver_dns_ares_init(void) {
 void grpc_resolver_dns_ares_shutdown(void) { grpc_ares_cleanup(); }
 
 #else /* GRPC_ARES == 1 */
-#include <grpc/support/log.h>
 
 void grpc_resolver_dns_ares_init(void) {}
 
