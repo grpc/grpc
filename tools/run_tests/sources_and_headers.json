@@ -5141,11 +5141,14 @@
   }, 
   {
     "deps": [
+      "census", 
       "gpr", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
-      "grpc_cronet"
+      "grpc_cronet", 
+      "grpc_transport_chttp2_client_insecure", 
+      "grpc_transport_chttp2_server_insecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -6203,28 +6206,7 @@
   }, 
   {
     "deps": [], 
-    "headers": [
-      "third_party/google_benchmark/include/benchmark/benchmark.h", 
-      "third_party/google_benchmark/include/benchmark/benchmark_api.h", 
-      "third_party/google_benchmark/include/benchmark/macros.h", 
-      "third_party/google_benchmark/include/benchmark/reporter.h", 
-      "third_party/google_benchmark/src/arraysize.h", 
-      "third_party/google_benchmark/src/benchmark_api_internal.h", 
-      "third_party/google_benchmark/src/check.h", 
-      "third_party/google_benchmark/src/colorprint.h", 
-      "third_party/google_benchmark/src/commandlineflags.h", 
-      "third_party/google_benchmark/src/complexity.h", 
-      "third_party/google_benchmark/src/cycleclock.h", 
-      "third_party/google_benchmark/src/internal_macros.h", 
-      "third_party/google_benchmark/src/log.h", 
-      "third_party/google_benchmark/src/mutex.h", 
-      "third_party/google_benchmark/src/re.h", 
-      "third_party/google_benchmark/src/sleep.h", 
-      "third_party/google_benchmark/src/stat.h", 
-      "third_party/google_benchmark/src/string_util.h", 
-      "third_party/google_benchmark/src/sysinfo.h", 
-      "third_party/google_benchmark/src/timers.h"
-    ], 
+    "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "google_benchmark", 
