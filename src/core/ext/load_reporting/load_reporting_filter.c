@@ -67,43 +67,27 @@ typedef struct channel_data {
   intptr_t id; /**< an id unique to the channel */
 } channel_data;
 
-typedef struct {
-  grpc_call_element *elem;
-  grpc_exec_ctx *exec_ctx;
-} recv_md_filter_args;
-
-static grpc_mdelem recv_md_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                  grpc_mdelem md) {
-  recv_md_filter_args *a = user_data;
-  grpc_call_element *elem = a->elem;
-  call_data *calld = elem->call_data;
-
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-    calld->service_method = grpc_slice_ref_internal(GRPC_MDVALUE(md));
-    calld->have_service_method = true;
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_TOKEN)) {
-    calld->initial_md_string = grpc_slice_ref_internal(GRPC_MDVALUE(md));
-    calld->have_initial_md_string = true;
-    return GRPC_MDNULL;
-  }
-
-  return md;
-}
-
 static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
                                 grpc_error *err) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
   if (err == GRPC_ERROR_NONE) {
-    recv_md_filter_args a;
-    a.elem = elem;
-    a.exec_ctx = exec_ctx;
-    grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
-                               recv_md_filter, &a);
-    if (!calld->have_service_method) {
+    if (calld->recv_initial_metadata->idx.named.path != NULL) {
+      calld->service_method = grpc_slice_ref_internal(
+          GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
+      calld->have_service_method = true;
+    } else {
       err =
           grpc_error_add_child(err, GRPC_ERROR_CREATE("Missing :path header"));
+    }
+    if (calld->recv_initial_metadata->idx.named.lb_token != NULL) {
+      calld->initial_md_string = grpc_slice_ref_internal(
+          GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.lb_token->md));
+      calld->have_initial_md_string = true;
+      grpc_metadata_batch_remove(
+          calld->recv_initial_metadata,
+          calld->recv_initial_metadata->idx.named.lb_token);
     }
   } else {
     GRPC_ERROR_REF(err);
@@ -196,20 +180,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   */
 }
 
-static grpc_mdelem lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
-                                         void *user_data, grpc_mdelem md) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
-
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
-    calld->trailing_md_string = grpc_slice_ref_internal(GRPC_MDVALUE(md));
-    calld->have_trailing_md_string = true;
-    return GRPC_MDNULL;
-  }
-
-  return md;
-}
-
 static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                          grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
@@ -222,8 +192,14 @@ static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     calld->ops_recv_initial_metadata_ready = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->on_initial_md_ready;
   } else if (op->send_trailing_metadata) {
-    grpc_metadata_batch_filter(exec_ctx, op->send_trailing_metadata,
-                               lr_trailing_md_filter, elem);
+    if (op->send_trailing_metadata->idx.named.lb_cost_bin != NULL) {
+      calld->trailing_md_string = grpc_slice_ref_internal(
+          GRPC_MDVALUE(op->send_trailing_metadata->idx.named.lb_cost_bin->md));
+      calld->have_trailing_md_string = true;
+      grpc_metadata_batch_remove(
+          op->send_trailing_metadata,
+          op->send_trailing_metadata->idx.named.lb_cost_bin);
+    }
   }
   grpc_call_next_op(exec_ctx, elem, op);
 

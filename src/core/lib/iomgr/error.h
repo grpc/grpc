@@ -124,7 +124,11 @@ typedef enum {
   /// filename that we were trying to read/write when this error occurred
   GRPC_ERROR_STR_FILENAME,
   /// which data was queued for writing when the error occurred
-  GRPC_ERROR_STR_QUEUED_BUFFERS
+  GRPC_ERROR_STR_QUEUED_BUFFERS,
+  /// key associated with the error
+  GRPC_ERROR_STR_KEY,
+  /// value associated with the error
+  GRPC_ERROR_STR_VALUE,
 } grpc_error_strs;
 
 typedef enum {

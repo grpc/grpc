@@ -94,74 +94,91 @@ typedef struct channel_data {
   size_t max_payload_size_for_get;
 } channel_data;
 
-static grpc_mdelem client_recv_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                      grpc_mdelem md) {
-  grpc_call_element *elem = user_data;
-  if (grpc_mdelem_eq(md, GRPC_MDELEM_STATUS_200)) {
-    return GRPC_MDNULL;
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_STATUS)) {
-    char *message_string;
-    char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
-    gpr_asprintf(&message_string, "Received http2 header with status: %s", val);
-    grpc_slice message = grpc_slice_from_copied_string(message_string);
-    gpr_free(message_string);
-    gpr_free(val);
-    grpc_call_element_send_close_with_message(exec_ctx, elem,
-                                              GRPC_STATUS_CANCELLED, &message);
-    return GRPC_MDNULL;
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_MESSAGE)) {
-    grpc_slice pct_decoded_msg =
-        grpc_permissive_percent_decode_slice(GRPC_MDVALUE(md));
-    if (grpc_slice_is_equivalent(pct_decoded_msg, GRPC_MDVALUE(md))) {
-      grpc_slice_unref(pct_decoded_msg);
-      return md;
+static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
+                                                   grpc_call_element *elem,
+                                                   grpc_metadata_batch *b) {
+  if (b->idx.named.status != NULL) {
+    if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
+      grpc_metadata_batch_remove(b, b->idx.named.status);
     } else {
-      return grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-                                     pct_decoded_msg);
-    }
-  } else if (grpc_mdelem_eq(md,
-                            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-    return GRPC_MDNULL;
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE)) {
-    if (grpc_slice_buf_start_eq(GRPC_MDVALUE(md), EXPECTED_CONTENT_TYPE,
-                                EXPECTED_CONTENT_TYPE_LENGTH) &&
-        (GRPC_SLICE_START_PTR(GRPC_MDVALUE(md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-             '+' ||
-         GRPC_SLICE_START_PTR(GRPC_MDVALUE(md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-             ';')) {
-      /* Although the C implementation doesn't (currently) generate them,
-         any custom +-suffix is explicitly valid. */
-      /* TODO(klempner): We should consider preallocating common values such
-         as +proto or +json, or at least stashing them if we see them. */
-      /* TODO(klempner): Should we be surfacing this to application code? */
-    } else {
-      /* TODO(klempner): We're currently allowing this, but we shouldn't
-         see it without a proxy so log for now. */
-      char *val = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
+      char *val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
+                                  GPR_DUMP_ASCII);
+      grpc_error *e = grpc_error_set_str(
+          GRPC_ERROR_CREATE(
+              "Received http2 :status header with non-200 OK status"),
+          GRPC_ERROR_STR_VALUE, val);
       gpr_free(val);
+      return e;
     }
-    return GRPC_MDNULL;
   }
-  return md;
+
+  if (b->idx.named.grpc_message != NULL) {
+    grpc_slice pct_decoded_msg = grpc_permissive_percent_decode_slice(
+        GRPC_MDVALUE(b->idx.named.grpc_message->md));
+    if (grpc_slice_is_equivalent(pct_decoded_msg,
+                                 GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
+      grpc_slice_unref(pct_decoded_msg);
+    } else {
+      grpc_metadata_batch_set_value(exec_ctx, b->idx.named.grpc_message,
+                                    pct_decoded_msg);
+    }
+  }
+
+  if (b->idx.named.content_type != NULL) {
+    if (!grpc_mdelem_eq(b->idx.named.content_type->md,
+                        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
+      if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
+                                  EXPECTED_CONTENT_TYPE,
+                                  EXPECTED_CONTENT_TYPE_LENGTH) &&
+          (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
+               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               '+' ||
+           GRPC_SLICE_START_PTR(GRPC_MDVALUE(
+               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               ';')) {
+        /* Although the C implementation doesn't (currently) generate them,
+           any custom +-suffix is explicitly valid. */
+        /* TODO(klempner): We should consider preallocating common values such
+           as +proto or +json, or at least stashing them if we see them. */
+        /* TODO(klempner): Should we be surfacing this to application code? */
+      } else {
+        /* TODO(klempner): We're currently allowing this, but we shouldn't
+           see it without a proxy so log for now. */
+        char *val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.content_type->md),
+                                    GPR_DUMP_ASCII);
+        gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
+        gpr_free(val);
+      }
+    }
+    grpc_metadata_batch_remove(b, b->idx.named.content_type);
+  }
+
+  return GRPC_ERROR_NONE;
 }
 
 static void hc_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
                                         void *user_data, grpc_error *error) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
-                             client_recv_filter, elem);
-  grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata,
-                   GRPC_ERROR_REF(error));
+  if (error == GRPC_ERROR_NONE) {
+    error = client_filter_incoming_metadata(exec_ctx, elem,
+                                            calld->recv_initial_metadata);
+  } else {
+    GRPC_ERROR_REF(error);
+  }
+  grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata, error);
 }
 
 static void hc_on_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
                                          void *user_data, grpc_error *error) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  grpc_metadata_batch_filter(exec_ctx, calld->recv_trailing_metadata,
-                             client_recv_filter, elem);
+  if (error == GRPC_ERROR_NONE) {
+    error = client_filter_incoming_metadata(exec_ctx, elem,
+                                            calld->recv_trailing_metadata);
+  } else {
+    GRPC_ERROR_REF(error);
+  }
   grpc_closure_run(exec_ctx, calld->on_done_recv_trailing_metadata,
                    GRPC_ERROR_REF(error));
 }
@@ -184,16 +201,11 @@ static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
-static grpc_mdelem client_strip_filter(grpc_exec_ctx *exec_ctx, void *user_data,
-                                       grpc_mdelem md) {
-  /* eat the things we'd like to set ourselves */
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_METHOD)) return GRPC_MDNULL;
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_SCHEME)) return GRPC_MDNULL;
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_TE)) return GRPC_MDNULL;
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_CONTENT_TYPE))
-    return GRPC_MDNULL;
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_USER_AGENT)) return GRPC_MDNULL;
-  return md;
+static void remove_if_present(grpc_metadata_batch *batch,
+                              grpc_metadata_batch_callouts_index idx) {
+  if (batch->idx.array[idx] != NULL) {
+    grpc_metadata_batch_remove(batch, batch->idx.array[idx]);
+  }
 }
 
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
@@ -232,11 +244,13 @@ static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   }
 }
 
-static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                         grpc_transport_stream_op *op) {
+static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
+                                grpc_call_element *elem,
+                                grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
+  grpc_error *error;
 
   if (op->send_initial_metadata != NULL) {
     /* Decide which HTTP VERB to use. We use GET if the request is marked
@@ -274,8 +288,9 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
             exec_ctx, GRPC_MDSTR_GRPC_PAYLOAD_BIN,
             grpc_slice_from_copied_buffer((const char *)calld->payload_bytes,
                                           op->send_message->length));
-        grpc_metadata_batch_add_tail(op->send_initial_metadata,
-                                     &calld->payload_bin, payload_bin);
+        error = grpc_metadata_batch_add_tail(op->send_initial_metadata,
+                                             &calld->payload_bin, payload_bin);
+        if (error != GRPC_ERROR_NONE) return error;
         calld->on_complete = op->on_complete;
         op->on_complete = &calld->hc_on_complete;
         op->send_message = NULL;
@@ -288,21 +303,32 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       }
     }
 
-    grpc_metadata_batch_filter(exec_ctx, op->send_initial_metadata,
-                               client_strip_filter, elem);
+    remove_if_present(op->send_initial_metadata, GRPC_BATCH_METHOD);
+    remove_if_present(op->send_initial_metadata, GRPC_BATCH_SCHEME);
+    remove_if_present(op->send_initial_metadata, GRPC_BATCH_TE);
+    remove_if_present(op->send_initial_metadata, GRPC_BATCH_CONTENT_TYPE);
+    remove_if_present(op->send_initial_metadata, GRPC_BATCH_USER_AGENT);
+
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->method,
-                                 method);
-    grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->scheme,
-                                 channeld->static_scheme);
-    grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->te_trailers,
-                                 GRPC_MDELEM_TE_TRAILERS);
-    grpc_metadata_batch_add_tail(
+    error = grpc_metadata_batch_add_head(op->send_initial_metadata,
+                                         &calld->method, method);
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_head(
+        op->send_initial_metadata, &calld->scheme, channeld->static_scheme);
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(op->send_initial_metadata,
+                                         &calld->te_trailers,
+                                         GRPC_MDELEM_TE_TRAILERS);
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(
         op->send_initial_metadata, &calld->content_type,
         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
-    grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->user_agent,
-                                 GRPC_MDELEM_REF(channeld->user_agent));
+    if (error != GRPC_ERROR_NONE) return error;
+    error = grpc_metadata_batch_add_tail(op->send_initial_metadata,
+                                         &calld->user_agent,
+                                         GRPC_MDELEM_REF(channeld->user_agent));
+    if (error != GRPC_ERROR_NONE) return error;
   }
 
   if (op->recv_initial_metadata != NULL) {
@@ -318,6 +344,8 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     calld->on_done_recv_trailing_metadata = op->on_complete;
     op->on_complete = &calld->hc_on_recv_trailing_metadata;
   }
+
+  return GRPC_ERROR_NONE;
 }
 
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -325,16 +353,20 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *op) {
   GPR_TIMER_BEGIN("hc_start_transport_op", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  hc_mutate_op(exec_ctx, elem, op);
-  GPR_TIMER_END("hc_start_transport_op", 0);
-  call_data *calld = elem->call_data;
-  if (op->send_message != NULL && calld->send_message_blocked) {
-    /* Don't forward the op. send_message contains slices that aren't ready
-    yet. The call will be forwarded by the op_complete of slice read call.
-    */
+  grpc_error *error = hc_mutate_op(exec_ctx, elem, op);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
   } else {
-    grpc_call_next_op(exec_ctx, elem, op);
+    call_data *calld = elem->call_data;
+    if (op->send_message != NULL && calld->send_message_blocked) {
+      /* Don't forward the op. send_message contains slices that aren't ready
+      yet. The call will be forwarded by the op_complete of slice read call.
+      */
+    } else {
+      grpc_call_next_op(exec_ctx, elem, op);
+    }
   }
+  GPR_TIMER_END("hc_start_transport_op", 0);
 }
 
 /* Constructor for call_data */

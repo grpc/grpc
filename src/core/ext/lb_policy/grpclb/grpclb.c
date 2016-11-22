@@ -133,13 +133,13 @@ int grpc_lb_glb_trace = 0;
 
 /* add lb_token of selected subchannel (address) to the call's initial
  * metadata */
-static void initial_metadata_add_lb_token(
+static grpc_error *initial_metadata_add_lb_token(
     grpc_metadata_batch *initial_metadata,
     grpc_linked_mdelem *lb_token_mdelem_storage, grpc_mdelem lb_token) {
   GPR_ASSERT(lb_token_mdelem_storage != NULL);
   GPR_ASSERT(!GRPC_MDISNULL(lb_token));
-  grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
-                               lb_token);
+  return grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
+                                      lb_token);
 }
 
 typedef struct wrapped_rr_closure_arg {
@@ -188,9 +188,11 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
      * available */
     if (wc_arg->target != NULL) {
       if (!GRPC_MDISNULL(wc_arg->lb_token)) {
-        initial_metadata_add_lb_token(wc_arg->initial_metadata,
-                                      wc_arg->lb_token_mdelem_storage,
-                                      GRPC_MDELEM_REF(wc_arg->lb_token));
+        GRPC_LOG_IF_ERROR(
+            "grpclb.initial_metadata_add_lb_token",
+            initial_metadata_add_lb_token(wc_arg->initial_metadata,
+                                          wc_arg->lb_token_mdelem_storage,
+                                          GRPC_MDELEM_REF(wc_arg->lb_token)));
       } else {
         gpr_log(GPR_ERROR,
                 "No LB token for connected subchannel pick %p (from RR "

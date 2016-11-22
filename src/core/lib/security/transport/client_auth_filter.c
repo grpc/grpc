@@ -102,6 +102,8 @@ static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   grpc_call_next_op(exec_ctx, elem, &calld->op);
 }
 
+static void add_error(grpc_error **combined, grpc_error *error) { abort(); }
+
 static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_credentials_md *md_elems,
                                     size_t num_md,
@@ -123,14 +125,20 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
   GPR_ASSERT(op->send_initial_metadata != NULL);
   mdb = op->send_initial_metadata;
+  grpc_error *error = GRPC_ERROR_NONE;
   for (i = 0; i < num_md; i++) {
-    grpc_metadata_batch_add_tail(
-        mdb, &calld->md_links[i],
-        grpc_mdelem_from_slices(exec_ctx,
-                                grpc_slice_ref_internal(md_elems[i].key),
-                                grpc_slice_ref_internal(md_elems[i].value)));
+    add_error(&error,
+              grpc_metadata_batch_add_tail(
+                  mdb, &calld->md_links[i],
+                  grpc_mdelem_from_slices(
+                      exec_ctx, grpc_slice_ref_internal(md_elems[i].key),
+                      grpc_slice_ref_internal(md_elems[i].value))));
   }
-  grpc_call_next_op(exec_ctx, elem, op);
+  if (error == GRPC_ERROR_NONE) {
+    grpc_call_next_op(exec_ctx, elem, op);
+  } else {
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+  }
 }
 
 void build_auth_metadata_context(grpc_security_connector *sc,
