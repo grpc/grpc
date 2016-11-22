@@ -843,11 +843,6 @@ static void polling_island_global_shutdown() {
  * alarm 'epoch'). This wakeup_fd gives us something to alert on when such a
  * case occurs. */
 
-/* TODO: sreek: Right now, this wakes up all pollers. In future we should make
- * sure to wake up one polling thread (which can wake up other threads if
- * needed) */
-grpc_wakeup_fd grpc_global_wakeup_fd;
-
 static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
