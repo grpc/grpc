@@ -725,8 +725,8 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
         sp->read_closure.cb_arg = sp;
         grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
         s->active_ports++;
-        sp = sp->next;
       }
+      sp = sp->next;
     } else {
       for (i = 0; i < pollset_count; i++) {
         grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
