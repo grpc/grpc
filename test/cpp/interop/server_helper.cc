@@ -42,12 +42,16 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 DECLARE_bool(use_tls);
+DECLARE_string(custom_credentials_type);
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (FLAGS_use_tls) {
+  if (FLAGS_custom_credentials_type.empty()) {
+    return GetCredentialsProvider()->GetServerCredentials(
+        FLAGS_custom_credentials_type);
+  } else if (FLAGS_use_tls) {
     return GetCredentialsProvider()->GetServerCredentials(kTlsCredentialsType);
   } else {
     return GetCredentialsProvider()->GetServerCredentials(

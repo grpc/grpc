@@ -53,6 +53,7 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 DECLARE_bool(use_tls);
+DECLARE_string(custom_credentials_type);
 DECLARE_bool(use_test_ca);
 DECLARE_int32(server_port);
 DECLARE_string(server_host);
@@ -115,8 +116,12 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     creds = AccessTokenCredentials(raw_token);
     GPR_ASSERT(creds);
   }
-  return CreateTestChannel(host_port, FLAGS_server_host_override, FLAGS_use_tls,
-                           !FLAGS_use_test_ca, creds);
+  if (FLAGS_custom_credentials_type.empty()) {
+    return CreateTestChannel(host_port, FLAGS_server_host_override,
+                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
+  } else {
+    return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+  }
 }
 
 }  // namespace testing
