@@ -895,8 +895,9 @@ static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
   }
   for (grpc_linked_mdelem *l = b->list.head; l != NULL; l = l->next) {
     mdusr = &dest->metadata[dest->count++];
-    mdusr->key = grpc_slice_ref(GRPC_MDKEY(l->md));
-    mdusr->value = grpc_slice_ref(GRPC_MDVALUE(l->md));
+    /* we pass back borrowed slices that are valid whilst the call is valid */
+    mdusr->key = GRPC_MDKEY(l->md);
+    mdusr->value = GRPC_MDVALUE(l->md);
   }
   GPR_TIMER_END("publish_app_metadata", 0);
 }
