@@ -1361,7 +1361,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
       g_cvfds.cvfds[idx].cvs = cvn;
       // Don't bother polling if a wakeup fd is ready
       if (g_cvfds.cvfds[idx].is_set) {
-        skip_poll=1;
+        skip_poll = 1;
       }
     } else if (fds[i].fd >= 0) {
       nsockfds++;
