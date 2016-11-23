@@ -331,7 +331,7 @@ for i, elem in enumerate(all_strs):
   id2strofs[i] = str_ofs
   str_ofs += len(elem);
 def slice_def(i):
-  return '{.refcount = &g_refcnts[%d].base, .data.refcounted = {g_bytes+%d, %d}}' % (i, id2strofs[i], len(all_strs[i]))
+  return '{.refcount = &grpc_static_metadata_refcounts[%d], .data.refcounted = {g_bytes+%d, %d}}' % (i, id2strofs[i], len(all_strs[i]))
 
 # validate configuration
 for elem in METADATA_BATCH_CALLOUTS:
@@ -349,29 +349,29 @@ print >>C, 'static uint8_t g_bytes[] = {%s};' % (','.join('%d' % ord(c) for c in
 print >>C
 print >>C, 'static void static_ref(void *unused) {}'
 print >>C, 'static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}'
-print >>C, 'static const grpc_slice_refcount_vtable static_vtable = {static_ref, static_unref, grpc_static_slice_eq, grpc_static_slice_hash};';
-print >>C, 'typedef struct { grpc_slice_refcount base; const uint16_t offset; const uint16_t length; } static_slice_refcount;'
-print >>C, 'static static_slice_refcount g_refcnts[GRPC_STATIC_MDSTR_COUNT] = {'
+print >>C, 'static const grpc_slice_refcount_vtable static_sub_vtable = {static_ref, static_unref, grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};';
+print >>H, 'extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;';
+print >>C, 'const grpc_slice_refcount_vtable grpc_static_metadata_vtable = {static_ref, static_unref, grpc_static_slice_eq, grpc_static_slice_hash};';
+print >>C, 'static grpc_slice_refcount static_sub_refcnt = {&static_sub_vtable, &static_sub_refcnt};';
+print >>H, 'extern grpc_slice_refcount grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];'
+print >>C, 'grpc_slice_refcount grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {'
 for i, elem in enumerate(all_strs):
-  print >>C, '  {{&static_vtable}, %d, %d},' % (id2strofs[i], len(elem))
+  print >>C, '  {&grpc_static_metadata_vtable, &static_sub_refcnt},'
 print >>C, '};'
 print >>C
-print >>C, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
-print >>C, '  return slice.refcount != NULL && slice.refcount->vtable == &static_vtable;'
-print >>C, '}'
-print >>C
+print >>H, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
+print >>H, '  return slice.refcount != NULL && slice.refcount->vtable == &grpc_static_metadata_vtable;'
+print >>H, '}'
+print >>H
 print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'
 for i, elem in enumerate(all_strs):
   print >>C, slice_def(i) + ','
 print >>C, '};'
 print >>C
-print >>H, 'int grpc_static_metadata_index(grpc_slice slice);'
-print >>C, 'int grpc_static_metadata_index(grpc_slice slice) {'
-print >>C, '  static_slice_refcount *r = (static_slice_refcount *)slice.refcount;'
-print >>C, '  if (slice.data.refcounted.bytes == g_bytes + r->offset && slice.data.refcounted.length == r->length) return (int)(r - g_refcnts);'
-print >>C, '  return -1;'
-print >>C, '}'
-print >>C
+print >>H, 'inline int grpc_static_metadata_index(grpc_slice slice) {'
+print >>H, '  return (int)(slice.refcount - grpc_static_metadata_refcounts);'
+print >>H, '}'
+print >>H
 
 print >>D, '# hpack fuzzing dictionary'
 for i, elem in enumerate(all_strs):

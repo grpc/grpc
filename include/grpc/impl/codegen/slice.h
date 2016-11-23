@@ -68,6 +68,11 @@ typedef struct grpc_slice_refcount_vtable {
    grpc_slice_new, or grpc_slice_new_with_len instead. */
 typedef struct grpc_slice_refcount {
   const grpc_slice_refcount_vtable *vtable;
+  /* If a subset of this slice is taken, use this pointer for the refcount.
+     Typically points back to the refcount itself, however iterning
+     implementations can use this to avoid a verification step on each hash
+     or equality check */
+  struct grpc_slice_refcount *sub_refcount;
 } grpc_slice_refcount;
 
 #define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
