@@ -185,39 +185,39 @@ static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd tfds[],
  * Main tests
  */
 
-/* We construct the following structure:
-
-          +---> FD0 (Added before PSS1, PS1 and PS2 are added to PSS0)
-          |
-          +---> FD5 (Added after PSS1, PS1 and PS2 are added to PSS0)
-          |
-          |
-          |           +---> FD1 (Added before PSS1 is added to PSS0)
-          |           |
-          |           +---> FD6 (Added after PSS1 is added to PSS0)
-          |           |
-          +---> PSS1--+            +--> FD2 (Added before PS0 is added to PSS1)
-          |           |            |
-          |           +---> PS0 ---+
-          |                        |
-  PSS0 ---+                        +--> FD7 (Added after PS0 is added to PSS1)
-          |
-          |
-          |           +---> FD3 (Added before PS1 is added to PSS0)
-          |           |
-          +---> PS1---+
-          |           |
-          |           +---> FD8 (Added after PS1 added to PSS0)
-          |
-          |
-          |           +---> FD4 (Added before PS2 is added to PSS0)
-          |           |
-          +---> PS2---+
-                      |
-                      +---> FD9 (Added after PS2 is added to PSS0)
- */
-
-static void pollset_set_tests() {
+/* Test some typical scenarios in pollset_set */
+static void pollset_set_test_basic() {
+  /* We construct the following structure for this test:
+   *
+   *        +---> FD0 (Added before PSS1, PS1 and PS2 are added to PSS0)
+   *        |
+   *        +---> FD5 (Added after PSS1, PS1 and PS2 are added to PSS0)
+   *        |
+   *        |
+   *        |           +---> FD1 (Added before PSS1 is added to PSS0)
+   *        |           |
+   *        |           +---> FD6 (Added after PSS1 is added to PSS0)
+   *        |           |
+   *        +---> PSS1--+           +--> FD2 (Added before PS0 is added to PSS1)
+   *        |           |           |
+   *        |           +---> PS0---+
+   *        |                       |
+   * PSS0---+                       +--> FD7 (Added after PS0 is added to PSS1)
+   *        |
+   *        |
+   *        |           +---> FD3 (Added before PS1 is added to PSS0)
+   *        |           |
+   *        +---> PS1---+
+   *        |           |
+   *        |           +---> FD8 (Added after PS1 added to PSS0)
+   *        |
+   *        |
+   *        |           +---> FD4 (Added before PS2 is added to PSS0)
+   *        |           |
+   *        +---> PS2---+
+   *                    |
+   *                    +---> FD9 (Added after PS2 is added to PSS0)
+   */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   int i;
   grpc_pollset_worker *worker;
@@ -259,7 +259,9 @@ static void pollset_set_tests() {
 
   grpc_exec_ctx_flush(&exec_ctx);
 
-  /* Test that FD readable event is noticed from any pollet
+  /* Test that if any FD in the above structure is readable, it is observable by
+   * doing grpc_pollset_work on any pollset
+   *
    *   For every pollset, do the following:
    *     - (Ensure that all FDs are in reset state)
    *     - Make all FDs readable
@@ -269,7 +271,7 @@ static void pollset_set_tests() {
    *       reset the FDs)
    * */
   for (i = 0; i < num_ps; i++) {
-     make_test_fds_readable(tfds, num_fds);
+    make_test_fds_readable(tfds, num_fds);
 
     gpr_mu_lock(pollsets[i].mu);
     deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2);
@@ -296,13 +298,153 @@ static void pollset_set_tests() {
   grpc_pollset_set_del_pollset(&exec_ctx, pollset_sets[0].pss, pollsets[2].ps);
 
   grpc_pollset_set_del_pollset_set(&exec_ctx, pollset_sets[0].pss,
-                               pollset_sets[1].pss);
+                                   pollset_sets[1].pss);
   grpc_exec_ctx_flush(&exec_ctx);
 
   cleanup_test_fds(&exec_ctx, tfds, num_fds);
   cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
   cleanup_test_pollset_sets(pollset_sets, num_pss);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+/* Same FD added multiple times to the pollset_set tree */
+void pollset_set_test_dup_fds() {
+  /* We construct the following structure for this test:
+   *
+   *        +---> FD0
+   *        |
+   *        |
+   * PSS0---+
+   *        |           +---> FD0 (also under PSS0)
+   *        |           |
+   *        +---> PSS1--+           +--> FD1 (also under PSS1)
+   *                    |           |
+   *                    +---> PS ---+
+   *                    |           |
+   *                    |           +--> FD2
+   *                    +---> FD1
+   */
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_pollset_worker *worker;
+  gpr_timespec deadline;
+
+  test_fd tfds[3];
+  test_pollset pollset;
+  test_pollset_set pollset_sets[2];
+  int num_fds = sizeof(tfds) / sizeof(tfds[0]);
+  int num_ps = 1;
+  int num_pss = sizeof(pollset_sets) / sizeof(pollset_sets[0]);
+
+  init_test_fds(&exec_ctx, tfds, num_fds);
+  init_test_pollsets(&pollset, num_ps);
+  init_test_pollset_sets(pollset_sets, num_pss);
+
+  /* Construct the structure */
+  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[0].pss, tfds[0].fd);
+  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[1].pss, tfds[0].fd);
+  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[1].pss, tfds[1].fd);
+
+  grpc_pollset_add_fd(&exec_ctx, pollset.ps, tfds[1].fd);
+  grpc_pollset_add_fd(&exec_ctx, pollset.ps, tfds[2].fd);
+
+  grpc_pollset_set_add_pollset(&exec_ctx, pollset_sets[1].pss, pollset.ps);
+  grpc_pollset_set_add_pollset_set(&exec_ctx, pollset_sets[0].pss,
+                                   pollset_sets[1].pss);
+
+  /* Test. Make all FDs readable and make sure that can be observed by doing a
+   * grpc_pollset_work on the pollset 'PS' */
+  make_test_fds_readable(tfds, num_fds);
+
+  gpr_mu_lock(pollset.mu);
+  deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2);
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_pollset_work(&exec_ctx, pollset.ps, &worker,
+                               gpr_now(GPR_CLOCK_MONOTONIC), deadline));
+  gpr_mu_unlock(pollset.mu);
   grpc_exec_ctx_flush(&exec_ctx);
+
+  verify_readable_and_reset(&exec_ctx, tfds, num_fds);
+  grpc_exec_ctx_flush(&exec_ctx);
+
+  /* Tear down */
+  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[0].pss, tfds[0].fd);
+  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[1].pss, tfds[0].fd);
+  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[1].pss, tfds[1].fd);
+
+  grpc_pollset_set_del_pollset(&exec_ctx, pollset_sets[1].pss, pollset.ps);
+  grpc_pollset_set_del_pollset_set(&exec_ctx, pollset_sets[0].pss,
+                                   pollset_sets[1].pss);
+  grpc_exec_ctx_flush(&exec_ctx);
+
+  cleanup_test_fds(&exec_ctx, tfds, num_fds);
+  cleanup_test_pollsets(&exec_ctx, &pollset, num_ps);
+  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+/* Pollset_set with an empty pollset */
+void pollset_set_test_empty_pollset() {
+  /* We construct the following structure for this test:
+   *
+   *        +---> PS0 (EMPTY)
+   *        |
+   *        +---> FD0
+   *        |
+   * PSS0---+
+   *        |          +---> FD1
+   *        |          |
+   *        +---> PS1--+
+   *                   |
+   *                   +---> FD2
+   */
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_pollset_worker *worker;
+  gpr_timespec deadline;
+
+  test_fd tfds[3];
+  test_pollset pollsets[2];
+  test_pollset_set pollset_set;
+  int num_fds = sizeof(tfds) / sizeof(tfds[0]);
+  int num_ps = sizeof(pollsets) / sizeof(pollsets[0]);
+  int num_pss = 1;
+
+  init_test_fds(&exec_ctx, tfds, num_fds);
+  init_test_pollsets(pollsets, num_ps);
+  init_test_pollset_sets(&pollset_set, num_pss);
+
+  /* Construct the structure */
+  grpc_pollset_set_add_fd(&exec_ctx, pollset_set.pss, tfds[0].fd);
+  grpc_pollset_add_fd(&exec_ctx, pollsets[1].ps, tfds[1].fd);
+  grpc_pollset_add_fd(&exec_ctx, pollsets[1].ps, tfds[2].fd);
+
+  grpc_pollset_set_add_pollset(&exec_ctx, pollset_set.pss, pollsets[0].ps);
+  grpc_pollset_set_add_pollset(&exec_ctx, pollset_set.pss, pollsets[1].ps);
+
+  /* Test. Make all FDs readable and make sure that can be observed by doing
+   * grpc_pollset_work on the empty pollset 'PS0' */
+  make_test_fds_readable(tfds, num_fds);
+
+  gpr_mu_lock(pollsets[0].mu);
+  deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2);
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_pollset_work(&exec_ctx, pollsets[0].ps, &worker,
+                               gpr_now(GPR_CLOCK_MONOTONIC), deadline));
+  gpr_mu_unlock(pollsets[0].mu);
+  grpc_exec_ctx_flush(&exec_ctx);
+
+  verify_readable_and_reset(&exec_ctx, tfds, num_fds);
+  grpc_exec_ctx_flush(&exec_ctx);
+
+  /* Tear down */
+  grpc_pollset_set_del_fd(&exec_ctx, pollset_set.pss, tfds[0].fd);
+  grpc_pollset_set_del_pollset(&exec_ctx, pollset_set.pss, pollsets[0].ps);
+  grpc_pollset_set_del_pollset(&exec_ctx, pollset_set.pss, pollsets[1].ps);
+  grpc_exec_ctx_flush(&exec_ctx);
+
+  cleanup_test_fds(&exec_ctx, tfds, num_fds);
+  cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
+  cleanup_test_pollset_sets(&pollset_set, num_pss);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
@@ -312,7 +454,9 @@ int main(int argc, char **argv) {
 
   poll_strategy = grpc_get_poll_strategy_name();
   if (poll_strategy != NULL && strcmp(poll_strategy, "epoll") == 0) {
-    pollset_set_tests();
+    pollset_set_test_basic();
+    pollset_set_test_dup_fds();
+    pollset_set_test_empty_pollset();
   } else {
     gpr_log(GPR_INFO,
             "Skipping the test. The test is only relevant for 'epoll' "
