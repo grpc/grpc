@@ -1306,8 +1306,8 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
         incoming_byte_stream_destroy_locked(exec_ctx, bs, GRPC_ERROR_NONE);
       }
     }
-    grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
-                                                 s->recv_initial_metadata);
+    grpc_chttp2_incoming_metadata_buffer_publish(
+        exec_ctx, &s->metadata_buffer[0], s->recv_initial_metadata);
     null_then_run_closure(exec_ctx, &s->recv_initial_metadata_ready,
                           GRPC_ERROR_NONE);
   }
@@ -1350,8 +1350,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
     }
     if (s->all_incoming_byte_streams_finished &&
         s->recv_trailing_metadata_finished != NULL) {
-      grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
-                                                   s->recv_trailing_metadata);
+      grpc_chttp2_incoming_metadata_buffer_publish(
+          exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->recv_trailing_metadata_finished, GRPC_ERROR_NONE,
           "recv_trailing_metadata_finished");

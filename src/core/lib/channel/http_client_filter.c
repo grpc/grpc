@@ -179,8 +179,7 @@ static void hc_on_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
   } else {
     GRPC_ERROR_REF(error);
   }
-  grpc_closure_run(exec_ctx, calld->on_done_recv_trailing_metadata,
-                   GRPC_ERROR_REF(error));
+  grpc_closure_run(exec_ctx, calld->on_done_recv_trailing_metadata, error);
 }
 
 static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
