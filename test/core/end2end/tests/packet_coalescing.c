@@ -338,7 +338,6 @@ static void test_request_response_with_metadata_and_payload(
 
 void packet_coalescing(grpc_end2end_test_config config) {
   authority = validate_host_override_string("foo.test.google.fr", config);
-  coalesced_message_and_eos = false;
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 1);
   gpr_set_log_function(log_processor);
