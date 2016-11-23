@@ -102,7 +102,13 @@ static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   grpc_call_next_op(exec_ctx, elem, &calld->op);
 }
 
-static void add_error(grpc_error **combined, grpc_error *error) { abort(); }
+static void add_error(grpc_error **combined, grpc_error *error) {
+  if (error == GRPC_ERROR_NONE) return;
+  if (*combined == GRPC_ERROR_NONE) {
+    *combined = GRPC_ERROR_CREATE("Client auth metadata plugin error");
+  }
+  *combined = grpc_error_add_child(*combined, error);
+}
 
 static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_credentials_md *md_elems,

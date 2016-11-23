@@ -133,6 +133,24 @@ grpc_error *grpc_metadata_batch_add_tail(
 
 grpc_error *grpc_attach_md_to_error(grpc_error *src, grpc_mdelem md);
 
+typedef struct {
+  grpc_error *error;
+  grpc_mdelem md;
+} grpc_filtered_mdelem;
+
+#define GRPC_FILTERED_ERROR(error) \
+  ((grpc_filtered_mdelem){(error), GRPC_MDNULL})
+#define GRPC_FILTERED_MDELEM(md) ((grpc_filtered_mdelem){GRPC_ERROR_NONE, (md)})
+#define GRPC_FILTERED_REMOVE() \
+  ((grpc_filtered_mdelem){GRPC_ERROR_NONE, GRPC_MDNULL})
+
+typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
+    grpc_exec_ctx *exec_ctx, void *user_data, grpc_mdelem elem);
+grpc_error *grpc_metadata_batch_filter(
+    grpc_exec_ctx *exec_ctx, grpc_metadata_batch *batch,
+    grpc_metadata_batch_filter_func func, void *user_data,
+    const char *composite_error_string) GRPC_MUST_USE_RESULT;
+
 #ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
 #else
