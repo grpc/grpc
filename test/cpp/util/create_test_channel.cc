@@ -135,4 +135,18 @@ std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
   return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
 }
 
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& credential_type,
+    const std::shared_ptr<CallCredentials>& creds) {
+  ChannelArguments channel_args;
+  std::shared_ptr<ChannelCredentials> channel_creds =
+      testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
+                                                               &channel_args);
+  GPR_ASSERT(channel_creds != nullptr);
+  if (creds.get()) {
+    channel_creds = CompositeChannelCredentials(channel_creds, creds);
+  }
+  return CreateCustomChannel(server, channel_creds, channel_args);
+}
+
 }  // namespace grpc
