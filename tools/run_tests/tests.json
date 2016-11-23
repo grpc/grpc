@@ -62716,50 +62716,6 @@
   }, 
   {
     "args": [
-      "test/core/end2end/fuzzers/client_fuzzer_corpus/server_hanging_response_1_header"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [
-      "tsan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "client_fuzzer_one_entry", 
-    "platforms": [
-      "linux"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [
-      "test/core/end2end/fuzzers/client_fuzzer_corpus/server_hanging_response_2_header2"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [
-      "tsan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "client_fuzzer_one_entry", 
-    "platforms": [
-      "linux"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/settings_frame_1.bin"
     ], 
     "ci_platforms": [
