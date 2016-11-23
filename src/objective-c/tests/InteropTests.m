@@ -321,51 +321,6 @@
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
-- (void)testErroneousPingPongRPC {
-  XCTAssertNotNil(self.class.host);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
-
-  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
-
-  __block int index = 0;
-
-  RMTStreamingOutputCallRequest *request =
-      [RMTStreamingOutputCallRequest messageWithPayloadSize:@256
-                                      requestedResponseSize:@256];
-
-  [requestsBuffer writeValue:request];
-
-  [_service fullDuplexCallWithRequestsWriter:requestsBuffer
-                                eventHandler:^(BOOL done,
-                                               RMTStreamingOutputCallResponse *response,
-                                               NSError *error) {
-      if (index == 0) {
-        XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-        XCTAssertNotNil(response, @"Event handler called without an event.");
-        XCTAssertFalse(done);
-
-        id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:@256];
-        XCTAssertEqualObjects(response, expected);
-        index += 1;
-
-        RMTStreamingOutputCallRequest *request =
-        [RMTStreamingOutputCallRequest messageWithPayloadSize:@256
-                                        requestedResponseSize:@0];
-        RMTEchoStatus *status = [RMTEchoStatus message];
-        status.code = 7;
-        status.message = @"Error message!";
-        request.responseStatus = status;
-        [requestsBuffer writeValue:request];
-      } else {
-        XCTAssertNil(response);
-        XCTAssertNotNil(error);
-
-        [expectation fulfill];
-      }
-  }];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
-}
-
 #ifndef GRPC_COMPILE_WITH_CRONET
 // TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
