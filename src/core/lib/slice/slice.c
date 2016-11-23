@@ -81,7 +81,8 @@ static void noop_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 static const grpc_slice_refcount_vtable noop_refcount_vtable = {
     noop_ref, noop_unref, grpc_slice_default_eq_impl,
     grpc_slice_default_hash_impl};
-static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable};
+static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable,
+                                            &noop_refcount};
 
 grpc_slice grpc_slice_from_static_buffer(const void *s, size_t len) {
   grpc_slice slice;

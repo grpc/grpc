@@ -249,7 +249,18 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 
 bool grpc_is_static_metadata_string(grpc_slice slice);
 
-int grpc_static_metadata_index(grpc_slice slice);
+extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;
+extern grpc_slice_refcount
+    grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];
+bool grpc_is_static_metadata_string(grpc_slice slice) {
+  return slice.refcount != NULL &&
+         slice.refcount->vtable == &grpc_static_metadata_vtable;
+}
+
+inline int grpc_static_metadata_index(grpc_slice slice) {
+  return (int)(slice.refcount - grpc_static_metadata_refcounts);
+}
+
 #define GRPC_STATIC_MDELEM_COUNT 81
 extern grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
