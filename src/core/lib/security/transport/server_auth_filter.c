@@ -127,6 +127,10 @@ static void on_md_processing_done(
         grpc_metadata_batch_filter(&exec_ctx, calld->recv_initial_metadata,
                                    remove_consumed_md, elem,
                                    "Response metadata filtering error"));
+    for (size_t i = 0; i < calld->md.count; i++) {
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
+      grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+    }
     grpc_metadata_array_destroy(&calld->md);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
