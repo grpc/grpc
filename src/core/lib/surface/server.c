@@ -750,6 +750,11 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
         GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.authority->md));
     calld->path_set = true;
     calld->host_set = true;
+    grpc_metadata_batch_remove(exec_ctx, calld->recv_initial_metadata,
+                               calld->recv_initial_metadata->idx.named.path);
+    grpc_metadata_batch_remove(
+        exec_ctx, calld->recv_initial_metadata,
+        calld->recv_initial_metadata->idx.named.authority);
   } else {
     GRPC_ERROR_REF(error);
   }

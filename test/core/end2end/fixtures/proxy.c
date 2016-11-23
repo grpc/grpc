@@ -308,6 +308,7 @@ static void on_p2s_status(void *arg, int success) {
     op.data.send_status_from_server.trailing_metadata =
         pc->p2s_trailing_metadata.metadata;
     op.data.send_status_from_server.status = pc->p2s_status;
+    op.data.send_status_from_server.status_details = &pc->p2s_status_details;
     refpc(pc, "on_c2p_sent_status");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_status, pc), NULL);
