@@ -327,6 +327,7 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
       tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
       tail.data.refcounted.length = tail_length;
     }
+    source->refcount = source->refcount->sub_refcount;
     source->data.refcounted.length = split;
   }
 
@@ -352,6 +353,7 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
     head.refcount = NULL;
     head.data.inlined.length = (uint8_t)split;
     memcpy(head.data.inlined.bytes, source->data.refcounted.bytes, split);
+    source->refcount = source->refcount->sub_refcount;
     source->data.refcounted.bytes += split;
     source->data.refcounted.length -= split;
   } else {
@@ -364,6 +366,7 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
     /* Point into the source array */
     head.data.refcounted.bytes = source->data.refcounted.bytes;
     head.data.refcounted.length = split;
+    source->refcount = source->refcount->sub_refcount;
     source->data.refcounted.bytes += split;
     source->data.refcounted.length -= split;
   }

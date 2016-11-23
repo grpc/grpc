@@ -138,8 +138,15 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                                 calld->service_method};
   */
 
-  grpc_slice_unref_internal(exec_ctx, calld->initial_md_string);
-  grpc_slice_unref_internal(exec_ctx, calld->trailing_md_string);
+  if (calld->have_initial_md_string) {
+    grpc_slice_unref_internal(exec_ctx, calld->initial_md_string);
+  }
+  if (calld->have_trailing_md_string) {
+    grpc_slice_unref_internal(exec_ctx, calld->trailing_md_string);
+  }
+  if (calld->have_service_method) {
+    grpc_slice_unref_internal(exec_ctx, calld->service_method);
+  }
 }
 
 /* Constructor for channel_data */
