@@ -1539,8 +1539,10 @@ static grpc_error *parse_key_string(grpc_exec_ctx *exec_ctx,
 /* check if a key represents a binary header or not */
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
-  return grpc_is_binary_header(grpc_slice_from_static_buffer(
-      p->key.data.copied.str, p->key.data.copied.length));
+  return grpc_is_binary_header(
+      p->key.copied ? grpc_slice_from_static_buffer(p->key.data.copied.str,
+                                                    p->key.data.copied.length)
+                    : p->key.data.referenced);
 }
 
 static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
