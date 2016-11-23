@@ -343,8 +343,6 @@ for i, elem in enumerate(all_strs):
   print >>H, '/* "%s" */' % elem
   print >>H, '#define %s (grpc_static_slice_table[%d])' % (mangle(elem).upper(), i)
 print >>H
-print >>H, 'bool grpc_is_static_metadata_string(grpc_slice slice);'
-print >>H
 print >>C, 'static uint8_t g_bytes[] = {%s};' % (','.join('%d' % ord(c) for c in ''.join(all_strs)))
 print >>C
 print >>C, 'static void static_ref(void *unused) {}'
@@ -359,18 +357,16 @@ for i, elem in enumerate(all_strs):
   print >>C, '  {&grpc_static_metadata_vtable, &static_sub_refcnt},'
 print >>C, '};'
 print >>C
-print >>H, 'bool grpc_is_static_metadata_string(grpc_slice slice) {'
-print >>H, '  return slice.refcount != NULL && slice.refcount->vtable == &grpc_static_metadata_vtable;'
-print >>H, '}'
+print >>H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
+print >>H, '  ((slice).refcount != NULL && (slice).refcount->vtable == &grpc_static_metadata_vtable)'
 print >>H
 print >>C, 'const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {'
 for i, elem in enumerate(all_strs):
   print >>C, slice_def(i) + ','
 print >>C, '};'
 print >>C
-print >>H, 'inline int grpc_static_metadata_index(grpc_slice slice) {'
-print >>H, '  return (int)(slice.refcount - grpc_static_metadata_refcounts);'
-print >>H, '}'
+print >>H, '#define GRPC_STATIC_METADATA_INDEX(static_slice) \\'
+print >>H, '  ((int)((static_slice).refcount - grpc_static_metadata_refcounts))'
 print >>H
 
 print >>D, '# hpack fuzzing dictionary'
@@ -511,8 +507,8 @@ for i, elem in enumerate( METADATA_BATCH_CALLOUTS):
 print >>C, 'static const uint8_t batch_hash_to_idx[] = {%s};' % ','.join('%d' % n for n in batch_hash_to_idx)
 print >>C
 print >>C, 'grpc_metadata_batch_callouts_index grpc_batch_index_of(grpc_slice slice) {'
-print >>C, '  if (!grpc_is_static_metadata_string(slice)) return GRPC_BATCH_CALLOUTS_COUNT;'
-print >>C, '  uint32_t idx = (uint32_t)grpc_static_metadata_index(slice);'
+print >>C, '  if (!GRPC_IS_STATIC_METADATA_STRING(slice)) return GRPC_BATCH_CALLOUTS_COUNT;'
+print >>C, '  uint32_t idx = (uint32_t)GRPC_STATIC_METADATA_INDEX(slice);'
 print >>C, '  uint32_t hash = batch_phash(idx);'
 print >>C, '  if (hash < GPR_ARRAY_SIZE(batch_hash_to_idx) && batch_hash_to_idx[hash] == idx) return (grpc_metadata_batch_callouts_index)hash;'
 print >>C, '  return GRPC_BATCH_CALLOUTS_COUNT;'

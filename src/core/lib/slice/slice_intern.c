@@ -176,7 +176,7 @@ uint32_t grpc_slice_default_hash_impl(grpc_slice s) {
 }
 
 uint32_t grpc_static_slice_hash(grpc_slice s) {
-  int id = grpc_static_metadata_index(s);
+  int id = GRPC_STATIC_METADATA_INDEX(s);
   if (id == -1) {
     return grpc_slice_default_hash_impl(s);
   }
@@ -184,8 +184,8 @@ uint32_t grpc_static_slice_hash(grpc_slice s) {
 }
 
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
-  int id_a = grpc_static_metadata_index(a);
-  int id_b = grpc_static_metadata_index(b);
+  int id_a = GRPC_STATIC_METADATA_INDEX(a);
+  int id_b = GRPC_STATIC_METADATA_INDEX(b);
   if (id_a == -1 || id_b == -1) {
     return grpc_slice_default_eq_impl(a, b);
   }
@@ -198,7 +198,7 @@ uint32_t grpc_slice_hash(grpc_slice s) {
 }
 
 void grpc_slice_static_intern(grpc_slice *slice) {
-  if (grpc_is_static_metadata_string(*slice)) {
+  if (GRPC_IS_STATIC_METADATA_STRING(*slice)) {
     return;
   }
 
@@ -217,11 +217,11 @@ void grpc_slice_static_intern(grpc_slice *slice) {
 
 bool grpc_slice_is_interned(grpc_slice slice) {
   return (slice.refcount && slice.refcount->vtable == &interned_slice_vtable) ||
-         grpc_is_static_metadata_string(slice);
+         GRPC_IS_STATIC_METADATA_STRING(slice);
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
-  if (grpc_is_static_metadata_string(slice)) {
+  if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
     return slice;
   }
 
