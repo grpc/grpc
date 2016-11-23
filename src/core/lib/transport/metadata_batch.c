@@ -228,11 +228,13 @@ static void unlink_storage(grpc_mdelem_list *list,
   assert_valid_list(list);
 }
 
-void grpc_metadata_batch_remove(grpc_metadata_batch *batch,
+void grpc_metadata_batch_remove(grpc_exec_ctx *exec_ctx,
+                                grpc_metadata_batch *batch,
                                 grpc_linked_mdelem *storage) {
   assert_valid_callouts(batch);
   maybe_unlink_callout(batch, storage);
   unlink_storage(&batch->list, storage);
+  GRPC_MDELEM_UNREF(exec_ctx, storage->md);
   assert_valid_callouts(batch);
 }
 

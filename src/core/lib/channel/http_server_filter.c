@@ -128,7 +128,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                 grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
                                         b->idx.named.method->md));
     }
-    grpc_metadata_batch_remove(b, b->idx.named.method);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.method);
   } else {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
@@ -141,7 +141,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                 grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
                                         b->idx.named.te->md));
     }
-    grpc_metadata_batch_remove(b, b->idx.named.te);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.te);
   } else {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
@@ -156,7 +156,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                 grpc_attach_md_to_error(GRPC_ERROR_CREATE("Bad header"),
                                         b->idx.named.scheme->md));
     }
-    grpc_metadata_batch_remove(b, b->idx.named.scheme);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.scheme);
   } else {
     add_error(error_name, &error,
               grpc_error_set_str(GRPC_ERROR_CREATE("Missing header"),
@@ -189,7 +189,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
         gpr_free(val);
       }
     }
-    grpc_metadata_batch_remove(b, b->idx.named.content_type);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.content_type);
   }
 
   if (b->idx.named.path == NULL) {
@@ -220,7 +220,7 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                               GRPC_MDVALUE(b->idx.named.grpc_payload_bin->md)));
     grpc_slice_buffer_stream_init(&calld->read_stream,
                                   &calld->read_slice_buffer, 0);
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_payload_bin);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_payload_bin);
   }
 
   return error;

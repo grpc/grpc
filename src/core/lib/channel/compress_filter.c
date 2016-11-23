@@ -134,7 +134,7 @@ static grpc_error *process_send_initial_metadata(
     calld->has_compression_algorithm = 1;
 
     grpc_metadata_batch_remove(
-        initial_metadata,
+        exec_ctx, initial_metadata,
         initial_metadata->idx.named.grpc_internal_encoding_request);
   } else {
     /* If no algorithm was found in the metadata and we aren't

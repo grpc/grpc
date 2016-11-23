@@ -86,7 +86,7 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
           GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.lb_token->md));
       calld->have_initial_md_string = true;
       grpc_metadata_batch_remove(
-          calld->recv_initial_metadata,
+          exec_ctx, calld->recv_initial_metadata,
           calld->recv_initial_metadata->idx.named.lb_token);
     }
   } else {
@@ -197,7 +197,7 @@ static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
           GRPC_MDVALUE(op->send_trailing_metadata->idx.named.lb_cost_bin->md));
       calld->have_trailing_md_string = true;
       grpc_metadata_batch_remove(
-          op->send_trailing_metadata,
+          exec_ctx, op->send_trailing_metadata,
           op->send_trailing_metadata->idx.named.lb_cost_bin);
     }
   }
