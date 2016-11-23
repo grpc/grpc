@@ -48,7 +48,7 @@ namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (FLAGS_custom_credentials_type.empty()) {
+  if (!FLAGS_custom_credentials_type.empty()) {
     return GetCredentialsProvider()->GetServerCredentials(
         FLAGS_custom_credentials_type);
   } else if (FLAGS_use_tls) {
