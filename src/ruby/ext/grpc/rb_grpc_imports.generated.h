@@ -518,6 +518,9 @@ extern grpc_slice_cmp_type grpc_slice_cmp_import;
 typedef int(*grpc_slice_str_cmp_type)(grpc_slice a, const char *b);
 extern grpc_slice_str_cmp_type grpc_slice_str_cmp_import;
 #define grpc_slice_str_cmp grpc_slice_str_cmp_import
+typedef int(*grpc_slice_is_equivalent_type)(grpc_slice a, grpc_slice b);
+extern grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
+#define grpc_slice_is_equivalent grpc_slice_is_equivalent_import
 typedef void(*grpc_slice_buffer_init_type)(grpc_slice_buffer *sb);
 extern grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 #define grpc_slice_buffer_init grpc_slice_buffer_init_import
