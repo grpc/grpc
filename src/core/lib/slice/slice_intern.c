@@ -258,6 +258,9 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   s->length = GRPC_SLICE_LENGTH(slice);
   s->hash = hash;
   s->base.vtable = &interned_slice_vtable;
+  s->base.sub_refcount = &s->sub;
+  s->sub.vtable = &interned_slice_sub_vtable;
+  s->sub.sub_refcount = &s->sub;
   s->bucket_next = shard->strs[idx];
   shard->strs[idx] = s;
   memcpy(s + 1, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
