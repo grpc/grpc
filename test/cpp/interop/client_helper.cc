@@ -50,6 +50,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 DECLARE_bool(use_tls);
 DECLARE_bool(use_test_ca);
