@@ -374,6 +374,7 @@ static grpc_slice ru_slice_create(grpc_resource_user *resource_user,
                                   size_t size) {
   ru_slice_refcount *rc = gpr_malloc(sizeof(ru_slice_refcount) + size);
   rc->base.vtable = &ru_slice_vtable;
+  rc->base.sub_refcount = &rc->base;
   gpr_ref_init(&rc->refs, 1);
   rc->resource_user = resource_user;
   rc->size = size;
