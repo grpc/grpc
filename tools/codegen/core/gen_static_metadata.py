@@ -498,7 +498,7 @@ print >>H, '  } named;'
 print >>H, '} grpc_metadata_batch_callouts;'
 print >>H
 print >>H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
-print >>H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
+print >>H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >>H
 
 print >>H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))

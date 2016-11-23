@@ -116,9 +116,7 @@ void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
 
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
-                                           grpc_slice_refcount *refcount,
-                                           const uint8_t *beg,
-                                           const uint8_t *end);
+                                           grpc_slice slice);
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */

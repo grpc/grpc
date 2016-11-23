@@ -1615,15 +1615,14 @@ void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
 
 grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_hpack_parser *p,
-                                           grpc_slice_refcount *refcount,
-                                           const uint8_t *beg,
-                                           const uint8_t *end) {
+                                           grpc_slice slice) {
   /* TODO(ctiller): limit the distance of end from beg, and perform multiple
      steps in the event of a large chunk of data to limit
      stack space usage when no tail call optimization is
      available */
-  p->current_slice_refcount = refcount;
-  grpc_error *error = p->state(exec_ctx, p, beg, end);
+  p->current_slice_refcount = slice.refcount;
+  grpc_error *error = p->state(exec_ctx, p, GRPC_SLICE_START_PTR(slice),
+                               GRPC_SLICE_END_PTR(slice));
   p->current_slice_refcount = NULL;
   return error;
 }
@@ -1659,9 +1658,7 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
   if (s != NULL) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
-  grpc_error *error = grpc_chttp2_hpack_parser_parse(
-      exec_ctx, parser, slice.refcount, GRPC_SLICE_START_PTR(slice),
-      GRPC_SLICE_END_PTR(slice));
+  grpc_error *error = grpc_chttp2_hpack_parser_parse(exec_ctx, parser, slice);
   if (error != GRPC_ERROR_NONE) {
     GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
     return error;
