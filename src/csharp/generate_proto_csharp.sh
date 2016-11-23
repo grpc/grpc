@@ -36,6 +36,7 @@ PROTOC=bins/opt/protobuf/protoc
 PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
 EXAMPLES_DIR=src/csharp/Grpc.Examples
 HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
+REFLECTION_DIR=src/csharp/Grpc.Reflection
 TESTING_DIR=src/csharp/Grpc.IntegrationTesting
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
@@ -43,6 +44,9 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
     -I src/proto/grpc/health/v1 src/proto/grpc/health/v1/health.proto
+    
+$PROTOC --plugin=$PLUGIN --csharp_out=$REFLECTION_DIR --grpc_out=$REFLECTION_DIR \
+    -I src/proto/grpc/reflection/v1alpha src/proto/grpc/reflection/v1alpha/reflection.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
     -I . src/proto/grpc/testing/{control,empty,messages,metrics,payloads,services,stats,test}.proto 
