@@ -753,7 +753,6 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   } else {
     GRPC_ERROR_REF(error);
   }
-  GRPC_ERROR_REF(error);
   op_deadline = calld->recv_initial_metadata->deadline;
   if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
     calld->deadline = op_deadline;
