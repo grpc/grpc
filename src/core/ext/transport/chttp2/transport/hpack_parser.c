@@ -936,9 +936,9 @@ static grpc_error *finish_lithdr_notidx_v(grpc_exec_ctx *exec_ctx,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
   grpc_error *err = on_hdr(
-      exec_ctx, p, grpc_mdelem_from_slices(
-                       exec_ctx, take_string(exec_ctx, p, &p->key, false),
-                       take_string(exec_ctx, p, &p->value, false)),
+      exec_ctx, p,
+      grpc_mdelem_from_slices(exec_ctx, take_string(exec_ctx, p, &p->key, true),
+                              take_string(exec_ctx, p, &p->value, false)),
       0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
@@ -1006,9 +1006,9 @@ static grpc_error *finish_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
   grpc_error *err = on_hdr(
-      exec_ctx, p, grpc_mdelem_from_slices(
-                       exec_ctx, take_string(exec_ctx, p, &p->key, false),
-                       take_string(exec_ctx, p, &p->value, false)),
+      exec_ctx, p,
+      grpc_mdelem_from_slices(exec_ctx, take_string(exec_ctx, p, &p->key, true),
+                              take_string(exec_ctx, p, &p->value, false)),
       0);
   if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
   return parse_begin(exec_ctx, p, cur, end);
