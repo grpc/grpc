@@ -76,9 +76,8 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
   for (i = 0; i < nslices; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
-                   &exec_ctx, parser, GRPC_SLICE_START_PTR(slices[i]),
-                   GRPC_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(&exec_ctx, parser, slices[i]) ==
+               GRPC_ERROR_NONE);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 

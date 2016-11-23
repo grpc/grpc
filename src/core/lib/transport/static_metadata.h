@@ -549,10 +549,11 @@ typedef union {
   } named;
 } grpc_metadata_batch_callouts;
 
-#define GRPC_BATCH_INDEX_OF(slice)                         \
-  (GRPC_IS_STATIC_METADATA_STRING((slice))                 \
-       ? GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, \
-                   GRPC_BATCH_CALLOUTS_COUNT)              \
+#define GRPC_BATCH_INDEX_OF(slice)                      \
+  (GRPC_IS_STATIC_METADATA_STRING((slice))              \
+       ? (grpc_metadata_batch_callouts_index)GPR_CLAMP( \
+             GRPC_STATIC_METADATA_INDEX((slice)), 0,    \
+             GRPC_BATCH_CALLOUTS_COUNT)                 \
        : GRPC_BATCH_CALLOUTS_COUNT)
 
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
