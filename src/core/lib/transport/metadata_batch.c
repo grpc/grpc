@@ -285,3 +285,33 @@ size_t grpc_metadata_batch_size(grpc_metadata_batch *batch) {
   }
   return size;
 }
+
+static void add_error(grpc_error **composite, grpc_error *error,
+                      const char *composite_error_string) {
+  if (error == GRPC_ERROR_NONE) return;
+  if (*composite == GRPC_ERROR_NONE) {
+    *composite = GRPC_ERROR_CREATE(composite_error_string);
+  }
+  *composite = grpc_error_add_child(*composite, error);
+}
+
+grpc_error *grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
+                                       grpc_metadata_batch *batch,
+                                       grpc_metadata_batch_filter_func func,
+                                       void *user_data,
+                                       const char *composite_error_string) {
+  grpc_linked_mdelem *l = batch->list.head;
+  grpc_error *error = GRPC_ERROR_NONE;
+  while (l) {
+    grpc_linked_mdelem *next = l->next;
+    grpc_filtered_mdelem new = func(exec_ctx, user_data, l->md);
+    add_error(&error, new.error, composite_error_string);
+    if (GRPC_MDISNULL(new.md)) {
+      grpc_metadata_batch_remove(exec_ctx, batch, l);
+    } else if (new.md.payload != l->md.payload) {
+      grpc_metadata_batch_substitute(exec_ctx, batch, l, new.md);
+    }
+    l = next;
+  }
+  return error;
+}
