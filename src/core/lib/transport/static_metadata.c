@@ -807,39 +807,5 @@ grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
      {.refcount = &grpc_static_metadata_refcounts[97],
       .data.refcounted = {g_bytes + 1010, 21}}},
 };
-#define BATCH_PHASHLEN 0x10
-#define BATCH_PHASHNKEYS 17
-#define BATCH_PHASHRANGE 32
-#define BATCH_PHASHSALT 0x9e3779b9
-
-static const uint8_t batch_tab[] = {
-    0, 13, 0, 13, 0, 13, 0, 13, 0, 13, 0, 15, 0, 13, 0, 23,
-};
-
-static uint32_t batch_phash(uint32_t val) {
-  val += (uint32_t)0;
-
-  uint32_t a, b, rsl;
-
-  b = (val & 0xf);
-  a = ((val << 27) >> 28);
-  rsl = (a ^ batch_tab[b]);
-  return rsl;
-}
-
-static const uint8_t batch_hash_to_idx[] = {
-    0,  2, 4, 6, 8, 10, 12, 14, 16, 9, 11, 13, 3, 1, 7, 5,
-    15, 0, 0, 0, 0, 0,  0,  0,  0,  0, 0,  0,  0, 0, 0, 0};
-
-grpc_metadata_batch_callouts_index grpc_batch_index_of(grpc_slice slice) {
-  if (!GRPC_IS_STATIC_METADATA_STRING(slice)) return GRPC_BATCH_CALLOUTS_COUNT;
-  uint32_t idx = (uint32_t)GRPC_STATIC_METADATA_INDEX(slice);
-  uint32_t hash = batch_phash(idx);
-  if (hash < GPR_ARRAY_SIZE(batch_hash_to_idx) &&
-      batch_hash_to_idx[hash] == idx)
-    return (grpc_metadata_batch_callouts_index)hash;
-  return GRPC_BATCH_CALLOUTS_COUNT;
-}
-
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  74, 75, 76,
                                                          77, 78, 79, 80};

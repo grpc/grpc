@@ -507,22 +507,22 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);
 typedef enum {
   GRPC_BATCH_PATH,
-  GRPC_BATCH_STATUS,
-  GRPC_BATCH_SCHEME,
-  GRPC_BATCH_GRPC_MESSAGE,
-  GRPC_BATCH_GRPC_PAYLOAD_BIN,
-  GRPC_BATCH_GRPC_ACCEPT_ENCODING,
-  GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
-  GRPC_BATCH_HOST,
-  GRPC_BATCH_LB_COST_BIN,
-  GRPC_BATCH_GRPC_ENCODING,
-  GRPC_BATCH_CONTENT_TYPE,
-  GRPC_BATCH_USER_AGENT,
-  GRPC_BATCH_AUTHORITY,
   GRPC_BATCH_METHOD,
-  GRPC_BATCH_GRPC_STATUS,
+  GRPC_BATCH_STATUS,
+  GRPC_BATCH_AUTHORITY,
+  GRPC_BATCH_SCHEME,
   GRPC_BATCH_TE,
+  GRPC_BATCH_GRPC_MESSAGE,
+  GRPC_BATCH_GRPC_STATUS,
+  GRPC_BATCH_GRPC_PAYLOAD_BIN,
+  GRPC_BATCH_GRPC_ENCODING,
+  GRPC_BATCH_GRPC_ACCEPT_ENCODING,
+  GRPC_BATCH_CONTENT_TYPE,
+  GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
+  GRPC_BATCH_USER_AGENT,
+  GRPC_BATCH_HOST,
   GRPC_BATCH_LB_TOKEN,
+  GRPC_BATCH_LB_COST_BIN,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -530,26 +530,30 @@ typedef union {
   struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];
   struct {
     struct grpc_linked_mdelem *path;
-    struct grpc_linked_mdelem *status;
-    struct grpc_linked_mdelem *scheme;
-    struct grpc_linked_mdelem *grpc_message;
-    struct grpc_linked_mdelem *grpc_payload_bin;
-    struct grpc_linked_mdelem *grpc_accept_encoding;
-    struct grpc_linked_mdelem *grpc_internal_encoding_request;
-    struct grpc_linked_mdelem *host;
-    struct grpc_linked_mdelem *lb_cost_bin;
-    struct grpc_linked_mdelem *grpc_encoding;
-    struct grpc_linked_mdelem *content_type;
-    struct grpc_linked_mdelem *user_agent;
-    struct grpc_linked_mdelem *authority;
     struct grpc_linked_mdelem *method;
-    struct grpc_linked_mdelem *grpc_status;
+    struct grpc_linked_mdelem *status;
+    struct grpc_linked_mdelem *authority;
+    struct grpc_linked_mdelem *scheme;
     struct grpc_linked_mdelem *te;
+    struct grpc_linked_mdelem *grpc_message;
+    struct grpc_linked_mdelem *grpc_status;
+    struct grpc_linked_mdelem *grpc_payload_bin;
+    struct grpc_linked_mdelem *grpc_encoding;
+    struct grpc_linked_mdelem *grpc_accept_encoding;
+    struct grpc_linked_mdelem *content_type;
+    struct grpc_linked_mdelem *grpc_internal_encoding_request;
+    struct grpc_linked_mdelem *user_agent;
+    struct grpc_linked_mdelem *host;
     struct grpc_linked_mdelem *lb_token;
+    struct grpc_linked_mdelem *lb_cost_bin;
   } named;
 } grpc_metadata_batch_callouts;
 
-grpc_metadata_batch_callouts_index grpc_batch_index_of(grpc_slice slice);
+#define GRPC_BATCH_INDEX_OF(slice)                         \
+  (GRPC_IS_STATIC_METADATA_STRING((slice))                 \
+       ? GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, \
+                   GRPC_BATCH_CALLOUTS_COUNT)              \
+       : GRPC_BATCH_CALLOUTS_COUNT)
 
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs)                       \
