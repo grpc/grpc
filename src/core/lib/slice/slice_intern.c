@@ -111,6 +111,15 @@ static void interned_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
   }
 }
 
+static void interned_slice_sub_ref(void *p) {
+  interned_slice_ref(((char *)p) - offsetof(interned_slice_refcount, sub));
+}
+
+static void interned_slice_sub_unref(grpc_exec_ctx *exec_ctx, void *p) {
+  interned_slice_unref(exec_ctx,
+                       ((char *)p) - offsetof(interned_slice_refcount, sub));
+}
+
 static uint32_t interned_slice_hash(grpc_slice slice) {
   interned_slice_refcount *s = (interned_slice_refcount *)slice.refcount;
   if (slice.data.refcounted.bytes == (uint8_t *)(s + 1) &&
@@ -135,6 +144,9 @@ static int interned_slice_eq(grpc_slice a, grpc_slice b) {
 static const grpc_slice_refcount_vtable interned_slice_vtable = {
     interned_slice_ref, interned_slice_unref, interned_slice_eq,
     interned_slice_hash};
+static const grpc_slice_refcount_vtable interned_slice_sub_vtable = {
+    interned_slice_sub_ref, interned_slice_sub_unref,
+    grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};
 
 static void grow_shard(slice_shard *shard) {
   size_t capacity = shard->capacity * 2;
