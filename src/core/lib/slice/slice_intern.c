@@ -53,6 +53,7 @@
 
 typedef struct interned_slice_refcount {
   grpc_slice_refcount base;
+  grpc_slice_refcount sub;
   size_t length;
   gpr_atm refcnt;
   uint32_t hash;
@@ -176,20 +177,11 @@ uint32_t grpc_slice_default_hash_impl(grpc_slice s) {
 }
 
 uint32_t grpc_static_slice_hash(grpc_slice s) {
-  int id = GRPC_STATIC_METADATA_INDEX(s);
-  if (id == -1) {
-    return grpc_slice_default_hash_impl(s);
-  }
-  return static_metadata_hash_values[id];
+  return static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(s)];
 }
 
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
-  int id_a = GRPC_STATIC_METADATA_INDEX(a);
-  int id_b = GRPC_STATIC_METADATA_INDEX(b);
-  if (id_a == -1 || id_b == -1) {
-    return grpc_slice_default_eq_impl(a, b);
-  }
-  return id_a == id_b;
+  return GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b);
 }
 
 uint32_t grpc_slice_hash(grpc_slice s) {
