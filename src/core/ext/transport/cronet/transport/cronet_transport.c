@@ -917,10 +917,11 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         if (!stream_op->send_trailing_metadata) {
           CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_flush (%p)", s->cbs);
           cronet_bidirectional_stream_flush(s->cbs);
+          result = ACTION_TAKEN_WITH_CALLBACK;
         } else {
           stream_state->pending_write_for_trailer = true;
+          result = ACTION_TAKEN_NO_CALLBACK;
         }
-        result = ACTION_TAKEN_WITH_CALLBACK;
       } else {
         result = NO_ACTION_POSSIBLE;
       }
@@ -1019,6 +1020,16 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                               GRPC_ERROR_NONE, NULL);
           stream_state->state_op_done[OP_RECV_MESSAGE] = true;
           oas->state.state_op_done[OP_RECV_MESSAGE] = true;
+
+          /* Extra read to trigger on_succeed */
+          stream_state->rs.read_buffer = stream_state->rs.grpc_header_bytes;
+          stream_state->rs.remaining_bytes = GRPC_HEADER_SIZE_IN_BYTES;
+          stream_state->rs.received_bytes = 0;
+          CRONET_LOG(GPR_DEBUG, "cronet_bidirectional_stream_read(%p)", s->cbs);
+          stream_state->state_op_done[OP_READ_REQ_MADE] =
+          true; /* Indicates that at least one read request has been made */
+          cronet_bidirectional_stream_read(s->cbs, stream_state->rs.read_buffer,
+                                           stream_state->rs.remaining_bytes);
           result = ACTION_TAKEN_NO_CALLBACK;
         }
       } else if (stream_state->rs.remaining_bytes == 0) {
