@@ -175,6 +175,9 @@ static NSMutableDictionary *callFlags;
 
 - (void)finishWithError:(NSError *)errorOrNil {
   @synchronized(self) {
+    if (_state == GRXWriterStateFinished) {
+      return;
+    }
     _state = GRXWriterStateFinished;
   }
 

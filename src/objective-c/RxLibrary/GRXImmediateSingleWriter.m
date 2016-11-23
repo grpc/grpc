@@ -75,4 +75,9 @@
   return;
 }
 
+- (GRXWriter *)map:(id (^)(id))map {
+  _value = map(_value);
+  return self;
+}
+
 @end
