@@ -260,10 +260,10 @@ grpc_mdelem grpc_mdelem_create(
     return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED);
   }
 
-  if (grpc_is_static_metadata_string(key) &&
-      grpc_is_static_metadata_string(value)) {
+  if (GRPC_IS_STATIC_METADATA_STRING(key) &&
+      GRPC_IS_STATIC_METADATA_STRING(value)) {
     grpc_mdelem static_elem = grpc_static_mdelem_for_static_strings(
-        grpc_static_metadata_index(key), grpc_static_metadata_index(value));
+        GRPC_STATIC_METADATA_INDEX(key), GRPC_STATIC_METADATA_INDEX(value));
     if (!GRPC_MDISNULL(static_elem)) {
       return static_elem;
     }

@@ -43,7 +43,7 @@
 
 grpc_slice grpc_empty_slice(void) {
   grpc_slice out;
-  out.refcount = 0;
+  out.refcount = NULL;
   out.data.inlined.length = 0;
   return out;
 }
@@ -129,6 +129,7 @@ grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
   new_slice_refcount *rc = gpr_malloc(sizeof(new_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.vtable = &new_slice_vtable;
+  rc->rc.sub_refcount = &rc->rc;
   rc->user_destroy = destroy;
   rc->user_data = user_data;
 
@@ -177,6 +178,7 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
       gpr_malloc(sizeof(new_with_len_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.vtable = &new_with_len_vtable;
+  rc->rc.sub_refcount = &rc->rc;
   rc->user_destroy = destroy;
   rc->user_data = p;
   rc->user_length = len;
@@ -238,6 +240,7 @@ grpc_slice grpc_slice_malloc(size_t length) {
     gpr_ref_init(&rc->refs, 1);
 
     rc->base.vtable = &malloc_vtable;
+    rc->base.sub_refcount = &rc->base;
 
     /* Build up the slice to be returned. */
     /* The slices refcount points back to the allocated block. */
@@ -264,7 +267,7 @@ grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
     GPR_ASSERT(source.data.refcounted.length >= end);
 
     /* Build the result */
-    subset.refcount = source.refcount;
+    subset.refcount = source.refcount->sub_refcount;
     /* Point into the source array */
     subset.data.refcounted.bytes = source.data.refcounted.bytes + begin;
     subset.data.refcounted.length = end - begin;
@@ -317,7 +320,7 @@ grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
              tail_length);
     } else {
       /* Build the result */
-      tail.refcount = source->refcount;
+      tail.refcount = source->refcount->sub_refcount;
       /* Bump the refcount */
       tail.refcount->vtable->ref(tail.refcount);
       /* Point into the source array */
@@ -355,7 +358,7 @@ grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
     GPR_ASSERT(source->data.refcounted.length >= split);
 
     /* Build the result */
-    head.refcount = source->refcount;
+    head.refcount = source->refcount->sub_refcount;
     /* Bump the refcount */
     head.refcount->vtable->ref(head.refcount);
     /* Point into the source array */

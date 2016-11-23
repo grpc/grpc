@@ -832,8 +832,8 @@ static const uint8_t batch_hash_to_idx[] = {
     15, 0, 0, 0, 0, 0,  0,  0,  0,  0, 0,  0,  0, 0, 0, 0};
 
 grpc_metadata_batch_callouts_index grpc_batch_index_of(grpc_slice slice) {
-  if (!grpc_is_static_metadata_string(slice)) return GRPC_BATCH_CALLOUTS_COUNT;
-  uint32_t idx = (uint32_t)grpc_static_metadata_index(slice);
+  if (!GRPC_IS_STATIC_METADATA_STRING(slice)) return GRPC_BATCH_CALLOUTS_COUNT;
+  uint32_t idx = (uint32_t)GRPC_STATIC_METADATA_INDEX(slice);
   uint32_t hash = batch_phash(idx);
   if (hash < GPR_ARRAY_SIZE(batch_hash_to_idx) &&
       batch_hash_to_idx[hash] == idx)
