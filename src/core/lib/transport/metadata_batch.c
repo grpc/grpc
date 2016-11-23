@@ -70,7 +70,7 @@ static void assert_valid_callouts(grpc_metadata_batch *batch) {
   for (grpc_linked_mdelem *l = batch->list.head; l != NULL; l = l->next) {
     grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
     grpc_metadata_batch_callouts_index callout_idx =
-        grpc_batch_index_of(key_interned);
+        GRPC_BATCH_INDEX_OF(key_interned);
     if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
       GPR_ASSERT(batch->idx.array[callout_idx] == l);
     }
@@ -115,22 +115,22 @@ static grpc_error *maybe_link_callout(grpc_metadata_batch *batch,
 static grpc_error *maybe_link_callout(grpc_metadata_batch *batch,
                                       grpc_linked_mdelem *storage) {
   grpc_metadata_batch_callouts_index idx =
-      grpc_batch_index_of(GRPC_MDKEY(storage->md));
+      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return GRPC_ERROR_NONE;
   }
-  if (batch->idx.array[idx] != NULL) {
-    return grpc_attach_md_to_error(
-        GRPC_ERROR_CREATE("Unallowed duplicate metadata"), storage->md);
+  if (batch->idx.array[idx] == NULL) {
+    batch->idx.array[idx] = storage;
+    return GRPC_ERROR_NONE;
   }
-  batch->idx.array[idx] = storage;
-  return GRPC_ERROR_NONE;
+  return grpc_attach_md_to_error(
+      GRPC_ERROR_CREATE("Unallowed duplicate metadata"), storage->md);
 }
 
 static void maybe_unlink_callout(grpc_metadata_batch *batch,
                                  grpc_linked_mdelem *storage) {
   grpc_metadata_batch_callouts_index idx =
-      grpc_batch_index_of(GRPC_MDKEY(storage->md));
+      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return;
   }
