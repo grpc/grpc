@@ -1587,9 +1587,11 @@ void grpc_chttp2_hpack_parser_init(grpc_exec_ctx *exec_ctx,
   p->on_header = NULL;
   p->on_header_user_data = NULL;
   p->state = parse_begin;
+  p->key.data.referenced = grpc_empty_slice();
   p->key.data.copied.str = NULL;
   p->key.data.copied.capacity = 0;
   p->key.data.copied.length = 0;
+  p->value.data.referenced = grpc_empty_slice();
   p->value.data.copied.str = NULL;
   p->value.data.copied.capacity = 0;
   p->value.data.copied.length = 0;
