@@ -122,23 +122,11 @@ static void interned_slice_sub_unref(grpc_exec_ctx *exec_ctx, void *p) {
 
 static uint32_t interned_slice_hash(grpc_slice slice) {
   interned_slice_refcount *s = (interned_slice_refcount *)slice.refcount;
-  if (slice.data.refcounted.bytes == (uint8_t *)(s + 1) &&
-      slice.data.refcounted.length == s->length) {
-    return s->hash;
-  }
-  return grpc_slice_default_hash_impl(slice);
+  return s->hash;
 }
 
 static int interned_slice_eq(grpc_slice a, grpc_slice b) {
-  interned_slice_refcount *sa = (interned_slice_refcount *)a.refcount;
-  interned_slice_refcount *sb = (interned_slice_refcount *)b.refcount;
-  if (a.data.refcounted.bytes == (uint8_t *)(sa + 1) &&
-      b.data.refcounted.bytes == (uint8_t *)(sb + 1)) {
-    return a.data.refcounted.length == b.data.refcounted.length &&
-           a.data.refcounted.bytes == b.data.refcounted.bytes;
-  } else {
-    return grpc_slice_default_eq_impl(a, b);
-  }
+  return a.refcount == b.refcount;
 }
 
 static const grpc_slice_refcount_vtable interned_slice_vtable = {
