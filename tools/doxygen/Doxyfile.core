@@ -787,6 +787,7 @@ include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
 include/grpc/grpc_security.h \
+include/grpc/client_channel.h \
 include/grpc/census.h \
 include/grpc/support/alloc.h \
 include/grpc/support/atm.h \

@@ -956,6 +956,7 @@ fling_test: $(BINDIR)/$(CONFIG)/fling_test
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
 gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
 gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+generic_uri_parse_test: $(BINDIR)/$(CONFIG)/generic_uri_parse_test
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
 gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_backoff_test: $(BINDIR)/$(CONFIG)/gpr_backoff_test
@@ -1299,6 +1300,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/fling_server \
   $(BINDIR)/$(CONFIG)/fling_stream_test \
   $(BINDIR)/$(CONFIG)/fling_test \
+  $(BINDIR)/$(CONFIG)/generic_uri_parse_test \
   $(BINDIR)/$(CONFIG)/goaway_server_test \
   $(BINDIR)/$(CONFIG)/gpr_avl_test \
   $(BINDIR)/$(CONFIG)/gpr_backoff_test \
@@ -1653,6 +1655,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/fling_stream_test || ( echo test fling_stream_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fling_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
+	$(E) "[RUN]     Testing generic_uri_parse_test"
+	$(Q) $(BINDIR)/$(CONFIG)/generic_uri_parse_test || ( echo test generic_uri_parse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing goaway_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/goaway_server_test || ( echo test goaway_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_avl_test"
@@ -2794,6 +2798,7 @@ LIBGRPC_SRC = \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
     src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/generic_uri_parse.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
@@ -2867,6 +2872,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/grpc_security.h \
+    include/grpc/client_channel.h \
     include/grpc/census.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
@@ -3067,6 +3073,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
     src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/generic_uri_parse.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
@@ -3138,6 +3145,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/grpc_cronet.h \
     include/grpc/grpc_security.h \
+    include/grpc/client_channel.h \
 
 LIBGRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CRONET_SRC))))
 
@@ -3575,6 +3583,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
     src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/generic_uri_parse.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
@@ -3642,6 +3651,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/client_channel.h \
     include/grpc/census.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
@@ -4127,6 +4137,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/client_channel/client_channel_plugin.c \
     src/core/ext/client_channel/connector.c \
     src/core/ext/client_channel/default_initial_connect_string.c \
+    src/core/ext/client_channel/generic_uri_parse.c \
     src/core/ext/client_channel/http_connect_handshaker.c \
     src/core/ext/client_channel/initial_connect_string.c \
     src/core/ext/client_channel/lb_policy.c \
@@ -4257,6 +4268,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/client_channel.h \
     include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
@@ -8444,6 +8456,38 @@ deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
+GENERIC_URI_PARSE_TEST_SRC = \
+    test/core/client_channel/generic_uri_parse_test.c \
+
+GENERIC_URI_PARSE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GENERIC_URI_PARSE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/generic_uri_parse_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/generic_uri_parse_test: $(GENERIC_URI_PARSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GENERIC_URI_PARSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/generic_uri_parse_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/generic_uri_parse_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_generic_uri_parse_test: $(GENERIC_URI_PARSE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GENERIC_URI_PARSE_TEST_OBJS:.o=.dep)
 endif
 endif
 

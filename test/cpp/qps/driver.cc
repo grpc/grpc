@@ -45,6 +45,8 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
+#include <include/grpc/client_channel.h>
+
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
@@ -67,7 +69,7 @@ static std::string get_host(const std::string& worker) {
   char* host;
   char* port;
 
-  gpr_split_host_port(worker.c_str(), &host, &port);
+  grpc_generic_split_host_port(worker.c_str(), &host, &port);
   const string s(host);
 
   gpr_free(host);
@@ -274,7 +276,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     char* host;
     char* driver_port;
     char* cli_target;
-    gpr_split_host_port(workers[i].c_str(), &host, &driver_port);
+    char* qps_server_port;
+    grpc_generic_split_host_port(workers[i].c_str(), &host, &driver_port);
     string host_str(host);
     int server_core_limit = initial_server_config.core_limit();
     int client_core_limit = initial_client_config.core_limit();
@@ -315,7 +318,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
     }
-    gpr_join_host_port(&cli_target, host, init_status.port());
+    GPR_ASSERT(asprintf(&qps_server_port, "%d", init_status.port()) >= 0);
+    grpc_generic_join_host_port(&cli_target, host, qps_server_port);
     client_config.add_server_targets(cli_target);
     gpr_free(host);
     gpr_free(driver_port);

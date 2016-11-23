@@ -245,6 +245,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/client_channel/client_channel_plugin.c',
   'src/core/ext/client_channel/connector.c',
   'src/core/ext/client_channel/default_initial_connect_string.c',
+  'src/core/ext/client_channel/generic_uri_parse.c',
   'src/core/ext/client_channel/http_connect_handshaker.c',
   'src/core/ext/client_channel/initial_connect_string.c',
   'src/core/ext/client_channel/lb_policy.c',

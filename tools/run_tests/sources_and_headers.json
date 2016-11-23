@@ -589,6 +589,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "generic_uri_parse_test", 
+    "src": [
+      "test/core/client_channel/generic_uri_parse_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "goaway_server_test", 
     "src": [
       "test/core/end2end/goaway_server_test.c"
@@ -7003,9 +7020,11 @@
       "grpc_base"
     ], 
     "headers": [
+      "include/grpc/client_channel.h", 
       "src/core/ext/client_channel/client_channel.h", 
       "src/core/ext/client_channel/client_channel_factory.h", 
       "src/core/ext/client_channel/connector.h", 
+      "src/core/ext/client_channel/generic_uri_parse.h", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
       "src/core/ext/client_channel/initial_connect_string.h", 
       "src/core/ext/client_channel/lb_policy.h", 
@@ -7023,6 +7042,7 @@
     "language": "c", 
     "name": "grpc_client_channel", 
     "src": [
+      "include/grpc/client_channel.h", 
       "src/core/ext/client_channel/channel_connectivity.c", 
       "src/core/ext/client_channel/client_channel.c", 
       "src/core/ext/client_channel/client_channel.h", 
@@ -7032,6 +7052,8 @@
       "src/core/ext/client_channel/connector.c", 
       "src/core/ext/client_channel/connector.h", 
       "src/core/ext/client_channel/default_initial_connect_string.c", 
+      "src/core/ext/client_channel/generic_uri_parse.c", 
+      "src/core/ext/client_channel/generic_uri_parse.h", 
       "src/core/ext/client_channel/http_connect_handshaker.c", 
       "src/core/ext/client_channel/http_connect_handshaker.h", 
       "src/core/ext/client_channel/initial_connect_string.c", 

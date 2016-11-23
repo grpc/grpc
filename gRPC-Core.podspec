@@ -180,6 +180,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_posix.h',
                       'include/grpc/impl/codegen/sync_windows.h',
                       'include/grpc/grpc_security.h',
+                      'include/grpc/client_channel.h',
                       'include/grpc/census.h'
   end
   s.subspec 'Implementation' do |ss|
@@ -391,6 +392,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/client_channel.h',
                       'src/core/ext/client_channel/client_channel_factory.h',
                       'src/core/ext/client_channel/connector.h',
+                      'src/core/ext/client_channel/generic_uri_parse.h',
                       'src/core/ext/client_channel/http_connect_handshaker.h',
                       'src/core/ext/client_channel/initial_connect_string.h',
                       'src/core/ext/client_channel/lb_policy.h',
@@ -595,6 +597,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_channel/client_channel_plugin.c',
                       'src/core/ext/client_channel/connector.c',
                       'src/core/ext/client_channel/default_initial_connect_string.c',
+                      'src/core/ext/client_channel/generic_uri_parse.c',
                       'src/core/ext/client_channel/http_connect_handshaker.c',
                       'src/core/ext/client_channel/initial_connect_string.c',
                       'src/core/ext/client_channel/lb_policy.c',
@@ -798,6 +801,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_channel/client_channel.h',
                               'src/core/ext/client_channel/client_channel_factory.h',
                               'src/core/ext/client_channel/connector.h',
+                              'src/core/ext/client_channel/generic_uri_parse.h',
                               'src/core/ext/client_channel/http_connect_handshaker.h',
                               'src/core/ext/client_channel/initial_connect_string.h',
                               'src/core/ext/client_channel/lb_policy.h',
