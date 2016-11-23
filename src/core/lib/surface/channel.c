@@ -270,11 +270,11 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 
   rc->path = grpc_mdelem_from_slices(
       &exec_ctx, GRPC_MDSTR_PATH,
-      grpc_slice_intern(grpc_slice_from_copied_string(method)));
+      grpc_slice_intern(grpc_slice_from_static_string(method)));
   rc->authority =
       host ? grpc_mdelem_from_slices(
                  &exec_ctx, GRPC_MDSTR_AUTHORITY,
-                 grpc_slice_intern(grpc_slice_from_copied_string(host)))
+                 grpc_slice_intern(grpc_slice_from_static_string(host)))
            : GRPC_MDNULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;

@@ -141,14 +141,14 @@ static void test_create_many_persistant_metadata(void) {
     gpr_ltoa(i, buffer);
     created[i] = grpc_mdelem_from_slices(
         &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("a")),
-        grpc_slice_intern(grpc_slice_from_copied_string(buffer)));
+        grpc_slice_intern(grpc_slice_from_static_string(buffer)));
   }
   /* verify phase */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
     md = grpc_mdelem_from_slices(
         &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("a")),
-        grpc_slice_intern(grpc_slice_from_copied_string(buffer)));
+        grpc_slice_intern(grpc_slice_from_static_string(buffer)));
     GPR_ASSERT(grpc_mdelem_eq(md, created[i]));
     GRPC_MDELEM_UNREF(&exec_ctx, md);
   }

@@ -1166,12 +1166,12 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       bool has_host;
       grpc_slice method;
       if (rm->host != NULL) {
-        host = grpc_slice_intern(grpc_slice_from_copied_string(rm->host));
+        host = grpc_slice_intern(grpc_slice_from_static_string(rm->host));
         has_host = true;
       } else {
         has_host = false;
       }
-      method = grpc_slice_intern(grpc_slice_from_copied_string(rm->method));
+      method = grpc_slice_intern(grpc_slice_from_static_string(rm->method));
       hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash(host) : 0,
                                 grpc_slice_hash(method));
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
