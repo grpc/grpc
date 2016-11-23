@@ -189,6 +189,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 labels=['portability'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
+
   for compiler in ['gcc4.8', 'gcc5.3',
                    'clang3.5', 'clang3.6', 'clang3.7']:
     test_jobs += _generate_jobs(languages=['c++'],
