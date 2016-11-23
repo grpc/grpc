@@ -75,15 +75,19 @@ void grpc_chttp2_incoming_metadata_buffer_set_deadline(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_metadata_batch *batch) {
   GPR_ASSERT(!buffer->published);
   buffer->published = 1;
   if (buffer->count > 0) {
     size_t i;
     for (i = 0; i < buffer->count; i++) {
-      GRPC_LOG_IF_ERROR(
-          "grpc_chttp2_incoming_metadata_buffer_publish",
-          grpc_metadata_batch_link_tail(batch, &buffer->elems[i]));
+      /* TODO(ctiller): do something better here */
+      if (!GRPC_LOG_IF_ERROR(
+              "grpc_chttp2_incoming_metadata_buffer_publish",
+              grpc_metadata_batch_link_tail(batch, &buffer->elems[i]))) {
+        GRPC_MDELEM_UNREF(exec_ctx, buffer->elems[i].md);
+      }
     }
   } else {
     batch->list.head = batch->list.tail = NULL;
