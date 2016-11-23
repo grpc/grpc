@@ -99,7 +99,7 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                                                    grpc_metadata_batch *b) {
   if (b->idx.named.status != NULL) {
     if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
-      grpc_metadata_batch_remove(b, b->idx.named.status);
+      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.status);
     } else {
       char *val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
                                   GPR_DUMP_ASCII);
@@ -150,7 +150,7 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
         gpr_free(val);
       }
     }
-    grpc_metadata_batch_remove(b, b->idx.named.content_type);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.content_type);
   }
 
   return GRPC_ERROR_NONE;
@@ -201,10 +201,11 @@ static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
-static void remove_if_present(grpc_metadata_batch *batch,
+static void remove_if_present(grpc_exec_ctx *exec_ctx,
+                              grpc_metadata_batch *batch,
                               grpc_metadata_batch_callouts_index idx) {
   if (batch->idx.array[idx] != NULL) {
-    grpc_metadata_batch_remove(batch, batch->idx.array[idx]);
+    grpc_metadata_batch_remove(exec_ctx, batch, batch->idx.array[idx]);
   }
 }
 
@@ -303,11 +304,13 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
       }
     }
 
-    remove_if_present(op->send_initial_metadata, GRPC_BATCH_METHOD);
-    remove_if_present(op->send_initial_metadata, GRPC_BATCH_SCHEME);
-    remove_if_present(op->send_initial_metadata, GRPC_BATCH_TE);
-    remove_if_present(op->send_initial_metadata, GRPC_BATCH_CONTENT_TYPE);
-    remove_if_present(op->send_initial_metadata, GRPC_BATCH_USER_AGENT);
+    remove_if_present(exec_ctx, op->send_initial_metadata, GRPC_BATCH_METHOD);
+    remove_if_present(exec_ctx, op->send_initial_metadata, GRPC_BATCH_SCHEME);
+    remove_if_present(exec_ctx, op->send_initial_metadata, GRPC_BATCH_TE);
+    remove_if_present(exec_ctx, op->send_initial_metadata,
+                      GRPC_BATCH_CONTENT_TYPE);
+    remove_if_present(exec_ctx, op->send_initial_metadata,
+                      GRPC_BATCH_USER_AGENT);
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */

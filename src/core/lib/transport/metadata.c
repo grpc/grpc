@@ -260,6 +260,14 @@ grpc_mdelem grpc_mdelem_create(
     allocated->key = grpc_slice_ref_internal(key);
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+    char *key_str = grpc_dump_slice(allocated->key, GPR_DUMP_ASCII);
+    char *value_str = grpc_dump_slice(allocated->value, GPR_DUMP_ASCII);
+    gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%zu: '%s' = '%s'", (void *)allocated,
+            gpr_atm_no_barrier_load(&allocated->refcnt), key_str, value_str);
+    gpr_free(key_str);
+    gpr_free(value_str);
+#endif
     return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED);
   }
 

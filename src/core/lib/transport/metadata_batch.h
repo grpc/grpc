@@ -81,7 +81,8 @@ bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
 size_t grpc_metadata_batch_size(grpc_metadata_batch *batch);
 
 /** Remove \a storage from the batch, unreffing the mdelem contained */
-void grpc_metadata_batch_remove(grpc_metadata_batch *batch,
+void grpc_metadata_batch_remove(grpc_exec_ctx *exec_ctx,
+                                grpc_metadata_batch *batch,
                                 grpc_linked_mdelem *storage);
 
 /** Substitute a new mdelem for an old value */
