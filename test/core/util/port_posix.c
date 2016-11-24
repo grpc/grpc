@@ -127,9 +127,9 @@ static bool is_port_available(int *port, bool is_tcp) {
      on each supported family. */
   bool got_socket = false;
   for (int is_ipv6 = 1; is_ipv6 >= 0; is_ipv6--) {
-    const int fd = socket(is_ipv6 ? AF_INET6 : AF_INET,
-                          is_tcp ? SOCK_STREAM : SOCK_DGRAM,
-                          is_tcp ? IPPROTO_TCP : 0);
+    const int fd =
+        socket(is_ipv6 ? AF_INET6 : AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM,
+               is_tcp ? IPPROTO_TCP : 0);
     if (fd >= 0) {
       got_socket = true;
     } else {
@@ -147,9 +147,9 @@ static bool is_port_available(int *port, bool is_tcp) {
     /* Try binding to port */
     grpc_resolved_address addr;
     if (is_ipv6) {
-      grpc_sockaddr_make_wildcard6(*port, &addr);  /* [::]:port */
+      grpc_sockaddr_make_wildcard6(*port, &addr); /* [::]:port */
     } else {
-      grpc_sockaddr_make_wildcard4(*port, &addr);  /* 0.0.0.0:port */
+      grpc_sockaddr_make_wildcard4(*port, &addr); /* 0.0.0.0:port */
     }
     if (bind(fd, (struct sockaddr *)addr.addr, (socklen_t)addr.len) < 0) {
       gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
@@ -158,8 +158,8 @@ static bool is_port_available(int *port, bool is_tcp) {
     }
 
     /* Get the bound port number */
-    if (getsockname(fd, (struct sockaddr *)addr.addr,
-                    (socklen_t *)&addr.len) < 0) {
+    if (getsockname(fd, (struct sockaddr *)addr.addr, (socklen_t *)&addr.len) <
+        0) {
       gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
       close(fd);
       return false;
