@@ -29,7 +29,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'google-protobuf', '~> 3.0.2'
   s.add_dependency 'googleauth',      '~> 0.5.1'
-  s.add_dependency 'concurrent-ruby'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
@@ -261,8 +260,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/mdstr_hash_table.h )
   s.files += %w( src/core/lib/transport/metadata.h )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
-  s.files += %w( src/core/lib/transport/method_config.h )
   s.files += %w( src/core/lib/transport/pid_controller.h )
+  s.files += %w( src/core/lib/transport/service_config.h )
   s.files += %w( src/core/lib/transport/static_metadata.h )
   s.files += %w( src/core/lib/transport/timeout_encoding.h )
   s.files += %w( src/core/lib/transport/transport.h )
@@ -455,8 +454,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/mdstr_hash_table.c )
   s.files += %w( src/core/lib/transport/metadata.c )
   s.files += %w( src/core/lib/transport/metadata_batch.c )
-  s.files += %w( src/core/lib/transport/method_config.c )
   s.files += %w( src/core/lib/transport/pid_controller.c )
+  s.files += %w( src/core/lib/transport/service_config.c )
   s.files += %w( src/core/lib/transport/static_metadata.c )
   s.files += %w( src/core/lib/transport/timeout_encoding.c )
   s.files += %w( src/core/lib/transport/transport.c )

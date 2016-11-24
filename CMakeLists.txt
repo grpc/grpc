@@ -396,8 +396,8 @@ add_library(grpc
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
-  src/core/lib/transport/method_config.c
   src/core/lib/transport/pid_controller.c
+  src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -676,8 +676,8 @@ add_library(grpc_cronet
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
-  src/core/lib/transport/method_config.c
   src/core/lib/transport/pid_controller.c
+  src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
@@ -928,8 +928,8 @@ add_library(grpc_unsecure
   src/core/lib/transport/mdstr_hash_table.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
-  src/core/lib/transport/method_config.c
   src/core/lib/transport/pid_controller.c
+  src/core/lib/transport/service_config.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/timeout_encoding.c
   src/core/lib/transport/transport.c
