@@ -954,6 +954,16 @@ static void complete_fetch(grpc_exec_ctx *exec_ctx, void *gs,
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
+static void log_metadata(const grpc_metadata_batch *md_batch, uint32_t id,
+                         bool is_client, bool is_initial) {
+  for (grpc_linked_mdelem *md = md_batch->list.head; md != md_batch->list.tail;
+       md = md->next) {
+    gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
+            is_client ? "CLI" : "SVR", grpc_mdstr_as_c_string(md->md->key),
+            grpc_mdstr_as_c_string(md->md->value));
+  }
+}
+
 static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                                      grpc_error *error_ignored) {
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
@@ -967,6 +977,12 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
     gpr_free(str);
+    if (op->send_initial_metadata) {
+      log_metadata(op->send_initial_metadata, s->id, t->is_client, true);
+    }
+    if (op->send_trailing_metadata) {
+      log_metadata(op->send_trailing_metadata, s->id, t->is_client, false);
+    }
   }
 
   grpc_closure *on_complete = op->on_complete;
@@ -1037,7 +1053,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                                       "op.send_initial_metadata");
         }
       } else {
-        s->send_trailing_metadata = NULL;
+        s->send_initial_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_initial_metadata_finished,
             GRPC_ERROR_CREATE(
@@ -1523,13 +1539,17 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_error *error) {
   error =
       removal_error(error, s, "Pending writes failed due to stream closure");
-  s->fetching_send_message = NULL;
+  s->send_initial_metadata = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_REF(error),
       "send_initial_metadata_finished");
+
+  s->send_trailing_metadata = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->send_trailing_metadata_finished,
       GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
+
+  s->fetching_send_message = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, t, s, &s->fetching_send_message_finished, GRPC_ERROR_REF(error),
       "fetching_send_message_finished");

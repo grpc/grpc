@@ -189,6 +189,7 @@ grpc_slice_split_head_type grpc_slice_split_head_import;
 gpr_empty_slice_type gpr_empty_slice_import;
 grpc_slice_cmp_type grpc_slice_cmp_import;
 grpc_slice_str_cmp_type grpc_slice_str_cmp_import;
+grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
 grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 grpc_slice_buffer_destroy_type grpc_slice_buffer_destroy_import;
 grpc_slice_buffer_add_type grpc_slice_buffer_add_import;
@@ -464,6 +465,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_empty_slice_import = (gpr_empty_slice_type) GetProcAddress(library, "gpr_empty_slice");
   grpc_slice_cmp_import = (grpc_slice_cmp_type) GetProcAddress(library, "grpc_slice_cmp");
   grpc_slice_str_cmp_import = (grpc_slice_str_cmp_type) GetProcAddress(library, "grpc_slice_str_cmp");
+  grpc_slice_is_equivalent_import = (grpc_slice_is_equivalent_type) GetProcAddress(library, "grpc_slice_is_equivalent");
   grpc_slice_buffer_init_import = (grpc_slice_buffer_init_type) GetProcAddress(library, "grpc_slice_buffer_init");
   grpc_slice_buffer_destroy_import = (grpc_slice_buffer_destroy_type) GetProcAddress(library, "grpc_slice_buffer_destroy");
   grpc_slice_buffer_add_import = (grpc_slice_buffer_add_type) GetProcAddress(library, "grpc_slice_buffer_add");

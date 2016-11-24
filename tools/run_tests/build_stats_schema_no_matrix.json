@@ -25,6 +25,11 @@
     "mode": "NULLABLE"
   },
   {
+    "name": "no_report_files_found",
+    "type": "BOOLEAN",
+    "mode": "NULLABLE"
+  },
+  {
     "name": "error",
     "type": "RECORD",
     "mode": "REPEATED",

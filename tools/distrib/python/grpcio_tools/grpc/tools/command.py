@@ -28,6 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import pkg_resources
 import sys
 
 import setuptools
@@ -43,10 +44,14 @@ def build_package_protos(package_root):
       if filename.endswith('.proto'):
         proto_files.append(os.path.abspath(os.path.join(root, filename)))
 
+  well_known_protos_include = pkg_resources.resource_filename(
+      'grpc.tools', '_proto')
+
   for proto_file in proto_files:
     command = [
         'grpc.tools.protoc',
         '--proto_path={}'.format(inclusion_root),
+        '--proto_path={}'.format(well_known_protos_include),
         '--python_out={}'.format(inclusion_root),
         '--grpc_python_out={}'.format(inclusion_root),
     ] + [proto_file]

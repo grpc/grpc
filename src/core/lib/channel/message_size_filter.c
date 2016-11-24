@@ -34,16 +34,14 @@
 #include <limits.h>
 #include <string.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/method_config.h"
-
-#define DEFAULT_MAX_SEND_MESSAGE_LENGTH -1  // Unlimited.
-// The protobuf library will (by default) start warning at 100 megs.
-#define DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/service_config.h"
 
 typedef struct message_size_limits {
   int max_send_size;
@@ -56,30 +54,29 @@ static void* message_size_limits_copy(void* value) {
   return new_value;
 }
 
-static int message_size_limits_cmp(void* value1, void* value2) {
-  const message_size_limits* v1 = value1;
-  const message_size_limits* v2 = value2;
-  if (v1->max_send_size > v2->max_send_size) return 1;
-  if (v1->max_send_size < v2->max_send_size) return -1;
-  if (v1->max_recv_size > v2->max_recv_size) return 1;
-  if (v1->max_recv_size < v2->max_recv_size) return -1;
-  return 0;
-}
-
 static const grpc_mdstr_hash_table_vtable message_size_limits_vtable = {
-    gpr_free, message_size_limits_copy, message_size_limits_cmp};
+    gpr_free, message_size_limits_copy};
 
-static void* method_config_convert_value(
-    const grpc_method_config* method_config) {
+static void* message_size_limits_create_from_json(const grpc_json* json) {
+  int max_request_message_bytes = -1;
+  int max_response_message_bytes = -1;
+  for (grpc_json* field = json->child; field != NULL; field = field->next) {
+    if (field->key == NULL) continue;
+    if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
+      if (max_request_message_bytes >= 0) return NULL;  // Duplicate.
+      if (field->type != GRPC_JSON_STRING) return NULL;
+      max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
+      if (max_request_message_bytes == -1) return NULL;
+    } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
+      if (max_response_message_bytes >= 0) return NULL;  // Duplicate.
+      if (field->type != GRPC_JSON_STRING) return NULL;
+      max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
+      if (max_response_message_bytes == -1) return NULL;
+    }
+  }
   message_size_limits* value = gpr_malloc(sizeof(message_size_limits));
-  const int32_t* max_request_message_bytes =
-      grpc_method_config_get_max_request_message_bytes(method_config);
-  value->max_send_size =
-      max_request_message_bytes != NULL ? *max_request_message_bytes : -1;
-  const int32_t* max_response_message_bytes =
-      grpc_method_config_get_max_response_message_bytes(method_config);
-  value->max_recv_size =
-      max_response_message_bytes != NULL ? *max_response_message_bytes : -1;
+  value->max_send_size = max_request_message_bytes;
+  value->max_recv_size = max_response_message_bytes;
   return value;
 }
 
@@ -201,20 +198,20 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(!args->is_last);
   channel_data* chand = elem->channel_data;
   memset(chand, 0, sizeof(*chand));
-  chand->max_send_size = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
-  chand->max_recv_size = DEFAULT_MAX_RECV_MESSAGE_LENGTH;
+  chand->max_send_size = GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  chand->max_recv_size = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_SEND_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0,
-                                            INT_MAX};
+      const grpc_integer_options options = {
+          GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, 0, INT_MAX};
       chand->max_send_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
     if (strcmp(args->channel_args->args[i].key,
                GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH) == 0) {
-      const grpc_integer_options options = {DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0,
-                                            INT_MAX};
+      const grpc_integer_options options = {
+          GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, 0, INT_MAX};
       chand->max_recv_size =
           grpc_channel_arg_get_integer(&args->channel_args->args[i], options);
     }
@@ -223,10 +220,16 @@ static void init_channel_elem(grpc_exec_ctx* exec_ctx,
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (channel_arg != NULL) {
-    GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-    chand->method_limit_table = grpc_method_config_table_convert(
-        (grpc_method_config_table*)channel_arg->value.pointer.p,
-        method_config_convert_value, &message_size_limits_vtable);
+    GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+    grpc_service_config* service_config =
+        grpc_service_config_create(channel_arg->value.string);
+    if (service_config != NULL) {
+      chand->method_limit_table =
+          grpc_service_config_create_method_config_table(
+              service_config, message_size_limits_create_from_json,
+              &message_size_limits_vtable);
+      grpc_service_config_destroy(service_config);
+    }
   }
 }
 
