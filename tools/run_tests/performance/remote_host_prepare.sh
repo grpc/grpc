@@ -32,18 +32,23 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-# cleanup after previous builds
-ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_workspace"
-
 # TODO(jtattermusch): To be sure there are no running processes that would
 # mess with the results, be rough and reboot the slave here
 # and wait for it to come back online.
-# could also kill jenkins.
-ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby worker || true"
+ssh "${USER_AT_HOST}" "killall -9 qps_worker dotnet mono node ruby worker || true"
+
+# On Windows, killall is not supported & we need to kill all pending workers
+# before attempting to delete the workspace
+ssh "${USER_AT_HOST}" "ps -e | egrep 'qps_worker|dotnet' | awk '{print $1}' | xargs kill -9 || true"
+
+# cleanup after previous builds
+ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_workspace"
 
 # push the current sources to the slave and unpack it.
 scp ../grpc.tar "${USER_AT_HOST}:~/performance_workspace"
-ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace"
+# Windows workaround: attempt to untar twice, first run is going to fail
+# with symlink creation error(s).
+ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace || tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace"
 
 # For consistency with local run, invoke the kill_workers script remotely.
 ssh "${USER_AT_HOST}" "~/performance_workspace/grpc/tools/run_tests/performance/kill_workers.sh"

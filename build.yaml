@@ -186,7 +186,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/ev_epoll_linux.h
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -255,8 +254,8 @@ filegroups:
   - src/core/lib/transport/mdstr_hash_table.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
-  - src/core/lib/transport/method_config.h
   - src/core/lib/transport/pid_controller.h
+  - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -286,7 +285,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll_linux.c
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -369,8 +367,8 @@ filegroups:
   - src/core/lib/transport/mdstr_hash_table.c
   - src/core/lib/transport/metadata.c
   - src/core/lib/transport/metadata_batch.c
-  - src/core/lib/transport/method_config.c
   - src/core/lib/transport/pid_controller.c
+  - src/core/lib/transport/service_config.c
   - src/core/lib/transport/static_metadata.c
   - src/core/lib/transport/timeout_encoding.c
   - src/core/lib/transport/transport.c
@@ -2817,6 +2815,19 @@ targets:
   src:
   - test/cpp/common/auth_property_iterator_test.cc
   deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: bm_fullstack
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_fullstack.cc
+  deps:
+  - google_benchmark
   - grpc++_test_util
   - grpc_test_util
   - grpc++
