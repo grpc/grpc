@@ -6809,25 +6809,25 @@ endif
 
 
 LIBGOOGLE_BENCHMARK_SRC = \
-    third_party/google_benchmark/src/benchmark.cc \
-    third_party/google_benchmark/src/benchmark_register.cc \
-    third_party/google_benchmark/src/colorprint.cc \
-    third_party/google_benchmark/src/commandlineflags.cc \
-    third_party/google_benchmark/src/complexity.cc \
-    third_party/google_benchmark/src/console_reporter.cc \
-    third_party/google_benchmark/src/csv_reporter.cc \
-    third_party/google_benchmark/src/json_reporter.cc \
-    third_party/google_benchmark/src/reporter.cc \
-    third_party/google_benchmark/src/sleep.cc \
-    third_party/google_benchmark/src/string_util.cc \
-    third_party/google_benchmark/src/sysinfo.cc \
-    third_party/google_benchmark/src/timers.cc \
+    third_party/benchmark/src/benchmark.cc \
+    third_party/benchmark/src/benchmark_register.cc \
+    third_party/benchmark/src/colorprint.cc \
+    third_party/benchmark/src/commandlineflags.cc \
+    third_party/benchmark/src/complexity.cc \
+    third_party/benchmark/src/console_reporter.cc \
+    third_party/benchmark/src/csv_reporter.cc \
+    third_party/benchmark/src/json_reporter.cc \
+    third_party/benchmark/src/reporter.cc \
+    third_party/benchmark/src/sleep.cc \
+    third_party/benchmark/src/string_util.cc \
+    third_party/benchmark/src/sysinfo.cc \
+    third_party/benchmark/src/timers.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBGOOGLE_BENCHMARK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGOOGLE_BENCHMARK_SRC))))
 
-$(LIBGOOGLE_BENCHMARK_OBJS): CPPFLAGS += -Ithird_party/google_benchmark/include -DHAVE_POSIX_REGEX
+$(LIBGOOGLE_BENCHMARK_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
 
 ifeq ($(NO_PROTOBUF),true)
 
