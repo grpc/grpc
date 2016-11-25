@@ -124,7 +124,7 @@ _WHITELIST_DICT = {
 }
 
 # Add all triggers to their respective test suites
-for trigger, test_suites in _WHITELIST_DICT.iteritems():
+for trigger, test_suites in iter(_WHITELIST_DICT.items()):
   for test_suite in test_suites:
     test_suite.add_trigger(trigger)
 
