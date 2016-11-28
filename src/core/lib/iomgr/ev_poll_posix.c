@@ -1003,8 +1003,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
-          work_combine_error(
-              &error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd));
+          work_combine_error(&error,
+                             grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd));
         }
         if (pfds[1].revents & POLLIN_CHECK) {
           work_combine_error(
