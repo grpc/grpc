@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -124,11 +125,14 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_init(&context);
 
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
-      &exec_ctx, &context, &detector.pollent, &request,
+      &exec_ctx, &context, &detector.pollent, resource_quota, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       grpc_closure_create(on_compute_engine_detection_http_response, &detector),
       &detector.response);
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
 
   grpc_exec_ctx_flush(&exec_ctx);
 
@@ -171,7 +175,7 @@ static grpc_error *create_default_creds_from_path(
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_call_credentials *result = NULL;
-  gpr_slice creds_data = gpr_empty_slice();
+  grpc_slice creds_data = gpr_empty_slice();
   grpc_error *error = GRPC_ERROR_NONE;
   if (creds_path == NULL) {
     error = GRPC_ERROR_CREATE("creds_path unset");
@@ -182,9 +186,9 @@ static grpc_error *create_default_creds_from_path(
     goto end;
   }
   json = grpc_json_parse_string_with_len(
-      (char *)GPR_SLICE_START_PTR(creds_data), GPR_SLICE_LENGTH(creds_data));
+      (char *)GRPC_SLICE_START_PTR(creds_data), GRPC_SLICE_LENGTH(creds_data));
   if (json == NULL) {
-    char *dump = gpr_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *dump = grpc_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
                                GRPC_ERROR_STR_RAW_BYTES, dump);
     gpr_free(dump);
@@ -221,7 +225,7 @@ static grpc_error *create_default_creds_from_path(
 end:
   GPR_ASSERT((result == NULL) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != NULL) gpr_free(creds_path);
-  gpr_slice_unref(creds_data);
+  grpc_slice_unref(creds_data);
   if (json != NULL) grpc_json_destroy(json);
   *creds = result;
   return error;

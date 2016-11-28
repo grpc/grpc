@@ -43,11 +43,13 @@ from tests.interop import resources
 def _args():
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      '--server_host', help='the host to which to connect', type=str)
+      '--server_host', help='the host to which to connect', type=str,
+      default="127.0.0.1")
   parser.add_argument(
       '--server_port', help='the port to which to connect', type=int)
   parser.add_argument(
-      '--test_case', help='the test case to execute', type=str)
+      '--test_case', help='the test case to execute', type=str,
+      default="large_unary")
   parser.add_argument(
       '--use_tls', help='require a secure connection', default=False,
       type=resources.parse_bool)
@@ -55,7 +57,7 @@ def _args():
       '--use_test_ca', help='replace platform root CAs with ca.pem',
       default=False, type=resources.parse_bool)
   parser.add_argument(
-      '--server_host_override',
+      '--server_host_override', default="foo.test.google.fr",
       help='the server host to which to claim to connect', type=str)
   parser.add_argument('--oauth_scope', help='scope for OAuth tokens', type=str)
   parser.add_argument(
@@ -106,7 +108,10 @@ def _stub(args):
         (('grpc.ssl_target_name_override', args.server_host_override,),))
   else:
     channel = grpc.insecure_channel(target)
-  return test_pb2.TestServiceStub(channel)
+  if args.test_case == "unimplemented_service":
+    return test_pb2.UnimplementedServiceStub(channel)
+  else:
+    return test_pb2.TestServiceStub(channel)
 
 
 def _test_case_from_arg(test_case_arg):

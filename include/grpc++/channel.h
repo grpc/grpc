@@ -46,16 +46,23 @@ struct grpc_channel;
 
 namespace grpc {
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
-class Channel GRPC_FINAL : public ChannelInterface,
-                           public CallHook,
-                           public std::enable_shared_from_this<Channel>,
-                           private GrpcLibraryCodegen {
+class Channel final : public ChannelInterface,
+                      public CallHook,
+                      public std::enable_shared_from_this<Channel>,
+                      private GrpcLibraryCodegen {
  public:
   ~Channel();
 
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
-  grpc_connectivity_state GetState(bool try_to_connect) GRPC_OVERRIDE;
+  grpc_connectivity_state GetState(bool try_to_connect) override;
+
+  /// Returns the LB policy name, or the empty string if not yet available.
+  grpc::string GetLoadBalancingPolicyName() const;
+
+  /// Returns the service config in JSON form, or the empty string if
+  /// not available.
+  grpc::string GetServiceConfigJSON() const;
 
  private:
   template <class InputMessage, class OutputMessage>
@@ -69,15 +76,15 @@ class Channel GRPC_FINAL : public ChannelInterface,
   Channel(const grpc::string& host, grpc_channel* c_channel);
 
   Call CreateCall(const RpcMethod& method, ClientContext* context,
-                  CompletionQueue* cq) GRPC_OVERRIDE;
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
-  void* RegisterMethod(const char* method) GRPC_OVERRIDE;
+                  CompletionQueue* cq) override;
+  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
+  void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline, CompletionQueue* cq,
-                               void* tag) GRPC_OVERRIDE;
+                               void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                              gpr_timespec deadline) GRPC_OVERRIDE;
+                              gpr_timespec deadline) override;
 
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned

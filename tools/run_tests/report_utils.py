@@ -36,7 +36,7 @@ try:
   from mako.template import Template
   from mako import exceptions
 except (ImportError):
-  pass  # Mako not installed but it is ok. 
+  pass  # Mako not installed but it is ok.
 import os
 import string
 import xml.etree.cElementTree as ET
@@ -57,14 +57,15 @@ def _filter_msg(msg, output_format):
     return msg
 
 
-def render_junit_xml_report(resultset, xml_report):
+def render_junit_xml_report(resultset, xml_report, suite_package='grpc',
+                            suite_name='tests'):
   """Generate JUnit-like XML report."""
   root = ET.Element('testsuites')
-  testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', 
-                            name='tests')
-  for shortname, results in resultset.items():
+  testsuite = ET.SubElement(root, 'testsuite', id='1', package=suite_package,
+                            name=suite_name)
+  for shortname, results in resultset.iteritems():
     for result in results:
-      xml_test = ET.SubElement(testsuite, 'testcase', name=shortname) 
+      xml_test = ET.SubElement(testsuite, 'testcase', name=shortname)
       if result.elapsed_time:
         xml_test.set('time', str(result.elapsed_time))
       ET.SubElement(xml_test, 'system-out').text = _filter_msg(result.message,
@@ -73,12 +74,14 @@ def render_junit_xml_report(resultset, xml_report):
         ET.SubElement(xml_test, 'failure', message='Failure')
       elif result.state == 'TIMEOUT':
         ET.SubElement(xml_test, 'error', message='Timeout')
+      elif result.state == 'SKIPPED':
+        ET.SubElement(xml_test, 'skipped', message='Skipped')
   tree = ET.ElementTree(root)
   tree.write(xml_report, encoding='UTF-8')
 
 
 def render_interop_html_report(
-  client_langs, server_langs, test_cases, auth_test_cases, http2_cases, 
+  client_langs, server_langs, test_cases, auth_test_cases, http2_cases,
   resultset, num_failures, cloud_to_prod, prod_servers, http2_interop):
   """Generate HTML report for interop tests."""
   template_file = 'tools/run_tests/interop_html_report.template'
@@ -98,7 +101,7 @@ def render_interop_html_report(
   sorted_server_langs = sorted(server_langs)
   sorted_prod_servers = sorted(prod_servers)
 
-  args = {'client_langs': sorted_client_langs, 
+  args = {'client_langs': sorted_client_langs,
           'server_langs': sorted_server_langs,
           'test_cases': sorted_test_cases,
           'auth_test_cases': sorted_auth_test_cases,
@@ -109,9 +112,9 @@ def render_interop_html_report(
           'prod_servers': sorted_prod_servers,
           'http2_interop': http2_interop}
 
-  html_report_out_dir = 'reports' 
+  html_report_out_dir = 'reports'
   if not os.path.exists(html_report_out_dir):
-    os.mkdir(html_report_out_dir) 
+    os.mkdir(html_report_out_dir)
   html_file_path = os.path.join(html_report_out_dir, 'index.html')
   try:
     with open(html_file_path, 'w') as output_file:
@@ -119,4 +122,3 @@ def render_interop_html_report(
   except:
     print(exceptions.text_error_template().render())
     raise
-

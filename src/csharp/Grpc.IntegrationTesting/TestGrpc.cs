@@ -45,7 +45,7 @@ namespace Grpc.Testing {
   ///  A simple service to test the various types of RPCs and experiment with
   ///  performance with various types of payload.
   /// </summary>
-  public static class TestService
+  public static partial class TestService
   {
     static readonly string __ServiceName = "grpc.testing.TestService";
 
@@ -68,6 +68,13 @@ namespace Grpc.Testing {
         MethodType.Unary,
         __ServiceName,
         "UnaryCall",
+        __Marshaller_SimpleRequest,
+        __Marshaller_SimpleResponse);
+
+    static readonly Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_CacheableUnaryCall = new Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
+        MethodType.Unary,
+        __ServiceName,
+        "CacheableUnaryCall",
         __Marshaller_SimpleRequest,
         __Marshaller_SimpleResponse);
 
@@ -99,6 +106,13 @@ namespace Grpc.Testing {
         __Marshaller_StreamingOutputCallRequest,
         __Marshaller_StreamingOutputCallResponse);
 
+    static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_UnimplementedCall = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+        MethodType.Unary,
+        __ServiceName,
+        "UnimplementedCall",
+        __Marshaller_Empty,
+        __Marshaller_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -106,7 +120,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of TestService</summary>
-    public abstract class TestServiceBase
+    public abstract partial class TestServiceBase
     {
       /// <summary>
       ///  One empty request followed by one empty response.
@@ -120,6 +134,16 @@ namespace Grpc.Testing {
       ///  One request followed by one response.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -163,10 +187,19 @@ namespace Grpc.Testing {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
 
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
     }
 
     /// <summary>Client for TestService</summary>
-    public class TestServiceClient : ClientBase<TestServiceClient>
+    public partial class TestServiceClient : ClientBase<TestServiceClient>
     {
       /// <summary>Creates a new client for TestService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -245,6 +278,42 @@ namespace Grpc.Testing {
         return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual global::Grpc.Testing.SimpleResponse CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CacheableUnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual global::Grpc.Testing.SimpleResponse CacheableUnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_CacheableUnaryCall, null, options, request);
+      }
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> CacheableUnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CacheableUnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  One request followed by one response. Response has cache control
+      ///  headers set such that a caching HTTP proxy (such as GFE) can
+      ///  satisfy subsequent requests.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> CacheableUnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_CacheableUnaryCall, null, options, request);
+      }
+      /// <summary>
       ///  One request followed by a sequence of responses (streamed download).
       ///  The server returns the payload with client desired type and sizes.
       /// </summary>
@@ -314,6 +383,39 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_HalfDuplexCall, null, options);
       }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      ///  The test server will not implement this method. It will be used
+      ///  to test the behavior when clients call unimplemented methods.
+      /// </summary>
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override TestServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new TestServiceClient(configuration);
@@ -326,10 +428,12 @@ namespace Grpc.Testing {
       return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_CacheableUnaryCall, serviceImpl.CacheableUnaryCall)
           .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
           .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
           .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
-          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
+          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall)
+          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
   }
@@ -337,7 +441,7 @@ namespace Grpc.Testing {
   ///  A simple service NOT implemented at servers so clients can test for
   ///  that case.
   /// </summary>
-  public static class UnimplementedService
+  public static partial class UnimplementedService
   {
     static readonly string __ServiceName = "grpc.testing.UnimplementedService";
 
@@ -357,7 +461,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
-    public abstract class UnimplementedServiceBase
+    public abstract partial class UnimplementedServiceBase
     {
       /// <summary>
       ///  A call that no server should implement
@@ -370,7 +474,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for UnimplementedService</summary>
-    public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
+    public partial class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
     {
       /// <summary>Creates a new client for UnimplementedService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -420,6 +524,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override UnimplementedServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new UnimplementedServiceClient(configuration);
@@ -437,7 +542,7 @@ namespace Grpc.Testing {
   /// <summary>
   ///  A service used to control reconnect server.
   /// </summary>
-  public static class ReconnectService
+  public static partial class ReconnectService
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
@@ -466,7 +571,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
-    public abstract class ReconnectServiceBase
+    public abstract partial class ReconnectServiceBase
     {
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context)
       {
@@ -481,7 +586,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for ReconnectService</summary>
-    public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
+    public partial class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
     {
       /// <summary>Creates a new client for ReconnectService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
@@ -535,6 +640,7 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_Stop, null, options, request);
       }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override ReconnectServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
         return new ReconnectServiceClient(configuration);

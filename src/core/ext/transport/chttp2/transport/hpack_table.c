@@ -226,8 +226,8 @@ grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
 /* Evict one element from the table */
 static void evict1(grpc_chttp2_hptbl *tbl) {
   grpc_mdelem *first_ent = tbl->ents[tbl->first_ent];
-  size_t elem_bytes = GPR_SLICE_LENGTH(first_ent->key->slice) +
-                      GPR_SLICE_LENGTH(first_ent->value->slice) +
+  size_t elem_bytes = GRPC_SLICE_LENGTH(first_ent->key->slice) +
+                      GRPC_SLICE_LENGTH(first_ent->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
   tbl->mem_used -= (uint32_t)elem_bytes;
@@ -298,8 +298,8 @@ grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
 
 grpc_error *grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   /* determine how many bytes of buffer this entry represents */
-  size_t elem_bytes = GPR_SLICE_LENGTH(md->key->slice) +
-                      GPR_SLICE_LENGTH(md->value->slice) +
+  size_t elem_bytes = GRPC_SLICE_LENGTH(md->key->slice) +
+                      GRPC_SLICE_LENGTH(md->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {

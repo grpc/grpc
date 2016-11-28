@@ -40,6 +40,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/workqueue.h"
 
 typedef struct grpc_fd grpc_fd;
 
@@ -95,6 +96,18 @@ typedef struct grpc_event_engine_vtable {
   grpc_error *(*kick_poller)(void);
 
   void (*shutdown_engine)(void);
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+  grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason);
+  void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                          const char *file, int line, const char *reason);
+#else
+  grpc_workqueue *(*workqueue_ref)(grpc_workqueue *workqueue);
+  void (*workqueue_unref)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
+#endif
+  void (*workqueue_enqueue)(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            grpc_closure *closure, grpc_error *error);
 } grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
@@ -170,6 +183,5 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

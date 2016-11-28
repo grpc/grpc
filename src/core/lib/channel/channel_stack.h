@@ -74,6 +74,8 @@ typedef struct {
   grpc_call_stack *call_stack;
   const void *server_transport_data;
   grpc_call_context_element *context;
+  grpc_mdstr *path;
+  gpr_timespec start_time;
   gpr_timespec deadline;
 } grpc_call_element_args;
 
@@ -154,6 +156,10 @@ typedef struct {
   /* Implement grpc_call_get_peer() */
   char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
+  /* Implement grpc_channel_get_info() */
+  void (*get_channel_info)(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                           const grpc_channel_info *channel_info);
+
   /* The name of this filter */
   const char *name;
 } grpc_channel_filter;
@@ -225,7 +231,8 @@ grpc_error *grpc_call_stack_init(
     grpc_exec_ctx *exec_ctx, grpc_channel_stack *channel_stack,
     int initial_refs, grpc_iomgr_cb_func destroy, void *destroy_arg,
     grpc_call_context_element *context, const void *transport_server_data,
-    gpr_timespec deadline, grpc_call_stack *call_stack);
+    grpc_mdstr *path, gpr_timespec start_time, gpr_timespec deadline,
+    grpc_call_stack *call_stack);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -271,6 +278,10 @@ void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                           grpc_transport_op *op);
 /* Pass through a request to get_peer to the next child element */
 char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
+/* Pass through a request to get_channel_info() to the next child element */
+void grpc_channel_next_get_info(grpc_exec_ctx *exec_ctx,
+                                grpc_channel_element *elem,
+                                const grpc_channel_info *channel_info);
 
 /* Given the top element of a channel stack, get the channel stack itself */
 grpc_channel_stack *grpc_channel_stack_from_top_element(
@@ -287,12 +298,12 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
 void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_element *cur_elem,
                                                 grpc_status_code status,
-                                                gpr_slice *optional_message);
+                                                grpc_slice *optional_message);
 
 void grpc_call_element_send_close_with_message(grpc_exec_ctx *exec_ctx,
                                                grpc_call_element *cur_elem,
                                                grpc_status_code status,
-                                               gpr_slice *optional_message);
+                                               grpc_slice *optional_message);
 
 extern int grpc_trace_channel;
 

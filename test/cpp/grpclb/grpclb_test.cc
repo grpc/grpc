@@ -51,7 +51,7 @@
 
 #include <grpc++/impl/codegen/config.h>
 extern "C" {
-#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/support/string.h"
@@ -76,10 +76,25 @@ extern "C" {
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
 // - Test reception of invalid serverlist
 // - Test pinging
-// - Test against a non-LB server. That server should return UNIMPLEMENTED and
-//   the call should fail.
+// - Test against a non-LB server.
 // - Random LB server closing the stream unexpectedly.
 // - Test using DNS-resolvable names (localhost?)
+// - Test handling of creation of faulty RR instance by having the LB return a
+//   serverlist with non-existent backends after having initially returned a
+//   valid one.
+//
+// Findings from end to end testing to be covered here:
+// - Handling of LB servers restart, including reconnection after backing-off
+//   retries.
+// - Destruction of load balanced channel (and therefore of grpclb instance)
+//   while:
+//   1) the internal LB call is still active. This should work by virtue
+//   of the weak reference the LB call holds. The call should be terminated as
+//   part of the grpclb shutdown process.
+//   2) the retry timer is active. Again, the weak reference it holds should
+//   prevent a premature call to \a glb_destroy.
+// - Restart of backend servers with no changes to serverlist. This exercises
+//   the RR handover mechanism.
 
 namespace grpc {
 namespace {
@@ -96,6 +111,7 @@ typedef struct server_fixture {
   grpc_completion_queue *cq;
   char *servers_hostport;
   int port;
+  const char *lb_token_prefix;
   gpr_thd_id tid;
   int num_calls_serviced;
 } server_fixture;
@@ -109,9 +125,10 @@ typedef struct test_fixture {
 
 static void *tag(intptr_t t) { return (void *)t; }
 
-static gpr_slice build_response_payload_slice(
+static grpc_slice build_response_payload_slice(
     const char *host, int *ports, size_t nports,
-    int64_t expiration_interval_secs, int32_t expiration_interval_nanos) {
+    int64_t expiration_interval_secs, int32_t expiration_interval_nanos,
+    const char *token_prefix) {
   // server_list {
   //   servers {
   //     ip_address: <in_addr/6 bytes of an IP>
@@ -138,17 +155,16 @@ static gpr_slice build_response_payload_slice(
     struct in_addr ip4;
     GPR_ASSERT(inet_pton(AF_INET, host, &ip4) == 1);
     server->set_ip_address(
-        grpc::string(reinterpret_cast<const char *>(&ip4), sizeof(ip4)));
+        string(reinterpret_cast<const char *>(&ip4), sizeof(ip4)));
     server->set_port(ports[i]);
-    // The following long long int cast is meant to work around the
-    // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
-    // have a version for int but does have one for long long int.
-    string token_data = "token" + std::to_string((long long int)ports[i]);
-    token_data.resize(64, '-');
-    server->set_load_balance_token(token_data);
+    // Missing tokens are acceptable. Test that path.
+    if (strlen(token_prefix) > 0) {
+      string token_data = token_prefix + std::to_string(ports[i]);
+      server->set_load_balance_token(token_data);
+    }
   }
-  const grpc::string &enc_resp = response.SerializeAsString();
-  return gpr_slice_from_copied_buffer(enc_resp.data(), enc_resp.size());
+  const string &enc_resp = response.SerializeAsString();
+  return grpc_slice_from_copied_buffer(enc_resp.data(), enc_resp.size());
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -210,17 +226,17 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   // validate initial request.
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, request_payload_recv);
-  gpr_slice request_payload_slice = grpc_byte_buffer_reader_readall(&bbr);
+  grpc_slice request_payload_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc::lb::v1::LoadBalanceRequest request;
-  request.ParseFromArray(GPR_SLICE_START_PTR(request_payload_slice),
-                         GPR_SLICE_LENGTH(request_payload_slice));
+  request.ParseFromArray(GRPC_SLICE_START_PTR(request_payload_slice),
+                         GRPC_SLICE_LENGTH(request_payload_slice));
   GPR_ASSERT(request.has_initial_request());
   GPR_ASSERT(request.initial_request().name() == sf->servers_hostport);
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(request_payload_recv);
 
-  gpr_slice response_payload_slice;
+  grpc_slice response_payload_slice;
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -239,14 +255,14 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   for (int i = 0; i < 2; i++) {
     if (i == 0) {
       // First half of the ports.
-      response_payload_slice =
-          build_response_payload_slice("127.0.0.1", ports, nports / 2, -1, -1);
+      response_payload_slice = build_response_payload_slice(
+          "127.0.0.1", ports, nports / 2, -1, -1, sf->lb_token_prefix);
     } else {
       // Second half of the ports.
       sleep_ms(update_delay_ms);
-      response_payload_slice =
-          build_response_payload_slice("127.0.0.1", ports + (nports / 2),
-                                       (nports + 1) / 2 /* ceil */, -1, -1);
+      response_payload_slice = build_response_payload_slice(
+          "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */, -1,
+          -1, "" /* this half doesn't get to receive an LB token */);
     }
 
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -264,7 +280,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
             sf->servers_hostport, i);
 
     grpc_byte_buffer_destroy(response_payload);
-    gpr_slice_unref(response_payload_slice);
+    grpc_slice_unref(response_payload_slice);
   }
   gpr_log(GPR_INFO, "LB Server[%s] shutting down", sf->servers_hostport);
 
@@ -328,14 +344,10 @@ static void start_backend_server(server_fixture *sf) {
       return;
     }
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-
-    // The following long long int cast is meant to work around the
-    // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
-    // have a version for int but does have one for long long int.
-    string expected_token = "token" + std::to_string((long long int)sf->port);
-    expected_token.resize(64, '-');
-    GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                 "load-reporting-initial",
+    const string expected_token =
+        strlen(sf->lb_token_prefix) == 0 ? "" : sf->lb_token_prefix +
+                                                    std::to_string(sf->port);
+    GPR_ASSERT(contains_metadata(&request_metadata_recv, "lb-token",
                                  expected_token.c_str()));
 
     gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
@@ -356,7 +368,7 @@ static void start_backend_server(server_fixture *sf) {
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
     bool exit = false;
-    gpr_slice response_payload_slice = gpr_slice_from_copied_string(PAYLOAD);
+    grpc_slice response_payload_slice = grpc_slice_from_copied_string(PAYLOAD);
     while (!exit) {
       op = ops;
       op->op = GRPC_OP_RECV_MESSAGE;
@@ -415,7 +427,7 @@ static void start_backend_server(server_fixture *sf) {
     ++sf->num_calls_serviced;
 
     gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP", sf->servers_hostport);
-    gpr_slice_unref(response_payload_slice);
+    grpc_slice_unref(response_payload_slice);
 
     op = ops;
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -457,7 +469,8 @@ static void perform_request(client_fixture *cf) {
   int i;
 
   memset(ops, 0, sizeof(ops));
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
@@ -511,12 +524,14 @@ static void perform_request(client_fixture *cf) {
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     cq_verify(cqv);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, PAYLOAD));
+    GPR_ASSERT(grpc_channel_check_connectivity_state(
+                   cf->client, 0 /* try to connect */) == GRPC_CHANNEL_READY);
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload_recv);
   }
 
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
 
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -616,6 +631,7 @@ static void fork_lb_server(void *arg) {
                   tf->lb_server_update_delay_ms);
 }
 
+#define LB_TOKEN_PREFIX "token"
 static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   test_fixture tf;
   memset(&tf, 0, sizeof(tf));
@@ -625,16 +641,25 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
   gpr_thd_options_set_joinable(&options);
 
   for (int i = 0; i < NUM_BACKENDS; ++i) {
+    // Only the first half of the servers expect an LB token.
+    if (i < NUM_BACKENDS / 2) {
+      tf.lb_backends[i].lb_token_prefix = LB_TOKEN_PREFIX;
+    } else {
+      tf.lb_backends[i].lb_token_prefix = "";
+    }
     setup_server("127.0.0.1", &tf.lb_backends[i]);
     gpr_thd_new(&tf.lb_backends[i].tid, fork_backend_server, &tf.lb_backends[i],
                 &options);
   }
 
+  tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
   setup_server("127.0.0.1", &tf.lb_server);
   gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
 
   char *server_uri;
-  gpr_asprintf(&server_uri, "test:%s?lb_policy=grpclb&lb_enabled=1",
+  // The grpclb LB policy will be automatically selected by virtue of
+  // the fact that the returned addresses are balancer addresses.
+  gpr_asprintf(&server_uri, "test:%s?lb_enabled=1",
                tf.lb_server.servers_hostport);
   setup_client(server_uri, &tf.client);
   gpr_free(server_uri);

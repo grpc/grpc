@@ -34,12 +34,12 @@
 #include "test/core/util/parse_hexstring.h"
 #include <grpc/support/log.h>
 
-gpr_slice parse_hexstring(const char *hexstring) {
+grpc_slice parse_hexstring(const char *hexstring) {
   size_t nibbles = 0;
   const char *p = 0;
   uint8_t *out;
   uint8_t temp;
-  gpr_slice slice;
+  grpc_slice slice;
 
   for (p = hexstring; *p; p++) {
     nibbles += (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f');
@@ -47,8 +47,8 @@ gpr_slice parse_hexstring(const char *hexstring) {
 
   GPR_ASSERT((nibbles & 1) == 0);
 
-  slice = gpr_slice_malloc(nibbles / 2);
-  out = GPR_SLICE_START_PTR(slice);
+  slice = grpc_slice_malloc(nibbles / 2);
+  out = GRPC_SLICE_START_PTR(slice);
 
   nibbles = 0;
   temp = 0;

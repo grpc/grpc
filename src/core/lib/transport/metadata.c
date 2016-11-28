@@ -51,7 +51,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(gpr_slice input);
+grpc_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(grpc_slice input);
 
 /* There are two kinds of mdelem and mdstr instances.
  * Static instances are declared in static_metadata.{h,c} and
@@ -85,16 +85,16 @@ typedef void (*destroy_user_data_func)(void *user_data);
 /* Shadow structure for grpc_mdstr for non-static values */
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
-  gpr_slice slice;
+  grpc_slice slice;
   uint32_t hash;
 
   /* private only data */
   gpr_atm refcnt;
 
   uint8_t has_base64_and_huffman_encoded;
-  gpr_slice_refcount refcount;
+  grpc_slice_refcount refcount;
 
-  gpr_slice base64_and_huffman;
+  grpc_slice base64_and_huffman;
 
   gpr_atm size_in_decoder_table;
 
@@ -174,7 +174,7 @@ void grpc_mdctx_global_init(void) {
     grpc_mdstr *elem = &grpc_static_mdstr_table[i];
     const char *str = grpc_static_metadata_strings[i];
     uint32_t hash = gpr_murmur_hash3(str, strlen(str), g_hash_seed);
-    *(gpr_slice *)&elem->slice = gpr_slice_from_static_string(str);
+    *(grpc_slice *)&elem->slice = grpc_slice_from_static_string(str);
     *(uint32_t *)&elem->hash = hash;
     for (j = 0;; j++) {
       size_t idx = (hash + j) % GPR_ARRAY_SIZE(g_static_strtab);
@@ -321,7 +321,7 @@ static void internal_destroy_string(strtab_shard *shard, internal_string *is) {
   internal_string *cur;
   GPR_TIMER_BEGIN("internal_destroy_string", 0);
   if (is->has_base64_and_huffman_encoded) {
-    gpr_slice_unref(is->base64_and_huffman);
+    grpc_slice_unref(is->base64_and_huffman);
   }
   for (prev_next = &shard->strs[TABLE_IDX(is->hash, LOG2_STRTAB_SHARD_COUNT,
                                           shard->capacity)],
@@ -350,10 +350,10 @@ grpc_mdstr *grpc_mdstr_from_string(const char *str) {
   return grpc_mdstr_from_buffer((const uint8_t *)str, strlen(str));
 }
 
-grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice) {
-  grpc_mdstr *result = grpc_mdstr_from_buffer(GPR_SLICE_START_PTR(slice),
-                                              GPR_SLICE_LENGTH(slice));
-  gpr_slice_unref(slice);
+grpc_mdstr *grpc_mdstr_from_slice(grpc_slice slice) {
+  grpc_mdstr *result = grpc_mdstr_from_buffer(GRPC_SLICE_START_PTR(slice),
+                                              GRPC_SLICE_LENGTH(slice));
+  grpc_slice_unref(slice);
   return result;
 }
 
@@ -373,9 +373,9 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
     idx = (hash + i) % GPR_ARRAY_SIZE(g_static_strtab);
     ss = g_static_strtab[idx];
     if (ss == NULL) break;
-    if (ss->hash == hash && GPR_SLICE_LENGTH(ss->slice) == length &&
+    if (ss->hash == hash && GRPC_SLICE_LENGTH(ss->slice) == length &&
         (length == 0 ||
-         0 == memcmp(buf, GPR_SLICE_START_PTR(ss->slice), length))) {
+         0 == memcmp(buf, GRPC_SLICE_START_PTR(ss->slice), length))) {
       GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
       return ss;
     }
@@ -386,8 +386,8 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   /* search for an existing string */
   idx = TABLE_IDX(hash, LOG2_STRTAB_SHARD_COUNT, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
-    if (s->hash == hash && GPR_SLICE_LENGTH(s->slice) == length &&
-        0 == memcmp(buf, GPR_SLICE_START_PTR(s->slice), length)) {
+    if (s->hash == hash && GRPC_SLICE_LENGTH(s->slice) == length &&
+        0 == memcmp(buf, GRPC_SLICE_START_PTR(s->slice), length)) {
       if (gpr_atm_full_fetch_add(&s->refcnt, 1) == 0) {
         /* If we get here, we've added a ref to something that was about to
          * die - drop it immediately.
@@ -404,7 +404,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   }
 
   /* not found: create a new string */
-  if (length + 1 < GPR_SLICE_INLINED_SIZE) {
+  if (length + 1 < GRPC_SLICE_INLINED_SIZE) {
     /* string data goes directly into the slice */
     s = gpr_malloc(sizeof(internal_string));
     gpr_atm_rel_store(&s->refcnt, 1);
@@ -589,7 +589,7 @@ grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value) {
                                            grpc_mdstr_from_string(value));
 }
 
-grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value) {
+grpc_mdelem *grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
   return grpc_mdelem_from_metadata_strings(grpc_mdstr_from_slice(key),
                                            grpc_mdstr_from_slice(value));
 }
@@ -607,12 +607,12 @@ static size_t get_base64_encoded_size(size_t raw_length) {
 }
 
 size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
-  size_t overhead_and_key = 32 + GPR_SLICE_LENGTH(elem->key->slice);
-  size_t value_len = GPR_SLICE_LENGTH(elem->value->slice);
+  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(elem->key->slice);
+  size_t value_len = GRPC_SLICE_LENGTH(elem->value->slice);
   if (is_mdstr_static(elem->value)) {
     if (grpc_is_binary_header(
-            (const char *)GPR_SLICE_START_PTR(elem->key->slice),
-            GPR_SLICE_LENGTH(elem->key->slice))) {
+            (const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+            GRPC_SLICE_LENGTH(elem->key->slice))) {
       return overhead_and_key + get_base64_encoded_size(value_len);
     } else {
       return overhead_and_key + value_len;
@@ -622,8 +622,8 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
     gpr_atm current_size = gpr_atm_acq_load(&is->size_in_decoder_table);
     if (current_size == SIZE_IN_DECODER_TABLE_NOT_SET) {
       if (grpc_is_binary_header(
-              (const char *)GPR_SLICE_START_PTR(elem->key->slice),
-              GPR_SLICE_LENGTH(elem->key->slice))) {
+              (const char *)GRPC_SLICE_START_PTR(elem->key->slice),
+              GRPC_SLICE_LENGTH(elem->key->slice))) {
         current_size = (gpr_atm)get_base64_encoded_size(value_len);
       } else {
         current_size = (gpr_atm)value_len;
@@ -679,7 +679,7 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
 }
 
 const char *grpc_mdstr_as_c_string(const grpc_mdstr *s) {
-  return (const char *)GPR_SLICE_START_PTR(s->slice);
+  return (const char *)GRPC_SLICE_START_PTR(s->slice);
 }
 
 size_t grpc_mdstr_length(const grpc_mdstr *s) { return GRPC_MDSTR_LENGTH(s); }
@@ -687,6 +687,11 @@ size_t grpc_mdstr_length(const grpc_mdstr *s) { return GRPC_MDSTR_LENGTH(s); }
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   if (is_mdstr_static(gs)) return gs;
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR   REF:%p:%zu->%zu: '%s'",
+          (void *)s, gpr_atm_no_barrier_load(&s->refcnt),
+          gpr_atm_no_barrier_load(&s->refcnt) + 1, grpc_mdstr_as_c_string(gs));
+#endif
   GPR_ASSERT(gpr_atm_full_fetch_add(&s->refcnt, 1) > 0);
   return gs;
 }
@@ -694,6 +699,11 @@ grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
 void grpc_mdstr_unref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   if (is_mdstr_static(gs)) return;
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR UNREF:%p:%zu->%zu: '%s'",
+          (void *)s, gpr_atm_no_barrier_load(&s->refcnt),
+          gpr_atm_no_barrier_load(&s->refcnt) - 1, grpc_mdstr_as_c_string(gs));
+#endif
   if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
     strtab_shard *shard =
         &g_strtab_shard[SHARD_IDX(s->hash, LOG2_STRTAB_SHARD_COUNT)];
@@ -718,8 +728,8 @@ void *grpc_mdelem_get_user_data(grpc_mdelem *md, void (*destroy_func)(void *)) {
   return result;
 }
 
-void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
-                               void *user_data) {
+void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
+                                void *user_data) {
   internal_metadata *im = (internal_metadata *)md;
   GPR_ASSERT(!is_mdelem_static(md));
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
@@ -730,16 +740,17 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
     if (destroy_func != NULL) {
       destroy_func(user_data);
     }
-    return;
+    return (void *)gpr_atm_no_barrier_load(&im->user_data);
   }
   gpr_atm_no_barrier_store(&im->user_data, (gpr_atm)user_data);
   gpr_atm_rel_store(&im->destroy_user_data, (gpr_atm)destroy_func);
   gpr_mu_unlock(&im->mu_user_data);
+  return user_data;
 }
 
-gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
+grpc_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   internal_string *s = (internal_string *)gs;
-  gpr_slice slice;
+  grpc_slice slice;
   strtab_shard *shard =
       &g_strtab_shard[SHARD_IDX(s->hash, LOG2_STRTAB_SHARD_COUNT)];
   gpr_mu_lock(&shard->mu);

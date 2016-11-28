@@ -39,6 +39,14 @@ cd $(dirname $0)/../..
 
 PLATFORM=`uname -s`
 
+function is_msys() {
+  if [ "${PLATFORM/MSYS}" != "$PLATFORM" ]; then
+    echo true
+  else
+    exit 1
+  fi
+}
+
 function is_mingw() {
   if [ "${PLATFORM/MINGW}" != "$PLATFORM" ]; then
     echo true
@@ -108,6 +116,12 @@ VENV=${2:-$(venv $PYTHON)}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
 TOOLCHAIN=${4:-$(toolchain)}
 
+if [ $(is_msys) ]; then
+  echo "MSYS doesn't directly provide the right compiler(s);"
+  echo "switch to a MinGW shell."
+  exit 1
+fi
+
 ROOT=`pwd`
 export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
@@ -166,9 +180,18 @@ pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
 # TODO(atash) figure out namespace packages and grpcio-tools and auditwheel
 # etc...
 pip_install_dir $ROOT
+
+# Build/install health checking
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
 $VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_health_checking
+
+# Build/install reflection
+$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py preprocess
+$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py build_package_protos
+pip_install_dir $ROOT/src/python/grpcio_reflection
+
+# Build/install tests
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py preprocess
 $VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_package_protos
 pip_install_dir $ROOT/src/python/grpcio_tests

@@ -175,6 +175,15 @@ char *grpc_channel_get_target(grpc_channel *channel) {
   return gpr_strdup(channel->target);
 }
 
+void grpc_channel_get_info(grpc_channel *channel,
+                           const grpc_channel_info *channel_info) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_channel_element *elem =
+      grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
+  elem->filter->get_channel_info(&exec_ctx, elem, channel_info);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *cq, grpc_pollset_set *pollset_set_alternative,
@@ -193,9 +202,21 @@ static grpc_call *grpc_channel_create_call_internal(
     send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
-  return grpc_call_create(channel, parent_call, propagation_mask, cq,
-                          pollset_set_alternative, NULL, send_metadata,
-                          num_metadata, deadline);
+  grpc_call_create_args args;
+  memset(&args, 0, sizeof(args));
+  args.channel = channel;
+  args.parent_call = parent_call;
+  args.propagation_mask = propagation_mask;
+  args.cq = cq;
+  args.pollset_set_alternative = pollset_set_alternative;
+  args.server_transport_data = NULL;
+  args.add_initial_metadata = send_metadata;
+  args.add_initial_metadata_count = num_metadata;
+  args.send_deadline = deadline;
+
+  grpc_call *call;
+  GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
+  return call;
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
