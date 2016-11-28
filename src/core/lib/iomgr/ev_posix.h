@@ -183,6 +183,5 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */
