@@ -247,7 +247,8 @@ static void test_request(grpc_end2end_test_config config) {
   GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) <= 0);
   // Server latency should always be smaller than client latency, however since
   // we only calculate latency at destruction time, and that might mean that we
-  // need to wait for an outstanding write, this isn't verifiable right now.
+  // need to wait for an outstanding channel-related work, this isn't verifiable
+  // right now (the server MAY hold on to the call for longer than the client).
   // GPR_ASSERT(gpr_time_cmp(g_server_latency, g_client_latency) < 0);
   gpr_mu_unlock(&g_mu);
 }
