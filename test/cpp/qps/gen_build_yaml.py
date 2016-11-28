@@ -63,8 +63,7 @@ def guess_cpu(scenario_json):
   server = threads_of_type(scenario_json, 'server_config/async_server_threads')
   # make an arbitrary guess if set to auto-detect
   # about the size of the jenkins instances we have for unit tests
-  if client == 0: client = 8
-  if server == 0: server = 8
+  if client == 0 or server == 0: return 'capacity'
   return (scenario_json['num_clients'] * client +
           scenario_json['num_servers'] * server)
 

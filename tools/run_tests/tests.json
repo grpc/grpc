@@ -36783,7 +36783,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36804,7 +36804,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36825,7 +36825,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36846,7 +36846,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36888,7 +36888,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36909,7 +36909,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36951,7 +36951,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -36972,7 +36972,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37014,7 +37014,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37035,7 +37035,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37077,7 +37077,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37098,7 +37098,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37140,7 +37140,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37161,7 +37161,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37182,7 +37182,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37203,7 +37203,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37245,7 +37245,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37266,7 +37266,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37308,7 +37308,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37329,7 +37329,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37371,7 +37371,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37392,7 +37392,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37434,7 +37434,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -37455,7 +37455,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 8, 
+    "cpu_cost": "capacity", 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
