@@ -77,7 +77,7 @@ static void server_setup_transport(void *ts, grpc_transport *transport) {
 
 typedef struct {
   grpc_bad_client_client_stream_validator validator;
-  gpr_slice_buffer incoming;
+  grpc_slice_buffer incoming;
   gpr_event read_done;
 } read_args;
 
@@ -96,9 +96,9 @@ void grpc_run_bad_client_test(
   gpr_thd_id id;
   char *hex;
   grpc_transport *transport;
-  gpr_slice slice =
-      gpr_slice_from_copied_buffer(client_payload, client_payload_length);
-  gpr_slice_buffer outgoing;
+  grpc_slice slice =
+      grpc_slice_from_copied_buffer(client_payload, client_payload_length);
+  grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -114,7 +114,10 @@ void grpc_run_bad_client_test(
   grpc_init();
 
   /* Create endpoints */
-  sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("bad_client_test");
+  sfd = grpc_iomgr_create_endpoint_pair("fixture", resource_quota, 65536);
+  grpc_resource_quota_internal_unref(&exec_ctx, resource_quota);
 
   /* Create server, completion events */
   a.server = grpc_server_create(NULL, NULL);
@@ -143,8 +146,8 @@ void grpc_run_bad_client_test(
   /* Start validator */
   gpr_thd_new(&id, thd_func, &a, NULL);
 
-  gpr_slice_buffer_init(&outgoing);
-  gpr_slice_buffer_add(&outgoing, slice);
+  grpc_slice_buffer_init(&outgoing);
+  grpc_slice_buffer_add(&outgoing, slice);
   grpc_closure_init(&done_write_closure, done_write, &a);
 
   /* Write data */
@@ -169,7 +172,7 @@ void grpc_run_bad_client_test(
     if (client_validator != NULL) {
       read_args args;
       args.validator = client_validator;
-      gpr_slice_buffer_init(&args.incoming);
+      grpc_slice_buffer_init(&args.incoming);
       gpr_event_init(&args.read_done);
       grpc_closure read_done_closure;
       grpc_closure_init(&read_done_closure, read_done, &args);
@@ -178,7 +181,7 @@ void grpc_run_bad_client_test(
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(
           gpr_event_wait(&args.read_done, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
-      gpr_slice_buffer_destroy(&args.incoming);
+      grpc_slice_buffer_destroy(&args.incoming);
     }
     // Shutdown.
     grpc_endpoint_shutdown(&exec_ctx, sfd.client);
@@ -191,7 +194,7 @@ void grpc_run_bad_client_test(
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
-  gpr_slice_buffer_destroy(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
 
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();

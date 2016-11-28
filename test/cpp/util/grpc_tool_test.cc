@@ -93,13 +93,12 @@ DECLARE_bool(l);
 
 namespace {
 
-class TestCliCredentials GRPC_FINAL : public grpc::testing::CliCredentials {
+class TestCliCredentials final : public grpc::testing::CliCredentials {
  public:
-  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const
-      GRPC_OVERRIDE {
+  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const override {
     return InsecureChannelCredentials();
   }
-  const grpc::string GetCredentialUsage() const GRPC_OVERRIDE { return ""; }
+  const grpc::string GetCredentialUsage() const override { return ""; }
 };
 
 bool PrintStream(std::stringstream* ss, const grpc::string& output) {
@@ -113,12 +112,10 @@ size_t ArraySize(T& a) {
           static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
 }
 
-}  // namespame
-
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     if (!context->client_metadata().empty()) {
       for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
                iter = context->client_metadata().begin();
@@ -132,6 +129,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 };
+
+}  // namespace
 
 class GrpcToolTest : public ::testing::Test {
  protected:

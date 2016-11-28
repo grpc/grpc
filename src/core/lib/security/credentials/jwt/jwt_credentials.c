@@ -144,17 +144,44 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   return &c->base;
 }
 
+static char *redact_private_key(const char *json_key) {
+  char *json_copy = gpr_strdup(json_key);
+  grpc_json *json = grpc_json_parse_string(json_copy);
+  if (!json) {
+    gpr_free(json_copy);
+    return gpr_strdup("<Json failed to parse.>");
+  }
+  const char *redacted = "<redacted>";
+  grpc_json *current = json->child;
+  while (current) {
+    if (current->type == GRPC_JSON_STRING &&
+        strcmp(current->key, "private_key") == 0) {
+      current->value = (char *)redacted;
+      break;
+    }
+    current = current->next;
+  }
+  char *clean_json = grpc_json_dump_to_string(json, 2);
+  gpr_free(json_copy);
+  grpc_json_destroy(json);
+  return clean_json;
+}
+
 grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
     const char *json_key, gpr_timespec token_lifetime, void *reserved) {
-  GRPC_API_TRACE(
-      "grpc_service_account_jwt_access_credentials_create("
-      "json_key=%s, "
-      "token_lifetime="
-      "gpr_timespec { tv_sec: %" PRId64
-      ", tv_nsec: %d, clock_type: %d }, "
-      "reserved=%p)",
-      5, (json_key, token_lifetime.tv_sec, token_lifetime.tv_nsec,
-          (int)token_lifetime.clock_type, reserved));
+  if (grpc_api_trace) {
+    char *clean_json = redact_private_key(json_key);
+    gpr_log(GPR_INFO,
+            "grpc_service_account_jwt_access_credentials_create("
+            "json_key=%s, "
+            "token_lifetime="
+            "gpr_timespec { tv_sec: %" PRId64
+            ", tv_nsec: %d, clock_type: %d }, "
+            "reserved=%p)",
+            clean_json, token_lifetime.tv_sec, token_lifetime.tv_nsec,
+            (int)token_lifetime.clock_type, reserved);
+    gpr_free(clean_json);
+  }
   GPR_ASSERT(reserved == NULL);
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
       grpc_auth_json_key_create_from_string(json_key), token_lifetime);

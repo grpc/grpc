@@ -382,6 +382,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     if (args.options) {
       message.grpcWriteFlags = args.options.flags;
     }
+
     client_batch[grpc.opType.SEND_INITIAL_METADATA] =
         metadata._getCoreRepresentation();
     client_batch[grpc.opType.SEND_MESSAGE] = message;

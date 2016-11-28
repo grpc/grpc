@@ -64,8 +64,10 @@ _SKIP_SERVER_COMPRESSION = ['server_compressed_unary',
 
 _SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
-_SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
-                  'unimplemented_method']
+_SKIP_ADVANCED = ['status_code_and_message',
+                  'custom_metadata',
+                  'unimplemented_method',
+                  'unimplemented_service']
 
 _TEST_TIMEOUT = 3*60
 
@@ -89,10 +91,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED
+    return []
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED
+    return []
 
   def __str__(self):
     return 'c++'
@@ -206,10 +208,10 @@ class GoLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'go'
@@ -251,13 +253,16 @@ class NodeLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['node', 'src/node/interop/interop_client.js'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_server.js',
+            '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -330,13 +335,15 @@ class RubyLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/client.rb'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/client.rb'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -384,10 +391,10 @@ class PythonLanguage:
             'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'python'
@@ -415,7 +422,8 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'timeout_on_sleeping_server', 'custom_metadata',
                'status_code_and_message', 'unimplemented_method',
                'client_compressed_unary', 'server_compressed_unary',
-               'client_compressed_streaming', 'server_compressed_streaming']
+               'client_compressed_streaming', 'server_compressed_streaming',
+               'unimplemented_service']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
@@ -443,12 +451,11 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   return docker_cmdline
 
 
-def bash_login_cmdline(cmdline):
-  """Creates bash -l -c cmdline from args list."""
+def bash_cmdline(cmdline):
+  """Creates bash -c cmdline from args list."""
   # Use login shell:
-  # * rvm and nvm require it
   # * makes error messages clearer if executables are missing
-  return ['bash', '-l', '-c', ' '.join(cmdline)]
+  return ['bash', '-c', ' '.join(cmdline)]
 
 
 def auth_options(language, test_case):
@@ -508,7 +515,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
     auth_cmdargs, auth_env = auth_options(language, test_case)
     cmdargs += auth_cmdargs
     environ.update(auth_env)
-  cmdline = bash_login_cmdline(language.client_cmd(cmdargs))
+  cmdline = bash_cmdline(language.client_cmd(cmdargs))
   cwd = language.client_cwd
 
   if docker_image:
@@ -542,7 +549,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_login_cmdline(language.client_cmd([
+  cmdline = bash_cmdline(language.client_cmd([
       '--server_host_override=foo.test.google.fr',
       '--use_tls=true',
       '--use_test_ca=true',
@@ -579,7 +586,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
 def server_jobspec(language, docker_image):
   """Create jobspec for running a server"""
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
-  cmdline = bash_login_cmdline(
+  cmdline = bash_cmdline(
       language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT]))
   environ = language.global_env()
   docker_cmdline = docker_run_cmdline(cmdline,

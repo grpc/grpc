@@ -138,6 +138,18 @@ grpc_security_status grpc_channel_credentials_create_security_connector(
       channel_creds, NULL, target, args, sc, new_args);
 }
 
+grpc_channel_credentials *
+grpc_channel_credentials_duplicate_without_call_credentials(
+    grpc_channel_credentials *channel_creds) {
+  if (channel_creds != NULL && channel_creds->vtable != NULL &&
+      channel_creds->vtable->duplicate_without_call_credentials != NULL) {
+    return channel_creds->vtable->duplicate_without_call_credentials(
+        channel_creds);
+  } else {
+    return grpc_channel_credentials_ref(channel_creds);
+  }
+}
+
 grpc_server_credentials *grpc_server_credentials_ref(
     grpc_server_credentials *creds) {
   if (creds == NULL) return NULL;

@@ -75,6 +75,8 @@ class Server {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    stats.set_total_cpu_time(timer_result.total_cpu_time);
+    stats.set_idle_cpu_time(timer_result.idle_cpu_time);
     return stats;
   }
 

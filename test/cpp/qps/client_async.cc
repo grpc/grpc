@@ -83,7 +83,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
               BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
               CompletionQueue*)>
           start_req,
-      std::function<void(grpc::Status, ResponseType*)> on_done)
+      std::function<void(grpc::Status, ResponseType*, HistogramEntry*)> on_done)
       : context_(),
         stub_(stub),
         cq_(nullptr),
@@ -93,8 +93,8 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         callback_(on_done),
         next_issue_(next_issue),
         start_req_(start_req) {}
-  ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
-  void Start(CompletionQueue* cq) GRPC_OVERRIDE {
+  ~ClientRpcContextUnaryImpl() override {}
+  void Start(CompletionQueue* cq) override {
     cq_ = cq;
     if (!next_issue_) {  // ready to issue
       RunNextState(true, nullptr);
@@ -102,7 +102,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
       alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
     }
   }
-  bool RunNextState(bool ok, HistogramEntry* entry) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, HistogramEntry* entry) override {
     switch (next_state_) {
       case State::READY:
         start_ = UsageTimer::Now();
@@ -113,7 +113,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         return true;
       case State::RESP_DONE:
         entry->set_value((UsageTimer::Now() - start_) * 1e9);
-        callback_(status_, &response_);
+        callback_(status_, &response_, entry);
         next_state_ = State::INVALID;
         return false;
       default:
@@ -121,7 +121,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         return false;
     }
   }
-  ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
+  ClientRpcContext* StartNewClone() override {
     return new ClientRpcContextUnaryImpl(stub_, req_, next_issue_, start_req_,
                                          callback_);
   }
@@ -135,7 +135,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   ResponseType response_;
   enum State { INVALID, READY, RESP_DONE };
   State next_state_;
-  std::function<void(grpc::Status, ResponseType*)> callback_;
+  std::function<void(grpc::Status, ResponseType*, HistogramEntry*)> callback_;
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
       BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
@@ -177,7 +177,6 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
 
-    using namespace std::placeholders;
     int t = 0;
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
@@ -217,7 +216,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
     return num_threads;
   }
-  void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL {
+  void DestroyMultithreading() override final {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
@@ -228,8 +227,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     this->EndThreads();  // this needed for resolution
   }
 
-  bool ThreadFunc(HistogramEntry* entry,
-                  size_t thread_idx) GRPC_OVERRIDE GRPC_FINAL {
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override final {
     void* got_tag;
     bool ok;
 
@@ -279,7 +277,7 @@ static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
   return BenchmarkService::NewStub(ch);
 }
 
-class AsyncUnaryClient GRPC_FINAL
+class AsyncUnaryClient final
     : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncUnaryClient(const ClientConfig& config)
@@ -287,10 +285,13 @@ class AsyncUnaryClient GRPC_FINAL
             config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
-  ~AsyncUnaryClient() GRPC_OVERRIDE {}
+  ~AsyncUnaryClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(grpc::Status s, SimpleResponse* response,
+                        HistogramEntry* entry) {
+    entry->set_status(s.error_code());
+  }
   static std::unique_ptr<grpc::ClientAsyncResponseReader<SimpleResponse>>
   StartReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
            const SimpleRequest& request, CompletionQueue* cq) {
@@ -326,13 +327,13 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
         callback_(on_done),
         next_issue_(next_issue),
         start_req_(start_req) {}
-  ~ClientRpcContextStreamingImpl() GRPC_OVERRIDE {}
-  void Start(CompletionQueue* cq) GRPC_OVERRIDE {
+  ~ClientRpcContextStreamingImpl() override {}
+  void Start(CompletionQueue* cq) override {
     cq_ = cq;
     stream_ = start_req_(stub_, &context_, cq, ClientRpcContext::tag(this));
     next_state_ = State::STREAM_IDLE;
   }
-  bool RunNextState(bool ok, HistogramEntry* entry) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
       switch (next_state_) {
         case State::STREAM_IDLE:
@@ -374,7 +375,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
       }
     }
   }
-  ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
+  ClientRpcContext* StartNewClone() override {
     return new ClientRpcContextStreamingImpl(stub_, req_, next_issue_,
                                              start_req_, callback_);
   }
@@ -407,7 +408,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
       stream_;
 };
 
-class AsyncStreamingClient GRPC_FINAL
+class AsyncStreamingClient final
     : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncStreamingClient(const ClientConfig& config)
@@ -416,7 +417,7 @@ class AsyncStreamingClient GRPC_FINAL
     StartThreads(num_async_threads_);
   }
 
-  ~AsyncStreamingClient() GRPC_OVERRIDE {}
+  ~AsyncStreamingClient() override {}
 
  private:
   static void CheckDone(grpc::Status s, SimpleResponse* response) {}
@@ -455,8 +456,8 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         callback_(on_done),
         next_issue_(next_issue),
         start_req_(start_req) {}
-  ~ClientRpcContextGenericStreamingImpl() GRPC_OVERRIDE {}
-  void Start(CompletionQueue* cq) GRPC_OVERRIDE {
+  ~ClientRpcContextGenericStreamingImpl() override {}
+  void Start(CompletionQueue* cq) override {
     cq_ = cq;
     const grpc::string kMethodName(
         "/grpc.testing.BenchmarkService/StreamingCall");
@@ -464,7 +465,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
                          ClientRpcContext::tag(this));
     next_state_ = State::STREAM_IDLE;
   }
-  bool RunNextState(bool ok, HistogramEntry* entry) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
       switch (next_state_) {
         case State::STREAM_IDLE:
@@ -506,7 +507,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
       }
     }
   }
-  ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
+  ClientRpcContext* StartNewClone() override {
     return new ClientRpcContextGenericStreamingImpl(stub_, req_, next_issue_,
                                                     start_req_, callback_);
   }
@@ -543,7 +544,7 @@ static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
   return std::unique_ptr<grpc::GenericStub>(new grpc::GenericStub(ch));
 }
 
-class GenericAsyncStreamingClient GRPC_FINAL
+class GenericAsyncStreamingClient final
     : public AsyncClient<grpc::GenericStub, ByteBuffer> {
  public:
   explicit GenericAsyncStreamingClient(const ClientConfig& config)
@@ -552,7 +553,7 @@ class GenericAsyncStreamingClient GRPC_FINAL
     StartThreads(num_async_threads_);
   }
 
-  ~GenericAsyncStreamingClient() GRPC_OVERRIDE {}
+  ~GenericAsyncStreamingClient() override {}
 
  private:
   static void CheckDone(grpc::Status s, ByteBuffer* response) {}

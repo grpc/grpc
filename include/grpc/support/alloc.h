@@ -48,7 +48,11 @@ typedef struct gpr_allocation_functions {
   void (*free_fn)(void *ptr);
 } gpr_allocation_functions;
 
-/* malloc, never returns NULL */
+/* malloc.
+ * If size==0, always returns NULL. Otherwise this function never returns NULL.
+ * The pointer returned is suitably aligned for any kind of variable it could
+ * contain.
+ */
 GPRAPI void *gpr_malloc(size_t size);
 /* free */
 GPRAPI void gpr_free(void *ptr);

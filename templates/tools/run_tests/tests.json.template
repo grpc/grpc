@@ -10,6 +10,7 @@
                  "ci_platforms": tgt.ci_platforms,
                  "gtest": tgt.gtest,
                  "exclude_configs": tgt.get("exclude_configs", []),
+                 "exclude_iomgrs": tgt.get("exclude_iomgrs", []),
                  "args": [],
                  "flaky": tgt.flaky,
                  "cpu_cost": tgt.get("cpu_cost", 1.0)}

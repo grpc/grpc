@@ -61,7 +61,7 @@ fake_transport_security_server_create_security_connector(
 
 static grpc_channel_credentials_vtable
     fake_transport_security_credentials_vtable = {
-        NULL, fake_transport_security_create_security_connector};
+        NULL, fake_transport_security_create_security_connector, NULL};
 
 static grpc_server_credentials_vtable
     fake_transport_security_server_credentials_vtable = {
