@@ -1039,6 +1039,9 @@ libs:
   - grpc++_base
   - grpc++_codegen_base
   - grpc++_codegen_base_src
+  - grpc_transport_chttp2_client_insecure
+  - grpc_transport_chttp2_server_insecure
+  - census
   platforms:
   - linux
   secure: true
