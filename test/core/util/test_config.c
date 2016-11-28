@@ -37,6 +37,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
