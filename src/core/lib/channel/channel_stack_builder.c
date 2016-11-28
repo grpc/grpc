@@ -252,7 +252,7 @@ grpc_error *grpc_channel_stack_builder_finish(
   *result = gpr_malloc(prefix_bytes + channel_stack_size);
   // fetch a pointer to the channel stack
   grpc_channel_stack *channel_stack =
-      (grpc_channel_stack *)(*result + prefix_bytes);
+      (grpc_channel_stack *)((char *)(*result) + prefix_bytes);
   // and initialize it
   grpc_error *error = grpc_channel_stack_init(
       exec_ctx, initial_refs, destroy,
