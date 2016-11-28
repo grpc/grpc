@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -56,6 +57,7 @@ typedef struct call_data {
   grpc_linked_mdelem payload_bin;
 
   grpc_metadata_batch *recv_initial_metadata;
+  grpc_metadata_batch *recv_trailing_metadata;
   uint8_t *payload_bytes;
 
   /* Vars to read data off of send_message */
@@ -69,14 +71,16 @@ typedef struct call_data {
   bool send_message_blocked;
 
   /** Closure to call when finished with the hc_on_recv hook */
-  grpc_closure *on_done_recv;
+  grpc_closure *on_done_recv_initial_metadata;
+  grpc_closure *on_done_recv_trailing_metadata;
   grpc_closure *on_complete;
   grpc_closure *post_send;
 
   /** Receive closures are chained: we inject this closure as the on_done_recv
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
-  grpc_closure hc_on_recv;
+  grpc_closure hc_on_recv_initial_metadata;
+  grpc_closure hc_on_recv_trailing_metadata;
   grpc_closure hc_on_complete;
   grpc_closure got_slice;
   grpc_closure send_done;
@@ -106,6 +110,16 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
     grpc_call_element_send_close_with_message(a->exec_ctx, a->elem,
                                               GRPC_STATUS_CANCELLED, &message);
     return NULL;
+  } else if (md->key == GRPC_MDSTR_GRPC_MESSAGE) {
+    grpc_slice pct_decoded_msg =
+        grpc_permissive_percent_decode_slice(md->value->slice);
+    if (grpc_slice_is_equivalent(pct_decoded_msg, md->value->slice)) {
+      grpc_slice_unref(pct_decoded_msg);
+      return md;
+    } else {
+      return grpc_mdelem_from_metadata_strings(
+          GRPC_MDSTR_GRPC_MESSAGE, grpc_mdstr_from_slice(pct_decoded_msg));
+    }
   } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     return NULL;
   } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
@@ -129,8 +143,8 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
-                       grpc_error *error) {
+static void hc_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx,
+                                        void *user_data, grpc_error *error) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   client_recv_filter_args a;
@@ -138,7 +152,21 @@ static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
   a.exec_ctx = exec_ctx;
   grpc_metadata_batch_filter(calld->recv_initial_metadata, client_recv_filter,
                              &a);
-  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, error);
+  grpc_closure_run(exec_ctx, calld->on_done_recv_initial_metadata,
+                   GRPC_ERROR_REF(error));
+}
+
+static void hc_on_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
+                                         void *user_data, grpc_error *error) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  client_recv_filter_args a;
+  a.elem = elem;
+  a.exec_ctx = exec_ctx;
+  grpc_metadata_batch_filter(calld->recv_trailing_metadata, client_recv_filter,
+                             &a);
+  grpc_closure_run(exec_ctx, calld->on_done_recv_trailing_metadata,
+                   GRPC_ERROR_REF(error));
 }
 
 static void hc_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -281,8 +309,15 @@ static void hc_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (op->recv_initial_metadata != NULL) {
     /* substitute our callback for the higher callback */
     calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv = op->recv_initial_metadata_ready;
-    op->recv_initial_metadata_ready = &calld->hc_on_recv;
+    calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
+    op->recv_initial_metadata_ready = &calld->hc_on_recv_initial_metadata;
+  }
+
+  if (op->recv_trailing_metadata != NULL) {
+    /* substitute our callback for the higher callback */
+    calld->recv_trailing_metadata = op->recv_trailing_metadata;
+    calld->on_done_recv_trailing_metadata = op->on_complete;
+    op->on_complete = &calld->hc_on_recv_trailing_metadata;
   }
 }
 
@@ -308,11 +343,15 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  calld->on_done_recv = NULL;
+  calld->on_done_recv_initial_metadata = NULL;
+  calld->on_done_recv_trailing_metadata = NULL;
   calld->on_complete = NULL;
   calld->payload_bytes = NULL;
   grpc_slice_buffer_init(&calld->slices);
-  grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
+  grpc_closure_init(&calld->hc_on_recv_initial_metadata,
+                    hc_on_recv_initial_metadata, elem);
+  grpc_closure_init(&calld->hc_on_recv_trailing_metadata,
+                    hc_on_recv_trailing_metadata, elem);
   grpc_closure_init(&calld->hc_on_complete, hc_on_complete, elem);
   grpc_closure_init(&calld->got_slice, got_slice, elem);
   grpc_closure_init(&calld->send_done, send_done, elem);
