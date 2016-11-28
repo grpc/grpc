@@ -41,7 +41,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
@@ -280,7 +279,6 @@ static void install_crash_handler() {}
 
 void grpc_test_init(int argc, char **argv) {
   install_crash_handler();
-#ifdef GRPC_POSIX_SOCKET
   { /* poll-cv poll strategy runs much more slowly than anything else */
     char *s = gpr_getenv("GRPC_POLL_STRATEGY");
     if (s != NULL && 0 == strcmp(s, "poll-cv")) {
@@ -288,7 +286,6 @@ void grpc_test_init(int argc, char **argv) {
     }
     gpr_free(s);
   }
-#endif
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f poll=%f total=%f",
           (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,
           (double)GRPC_TEST_SLOWDOWN_BUILD_FACTOR, g_poller_slowdown_factor,
