@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "v#{version}",
+    :tag => "objective-c-v#{version}",
   }
 
   s.ios.deployment_target = '7.1'
