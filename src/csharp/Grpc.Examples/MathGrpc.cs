@@ -38,7 +38,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Math {
-  public static class Math
+  public static partial class Math
   {
     static readonly string __ServiceName = "math.Math";
 
@@ -82,7 +82,7 @@ namespace Math {
     }
 
     /// <summary>Base class for server-side implementations of Math</summary>
-    public abstract class MathBase
+    public abstract partial class MathBase
     {
       /// <summary>
       ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
@@ -126,7 +126,7 @@ namespace Math {
     }
 
     /// <summary>Client for Math</summary>
-    public class MathClient : ClientBase<MathClient>
+    public partial class MathClient : ClientBase<MathClient>
     {
       /// <summary>Creates a new client for Math</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>

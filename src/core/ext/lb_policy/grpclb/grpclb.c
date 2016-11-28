@@ -182,10 +182,10 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
                       NULL);
 
   if (wc_arg->rr_policy != NULL) {
-    /* if target is NULL, no pick has been made by the RR policy (eg, all
+    /* if *target is NULL, no pick has been made by the RR policy (eg, all
      * addresses failed to connect). There won't be any user_data/token
      * available */
-    if (wc_arg->target != NULL) {
+    if (*wc_arg->target != NULL) {
       if (wc_arg->lb_token != NULL) {
         initial_metadata_add_lb_token(wc_arg->initial_metadata,
                                       wc_arg->lb_token_mdelem_storage,
@@ -1238,12 +1238,15 @@ static void lb_on_response_received(grpc_exec_ctx *exec_ctx, void *arg,
             gpr_log(GPR_INFO,
                     "Incoming server list identical to current, ignoring.");
           }
+          grpc_grpclb_destroy_serverlist(serverlist);
         } else { /* new serverlist */
           if (glb_policy->serverlist != NULL) {
             /* dispose of the old serverlist */
             grpc_grpclb_destroy_serverlist(glb_policy->serverlist);
           }
-          /* and update the copy in the glb_lb_policy instance */
+          /* and update the copy in the glb_lb_policy instance. This serverlist
+           * instance will be destroyed either upon the next update or in
+           * glb_destroy() */
           glb_policy->serverlist = serverlist;
 
           rr_handover_locked(exec_ctx, glb_policy);
