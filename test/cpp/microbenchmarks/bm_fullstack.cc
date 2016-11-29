@@ -71,9 +71,7 @@ static class InitializeStuff {
     rq_ = grpc_resource_quota_create("bm");
   }
 
-  ~InitializeStuff() {
-    init_lib_.shutdown();
-  }
+  ~InitializeStuff() { init_lib_.shutdown(); }
 
   grpc_resource_quota* rq() { return rq_; }
 
