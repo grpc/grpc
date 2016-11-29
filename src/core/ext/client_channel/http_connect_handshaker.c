@@ -122,6 +122,11 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
       GRPC_ERROR_REF(error);  // Take ref for the handshake-done callback.
     }
     if (!handshaker->shutdown) {
+      // TODO(ctiller): It is currently necessary to shutdown endpoints
+      // before destroying them, even if we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
+      grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
       // Not shutting down, so the write failed.  Clean up before
       // invoking the callback.
       cleanup_args_for_failure_locked(handshaker);
@@ -156,6 +161,11 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
       GRPC_ERROR_REF(error);  // Take ref for the handshake-done callback.
     }
     if (!handshaker->shutdown) {
+      // TODO(ctiller): It is currently necessary to shutdown endpoints
+      // before destroying them, even if we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
+      grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
       // Not shutting down, so the write failed.  Clean up before
       // invoking the callback.
       cleanup_args_for_failure_locked(handshaker);
