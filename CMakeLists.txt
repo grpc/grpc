@@ -514,8 +514,6 @@ target_link_libraries(grpc
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   gpr
-  grpc_transport_chttp2
-  grpc_base
 )
 
 foreach(_hdr
@@ -767,8 +765,6 @@ target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
   gpr
-  grpc_transport_chttp2
-  grpc_base
 )
 
 foreach(_hdr
@@ -959,6 +955,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/alpn/alpn.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/client_channel/channel_connectivity.c
   src/core/ext/client_channel/client_channel.c
   src/core/ext/client_channel/client_channel_factory.c
@@ -977,7 +974,6 @@ add_library(grpc_unsecure
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
-  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/resolver/dns/native/dns_resolver.c
   src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/load_reporting/load_reporting.c
@@ -1019,8 +1015,6 @@ target_include_directories(grpc_unsecure
 target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   gpr
-  grpc_transport_chttp2
-  grpc_base
 )
 
 foreach(_hdr
@@ -1267,6 +1261,7 @@ add_library(grpc++_cronet
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
@@ -1419,7 +1414,6 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
-  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/census/base_resources.c
@@ -1455,8 +1449,6 @@ target_link_libraries(grpc++_cronet
   ${_gRPC_SSL_LIBRARIES}
   gpr
   grpc_cronet
-  grpc_transport_chttp2
-  grpc_base
 )
 
 foreach(_hdr

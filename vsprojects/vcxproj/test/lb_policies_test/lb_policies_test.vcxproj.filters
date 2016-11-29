@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\lb_policies_test.c">
+      <Filter>test\core\client_channel</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{58736598-65ad-bf09-4484-a4de1bb9b51f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{6e194f4b-ceb1-0e6b-e77a-8149b0411d99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_channel">
+      <UniqueIdentifier>{c4b19e85-1a5c-066b-9503-b58971695a58}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

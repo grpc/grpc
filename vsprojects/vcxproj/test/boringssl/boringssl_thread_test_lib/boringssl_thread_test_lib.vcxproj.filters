@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\thread_test.c">
+      <Filter>third_party\boringssl\crypto</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{83af82d3-5132-700e-d1fd-07a3bcc7f4d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{40d0c1cf-b52c-611b-fd17-644f9dc8d94d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{93f1e66b-5ff6-e20e-cb4b-a653eaa3ce8a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\common\auth_property_iterator_test.cc">
+      <Filter>test\cpp\common</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{661b8f10-3886-7677-dd91-30751dcf643f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{75b62764-651e-c6d1-c811-8df36e871f88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\common">
+      <UniqueIdentifier>{6656847f-8333-9835-8a26-64e4e3d3ef1c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

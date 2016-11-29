@@ -580,8 +580,6 @@ cc_library(
     "//external:libssl",
     "//external:zlib",
     ":gpr",
-    ":grpc_transport_chttp2",
-    ":grpc_base",
     "//external:nanopb",
   ],
   copts = [
@@ -977,8 +975,6 @@ cc_library(
   deps = [
     "//external:libssl",
     ":gpr",
-    ":grpc_transport_chttp2",
-    ":grpc_base",
   ],
 )
 
@@ -1105,6 +1101,7 @@ cc_library(
     "src/core/ext/transport/chttp2/transport/stream_map.h",
     "src/core/ext/transport/chttp2/transport/varint.h",
     "src/core/ext/transport/chttp2/alpn/alpn.h",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/client_channel/client_channel.h",
     "src/core/ext/client_channel/client_channel_factory.h",
     "src/core/ext/client_channel/connector.h",
@@ -1120,7 +1117,6 @@ cc_library(
     "src/core/ext/client_channel/subchannel.h",
     "src/core/ext/client_channel/subchannel_index.h",
     "src/core/ext/client_channel/uri_parser.h",
-    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/load_reporting/load_reporting.h",
     "src/core/ext/load_reporting/load_reporting_filter.h",
     "src/core/ext/lb_policy/grpclb/grpclb.h",
@@ -1277,6 +1273,7 @@ cc_library(
     "src/core/ext/transport/chttp2/alpn/alpn.c",
     "src/core/ext/transport/chttp2/client/insecure/channel_create.c",
     "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/client_channel/channel_connectivity.c",
     "src/core/ext/client_channel/client_channel.c",
     "src/core/ext/client_channel/client_channel_factory.c",
@@ -1295,7 +1292,6 @@ cc_library(
     "src/core/ext/client_channel/subchannel.c",
     "src/core/ext/client_channel/subchannel_index.c",
     "src/core/ext/client_channel/uri_parser.c",
-    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/resolver/dns/native/dns_resolver.c",
     "src/core/ext/resolver/sockaddr/sockaddr_resolver.c",
     "src/core/ext/load_reporting/load_reporting.c",
@@ -1356,8 +1352,6 @@ cc_library(
   ],
   deps = [
     ":gpr",
-    ":grpc_transport_chttp2",
-    ":grpc_base",
     "//external:nanopb",
   ],
   copts = [
@@ -1527,6 +1521,7 @@ cc_library(
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/transport/chttp2/transport/bin_decoder.h",
     "src/core/ext/transport/chttp2/transport/bin_encoder.h",
     "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
@@ -1660,7 +1655,6 @@ cc_library(
     "src/core/ext/client_channel/subchannel.h",
     "src/core/ext/client_channel/subchannel_index.h",
     "src/core/ext/client_channel/uri_parser.h",
-    "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     "src/core/ext/census/aggregation.h",
     "src/core/ext/census/base_resources.h",
     "src/core/ext/census/census_interface.h",
@@ -1707,6 +1701,7 @@ cc_library(
     "src/cpp/codegen/codegen_init.cc",
     "src/core/ext/transport/chttp2/client/insecure/channel_create.c",
     "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c",
+    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/transport/chttp2/transport/bin_decoder.c",
     "src/core/ext/transport/chttp2/transport/bin_encoder.c",
     "src/core/ext/transport/chttp2/transport/chttp2_plugin.c",
@@ -1859,7 +1854,6 @@ cc_library(
     "src/core/ext/client_channel/subchannel.c",
     "src/core/ext/client_channel/subchannel_index.c",
     "src/core/ext/client_channel/uri_parser.c",
-    "src/core/ext/transport/chttp2/client/chttp2_connector.c",
     "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c",
     "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c",
     "src/core/ext/census/base_resources.c",
@@ -1984,8 +1978,6 @@ cc_library(
     "//external:libssl",
     ":gpr",
     ":grpc_cronet",
-    ":grpc_transport_chttp2",
-    ":grpc_base",
     "//external:nanopb",
   ],
 )
@@ -2753,8 +2745,6 @@ objc_library(
   ],
   deps = [
     ":gpr_objc",
-    ":grpc_transport_chttp2_objc",
-    ":grpc_base_objc",
     "//external:libssl_objc",
     "//external:nanopb",
   ],

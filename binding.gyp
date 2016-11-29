@@ -562,8 +562,6 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
-        'grpc_transport_chttp2',
-        'grpc_base',
       ],
       'sources': [
         'src/core/lib/surface/init.c',

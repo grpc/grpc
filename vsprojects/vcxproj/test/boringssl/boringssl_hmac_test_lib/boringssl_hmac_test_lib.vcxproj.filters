@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\hmac\hmac_test.cc">
+      <Filter>third_party\boringssl\crypto\hmac</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{82c67b78-128a-a132-6fb7-d9bbd0dc5c71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{bddcec96-cd29-16f9-3b6c-5c3ade86d72c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{4d73fd40-54a9-7645-9c51-612e1d459d46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\hmac">
+      <UniqueIdentifier>{b337a92a-de4b-9639-c158-6228a1c82092}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

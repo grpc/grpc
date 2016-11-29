@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\json\json_test.c">
+      <Filter>test\core\json</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{38bd69da-e5d3-a0d8-641d-8923a0398da9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{ad7bd1bd-ec40-f392-07b9-0927d7349e69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\json">
+      <UniqueIdentifier>{46b0b357-d5c0-40a5-f33e-0365e022748f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

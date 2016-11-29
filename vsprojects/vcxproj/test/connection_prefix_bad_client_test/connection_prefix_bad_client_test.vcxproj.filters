@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\bad_client\tests\connection_prefix.c">
+      <Filter>test\core\bad_client\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{4fe7815e-17f8-e128-2a80-c2d506ff01cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c8a7a677-3402-3435-7448-13e8c7b644f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client">
+      <UniqueIdentifier>{319b8bcf-6dfb-f2c8-ca65-0f05799148bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client\tests">
+      <UniqueIdentifier>{2b2b470c-98b9-8862-947b-75fe5ee5fcc8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

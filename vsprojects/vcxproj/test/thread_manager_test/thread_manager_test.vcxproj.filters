@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\thread_manager\thread_manager_test.cc">
+      <Filter>test\cpp\thread_manager</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{e9e471cd-7f7e-9abc-af13-ec58851849ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{b350f72c-af76-7272-4342-1b0fc7a458ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\thread_manager">
+      <UniqueIdentifier>{6b09ea8d-fbc6-e6fe-f884-b3d3dfcbfc12}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

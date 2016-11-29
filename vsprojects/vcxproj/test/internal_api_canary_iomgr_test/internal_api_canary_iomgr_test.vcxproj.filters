@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\internal_api_canaries\iomgr.c">
+      <Filter>test\core\internal_api_canaries</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{881986d1-d1fe-b377-cf26-b3377af95009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{4f9a544e-5680-18ee-30d7-38179bf82cee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\internal_api_canaries">
+      <UniqueIdentifier>{6ab29f78-ec9d-d63a-8e8f-0d7552b3edd4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

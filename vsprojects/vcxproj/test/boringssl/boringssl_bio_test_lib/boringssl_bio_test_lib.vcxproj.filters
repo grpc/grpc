@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\bio_test.cc">
+      <Filter>third_party\boringssl\crypto\bio</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{620b04a2-c2af-b6a8-867d-9f1681f8bec6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{8795edcd-07bd-5168-8b5a-6a2c0b46313a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{c0d5ec8a-b2ed-6716-26ac-e0bc647609a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\bio">
+      <UniqueIdentifier>{167cdef9-0306-515d-fe0d-61788fb48871}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
