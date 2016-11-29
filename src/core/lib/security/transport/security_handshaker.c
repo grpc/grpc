@@ -60,9 +60,6 @@ typedef struct {
   gpr_refcount refs;
   unsigned char *handshake_buffer;
   size_t handshake_buffer_size;
-// FIXME: use args->endpoint instead
-  grpc_endpoint *wrapped_endpoint;
-  grpc_endpoint *secure_endpoint;
   grpc_slice_buffer left_overs;
   grpc_slice_buffer outgoing;
   grpc_closure on_handshake_data_sent_to_peer;
@@ -95,7 +92,6 @@ static void security_handshake_done_locked(grpc_exec_ctx *exec_ctx,
                                            security_handshaker *h,
                                            grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
-    h->args->endpoint = h->secure_endpoint;
     grpc_arg auth_context_arg = grpc_auth_context_to_arg(h->auth_context);
     grpc_channel_args* tmp_args = h->args->args;
     h->args->args =
@@ -105,16 +101,12 @@ static void security_handshake_done_locked(grpc_exec_ctx *exec_ctx,
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
     grpc_error_free_string(msg);
-    if (h->secure_endpoint != NULL) {
-      grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
+    grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
 // FIXME: clarify who should destroy...
-//      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
-//    } else {
-//      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
-    }
+    //grpc_endpoint_destroy(exec_ctx, h->args->endpoint);
   }
   // Clear out the read buffer before it gets passed to the transport,
-  // since any excess bytes were already moved to h->left_overs.
+  // since any excess bytes were already copied to h->left_overs.
   grpc_slice_buffer_reset_and_unref(h->args->read_buffer);
   h->args = NULL;
   grpc_exec_ctx_sched(exec_ctx, h->on_handshake_done, error, NULL);
@@ -138,8 +130,8 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
         GRPC_ERROR_CREATE("Frame protector creation failed"), result);
     goto done;
   }
-  h->secure_endpoint =
-      grpc_secure_endpoint_create(protector, h->wrapped_endpoint,
+  h->args->endpoint =
+      grpc_secure_endpoint_create(protector, h->args->endpoint,
                                   h->left_overs.slices, h->left_overs.count);
   h->left_overs.count = 0;
   h->left_overs.length = 0;
@@ -187,7 +179,7 @@ static grpc_error* send_handshake_bytes_to_peer_locked(grpc_exec_ctx *exec_ctx,
       grpc_slice_from_copied_buffer((const char *)h->handshake_buffer, offset);
   grpc_slice_buffer_reset_and_unref(&h->outgoing);
   grpc_slice_buffer_add(&h->outgoing, to_send);
-  grpc_endpoint_write(exec_ctx, h->wrapped_endpoint, &h->outgoing,
+  grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
                       &h->on_handshake_data_sent_to_peer);
   return GRPC_ERROR_NONE;
 }
@@ -219,7 +211,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   if (tsi_handshaker_is_in_progress(h->handshaker)) {
     /* We may need more data. */
     if (result == TSI_INCOMPLETE_DATA) {
-      grpc_endpoint_read(exec_ctx, h->wrapped_endpoint, h->args->read_buffer,
+      grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
                          &h->on_handshake_data_received_from_peer);
       goto done;
     } else {
@@ -294,7 +286,7 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx,
   /* We may be done. */
   gpr_mu_lock(&h->mu);
   if (tsi_handshaker_is_in_progress(h->handshaker)) {
-    grpc_endpoint_read(exec_ctx, h->wrapped_endpoint, h->args->read_buffer,
+    grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
                        &h->on_handshake_data_received_from_peer);
   } else {
     error = check_peer_locked(exec_ctx, h);
@@ -323,7 +315,7 @@ static void security_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
   security_handshaker *h = (security_handshaker*)handshaker;
   gpr_mu_lock(&h->mu);
   if (h->args != NULL) {
-    grpc_endpoint_shutdown(exec_ctx, h->wrapped_endpoint);
+    grpc_endpoint_shutdown(exec_ctx, h->args->endpoint);
   }
   gpr_mu_unlock(&h->mu);
 }
@@ -336,7 +328,6 @@ static void security_handshaker_do_handshake(
   gpr_mu_lock(&h->mu);
   h->args = args;
   h->on_handshake_done = on_handshake_done;
-  h->wrapped_endpoint = args->endpoint;  // FIXME: remove?
   gpr_ref(&h->refs);
   grpc_error* error = send_handshake_bytes_to_peer_locked(exec_ctx, h);
   if (error != GRPC_ERROR_NONE) {
