@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\evp_test.cc">
+      <Filter>third_party\boringssl\crypto\evp</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{933c4314-54c5-e0a9-7b6e-191a1f29b3f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{429801df-3249-80e8-2013-4212d4b5d999}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{ea6d47e7-6d2c-1847-9472-170753b10141}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\evp">
+      <UniqueIdentifier>{2a8fb08b-0afd-c956-2c52-e79f2fe4e814}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

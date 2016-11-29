@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\client_crash_test_server.cc">
+      <Filter>test\cpp\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{79d740b5-88ab-005f-f075-858096ab96ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{e5dfeb83-387a-43ed-1d6e-8a300c6b6f8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\end2end">
+      <UniqueIdentifier>{8bdf98f9-deb7-c22d-d78a-655270450f7e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

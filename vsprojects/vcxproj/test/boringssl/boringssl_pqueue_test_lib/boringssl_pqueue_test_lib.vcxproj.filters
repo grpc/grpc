@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\pqueue\pqueue_test.c">
+      <Filter>third_party\boringssl\ssl\pqueue</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{5abc2e4b-4b3e-76f3-af5b-32b49bed5734}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{ba7fa262-1d79-278b-6d33-494ef09bc0b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\ssl">
+      <UniqueIdentifier>{bbe38f66-e869-8d99-4ef8-a477041fda28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\ssl\pqueue">
+      <UniqueIdentifier>{c6deeb40-d424-ed7a-bcf9-8b33d62d603d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

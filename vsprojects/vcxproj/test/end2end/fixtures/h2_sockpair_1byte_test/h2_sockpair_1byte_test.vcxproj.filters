@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\h2_sockpair_1byte.c">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{7891f629-6021-0353-3080-a164f1541a60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{909720b4-6980-83ac-c78e-4cd7ca4bd1b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{2a71014a-0dc5-f7f6-d3d8-d0bf2a715d1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\fixtures">
+      <UniqueIdentifier>{5a2c9f6a-419d-f0cb-3613-19dc49c3d59a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

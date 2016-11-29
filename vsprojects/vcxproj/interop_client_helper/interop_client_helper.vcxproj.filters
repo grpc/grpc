@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\client_helper.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\interop\client_helper.h">
+      <Filter>test\cpp\interop</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{f00fc868-0efd-6675-4891-42af1833c479}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{3c09bd5f-4d22-1faf-1a58-32118a5473e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{0c11c3d3-d0b6-7803-39c4-8521b045464e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{0e888b7f-bacf-f718-56cf-e2db104e2263}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{2164d474-4a93-f014-982c-30ff23cb7ba5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{704b5dcd-7bcc-aaa8-d91a-78a1ec1b8fcc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\interop">
+      <UniqueIdentifier>{d07b9253-17d2-d5cf-0cbb-86223b2591b9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

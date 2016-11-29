@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\bad_server_response_test.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{d29396a6-e5cf-3f1f-a33d-d1e9f2fa1b38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{332f26c8-dd3f-091d-9e10-5b704377e991}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{158709cc-74ed-274f-fe50-b8e64cc9830e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

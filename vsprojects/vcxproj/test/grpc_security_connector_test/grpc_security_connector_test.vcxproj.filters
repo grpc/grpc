@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\security\security_connector_test.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{62dcf596-b5f1-043f-c645-8bed2bf94b01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f9ce8fb8-9b9b-7873-1ebc-1f5fa9753a92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\security">
+      <UniqueIdentifier>{953200eb-f0f9-49fc-7fe7-7cf941e921b2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

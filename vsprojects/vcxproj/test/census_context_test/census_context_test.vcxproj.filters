@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\census\context_test.c">
+      <Filter>test\core\census</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{bc15bb31-7dbe-17f2-fb1c-4bc140ce1707}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{806f9b58-6a48-ae09-3cc6-bb36e3126f27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\census">
+      <UniqueIdentifier>{85e37a47-e797-dcd1-b1e0-df553a454d8f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

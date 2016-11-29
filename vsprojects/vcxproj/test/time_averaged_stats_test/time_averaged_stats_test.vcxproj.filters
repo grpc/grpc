@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\time_averaged_stats_test.c">
+      <Filter>test\core\iomgr</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{3ae9b74a-a9ce-be77-0ae2-eccac8c26481}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{33ecfa3a-0016-0a7a-3f66-a48510db49b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\iomgr">
+      <UniqueIdentifier>{e7533292-78d7-dd3f-717d-3a967e7f330f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\surface\concurrent_connectivity_test.c">
+      <Filter>test\core\surface</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{1320b717-a107-004b-c517-074e6a7baf97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f205219c-cee2-c0e8-a922-5486f2d31026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\surface">
+      <UniqueIdentifier>{6804b6ae-88f4-acf9-b3fc-6b12f8e28d4d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\support\tls_test.c">
+      <Filter>test\core\support</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{517e4631-4f89-3755-6310-5ca3127c981c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{4c3a337b-33fc-a2e8-f3cd-7756320026cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\support">
+      <UniqueIdentifier>{4f3ec63f-ada4-c8fc-81a0-820987f92307}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

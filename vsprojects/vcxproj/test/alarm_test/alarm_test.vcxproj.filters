@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\surface\alarm_test.c">
+      <Filter>test\core\surface</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{ce8dc749-635b-4486-70d6-6bdf52297d09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c214d1e9-ebce-1040-28fa-e286dbb702d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\surface">
+      <UniqueIdentifier>{b260bb85-bedf-a6bf-c32e-3cd4b9d22bc8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

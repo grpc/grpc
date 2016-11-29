@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\security\create_jwt.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{43712951-4a0c-baed-a8d7-f28cc758a4aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f961567d-8068-75b9-5e88-cb59fa97dac0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\security">
+      <UniqueIdentifier>{b63ba4e4-e3e1-40f9-0e81-a50a1c544a36}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

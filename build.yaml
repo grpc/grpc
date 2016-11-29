@@ -626,7 +626,7 @@ filegroups:
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   src:
   - src/core/ext/transport/chttp2/client/chttp2_connector.c
-  deps:
+  uses:
   - grpc_transport_chttp2
   - grpc_base
 - name: grpc_transport_chttp2_client_insecure
@@ -634,10 +634,10 @@ filegroups:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
   - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   uses:
+  - grpc_transport_chttp2_client_connector
   - grpc_transport_chttp2
   - grpc_base
   - grpc_client_channel
-  - grpc_transport_chttp2_client_connector
 - name: grpc_transport_chttp2_client_secure
   src:
   - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\surface\lame_client_test.c">
+      <Filter>test\core\surface</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{e7bb5cbc-25b0-e358-fafa-2c7048d18947}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{ce6d3d5a-27ab-76d2-eb61-1d085fa36f29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\surface">
+      <UniqueIdentifier>{2d8a5a27-5421-ba0d-520e-1e168d10fb4e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

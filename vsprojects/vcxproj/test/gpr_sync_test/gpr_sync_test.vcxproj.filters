@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\support\sync_test.c">
+      <Filter>test\core\support</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{c03559e2-7eaa-1c66-b9b1-48925b426d68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{ce30b047-25b4-53c9-ab68-1248cc509a3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\support">
+      <UniqueIdentifier>{27ee2962-193c-3ef6-6fc7-057da8e526fb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
