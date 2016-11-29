@@ -59,21 +59,11 @@ typedef struct grpc_security_connector grpc_security_connector;
 
 #define GRPC_SECURITY_CONNECTOR_ARG "grpc.security_connector"
 
-typedef void (*grpc_security_peer_check_cb)(grpc_exec_ctx *exec_ctx,
-                                            void *user_data,
-                                            grpc_security_status status,
-                                            grpc_auth_context *auth_context);
-
-/* Ownership of the secure_endpoint is transfered. */
-typedef void (*grpc_security_handshake_done_cb)(
-    grpc_exec_ctx *exec_ctx, void *user_data, grpc_security_status status,
-    grpc_endpoint *secure_endpoint, grpc_auth_context *auth_context);
-
 typedef struct {
   void (*destroy)(grpc_security_connector *sc);
   void (*check_peer)(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc,
-                     tsi_peer peer, grpc_security_peer_check_cb cb,
-                     void *user_data);
+                     tsi_peer peer, grpc_auth_context **auth_context,
+                     grpc_closure *on_peer_checked);
 } grpc_security_connector_vtable;
 
 typedef struct grpc_security_connector_handshake_list {
@@ -108,12 +98,12 @@ void grpc_security_connector_unref(grpc_security_connector *policy);
 #endif
 
 /* Check the peer. Callee takes ownership of the peer object.
-   The callback will include the resulting auth_context. */
+   Sets *auth_context and invokes on_peer_checked when done. */
 void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_security_connector *sc,
                                         tsi_peer peer,
-                                        grpc_security_peer_check_cb cb,
-                                        void *user_data);
+                                        grpc_auth_context **auth_context,
+                                        grpc_closure *on_peer_checked);
 
 /* Util to encapsulate the connector in a channel arg. */
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc);
