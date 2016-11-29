@@ -104,6 +104,9 @@ struct grpc_resource_user {
   /* Reclaimers: index 0 is the benign reclaimer, 1 is the destructive reclaimer
    */
   grpc_closure *reclaimers[2];
+  /* Reclaimers just posted: once we're in the combiner lock, we'll move them
+     to the array above */
+  grpc_closure *new_reclaimers[2];
   /* Trampoline closures to finish reclamation and re-enter the quota combiner
      lock */
   grpc_closure post_reclaimer_closure[2];
@@ -418,9 +421,25 @@ static void ru_add_to_free_pool(grpc_exec_ctx *exec_ctx, void *ru,
   rulist_add_tail(resource_user, GRPC_RULIST_NON_EMPTY_FREE_POOL);
 }
 
+static bool ru_post_reclaimer(grpc_exec_ctx *exec_ctx,
+                              grpc_resource_user *resource_user,
+                              bool destructive) {
+  grpc_closure *closure = resource_user->new_reclaimers[destructive];
+  GPR_ASSERT(closure != NULL);
+  resource_user->new_reclaimers[destructive] = NULL;
+  GPR_ASSERT(resource_user->reclaimers[destructive] == NULL);
+  if (gpr_atm_acq_load(&resource_user->shutdown) > 0) {
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CANCELLED, NULL);
+    return false;
+  }
+  resource_user->reclaimers[destructive] = closure;
+  return true;
+}
+
 static void ru_post_benign_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
                                      grpc_error *error) {
   grpc_resource_user *resource_user = ru;
+  if (!ru_post_reclaimer(exec_ctx, resource_user, false)) return;
   if (!rulist_empty(resource_user->resource_quota,
                     GRPC_RULIST_AWAITING_ALLOCATION) &&
       rulist_empty(resource_user->resource_quota,
@@ -435,6 +454,7 @@ static void ru_post_benign_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
 static void ru_post_destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
                                           grpc_error *error) {
   grpc_resource_user *resource_user = ru;
+  if (!ru_post_reclaimer(exec_ctx, resource_user, true)) return;
   if (!rulist_empty(resource_user->resource_quota,
                     GRPC_RULIST_AWAITING_ALLOCATION) &&
       rulist_empty(resource_user->resource_quota,
@@ -649,6 +669,8 @@ grpc_resource_user *grpc_resource_user_create(
   resource_user->added_to_free_pool = false;
   resource_user->reclaimers[0] = NULL;
   resource_user->reclaimers[1] = NULL;
+  resource_user->new_reclaimers[0] = NULL;
+  resource_user->new_reclaimers[1] = NULL;
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_user->links[i].next = resource_user->links[i].prev = NULL;
   }
@@ -748,12 +770,8 @@ void grpc_resource_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
                                        grpc_resource_user *resource_user,
                                        bool destructive,
                                        grpc_closure *closure) {
-  GPR_ASSERT(resource_user->reclaimers[destructive] == NULL);
-  if (gpr_atm_acq_load(&resource_user->shutdown) > 0) {
-    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CANCELLED, NULL);
-    return;
-  }
-  resource_user->reclaimers[destructive] = closure;
+  GPR_ASSERT(resource_user->new_reclaimers[destructive] == NULL);
+  resource_user->new_reclaimers[destructive] = closure;
   grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
                         &resource_user->post_reclaimer_closure[destructive],
                         GRPC_ERROR_NONE, false);
