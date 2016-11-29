@@ -259,14 +259,21 @@ grpc_error *grpc_channel_stack_builder_finish(
       destroy_arg == NULL ? *result : destroy_arg, filters, num_filters,
       builder->args, builder->transport, builder->name, channel_stack);
 
-  // run post-initialization functions
-  i = 0;
-  for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
-    if (p->init != NULL) {
-      p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
-              p->init_arg);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_channel_stack_destroy(exec_ctx, channel_stack);
+    gpr_free(*result);
+    *result = NULL;
+  } else {
+    // run post-initialization functions
+    i = 0;
+    for (filter_node *p = builder->begin.next; p != &builder->end;\
+         p = p->next) {
+      if (p->init != NULL) {
+        p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
+                p->init_arg);
+      }
+      i++;
     }
-    i++;
   }
 
   grpc_channel_stack_builder_destroy(builder);
