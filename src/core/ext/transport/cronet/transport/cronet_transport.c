@@ -59,7 +59,7 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
+int grpc_cronet_trace = 1;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -911,11 +911,13 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
                           GRPC_ERROR_CANCELLED, NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
+      result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       CRONET_LOG(GPR_DEBUG, "Stream failed.");
       grpc_exec_ctx_sched(exec_ctx, stream_op->recv_message_ready,
                           make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."), NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
+      result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->rs.read_stream_closed == true) {
       /* No more data will be received */
       CRONET_LOG(GPR_DEBUG, "read stream closed");
@@ -923,6 +925,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                           GRPC_ERROR_NONE, NULL);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
+      result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->rs.length_field_received == false) {
       if (stream_state->rs.received_bytes == GRPC_HEADER_SIZE_IN_BYTES &&
           stream_state->rs.remaining_bytes == 0) {
