@@ -86,20 +86,22 @@ static void httpcli_ssl_create_handshakers(
 
 static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
                                    grpc_security_connector *sc, tsi_peer peer,
-                                   grpc_security_peer_check_cb cb,
-                                   void *user_data) {
+                                   grpc_auth_context **auth_context,
+                                   grpc_closure *on_peer_checked) {
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
-  grpc_security_status status = GRPC_SECURITY_OK;
+  grpc_error *error = GRPC_ERROR_NONE;
 
   /* Check the peer name. */
   if (c->secure_peer_name != NULL &&
       !tsi_ssl_peer_matches_name(&peer, c->secure_peer_name)) {
-    gpr_log(GPR_ERROR, "Peer name %s is not in peer certificate",
-            c->secure_peer_name);
-    status = GRPC_SECURITY_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
+                 c->secure_peer_name);
+    error = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
   }
-  cb(exec_ctx, user_data, status, NULL);
+  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
   tsi_peer_destruct(&peer);
 }
 

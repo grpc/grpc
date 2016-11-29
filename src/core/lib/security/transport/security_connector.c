@@ -130,13 +130,15 @@ void grpc_server_security_connector_create_handshakers(
 void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_security_connector *sc,
                                         tsi_peer peer,
-                                        grpc_security_peer_check_cb cb,
-                                        void *user_data) {
+                                        grpc_auth_context **auth_context,
+                                        grpc_closure *on_peer_checked) {
   if (sc == NULL) {
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
+    grpc_exec_ctx_sched(
+        exec_ctx, on_peer_checked,
+        GRPC_ERROR_CREATE("cannot check peer -- no security connector"), NULL);
     tsi_peer_destruct(&peer);
   } else {
-    sc->vtable->check_peer(exec_ctx, sc, peer, cb, user_data);
+    sc->vtable->check_peer(exec_ctx, sc, peer, auth_context, on_peer_checked);
   }
 }
 
@@ -242,37 +244,37 @@ static void fake_server_destroy(grpc_security_connector *sc) {
 
 static void fake_check_peer(grpc_exec_ctx *exec_ctx,
                             grpc_security_connector *sc, tsi_peer peer,
-                            grpc_security_peer_check_cb cb, void *user_data) {
+                            grpc_auth_context **auth_context,
+                            grpc_closure *on_peer_checked) {
   const char *prop_name;
-  grpc_security_status status = GRPC_SECURITY_OK;
-  grpc_auth_context *auth_context = NULL;
+  grpc_error *error = GRPC_ERROR_NONE;
+  *auth_context = NULL;
   if (peer.property_count != 1) {
-    gpr_log(GPR_ERROR, "Fake peers should only have 1 property.");
-    status = GRPC_SECURITY_ERROR;
+    error = GRPC_ERROR_CREATE("Fake peers should only have 1 property.");
     goto end;
   }
   prop_name = peer.properties[0].name;
   if (prop_name == NULL ||
       strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY)) {
-    gpr_log(GPR_ERROR, "Unexpected property in fake peer: %s.",
-            prop_name == NULL ? "<EMPTY>" : prop_name);
-    status = GRPC_SECURITY_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
+                 prop_name == NULL ? "<EMPTY>" : prop_name);
+    error = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
               peer.properties[0].value.length)) {
-    gpr_log(GPR_ERROR, "Invalid value for cert type property.");
-    status = GRPC_SECURITY_ERROR;
+    error = GRPC_ERROR_CREATE("Invalid value for cert type property.");
     goto end;
   }
-  auth_context = grpc_auth_context_create(NULL);
+  *auth_context = grpc_auth_context_create(NULL);
   grpc_auth_context_add_cstring_property(
-      auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+      *auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 
 end:
-  cb(exec_ctx, user_data, status, auth_context);
-  grpc_auth_context_unref(auth_context);
+  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
   tsi_peer_destruct(&peer);
 }
 
@@ -466,57 +468,53 @@ grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
   return ctx;
 }
 
-static grpc_security_status ssl_check_peer(grpc_security_connector *sc,
-                                           const char *peer_name,
-                                           const tsi_peer *peer,
-                                           grpc_auth_context **auth_context) {
+static grpc_error *ssl_check_peer(grpc_security_connector *sc,
+                                  const char *peer_name, const tsi_peer *peer,
+                                  grpc_auth_context **auth_context) {
   /* Check the ALPN. */
   const tsi_peer_property *p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == NULL) {
-    gpr_log(GPR_ERROR, "Missing selected ALPN property.");
-    return GRPC_SECURITY_ERROR;
+    return GRPC_ERROR_CREATE("Cannot check peer: "
+                             "missing selected ALPN property.");
   }
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    gpr_log(GPR_ERROR, "Invalid ALPN value.");
-    return GRPC_SECURITY_ERROR;
+    return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
   }
 
   /* Check the peer name if specified. */
   if (peer_name != NULL && !ssl_host_matches_name(peer, peer_name)) {
-    gpr_log(GPR_ERROR, "Peer name %s is not in peer certificate", peer_name);
-    return GRPC_SECURITY_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
+    grpc_error *error = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return error;
   }
   *auth_context = tsi_ssl_peer_to_auth_context(peer);
-  return GRPC_SECURITY_OK;
+  return GRPC_ERROR_NONE;
 }
 
 static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
                                    grpc_security_connector *sc, tsi_peer peer,
-                                   grpc_security_peer_check_cb cb,
-                                   void *user_data) {
+                                   grpc_auth_context **auth_context,
+                                   grpc_closure *on_peer_checked) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
-  grpc_security_status status;
-  grpc_auth_context *auth_context = NULL;
-  status = ssl_check_peer(sc, c->overridden_target_name != NULL
-                                  ? c->overridden_target_name
-                                  : c->target_name,
-                          &peer, &auth_context);
-  cb(exec_ctx, user_data, status, auth_context);
-  grpc_auth_context_unref(auth_context);
+  grpc_error *error = ssl_check_peer(sc, c->overridden_target_name != NULL
+                                             ? c->overridden_target_name
+                                             : c->target_name,
+                                     &peer, auth_context);
+  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
   tsi_peer_destruct(&peer);
 }
 
 static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
                                   grpc_security_connector *sc, tsi_peer peer,
-                                  grpc_security_peer_check_cb cb,
-                                  void *user_data) {
-  grpc_auth_context *auth_context = NULL;
-  grpc_security_status status = ssl_check_peer(sc, NULL, &peer, &auth_context);
+                                  grpc_auth_context **auth_context,
+                                  grpc_closure *on_peer_checked) {
+  grpc_error *error = ssl_check_peer(sc, NULL, &peer, auth_context);
   tsi_peer_destruct(&peer);
-  cb(exec_ctx, user_data, status, auth_context);
-  grpc_auth_context_unref(auth_context);
+  grpc_exec_ctx_sched(exec_ctx, on_peer_checked, error, NULL);
 }
 
 static void add_shallow_auth_property_to_peer(tsi_peer *peer,
