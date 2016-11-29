@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <string.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
@@ -85,6 +86,23 @@ typedef struct {
   grpc_call_element *elem;
   grpc_exec_ctx *exec_ctx;
 } server_filter_args;
+
+static grpc_mdelem *server_filter_outgoing_metadata(void *user_data,
+                                                    grpc_mdelem *md) {
+  if (md->key == GRPC_MDSTR_GRPC_MESSAGE) {
+    grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
+        md->value->slice, grpc_compatible_percent_encoding_unreserved_bytes);
+    if (grpc_slice_is_equivalent(pct_encoded_msg, md->value->slice)) {
+      grpc_slice_unref(pct_encoded_msg);
+      return md;
+    } else {
+      return grpc_mdelem_from_metadata_strings(
+          GRPC_MDSTR_GRPC_MESSAGE, grpc_mdstr_from_slice(pct_encoded_msg));
+    }
+  } else {
+    return md;
+  }
+}
 
 static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   server_filter_args *a = user_data;
@@ -254,7 +272,7 @@ static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
   }
 }
 
-static void hs_mutate_op(grpc_call_element *elem,
+static void hs_mutate_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -290,6 +308,12 @@ static void hs_mutate_op(grpc_call_element *elem,
       op->on_complete = &calld->hs_on_complete;
     }
   }
+
+  if (op->send_trailing_metadata) {
+    server_filter_args a = {elem, exec_ctx};
+    grpc_metadata_batch_filter(op->send_trailing_metadata,
+                               server_filter_outgoing_metadata, &a);
+  }
 }
 
 static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -297,7 +321,7 @@ static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   GPR_TIMER_BEGIN("hs_start_transport_op", 0);
-  hs_mutate_op(elem, op);
+  hs_mutate_op(exec_ctx, elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
   GPR_TIMER_END("hs_start_transport_op", 0);
 }
