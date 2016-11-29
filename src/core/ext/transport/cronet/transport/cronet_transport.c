@@ -88,13 +88,12 @@ enum e_op_id {
 
 static void on_request_headers_sent(bidirectional_stream *);
 static void on_response_headers_received(
-    bidirectional_stream *,
-    const bidirectional_stream_header_array *, const char *);
+    bidirectional_stream *, const bidirectional_stream_header_array *,
+    const char *);
 static void on_write_completed(bidirectional_stream *, const char *);
 static void on_read_completed(bidirectional_stream *, char *, int);
 static void on_response_trailers_received(
-    bidirectional_stream *,
-    const bidirectional_stream_header_array *);
+    bidirectional_stream *, const bidirectional_stream_header_array *);
 static void on_succeeded(bidirectional_stream *);
 static void on_failed(bidirectional_stream *, int);
 static void on_canceled(bidirectional_stream *);
@@ -440,8 +439,7 @@ static void on_response_headers_received(
 /*
   Cronet callback
 */
-static void on_write_completed(bidirectional_stream *stream,
-                               const char *data) {
+static void on_write_completed(bidirectional_stream *stream, const char *data) {
   stream_obj *s = (stream_obj *)stream->annotation;
   CRONET_LOG(GPR_DEBUG, "W: on_write_completed(%p, %s)", stream, data);
   gpr_mu_lock(&s->mu);
@@ -798,10 +796,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         stream_op->send_initial_metadata->list.head, s->curr_ct.host, &url,
         &s->header_array.headers, &s->header_array.count, &method);
     s->header_array.capacity = s->header_array.count;
-    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs,
-               url);
-    bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array,
-                               false);
+    CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
+    bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_WITH_CALLBACK;
   } else if (stream_op->recv_initial_metadata &&
@@ -849,8 +845,8 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         size_t write_buffer_size;
         create_grpc_frame(&write_slice_buffer, &stream_state->ws.write_buffer,
                           &write_buffer_size);
-        CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, %p)",
-                   s->cbs, stream_state->ws.write_buffer);
+        CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, %p)", s->cbs,
+                   stream_state->ws.write_buffer);
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
         bidirectional_stream_write(s->cbs, stream_state->ws.write_buffer,
                                    (int)write_buffer_size, false);
@@ -972,8 +968,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       result = NO_ACTION_POSSIBLE;
       CRONET_LOG(GPR_DEBUG, "Stream is either cancelled or failed.");
     } else {
-      CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, 0)",
-                 s->cbs);
+      CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, 0)", s->cbs);
       stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
       bidirectional_stream_write(s->cbs, "", 0, true);
       result = ACTION_TAKEN_WITH_CALLBACK;
@@ -1073,8 +1068,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     /* Notify application that operation is cancelled by forging trailers */
     header_array.count = 1;
     header_array.capacity = 1;
-    header_array.headers =
-        gpr_malloc(sizeof(bidirectional_stream_header));
+    header_array.headers = gpr_malloc(sizeof(bidirectional_stream_header));
     header = (bidirectional_stream_header *)header_array.headers;
     header->key = "grpc-status";
     header->value = "1"; /* Return status GRPC_STATUS_CANCELLED */
