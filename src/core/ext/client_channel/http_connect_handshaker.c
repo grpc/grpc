@@ -86,9 +86,9 @@ static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
 static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
   http_connect_handshaker* handshaker = arg;
+  gpr_mu_lock(&handshaker->mu);
   if (error != GRPC_ERROR_NONE || handshaker->args == NULL) {
     // If the write failed, invoke the callback immediately with the error.
-    gpr_mu_lock(&handshaker->mu);
     grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done,
                         GRPC_ERROR_REF(error), NULL);
     handshaker->args = NULL;
@@ -97,7 +97,6 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
   } else {
     // Otherwise, read the response.
     // The read callback inherits our ref to the handshaker.
-    gpr_mu_lock(&handshaker->mu);
     grpc_endpoint_read(exec_ctx, handshaker->args->endpoint,
                        handshaker->args->read_buffer,
                        &handshaker->response_read_closure);
