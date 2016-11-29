@@ -41,6 +41,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/uri_parser.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/support/env.h"
@@ -55,9 +56,12 @@ typedef struct http_connect_handshaker {
   gpr_refcount refcount;
   gpr_mu mu;
 
+  bool shutdown;
+  // Endpoint and read buffer to destroy after a shutdown.
+  grpc_endpoint* endpoint_to_destroy;
+  grpc_slice_buffer* read_buffer_to_destroy;
+
   // State saved while performing the handshake.
-  // args will be NULL when either there is no handshake in progress or
-  // when the handshaker is shutting down.
   grpc_handshaker_args* args;
   grpc_closure* on_handshake_done;
 
@@ -70,9 +74,17 @@ typedef struct http_connect_handshaker {
 } http_connect_handshaker;
 
 // Unref and clean up handshaker.
-static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
+static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
+                                          http_connect_handshaker* handshaker) {
   if (gpr_unref(&handshaker->refcount)) {
     gpr_mu_destroy(&handshaker->mu);
+    if (handshaker->endpoint_to_destroy != NULL) {
+      grpc_endpoint_destroy(exec_ctx, handshaker->endpoint_to_destroy);
+    }
+    if (handshaker->read_buffer_to_destroy != NULL) {
+      grpc_slice_buffer_destroy(handshaker->read_buffer_to_destroy);
+      gpr_free(handshaker->read_buffer_to_destroy);
+    }
     gpr_free(handshaker->proxy_server);
     gpr_free(handshaker->server_name);
     grpc_slice_buffer_destroy(&handshaker->write_buffer);
@@ -82,18 +94,47 @@ static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
   }
 }
 
+// Set args fields to NULL, saving the endpoint and read buffer for
+// later destruction.
+static void cleanup_args_for_failure_locked(
+    http_connect_handshaker* handshaker) {
+  handshaker->endpoint_to_destroy = handshaker->args->endpoint;
+  handshaker->args->endpoint = NULL;
+  handshaker->read_buffer_to_destroy = handshaker->args->read_buffer;
+  handshaker->args->read_buffer = NULL;
+  grpc_channel_args_destroy(handshaker->args->args);
+  handshaker->args->args = NULL;
+}
+
 // Callback invoked when finished writing HTTP CONNECT request.
 static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
   http_connect_handshaker* handshaker = arg;
   gpr_mu_lock(&handshaker->mu);
-  if (error != GRPC_ERROR_NONE || handshaker->args == NULL) {
-    // If the write failed, invoke the callback immediately with the error.
-    grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done,
-                        GRPC_ERROR_REF(error), NULL);
-    handshaker->args = NULL;
+  if (error != GRPC_ERROR_NONE || handshaker->shutdown) {
+    // If the write failed or we're shutting down, clean up and invoke the
+    // callback with the error.
+    if (error == GRPC_ERROR_NONE) {
+      // If we were shut down after the write succeeded but before this
+      // callback was invoked, we need to generate our own error.
+      error = GRPC_ERROR_CREATE("Handshaker shutdown");
+    } else {
+      GRPC_ERROR_REF(error);  // Take ref for the handshake-done callback.
+    }
+    if (!handshaker->shutdown) {
+      // TODO(ctiller): It is currently necessary to shutdown endpoints
+      // before destroying them, even if we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
+      grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
+      // Not shutting down, so the write failed.  Clean up before
+      // invoking the callback.
+      cleanup_args_for_failure_locked(handshaker);
+    }
+    // Invoke callback.
+    grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done, error, NULL);
     gpr_mu_unlock(&handshaker->mu);
-    http_connect_handshaker_unref(handshaker);
+    http_connect_handshaker_unref(exec_ctx, handshaker);
   } else {
     // Otherwise, read the response.
     // The read callback inherits our ref to the handshaker.
@@ -109,8 +150,26 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
   http_connect_handshaker* handshaker = arg;
   gpr_mu_lock(&handshaker->mu);
-  if (error != GRPC_ERROR_NONE || handshaker->args == NULL) {
-    GRPC_ERROR_REF(error);  // Take ref to pass to the handshake-done callback.
+  if (error != GRPC_ERROR_NONE || handshaker->shutdown) {
+    // If the write failed or we're shutting down, clean up and invoke the
+    // callback with the error.
+    if (error == GRPC_ERROR_NONE) {
+      // If we were shut down after the write succeeded but before this
+      // callback was invoked, we need to generate our own error.
+      error = GRPC_ERROR_CREATE("Handshaker shutdown");
+    } else {
+      GRPC_ERROR_REF(error);  // Take ref for the handshake-done callback.
+    }
+    if (!handshaker->shutdown) {
+      // TODO(ctiller): It is currently necessary to shutdown endpoints
+      // before destroying them, even if we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
+      grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
+      // Not shutting down, so the write failed.  Clean up before
+      // invoking the callback.
+      cleanup_args_for_failure_locked(handshaker);
+    }
     goto done;
   }
   // Add buffer to parser.
@@ -172,10 +231,9 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
 done:
   // Invoke handshake-done callback.
-  handshaker->args = NULL;
   grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done, error, NULL);
   gpr_mu_unlock(&handshaker->mu);
-  http_connect_handshaker_unref(handshaker);
+  http_connect_handshaker_unref(exec_ctx, handshaker);
 }
 
 //
@@ -185,16 +243,17 @@ done:
 static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                                             grpc_handshaker* handshaker_in) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
-  http_connect_handshaker_unref(handshaker);
+  http_connect_handshaker_unref(exec_ctx, handshaker);
 }
 
 static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
                                              grpc_handshaker* handshaker_in) {
   http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
   gpr_mu_lock(&handshaker->mu);
-  if (handshaker->args != NULL) {
+  if (!handshaker->shutdown) {
+    handshaker->shutdown = true;
     grpc_endpoint_shutdown(exec_ctx, handshaker->args->endpoint);
-    handshaker->args = NULL;
+    cleanup_args_for_failure_locked(handshaker);
   }
   gpr_mu_unlock(&handshaker->mu);
 }

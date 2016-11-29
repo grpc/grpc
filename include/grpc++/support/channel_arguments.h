@@ -93,6 +93,10 @@ class ChannelArguments {
   /// grpclb LB policy will be used, regardless of what is specified here.
   void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
 
+  /// Set service config in JSON form.
+  /// Primarily meant for use in unit tests.
+  void SetServiceConfigJSON(const grpc::string& service_config_json);
+
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
@@ -106,6 +110,15 @@ class ChannelArguments {
 
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
+
+  /// Return (by value) a c grpc_channel_args structure which points to
+  /// arguments owned by this ChannelArguments instance
+  grpc_channel_args c_channel_args() {
+    grpc_channel_args out;
+    out.num_args = args_.size();
+    out.args = args_.empty() ? NULL : &args_[0];
+    return out;
+  }
 
  private:
   friend class SecureChannelCredentials;

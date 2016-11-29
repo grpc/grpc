@@ -57,17 +57,24 @@ typedef struct grpc_handshaker grpc_handshaker;
 /// Arguments passed through handshakers and to the on_handshake_done callback.
 ///
 /// For handshakers, all members are input/output parameters; for
-/// example, a handshaker may read from \a endpoint and then later
-/// replace it with a wrapped endpoint.  Similarly, a handshaker may
-/// modify \a args.
+/// example, a handshaker may read from or write to \a endpoint and
+/// then later replace it with a wrapped endpoint.  Similarly, a
+/// handshaker may modify \a args.
+///
+/// A handshaker takes ownership of the members while a handshake is in
+/// progress.  Upon failure or shutdown of an in-progress handshaker,
+/// the handshaker is responsible for destroying the members and setting
+/// them to NULL before invoking the on_handshake_done callback.
 ///
 /// For the on_handshake_done callback, all members are input arguments,
 /// which the callback takes ownership of.
 typedef struct {
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
-  void* user_data;
   grpc_slice_buffer* read_buffer;
+  // User data passed through the handshake manager.  Not used by
+  // individual handshakers.
+  void* user_data;
 } grpc_handshaker_args;
 
 typedef struct {
@@ -132,9 +139,9 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 ///
 /// When done, invokes \a on_handshake_done with a grpc_handshaker_args
 /// object as its argument.  If the callback is invoked with error !=
-/// GRPC_ERROR_NONE, then handshaking failed and the resulting endpoint
-/// will have already been shut down (although the caller will still be
-/// responsible for destroying it).
+/// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
+/// the necessary clean-up.  Otherwise, the callback takes ownership of
+/// the arguments.
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
