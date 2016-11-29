@@ -31,7 +31,11 @@
  *
  */
 
+#include <signal.h>
+#include <string.h>
+
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string>
 
@@ -42,6 +46,9 @@
 #include "test/cpp/util/subprocess.h"
 
 using grpc::SubProcess;
+typedef std::unique_ptr<SubProcess> SubProcessPtr;
+std::vector<SubProcessPtr> g_workers;
+SubProcessPtr g_driver;
 
 template <class T>
 std::string as_string(const T& val) {
@@ -50,9 +57,24 @@ std::string as_string(const T& val) {
   return out.str();
 }
 
+static void sighandler(int sig) {
+  g_driver->Interrupt();
+  for (auto it = g_workers.begin(); it != g_workers.end(); ++it) {
+    (*it)->Interrupt();
+  }
+}
+
+static void register_sighandler() {
+  struct sigaction act;
+  memset(&act, 0, sizeof(act));
+  act.sa_handler = sighandler;
+
+  sigaction(SIGINT, &act, NULL);
+  sigaction(SIGTERM, &act, NULL);
+}
+
 int main(int argc, char** argv) {
-  typedef std::unique_ptr<SubProcess> SubProcessPtr;
-  std::vector<SubProcessPtr> jobs;
+  register_sighandler();
 
   std::string my_bin = argv[0];
   std::string bin_dir = my_bin.substr(0, my_bin.rfind('/'));
@@ -64,7 +86,7 @@ int main(int argc, char** argv) {
     auto port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
                                      as_string(port)};
-    jobs.emplace_back(new SubProcess(args));
+    g_workers.emplace_back(new SubProcess(args));
     if (!first) env << ",";
     env << "localhost:" << port;
     first = false;
@@ -75,12 +97,14 @@ int main(int argc, char** argv) {
   for (int i = 1; i < argc; i++) {
     args.push_back(argv[i]);
   }
-  GPR_ASSERT(SubProcess(args).Join() == 0);
 
-  for (auto it = jobs.begin(); it != jobs.end(); ++it) {
+  g_driver.reset(new SubProcess(args));
+  const int driver_join_status = g_driver->Join();
+  for (auto it = g_workers.begin(); it != g_workers.end(); ++it) {
     (*it)->Interrupt();
   }
-  for (auto it = jobs.begin(); it != jobs.end(); ++it) {
+  for (auto it = g_workers.begin(); it != g_workers.end(); ++it) {
     (*it)->Join();
   }
+  GPR_ASSERT(driver_join_status == 0);
 }
