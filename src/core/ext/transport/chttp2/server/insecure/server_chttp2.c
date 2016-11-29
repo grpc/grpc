@@ -62,8 +62,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    grpc_endpoint_destroy(exec_ctx, args->endpoint);
-    gpr_free(args->read_buffer);
   } else {
     // Beware that the call to grpc_create_chttp2_transport() has to happen
     // before grpc_tcp_server_destroy(). This is fine here, but similar code
@@ -76,9 +74,9 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                 state->accepting_pollset,
                                 grpc_server_get_channel_args(state->server));
     grpc_chttp2_transport_start_reading(exec_ctx, transport, args->read_buffer);
+    grpc_channel_args_destroy(args->args);
   }
   // Clean up.
-  grpc_channel_args_destroy(args->args);
   grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
   gpr_free(state);
 }

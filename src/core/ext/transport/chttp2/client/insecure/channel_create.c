@@ -96,11 +96,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
   connector *c = args->user_data;
-  if (error != GRPC_ERROR_NONE) {
-    grpc_endpoint_destroy(exec_ctx, args->endpoint);
-    grpc_channel_args_destroy(args->args);
-    gpr_free(args->read_buffer);
-  } else {
+  if (error == GRPC_ERROR_NONE) {
     c->result->transport =
         grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 1);
     GPR_ASSERT(c->result->transport);

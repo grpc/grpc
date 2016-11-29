@@ -141,14 +141,11 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr) {
   gpr_mu_lock(&mgr->mu);
-  for (size_t i = 0; i < mgr->count; ++i) {
-    grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[i]);
+  if (mgr->index > 0) {
+    grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1]);
   }
   gpr_mu_unlock(&mgr->mu);
 }
-
-static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
-                                 grpc_error* error);
 
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
@@ -156,10 +153,8 @@ static void call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
                                         grpc_handshake_manager* mgr,
                                         grpc_error* error) {
   GPR_ASSERT(mgr->index <= mgr->count);
-  // If we got an error, skip all remaining handshakers and invoke the
-  // caller-supplied callback immediately.
-  // Otherwise, if this is the last handshaker, then call the on_handshake_done
-  // callback instead of chaining back to this function again.
+  // If we got an error or we've finished the last handshaker, invoke
+  // the on_handshake_done callback.  Otherwise, call the next handshaker.
   if (error != GRPC_ERROR_NONE || mgr->index == mgr->count) {
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
@@ -202,6 +197,8 @@ void grpc_handshake_manager_do_handshake(
     grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
     gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
     grpc_iomgr_cb_func on_handshake_done, void* user_data) {
+  gpr_mu_lock(&mgr->mu);
+  GPR_ASSERT(mgr->index == 0);
   // Construct handshaker args.  These will be passed through all
   // handshakers and eventually be freed by the on_handshake_done callback.
   mgr->args.endpoint = endpoint;
@@ -210,8 +207,6 @@ void grpc_handshake_manager_do_handshake(
   mgr->args.read_buffer = gpr_malloc(sizeof(*mgr->args.read_buffer));
   grpc_slice_buffer_init(mgr->args.read_buffer);
   // Initialize state needed for calling handshakers.
-  gpr_mu_lock(&mgr->mu);
-  GPR_ASSERT(mgr->index == 0);
   mgr->acceptor = acceptor;
   grpc_closure_init(&mgr->call_next_handshaker, call_next_handshaker, mgr);
   grpc_closure_init(&mgr->on_handshake_done, on_handshake_done, &mgr->args);
