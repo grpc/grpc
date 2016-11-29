@@ -44,7 +44,7 @@ import time
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 9
+_MY_VERSION = 11
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -66,9 +66,18 @@ if args.logfile is not None:
 
 print('port server running on port %d' % args.port)
 
-pool = []
-in_use = {}
+pool = {} # map of port number --> bound socket
+in_use = {} # map of port number --> time of use
 
+
+def reserve_port(port, req):
+  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+  try:
+    s.bind(('localhost', port))
+    return s
+  except:
+    return None
 
 def refill_pool(max_timeout, req):
   """Scan for ports not marked for being in use"""
@@ -80,16 +89,10 @@ def refill_pool(max_timeout, req):
         continue
       req.log_message("kill old request %d" % i)
       del in_use[i]
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-      s.bind(('localhost', i))
+    s = reserve_port(i, req)
+    if s != None:
       req.log_message("found available port %d" % i)
-      pool.append(i)
-    except:
-      pass # we really don't care about failures
-    finally:
-      s.close()
+      pool[i] = s
 
 
 def allocate_port(req):
@@ -102,8 +105,9 @@ def allocate_port(req):
       req.log_message("failed to find ports: retrying soon")
       time.sleep(1)
       max_timeout /= 2
-  port = pool[0]
-  pool = pool[1:]
+  port, sock = pool.items()[0]
+  del pool[port]
+  sock.close()
   in_use[port] = time.time()
   return port
 
@@ -136,8 +140,12 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       p = int(self.path[6:])
       if p in in_use:
         del in_use[p]
-        pool.append(p)
-        self.log_message('drop known port %d' % p)
+        s = reserve_port(p, self)
+        if s:
+          pool[p] = s
+          self.log_message('drop known port %d' % p)
+        else:
+          self.log_message('drop USED port %d' % p)
       else:
         self.log_message('drop unknown port %d' % p)
     elif self.path == '/version_number':
@@ -154,7 +162,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
       now = time.time()
-      self.wfile.write(yaml.dump({'pool': pool, 'in_use': dict((k, now - v) for k, v in in_use.items())}))
+      self.wfile.write(yaml.dump({'pool': pool.keys(), 'in_use': dict((k, now - v) for k, v in in_use.items())}))
     elif self.path == '/quitquitquit':
       self.send_response(200)
       self.end_headers()
