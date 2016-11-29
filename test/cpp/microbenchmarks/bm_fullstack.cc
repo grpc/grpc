@@ -128,7 +128,16 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  UDS(Service* service) : FullstackFixture(service, "unix:bm_fullstack") {}
+  UDS(Service* service) : FullstackFixture(service, MakeAddress()) {}
+
+ private:
+  static grpc::string MakeAddress() {
+    int port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
+                                                // real port
+    std::stringstream addr;
+    addr << "unix:/tmp/bm_fullstack." << port;
+    return addr.str();
+  }
 };
 
 class EndpointPairFixture {
