@@ -43,6 +43,8 @@ sys.path.append(run_tests_root)
 
 import performance.scenario_config as scenario_config
 
+configs_from_yaml = yaml.load(open(os.path.join(os.path.dirname(sys.argv[0]), '../../../build.yaml')))['configs'].keys()
+
 def mutate_scenario(scenario_json, is_tsan):
   # tweak parameters to get fast test times
   scenario_json = dict(scenario_json)
@@ -106,7 +108,7 @@ print yaml.dump({
       'boringssl': True,
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json, True),
-      'exclude_configs': ['dbg', 'opt', 'asan', 'msan'],
+      'exclude_configs': sorted(c for c in configs_from_yaml if c != 'tsan'),
       'timeout_seconds': 6*60
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
