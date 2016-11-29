@@ -97,7 +97,8 @@ retry:
     if (errno == EINTR) {
       goto retry;
     }
-    gpr_log(GPR_ERROR, "waitpid failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "waitpid failed for pid %d: %s", p->pid,
+            strerror(errno));
     return -1;
   }
   return status;
