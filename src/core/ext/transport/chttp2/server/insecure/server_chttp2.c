@@ -110,29 +110,33 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
   server_connection_state *connection_state = args->user_data;
-  if (error != GRPC_ERROR_NONE) {
+  gpr_mu_lock(&connection_state->server_state->mu);
+  if (error != GRPC_ERROR_NONE || connection_state->server_state->shutdown) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
     grpc_error_free_string(error_str);
-    gpr_mu_lock(&connection_state->server_state->mu);
-  } else {
-    gpr_mu_lock(&connection_state->server_state->mu);
-    if (!connection_state->server_state->shutdown) {
-      grpc_transport *transport =
-          grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
-      grpc_server_setup_transport(
-          exec_ctx, connection_state->server_state->server, transport,
-          connection_state->accepting_pollset,
-          grpc_server_get_channel_args(connection_state->server_state->server));
-      grpc_chttp2_transport_start_reading(exec_ctx, transport,
-                                          args->read_buffer);
-    } else {
-      // Need to destroy this here, because the server may have already
-      // gone away.
+    if (error == GRPC_ERROR_NONE) {
+      // We were shut down after handshaking completed successfully, so
+      // destroy the endpoint here.
+      // TODO(ctiller): It is currently necessary to shutdown endpoints
+      // before destroying them, even if we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
+      grpc_endpoint_shutdown(exec_ctx, args->endpoint);
       grpc_endpoint_destroy(exec_ctx, args->endpoint);
+      grpc_channel_args_destroy(args->args);
       grpc_slice_buffer_destroy(args->read_buffer);
       gpr_free(args->read_buffer);
     }
+  } else {
+    grpc_transport *transport =
+        grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
+    grpc_server_setup_transport(
+        exec_ctx, connection_state->server_state->server, transport,
+        connection_state->accepting_pollset,
+        grpc_server_get_channel_args(connection_state->server_state->server));
+    grpc_chttp2_transport_start_reading(exec_ctx, transport,
+                                        args->read_buffer);
     grpc_channel_args_destroy(args->args);
   }
   pending_handshake_manager_remove_locked(connection_state->server_state,
