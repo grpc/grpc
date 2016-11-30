@@ -222,7 +222,9 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
 
 grpc_connector *grpc_chttp2_connector_create(
     grpc_exec_ctx *exec_ctx, const char* server_name,
-    grpc_channel_security_connector* security_connector) {
+    void (*create_handshakers)(grpc_exec_ctx* exec_ctx, void* user_data,
+                               grpc_handshake_manager* handshake_mgr),
+    void* user_data) {
   chttp2_connector *c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
@@ -236,10 +238,8 @@ grpc_connector *grpc_chttp2_connector_create(
         grpc_http_connect_handshaker_create(proxy_name, server_name));
     gpr_free(proxy_name);
   }
-  if (security_connector != NULL) {
-// FIXME: this function call is not linked in for the insecure target!
-    grpc_channel_security_connector_create_handshakers(
-        exec_ctx, security_connector, c->handshake_mgr);
+  if (create_handshakers != NULL) {
+    create_handshakers(exec_ctx, user_data, c->handshake_mgr);
   }
   return &c->base;
 }
