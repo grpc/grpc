@@ -107,18 +107,22 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 
   gpr_mu_lock(&ac->mu);
 
-  if (error == GRPC_ERROR_NONE && socket != NULL) {
-    DWORD transfered_bytes = 0;
-    DWORD flags;
-    BOOL wsa_success =
+  if (error == GRPC_ERROR_NONE) {
+    if (socket != NULL) {
+      DWORD transfered_bytes = 0;
+      DWORD flags;
+      BOOL wsa_success =
         WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
-                               &transfered_bytes, FALSE, &flags);
-    GPR_ASSERT(transfered_bytes == 0);
-    if (!wsa_success) {
-      error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+        &transfered_bytes, FALSE, &flags);
+      GPR_ASSERT(transfered_bytes == 0);
+      if (!wsa_success) {
+        error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+      } else {
+        *ep = grpc_tcp_create(socket, ac->resource_quota, ac->addr_name);
+        socket = NULL;
+      }
     } else {
-      *ep = grpc_tcp_create(socket, ac->resource_quota, ac->addr_name);
-      socket = NULL;
+      error = GRPC_ERROR_CREATE("socket is null");
     }
   }
 
