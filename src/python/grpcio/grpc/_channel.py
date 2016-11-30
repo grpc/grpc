@@ -36,8 +36,8 @@ import time
 import grpc
 from grpc import _common
 from grpc import _grpcio_metadata
-from grpc.framework.foundation import callable_util
 from grpc._cython import cygrpc
+from grpc.framework.foundation import callable_util
 
 _USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
@@ -358,7 +358,7 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
       if self._state.callbacks is None:
         return False
       else:
-        self._state.callbacks.append(lambda: callback())
+        self._state.callbacks.append(callback)
         return True
 
   def initial_metadata(self):
@@ -857,6 +857,7 @@ def _options(options):
 
 
 class Channel(grpc.Channel):
+  """A cygrpc.Channel-backed implementation of grpc.Channel."""
 
   def __init__(self, target, options, credentials):
     """Constructor.
