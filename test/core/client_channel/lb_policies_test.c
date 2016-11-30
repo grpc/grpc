@@ -43,6 +43,7 @@
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
@@ -522,7 +523,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
   arg_array[0].value.integer = RETRY_TIMEOUT;
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
-  arg_array[1].value.string = "round_robin";
+  arg_array[1].value.string = "ROUND_ROBIN";
   args.num_args = 2;
   args.args = arg_array;
 
@@ -611,29 +612,43 @@ static void test_pending_calls(size_t concurrent_calls) {
 }
 
 static void test_get_channel_info() {
-  grpc_channel_args args;
-  grpc_arg arg_array[1];
-  arg_array[0].type = GRPC_ARG_STRING;
-  arg_array[0].key = GRPC_ARG_LB_POLICY_NAME;
-  arg_array[0].value.string = "round_robin";
-  args.num_args = 1;
-  args.args = arg_array;
-
   grpc_channel *channel =
-      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", &args, NULL);
+      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", NULL, NULL);
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
-  // Use grpc_channel_get_info() to get LB policy name.
-  char *lb_policy_name = NULL;
+  // First, request no fields.  This is a no-op.
   grpc_channel_info channel_info;
+  memset(&channel_info, 0, sizeof(channel_info));
+  grpc_channel_get_info(channel, &channel_info);
+  // Request LB policy name.
+  char *lb_policy_name = NULL;
   channel_info.lb_policy_name = &lb_policy_name;
   grpc_channel_get_info(channel, &channel_info);
   GPR_ASSERT(lb_policy_name != NULL);
-  GPR_ASSERT(strcmp(lb_policy_name, "round_robin") == 0);
+  GPR_ASSERT(strcmp(lb_policy_name, "pick_first") == 0);
   gpr_free(lb_policy_name);
-  // Try again without requesting anything.  This is a no-op.
-  channel_info.lb_policy_name = NULL;
+  // Request service config, which does not exist, so we'll get nothing back.
+  memset(&channel_info, 0, sizeof(channel_info));
+  char *service_config_json = "dummy_string";
+  channel_info.service_config_json = &service_config_json;
   grpc_channel_get_info(channel, &channel_info);
+  GPR_ASSERT(service_config_json == NULL);
+  // Recreate the channel such that it has a service config.
+  grpc_channel_destroy(channel);
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_SERVICE_CONFIG;
+  arg.value.string = "{\"loadBalancingPolicy\": \"ROUND_ROBIN\"}";
+  grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, NULL);
+  grpc_channel_args_destroy(args);
+  // Ensures that resolver returns.
+  grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
+  // Now request the service config again.
+  grpc_channel_get_info(channel, &channel_info);
+  GPR_ASSERT(service_config_json != NULL);
+  GPR_ASSERT(strcmp(service_config_json, arg.value.string) == 0);
+  gpr_free(service_config_json);
   // Clean up.
   grpc_channel_destroy(channel);
 }

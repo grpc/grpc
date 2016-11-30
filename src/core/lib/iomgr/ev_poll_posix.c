@@ -120,6 +120,8 @@ struct grpc_fd {
   grpc_pollset *read_notifier_pollset;
 };
 
+static grpc_wakeup_fd global_wakeup_fd;
+
 /* Begin polling on an fd.
    Registers that the given pollset is interested in this fd - so that if read
    or writability interest changes, the pollset can be kicked to pick up that
@@ -769,17 +771,17 @@ static grpc_error *pollset_kick(grpc_pollset *p,
 static grpc_error *pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
   gpr_tls_init(&g_current_thread_worker);
-  return grpc_wakeup_fd_init(&grpc_global_wakeup_fd);
+  return grpc_wakeup_fd_init(&global_wakeup_fd);
 }
 
 static void pollset_global_shutdown(void) {
-  grpc_wakeup_fd_destroy(&grpc_global_wakeup_fd);
+  grpc_wakeup_fd_destroy(&global_wakeup_fd);
   gpr_tls_destroy(&g_current_thread_poller);
   gpr_tls_destroy(&g_current_thread_worker);
 }
 
 static grpc_error *kick_poller(void) {
-  return grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd);
+  return grpc_wakeup_fd_wakeup(&global_wakeup_fd);
 }
 
 /* main interface */
@@ -947,7 +949,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
       fd_count = 0;
       pfd_count = 2;
-      pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd);
+      pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&global_wakeup_fd);
       pfds[0].events = POLLIN;
       pfds[0].revents = 0;
       pfds[1].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker.wakeup_fd->fd);
@@ -1001,8 +1003,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
-          work_combine_error(
-              &error, grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd));
+          work_combine_error(&error,
+                             grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd));
         }
         if (pfds[1].revents & POLLIN_CHECK) {
           work_combine_error(
@@ -1343,6 +1345,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   int res, idx;
   gpr_cv *pollcv;
   cv_node *cvn, *prev;
+  int skip_poll = 0;
   nfds_t nsockfds = 0;
   gpr_thd_id t_id;
   gpr_thd_options opt;
@@ -1358,17 +1361,17 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
       cvn->cv = pollcv;
       cvn->next = g_cvfds.cvfds[idx].cvs;
       g_cvfds.cvfds[idx].cvs = cvn;
-      // We should return immediately if there are pending events,
-      // but we still need to call poll() to check for socket events
+      // Don't bother polling if a wakeup fd is ready
       if (g_cvfds.cvfds[idx].is_set) {
-        timeout = 0;
+        skip_poll = 1;
       }
     } else if (fds[i].fd >= 0) {
       nsockfds++;
     }
   }
 
-  if (nsockfds > 0) {
+  res = 0;
+  if (!skip_poll && nsockfds > 0) {
     pargs = gpr_malloc(sizeof(struct poll_args));
     // Both the main thread and calling thread get a reference
     gpr_ref_init(&pargs->refcount, 2);
@@ -1398,16 +1401,14 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
       res = pargs->retval;
       errno = pargs->err;
     } else {
-      res = 0;
       errno = 0;
       gpr_atm_no_barrier_store(&pargs->status, CANCELLED);
     }
-  } else {
+  } else if (!skip_poll) {
     gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
     deadline =
         gpr_time_add(deadline, gpr_time_from_millis(timeout, GPR_TIMESPAN));
     gpr_cv_wait(pollcv, &g_cvfds.mu, deadline);
-    res = 0;
   }
 
   idx = 0;
@@ -1431,7 +1432,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
         fds[i].revents = POLLIN;
         if (res >= 0) res++;
       }
-    } else if (fds[i].fd >= 0 &&
+    } else if (!skip_poll && fds[i].fd >= 0 &&
                gpr_atm_no_barrier_load(&pargs->status) == COMPLETED) {
       fds[i].revents = pargs->fds[idx].revents;
       idx++;

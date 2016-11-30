@@ -143,6 +143,11 @@ void ChannelArguments::SetLoadBalancingPolicyName(
   SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
 }
 
+void ChannelArguments::SetServiceConfigJSON(
+    const grpc::string& service_config_json) {
+  SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
+}
+
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;

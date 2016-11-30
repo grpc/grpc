@@ -403,6 +403,8 @@ argp.add_argument('--netperf',
                   action='store_const',
                   const=True,
                   help='Run netperf benchmark as one of the scenarios.')
+argp.add_argument('-x', '--xml_report', default='report.xml', type=str,
+                  help='Name of XML report file to generate.')
 
 args = argp.parse_args()
 
@@ -473,7 +475,7 @@ for scenario in scenarios:
       qps_workers_killed += finish_qps_workers(scenario.workers)
 
 
-report_utils.render_junit_xml_report(merged_resultset, 'report.xml',
+report_utils.render_junit_xml_report(merged_resultset, args.xml_report,
                                      suite_name='benchmarks')
 
 if total_scenario_failures > 0 or qps_workers_killed > 0:
