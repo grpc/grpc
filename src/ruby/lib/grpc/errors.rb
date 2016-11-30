@@ -66,43 +66,30 @@ module GRPC
     end
 
     def self.new_status_exception(code, details = 'unkown cause', metadata = {})
-      case code
-      when OK
-	Ok.new(details, metadata)
-      when CANCELLED
-	Cancelled.new(details, metadata)
-      when UNKNOWN
-	Unknown.new(details, metadata)
-      when INVALID_ARGUMENT
-	InvalidArgument.new(details, metadata)
-      when DEADLINE_EXCEEDED
-	DeadlineExceeded.new(details, metadata)
-      when NOT_FOUND
-	NotFound.new(details, metadata)
-      when ALREADY_EXISTS
-	AlreadyExists.new(details, metadata)
-      when PERMISSION_DENIED
-	PermissionDenied.new(details, metadata)
-      when UNAUTHENTICATED
-	Unauthenticated.new(details, metadata)
-      when RESOURCE_EXHAUSTED
-	ResourceExhausted.new(details, metadata)
-      when FAILED_PRECONDITION
-	FailedPrecondition.new(details, metadata)
-      when ABORTED
-	Aborted.new(details, metadata)
-      when OUT_OF_RANGE
-	OutOfRange.new(details, metadata)
-      when UNIMPLEMENTED
-	Unimplemented.new(details, metadata)
-      when INTERNAL
-	Internal.new(details, metadata)
-      when UNAVAILABLE 
-	Unavailable.new(details, metadata)
-      when DATA_LOSS
-	DataLoss.new(details, metadata)
+      codes = {}
+      codes[OK] = Ok
+      codes[CANCELLED] = Cancelled
+      codes[UNKNOWN] = Unknown
+      codes[INVALID_ARGUMENT] = InvalidArgument
+      codes[DEADLINE_EXCEEDED] = DeadlineExceeded
+      codes[NOT_FOUND] = NotFound
+      codes[ALREADY_EXISTS] = AlreadyExists
+      codes[PERMISSION_DENIED] =  PermissionDenied
+      codes[UNAUTHENTICATED] = Unauthenticated
+      codes[RESOURCE_EXHAUSTED] = ResourceExhausted
+      codes[FAILED_PRECONDITION] = FailedPrecondition
+      codes[ABORTED] = Aborted
+      codes[OUT_OF_RANGE] = OutOfRange
+      codes[UNIMPLEMENTED] =  Unimplemented
+      codes[INTERNAL] = Internal
+      codes[UNIMPLEMENTED] =  Unimplemented
+      codes[UNAVAILABLE] =  Unavailable
+      codes[DATA_LOSS] = DataLoss
+
+      if codes[code].nil?
+        BadStatus.new(code, details, metadata)
       else
-        fail 'unknown code'
+        codes[code].new(details, metadata)
       end
     end
   end

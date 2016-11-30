@@ -40,7 +40,7 @@ describe StatusCodes do
 
   StatusCodes.constants.each do |status_name|
     it 'there is a subclass of BadStatus corresponding to StatusCode: ' \
-      "#{name} that has code: #{StatusCodes.const_get(status_name)}" do
+      "#{status_name} that has code: #{StatusCodes.const_get(status_name)}" do
       camel_case = upper_snake_to_camel(status_name)
       error_class = GRPC.const_get(camel_case)
       # expect the error class to be a subclass of BadStatus
