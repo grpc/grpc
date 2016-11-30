@@ -141,7 +141,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
+                           grpc_error *error) {
   grpc_tcp_server *s = arg;
 
   /* Now that the accepts have been aborted, we can destroy the sockets.
@@ -158,12 +159,14 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error
   gpr_free(s);
 }
 
-static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
+static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
+                                   grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
     grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(destroy_server, s), GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(destroy_server, s),
+                      GRPC_ERROR_NONE, NULL);
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
@@ -256,7 +259,7 @@ failure:
 }
 
 static void decrement_active_ports_and_notify_locked(grpc_exec_ctx *exec_ctx,
-                                              grpc_tcp_listener *sp) {
+                                                     grpc_tcp_listener *sp) {
   int notify = 0;
   sp->shutting_down = 0;
   GPR_ASSERT(sp->server->active_ports > 0);
@@ -268,7 +271,7 @@ static void decrement_active_ports_and_notify_locked(grpc_exec_ctx *exec_ctx,
 /* In order to do an async accept, we need to create a socket first which
    will be the one assigned to the new incoming connection. */
 static grpc_error *start_accept_locked(grpc_exec_ctx *exec_ctx,
-                                grpc_tcp_listener *port) {
+                                       grpc_tcp_listener *port) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   DWORD addrlen = sizeof(struct sockaddr_in6) + 16;
@@ -400,7 +403,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next
      connection. */
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(exec_ctx, sp)));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(exec_ctx, sp)));
   if (0 == --sp->outstanding_calls) {
     decrement_active_ports_and_notify_locked(exec_ctx, sp);
   }
@@ -550,7 +554,8 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
   s->on_accept_cb = on_accept_cb;
   s->on_accept_cb_arg = on_accept_cb_arg;
   for (sp = s->head; sp; sp = sp->next) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(exec_ctx, sp)));
+    GPR_ASSERT(
+        GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(exec_ctx, sp)));
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
