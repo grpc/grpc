@@ -45,6 +45,8 @@
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+#import <grpc/support/log.h>
+#import <grpc/grpc.h>
 
 #define TEST_TIMEOUT 32
 
@@ -92,15 +94,6 @@
 
 - (int32_t)encodingOverhead {
   return 0;
-}
-
-+ (void)setUp {
-#ifdef GRPC_COMPILE_WITH_CRONET
-  // Cronet setup
-  [Cronet setHttp2Enabled:YES];
-  [Cronet start];
-  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-#endif
 }
 
 - (void)setUp {
@@ -151,6 +144,57 @@
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
+
+// TODO (mxyan): Do the same test for chttp2
+#ifdef GRPC_COMPILE_WITH_CRONET
+
+static bool coalesced_message_and_eos;
+
+static void log_processor(gpr_log_func_args *args) {
+  unsigned long file_len = strlen(args->file);
+  const char suffix[] = "call.c";
+  const int suffix_len = sizeof(suffix) - 1;
+  const char nops[] = "nops=3";
+
+  if (file_len > suffix_len &&
+      0 == strcmp(suffix, &args->file[file_len - suffix_len]) &&
+      strstr(args->message, nops)) {
+        fprintf(stderr, "%s, %s\n", args->file, args->message);
+        coalesced_message_and_eos = true;
+      }
+}
+
+- (void)testPacketCoalescing {
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+  grpc_tracer_set_enabled("all", 1);
+  gpr_set_log_function(log_processor);
+  coalesced_message_and_eos = false;
+
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseType = RMTPayloadType_Compressable;
+  request.responseSize = 10;
+  request.payload.body = [NSMutableData dataWithLength:10];
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+
+    RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+    expectedResponse.payload.type = RMTPayloadType_Compressable;
+    expectedResponse.payload.body = [NSMutableData dataWithLength:10];
+    XCTAssertEqualObjects(response, expectedResponse);
+
+    XCTAssert(coalesced_message_and_eos);
+
+    [expectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:16 handler:nil];
+}
+
+#endif
 
 - (void)test4MBResponsesAreAccepted {
   XCTAssertNotNil(self.class.host);
