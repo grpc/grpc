@@ -56,23 +56,22 @@ int bidirectional_stream_destroy(bidirectional_stream* stream) {
   return 0;
 }
 
-int bidirectional_stream_start(
-    bidirectional_stream* stream, const char* url, int priority,
-    const char* method, const bidirectional_stream_header_array* headers,
-    bool end_of_stream) {
-  GPR_ASSERT(0);
-  return 0;
-}
-
-int bidirectional_stream_read(bidirectional_stream* stream,
-                              char* buffer, int capacity) {
-  GPR_ASSERT(0);
-  return 0;
-}
-
-int bidirectional_stream_write(bidirectional_stream* stream,
-                               const char* buffer, int count,
+int bidirectional_stream_start(bidirectional_stream* stream, const char* url,
+                               int priority, const char* method,
+                               const bidirectional_stream_header_array* headers,
                                bool end_of_stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int bidirectional_stream_read(bidirectional_stream* stream, char* buffer,
+                              int capacity) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int bidirectional_stream_write(bidirectional_stream* stream, const char* buffer,
+                               int count, bool end_of_stream) {
   GPR_ASSERT(0);
   return 0;
 }
