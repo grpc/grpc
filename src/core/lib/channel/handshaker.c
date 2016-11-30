@@ -142,7 +142,7 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr) {
   gpr_mu_lock(&mgr->mu);
   // Shutdown the handshaker that's currently in progress, if any.
-  if (mgr->index > 0 && mgr->index <= mgr->count) {
+  if (mgr->index > 0) {
     grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1]);
   }
   gpr_mu_unlock(&mgr->mu);
@@ -157,20 +157,21 @@ static bool call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(mgr->index <= mgr->count);
   // If we got an error or we've finished the last handshaker, invoke
   // the on_handshake_done callback.  Otherwise, call the next handshaker.
-  bool done = false;
   if (error != GRPC_ERROR_NONE || mgr->index == mgr->count) {
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     grpc_timer_cancel(exec_ctx, &mgr->deadline_timer);
     grpc_exec_ctx_sched(exec_ctx, &mgr->on_handshake_done, error, NULL);
-    done = true;
-  } else {
-    grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->index],
-                                 mgr->acceptor, &mgr->call_next_handshaker,
-                                 &mgr->args);
+    // Reset index to 0 so that we can start over if we re-attempt the
+    // connection.
+    mgr->index = 0;
+    return true;
   }
+  grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->index],
+                               mgr->acceptor, &mgr->call_next_handshaker,
+                               &mgr->args);
   ++mgr->index;
-  return done;
+  return false;
 }
 
 // A function used as the handshaker-done callback when chaining
