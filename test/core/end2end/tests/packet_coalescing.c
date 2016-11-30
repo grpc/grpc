@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static char *authority;
-
 extern void gpr_default_log(gpr_log_func_args *args);
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -57,7 +55,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
-  config.init_client(&f, client_args, NULL);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -123,7 +121,8 @@ static void test_request_response_with_metadata_and_payload(
     grpc_end2end_test_config config, bool coalesce) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
@@ -150,8 +149,10 @@ static void test_request_response_with_metadata_and_payload(
   int was_cancelled = 2;
   coalesced_message_and_eos = false;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", authority, deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -305,9 +306,8 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  if (authority) {
-    GPR_ASSERT(0 == strcmp(call_details.host, authority));
-  }
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));
@@ -337,7 +337,6 @@ static void test_request_response_with_metadata_and_payload(
 }
 
 void packet_coalescing(grpc_end2end_test_config config) {
-  authority = validate_host_override_string("foo.test.google.fr", config);
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   grpc_tracer_set_enabled("all", 1);
   gpr_set_log_function(log_processor);
