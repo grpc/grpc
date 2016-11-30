@@ -107,15 +107,20 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     if (error == GRPC_ERROR_NONE) {
       error = GRPC_ERROR_CREATE("connector shutdown");
       // We were shut down after handshaking completed successfully, so
-      // shutdown the endpoint here.
+      // destroy the endpoint here.
+      // TODO(ctiller): It is currently necessary to shutdown endpoints
+      // before destroying them, even if we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
       grpc_endpoint_shutdown(exec_ctx, args->endpoint);
+      grpc_endpoint_destroy(exec_ctx, args->endpoint);
+      grpc_channel_args_destroy(args->args);
+      grpc_slice_buffer_destroy(args->read_buffer);
+      gpr_free(args->read_buffer);
     } else {
       error = GRPC_ERROR_REF(error);
     }
     memset(c->result, 0, sizeof(*c->result));
-    grpc_endpoint_destroy(exec_ctx, args->endpoint);
-    grpc_channel_args_destroy(args->args);
-    gpr_free(args->read_buffer);
   } else {
     c->result->transport =
         grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 1);
@@ -232,6 +237,7 @@ grpc_connector *grpc_chttp2_connector_create(
     gpr_free(proxy_name);
   }
   if (security_connector != NULL) {
+// FIXME: this function call is not linked in for the insecure target!
     grpc_channel_security_connector_create_handshakers(
         exec_ctx, security_connector, c->handshake_mgr);
   }
