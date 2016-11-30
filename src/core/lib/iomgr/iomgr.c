@@ -106,6 +106,7 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
     if (grpc_timer_check(exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
       gpr_mu_unlock(&g_mu);
       grpc_exec_ctx_flush(exec_ctx);
+      grpc_iomgr_platform_flush();
       gpr_mu_lock(&g_mu);
       continue;
     }

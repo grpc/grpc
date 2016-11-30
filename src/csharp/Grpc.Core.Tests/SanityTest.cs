@@ -115,7 +115,8 @@ namespace Grpc.Core.Tests
             var otherAssemblies = new[] {
                 "Grpc.Examples.Tests",
                 "Grpc.HealthCheck.Tests",
-                "Grpc.IntegrationTesting"
+                "Grpc.IntegrationTesting",
+                "Grpc.Reflection.Tests",
             };
             foreach (var assemblyName in otherAssemblies)
             {
