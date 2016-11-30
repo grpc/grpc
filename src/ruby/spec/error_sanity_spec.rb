@@ -48,11 +48,17 @@ describe StatusCodes do
 
       error_object = error_class.new
       # check that the code matches the int value of the error's constant
-      expect(error_object.code).to eq(StatusCodes.const_get(status_name))
+      status_code = StatusCodes.const_get(status_name)
+      expect(error_object.code).to eq(status_code)
 
       # check default parameters
       expect(error_object.details).to eq('unknown cause')
       expect(error_object.metadata).to eq({})
+
+      # check that the BadStatus factory for creates the correct
+      # exception too
+      from_factory = GRPC::BadStatus.new_status_exception(status_code)
+      expect(from_factory.is_a?(error_class)).to be(true)
     end
   end
 end

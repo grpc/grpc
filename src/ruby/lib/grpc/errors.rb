@@ -45,6 +45,8 @@ module GRPC
   class BadStatus < StandardError
     attr_reader :code, :details, :metadata
 
+    include GRPC::Core::StatusCodes
+
     # @param code [Numeric] the status code
     # @param details [String] the details of the exception
     # @param metadata [Hash] the error's metadata
@@ -61,6 +63,47 @@ module GRPC
     # @return [Status] with the same code and details
     def to_status
       Struct::Status.new(code, details, @metadata)
+    end
+
+    def self.new_status_exception(code, details = 'unkown cause', metadata = {})
+      case code
+      when OK
+	Ok.new(details, metadata)
+      when CANCELLED
+	Cancelled.new(details, metadata)
+      when UNKNOWN
+	Unknown.new(details, metadata)
+      when INVALID_ARGUMENT
+	InvalidArgument.new(details, metadata)
+      when DEADLINE_EXCEEDED
+	DeadlineExceeded.new(details, metadata)
+      when NOT_FOUND
+	NotFound.new(details, metadata)
+      when ALREADY_EXISTS
+	AlreadyExists.new(details, metadata)
+      when PERMISSION_DENIED
+	PermissionDenied.new(details, metadata)
+      when UNAUTHENTICATED
+	Unauthenticated.new(details, metadata)
+      when RESOURCE_EXHAUSTED
+	ResourceExhausted.new(details, metadata)
+      when FAILED_PRECONDITION
+	FailedPrecondition.new(details, metadata)
+      when ABORTED
+	Aborted.new(details, metadata)
+      when OUT_OF_RANGE
+	OutOfRange.new(details, metadata)
+      when UNIMPLEMENTED
+	Unimplemented.new(details, metadata)
+      when INTERNAL
+	Internal.new(details, metadata)
+      when UNAVAILABLE 
+	Unavailable.new(details, metadata)
+      when DATA_LOSS
+	DataLoss.new(details, metadata)
+      else
+        fail 'unknown code'
+      end
     end
   end
 
