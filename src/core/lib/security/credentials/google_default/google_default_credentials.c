@@ -160,6 +160,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
                         grpc_polling_entity_pollset(&detector.pollent),
                         &destroy_closure);
   g_polling_mu = NULL;
+  grpc_exec_ctx_flush(exec_ctx);
 
   gpr_free(grpc_polling_entity_pollset(&detector.pollent));
   grpc_http_response_destroy(&detector.response);
