@@ -46,10 +46,11 @@
 #include "test/cpp/util/subprocess.h"
 
 using grpc::SubProcess;
-typedef std::unique_ptr<SubProcess> SubProcessPtr;
-SubProcessPtr g_driver;
+
 constexpr auto kNumWorkers = 2;
-std::vector<SubProcessPtr> g_workers(2);
+
+static SubProcess* g_driver;
+static SubProcess* g_workers[kNumWorkers];
 
 template <class T>
 std::string as_string(const T& val) {
@@ -61,8 +62,9 @@ std::string as_string(const T& val) {
 static void sighandler(int sig) {
   const int errno_saved = errno;
   g_driver->Interrupt();
-  for (const auto& worker : g_workers)
-    if (worker) worker->Interrupt();
+  for (int i = 0; i < kNumWorkers; ++i) {
+    if (g_workers[i]) g_workers[i]->Interrupt();
+  }
   errno = errno_saved;
 }
 
@@ -100,7 +102,7 @@ int main(int argc, char** argv) {
     const auto port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
                                      as_string(port)};
-    g_workers[i].reset(new SubProcess(args));
+    g_workers[i] = new SubProcess(args);
     if (!first) env << ",";
     env << "localhost:" << port;
     first = false;
@@ -112,20 +114,25 @@ int main(int argc, char** argv) {
     args.push_back(argv[i]);
   }
 
-  g_driver.reset(new SubProcess(args));
+  g_driver = new SubProcess(args);
   const int driver_join_status = g_driver->Join();
   if (driver_join_status != 0) {
     LogStatus(driver_join_status, "driver");
   }
-  for (const auto& worker : g_workers) {
-    if (worker) worker->Interrupt();
+  for (int i = 0; i < kNumWorkers; ++i) {
+    if (g_workers[i]) g_workers[i]->Interrupt();
   }
-  for (const auto& worker : g_workers) {
-    if (worker) {
-      const int worker_status = worker->Join();
+
+  for (int i = 0; i < kNumWorkers; ++i) {
+    if (g_workers[i]) {
+      const int worker_status = g_workers[i]->Join();
       if (worker_status != 0) {
         LogStatus(worker_status, "worker");
       }
     }
   }
+
+  delete g_driver;
+  for (int i = 0; i < kNumWorkers; ++i) delete g_workers[i];
+  GPR_ASSERT(driver_join_status == 0);
 }
