@@ -52,7 +52,10 @@ typedef struct {
 } grpc_httpcli_ssl_channel_security_connector;
 
 static void httpcli_ssl_destroy(grpc_security_connector *sc) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;  // FIXME
+  // TODO(roth, ctiller): Once https://github.com/grpc/grpc/pull/8705 is
+  // merged, change this to use the passed-in exec_ctx instead of creating
+  // its own.
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
