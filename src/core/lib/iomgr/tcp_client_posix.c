@@ -251,8 +251,11 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                               "Failed to connect to remote host");
+    char *error_descr;
+    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s",
+                 grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, error_descr);
+    gpr_free(error_descr);
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
   }

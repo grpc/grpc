@@ -34,7 +34,9 @@
 #include "src/core/lib/support/string.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -187,6 +189,13 @@ int int64_ttoa(int64_t value, char *string) {
   gpr_reverse_bytes(string, i);
   string[i] = 0;
   return i;
+}
+
+int gpr_parse_nonnegative_int(const char *value) {
+  char *end;
+  long result = strtol(value, &end, 0);
+  if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
+  return (int)result;
 }
 
 char *gpr_leftpad(const char *str, char flag, size_t length) {

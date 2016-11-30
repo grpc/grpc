@@ -76,6 +76,14 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
   LPFN_DISCONNECTEX DisconnectEx;
   DWORD ioctl_num_bytes;
 
+  gpr_mu_lock(&winsocket->state_mu);
+  if (winsocket->shutdown_called) {
+    gpr_mu_unlock(&winsocket->state_mu);
+    return;
+  }
+  winsocket->shutdown_called = true;
+  gpr_mu_unlock(&winsocket->state_mu);
+
   status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
                     &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
                     &ioctl_num_bytes, NULL, NULL);
