@@ -61,7 +61,7 @@ std::string as_string(const T& val) {
 
 static void sighandler(int sig) {
   const int errno_saved = errno;
-  g_driver->Interrupt();
+  if (g_driver != NULL) g_driver->Interrupt();
   for (int i = 0; i < kNumWorkers; ++i) {
     if (g_workers[i]) g_workers[i]->Interrupt();
   }
@@ -133,6 +133,7 @@ int main(int argc, char** argv) {
   }
 
   delete g_driver;
+  g_driver = NULL;
   for (int i = 0; i < kNumWorkers; ++i) delete g_workers[i];
   GPR_ASSERT(driver_join_status == 0);
 }
