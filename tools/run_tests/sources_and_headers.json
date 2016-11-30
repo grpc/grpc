@@ -5141,11 +5141,14 @@
   }, 
   {
     "deps": [
+      "census", 
       "gpr", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
-      "grpc_cronet"
+      "grpc_cronet", 
+      "grpc_transport_chttp2_client_insecure", 
+      "grpc_transport_chttp2_server_insecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
