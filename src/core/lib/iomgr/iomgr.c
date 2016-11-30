@@ -108,6 +108,7 @@ void grpc_iomgr_shutdown(void) {
                          NULL)) {
       gpr_mu_unlock(&g_mu);
       grpc_exec_ctx_flush(&exec_ctx);
+      grpc_iomgr_platform_flush();
       gpr_mu_lock(&g_mu);
       continue;
     }
