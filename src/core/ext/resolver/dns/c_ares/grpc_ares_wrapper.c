@@ -125,12 +125,12 @@ static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
 static void on_done_cb(void *arg, int status, int timeouts,
                        struct hostent *hostent) {
   grpc_ares_request *r = (grpc_ares_request *)arg;
-  grpc_resolved_addresses **addresses = r->addrs_out;
   gpr_mu_lock(&r->mu);
   if (status == ARES_SUCCESS) {
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     r->success = true;
+    grpc_resolved_addresses **addresses = r->addrs_out;
     if (*addresses == NULL) {
       *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
       (*addresses)->naddrs = 0;

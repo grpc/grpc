@@ -123,16 +123,14 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
 
 grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
                                        grpc_pollset_set *pollset_set) {
-  int status;
-  grpc_error *err = GRPC_ERROR_NONE;
   *ev_driver = gpr_malloc(sizeof(grpc_ares_ev_driver));
-  status = ares_init(&(*ev_driver)->channel);
+  int status = ares_init(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
   if (status != ARES_SUCCESS) {
     char *err_msg;
     gpr_asprintf(&err_msg, "Failed to init ares channel. C-ares error: %s",
                  ares_strerror(status));
-    err = GRPC_ERROR_CREATE(err_msg);
+    grpc_error *err = GRPC_ERROR_CREATE(err_msg);
     gpr_free(err_msg);
     gpr_free(*ev_driver);
     return err;
