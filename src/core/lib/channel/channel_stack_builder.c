@@ -266,7 +266,7 @@ grpc_error *grpc_channel_stack_builder_finish(
   } else {
     // run post-initialization functions
     i = 0;
-    for (filter_node *p = builder->begin.next; p != &builder->end;\
+    for (filter_node *p = builder->begin.next; p != &builder->end;
          p = p->next) {
       if (p->init != NULL) {
         p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),

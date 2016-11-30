@@ -287,7 +287,7 @@ class ChannelFilter final {
             ? grpc_transport_get_peer(exec_ctx, args->optional_transport)
             : nullptr;
     // Construct the object in the already-allocated memory.
-    ChannelDataType* channel_data =
+    ChannelDataType *channel_data =
         new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
     return channel_data->Init();
   }
