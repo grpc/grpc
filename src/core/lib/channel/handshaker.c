@@ -141,6 +141,7 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr) {
   gpr_mu_lock(&mgr->mu);
+  // Shutdown the handshaker that's currently in progress, if any.
   if (mgr->index > 0) {
     grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[mgr->index - 1]);
   }
@@ -149,7 +150,8 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
-static void call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
+// Returns true if we've scheduled the on_handshake_done callback.
+static bool call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
                                         grpc_handshake_manager* mgr,
                                         grpc_error* error) {
   GPR_ASSERT(mgr->index <= mgr->count);
@@ -160,17 +162,16 @@ static void call_next_handshaker_locked(grpc_exec_ctx* exec_ctx,
     // callback now.
     grpc_timer_cancel(exec_ctx, &mgr->deadline_timer);
     grpc_exec_ctx_sched(exec_ctx, &mgr->on_handshake_done, error, NULL);
-    // Since we're invoking the final callback, we won't be coming back
-    // to this function, so we can release our reference to the
-    // handshake manager.
-    grpc_handshake_manager_unref(exec_ctx, mgr);
-    return;
+    // Reset index to 0 so that we can start over if we re-attempt the
+    // connection.
+    mgr->index = 0;
+    return true;
   }
-  // Call the next handshaker.
   grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->index],
                                mgr->acceptor, &mgr->call_next_handshaker,
                                &mgr->args);
   ++mgr->index;
+  return false;
 }
 
 // A function used as the handshaker-done callback when chaining
@@ -179,8 +180,14 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx, void* arg,
                                  grpc_error* error) {
   grpc_handshake_manager* mgr = arg;
   gpr_mu_lock(&mgr->mu);
-  call_next_handshaker_locked(exec_ctx, mgr, GRPC_ERROR_REF(error));
+  bool done = call_next_handshaker_locked(exec_ctx, mgr, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&mgr->mu);
+  // If we're invoked the final callback, we won't be coming back
+  // to this function, so we can release our reference to the
+  // handshake manager.
+  if (done) {
+    grpc_handshake_manager_unref(exec_ctx, mgr);
+  }
 }
 
 // Callback invoked when deadline is exceeded.
@@ -217,6 +224,9 @@ void grpc_handshake_manager_do_handshake(
                   on_timeout, mgr, gpr_now(GPR_CLOCK_MONOTONIC));
   // Start first handshaker, which also owns a ref.
   gpr_ref(&mgr->refs);
-  call_next_handshaker_locked(exec_ctx, mgr, GRPC_ERROR_NONE);
+  bool done = call_next_handshaker_locked(exec_ctx, mgr, GRPC_ERROR_NONE);
   gpr_mu_unlock(&mgr->mu);
+  if (done) {
+    grpc_handshake_manager_unref(exec_ctx, mgr);
+  }
 }
