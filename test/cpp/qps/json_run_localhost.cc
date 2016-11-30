@@ -50,6 +50,18 @@ std::string as_string(const T& val) {
   return out.str();
 }
 
+static void LogStatus(int status, const char* label) {
+  if (WIFEXITED(status)) {
+    gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label,
+            WEXITSTATUS(status));
+  } else if (WIFSIGNALED(status)) {
+    gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label,
+            WTERMSIG(status));
+  } else {
+    gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label, status);
+  }
+}
+
 int main(int argc, char** argv) {
   typedef std::unique_ptr<SubProcess> SubProcessPtr;
   std::vector<SubProcessPtr> jobs;
@@ -75,12 +87,18 @@ int main(int argc, char** argv) {
   for (int i = 1; i < argc; i++) {
     args.push_back(argv[i]);
   }
-  GPR_ASSERT(SubProcess(args).Join() == 0);
+  int status = SubProcess(args).Join();
+  if (status != 0) {
+    LogStatus(status, "driver");
+  }
 
   for (auto it = jobs.begin(); it != jobs.end(); ++it) {
     (*it)->Interrupt();
   }
   for (auto it = jobs.begin(); it != jobs.end(); ++it) {
-    (*it)->Join();
+    status = (*it)->Join();
+    if (status != 0) {
+      LogStatus(status, "worker");
+    }
   }
 }
