@@ -101,7 +101,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
       exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
       (void **)&channel);
   if (error != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(error);
+    const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "channel stack builder failed: %s", msg);
     grpc_error_free_string(msg);
     GRPC_ERROR_UNREF(error);
@@ -126,8 +126,8 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
           /* setting this takes precedence over anything else */
           GRPC_MDELEM_UNREF(channel->default_authority);
         }
-        channel->default_authority = grpc_mdelem_from_strings(
-            ":authority", args->args[i].value.string);
+        channel->default_authority =
+            grpc_mdelem_from_strings(":authority", args->args[i].value.string);
       }
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
@@ -156,8 +156,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
       channel->compression_options.default_algorithm.is_set = true;
       GPR_ASSERT(args->args[i].value.integer >= 0 &&
-                 args->args[i].value.integer <
-                     GRPC_COMPRESS_ALGORITHMS_COUNT);
+                 args->args[i].value.integer < GRPC_COMPRESS_ALGORITHMS_COUNT);
       channel->compression_options.default_algorithm.algorithm =
           (grpc_compression_algorithm)args->args[i].value.integer;
     } else if (0 ==
