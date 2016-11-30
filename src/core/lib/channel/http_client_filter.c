@@ -258,12 +258,15 @@ static grpc_error *hc_mutate_op(grpc_exec_ctx *exec_ctx,
     message, and the payload is below the size threshold, and all the data
     for this request is immediately available. */
     grpc_mdelem method = GRPC_MDELEM_METHOD_POST;
-    calld->send_message_blocked = false;
     if ((op->send_initial_metadata_flags &
          GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
         op->send_message != NULL &&
         op->send_message->length < channeld->max_payload_size_for_get) {
       method = GRPC_MDELEM_METHOD_GET;
+      /* The following write to calld->send_message_blocked isn't racy with
+      reads in hc_start_transport_op (which deals with SEND_MESSAGE ops) because
+      being here means ops->send_message is not NULL, which is primarily
+      guarding the read there. */
       calld->send_message_blocked = true;
     } else if (op->send_initial_metadata_flags &
                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
@@ -380,6 +383,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->on_done_recv_trailing_metadata = NULL;
   calld->on_complete = NULL;
   calld->payload_bytes = NULL;
+  calld->send_message_blocked = false;
   grpc_slice_buffer_init(&calld->slices);
   grpc_closure_init(&calld->hc_on_recv_initial_metadata,
                     hc_on_recv_initial_metadata, elem);
