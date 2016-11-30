@@ -112,8 +112,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
       DWORD transfered_bytes = 0;
       DWORD flags;
       BOOL wsa_success =
-        WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
-        &transfered_bytes, FALSE, &flags);
+          WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
+                                 &transfered_bytes, FALSE, &flags);
       GPR_ASSERT(transfered_bytes == 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
