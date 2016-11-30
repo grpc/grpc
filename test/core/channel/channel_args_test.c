@@ -134,12 +134,26 @@ static void test_compression_algorithm_states(void) {
   grpc_channel_args_destroy(ch_args);
 }
 
+static void test_set_socket_mutator(void) {
+  grpc_channel_args *ch_args;
+  grpc_socket_mutator mutator;
+  grpc_socket_mutator_init(&mutator, NULL);
+
+  ch_args = grpc_channel_args_set_socket_mutator(NULL, &mutator);
+  GPR_ASSERT(ch_args->num_args == 1);
+  GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_ARG_SOCKET_MUTATOR) == 0);
+  GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
+
+  grpc_channel_args_destroy(ch_args);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_create();
   test_set_compression_algorithm();
   test_compression_algorithm_states();
+  test_set_socket_mutator();
   grpc_shutdown();
   return 0;
 }

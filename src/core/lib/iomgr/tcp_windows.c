@@ -402,6 +402,8 @@ static grpc_resource_user *win_get_resource_user(grpc_endpoint *ep) {
   return tcp->resource_user;
 }
 
+static int win_get_fd(grpc_endpoint *ep) { return -1; }
+
 static grpc_endpoint_vtable vtable = {win_read,
                                       win_write,
                                       win_get_workqueue,
@@ -410,7 +412,8 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_shutdown,
                                       win_destroy,
                                       win_get_resource_user,
-                                      win_get_peer};
+                                      win_get_peer,
+                                      win_get_fd};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket,
                                grpc_resource_quota *resource_quota,
@@ -420,7 +423,7 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket,
   tcp->base.vtable = &vtable;
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
-  gpr_ref_init(&tcp->refcount, 2);
+  gpr_ref_init(&tcp->refcount, 1);
   grpc_closure_init(&tcp->on_read, on_read, tcp);
   grpc_closure_init(&tcp->on_write, on_write, tcp);
   tcp->peer_string = gpr_strdup(peer_string);

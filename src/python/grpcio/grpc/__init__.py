@@ -927,10 +927,16 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     passed in a previous call will not have the effect of stopping the server
     later.
 
+    This method does not block for any significant length of time. If None is
+    passed as the grace value, existing RPCs are immediately aborted and this
+    method blocks until this Server is completely stopped.
+
     Args:
-      grace: A duration of time in seconds to allow existing RPCs to complete
-        before being aborted by this Server's stopping. If None, this method
-        will block until the server is completely stopped.
+      grace: A duration of time in seconds or None. If a duration of time in
+        seconds, the time to allow existing RPCs to complete before being
+        aborted by this Server's stopping. If None, all RPCs will be aborted
+        immediately and this method will block until this Server is completely
+        stopped.
 
     Returns:
       A threading.Event that will be set when this Server has completely

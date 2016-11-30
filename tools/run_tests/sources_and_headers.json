@@ -1942,6 +1942,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "ssl_server_fuzzer", 
+    "src": [
+      "test/core/security/ssl_server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "tcp_client_posix_test", 
     "src": [
       "test/core/iomgr/tcp_client_posix_test.c"
@@ -2240,6 +2257,26 @@
     "name": "auth_property_iterator_test", 
     "src": [
       "test/cpp/common/auth_property_iterator_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "google_benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_fullstack", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_fullstack.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4848,6 +4885,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "ssl_server_fuzzer_one_entry", 
+    "src": [
+      "test/core/security/ssl_server_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "uri_fuzzer_test_one_entry", 
     "src": [
       "test/core/client_channel/uri_fuzzer_test.c", 
@@ -5088,11 +5143,14 @@
   }, 
   {
     "deps": [
+      "census", 
       "gpr", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
-      "grpc_cronet"
+      "grpc_cronet", 
+      "grpc_transport_chttp2_client_insecure", 
+      "grpc_transport_chttp2_server_insecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -6298,6 +6356,7 @@
       "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.c", 
       "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/call_creds.c", 
@@ -6315,6 +6374,7 @@
       "test/core/end2end/tests/empty_batch.c", 
       "test/core/end2end/tests/filter_call_init_fails.c", 
       "test/core/end2end/tests/filter_causes_close.c", 
+      "test/core/end2end/tests/filter_latency.c", 
       "test/core/end2end/tests/graceful_server_shutdown.c", 
       "test/core/end2end/tests/high_initial_seqno.c", 
       "test/core/end2end/tests/hpack_size.c", 
@@ -6366,6 +6426,7 @@
       "test/core/end2end/end2end_nosec_tests.c", 
       "test/core/end2end/end2end_test_utils.c", 
       "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/tests/authority_not_supported.c", 
       "test/core/end2end/tests/bad_hostname.c", 
       "test/core/end2end/tests/binary_metadata.c", 
       "test/core/end2end/tests/cancel_after_accept.c", 
@@ -6382,6 +6443,7 @@
       "test/core/end2end/tests/empty_batch.c", 
       "test/core/end2end/tests/filter_call_init_fails.c", 
       "test/core/end2end/tests/filter_causes_close.c", 
+      "test/core/end2end/tests/filter_latency.c", 
       "test/core/end2end/tests/graceful_server_shutdown.c", 
       "test/core/end2end/tests/high_initial_seqno.c", 
       "test/core/end2end/tests/hpack_size.c", 
@@ -6675,7 +6737,6 @@
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/ev_epoll_linux.h", 
-      "src/core/lib/iomgr/ev_poll_and_epoll_posix.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
@@ -6699,6 +6760,7 @@
       "src/core/lib/iomgr/sockaddr_posix.h", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_posix.h", 
       "src/core/lib/iomgr/socket_windows.h", 
@@ -6743,8 +6805,8 @@
       "src/core/lib/transport/mdstr_hash_table.h", 
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
-      "src/core/lib/transport/method_config.h", 
       "src/core/lib/transport/pid_controller.h", 
+      "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
@@ -6810,8 +6872,6 @@
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/ev_epoll_linux.c", 
       "src/core/lib/iomgr/ev_epoll_linux.h", 
-      "src/core/lib/iomgr/ev_poll_and_epoll_posix.c", 
-      "src/core/lib/iomgr/ev_poll_and_epoll_posix.h", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.c", 
@@ -6856,6 +6916,8 @@
       "src/core/lib/iomgr/sockaddr_utils.c", 
       "src/core/lib/iomgr/sockaddr_utils.h", 
       "src/core/lib/iomgr/sockaddr_windows.h", 
+      "src/core/lib/iomgr/socket_mutator.c", 
+      "src/core/lib/iomgr/socket_mutator.h", 
       "src/core/lib/iomgr/socket_utils.h", 
       "src/core/lib/iomgr/socket_utils_common_posix.c", 
       "src/core/lib/iomgr/socket_utils_linux.c", 
@@ -6960,10 +7022,10 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.c", 
       "src/core/lib/transport/metadata_batch.h", 
-      "src/core/lib/transport/method_config.c", 
-      "src/core/lib/transport/method_config.h", 
       "src/core/lib/transport/pid_controller.c", 
       "src/core/lib/transport/pid_controller.h", 
+      "src/core/lib/transport/service_config.c", 
+      "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.c", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/timeout_encoding.c", 

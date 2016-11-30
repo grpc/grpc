@@ -120,8 +120,8 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem);
    is used as a type tag and is checked during user_data fetch. */
 void *grpc_mdelem_get_user_data(grpc_mdelem *md,
                                 void (*if_destroy_func)(void *));
-void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
-                               void *user_data);
+void *grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
+                                void *user_data);
 
 /* Reference counting */
 //#define GRPC_METADATA_REFCOUNT_DEBUG

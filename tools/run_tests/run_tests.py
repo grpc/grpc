@@ -69,7 +69,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['epoll', 'poll', 'poll-cv', 'legacy']
+  'linux': ['epoll', 'poll', 'poll-cv']
 }
 
 
@@ -245,6 +245,9 @@ class CLanguage(object):
               target['name'])
         else:
           binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+        cpu_cost = target['cpu_cost']
+        if cpu_cost == 'capacity':
+          cpu_cost = multiprocessing.cpu_count()
         if os.path.isfile(binary):
           if 'gtest' in target and target['gtest']:
             # here we parse the output of --gtest_list_tests to build up a
@@ -268,7 +271,7 @@ class CLanguage(object):
                 cmdline = [binary] + ['--gtest_filter=%s' % test]
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
-                                                cpu_cost=target['cpu_cost'],
+                                                cpu_cost=cpu_cost,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
@@ -277,7 +280,7 @@ class CLanguage(object):
                                                           pipes.quote(arg)
                                                           for arg in cmdline) +
                                                       shortname_ext,
-                                            cpu_cost=target['cpu_cost'],
+                                            cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
                                             timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS),
                                             environ=env))

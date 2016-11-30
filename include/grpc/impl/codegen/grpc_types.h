@@ -84,6 +84,9 @@ typedef struct grpc_server grpc_server;
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
 
+/** The Socket Mutator interface allows changes on socket options */
+typedef struct grpc_socket_mutator grpc_socket_mutator;
+
 /** Type specifier for grpc_arg */
 typedef enum {
   GRPC_ARG_STRING,
@@ -215,6 +218,8 @@ typedef struct {
 /** Resolved addresses in a form used by the LB policy.
     Not intended for external use. */
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+/** The grpc_socket_mutator instance that set the socket options. A pointer. */
+#define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -256,6 +261,11 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
+/* Default send/receive message size limits in bytes. -1 for unlimited. */
+/* TODO(roth) Make this match the default receive limit after next release */
+#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
+#define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
+
 /* Write Flags: */
 /** Hint that the write may be buffered and need not go out on the wire
     immediately. GRPC is free to buffer the message until the next non-buffered
@@ -272,9 +282,6 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
-/** DEPRECATED: for backward compatibility */
-#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY \
-  GRPC_INITIAL_METADATA_WAIT_FOR_READY
 /** Signal that the call is cacheable. GRPC is free to use GET verb */
 #define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
@@ -476,6 +483,9 @@ typedef struct {
   /* If non-NULL, will be set to point to a string indicating the LB
    * policy name.  Caller takes ownership. */
   char **lb_policy_name;
+  /* If non-NULL, will be set to point to a string containing the
+   * service config used by the channel in JSON form. */
+  char **service_config_json;
 } grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;

@@ -29,7 +29,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'google-protobuf', '~> 3.0.2'
   s.add_dependency 'googleauth',      '~> 0.5.1'
-  s.add_dependency 'concurrent-ruby'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
@@ -188,7 +187,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/endpoint_pair.h )
   s.files += %w( src/core/lib/iomgr/error.h )
   s.files += %w( src/core/lib/iomgr/ev_epoll_linux.h )
-  s.files += %w( src/core/lib/iomgr/ev_poll_and_epoll_posix.h )
   s.files += %w( src/core/lib/iomgr/ev_poll_posix.h )
   s.files += %w( src/core/lib/iomgr/ev_posix.h )
   s.files += %w( src/core/lib/iomgr/exec_ctx.h )
@@ -212,6 +210,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/sockaddr_posix.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_utils.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_windows.h )
+  s.files += %w( src/core/lib/iomgr/socket_mutator.h )
   s.files += %w( src/core/lib/iomgr/socket_utils.h )
   s.files += %w( src/core/lib/iomgr/socket_utils_posix.h )
   s.files += %w( src/core/lib/iomgr/socket_windows.h )
@@ -256,8 +255,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/mdstr_hash_table.h )
   s.files += %w( src/core/lib/transport/metadata.h )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
-  s.files += %w( src/core/lib/transport/method_config.h )
   s.files += %w( src/core/lib/transport/pid_controller.h )
+  s.files += %w( src/core/lib/transport/service_config.h )
   s.files += %w( src/core/lib/transport/static_metadata.h )
   s.files += %w( src/core/lib/transport/timeout_encoding.h )
   s.files += %w( src/core/lib/transport/transport.h )
@@ -369,7 +368,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/endpoint_pair_windows.c )
   s.files += %w( src/core/lib/iomgr/error.c )
   s.files += %w( src/core/lib/iomgr/ev_epoll_linux.c )
-  s.files += %w( src/core/lib/iomgr/ev_poll_and_epoll_posix.c )
   s.files += %w( src/core/lib/iomgr/ev_poll_posix.c )
   s.files += %w( src/core/lib/iomgr/ev_posix.c )
   s.files += %w( src/core/lib/iomgr/exec_ctx.c )
@@ -391,6 +389,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/resolve_address_windows.c )
   s.files += %w( src/core/lib/iomgr/resource_quota.c )
   s.files += %w( src/core/lib/iomgr/sockaddr_utils.c )
+  s.files += %w( src/core/lib/iomgr/socket_mutator.c )
   s.files += %w( src/core/lib/iomgr/socket_utils_common_posix.c )
   s.files += %w( src/core/lib/iomgr/socket_utils_linux.c )
   s.files += %w( src/core/lib/iomgr/socket_utils_posix.c )
@@ -451,8 +450,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/mdstr_hash_table.c )
   s.files += %w( src/core/lib/transport/metadata.c )
   s.files += %w( src/core/lib/transport/metadata_batch.c )
-  s.files += %w( src/core/lib/transport/method_config.c )
   s.files += %w( src/core/lib/transport/pid_controller.c )
+  s.files += %w( src/core/lib/transport/service_config.c )
   s.files += %w( src/core/lib/transport/static_metadata.c )
   s.files += %w( src/core/lib/transport/timeout_encoding.c )
   s.files += %w( src/core/lib/transport/transport.c )

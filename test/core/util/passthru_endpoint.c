@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/iomgr/sockaddr.h"
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -146,6 +147,8 @@ static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
 
+static int me_get_fd(grpc_endpoint *ep) { return -1; }
+
 static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
 
 static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
@@ -163,6 +166,7 @@ static const grpc_endpoint_vtable vtable = {
     me_destroy,
     me_get_resource_user,
     me_get_peer,
+    me_get_fd,
 };
 
 static void half_init(half *m, passthru_endpoint *parent,

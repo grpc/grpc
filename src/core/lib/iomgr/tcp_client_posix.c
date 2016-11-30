@@ -51,6 +51,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -73,7 +74,8 @@ typedef struct {
   grpc_channel_args *channel_args;
 } async_connect;
 
-static grpc_error *prepare_socket(const grpc_resolved_address *addr, int fd) {
+static grpc_error *prepare_socket(const grpc_resolved_address *addr, int fd,
+                                  const grpc_channel_args *channel_args) {
   grpc_error *err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
@@ -88,6 +90,16 @@ static grpc_error *prepare_socket(const grpc_resolved_address *addr, int fd) {
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
+  if (channel_args) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_SOCKET_MUTATOR)) {
+        GPR_ASSERT(channel_args->args[i].type == GRPC_ARG_POINTER);
+        grpc_socket_mutator *mutator = channel_args->args[i].value.pointer.p;
+        err = grpc_set_socket_with_mutator(fd, mutator);
+        if (err != GRPC_ERROR_NONE) goto error;
+      }
+    }
+  }
   goto done;
 
 error:
@@ -239,8 +251,11 @@ finish:
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                               "Failed to connect to remote host");
+    char *error_descr;
+    gpr_asprintf(&error_descr, "Failed to connect to remote host: %s",
+                 grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, error_descr);
+    gpr_free(error_descr);
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
   }
@@ -287,7 +302,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
     addr = &addr4_copy;
   }
-  if ((error = prepare_socket(addr, fd)) != GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
     grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
     return;
   }
