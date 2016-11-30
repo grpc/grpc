@@ -75,6 +75,18 @@ static void register_sighandler() {
   sigaction(SIGTERM, &act, NULL);
 }
 
+static void LogStatus(int status, const char* label) {
+  if (WIFEXITED(status)) {
+    gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label,
+            WEXITSTATUS(status));
+  } else if (WIFSIGNALED(status)) {
+    gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label,
+            WTERMSIG(status));
+  } else {
+    gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label, status);
+  }
+}
+
 int main(int argc, char** argv) {
   register_sighandler();
 
@@ -102,9 +114,18 @@ int main(int argc, char** argv) {
 
   g_driver.reset(new SubProcess(args));
   const int driver_join_status = g_driver->Join();
-  for (const auto& worker : g_workers)
+  if (driver_join_status != 0) {
+    LogStatus(driver_join_status, "driver");
+  }
+  for (const auto& worker : g_workers) {
     if (worker) worker->Interrupt();
-  for (const auto& worker : g_workers)
-    if (worker) worker->Join();
-  GPR_ASSERT(driver_join_status == 0);
+  }
+  for (const auto& worker : g_workers) {
+    if (worker) {
+      const int worker_status = worker->Join();
+      if (worker_status != 0) {
+        LogStatus(worker_status, "worker");
+      }
+    }
+  }
 }
