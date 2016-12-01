@@ -41,9 +41,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/client_channel/connector.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/client_channel/connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -144,7 +144,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
   c->handshake_mgr = NULL;
   gpr_mu_unlock(&c->mu);
-  chttp2_connector_unref(exec_ctx, (grpc_connector*)c);
+  chttp2_connector_unref(exec_ctx, (grpc_connector *)c);
 }
 
 static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
@@ -246,9 +246,9 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
     chttp2_connector_connect};
 
 grpc_connector *grpc_chttp2_connector_create(
-    grpc_exec_ctx *exec_ctx, const char* server_name,
+    grpc_exec_ctx *exec_ctx, const char *server_name,
     grpc_chttp2_create_handshakers_func create_handshakers,
-    void* create_handshakers_user_data) {
+    void *create_handshakers_user_data) {
   chttp2_connector *c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;

@@ -162,7 +162,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   if (error != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(error);
+    const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
     grpc_error_free_string(msg);
     c->func(exec_ctx, c->arg, NULL);
@@ -198,8 +198,8 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
-  grpc_httpcli_ssl_channel_security_connector* httpcli_connector =
-      (grpc_httpcli_ssl_channel_security_connector*)sc;
+  grpc_httpcli_ssl_channel_security_connector *httpcli_connector =
+      (grpc_httpcli_ssl_channel_security_connector *)sc;
   grpc_channel_security_connector_create_handshakers(
       exec_ctx, sc, httpcli_connector->handshake_mgr);
   grpc_handshake_manager_do_handshake(

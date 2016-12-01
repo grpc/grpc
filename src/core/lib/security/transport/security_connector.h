@@ -133,9 +133,9 @@ struct grpc_channel_security_connector {
                           grpc_channel_security_connector *sc, const char *host,
                           grpc_auth_context *auth_context,
                           grpc_security_call_host_check_cb cb, void *user_data);
-  void (*create_handshakers)(
-      grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-      grpc_handshake_manager *handshake_mgr);
+  void (*create_handshakers)(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_security_connector *sc,
+                             grpc_handshake_manager *handshake_mgr);
 };
 
 /* Checks that the host that will be set for a call is acceptable. */
@@ -158,9 +158,9 @@ typedef struct grpc_server_security_connector grpc_server_security_connector;
 
 struct grpc_server_security_connector {
   grpc_security_connector base;
-  void (*create_handshakers)(
-      grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
-      grpc_handshake_manager *handshake_mgr);
+  void (*create_handshakers)(grpc_exec_ctx *exec_ctx,
+                             grpc_server_security_connector *sc,
+                             grpc_handshake_manager *handshake_mgr);
 };
 
 void grpc_server_security_connector_create_handshakers(

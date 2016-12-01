@@ -50,7 +50,7 @@
 #include "src/core/lib/surface/server.h"
 
 typedef struct pending_handshake_manager_node {
-  grpc_handshake_manager* handshake_mgr;
+  grpc_handshake_manager *handshake_mgr;
   struct pending_handshake_manager_node *next;
 } pending_handshake_manager_node;
 
@@ -72,17 +72,17 @@ typedef struct {
 } server_connection_state;
 
 static void pending_handshake_manager_add_locked(
-    server_state* state, grpc_handshake_manager* handshake_mgr) {
-  pending_handshake_manager_node* node = gpr_malloc(sizeof(*node));
+    server_state *state, grpc_handshake_manager *handshake_mgr) {
+  pending_handshake_manager_node *node = gpr_malloc(sizeof(*node));
   node->handshake_mgr = handshake_mgr;
   node->next = state->pending_handshake_mgrs;
   state->pending_handshake_mgrs = node;
 }
 
 static void pending_handshake_manager_remove_locked(
-    server_state* state, grpc_handshake_manager* handshake_mgr) {
-  pending_handshake_manager_node** prev_node = &state->pending_handshake_mgrs;
-  for (pending_handshake_manager_node* node = state->pending_handshake_mgrs;
+    server_state *state, grpc_handshake_manager *handshake_mgr) {
+  pending_handshake_manager_node **prev_node = &state->pending_handshake_mgrs;
+  for (pending_handshake_manager_node *node = state->pending_handshake_mgrs;
        node != NULL; node = node->next) {
     if (node->handshake_mgr == handshake_mgr) {
       *prev_node = node->next;
@@ -93,10 +93,10 @@ static void pending_handshake_manager_remove_locked(
   }
 }
 
-static void pending_handshake_manager_shutdown_locked(
-    grpc_exec_ctx* exec_ctx, server_state* state) {
-  pending_handshake_manager_node* prev_node = NULL;
-  for (pending_handshake_manager_node* node = state->pending_handshake_mgrs;
+static void pending_handshake_manager_shutdown_locked(grpc_exec_ctx *exec_ctx,
+                                                      server_state *state) {
+  pending_handshake_manager_node *prev_node = NULL;
+  for (pending_handshake_manager_node *node = state->pending_handshake_mgrs;
        node != NULL; node = node->next) {
     grpc_handshake_manager_shutdown(exec_ctx, node->handshake_mgr);
     gpr_free(prev_node);
@@ -135,8 +135,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, connection_state->server_state->server, transport,
         connection_state->accepting_pollset,
         grpc_server_get_channel_args(connection_state->server_state->server));
-    grpc_chttp2_transport_start_reading(exec_ctx, transport,
-                                        args->read_buffer);
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, args->read_buffer);
     grpc_channel_args_destroy(args->args);
   }
   pending_handshake_manager_remove_locked(connection_state->server_state,
@@ -150,14 +149,14 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                       grpc_pollset *accepting_pollset,
                       grpc_tcp_server_acceptor *acceptor) {
-  server_state* state = arg;
+  server_state *state = arg;
   gpr_mu_lock(&state->mu);
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
     grpc_endpoint_destroy(exec_ctx, tcp);
     return;
   }
-  grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
+  grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
   pending_handshake_manager_add_locked(state, handshake_mgr);
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
@@ -173,8 +172,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
   grpc_handshake_manager_do_handshake(
       exec_ctx, connection_state->handshake_mgr, tcp,
-      grpc_server_get_channel_args(state->server),
-      deadline, acceptor, on_handshake_done, connection_state);
+      grpc_server_get_channel_args(state->server), deadline, acceptor,
+      on_handshake_done, connection_state);
 }
 
 /* Server callback: start listening on our ports */
@@ -239,14 +238,13 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
-  server_state* state = gpr_malloc(sizeof(*state));
+  server_state *state = gpr_malloc(sizeof(*state));
   memset(state, 0, sizeof(*state));
   grpc_closure_init(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state);
-  err = grpc_tcp_server_create(&exec_ctx,
-                               &state->tcp_server_shutdown_complete,
-                               grpc_server_get_channel_args(server),
-                               &tcp_server);
+  err =
+      grpc_tcp_server_create(&exec_ctx, &state->tcp_server_shutdown_complete,
+                             grpc_server_get_channel_args(server), &tcp_server);
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
@@ -259,8 +257,8 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   const size_t naddrs = resolved->naddrs;
   errors = gpr_malloc(sizeof(*errors) * naddrs);
   for (i = 0; i < naddrs; i++) {
-    errors[i] = grpc_tcp_server_add_port(tcp_server, &resolved->addrs[i],
-                                         &port_temp);
+    errors[i] =
+        grpc_tcp_server_add_port(tcp_server, &resolved->addrs[i], &port_temp);
     if (errors[i] == GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
@@ -293,8 +291,8 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener(&exec_ctx, server, state,
-                           server_start_listener, server_destroy_listener);
+  grpc_server_add_listener(&exec_ctx, server, state, server_start_listener,
+                           server_destroy_listener);
   goto done;
 
 /* Error path: cleanup and return */
