@@ -142,7 +142,6 @@
     <Compile Include="Utils\TaskUtils.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Grpc.Core.nuspec" />
     <None Include="Grpc.Core.project.json" />
     <None Include="packages.config" />
   </ItemGroup>
