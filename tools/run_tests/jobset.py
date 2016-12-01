@@ -56,11 +56,11 @@ def sanitized_environment(env):
     print("key=", key)
     print("type(value)=", type(value))
     print("value=", value)
+    print("value hex dump:", ' '.join('%x' % ord(c) for c in value))
     print("type(key.encode(errors='ignore'))=", type(key.encode(errors='ignore')))
     print("key.encode(errors='ignore')=", key.encode(errors='ignore'))
     print("type(value.encode(errors='ignore'))=", type(value.encode(errors='ignore')))
     print("value.encode(errors='ignore')=", value.encode(errors='ignore'))
-    print("value hex dump:", ' '.join('%x' % ord(c) for c in value))
     sanitized[key.encode(errors='ignore')] = value.encode(errors='ignore')
   return sanitized
 
