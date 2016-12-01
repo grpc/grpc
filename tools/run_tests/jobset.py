@@ -52,6 +52,8 @@ _MAX_RESULT_SIZE = 8192
 def sanitized_environment(env):
   sanitized = {}
   for key, value in env.items():
+    print(key)
+    print(value)
     sanitized[str(key).encode()] = str(value).encode()
   return sanitized
 
