@@ -592,6 +592,7 @@ class _ServerStage(enum.Enum):
   STOPPED = 'stopped'
   STARTED = 'started'
   GRACE = 'grace'
+  HANDLER_GRACE = 'handler_grace'
 
 
 class _ServerState(object):
@@ -661,7 +662,8 @@ def _serve(state):
             event, state.generic_handlers, state.thread_pool)
         if rpc_state is not None:
           state.rpc_states.add(rpc_state)
-        if state.stage is _ServerStage.STARTED:
+        if (state.stage is _ServerStage.STARTED or
+            state.stage is _ServerStage.HANDLER_GRACE):
           _request_call(state)
         elif _stop_serving(state):
           return
@@ -687,7 +689,7 @@ def _stop(state, grace, shutdown_handler_grace):
         return
       elif state.stage is _ServerStage.STARTED:
         do_shutdown = True
-        state.stage = _ServerStage.GRACE
+        state.stage = _ServerStage.HANDLER_GRACE
         state.shutdown_events = []
       else:
         do_shutdown = False
