@@ -51,6 +51,14 @@
 
 extern cv_fd_table g_cvfds[TABLE_SHARDS];
 
+#ifdef THREAD_SANITIZER
+// We disable TSAN checking on this function because we aquire
+// locks in the reverse order as cvfd_poll() (ev_poll_posix.c).
+// See cvfd_poll() for why this is OK.
+static grpc_error* cv_fd_wakeup(grpc_wakeup_fd* fd_info)
+    __attribute__((no_sanitize_thread));
+#endif
+
 static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
   unsigned int i, newsize;
   int idx;
