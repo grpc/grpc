@@ -39,6 +39,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
@@ -59,6 +60,8 @@
 typedef struct {
   grpc_connector base;
   gpr_refcount refs;
+
+  char *server_name;
 
   grpc_closure *notify;
   grpc_connect_in_args args;
@@ -82,7 +85,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     /* c->initial_string_buffer does not need to be destroyed */
-    grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
+    gpr_free(c->server_name);
     gpr_free(c);
   }
 }
@@ -107,6 +110,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure *notify = c->notify;
   c->notify = NULL;
   grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
+  grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -123,6 +127,14 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
                           &c->initial_string_sent);
     } else {
+      c->handshake_mgr = grpc_handshake_manager_create();
+      char *proxy_name = grpc_get_http_proxy_server();
+      if (proxy_name != NULL) {
+        grpc_handshake_manager_add(
+            c->handshake_mgr,
+            grpc_http_connect_handshaker_create(proxy_name, c->server_name));
+        gpr_free(proxy_name);
+      }
       grpc_handshake_manager_do_handshake(
           exec_ctx, c->handshake_mgr, tcp, c->args.channel_args,
           c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
@@ -174,14 +186,7 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
   gpr_ref_init(&c->refs, 1);
-  c->handshake_mgr = grpc_handshake_manager_create();
-  char *proxy_name = grpc_get_http_proxy_server();
-  if (proxy_name != NULL) {
-    grpc_handshake_manager_add(
-        c->handshake_mgr,
-        grpc_http_connect_handshaker_create(proxy_name, args->server_name));
-    gpr_free(proxy_name);
-  }
+  c->server_name = gpr_strdup(args->server_name);
   grpc_subchannel *s = grpc_subchannel_create(exec_ctx, &c->base, args);
   grpc_connector_unref(exec_ctx, &c->base);
   return s;
