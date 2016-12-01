@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/ext/client_channel/client_channel.h"
 #include "src/core/ext/client_channel/lb_policy_registry.h"
@@ -787,9 +788,12 @@ static void verify_total_carnage_round_robin(const servers_fixture *f,
    * subchannel already transitioned to retrying. */
   for (size_t i = 0; i < sequences->n; i++) {
     const grpc_connectivity_state actual = sequences->connectivity_states[i];
-    const uint32_t expected_bitset =
-        GRPC_CHANNEL_TRANSIENT_FAILURE | GRPC_CHANNEL_CONNECTING;
-    if (((uint32_t)actual & expected_bitset) == 0) {
+    uint32_t expected_bitset;
+    GPR_BITSET(&expected_bitset, GRPC_CHANNEL_TRANSIENT_FAILURE);
+    GPR_BITSET(&expected_bitset, GRPC_CHANNEL_CONNECTING);
+    uint32_t actual_bitset;
+    GPR_BITSET(&actual_bitset, actual);
+    if ((actual_bitset & expected_bitset) == 0) {
       gpr_log(GPR_ERROR,
               "CONNECTIVITY STATUS SEQUENCE FAILURE: expected "
               "GRPC_CHANNEL_TRANSIENT_FAILURE or GRPC_CHANNEL_CONNECTING, got "
@@ -846,10 +850,13 @@ static void verify_partial_carnage_round_robin(
    * are gone. May also be CONNECTING if, under load, this check took too long
    * to run and the subchannel already transitioned to retrying. */
   actual = sequences->connectivity_states[num_iters - 1];
-  const uint32_t expected_bitset =
-      GRPC_CHANNEL_TRANSIENT_FAILURE | GRPC_CHANNEL_CONNECTING;
+  uint32_t expected_bitset;
+  GPR_BITSET(&expected_bitset, GRPC_CHANNEL_TRANSIENT_FAILURE);
+  GPR_BITSET(&expected_bitset, GRPC_CHANNEL_CONNECTING);
+  uint32_t actual_bitset;
+  GPR_BITSET(&actual_bitset, actual);
   for (i = 0; i < sequences->n; i++) {
-    if (((uint32_t)actual & expected_bitset) == 0) {
+    if ((actual_bitset & expected_bitset) == 0) {
       gpr_log(GPR_ERROR,
               "CONNECTIVITY STATUS SEQUENCE FAILURE: expected "
               "GRPC_CHANNEL_TRANSIENT_FAILURE or GRPC_CHANNEL_CONNECTING, got "
@@ -858,7 +865,6 @@ static void verify_partial_carnage_round_robin(
       abort();
     }
   }
-
   gpr_free(expected_connection_sequence);
 }
 
