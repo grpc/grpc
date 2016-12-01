@@ -31,19 +31,37 @@
  *
  */
 
-#include <grpc++/ext/health_check_service_server_builder_option.h>
+#include "src/cpp/server/default_health_check_service.h"
 
 namespace grpc {
 
-HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
-    std::unique_ptr<HealthCheckServiceInterface> hc) : hc_(std::move(hc)) { }
-
-HealthCheckServiceServerBuilderOption::UpdateArguments(ChannelArguments* args) override {
-  args->SetPointer(DefaultHealthCheckServiceInterfaceArg(), hc_.release());
+DefaultHealthCheckService::DefaultHealthCheckService() {
+  services_map_.insert("", true);
 }
 
-void HealthCheckServiceServerBuilderOption::UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+void DefaultHealthCheckService::SetServingStatus(
+    const grpc::string& service_name, bool serving) override {
+  std::lock_guard<std::mutex> lock(mu_);
+  services_map_[service_name] = serving;
+}
+
+void SetServingStatus(bool serving) override {
+  std::lock_guard<std::mutex> lock(mu_);
+  for (auto& iter = services_map_.begin(); iter != services_map_.end();
+       ++iter) {
+    iter->second = serving;
+  }
+}
+
+ServingStatus GetServingStatus(const grpc::string& service_name) const {
+  std::lock_guard<std::mutex> lock(mu_);
+  const auto& iter = services_map_.find(service_name);
+  if (iter == services_map_.end()) {
+    return NOT_FOUND;
+  }
+  return iter->second ? SERVING : NOT_SERVING;
 }
 
 }  // namespace grpc
 
+#endif  // GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H

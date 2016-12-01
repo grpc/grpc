@@ -36,6 +36,7 @@
 #include <utility>
 
 #include <grpc++/completion_queue.h>
+#include <grpc++/ext/g.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
@@ -342,6 +343,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
+  std::unique_ptr<RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -358,7 +360,8 @@ Server::Server(
       shutdown_notified_(false),
       has_generic_service_(false),
       server_(nullptr),
-      server_initializer_(new ServerInitializer(this)) {
+      server_initializer_(new ServerInitializer(this)),
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -373,6 +376,18 @@ Server::Server(
 
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
+
+  for (size_t i = 0; i < channel_args.num_args; i++) {
+    if (0 == strcmp(channel_args.args[i].key,
+                    kDefaultHealthCheckServiceInterfaceArg)) {
+      if (channel_args.args[i].value == nullptr) {
+        health_check_service_disabled_ = true;
+      } else {
+        health_check_service_.reset(channel_args.args[i].value);
+      }
+      break;
+    }
+  }
 
   server_ = grpc_server_create(&channel_args, nullptr);
 }
@@ -480,6 +495,22 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   started_ = true;
   grpc_server_start(server_);
+
+  // Only create default health check service when user did not provide an
+  // explicit one.
+  if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
+      EnableDefaultHealthCheckService()) {
+    health_check_service_.reset(CreateDefaultHealthCheckService());
+    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+      (*it)->AddHealthCheckSyncMethod();
+    }
+
+    for (size_t i = 0; i < num_cqs; i++) {
+      if (cqs[i]->IsFrequentlyPolled()) {
+        //        new UnimplementedAsyncRequest(this, cqs[i]);
+      }
+    }
+  }
 
   if (!has_generic_service_) {
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {

@@ -31,19 +31,33 @@
  *
  */
 
-#include <grpc++/ext/health_check_service_server_builder_option.h>
+#ifndef GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H
+#define GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H
+
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
-HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
-    std::unique_ptr<HealthCheckServiceInterface> hc) : hc_(std::move(hc)) { }
+const char kDefaultHealthCheckServiceInterfaceArg[] =
+    "grpc.default_health_check_service_interface";
 
-HealthCheckServiceServerBuilderOption::UpdateArguments(ChannelArguments* args) override {
-  args->SetPointer(DefaultHealthCheckServiceInterfaceArg(), hc_.release());
-}
+class HealthCheckServiceInterface {
+ public:
+  virtual ~HealthCheckServiceInterface() {}
+  virtual void SetServingStatus(const grpc::string& service_name,
+                                bool serving) = 0;
+  // Apply to all registered service names.
+  virtual void SetServingStatus(bool serving) = 0;
+};
 
-void HealthCheckServiceServerBuilderOption::UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
-}
+bool DefaultHealthCheckServiceEnabled();
+
+// Enable/disable the default health checking service. This applies to all C++
+// servers created afterwards. For each server, user can override the default
+// with a HealthCheckServiceServerBuilderOption.
+// NOT thread safe.
+void EnableDefaultHealthCheckService(bool enable);
 
 }  // namespace grpc
 
+#endif  // GRPCXX_HEALTH_CHECK_SERVICE_INTERFACE_H
