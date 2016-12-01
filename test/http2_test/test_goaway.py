@@ -12,7 +12,6 @@ class TestcaseGoaway(object):
     self._base_server = http2_base_server.H2ProtocolBaseServer()
     self._base_server._handlers['RequestReceived'] = self.on_request_received
     self._base_server._handlers['DataReceived'] = self.on_data_received
-    self._base_server._handlers['WindowUpdated'] = self.on_window_update_default
     self._base_server._handlers['SendDone'] = self.on_send_done
     self._base_server._handlers['ConnectionLost'] = self.on_connection_lost
     self._ready_to_send = False
@@ -27,11 +26,11 @@ class TestcaseGoaway(object):
     if self._iteration == 2:
       self._base_server.on_connection_lost(reason)
 
-  def on_send_done(self):
-    self._base_server.on_send_done_default()
-    if self._base_server._stream_id == 1:
-      logging.info('Sending GOAWAY for stream 1')
-      self._base_server._conn.close_connection(error_code=0, additional_data=None, last_stream_id=1)
+  def on_send_done(self, stream_id):
+    self._base_server.on_send_done_default(stream_id)
+    logging.info('Sending GOAWAY for stream %d:'%stream_id)
+    self._base_server._conn.close_connection(error_code=0, additional_data=None, last_stream_id=stream_id)
+    self._base_server._stream_status[stream_id] = False
 
   def on_request_received(self, event):
     self._ready_to_send = False
@@ -39,13 +38,9 @@ class TestcaseGoaway(object):
 
   def on_data_received(self, event):
     self._base_server.on_data_received_default(event)
-    sr = self._base_server.parse_received_data(self._base_server._recv_buffer)
+    sr = self._base_server.parse_received_data(event.stream_id)
     if sr:
       logging.info('Creating response size = %s'%sr.response_size)
       response_data = self._base_server.default_response_data(sr.response_size)
       self._ready_to_send = True
-      self._base_server.setup_send(response_data)
-
-  def on_window_update_default(self, event):
-    if self._ready_to_send:
-      self._base_server.default_send()
+      self._base_server.setup_send(response_data, event.stream_id)
