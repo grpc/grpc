@@ -158,18 +158,24 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
   on_done_closure *c = args->user_data;
+  grpc_channel_args_destroy(args->args);
+  grpc_slice_buffer_destroy(args->read_buffer);
+  gpr_free(args->read_buffer);
   if (error != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
     grpc_error_free_string(msg);
     c->func(exec_ctx, c->arg, NULL);
+    // TODO(ctiller): It is currently necessary to shutdown endpoints
+    // before destroying them, even if we know that there are no
+    // pending read/write callbacks.  This should be fixed, at which
+    // point this can be removed.
+    grpc_endpoint_shutdown(exec_ctx, args->endpoint);
+    grpc_endpoint_destroy(exec_ctx, args->endpoint);
   } else {
     c->func(exec_ctx, c->arg, args->endpoint);
   }
   gpr_free(c);
-  grpc_channel_args_destroy(args->args);
-  gpr_free(args->read_buffer);
-  gpr_free(args);
 }
 
 static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
