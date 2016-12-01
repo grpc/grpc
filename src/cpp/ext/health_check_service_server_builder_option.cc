@@ -31,30 +31,29 @@
  *
  */
 
-#ifndef GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
-#define GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
-
-#include <memory>
-
-#include <grpc++/ext/health_check_service_interface.h>
-#include <grpc++/impl/server_builder_option.h>
-#include <grpc++/support/config.h>
+#include <grpc++/ext/health_check_service_server_builder_option.h>
 
 namespace grpc {
+namespace {
+bool g_grpc_default_health_check_service_enabled = false;
+const char kDefaultHealthCheckServiceInterfaceArg[] = "grpc.default_health_check_service_interface";
+}  // namesapce
 
-class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
- public:
-  explicit HealthCheckServiceServerBuilderOption(
-      std::unique_ptr<HealthCheckServiceInterface> hc);
-  ~HealthCheckServiceServerBuilderOption() {}
-  void UpdateArguments(ChannelArguments* args) override;
-  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override;
- private:
-  std::unique_ptr<HealthCheckServiceInterface> hc_;
-};
+HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
+    std::unique_ptr<HealthCheckServiceInterface> hc) : hc_(std::move(hc)) { }
 
-void EnableDefaultHealthCheckService(bool enable);
+HealthCheckServiceServerBuilderOption::UpdateArguments(ChannelArguments* args) override {
+  args->SetPointer(kDefaultHealthCheckServiceInterfaceArg, hc_.release());
+}
+
+void HealthCheckServiceServerBuilderOption::UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+
+}
+
+void EnableDefaultHealthCheckService(bool enable) {
+  g_grpc_default_health_check_service_enabled = enable;
+}
 
 }  // namespace grpc
 
-#endif  // GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
+
