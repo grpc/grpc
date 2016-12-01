@@ -238,9 +238,7 @@ static void fake_channel_destroy(grpc_security_connector *sc) {
   gpr_free(sc);
 }
 
-static void fake_server_destroy(grpc_security_connector *sc) {
-  gpr_free(sc);
-}
+static void fake_server_destroy(grpc_security_connector *sc) { gpr_free(sc); }
 
 static void fake_check_peer(grpc_exec_ctx *exec_ctx,
                             grpc_security_connector *sc, tsi_peer peer,
@@ -387,15 +385,15 @@ static grpc_security_status ssl_create_handshaker(
 static void ssl_channel_create_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     grpc_handshake_manager *handshake_mgr) {
-  grpc_ssl_channel_security_connector* c =
-      (grpc_ssl_channel_security_connector*)sc;
+  grpc_ssl_channel_security_connector *c =
+      (grpc_ssl_channel_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  ssl_create_handshaker(
-      c->handshaker_factory, true /* is_client */,
-      c->overridden_target_name != NULL ? c->overridden_target_name
-                                        : c->target_name,
-      &tsi_hs);
+  ssl_create_handshaker(c->handshaker_factory, true /* is_client */,
+                        c->overridden_target_name != NULL
+                            ? c->overridden_target_name
+                            : c->target_name,
+                        &tsi_hs);
   // Create handshakers.
   grpc_security_create_handshakers(exec_ctx, tsi_hs, &sc->base, handshake_mgr);
 }
@@ -403,13 +401,12 @@ static void ssl_channel_create_handshakers(
 static void ssl_server_create_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
     grpc_handshake_manager *handshake_mgr) {
-  grpc_ssl_server_security_connector* c =
-      (grpc_ssl_server_security_connector*)sc;
+  grpc_ssl_server_security_connector *c =
+      (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  ssl_create_handshaker(
-      c->handshaker_factory, false /* is_client */, NULL /* peer_name */,
-      &tsi_hs);
+  ssl_create_handshaker(c->handshaker_factory, false /* is_client */,
+                        NULL /* peer_name */, &tsi_hs);
   // Create handshakers.
   grpc_security_create_handshakers(exec_ctx, tsi_hs, &sc->base, handshake_mgr);
 }
@@ -475,8 +472,8 @@ static grpc_error *ssl_check_peer(grpc_security_connector *sc,
   const tsi_peer_property *p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == NULL) {
-    return GRPC_ERROR_CREATE("Cannot check peer: "
-                             "missing selected ALPN property.");
+    return GRPC_ERROR_CREATE(
+        "Cannot check peer: missing selected ALPN property.");
   }
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
     return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
