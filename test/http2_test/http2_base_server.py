@@ -113,9 +113,6 @@ class H2ProtocolBaseServer(Protocol):
       return
 
     while self._send_remaining[stream_id] > 0:
-      if self._stream_status[stream_id] is False:
-        logging.info('Stream %d is closed.'%stream_id)
-        break
       lfcw = self._conn.local_flow_control_window(stream_id)
       if lfcw == 0:
         break
@@ -125,7 +122,11 @@ class H2ProtocolBaseServer(Protocol):
                     (lfcw, self._send_offset, self._send_offset + bytes_to_send,
                     stream_id))
       data = self._data_to_send[self._send_offset : self._send_offset + bytes_to_send]
-      self._conn.send_data(stream_id, data, False)
+      try:
+        self._conn.send_data(stream_id, data, False)
+      except ProtocolError:
+        logging.info('Stream %d is closed'%stream_id)
+        break
       self._send_remaining[stream_id] -= bytes_to_send
       self._send_offset += bytes_to_send
       if self._send_remaining[stream_id] == 0:
@@ -163,7 +164,7 @@ class H2ProtocolBaseServer(Protocol):
     asked in request """
     grpc_msg_size = struct.unpack('i',recv_buffer[1:5][::-1])[0]
     if len(recv_buffer) != GRPC_HEADER_SIZE + grpc_msg_size:
-      logging.error('not enough data to decode req proto. size = %d, needed %s'%(len(recv_buffer), 5+grpc_msg_size))
+      #logging.error('not enough data to decode req proto. size = %d, needed %s'%(len(recv_buffer), 5+grpc_msg_size))
       return None
     req_proto_str = recv_buffer[5:5+grpc_msg_size]
     sr = messages_pb2.SimpleRequest()

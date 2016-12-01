@@ -21,6 +21,7 @@ class H2Factory(Factory):
 
   def buildProtocol(self, addr):
     self._num_streams += 1
+    logging.info('New Connection: %d'%self._num_streams)
     if self._testcase == 'rst_after_header':
       t = test_rst_after_header.TestcaseRstStreamAfterHeader()
     elif self._testcase == 'rst_after_data':
