@@ -172,6 +172,9 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_channel_args_destroy(tmp_args);
   // Invoke callback.
   grpc_exec_ctx_sched(exec_ctx, h->on_handshake_done, GRPC_ERROR_NONE, NULL);
+  // Set shutdown to true so that subsequent calls to
+  // security_handshaker_shutdown() do nothing.
+  h->shutdown = true;
 done:
   gpr_mu_unlock(&h->mu);
   security_handshaker_unref(exec_ctx, h);

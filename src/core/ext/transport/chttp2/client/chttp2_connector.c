@@ -31,12 +31,15 @@
  *
  */
 
+#include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+
 #include <grpc/grpc.h>
 
 #include <string.h>
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -53,6 +56,10 @@ typedef struct {
   gpr_refcount refs;
 
   bool shutdown;
+
+  char *server_name;
+  grpc_chttp2_create_handshakers_func create_handshakers;
+  void *create_handshakers_user_data;
 
   grpc_closure *notify;
   grpc_connect_in_args args;
@@ -78,10 +85,10 @@ static void chttp2_connector_unref(grpc_exec_ctx *exec_ctx,
   if (gpr_unref(&c->refs)) {
     /* c->initial_string_buffer does not need to be destroyed */
     gpr_mu_destroy(&c->mu);
-    grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
     // If handshaking is not yet in progress, destroy the endpoint.
     // Otherwise, the handshaker will do this for us.
     if (c->endpoint != NULL) grpc_endpoint_destroy(exec_ctx, c->endpoint);
+    gpr_free(c->server_name);
     gpr_free(c);
   }
 }
@@ -91,7 +98,9 @@ static void chttp2_connector_shutdown(grpc_exec_ctx *exec_ctx,
   chttp2_connector *c = (chttp2_connector *)con;
   gpr_mu_lock(&c->mu);
   c->shutdown = true;
-  grpc_handshake_manager_shutdown(exec_ctx, c->handshake_mgr);
+  if (c->handshake_mgr != NULL) {
+    grpc_handshake_manager_shutdown(exec_ctx, c->handshake_mgr);
+  }
   // If handshaking is not yet in progress, shutdown the endpoint.
   // Otherwise, the handshaker will do this for us.
   if (c->endpoint != NULL) grpc_endpoint_shutdown(exec_ctx, c->endpoint);
@@ -132,8 +141,30 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure *notify = c->notify;
   c->notify = NULL;
   grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
+  grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
+  c->handshake_mgr = NULL;
   gpr_mu_unlock(&c->mu);
   chttp2_connector_unref(exec_ctx, (grpc_connector*)c);
+}
+
+static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
+                                   chttp2_connector *c) {
+  c->handshake_mgr = grpc_handshake_manager_create();
+  char *proxy_name = grpc_get_http_proxy_server();
+  if (proxy_name != NULL) {
+    grpc_handshake_manager_add(
+        c->handshake_mgr,
+        grpc_http_connect_handshaker_create(proxy_name, c->server_name));
+    gpr_free(proxy_name);
+  }
+  if (c->create_handshakers != NULL) {
+    c->create_handshakers(exec_ctx, c->create_handshakers_user_data,
+                          c->handshake_mgr);
+  }
+  grpc_handshake_manager_do_handshake(
+      exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
+      c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
+  c->endpoint = NULL;  // Endpoint handed off to handshake manager.
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
@@ -153,10 +184,7 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_mu_unlock(&c->mu);
     chttp2_connector_unref(exec_ctx, arg);
   } else {
-    grpc_handshake_manager_do_handshake(
-        exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
-        c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
-    c->endpoint = NULL;  // Endpoint handed off to handshake manager.
+    start_handshake_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   }
 }
@@ -187,10 +215,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_endpoint_write(exec_ctx, c->endpoint, &c->initial_string_buffer,
                           &c->initial_string_sent);
     } else {
-      grpc_handshake_manager_do_handshake(
-          exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
-          c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
-      c->endpoint = NULL;  // Endpoint handed off to handshake manager.
+      start_handshake_locked(exec_ctx, c);
     }
     gpr_mu_unlock(&c->mu);
   }
@@ -222,24 +247,15 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
 
 grpc_connector *grpc_chttp2_connector_create(
     grpc_exec_ctx *exec_ctx, const char* server_name,
-    void (*create_handshakers)(grpc_exec_ctx* exec_ctx, void* user_data,
-                               grpc_handshake_manager* handshake_mgr),
-    void* user_data) {
+    grpc_chttp2_create_handshakers_func create_handshakers,
+    void* create_handshakers_user_data) {
   chttp2_connector *c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
-  c->handshake_mgr = grpc_handshake_manager_create();
-  char *proxy_name = grpc_get_http_proxy_server();
-  if (proxy_name != NULL) {
-    grpc_handshake_manager_add(
-        c->handshake_mgr,
-        grpc_http_connect_handshaker_create(proxy_name, server_name));
-    gpr_free(proxy_name);
-  }
-  if (create_handshakers != NULL) {
-    create_handshakers(exec_ctx, user_data, c->handshake_mgr);
-  }
+  c->server_name = gpr_strdup(server_name);
+  c->create_handshakers = create_handshakers;
+  c->create_handshakers_user_data = create_handshakers_user_data;
   return &c->base;
 }

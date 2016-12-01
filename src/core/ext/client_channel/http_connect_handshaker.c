@@ -228,6 +228,9 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   // Success.  Invoke handshake-done callback.
   grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done, error, NULL);
 done:
+  // Set shutdown to true so that subsequent calls to
+  // http_connect_handshaker_shutdown() do nothing.
+  handshaker->shutdown = true;
   gpr_mu_unlock(&handshaker->mu);
   http_connect_handshaker_unref(exec_ctx, handshaker);
 }
