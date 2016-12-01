@@ -3805,6 +3805,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \
     include/grpc++/create_channel_posix.h \
+    include/grpc++/ext/health_check_service_interface.h \
+    include/grpc++/ext/health_check_service_server_builder_option.h \
     include/grpc++/generic/async_generic_service.h \
     include/grpc++/generic/generic_stub.h \
     include/grpc++/grpc++.h \
@@ -4167,6 +4169,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \
     include/grpc++/create_channel_posix.h \
+    include/grpc++/ext/health_check_service_interface.h \
+    include/grpc++/ext/health_check_service_server_builder_option.h \
     include/grpc++/generic/async_generic_service.h \
     include/grpc++/generic/generic_stub.h \
     include/grpc++/grpc++.h \
@@ -4700,6 +4704,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \
     include/grpc++/create_channel_posix.h \
+    include/grpc++/ext/health_check_service_interface.h \
+    include/grpc++/ext/health_check_service_server_builder_option.h \
     include/grpc++/generic/async_generic_service.h \
     include/grpc++/generic/generic_stub.h \
     include/grpc++/grpc++.h \
