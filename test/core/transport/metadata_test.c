@@ -389,6 +389,8 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
     } else {
       GPR_ASSERT(p.payload == q.payload);
     }
+    GRPC_MDELEM_UNREF(&exec_ctx, p);
+    GRPC_MDELEM_UNREF(&exec_ctx, q);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
