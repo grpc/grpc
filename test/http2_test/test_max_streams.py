@@ -24,7 +24,8 @@ class TestcaseSettingsMaxStreams(object):
 
   def on_data_received(self, event):
     self._base_server.on_data_received_default(event)
-    sr = self._base_server.parse_received_data(self._base_server._recv_buffer)
-    logging.info('Creating response size = %s'%sr.response_size)
-    response_data = self._base_server.default_response_data(sr.response_size)
-    self._base_server.setup_send(response_data)
+    sr = self._base_server.parse_received_data(event.stream_id)
+    if sr:
+      logging.info('Creating response of size = %s'%sr.response_size)
+      response_data = self._base_server.default_response_data(sr.response_size)
+      self._base_server.setup_send(response_data, event.stream_id)
