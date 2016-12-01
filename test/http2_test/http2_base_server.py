@@ -1,16 +1,11 @@
 import struct
 import messages_pb2
-import functools
-import argparse
 import logging
-import time
 
-from twisted.internet.defer import Deferred, inlineCallbacks
-from twisted.internet.protocol import Protocol, Factory
-from twisted.internet import endpoints, reactor, error, defer
+from twisted.internet.protocol import Protocol
+from twisted.internet import reactor
 from h2.connection import H2Connection
 from h2.events import RequestReceived, DataReceived, WindowUpdated, RemoteSettingsChanged, PingAcknowledged
-from threading import Lock
 
 READ_CHUNK_SIZE = 16384
 GRPC_HEADER_SIZE = 5
@@ -20,6 +15,7 @@ class H2ProtocolBaseServer(Protocol):
     self._conn = H2Connection(client_side=False)
     self._recv_buffer = ''
     self._handlers = {}
+    self._handlers['ConnectionMade'] = self.on_connection_made_default
     self._handlers['DataReceived'] = self.on_data_received_default
     self._handlers['WindowUpdated'] = self.on_window_update_default
     self._handlers['RequestReceived'] = self.on_request_received_default
@@ -33,13 +29,16 @@ class H2ProtocolBaseServer(Protocol):
     self._handlers = handlers
 
   def connectionMade(self):
+    self._handlers['ConnectionMade']()
+
+  def connectionLost(self, reason):
+    self._handlers['ConnectionLost'](reason)
+
+  def on_connection_made_default(self):
     logging.info('Connection Made')
     self._conn.initiate_connection()
     self.transport.setTcpNoDelay(True)
     self.transport.write(self._conn.data_to_send())
-
-  def connectionLost(self, reason):
-    self._handlers['ConnectionLost'](reason)
 
   def on_connection_lost(self, reason):
     logging.info('Disconnected %s'%reason)
