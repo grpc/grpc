@@ -52,10 +52,22 @@ _MAX_RESULT_SIZE = 8192
 def sanitized_environment(env):
   sanitized = {}
   for key, value in env.items():
-    print "type(key)=%s, key='%s'" % (type(key), key)
-    print "type(value)=%s, value='%s'" % (type(value), value)
-    print "key.encode(errors='ignore'): type()=%s, key=%s" % (type(key.encode(errors='ignore')), key.encode(errors='ignore'))
-    print "value.encode(errors='ignore'): type()=%s, value=%s" % (type(value.encode(errors='ignore')), value.encode(errors='ignore'))
+    print "type(key)="
+    print type(key)
+    print "key="
+    print key
+    print "type(value)="
+    print type(value)
+    print "value="
+    print value
+    print "type(key.encode(errors='ignore'))="
+    print type(key.encode(errors='ignore'))
+    print "key.encode(errors='ignore')="
+    print key.encode(errors='ignore')
+    print "type(value.encode(errors='ignore'))="
+    print type(value.encode(errors='ignore'))
+    print "value.encode(errors='ignore')="
+    print value.encode(errors='ignore')
     sanitized[key.encode(errors='ignore')] = value.encode(errors='ignore')
   return sanitized
 
