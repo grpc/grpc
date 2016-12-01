@@ -133,7 +133,7 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 /// Invokes handshakers in the order they were added.
 /// Takes ownership of \a endpoint, and then passes that ownership to
 /// the \a on_handshake_done callback.
-/// Does NOT take ownership of \a args.  Instead, makes a copy before
+/// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
 /// invoking the first handshaker.
 /// \a acceptor will be NULL for client-side handshakers.
 ///
