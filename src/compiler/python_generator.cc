@@ -760,6 +760,32 @@ PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration& config)
 
 PythonGrpcGenerator::~PythonGrpcGenerator() {}
 
+static bool GenerateGrpc(GeneratorContext* context, PrivateGenerator& generator,
+                         grpc::string file_name, bool generate_in_pb2_grpc) {
+  bool success;
+  std::unique_ptr<ZeroCopyOutputStream> output;
+  std::unique_ptr<CodedOutputStream> coded_output;
+  grpc::string grpc_code;
+
+  if (generate_in_pb2_grpc) {
+    output.reset(context->Open(file_name));
+    generator.generate_in_pb2_grpc = true;
+  } else {
+    output.reset(context->OpenForInsert(file_name, "module_scope"));
+    generator.generate_in_pb2_grpc = false;
+  }
+
+  coded_output.reset(new CodedOutputStream(output.get()));
+  tie(success, grpc_code) = generator.GetGrpcServices();
+
+  if (success) {
+    coded_output->WriteRaw(grpc_code.data(), grpc_code.size());
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
                                    const grpc::string& parameter,
                                    GeneratorContext* context,
@@ -780,28 +806,15 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   }
 
   PrivateGenerator generator(config_, file);
-
-  std::unique_ptr<ZeroCopyOutputStream> pb2_output(
-      context->OpenForAppend(pb2_file_name));
-  std::unique_ptr<ZeroCopyOutputStream> grpc_output(
-      context->Open(pb2_grpc_file_name));
-  CodedOutputStream pb2_coded_out(pb2_output.get());
-  CodedOutputStream grpc_coded_out(grpc_output.get());
-  bool success = false;
-  grpc::string pb2_code;
-  grpc::string grpc_code;
-  generator.generate_in_pb2_grpc = false;
-  tie(success, pb2_code) = generator.GetGrpcServices();
-  if (success) {
-    generator.generate_in_pb2_grpc = true;
-    tie(success, grpc_code) = generator.GetGrpcServices();
-    if (success) {
-      pb2_coded_out.WriteRaw(pb2_code.data(), pb2_code.size());
-      grpc_coded_out.WriteRaw(grpc_code.data(), grpc_code.size());
-      return true;
-    }
+  if (parameter == "grpc_2_0") {
+    return GenerateGrpc(context, generator, pb2_grpc_file_name, true);
+  } else if (parameter == "") {
+    return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
+           GenerateGrpc(context, generator, pb2_file_name, false);
+  } else {
+    *error = "Invalid parameter '" + parameter + "'.";
+    return false;
   }
-  return false;
 }
 
 }  // namespace grpc_python_generator
