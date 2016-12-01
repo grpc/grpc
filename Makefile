@@ -3779,6 +3779,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
+    src/cpp/common/health_check_service_server_builder_option.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/common/version_cc.cc \
@@ -3968,6 +3969,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
+    src/cpp/common/health_check_service_server_builder_option.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/common/version_cc.cc \
@@ -4678,6 +4680,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
     src/cpp/common/core_codegen.cc \
+    src/cpp/common/health_check_service_server_builder_option.cc \
     src/cpp/common/resource_quota_cc.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/common/version_cc.cc \
