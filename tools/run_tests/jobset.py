@@ -52,7 +52,7 @@ _MAX_RESULT_SIZE = 8192
 def sanitized_environment(env):
   sanitized = {}
   for key, value in env.items():
-    sanitized[str(key).encode()] = str(value).encode()
+    sanitized[key.encode(errors='ignore')] = value.encode(errors='ignore')
   return sanitized
 
 def platform_string():
