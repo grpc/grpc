@@ -36,7 +36,7 @@
 
 #include <memory>
 
-#include <grpc++/ext/health_check_service_interface.h>
+#include <grpc++/health_check_service_interface.h>
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/support/config.h>
 
@@ -44,6 +44,7 @@ namespace grpc {
 
 class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
  public:
+  // Use nullptr to disable default service.
   explicit HealthCheckServiceServerBuilderOption(
       std::unique_ptr<HealthCheckServiceInterface> hc);
   ~HealthCheckServiceServerBuilderOption() {}
@@ -52,8 +53,6 @@ class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
  private:
   std::unique_ptr<HealthCheckServiceInterface> hc_;
 };
-
-void EnableDefaultHealthCheckService(bool enable);
 
 }  // namespace grpc
 

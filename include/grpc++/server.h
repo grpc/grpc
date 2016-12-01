@@ -97,6 +97,11 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   // Returns a \em raw pointer to the underlying grpc_server instance.
   grpc_server* c_server();
 
+  /// Returns the health check service.
+  HealthCheckServiceInterface* GetHealthCheckService() const {
+    return hc_.get();
+  }
+
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
@@ -214,6 +219,10 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
+
+  std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
+  // User explicitly disabled health check service.
+  bool health_check_service_disabled_;
 };
 
 }  // namespace grpc

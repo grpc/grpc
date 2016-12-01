@@ -31,22 +31,29 @@
  *
  */
 
-#ifndef GRPCXX_EXT_HEALTH_CHECK_SERVICE_INTERFACE_H
-#define GRPCXX_EXT_HEALTH_CHECK_SERVICE_INTERFACE_H
+#ifndef GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
+#define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 
-#include <grpc++/support/config.h>
+#include <mutex>
+
+#include <grpc++/health_check_service_interface.h>
 
 namespace grpc {
 
-class  HealthCheckServiceInterface {
+class DefaultHealthCheckService : public HealthCheckServiceInterface {
  public:
-  virtual ~HealthCheckServiceInterface() { }
-  virtual void SetServingStatus(const grpc::string& service_name, bool serving) = 0;
-  // Apply to all registered service names.
-  virtual void SetServingStatus(bool serving) = 0;
-};
+  DefaultHealthCheckService();
+  void SetServingStatus(const grpc::string& service_name,
+                        bool serving) override;
+  void SetServingStatus(bool serving) override;
+  enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
+  ServingStatus GetServingStatus(const grpc::string& service_name) const;
 
+ private:
+  std::mutex mu_;
+  std::map<grpc::string, bool> services_map_;
+};
 
 }  // namespace grpc
 
-#endif  // GRPCXX_EXT_HEALTH_CHECK_SERVICE_INTERFACE_H
+#endif  // GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H

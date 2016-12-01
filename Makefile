@@ -3785,7 +3785,9 @@ LIBGRPC++_SRC = \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
+    src/cpp/server/default_health_check_service.cc \
     src/cpp/server/dynamic_thread_pool.cc \
+    src/cpp/server/health_check_service.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
@@ -3975,7 +3977,9 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
+    src/cpp/server/default_health_check_service.cc \
     src/cpp/server/dynamic_thread_pool.cc \
+    src/cpp/server/health_check_service.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \
@@ -4686,7 +4690,9 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/version_cc.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
+    src/cpp/server/default_health_check_service.cc \
     src/cpp/server/dynamic_thread_pool.cc \
+    src/cpp/server/health_check_service.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_cc.cc \
     src/cpp/server/server_context.cc \

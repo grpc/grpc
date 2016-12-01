@@ -31,19 +31,19 @@
  *
  */
 
-#include <grpc++/ext/health_check_service_server_builder_option.h>
+#include <grpc++/health_check_service_interface.h>
 
 namespace grpc {
+namespace {
+bool g_grpc_default_health_check_service_enabled = false;
+}  // namesapce
 
-HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
-    std::unique_ptr<HealthCheckServiceInterface> hc) : hc_(std::move(hc)) { }
-
-HealthCheckServiceServerBuilderOption::UpdateArguments(ChannelArguments* args) override {
-  args->SetPointer(DefaultHealthCheckServiceInterfaceArg(), hc_.release());
+bool DefaultHealthCheckServiceEnabled() {
+  return g_grpc_default_health_check_service_enabled;
 }
 
-void HealthCheckServiceServerBuilderOption::UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+void EnableDefaultHealthCheckService(bool enable) {
+  g_grpc_default_health_check_service_enabled = enable;
 }
 
 }  // namespace grpc
-
