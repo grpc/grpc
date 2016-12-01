@@ -38,7 +38,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "helloworld.grpc.pb.h"
+#include "hellostreamingworld.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;
@@ -46,9 +46,9 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCompletionQueue;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
+using hellostreamingworld::HelloRequest;
+using hellostreamingworld::HelloReply;
+using hellostreamingworld::MultiGreeter;
 
 class ServerImpl final {
  public:
@@ -169,7 +169,7 @@ class ServerImpl final {
   }
 
   std::unique_ptr<ServerCompletionQueue> cq_;
-  Greeter::AsyncService service_;
+  MultiGreeter::AsyncService service_;
   std::unique_ptr<Server> server_;
 };
 
