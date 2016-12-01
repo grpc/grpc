@@ -1,4 +1,5 @@
 import logging
+import time
 import http2_base_server
 
 class TestcaseGoaway(object):
@@ -23,11 +24,12 @@ class TestcaseGoaway(object):
   def on_connection_lost(self, reason):
     logging.info('Disconnect received. Count %d'%self._iteration)
     # _iteration == 2 => Two different connections have been used.
-    if self._iteration == 2:
+    if self._iteration == 200:
       self._base_server.on_connection_lost(reason)
 
   def on_send_done(self, stream_id):
     self._base_server.on_send_done_default(stream_id)
+    time.sleep(1)
     logging.info('Sending GOAWAY for stream %d:'%stream_id)
     self._base_server._conn.close_connection(error_code=0, additional_data=None, last_stream_id=stream_id)
     self._base_server._stream_status[stream_id] = False
