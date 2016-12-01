@@ -133,6 +133,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
   } catch (e) {
     e.code = grpc.status.INTERNAL;
     handleError(e);
+    return;
   }
   message.grpcWriteFlags = flags;
   end_batch[grpc.opType.SEND_MESSAGE] = message;
