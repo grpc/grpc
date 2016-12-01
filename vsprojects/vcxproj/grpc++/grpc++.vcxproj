@@ -264,6 +264,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\health_check_service_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\health_check_service_server_builder_option.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\async_generic_service.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\generic_stub.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
