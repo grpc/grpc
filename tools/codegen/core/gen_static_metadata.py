@@ -36,6 +36,7 @@ import os
 import sys
 import subprocess
 import re
+import perfection
 
 # configuration: a list of either strings or 2-tuples of strings
 # a single string represents a static grpc_mdstr
@@ -407,59 +408,40 @@ def offset_trials(mink):
       yield mul * i
 
 def perfect_hash(keys, name):
-    ok = False
-    print '***********'
-    print keys
-    cmd = '%s/perfect/build.sh' % (os.path.dirname(sys.argv[0]))
-    subprocess.check_call(cmd, shell=True)
-    for offset in offset_trials(min(keys)):
-        tmp = open('/tmp/keys.txt', 'w')
-        offset_keys = [x + offset for x in keys]
-        print offset_keys
-        tmp.write(''.join('%d\n' % x for x in offset_keys))
-        tmp.close()
-        cmd = '%s/perfect/run.sh %s -dms' % (os.path.dirname(sys.argv[0]), tmp.name)
-        out = subprocess.check_output(cmd, shell=True)
-        if 'fatal error' not in out:
-            ok = True
-            break
-    assert ok, "Failed to find hash of keys in /tmp/keys.txt"
+  p = perfection.hash_parameters(keys)
+  def f(i, p=p):
+    i += p.offset
+    x = i % p.t
+    y = i / p.t
+    return x + p.r[y]
+  return {
+    'PHASHRANGE': p.t - 1 + max(p.r),
+    'PHASHNKEYS': len(p.slots),
+    'pyfunc': f,
+    'code': """
+static const int8_t %(name)s_r[] = {%(r)s};
+static uint32_t %(name)s_phash(uint32_t i) {
+  i %(offset_sign)s= %(offset)d;
+  uint32_t x = i %% %(t)d;
+  uint32_t y = i / %(t)d;
+  return x + (uint32_t)%(name)s_r[y];
+}
+    """ % {
+      'name': name,
+      'r': ','.join('%d' % (r if r is not None else 0) for r in p.r),
+      't': p.t,
+      'offset': abs(p.offset),
+      'offset_sign': '+' if p.offset > 0 else '-'
+    }
+  }
 
-    code = ''
-
-    results = {}
-    with open('%s/perfect/phash.h' % os.path.dirname(sys.argv[0])) as f:
-        txt = f.read()
-        for var in ('PHASHLEN', 'PHASHNKEYS', 'PHASHRANGE', 'PHASHSALT'):
-            val = re.search(r'#define %s ([0-9a-zA-Z]+)' % var, txt).group(1)
-            code += '#define %s_%s %s\n' % (name.upper(), var, val)
-            results[var] = val
-    code += '\n'
-    pycode = 'def f(val):\n'
-    pycode += '  val += %d\n' % offset
-    with open('%s/perfect/phash.c' % os.path.dirname(sys.argv[0])) as f:
-        txt = f.read()
-        tabdata = re.search(r'ub1 tab\[\] = \{([^}]+)\}', txt, re.MULTILINE).group(1)
-        code += 'static const uint8_t %s_tab[] = {%s};\n\n' % (name, tabdata)
-        func_body = re.search(r'ub4 phash\(val\)\nub4 val;\n\{([^}]+)\}', txt, re.MULTILINE).group(1).replace('ub4', 'uint32_t')
-        code += 'static uint32_t %s_phash(uint32_t val) {\nval += (uint32_t)%d;\n%s}\n' % (name,
-            offset, func_body.replace('tab', '%s_tab' % name))
-        pycode += '  tab=(%s)' % tabdata.replace('\n', '')
-        pycode += '\n'.join('  %s' % s.strip() for s in func_body.splitlines()[2:])
-    g = {}
-    exec pycode in g
-    pyfunc = g['f']
-
-    results['code'] = code
-    results['pyfunc'] = pyfunc
-    return results
 
 elem_keys = [str_idx(elem[0]) * len(all_strs) + str_idx(elem[1]) for elem in all_elems]
 elem_hash = perfect_hash(elem_keys, "elems")
 print >>C, elem_hash['code']
 
 keys = [0] * int(elem_hash['PHASHRANGE'])
-idxs = [-1] * int(elem_hash['PHASHNKEYS'])
+idxs = [255] * int(elem_hash['PHASHNKEYS'])
 for i, k in enumerate(elem_keys):
     h = elem_hash['pyfunc'](k)
     assert keys[h] == 0
