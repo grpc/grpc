@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 #include "hellostreamingworld.grpc.pb.h"
 
 using grpc::Channel;
-using grpc::ClientAsyncResponseReader;
+using grpc::ClientAsyncReader;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
@@ -77,13 +77,13 @@ class GreeterClient {
     // stub_->AsyncSayHello() performs the RPC call, returning an instance we
     // store in "rpc". Because we are using the asynchronous API, we need to
     // hold on to the "rpc" instance in order to get updates on the ongoing RPC.
-    std::unique_ptr<ClientAsyncResponseReader<HelloReply> > rpc(
-        stub_->AsyncSayHello(&context, request, &cq));
+    std::unique_ptr<ClientAsyncReader<HelloReply> > rpc(
+        stub_->AsyncSayHello(&context, request, &cq, (void*)1));
 
     // Request that, upon completion of the RPC, "reply" be updated with the
     // server's response; "status" with the indication of whether the operation
     // was successful. Tag the request with the integer 1.
-    rpc->Finish(&reply, &status, (void*)1);
+    rpc->Finish(&status, (void*)1);
     void* got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".

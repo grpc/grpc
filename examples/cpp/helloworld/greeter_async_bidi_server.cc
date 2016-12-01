@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 #include "hellostreamingworld.grpc.pb.h"
 
 using grpc::Server;
-using grpc::ServerAsyncResponseWriter;
+using grpc::ServerAsyncWriter;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCompletionQueue;
@@ -86,7 +86,7 @@ class ServerImpl final {
     // Take in the "service" instance (in this case representing an asynchronous
     // server) and the completion queue "cq" used for asynchronous communication
     // with the gRPC runtime.
-    CallData(Greeter::AsyncService* service, ServerCompletionQueue* cq)
+    CallData(MultiGreeter::AsyncService* service, ServerCompletionQueue* cq)
         : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE) {
       // Invoke the serving logic right away.
       Proceed();
@@ -118,7 +118,7 @@ class ServerImpl final {
         // memory address of this instance as the uniquely identifying tag for
         // the event.
         status_ = FINISH;
-        responder_.Finish(reply_, Status::OK, this);
+        responder_.Finish(Status::OK, this);
       } else {
         GPR_ASSERT(status_ == FINISH);
         // Once in the FINISH state, deallocate ourselves (CallData).
@@ -129,7 +129,7 @@ class ServerImpl final {
    private:
     // The means of communication with the gRPC runtime for an asynchronous
     // server.
-    Greeter::AsyncService* service_;
+    MultiGreeter::AsyncService* service_;
     // The producer-consumer queue where for asynchronous server notifications.
     ServerCompletionQueue* cq_;
     // Context for the rpc, allowing to tweak aspects of it such as the use
@@ -143,7 +143,7 @@ class ServerImpl final {
     HelloReply reply_;
 
     // The means to get back to the client.
-    ServerAsyncResponseWriter<HelloReply> responder_;
+    ServerAsyncWriter<HelloReply> responder_;
 
     // Let's implement a tiny state machine with the following states.
     enum CallStatus { CREATE, PROCESS, FINISH };
