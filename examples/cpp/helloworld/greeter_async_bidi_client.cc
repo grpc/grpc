@@ -59,7 +59,7 @@ class AsyncBidiGreeterClient {
   explicit AsyncBidiGreeterClient(std::shared_ptr<Channel> channel)
       : stub_(MultiGreeter::NewStub(channel)) {
     grpc_thread_.reset(
-        new std::thread([=]() { &AsyncBidiGreeterClient::GrpcThread }));
+        new std::thread([=]() { GrpcThread(); }));
     stream_ = stub_->AsyncSayHello(&context_, &cq_,
                                    reinterpret_cast<void*>(Type::CONNECT));
   }
