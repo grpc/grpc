@@ -34,13 +34,14 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <grpc++/grpc++.h>
 
 #include "hellostreamingworld.grpc.pb.h"
 
 using grpc::Channel;
-using grpc::ClientAsyncReader;
+using grpc::ClientAsyncReaderWriter;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
@@ -48,80 +49,122 @@ using hellostreamingworld::HelloRequest;
 using hellostreamingworld::HelloReply;
 using hellostreamingworld::MultiGreeter;
 
-class GreeterClient {
- public:
-  explicit GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(MultiGreeter::NewStub(channel)) {}
+enum class Type { READ = 1, WRITE = 2, CONNECT = 3 };
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  std::string SayHello(const std::string& user) {
+class AsyncBidiGreeterClient {
+ public:
+  explicit AsyncBidiGreeterClient(std::shared_ptr<Channel> channel)
+      : stub_(MultiGreeter::NewStub(channel)) {
+    grpc_thread_.reset(
+        new std::thread(&AsyncBidiGreeterClient::GrpcThread, this));
+    stream_ = stub_->AsyncSayHello(&context_, &cq_,
+                                   reinterpret_cast<void*>(Type::CONNECT));
+  }
+
+  // Similar to the async hello example in greeter_async_client but does not
+  // wait for the response. Instead queues up a tag in the completion queue
+  // that is notified when the server responds back (or when the stream is
+  // closed).
+  void AsyncHello(const std::string& user) {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
+    // This is important: You can have at most one write or at most one read
+    // at any given time. The throttling is performed by gRPC completion
+    // queue. If you queue more than one write/read, the stream will crash.
+    stream_->Write(request, reinterpret_cast<void*>(Type::WRITE));
 
-    // Container for the data we expect from the server.
-    HelloReply reply;
+    // The tag is the link between our thread (main thread) and the completion
+    // queue thread. The tag allows the completion queue to fan off
+    // notification handlers for the specified read/write requests as they
+    // are being processed by gRPC.
+    stream_->Read(&response_, reinterpret_cast<void*>(Type::READ));
+  }
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
-    ClientContext context;
+  ~AsyncBidiGreeterClient() { grpc_thread_->join(); }
 
-    // The producer-consumer queue we use to communicate asynchronously with the
-    // gRPC runtime.
-    CompletionQueue cq;
+ private:
+  void AsyncHelloResponse() {
+    std::cout << "Got response: " << response_.message() << std::endl;
+  }
 
-    // Storage for the status of the RPC upon completion.
-    Status status;
-
-    // stub_->AsyncSayHello() performs the RPC call, returning an instance we
-    // store in "rpc". Because we are using the asynchronous API, we need to
-    // hold on to the "rpc" instance in order to get updates on the ongoing RPC.
-    std::unique_ptr<ClientAsyncReader<HelloReply> > rpc(
-        stub_->AsyncSayHello(&context, request, &cq, (void*)1));
-
-    // Request that, upon completion of the RPC, "reply" be updated with the
-    // server's response; "status" with the indication of whether the operation
-    // was successful. Tag the request with the integer 1.
-    rpc->Finish(&status, (void*)1);
-    void* got_tag;
-    bool ok = false;
-    // Block until the next result is available in the completion queue "cq".
-    // The return value of Next should always be checked. This return value
-    // tells us whether there is any kind of event or the cq_ is shutting down.
-    GPR_ASSERT(cq.Next(&got_tag, &ok));
-
-    // Verify that the result from "cq" corresponds, by its tag, our previous
-    // request.
-    GPR_ASSERT(got_tag == (void*)1);
-    // ... and that the request was completed successfully. Note that "ok"
-    // corresponds solely to the request for updates introduced by Finish().
-    GPR_ASSERT(ok);
-
-    // Act upon the status of the actual RPC.
-    if (status.ok()) {
-      return reply.message();
-    } else {
-      return "RPC failed";
+  // Runs a gRPC completion-queue processing thread. Checks for 'Next' tag
+  // and processes them until there are no more (or when the completion queue
+  // is shutdown).
+  void GrpcThread() {
+    while (true) {
+      void* got_tag;
+      bool ok = false;
+      // Block until the next result is available in the completion queue "cq".
+      // The return value of Next should always be checked. This return value
+      // tells us whether there is any kind of event or the cq_ is shutting
+      // down.
+      if (!cq_.Next(&got_tag, &ok)) {
+        std::cerr << "Client stream closed. Quitting" << std::endl;
+        break;
+      }
+      if (ok) {
+        std::cout << std::endl
+                  << "**** Processing completion queue tag " << got_tag
+                  << std::endl;
+        switch (static_cast<Type>(reinterpret_cast<long>(got_tag))) {
+          case Type::READ:
+            std::cout << "Read a new message." << std::endl;
+            AsyncHelloResponse();
+            break;
+          case Type::WRITE:
+            std::cout << "Sending message (async)." << std::endl;
+            break;
+          case Type::CONNECT:
+            std::cout << "Server connected." << std::endl;
+            break;
+          default:
+            std::cerr << "Unexpected tag " << got_tag << std::endl;
+            GPR_ASSERT(false);
+        }
+      }
     }
   }
 
- private:
+  // Context for the client. It could be used to convey extra information to
+  // the server and/or tweak certain RPC behaviors.
+  ClientContext context_;
+
+  // The producer-consumer queue we use to communicate asynchronously with the
+  // gRPC runtime.
+  CompletionQueue cq_;
+
   // Out of the passed in Channel comes the stub, stored here, our view of the
   // server's exposed services.
   std::unique_ptr<MultiGreeter::Stub> stub_;
+
+  // The bidirectional, asynchronous stream for sending/receiving messages.
+  std::unique_ptr<ClientAsyncReaderWriter<HelloRequest, HelloReply>> stream_;
+
+  // Allocated protobuf that holds the response. In real clients and servers,
+  // the memory management would a bit more complex as the thread that fills
+  // in the response should take care of concurrency as well as memory
+  // management.
+  HelloReply response_;
+
+  // Thread that notifies the gRPC completion queue tags.
+  std::unique_ptr<std::thread> grpc_thread_;
 };
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
-  GreeterClient greeter(grpc::CreateChannel(
+  AsyncBidiGreeterClient greeter(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user);  // The actual RPC call!
-  std::cout << "Greeter received: " << reply << std::endl;
 
+  std::string user;
+  while (true) {
+    std::cout << "Enter text (type quit to end): ";
+    std::cin >> user;
+    if (user == "quit") {
+      break;
+    }
+
+    // Async RPC call that sends a message and awaits a response.
+    greeter.AsyncHello(user);
+  }
   return 0;
 }
