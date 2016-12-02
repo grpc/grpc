@@ -262,6 +262,7 @@ grpc_error *grpc_chttp2_server_add_port(
   int port_temp;
   grpc_error *err = GRPC_ERROR_NONE;
   server_state *state = NULL;
+  grpc_error **errors = NULL;
 
   *port_num = -1;
 
@@ -289,7 +290,7 @@ grpc_error *grpc_chttp2_server_add_port(
   gpr_mu_init(&state->mu);
 
   const size_t naddrs = resolved->naddrs;
-  grpc_error **errors = gpr_malloc(sizeof(*errors) * naddrs);
+  errors = gpr_malloc(sizeof(*errors) * naddrs);
   for (i = 0; i < naddrs; i++) {
     errors[i] =
         grpc_tcp_server_add_port(tcp_server, &resolved->addrs[i], &port_temp);
