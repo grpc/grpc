@@ -727,6 +727,7 @@
         'src/core/lib/tsi/fake_transport_security.c',
         'src/core/lib/tsi/ssl_transport_security.c',
         'src/core/lib/tsi/transport_security.c',
+        'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/client_channel/channel_connectivity.c',
         'src/core/ext/client_channel/client_channel.c',
