@@ -40,8 +40,8 @@ LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
            -lprotobuf -lpthread -ldl
 else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed \
-           -lprotobuf -lpthread -ldl
+           -Wl,--no-as-needed -Wl,--as-needed \
+           -lprotobuf  -ldl
 endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
@@ -51,7 +51,7 @@ PROTOS_PATH = ../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
+all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_async_bidi_client greeter_async_bidi_server
 
 greeter_client: helloworld.pb.o helloworld.grpc.pb.o greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
@@ -68,6 +68,12 @@ greeter_async_client2: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client
 greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
+greeter_async_bidi_client: hellostreamingworld.pb.o hellostreamingworld.grpc.pb.o greeter_async_bidi_client.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+greeter_async_bidi_server: hellostreamingworld.pb.o hellostreamingworld.grpc.pb.o greeter_async_bidi_server.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
 .PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
@@ -77,7 +83,7 @@ greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_async_bidi_client greeter_async_bidi_server
 
 
 # The following is to test your system and ensure a smoother experience.
