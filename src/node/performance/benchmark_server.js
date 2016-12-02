@@ -40,6 +40,8 @@
 
 var fs = require('fs');
 var path = require('path');
+var EventEmitter = require('events');
+var util = require('util');
 
 var genericService = require('./generic_service');
 
@@ -138,12 +140,15 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
   this.server = server;
 }
 
+util.inherits(BenchmarkServer, EventEmitter);
+
 /**
  * Start the benchmark server.
  */
 BenchmarkServer.prototype.start = function() {
   this.server.start();
   this.last_wall_time = process.hrtime();
+  this.emit('started');
 };
 
 /**

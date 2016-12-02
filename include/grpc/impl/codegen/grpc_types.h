@@ -35,6 +35,7 @@
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/slice.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/status.h>
@@ -60,7 +61,7 @@ typedef struct grpc_byte_buffer {
     } reserved;
     struct {
       grpc_compression_algorithm compression;
-      gpr_slice_buffer slice_buffer;
+      grpc_slice_buffer slice_buffer;
     } raw;
   } data;
 } grpc_byte_buffer;
@@ -82,6 +83,9 @@ typedef struct grpc_server grpc_server;
     allowing properties to be set until it is invoked. After invoke, the Call
     can have messages written to it and read from it. */
 typedef struct grpc_call grpc_call;
+
+/** The Socket Mutator interface allows changes on socket options */
+typedef struct grpc_socket_mutator grpc_socket_mutator;
 
 /** Type specifier for grpc_arg */
 typedef enum {
@@ -148,11 +152,13 @@ typedef struct {
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection. Int valued. */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
-/** Maximum message length that the channel can receive. Int valued, bytes. */
+/** Maximum message length that the channel can receive. Int valued, bytes.
+    -1 means unlimited. */
 #define GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH "grpc.max_receive_message_length"
 /** \deprecated For backward compatibility. */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
-/** Maximum message length that the channel can send. Int valued, bytes. */
+/** Maximum message length that the channel can send. Int valued, bytes.
+    -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
 /** Initial sequence number for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
@@ -184,6 +190,9 @@ typedef struct {
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
+/** The time between the first and second connection attempts, in ms */
+#define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
+  "grpc.initial_reconnect_backoff_ms"
 /* The caller of the secure_channel_create functions may override the target
    name used for SSL host name checking using this channel argument which is of
    type \a GRPC_ARG_STRING. This *should* be used for testing only.
@@ -196,6 +205,21 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** If non-zero, a pointer to a buffer pool (use grpc_resource_quota_arg_vtable
+   to fetch an appropriate pointer arg vtable */
+#define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
+/** Service config data, to be passed to subchannels.
+    Not intended for external use. */
+#define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
+/** LB policy name. */
+#define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
+/** Server name. Not intended for external use. */
+#define GRPC_ARG_SERVER_NAME "grpc.server_name"
+/** Resolved addresses in a form used by the LB policy.
+    Not intended for external use. */
+#define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+/** The grpc_socket_mutator instance that set the socket options. A pointer. */
+#define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -237,6 +261,11 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
+/* Default send/receive message size limits in bytes. -1 for unlimited. */
+/* TODO(roth) Make this match the default receive limit after next release */
+#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
+#define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
+
 /* Write Flags: */
 /** Hint that the write may be buffered and need not go out on the wire
     immediately. GRPC is free to buffer the message until the next non-buffered
@@ -252,15 +281,19 @@ typedef enum grpc_call_error {
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
-#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
 /** Signal that the call is cacheable. GRPC is free to use GET verb */
 #define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
+/** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
+    by the calling application. */
+#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK        \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |  \
-   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY | \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST)
+#define GRPC_INITIAL_METADATA_USED_MASK       \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY |     \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |  \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
@@ -444,6 +477,18 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+/** Information requested from the channel. */
+typedef struct {
+  /* If non-NULL, will be set to point to a string indicating the LB
+   * policy name.  Caller takes ownership. */
+  char **lb_policy_name;
+  /* If non-NULL, will be set to point to a string containing the
+   * service config used by the channel in JSON form. */
+  char **service_config_json;
+} grpc_channel_info;
+
+typedef struct grpc_resource_quota grpc_resource_quota;
 
 #ifdef __cplusplus
 }

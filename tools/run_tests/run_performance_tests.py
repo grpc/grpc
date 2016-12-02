@@ -42,6 +42,7 @@ import os
 import performance.scenario_config as scenario_config
 import pipes
 import re
+import report_utils
 import subprocess
 import sys
 import tempfile
@@ -91,12 +92,11 @@ def create_qpsworker_job(language, shortname=None,
   else:
     host_and_port='localhost:%s' % port
 
-  # TODO(jtattermusch): with some care, we can calculate the right timeout
-  # of a worker from the sum of warmup + benchmark times for all the scenarios
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=2*60*60)
+      timeout_seconds=5*60,  # workers get restarted after each scenario
+      verbose_success=True)
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
@@ -280,7 +280,7 @@ def create_qpsworkers(languages, worker_hosts):
           for worker_idx, worker in enumerate(workers)]
 
 
-Scenario = collections.namedtuple('Scenario', 'jobspec workers')
+Scenario = collections.namedtuple('Scenario', 'jobspec workers name')
 
 
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
@@ -307,7 +307,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
         create_netperf_jobspec(server_host=netperf_server,
                                client_host=netperf_client,
                                bq_result_table=bq_result_table),
-        _NO_WORKERS))
+        _NO_WORKERS, 'netperf'))
 
   for language in languages:
     for scenario_json in language.scenarios():
@@ -347,7 +347,8 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
                                       [w.host_and_port for w in workers],
                                       remote_host=remote_host,
                                       bq_result_table=bq_result_table),
-              workers)
+              workers,
+              scenario_json['name'])
           scenarios.append(scenario)
 
   return scenarios
@@ -356,6 +357,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
 def finish_qps_workers(jobs):
   """Waits for given jobs to finish and eventually kills them."""
   retries = 0
+  num_killed = 0
   while any(job.is_running() for job in jobs):
     for job in qpsworker_jobs:
       if job.is_running():
@@ -364,10 +366,11 @@ def finish_qps_workers(jobs):
       print('Killing all QPS workers.')
       for job in jobs:
         job.kill()
+        num_killed += 1
     retries += 1
     time.sleep(3)
   print('All QPS workers finished.')
-
+  return num_killed
 
 argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
@@ -382,6 +385,11 @@ argp.add_argument('--remote_worker_host',
                   nargs='+',
                   default=[],
                   help='Worker hosts where to start QPS workers.')
+argp.add_argument('--dry_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Just list scenarios to be run, but don\'t run them.')
 argp.add_argument('-r', '--regex', default='.*', type=str,
                   help='Regex to select scenarios to run.')
 argp.add_argument('--bq_result_table', default=None, type=str,
@@ -395,6 +403,8 @@ argp.add_argument('--netperf',
                   action='store_const',
                   const=True,
                   help='Run netperf benchmark as one of the scenarios.')
+argp.add_argument('-x', '--xml_report', default='report.xml', type=str,
+                  help='Name of XML report file to generate.')
 
 args = argp.parse_args()
 
@@ -412,16 +422,18 @@ if args.remote_worker_host:
 if args.remote_driver_host:
   remote_hosts.add(args.remote_driver_host)
 
-if remote_hosts:
-  archive_repo(languages=[str(l) for l in languages])
-  prepare_remote_hosts(remote_hosts, prepare_local=True)
-else:
-  prepare_remote_hosts([], prepare_local=True)
+if not args.dry_run:
+  if remote_hosts:
+    archive_repo(languages=[str(l) for l in languages])
+    prepare_remote_hosts(remote_hosts, prepare_local=True)
+  else:
+    prepare_remote_hosts([], prepare_local=True)
 
 build_local = False
 if not args.remote_driver_host:
   build_local = True
-build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build_local=build_local)
+if not args.dry_run:
+  build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build_local=build_local)
 
 qpsworker_jobs = create_qpsworkers(languages, args.remote_worker_host)
 
@@ -442,12 +454,30 @@ scenarios = create_scenarios(languages,
 if not scenarios:
   raise Exception('No scenarios to run')
 
+total_scenario_failures = 0
+qps_workers_killed = 0
+merged_resultset = {}
 for scenario in scenarios:
-  try:
-    for worker in scenario.workers:
-      worker.start()
-    jobset.run([scenario.jobspec,
-                create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
-               newline_on_success=True, maxjobs=1)
-  finally:
-    finish_qps_workers(scenario.workers)
+  if args.dry_run:
+    print(scenario.name)
+  else:
+    try:
+      for worker in scenario.workers:
+        worker.start()
+      scenario_failures, resultset = jobset.run([scenario.jobspec,
+                                                create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host)],
+                                                newline_on_success=True, maxjobs=1)
+      total_scenario_failures += scenario_failures
+      merged_resultset = dict(itertools.chain(merged_resultset.iteritems(),
+                                              resultset.iteritems()))
+    finally:
+      # Consider qps workers that need to be killed as failures
+      qps_workers_killed += finish_qps_workers(scenario.workers)
+
+
+report_utils.render_junit_xml_report(merged_resultset, args.xml_report,
+                                     suite_name='benchmarks')
+
+if total_scenario_failures > 0 or qps_workers_killed > 0:
+  print ("%s scenarios failed and %s qps worker jobs killed" % (total_scenario_failures, qps_workers_killed))
+  sys.exit(1)

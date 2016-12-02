@@ -38,7 +38,7 @@ namespace testing {
 
 bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
   std::vector<Slice> slices;
-  buffer->Dump(&slices);
+  (void)buffer->Dump(&slices);
   grpc::string buf;
   buf.reserve(buffer->Length());
   for (auto s = slices.begin(); s != slices.end(); s++) {
@@ -51,7 +51,7 @@ std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
     grpc::protobuf::Message* message) {
   grpc::string buf;
   message->SerializeToString(&buf);
-  gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
+  grpc_slice s = grpc_slice_from_copied_string(buf.c_str());
   Slice slice(s, Slice::STEAL_REF);
   return std::unique_ptr<ByteBuffer>(new ByteBuffer(&slice, 1));
 }

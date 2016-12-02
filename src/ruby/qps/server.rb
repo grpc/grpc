@@ -49,16 +49,7 @@ class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
     sr.new(payload: pl.new(body: nulls(req.response_size)))
   end
   def streaming_call(reqs)
-    q = EnumeratorQueue.new(self)
-    Thread.new {
-      sr = Grpc::Testing::SimpleResponse
-      pl = Grpc::Testing::Payload
-      reqs.each do |req|
-        q.push(sr.new(payload: pl.new(body: nulls(req.response_size))))
-      end
-      q.push(self)
-    }
-    q.each_item
+    PingPongEnumerator.new(reqs).each_item
   end
 end
 
@@ -71,7 +62,10 @@ class BenchmarkServer
     else
       cred = :this_port_is_insecure
     end
-    @server = GRPC::RpcServer.new
+    # Make sure server can handle the large number of calls in benchmarks
+    # TODO: @apolcyn, if scenario config increases total outstanding
+    # calls then will need to increase the pool size too
+    @server = GRPC::RpcServer.new(pool_size: 1024, max_waiting_requests: 1024)
     @port = @server.add_http2_port("0.0.0.0:" + port.to_s, cred)
     @server.handle(BenchmarkServiceImpl.new)
     @start_time = Time.now

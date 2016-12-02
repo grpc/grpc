@@ -71,34 +71,28 @@ def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
 class CSharpPackage:
   """Builds C# nuget packages."""
 
-  def __init__(self, use_dotnet_cli=False):
-    self.use_dotnet_cli = use_dotnet_cli
-    self.name = 'csharp_package_dotnetcli' if use_dotnet_cli else 'csharp_package'
+  def __init__(self, linux=False):
+    self.linux = linux
     self.labels = ['package', 'csharp']
-    if use_dotnet_cli:
+    if linux:
+      self.name = 'csharp_package_dotnetcli_linux'
       self.labels += ['linux']
     else:
+      self.name = 'csharp_package_dotnetcli_windows'
       self.labels += ['windows']
 
   def pre_build_jobspecs(self):
-    if 'windows' in self.labels:
-      return [create_jobspec('prebuild_%s' % self.name,
-                             ['tools\\run_tests\\pre_build_csharp.bat'],
-                             shell=True,
-                             flake_retries=5,
-                             timeout_retries=2)]
-    else:
-      return []
+    return []
 
   def build_jobspec(self):
-    if self.use_dotnet_cli:
+    if self.linux:
       return create_docker_jobspec(
           self.name,
           'tools/dockerfile/test/csharp_coreclr_x64',
           'src/csharp/build_packages_dotnetcli.sh')
     else:
       return create_jobspec(self.name,
-                            ['build_packages.bat'],
+                            ['build_packages_dotnetcli.bat'],
                             cwd='src\\csharp',
                             shell=True)
 
@@ -177,7 +171,7 @@ class PHPPackage:
 def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
-          CSharpPackage(use_dotnet_cli=True),
+          CSharpPackage(linux=True),
           NodePackage(),
           RubyPackage(),
           PythonPackage(),

@@ -32,9 +32,8 @@
  *
  */
 require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
-require 'empty.php';
-require 'messages.php';
-require 'test.php';
+require 'src/proto/grpc/testing/test.pb.php';
+require 'src/proto/grpc/testing/test_grpc_pb.php';
 use Google\Auth\CredentialsLoader;
 use Google\Auth\ApplicationDefaultCredentials;
 use GuzzleHttp\ClientInterface;
@@ -282,7 +281,7 @@ function serverStreaming($stub)
     foreach ($sizes as $size) {
         $response_parameters = new grpc\testing\ResponseParameters();
         $response_parameters->setSize($size);
-        $request->addResponseParameters($response_parameters);
+        $request->getResponseParameters()[] = $response_parameters;
     }
 
     $call = $stub->StreamingOutputCall($request);
@@ -316,7 +315,7 @@ function pingPong($stub)
         $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
         $response_parameters = new grpc\testing\ResponseParameters();
         $response_parameters->setSize($response_lengths[$i]);
-        $request->addResponseParameters($response_parameters);
+        $request->getResponseParameters()[] = $response_parameters;
         $payload = new grpc\testing\Payload();
         $payload->setBody(str_repeat("\0", $request_lengths[$i]));
         $request->setPayload($payload);
@@ -376,7 +375,7 @@ function cancelAfterFirstResponse($stub)
     $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
     $response_parameters = new grpc\testing\ResponseParameters();
     $response_parameters->setSize(31415);
-    $request->addResponseParameters($response_parameters);
+    $request->getResponseParameters()[] = $response_parameters;
     $payload = new grpc\testing\Payload();
     $payload->setBody(str_repeat("\0", 27182));
     $request->setPayload($payload);
@@ -396,7 +395,7 @@ function timeoutOnSleepingServer($stub)
     $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
     $response_parameters = new grpc\testing\ResponseParameters();
     $response_parameters->setSize(8);
-    $request->addResponseParameters($response_parameters);
+    $request->getResponseParameters()[] = $response_parameters;
     $payload = new grpc\testing\Payload();
     $payload->setBody(str_repeat("\0", 9));
     $request->setPayload($payload);
@@ -478,9 +477,11 @@ function statusCodeAndMessage($stub)
     list($result, $status) = $call->wait();
 
     hardAssert($status->code === 2,
-               'Received unexpected status code');
+               'Received unexpected UnaryCall status code: '.
+               $status->code);
     hardAssert($status->details === 'test status message',
-               'Received unexpected status details');
+               'Received unexpected UnaryCall status details: '.
+               $status->details);
 
     $streaming_call = $stub->FullDuplexCall();
 
@@ -488,14 +489,27 @@ function statusCodeAndMessage($stub)
     $streaming_request->setResponseStatus($echo_status);
     $streaming_call->write($streaming_request);
     $streaming_call->writesDone();
+    $result = $streaming_call->read();
 
     $status = $streaming_call->getStatus();
     hardAssert($status->code === 2,
-               'Received unexpected status code');
+               'Received unexpected FullDuplexCall status code: '.
+               $status->code);
     hardAssert($status->details === 'test status message',
-               'Received unexpected status details');
+               'Received unexpected FullDuplexCall status details: '.
+               $status->details);
 }
 
+# NOTE: the stub input to this function is from UnimplementedService
+function unimplementedService($stub)
+{
+    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    list($result, $status) = $call->wait();
+    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
+               'Received unexpected status code');
+}
+
+# NOTE: the stub input to this function is from TestService
 function unimplementedMethod($stub)
 {
     $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
@@ -588,7 +602,7 @@ function _makeStub($args)
         $opts['update_metadata'] = $update_metadata;
     }
 
-    if ($test_case === 'unimplemented_method') {
+    if ($test_case === 'unimplemented_service') {
         $stub = new grpc\testing\UnimplementedServiceClient($server_address,
                                                             $opts);
     } else {
@@ -640,6 +654,9 @@ function interop_main($args, $stub = false)
             break;
         case 'status_code_and_message':
             statusCodeAndMessage($stub);
+            break;
+        case 'unimplemented_service':
+            unimplementedService($stub);
             break;
         case 'unimplemented_method':
             unimplementedMethod($stub);

@@ -31,16 +31,16 @@
  *
  */
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
+#include <mutex>
+#include <thread>
 
 #include "src/cpp/server/dynamic_thread_pool.h"
 
 namespace grpc {
 DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
-      thd_(new grpc::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
-                            this)) {}
+      thd_(new std::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
+                           this)) {}
 DynamicThreadPool::DynamicThread::~DynamicThread() {
   thd_->join();
   thd_.reset();
@@ -49,7 +49,7 @@ DynamicThreadPool::DynamicThread::~DynamicThread() {
 void DynamicThreadPool::DynamicThread::ThreadFunc() {
   pool_->ThreadFunc();
   // Now that we have killed ourselves, we should reduce the thread count
-  grpc::unique_lock<grpc::mutex> lock(pool_->mu_);
+  std::unique_lock<std::mutex> lock(pool_->mu_);
   pool_->nthreads_--;
   // Move ourselves to dead list
   pool_->dead_threads_.push_back(this);
@@ -62,7 +62,7 @@ void DynamicThreadPool::DynamicThread::ThreadFunc() {
 void DynamicThreadPool::ThreadFunc() {
   for (;;) {
     // Wait until work is available or we are shutting down.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     if (!shutdown_ && callbacks_.empty()) {
       // If there are too many threads waiting, then quit this thread
       if (threads_waiting_ >= reserve_threads_) {
@@ -91,7 +91,7 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads)
       nthreads_(0),
       threads_waiting_(0) {
   for (int i = 0; i < reserve_threads_; i++) {
-    grpc::lock_guard<grpc::mutex> lock(mu_);
+    std::lock_guard<std::mutex> lock(mu_);
     nthreads_++;
     new DynamicThread(this);
   }
@@ -104,7 +104,7 @@ void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
 }
 
 DynamicThreadPool::~DynamicThreadPool() {
-  grpc::unique_lock<grpc::mutex> lock(mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   shutdown_ = true;
   cv_.notify_all();
   while (nthreads_ != 0) {
@@ -114,7 +114,7 @@ DynamicThreadPool::~DynamicThreadPool() {
 }
 
 void DynamicThreadPool::Add(const std::function<void()>& callback) {
-  grpc::lock_guard<grpc::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   // Add works to the callbacks list
   callbacks_.push(callback);
   // Increase pool size or notify as needed

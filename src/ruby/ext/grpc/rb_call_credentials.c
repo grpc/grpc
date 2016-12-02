@@ -86,19 +86,16 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
       rb_funcall(exception_object, rb_intern("backtrace"), 0),
       rb_intern("join"),
       1, rb_str_new2("\n\tfrom "));
-  VALUE rb_exception_info = rb_funcall(exception_object, rb_intern("to_s"), 0);
-  const char *exception_classname = rb_obj_classname(exception_object);
+  VALUE rb_exception_info = rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
-  gpr_log(GPR_INFO, "Call credentials callback failed: %s: %s\n%s",
-          exception_classname, StringValueCStr(rb_exception_info),
+  gpr_log(GPR_INFO, "Call credentials callback failed: %s\n%s",
+          StringValueCStr(rb_exception_info),
           StringValueCStr(backtrace));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
-  /* Currently only gives the exception class name. It should be possible get
-     more details */
   rb_hash_aset(result, rb_str_new2("status"),
-               INT2NUM(GRPC_STATUS_PERMISSION_DENIED));
+               INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
   rb_hash_aset(result, rb_str_new2("details"),
-               rb_str_new2(exception_classname));
+               rb_exception_info);
   return result;
 }
 

@@ -35,7 +35,7 @@
 namespace Grpc;
 
 /**
- * Class AbstractCall
+ * Class AbstractCall.
  * @package Grpc
  */
 abstract class AbstractCall
@@ -121,6 +121,24 @@ abstract class AbstractCall
     }
 
     /**
+     * Serialize a message to the protobuf binary format.
+     *
+     * @param mixed $data The Protobuf message
+     *
+     * @return string The protobuf binary format
+     */
+    protected function serializeMessage($data)
+    {
+        // Proto3 implementation
+        if (method_exists($data, 'encode')) {
+            return $data->encode();
+        }
+
+        // Protobuf-PHP implementation
+        return $data->serialize();
+    }
+
+    /**
      * Deserialize a response value to an object.
      *
      * @param string $value The binary value to deserialize
@@ -133,6 +151,16 @@ abstract class AbstractCall
             return;
         }
 
+        // Proto3 implementation
+        if (is_array($this->deserialize)) {
+            list($className, $deserializeFunc) = $this->deserialize;
+            $obj = new $className();
+            $obj->$deserializeFunc($value);
+
+            return $obj;
+        }
+
+        // Protobuf-PHP implementation
         return call_user_func($this->deserialize, $value);
     }
 

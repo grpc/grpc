@@ -41,7 +41,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined(GPR_LINUX_LOG) && !defined(GPR_ANDROID)
+#ifdef GPR_LINUX_LOG
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

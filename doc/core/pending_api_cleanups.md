@@ -13,3 +13,5 @@ number:
 
 - remove `GRPC_ARG_MAX_MESSAGE_LENGTH` channel arg from
   `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
+  (cannot be done until after next grpc release, so that TensorFlow can
+  use the same code both internally and externally)

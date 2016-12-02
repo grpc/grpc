@@ -36,6 +36,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 
 #include <grpc++/channel.h>
@@ -102,7 +103,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      gpr_slice s = gpr_slice_from_copied_buffer(
+      grpc_slice s = grpc_slice_from_copied_buffer(
           buf.get(), payload_config.bytebuf_params().req_size());
       Slice slice(s, Slice::STEAL_REF);
       *req = ByteBuffer(&slice, 1);
@@ -112,58 +113,86 @@ class ClientRequestCreator<ByteBuffer> {
   }
 };
 
-class HistogramEntry GRPC_FINAL {
+class HistogramEntry final {
  public:
-  HistogramEntry() : used_(false) {}
-  bool used() const { return used_; }
+  HistogramEntry() : value_used_(false), status_used_(false) {}
+  bool value_used() const { return value_used_; }
   double value() const { return value_; }
   void set_value(double v) {
-    used_ = true;
+    value_used_ = true;
     value_ = v;
+  }
+  bool status_used() const { return status_used_; }
+  int status() const { return status_; }
+  void set_status(int status) {
+    status_used_ = true;
+    status_ = status;
   }
 
  private:
-  bool used_;
+  bool value_used_;
   double value_;
+  bool status_used_;
+  int status_;
 };
+
+typedef std::unordered_map<int, int64_t> StatusHistogram;
+
+inline void MergeStatusHistogram(const StatusHistogram& from,
+                                 StatusHistogram* to) {
+  for (StatusHistogram::const_iterator it = from.begin(); it != from.end();
+       ++it) {
+    (*to)[it->first] += it->second;
+  }
+}
 
 class Client {
  public:
-  Client() : timer_(new UsageTimer), interarrival_timer_() {
+  Client()
+      : timer_(new UsageTimer),
+        interarrival_timer_(),
+        started_requests_(false) {
     gpr_event_init(&start_requests_);
   }
   virtual ~Client() {}
 
   ClientStats Mark(bool reset) {
     Histogram latencies;
+    StatusHistogram statuses;
     UsageTimer::Result timer_result;
 
     MaybeStartRequests();
 
-    // avoid std::vector for old compilers that expect a copy constructor
     if (reset) {
-      Histogram* to_merge = new Histogram[threads_.size()];
+      std::vector<Histogram> to_merge(threads_.size());
+      std::vector<StatusHistogram> to_merge_status(threads_.size());
+
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->BeginSwap(&to_merge[i]);
+        threads_[i]->BeginSwap(&to_merge[i], &to_merge_status[i]);
       }
       std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer_.swap(timer);
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->EndSwap();
         latencies.Merge(to_merge[i]);
+        MergeStatusHistogram(to_merge_status[i], &statuses);
       }
-      delete[] to_merge;
       timer_result = timer->Mark();
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->MergeStatsInto(&latencies);
+        threads_[i]->MergeStatsInto(&latencies, &statuses);
       }
       timer_result = timer_->Mark();
     }
 
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
+    for (StatusHistogram::const_iterator it = statuses.begin();
+         it != statuses.end(); ++it) {
+      RequestResultCount* rrc = stats.add_request_results();
+      rrc->set_status_code(it->first);
+      rrc->set_count(it->second);
+    }
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
@@ -255,16 +284,16 @@ class Client {
 
     ~Thread() { impl_.join(); }
 
-    void BeginSwap(Histogram* n) {
+    void BeginSwap(Histogram* n, StatusHistogram* s) {
       std::lock_guard<std::mutex> g(mu_);
       n->Swap(&histogram_);
+      s->swap(statuses_);
     }
 
-    void EndSwap() {}
-
-    void MergeStatsInto(Histogram* hist) {
+    void MergeStatsInto(Histogram* hist, StatusHistogram* s) {
       std::unique_lock<std::mutex> g(mu_);
       hist->Merge(histogram_);
+      MergeStatusHistogram(statuses_, s);
     }
 
    private:
@@ -285,8 +314,11 @@ class Client {
         const bool thread_still_ok = client_->ThreadFunc(&entry, idx_);
         // lock, update histogram if needed and see if we're done
         std::lock_guard<std::mutex> g(mu_);
-        if (entry.used()) {
+        if (entry.value_used()) {
           histogram_.Add(entry.value());
+        }
+        if (entry.status_used()) {
+          statuses_[entry.status()]++;
         }
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
@@ -301,6 +333,7 @@ class Client {
 
     std::mutex mu_;
     Histogram histogram_;
+    StatusHistogram statuses_;
     Client* client_;
     const size_t idx_;
     std::thread impl_;

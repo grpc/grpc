@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -45,7 +45,6 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
-#include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -66,7 +65,7 @@ typedef struct {
 static const event_engine_factory g_factories[] = {
     {"epoll", grpc_init_epoll_linux},
     {"poll", grpc_init_poll_posix},
-    {"legacy", grpc_init_poll_and_epoll_posix},
+    {"poll-cv", grpc_init_poll_cv_posix},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -258,4 +257,27 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 
 grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
 
-#endif  // GPR_POSIX_SOCKET
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
+  return g_event_engine->workqueue_ref(workqueue, file, line, reason);
+}
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                          const char *file, int line, const char *reason) {
+  g_event_engine->workqueue_unref(exec_ctx, workqueue, file, line, reason);
+}
+#else
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  return g_event_engine->workqueue_ref(workqueue);
+}
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
+  g_event_engine->workqueue_unref(exec_ctx, workqueue);
+}
+#endif
+
+void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            grpc_closure *closure, grpc_error *error) {
+  g_event_engine->workqueue_enqueue(exec_ctx, workqueue, closure, error);
+}
+
+#endif  // GRPC_POSIX_SOCKET
