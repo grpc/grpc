@@ -7491,6 +7491,26 @@
       "grpc_base", 
       "grpc_transport_chttp2"
     ], 
+    "headers": [
+      "src/core/ext/transport/chttp2/server/chttp2_server.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_chttp2_server", 
+    "src": [
+      "src/core/ext/transport/chttp2/server/chttp2_server.c", 
+      "src/core/ext/transport/chttp2/server/chttp2_server.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_server"
+    ], 
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
@@ -7507,7 +7527,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_secure", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "grpc_transport_chttp2_server"
     ], 
     "headers": [], 
     "is_filegroup": true, 

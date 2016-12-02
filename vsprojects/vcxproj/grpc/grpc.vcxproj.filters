@@ -490,6 +490,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
       <Filter>src\core\lib\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
+      <Filter>src\core\ext\transport\chttp2\server</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\secure</Filter>
     </ClCompile>
@@ -1156,6 +1159,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h">
       <Filter>src\core\lib\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h">
+      <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h">
       <Filter>src\core\ext\client_channel</Filter>

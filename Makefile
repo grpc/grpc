@@ -2786,6 +2786,7 @@ LIBGRPC_SRC = \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_channel/channel_connectivity.c \
     src/core/ext/client_channel/client_channel.c \
@@ -3564,6 +3565,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
@@ -4139,6 +4141,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/client_channel/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
+    src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \

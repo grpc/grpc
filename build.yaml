@@ -647,6 +647,14 @@ filegroups:
   - grpc_client_channel
   - grpc_secure
   - grpc_transport_chttp2_client_connector
+- name: grpc_transport_chttp2_server
+  headers:
+  - src/core/ext/transport/chttp2/server/chttp2_server.h
+  src:
+  - src/core/ext/transport/chttp2/server/chttp2_server.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_server_insecure
   src:
   - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
@@ -654,6 +662,7 @@ filegroups:
   uses:
   - grpc_transport_chttp2
   - grpc_base
+  - grpc_transport_chttp2_server
 - name: grpc_transport_chttp2_server_secure
   src:
   - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
@@ -661,6 +670,7 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_secure
+  - grpc_transport_chttp2_server
 - name: grpc_transport_cronet_client_secure
   public_headers:
   - include/grpc/grpc_cronet.h
