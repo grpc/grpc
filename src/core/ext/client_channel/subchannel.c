@@ -637,9 +637,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
 
   /* setup subchannel watching connected subchannel for changes; subchannel
-     ref
-     for connecting is donated
-     to the state watcher */
+     ref for connecting is donated to the state watcher */
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
