@@ -33,13 +33,13 @@
 
 using System;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Flags for various call behaviors (client-side only).
+    /// Flags to enable special call behaviors (client-side only).
     /// </summary>
     [Flags]
-    public enum CallFlags
+    internal enum CallFlags
     {
         /// <summary>
         /// The call is idempotent (retrying the call doesn't change the outcome of the operation).
