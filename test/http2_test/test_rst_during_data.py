@@ -1,10 +1,10 @@
 import http2_base_server
 
-class TestcaseRstStreamAfterData(object):
+class TestcaseRstStreamDuringData(object):
   """
     In response to an incoming request, this test sends headers, followed by
-    data, followed by a reset stream frame. Client asserts that the RPC failed.
-    Client needs to deliver the complete message to the application layer.
+    some data, followed by a reset stream frame. Client asserts that the RPC
+    failed and does not deliver the message to the application.
   """
   def __init__(self):
     self._base_server = http2_base_server.H2ProtocolBaseServer()
@@ -20,7 +20,9 @@ class TestcaseRstStreamAfterData(object):
     if sr:
       response_data = self._base_server.default_response_data(sr.response_size)
       self._ready_to_send = True
-      self._base_server.setup_send(response_data, event.stream_id)
+      response_len = len(response_data)
+      truncated_response_data = response_data[0:response_len/2]
+      self._base_server.setup_send(truncated_response_data, event.stream_id)
       # send reset stream
 
   def on_send_done(self, stream_id):
