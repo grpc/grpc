@@ -72,17 +72,20 @@ class AsyncBidiGreeterClient {
     // This is important: You can have at most one write or at most one read
     // at any given time. The throttling is performed by gRPC completion
     // queue. If you queue more than one write/read, the stream will crash.
+    std::cout << " ** Sending request: " << user << std::endl;
     stream_->Write(request, reinterpret_cast<void*>(Type::WRITE));
   }
 
   ~AsyncBidiGreeterClient() {
-    std::cout << "Shutting down server." << std::endl;
+    std::cout << "Shutting down client." << std::endl;
+    grpc::Status status;
+    cq_.Shutdown();
     grpc_thread_->join();
   }
 
  private:
   void AsyncHelloResponse() {
-    std::cout << "Got response: " << response_.message() << std::endl;
+    std::cout << " ** Got response: " << response_.message() << std::endl;
 
     // The tag is the link between our thread (main thread) and the completion
     // queue thread. The tag allows the completion queue to fan off
@@ -118,10 +121,10 @@ class AsyncBidiGreeterClient {
         switch (static_cast<Type>(reinterpret_cast<long>(got_tag))) {
           case Type::READ:
             std::cout << "Read a new message." << std::endl;
-            AsyncHelloResponse();
             break;
           case Type::WRITE:
             std::cout << "Sending message (async)." << std::endl;
+            AsyncHelloResponse();
             break;
           case Type::CONNECT:
             std::cout << "Server connected." << std::endl;

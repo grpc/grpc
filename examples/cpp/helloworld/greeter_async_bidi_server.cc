@@ -74,6 +74,7 @@ class AsyncBidiGreeterServer {
     // Get hold of the completion queue used for the asynchronous communication
     // with the gRPC runtime.
     cq_ = builder.AddCompletionQueue();
+
     // Finally assemble the server.
     server_ = builder.BuildAndStart();
 
@@ -105,12 +106,13 @@ class AsyncBidiGreeterServer {
     // In the case of the server, we wait for a READ first and then write a
     // response. A server cannot initiate a connection so the server has to
     // wait for the client to send a message in order for it to respond back.
-    // stream_->Read(&request_, reinterpret_cast<void*>(Type::READ));
+    stream_->Read(&request_, reinterpret_cast<void*>(Type::READ));
   }
 
   void AsyncHelloResponse() {
-    std::cout << "Handling request: " << request_.name() << std::endl;
+    std::cout << " ** Handling request: " << request_.name() << std::endl;
     HelloReply response;
+    std::cout << " ** Sending response: " << response_str_ << std::endl;
     response.set_message(response_str_);
     stream_->Write(response, reinterpret_cast<void*>(Type::WRITE));
 
@@ -147,7 +149,7 @@ class AsyncBidiGreeterServer {
             break;
           case Type::CONNECT:
             std::cout << "Client connected." << std::endl;
-            // AsyncHello();
+            AsyncHello();
             break;
           default:
             std::cerr << "Unexpected tag " << got_tag << std::endl;
