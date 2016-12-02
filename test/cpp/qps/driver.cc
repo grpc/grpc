@@ -63,6 +63,17 @@ using std::vector;
 
 namespace grpc {
 namespace testing {
+static std::string get_host(const std::string& worker) {
+  char* host;
+  char* port;
+
+  gpr_split_host_port(worker.c_str(), &host, &port);
+  const string s(host);
+
+  gpr_free(host);
+  gpr_free(port);
+  return s;
+}
 
 static deque<string> get_workers(const string& name) {
   char* env = gpr_getenv(name.c_str());
@@ -233,11 +244,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
         CreateChannel(workers[i], InsecureChannelCredentials()));
 
     ServerConfig server_config = initial_server_config;
-    char* host;
-    char* driver_port;
-    char* cli_target;
-    gpr_split_host_port(workers[i].c_str(), &host, &driver_port);
-    string host_str(host);
 
     ServerArgs args;
     *args.mutable_setup() = server_config;
@@ -249,11 +255,15 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
     }
-    gpr_join_host_port(&cli_target, host, init_status.port());
-    client_config.add_server_targets(cli_target);
-    gpr_free(host);
-    gpr_free(driver_port);
-    gpr_free(cli_target);
+    // Fill in server targets only if they haven't already been configured.
+    if ((int)num_servers != client_config.server_targets_size()) {
+      std::string host;
+      char* cli_target;
+      host = get_host(workers[i]);
+      gpr_join_host_port(&cli_target, host.c_str(), init_status.port());
+      client_config.add_server_targets(cli_target);
+      gpr_free(cli_target);
+    }
   }
 
   // Targets are all set by now

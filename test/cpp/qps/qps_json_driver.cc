@@ -66,6 +66,9 @@ DEFINE_double(error_tolerance, 0.01,
               "Defines threshold for stopping the search. When current search "
               "range is narrower than the error_tolerance computed range, we "
               "stop the search.");
+DEFINE_string(benchmark_server_target_override, "",
+              "Optional uri to override the benchmark server target "
+              "given to client benchmark workers.");
 
 namespace grpc {
 namespace testing {
@@ -73,8 +76,17 @@ namespace testing {
 static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
                                                     bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
+
+  ClientConfig client_config = scenario.client_config();
+
+  if (FLAGS_benchmark_server_target_override != "") {
+    GPR_ASSERT(scenario.num_servers() == 1);
+    GPR_ASSERT(client_config.server_targets_size() == 0);
+    client_config.add_server_targets(FLAGS_benchmark_server_target_override);
+  }
+
   auto result =
-      RunScenario(scenario.client_config(), scenario.num_clients(),
+      RunScenario(client_config, scenario.num_clients(),
                   scenario.server_config(), scenario.num_servers(),
                   scenario.warmup_seconds(), scenario.benchmark_seconds(),
                   scenario.spawn_local_worker_count());
