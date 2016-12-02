@@ -49,20 +49,17 @@ measure_cpu_costs = False
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
 
+
+def strip_non_ascii_chars(s):
+  return ''.join(c for c in s if ord(c) < 128)
+
+
 def sanitized_environment(env):
   sanitized = {}
   for key, value in env.items():
-    print("type(key)=", type(key))
-    print("key=", key)
-    print("type(value)=", type(value))
-    print("value=", value)
-    print("value hex dump:", ' '.join('%x' % ord(c) for c in value))
-    print("type(key.encode(errors='ignore'))=", type(key.encode(errors='ignore')))
-    print("key.encode(errors='ignore')=", key.encode(errors='ignore'))
-    print("type(value.encode(errors='ignore'))=", type(value.encode(errors='ignore')))
-    print("value.encode(errors='ignore')=", value.encode(errors='ignore'))
-    sanitized[key.encode(errors='ignore')] = value.encode(errors='ignore')
+    sanitized[strip_non_ascii_chars(key)] = strip_non_ascii_chars(value)
   return sanitized
+
 
 def platform_string():
   if platform.system() == 'Windows':
