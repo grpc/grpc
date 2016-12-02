@@ -24,7 +24,7 @@ class TestcaseGoaway(object):
   def on_connection_lost(self, reason):
     logging.info('Disconnect received. Count %d'%self._iteration)
     # _iteration == 2 => Two different connections have been used.
-    if self._iteration == 200:
+    if self._iteration == 2:
       self._base_server.on_connection_lost(reason)
 
   def on_send_done(self, stream_id):
