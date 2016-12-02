@@ -1339,14 +1339,13 @@ static void run_poll(void *arg) {
     gpr_cv_signal(pargs->cv);
   }
   gpr_mu_unlock(pargs->mu);
+  decref_poll_args(pargs);
 
   if (gpr_unref(&g_cvfds_pollcount)) {
     gpr_mu_lock(&g_cvfds_shutdown_mu);
     gpr_cv_signal(&g_cvfds_shutdown_cv);
     gpr_mu_unlock(&g_cvfds_shutdown_mu);
   }
-
-  decref_poll_args(pargs);
 }
 
 // This function overrides poll() to handle condition variable wakeup fds
