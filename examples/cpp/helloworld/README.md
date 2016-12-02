@@ -273,10 +273,14 @@ export GRPC_VERBOSITY=DEBUG
 ```
 
 In the context of streaming servers/clients, several options are possible:
+
  1 Completion Queue  :: 1 Server :: 1 Stream (Simplest case)
- 1 Completion Queue  :: 1 Server :: N Streams (Sharing completion queue).
+ 
+ 1 Completion Queue  :: 1 Server :: N Streams (Sharing completion queue)
+ 
  N Completion Queues :: 1 Server :: N Streams (Independent completion queue
-  per stream).
+  per stream)
+  
  A completion queue can also be shared among *different* RPCs as well, not
   just for the same stream RPC API.
 
