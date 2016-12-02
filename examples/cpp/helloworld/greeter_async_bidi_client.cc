@@ -49,14 +49,17 @@ using hellostreamingworld::HelloRequest;
 using hellostreamingworld::HelloReply;
 using hellostreamingworld::MultiGreeter;
 
-enum class Type { READ = 1, WRITE = 2, CONNECT = 3 };
-
+// NOTE: This is a complex example for an asynchronous, bidirectional streaming
+// client. For a simpler example, start with the
+// greeter_client/greeter_async_client first.
 class AsyncBidiGreeterClient {
+  enum class Type { READ = 1, WRITE = 2, CONNECT = 3 };
+
  public:
   explicit AsyncBidiGreeterClient(std::shared_ptr<Channel> channel)
       : stub_(MultiGreeter::NewStub(channel)) {
     grpc_thread_.reset(
-        new std::thread(&AsyncBidiGreeterClient::GrpcThread, this));
+        new std::thread([=]() { &AsyncBidiGreeterClient::GrpcThread }));
     stream_ = stub_->AsyncSayHello(&context_, &cq_,
                                    reinterpret_cast<void*>(Type::CONNECT));
   }
@@ -65,13 +68,17 @@ class AsyncBidiGreeterClient {
   // wait for the response. Instead queues up a tag in the completion queue
   // that is notified when the server responds back (or when the stream is
   // closed).
-  void AsyncHello(const std::string& user) {
+  void AsyncSayHello(const std::string& user) {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
+
     // This is important: You can have at most one write or at most one read
     // at any given time. The throttling is performed by gRPC completion
     // queue. If you queue more than one write/read, the stream will crash.
+    // Because this stream is bidirectional, you *can* have a single read
+    // and a single write request queued for the same stream. Writes and reads
+    // are independent of each other in terms of ordering/delivery.
     std::cout << " ** Sending request: " << user << std::endl;
     stream_->Write(request, reinterpret_cast<void*>(Type::WRITE));
   }
@@ -84,7 +91,7 @@ class AsyncBidiGreeterClient {
   }
 
  private:
-  void AsyncHelloResponse() {
+  void AsyncHelloRequestNextMessage() {
     std::cout << " ** Got response: " << response_.message() << std::endl;
 
     // The tag is the link between our thread (main thread) and the completion
@@ -124,7 +131,7 @@ class AsyncBidiGreeterClient {
             break;
           case Type::WRITE:
             std::cout << "Sending message (async)." << std::endl;
-            AsyncHelloResponse();
+            AsyncHelloRequestNextMessage();
             break;
           case Type::CONNECT:
             std::cout << "Server connected." << std::endl;
@@ -175,7 +182,7 @@ int main(int argc, char** argv) {
     }
 
     // Async RPC call that sends a message and awaits a response.
-    greeter.AsyncHello(user);
+    greeter.AsyncSayHello(user);
   }
   return 0;
 }

@@ -52,6 +52,10 @@ using hellostreamingworld::MultiGreeter;
 
 enum class Type { READ = 1, WRITE = 2, CONNECT = 3, FINISH = 4 };
 
+// NOTE: This is a complex example for an asynchronous, bidirectional streaming
+// server. For a simpler example, start with the
+// greeter_server/greeter_async_server first.
+
 // Most of the logic is similar to AsyncBidiGreeterClient, so follow that class
 // for detailed comments. The only difference between the server and the client
 // is the (a) concept of 'listening' as well as (b) client 'Finish()' that
@@ -66,16 +70,9 @@ class AsyncBidiGreeterServer {
     std::string server_address("0.0.0.0:50051");
 
     ServerBuilder builder;
-    // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    // Register "service_" as the instance through which we'll communicate with
-    // clients. In this case it corresponds to an *asynchronous* service.
     builder.RegisterService(&service_);
-    // Get hold of the completion queue used for the asynchronous communication
-    // with the gRPC runtime.
     cq_ = builder.AddCompletionQueue();
-
-    // Finally assemble the server.
     server_ = builder.BuildAndStart();
 
     // This initiates a single stream for a single client. To allow multiple
@@ -86,8 +83,7 @@ class AsyncBidiGreeterServer {
         new ServerAsyncReaderWriter<HelloReply, HelloRequest>(&context_));
     service_.RequestSayHello(&context_, stream_.get(), cq_.get(), cq_.get(),
                              reinterpret_cast<void*>(Type::CONNECT));
-    grpc_thread_.reset(
-        new std::thread([=]() { GrpcThread(); }));
+    grpc_thread_.reset(new std::thread([=]() { GrpcThread(); }));
     std::cout << "Server listening on " << server_address << std::endl;
   }
 
@@ -117,17 +113,10 @@ class AsyncBidiGreeterServer {
     stream_->Write(response, reinterpret_cast<void*>(Type::WRITE));
   }
 
-  // Runs a gRPC completion-queue processing thread. Checks for 'Next' tag
-  // and processes them until there are no more (or when the completion queue
-  // is shutdown).
   void GrpcThread() {
     while (true) {
       void* got_tag = nullptr;
       bool ok = false;
-      // Block until the next result is available in the completion queue "cq".
-      // The return value of Next should always be checked. This return value
-      // tells us whether there is any kind of event or the cq_ is shutting
-      // down.
       if (!cq_->Next(&got_tag, &ok)) {
         std::cerr << "Client stream closed. Quitting" << std::endl;
         break;
