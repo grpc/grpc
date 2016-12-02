@@ -47,26 +47,17 @@
 typedef struct {
   grpc_channel_security_connector base;
   tsi_ssl_handshaker_factory *handshaker_factory;
-  grpc_handshake_manager *handshake_mgr;
   char *secure_peer_name;
 } grpc_httpcli_ssl_channel_security_connector;
 
 static void httpcli_ssl_destroy(grpc_security_connector *sc) {
-  // TODO(roth, ctiller): Once https://github.com/grpc/grpc/pull/8705 is
-  // merged, change this to use the passed-in exec_ctx instead of creating
-  // its own.
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
-  if (c->handshake_mgr != NULL) {
-    grpc_handshake_manager_destroy(&exec_ctx, c->handshake_mgr);
-  }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
   gpr_free(sc);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void httpcli_ssl_create_handshakers(
@@ -141,7 +132,6 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     *sc = NULL;
     return GRPC_SECURITY_ERROR;
   }
-  c->handshake_mgr = grpc_handshake_manager_create();
   c->base.create_handshakers = httpcli_ssl_create_handshakers;
   *sc = &c->base;
   return GRPC_SECURITY_OK;
@@ -152,29 +142,25 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
 typedef struct {
   void (*func)(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *endpoint);
   void *arg;
+  grpc_handshake_manager *handshake_mgr;
 } on_done_closure;
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = arg;
   on_done_closure *c = args->user_data;
-  grpc_channel_args_destroy(args->args);
-  grpc_slice_buffer_destroy(args->read_buffer);
-  gpr_free(args->read_buffer);
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
     grpc_error_free_string(msg);
     c->func(exec_ctx, c->arg, NULL);
-    // TODO(ctiller): It is currently necessary to shutdown endpoints
-    // before destroying them, even if we know that there are no
-    // pending read/write callbacks.  This should be fixed, at which
-    // point this can be removed.
-    grpc_endpoint_shutdown(exec_ctx, args->endpoint);
-    grpc_endpoint_destroy(exec_ctx, args->endpoint);
   } else {
+    grpc_channel_args_destroy(args->args);
+    grpc_slice_buffer_destroy(args->read_buffer);
+    gpr_free(args->read_buffer);
     c->func(exec_ctx, c->arg, args->endpoint);
   }
+  grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
   gpr_free(c);
 }
 
@@ -195,16 +181,15 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   }
   c->func = on_done;
   c->arg = arg;
+  c->handshake_mgr = grpc_handshake_manager_create();
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
-  grpc_httpcli_ssl_channel_security_connector *httpcli_connector =
-      (grpc_httpcli_ssl_channel_security_connector *)sc;
-  grpc_channel_security_connector_create_handshakers(
-      exec_ctx, sc, httpcli_connector->handshake_mgr);
+  grpc_channel_security_connector_create_handshakers(exec_ctx, sc,
+                                                     c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
-      exec_ctx, httpcli_connector->handshake_mgr, tcp, NULL /* channel_args */,
-      deadline, NULL /* acceptor */, on_handshake_done, c /* user_data */);
+      exec_ctx, c->handshake_mgr, tcp, NULL /* channel_args */, deadline,
+      NULL /* acceptor */, on_handshake_done, c /* user_data */);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

@@ -81,8 +81,7 @@ static void security_handshaker_unref(grpc_exec_ctx *exec_ctx,
                                       security_handshaker *h) {
   if (gpr_unref(&h->refs)) {
     gpr_mu_destroy(&h->mu);
-    if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
-    if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
+    tsi_handshaker_destroy(h->handshaker);
     if (h->endpoint_to_destroy != NULL) {
       grpc_endpoint_destroy(exec_ctx, h->endpoint_to_destroy);
     }
@@ -90,6 +89,7 @@ static void security_handshaker_unref(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer_destroy(h->read_buffer_to_destroy);
       gpr_free(h->read_buffer_to_destroy);
     }
+    gpr_free(h->handshake_buffer);
     grpc_slice_buffer_destroy(&h->left_overs);
     grpc_slice_buffer_destroy(&h->outgoing);
     GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
