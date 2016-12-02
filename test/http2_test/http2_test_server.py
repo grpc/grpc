@@ -31,7 +31,7 @@ class H2Factory(Factory):
     elif self._testcase == 'ping':
       t = test_ping.TestcasePing()
     elif self._testcase == 'max_streams':
-      t = TestcaseSettingsMaxStreams(self._num_streams)
+      t = test_max_streams.TestcaseSettingsMaxStreams()
     else:
       logging.error('Unknown test case: %s'%self._testcase)
       assert(0)
