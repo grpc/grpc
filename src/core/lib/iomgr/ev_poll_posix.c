@@ -270,7 +270,7 @@ typedef struct poll_args {
   gpr_atm status;
 } poll_args;
 
-cv_fd_table g_cvfds[TABLE_SHARDS];
+cv_fd_table g_cvfds[GRPC_POLLCV_TABLE_SHARDS];
 static gpr_mu g_cvfds_shutdown_mu;
 static gpr_cv g_cvfds_shutdown_cv;
 static gpr_refcount g_cvfds_pollcount;
@@ -1369,14 +1369,14 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   for (i = 0; i < nfds; i++) {
     fds[i].revents = 0;
     if (fds[i].fd < 0 && (fds[i].events & POLLIN)) {
-      shard = FD_TO_SHARD(fds[i].fd);
+      shard = GRPC_POLLCV_FD_TO_SHARD(fds[i].fd);
       // Note that g_cvfds[shard].mu and pollmu are aquired in opposite order
       // between here and cv_fd_wakeup() (deadlock-prone).  However,
       // g_cvfds[shard] can only get a reference to pollmu once we have
       // succesfully aquired both locks here, and we never hold both locks
       // again in this function.
       gpr_mu_lock(&g_cvfds[shard].mu);
-      idx = FD_TO_IDX(fds[i].fd);
+      idx = GRPC_POLLCV_FD_TO_IDX(fds[i].fd);
       cvn = gpr_malloc(sizeof(cv_node));
       cvn->cv = pollcv;
       cvn->mu = pollmu;
@@ -1441,8 +1441,8 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   j = 0;
   for (i = 0; i < nfds; i++) {
     if (fds[i].fd < 0 && (fds[i].events & POLLIN)) {
-      shard = FD_TO_SHARD(fds[i].fd);
-      idx = FD_TO_IDX(fds[i].fd);
+      shard = GRPC_POLLCV_FD_TO_SHARD(fds[i].fd);
+      idx = GRPC_POLLCV_FD_TO_IDX(fds[i].fd);
       gpr_mu_lock(&g_cvfds[shard].mu);
       cvn = g_cvfds[shard].cvfds[idx].cvs;
       prev = NULL;
@@ -1486,7 +1486,7 @@ static void global_cv_fd_table_init() {
   gpr_cv_init(&g_cvfds_shutdown_cv);
   gpr_ref_init(&g_cvfds_pollcount, 1);
 
-  for (int i = 0; i < TABLE_SHARDS; i++) {
+  for (int i = 0; i < GRPC_POLLCV_TABLE_SHARDS; i++) {
     gpr_mu_init(&g_cvfds[i].mu);
     g_cvfds[i].size = CV_DEFAULT_TABLE_SIZE;
     g_cvfds[i].cvfds = gpr_malloc(sizeof(fd_node) * CV_DEFAULT_TABLE_SIZE);
@@ -1517,7 +1517,7 @@ static void global_cv_fd_table_shutdown() {
   }
   gpr_cv_destroy(&g_cvfds_shutdown_cv);
   grpc_poll_function = g_cvfds_poll;
-  for (int i = 0; i < TABLE_SHARDS; i++) {
+  for (int i = 0; i < GRPC_POLLCV_TABLE_SHARDS; i++) {
     gpr_mu_lock(&g_cvfds[i].mu);
     gpr_free(g_cvfds[i].cvfds);
     gpr_mu_unlock(&g_cvfds[i].mu);
