@@ -126,6 +126,9 @@ static void handshake_failed_locked(grpc_exec_ctx* exec_ctx,
     // Not shutting down, so the handshake failed.  Clean up before
     // invoking the callback.
     cleanup_args_for_failure_locked(handshaker);
+    // Set shutdown to true so that subsequent calls to
+    // http_connect_handshaker_shutdown() do nothing.
+    handshaker->shutdown = true;
   }
   // Invoke callback.
   grpc_exec_ctx_sched(exec_ctx, handshaker->on_handshake_done, error, NULL);
