@@ -98,5 +98,16 @@ namespace Grpc.Core.Tests
             Assert.AreEqual(token, new CallOptions(propagationToken: propagationToken2).Normalize().CancellationToken);
             Assert.Throws(typeof(ArgumentException), () => new CallOptions(cancellationToken: token, propagationToken: propagationToken2).Normalize());
         }
+
+        [Test]
+        public void WaitForReady()
+        {
+            var callOptions = new CallOptions();
+            Assert.IsFalse(callOptions.IsWaitForReady);
+
+            Assert.AreEqual(CallFlags.WaitForReady, callOptions.WithWaitForReady().Flags);
+            Assert.IsTrue(callOptions.WithWaitForReady().IsWaitForReady);
+            Assert.IsFalse(callOptions.WithWaitForReady(true).WithWaitForReady(false).IsWaitForReady);
+        }
     }
 }

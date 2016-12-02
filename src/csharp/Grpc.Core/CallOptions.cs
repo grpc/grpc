@@ -61,10 +61,8 @@ namespace Grpc.Core
         /// <param name="writeOptions">Write options that will be used for this call.</param>
         /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
         /// <param name="credentials">Credentials to use for this call.</param>
-        /// <param name="flags">Flags to use for this call.</param>
         public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
-                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null,
-                           CallFlags flags = default(CallFlags))
+                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
         {
             this.headers = headers;
             this.deadline = deadline;
@@ -72,7 +70,7 @@ namespace Grpc.Core
             this.writeOptions = writeOptions;
             this.propagationToken = propagationToken;
             this.credentials = credentials;
-            this.flags = flags;
+            this.flags = default(CallFlags);
         }
 
         /// <summary>
@@ -130,9 +128,19 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// If <c>true</c> and and channel is in <c>ChannelState.TransientFailure</c>, the call will attempt waiting for the channel to recover
+        /// instead of failing immediately (which is the default "FailFast" semantics).
+        /// Note: experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public bool IsWaitForReady
+        {
+            get { return (this.flags & CallFlags.WaitForReady) == CallFlags.WaitForReady; }
+        }
+
+        /// <summary>
         /// Flags to use for this call.
         /// </summary>
-        public CallFlags Flags
+        internal CallFlags Flags
         {
             get { return this.flags; }
         }
@@ -210,11 +218,25 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with "WaitForReady" semantics enabled/disabled.
+        /// <see cref="IsWaitForReady"/>.
+        /// Note: experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public CallOptions WithWaitForReady(bool waitForReady = true)
+        {
+            if (waitForReady)
+            {
+                return WithFlags(this.flags | CallFlags.WaitForReady);
+            }
+            return WithFlags(this.flags & ~CallFlags.WaitForReady);
+        }
+
+        /// <summary>
         /// Returns new instance of <see cref="CallOptions"/> with
         /// <c>Flags</c> set to the value provided. Values of all other fields are preserved.
         /// </summary>
         /// <param name="flags">The call flags.</param>
-        public CallOptions WithFlags(CallFlags flags)
+        internal CallOptions WithFlags(CallFlags flags)
         {
             var newOptions = this;
             newOptions.flags = flags;
