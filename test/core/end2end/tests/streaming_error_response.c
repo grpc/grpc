@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -103,10 +101,10 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice response_payload1_slice = gpr_slice_from_copied_string("hello");
+  grpc_slice response_payload1_slice = grpc_slice_from_copied_string("hello");
   grpc_byte_buffer *response_payload1 =
       grpc_raw_byte_buffer_create(&response_payload1_slice, 1);
-  gpr_slice response_payload2_slice = gpr_slice_from_copied_string("world");
+  grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer *response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
   gpr_timespec deadline = five_seconds_time();
@@ -127,8 +125,10 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -163,7 +163,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -177,7 +177,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -188,9 +188,9 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(103), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   if (!request_status_early) {
-    cq_expect_completion(cqv, tag(1), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   }
   cq_verify(cqv);
 
@@ -217,11 +217,11 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     GPR_ASSERT(GRPC_CALL_OK == error);
   }
 
-  cq_expect_completion(cqv, tag(104), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   if (request_status_early) {
-    cq_expect_completion(cqv, tag(1), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   } else {
-    cq_expect_completion(cqv, tag(2), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   }
   cq_verify(cqv);
 
@@ -237,7 +237,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    cq_expect_completion(cqv, tag(3), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
     cq_verify(cqv);
 
     GPR_ASSERT(response_payload1_recv != NULL);
@@ -247,7 +247,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   GPR_ASSERT(status == GRPC_STATUS_FAILED_PRECONDITION);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);

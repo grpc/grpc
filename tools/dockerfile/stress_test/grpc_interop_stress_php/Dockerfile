@@ -63,6 +63,21 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+
 #==================
 # Ruby dependencies
 
@@ -102,24 +117,9 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 RUN mkdir /var/local/jenkins
 
-# ronn: a ruby tool used to convert markdown to man pages, used during the
-# install of Protobuf extensions
-#
-# rake: a ruby version of make used to build the PHP Protobuf extension
-RUN /bin/bash -l -c "rvm all do gem install ronn rake"
-
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
-
-# Download the patched PHP protobuf so that PHP gRPC clients can be generated
-# from proto3 schemas.
-RUN git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
-
-RUN /bin/bash -l -c "rvm use ruby-2.1 \
-  && cd /var/local/git/protobuf-php \
-  && rvm all do rake pear:package version=1.0 \
-  && pear install Protobuf-1.0.tgz"
 
 # Define the default command.
 CMD ["bash"]

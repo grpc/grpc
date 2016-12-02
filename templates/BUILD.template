@@ -38,6 +38,8 @@
   
   licenses(["notice"])  # 3-clause BSD
   
+  exports_files(["LICENSE"])
+  
   package(default_visibility = ["//visibility:public"])
   
   <%!

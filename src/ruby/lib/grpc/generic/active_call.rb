@@ -43,7 +43,8 @@ class Struct
         GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
-        fail GRPC::BadStatus.new(status.code, status.details, md)
+        fail GRPC::BadStatus.new(status.code, status.details, md),
+             "status code: #{status.code}, details: #{status.details}"
       end
       status
     end
@@ -58,7 +59,7 @@ module GRPC
     include Core::TimeConsts
     include Core::CallOps
     extend Forwardable
-    attr_reader(:deadline)
+    attr_reader :deadline, :metadata_sent, :metadata_to_send
     def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
                    :peer, :peer_cert, :trailing_metadata
 
@@ -101,7 +102,7 @@ module GRPC
     # @param metadata_received [true|false] indicates if metadata has already
     #     been received. Should always be true for server calls
     def initialize(call, marshal, unmarshal, deadline, started: true,
-                   metadata_received: false)
+                   metadata_received: false, metadata_to_send: nil)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       @call = call
       @deadline = deadline
@@ -110,6 +111,20 @@ module GRPC
       @metadata_received = metadata_received
       @metadata_sent = started
       @op_notifier = nil
+
+      fail(ArgumentError, 'Already sent md') if started && metadata_to_send
+      @metadata_to_send = metadata_to_send || {} unless started
+      @send_initial_md_mutex = Mutex.new
+    end
+
+    # Sends the initial metadata that has yet to be sent.
+    # Does nothing if metadata has already been sent for this call.
+    def send_initial_metadata
+      @send_initial_md_mutex.synchronize do
+        return if @metadata_sent
+        @metadata_tag = ActiveCall.client_invoke(@call, @metadata_to_send)
+        @metadata_sent = true
+      end
     end
 
     # output_metadata are provides access to hash that can be used to
@@ -142,41 +157,25 @@ module GRPC
       Operation.new(self)
     end
 
-    # writes_done indicates that all writes are completed.
-    #
-    # It blocks until the remote endpoint acknowledges with at status unless
-    # assert_finished is set to false.  Any calls to #remote_send after this
-    # call will fail.
-    #
-    # @param assert_finished [true, false] when true(default), waits for
-    # FINISHED.
-    def writes_done(assert_finished = true)
-      ops = {
-        SEND_CLOSE_FROM_CLIENT => nil
-      }
-      ops[RECV_STATUS_ON_CLIENT] = nil if assert_finished
-      batch_result = @call.run_batch(ops)
-      return unless assert_finished
-      unless batch_result.status.nil?
-        @call.trailing_metadata = batch_result.status.metadata
-      end
-      @call.status = batch_result.status
-      op_is_done
-      batch_result.check_status
-    end
-
     # finished waits until a client call is completed.
     #
     # It blocks until the remote endpoint acknowledges by sending a status.
     def finished
       batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
-      unless batch_result.status.nil?
-        @call.trailing_metadata = batch_result.status.metadata
+      attach_status_results_and_complete_call(batch_result)
+    end
+
+    def attach_status_results_and_complete_call(recv_status_batch_result)
+      unless recv_status_batch_result.status.nil?
+        @call.trailing_metadata = recv_status_batch_result.status.metadata
       end
-      @call.status = batch_result.status
-      op_is_done
-      batch_result.check_status
+      @call.status = recv_status_batch_result.status
       @call.close
+      op_is_done
+
+      # The RECV_STATUS in run_batch always succeeds
+      # Check the status for a bad status or failed run batch
+      recv_status_batch_result.check_status
     end
 
     # remote_send sends a request to the remote endpoint.
@@ -187,7 +186,7 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      # TODO(murgatroid99): ensure metadata was sent
+      send_initial_metadata
       GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
       payload = marshalled ? req : @marshal.call(req)
       @call.run_batch(SEND_MESSAGE => payload)
@@ -203,12 +202,30 @@ module GRPC
     # list, mulitple metadata for its key are sent
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
+      send_initial_metadata
       ops = {
         SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
       @call.run_batch(ops)
       nil
+    end
+
+    def server_unary_response(req, trailing_metadata: {},
+                              code: Core::StatusCodes::OK, details: 'OK')
+      ops = {}
+      @send_initial_md_mutex.synchronize do
+        ops[SEND_INITIAL_METADATA] = @metadata_to_send unless @metadata_sent
+        @metadata_sent = true
+      end
+
+      payload = @marshal.call(req)
+      ops[SEND_MESSAGE] = payload
+      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
+        code, details, trailing_metadata)
+      ops[RECV_CLOSE_ON_SERVER] = nil
+
+      @call.run_batch(ops)
     end
 
     # remote_read reads a response from the remote endpoint.
@@ -225,12 +242,13 @@ module GRPC
         @call.metadata = batch_result.metadata
         @metadata_received = true
       end
-      GRPC.logger.debug("received req: #{batch_result}")
-      unless batch_result.nil? || batch_result.message.nil?
-        GRPC.logger.debug("received req.to_s: #{batch_result.message}")
-        res = @unmarshal.call(batch_result.message)
-        GRPC.logger.debug("received_req (unmarshalled): #{res.inspect}")
-        return res
+      get_message_from_batch_result(batch_result)
+    end
+
+    def get_message_from_batch_result(recv_message_batch_result)
+      unless recv_message_batch_result.nil? ||
+             recv_message_batch_result.message.nil?
+        return @unmarshal.call(recv_message_batch_result.message)
       end
       GRPC.logger.debug('found nil; the final response has been sent')
       nil
@@ -286,7 +304,6 @@ module GRPC
       return enum_for(:each_remote_read_then_finish) unless block_given?
       loop do
         resp = remote_read
-        break if resp.is_a? Struct::Status  # is an OK status
         if resp.nil?  # the last response was received, but not finished yet
           finished
           break
@@ -303,15 +320,25 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
-      start_call(metadata)
-      remote_send(req)
-      writes_done(false)
-      response = remote_read
-      finished unless response.is_a? Struct::Status
-      response
-    rescue GRPC::Core::CallError => e
-      finished  # checks for Cancelled
-      raise e
+      ops = {
+        SEND_MESSAGE => @marshal.call(req),
+        SEND_CLOSE_FROM_CLIENT => nil,
+        RECV_INITIAL_METADATA => nil,
+        RECV_MESSAGE => nil,
+        RECV_STATUS_ON_CLIENT => nil
+      }
+      @send_initial_md_mutex.synchronize do
+        # Metadata might have already been sent if this is an operation view
+        unless @metadata_sent
+          ops[SEND_INITIAL_METADATA] = @metadata_to_send.merge!(metadata)
+        end
+        @metadata_sent = true
+      end
+      batch_result = @call.run_batch(ops)
+
+      @call.metadata = batch_result.metadata
+      attach_status_results_and_complete_call(batch_result)
+      get_message_from_batch_result(batch_result)
     end
 
     # client_streamer sends a stream of requests to a GRPC server, and
@@ -327,12 +354,20 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
-      start_call(metadata)
-      requests.each { |r| remote_send(r) }
-      writes_done(false)
-      response = remote_read
-      finished unless response.is_a? Struct::Status
-      response
+      # Metadata might have already been sent if this is an operation view
+      merge_metadata_and_send_if_not_already_sent(metadata)
+
+      requests.each { |r| @call.run_batch(SEND_MESSAGE => @marshal.call(r)) }
+      batch_result = @call.run_batch(
+        SEND_CLOSE_FROM_CLIENT => nil,
+        RECV_INITIAL_METADATA => nil,
+        RECV_MESSAGE => nil,
+        RECV_STATUS_ON_CLIENT => nil
+      )
+
+      @call.metadata = batch_result.metadata
+      attach_status_results_and_complete_call(batch_result)
+      get_message_from_batch_result(batch_result)
     rescue GRPC::Core::CallError => e
       finished  # checks for Cancelled
       raise e
@@ -353,9 +388,18 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
-      start_call(metadata)
-      remote_send(req)
-      writes_done(false)
+      ops = {
+        SEND_MESSAGE => @marshal.call(req),
+        SEND_CLOSE_FROM_CLIENT => nil
+      }
+      @send_initial_md_mutex.synchronize do
+        # Metadata might have already been sent if this is an operation view
+        unless @metadata_sent
+          ops[SEND_INITIAL_METADATA] = @metadata_to_send.merge!(metadata)
+        end
+        @metadata_sent = true
+      end
+      @call.run_batch(ops)
       replies = enum_for(:each_remote_read_then_finish)
       return replies unless block_given?
       replies.each { |r| yield r }
@@ -392,9 +436,13 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
-      start_call(metadata)
-      bd = BidiCall.new(@call, @marshal, @unmarshal,
+      # Metadata might have already been sent if this is an operation view
+      merge_metadata_and_send_if_not_already_sent(metadata)
+      bd = BidiCall.new(@call,
+                        @marshal,
+                        @unmarshal,
                         metadata_received: @metadata_received)
+
       bd.run_on_client(requests, @op_notifier, &blk)
     end
 
@@ -410,8 +458,12 @@ module GRPC
     #
     # @param gen_each_reply [Proc] generates the BiDi stream replies
     def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call, @marshal, @unmarshal,
-                        metadata_received: @metadata_received)
+      bd = BidiCall.new(@call,
+                        @marshal,
+                        @unmarshal,
+                        metadata_received: @metadata_received,
+                        req_view: MultiReqView.new(self))
+
       bd.run_on_server(gen_each_reply)
     end
 
@@ -428,15 +480,32 @@ module GRPC
       @op_notifier.notify(self)
     end
 
+    # Add to the metadata that will be sent from the server.
+    # Fails if metadata has already been sent.
+    # Unused by client calls.
+    def merge_metadata_to_send(new_metadata = {})
+      @send_initial_md_mutex.synchronize do
+        fail('cant change metadata after already sent') if @metadata_sent
+        @metadata_to_send.merge!(new_metadata)
+      end
+    end
+
+    def merge_metadata_and_send_if_not_already_sent(new_metadata = {})
+      @send_initial_md_mutex.synchronize do
+        return if @metadata_sent
+        @metadata_to_send.merge!(new_metadata)
+        @call.run_batch(SEND_INITIAL_METADATA => @metadata_to_send)
+        @metadata_sent = true
+      end
+    end
+
     private
 
     # Starts the call if not already started
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
     def start_call(metadata = {})
-      return if @metadata_sent
-      @metadata_tag = ActiveCall.client_invoke(@call, metadata)
-      @metadata_sent = true
+      merge_metadata_to_send(metadata) && send_initial_metadata
     end
 
     def self.view_class(*visible_methods)
@@ -454,12 +523,20 @@ module GRPC
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
     SingleReqView = view_class(:cancelled?, :deadline, :metadata,
-                               :output_metadata, :peer, :peer_cert)
+                               :output_metadata, :peer, :peer_cert,
+                               :send_initial_metadata,
+                               :metadata_to_send,
+                               :merge_metadata_to_send,
+                               :metadata_sent)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
     MultiReqView = view_class(:cancelled?, :deadline, :each_queued_msg,
-                              :each_remote_read, :metadata, :output_metadata)
+                              :each_remote_read, :metadata, :output_metadata,
+                              :send_initial_metadata,
+                              :metadata_to_send,
+                              :merge_metadata_to_send,
+                              :metadata_sent)
 
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.

@@ -42,42 +42,12 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 
-struct grpc_load_reporting_config {
-  grpc_load_reporting_fn fn;
-  void *user_data;
-};
-
-grpc_load_reporting_config *grpc_load_reporting_config_create(
-    grpc_load_reporting_fn fn, void *user_data) {
-  GPR_ASSERT(fn != NULL);
-  grpc_load_reporting_config *lrc =
-      gpr_malloc(sizeof(grpc_load_reporting_config));
-  lrc->fn = fn;
-  lrc->user_data = user_data;
-  return lrc;
-}
-
-grpc_load_reporting_config *grpc_load_reporting_config_copy(
-    grpc_load_reporting_config *src) {
-  return grpc_load_reporting_config_create(src->fn, src->user_data);
-}
-
-void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lrc) {
-  gpr_free(lrc);
-}
-
-void grpc_load_reporting_config_call(
-    grpc_load_reporting_config *lrc,
-    const grpc_load_reporting_call_data *call_data) {
-  lrc->fn(call_data, lrc->user_data);
-}
-
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
   if (a == NULL) return false;
   for (size_t i = 0; i < a->num_args; i++) {
     if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_LOAD_REPORTING)) {
-      return a->args[i].type == GRPC_ARG_POINTER &&
-             a->args[i].value.pointer.p != NULL;
+      return a->args[i].type == GRPC_ARG_INTEGER &&
+             a->args[i].value.integer != 0;
     }
   }
   return false;
@@ -94,37 +64,17 @@ static bool maybe_add_load_reporting_filter(grpc_channel_stack_builder *builder,
   return true;
 }
 
-static void lrd_arg_destroy(void *p) { grpc_load_reporting_config_destroy(p); }
-
-static void *lrd_arg_copy(void *p) {
-  return grpc_load_reporting_config_copy(p);
-}
-
-static int lrd_arg_cmp(void *a, void *b) {
-  grpc_load_reporting_config *lhs = a;
-  grpc_load_reporting_config *rhs = b;
-  return !(lhs->fn == rhs->fn && lhs->user_data == rhs->user_data);
-}
-
-static const grpc_arg_pointer_vtable lrd_ptr_vtable = {
-    lrd_arg_copy, lrd_arg_destroy, lrd_arg_cmp};
-
-grpc_arg grpc_load_reporting_config_create_arg(
-    grpc_load_reporting_config *lrc) {
+grpc_arg grpc_load_reporting_enable_arg() {
   grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
+  arg.type = GRPC_ARG_INTEGER;
   arg.key = GRPC_ARG_ENABLE_LOAD_REPORTING;
-  arg.value.pointer.p = lrc;
-  arg.value.pointer.vtable = &lrd_ptr_vtable;
+  arg.value.integer = 1;
   return arg;
 }
 
 /* Plugin registration */
 
 void grpc_load_reporting_plugin_init(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_load_reporting_filter,
-                                   (void *)&grpc_load_reporting_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_load_reporting_filter,
                                    (void *)&grpc_load_reporting_filter);

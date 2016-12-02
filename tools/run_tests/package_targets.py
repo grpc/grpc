@@ -39,7 +39,7 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   environ['RUN_COMMAND'] = shell_command
 
   docker_args=[]
-  for k,v in environ.iteritems():
+  for k,v in environ.items():
     docker_args += ['-e', '%s=%s' % (k, v)]
   docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
                 'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
@@ -71,34 +71,28 @@ def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
 class CSharpPackage:
   """Builds C# nuget packages."""
 
-  def __init__(self, use_coreclr=False):
-    self.use_coreclr = use_coreclr
-    self.name = 'csharp_package_coreclr' if use_coreclr else 'csharp_package'
+  def __init__(self, linux=False):
+    self.linux = linux
     self.labels = ['package', 'csharp']
-    if use_coreclr:
+    if linux:
+      self.name = 'csharp_package_dotnetcli_linux'
       self.labels += ['linux']
     else:
+      self.name = 'csharp_package_dotnetcli_windows'
       self.labels += ['windows']
 
   def pre_build_jobspecs(self):
-    if 'windows' in self.labels:
-      return [create_jobspec('prebuild_%s' % self.name,
-                             ['tools\\run_tests\\pre_build_csharp.bat'],
-                             shell=True,
-                             flake_retries=5,
-                             timeout_retries=2)]
-    else:
-      return []
+    return []
 
   def build_jobspec(self):
-    if self.use_coreclr:
+    if self.linux:
       return create_docker_jobspec(
           self.name,
           'tools/dockerfile/test/csharp_coreclr_x64',
-          'tools/run_tests/build_package_csharp_coreclr.sh')
+          'src/csharp/build_packages_dotnetcli.sh')
     else:
       return create_jobspec(self.name,
-                            ['build_packages.bat'],
+                            ['build_packages_dotnetcli.bat'],
                             cwd='src\\csharp',
                             shell=True)
 
@@ -177,7 +171,7 @@ class PHPPackage:
 def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
-          CSharpPackage(use_coreclr=True),
+          CSharpPackage(linux=True),
           NodePackage(),
           RubyPackage(),
           PythonPackage(),

@@ -32,14 +32,16 @@ cimport cpython
 
 cdef class Channel:
 
-  def __cinit__(self, bytes target, ChannelArgs arguments=None,
+  def __cinit__(self, bytes target, ChannelArgs arguments,
                 ChannelCredentials channel_credentials=None):
+    grpc_init()
     cdef grpc_channel_args *c_arguments = NULL
     cdef char *c_target = NULL
     self.c_channel = NULL
     self.references = []
-    if arguments is not None:
+    if len(arguments) > 0:
       c_arguments = &arguments.c_args
+      self.references.append(arguments)
     c_target = target
     if channel_credentials is None:
       with nogil:
@@ -103,3 +105,4 @@ cdef class Channel:
   def __dealloc__(self):
     if self.c_channel != NULL:
       grpc_channel_destroy(self.c_channel)
+    grpc_shutdown()

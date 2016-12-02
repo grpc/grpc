@@ -143,7 +143,8 @@ struct grpc_channel_security_connector {
                           grpc_security_call_host_check_cb cb, void *user_data);
   void (*do_handshake)(grpc_exec_ctx *exec_ctx,
                        grpc_channel_security_connector *sc,
-                       grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
+                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_slice_buffer *read_buffer, gpr_timespec deadline,
                        grpc_security_handshake_done_cb cb, void *user_data);
 };
 
@@ -156,8 +157,8 @@ void grpc_channel_security_connector_check_call_host(
 /* Handshake. */
 void grpc_channel_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
-    grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
-    grpc_security_handshake_done_cb cb, void *user_data);
+    grpc_endpoint *nonsecure_endpoint, grpc_slice_buffer *read_buffer,
+    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
 
 /* --- server_security_connector object. ---
 
@@ -174,14 +175,16 @@ struct grpc_server_security_connector {
   void (*do_handshake)(grpc_exec_ctx *exec_ctx,
                        grpc_server_security_connector *sc,
                        grpc_tcp_server_acceptor *acceptor,
-                       grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
+                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_slice_buffer *read_buffer, gpr_timespec deadline,
                        grpc_security_handshake_done_cb cb, void *user_data);
 };
 
 void grpc_server_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
     grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
-    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
+    grpc_slice_buffer *read_buffer, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data);
 
 void grpc_server_security_connector_shutdown(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *connector);
@@ -230,7 +233,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs);
 
 /* Exposed for TESTING ONLY!. */
-gpr_slice grpc_get_default_ssl_roots_for_testing(void);
+grpc_slice grpc_get_default_ssl_roots_for_testing(void);
 
 /* Config for ssl servers. */
 typedef struct {

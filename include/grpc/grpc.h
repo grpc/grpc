@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <stddef.h>
 
@@ -89,6 +89,9 @@ GRPCAPI void grpc_shutdown(void);
 
 /** Return a string representing the current version of grpc */
 GRPCAPI const char *grpc_version_string(void);
+
+/** Return a string specifying what the 'g' in gRPC stands for */
+GRPCAPI const char *grpc_g_stands_for(void);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue *grpc_completion_queue_create(void *reserved);
@@ -170,8 +173,9 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.
     If parent_call is non-NULL, it must be a server-side call. It will be used
-    to propagate properties from the server call to this new client call.
-    */
+    to propagate properties from the server call to this new client call,
+    depending on the value of \a propagation_mask (see propagation_bits.h for
+    possible values). */
 GRPCAPI grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, const char *method,
@@ -187,7 +191,8 @@ GRPCAPI void *grpc_channel_register_call(grpc_channel *channel,
                                          const char *method, const char *host,
                                          void *reserved);
 
-/** Create a call given a handle returned from grpc_channel_register_call */
+/** Create a call given a handle returned from grpc_channel_register_call.
+    \sa grpc_channel_create_call. */
 GRPCAPI grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,
@@ -231,6 +236,13 @@ GRPCAPI struct census_context *grpc_census_call_get_context(grpc_call *call);
 /** Return a newly allocated string representing the target a channel was
     created for. */
 GRPCAPI char *grpc_channel_get_target(grpc_channel *channel);
+
+/** Request info about the channel.
+    \a channel_info indicates what information is being requested and
+    how that information will be returned.
+    \a channel_info is owned by the caller. */
+GRPCAPI void grpc_channel_get_info(grpc_channel *channel,
+                                   const grpc_channel_info *channel_info);
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
@@ -395,6 +407,23 @@ GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 
 /** Convert grpc_call_error values to a string */
 GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
+
+/** Create a buffer pool */
+GRPCAPI grpc_resource_quota *grpc_resource_quota_create(const char *trace_name);
+
+/** Add a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_ref(grpc_resource_quota *resource_quota);
+
+/** Drop a reference to a buffer pool */
+GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota *resource_quota);
+
+/** Update the size of a buffer pool */
+GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota *resource_quota,
+                                        size_t new_size);
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
+ */
+GRPCAPI const grpc_arg_pointer_vtable *grpc_resource_quota_arg_vtable(void);
 
 #ifdef __cplusplus
 }

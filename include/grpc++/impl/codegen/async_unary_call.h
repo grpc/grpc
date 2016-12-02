@@ -40,7 +40,6 @@
 #include <grpc++/impl/codegen/server_context.h>
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/log.h>
 
 namespace grpc {
 
@@ -56,7 +55,7 @@ class ClientAsyncResponseReaderInterface {
 };
 
 template <class R>
-class ClientAsyncResponseReader GRPC_FINAL
+class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   template <class W>
@@ -65,7 +64,7 @@ class ClientAsyncResponseReader GRPC_FINAL
                             const W& request)
       : context_(context),
         call_(channel->CreateCall(method, context, cq)),
-        collection_(new CallOpSetCollection) {
+        collection_(std::make_shared<CallOpSetCollection>()) {
     collection_->init_buf_.SetCollection(collection_);
     collection_->init_buf_.SendInitialMetadata(
         context->send_initial_metadata_, context->initial_metadata_flags());
@@ -114,13 +113,12 @@ class ClientAsyncResponseReader GRPC_FINAL
 };
 
 template <class W>
-class ServerAsyncResponseWriter GRPC_FINAL
-    : public ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
+  void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.set_output_tag(tag);
@@ -169,7 +167,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
   }
 
  private:
-  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;

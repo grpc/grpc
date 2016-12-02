@@ -45,8 +45,6 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -99,20 +97,23 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-static void empty_batch_body(grpc_end2end_test_fixture f) {
+static void empty_batch_body(grpc_end2end_test_config config,
+                             grpc_end2end_test_fixture f) {
   grpc_call *c;
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_call_error error;
   grpc_op *op = NULL;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   error = grpc_call_start_batch(c, op, 0, tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   grpc_call_destroy(c);
@@ -124,7 +125,7 @@ static void test_invoke_empty_body(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
   f = begin_test(config, "test_invoke_empty_body", NULL, NULL);
-  empty_batch_body(f);
+  empty_batch_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }

@@ -147,21 +147,42 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\config_grpc_cli.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\service_describer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\grpc_tool.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\service_describer.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.grpc.pb.h">
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_proto_reflection_desc_db\grpc++_proto_reflection_desc_db.vcxproj">
+      <Project>{7B95AF96-915A-7132-AE45-9FA37769FACE}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_plugin_support\grpc_plugin_support.vcxproj">
-      <Project>{B6E81D84-2ACB-41B8-8781-493A944C7817}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

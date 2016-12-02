@@ -79,20 +79,39 @@ class SynchronousClient
   virtual ~SynchronousClient(){};
 
  protected:
-  void WaitToIssue(int thread_idx) {
+  // WaitToIssue returns false if we realize that we need to break out
+  bool WaitToIssue(int thread_idx) {
     if (!closed_loop_) {
-      gpr_sleep_until(NextIssueTime(thread_idx));
+      const gpr_timespec next_issue_time = NextIssueTime(thread_idx);
+      // Avoid sleeping for too long continuously because we might
+      // need to terminate before then. This is an issue since
+      // exponential distribution can occasionally produce bad outliers
+      while (true) {
+        const gpr_timespec one_sec_delay =
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                         gpr_time_from_seconds(1, GPR_TIMESPAN));
+        if (gpr_time_cmp(next_issue_time, one_sec_delay) <= 0) {
+          gpr_sleep_until(next_issue_time);
+          return true;
+        } else {
+          gpr_sleep_until(one_sec_delay);
+          if (gpr_atm_acq_load(&thread_pool_done_) != static_cast<gpr_atm>(0)) {
+            return false;
+          }
+        }
+      }
     }
+    return true;
   }
 
   size_t num_threads_;
   std::vector<SimpleResponse> responses_;
 
  private:
-  void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL { EndThreads(); }
+  void DestroyMultithreading() override final { EndThreads(); }
 };
 
-class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
+class SynchronousUnaryClient final : public SynchronousClient {
  public:
   SynchronousUnaryClient(const ClientConfig& config)
       : SynchronousClient(config) {
@@ -100,8 +119,10 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   }
   ~SynchronousUnaryClient() {}
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
-    WaitToIssue(thread_idx);
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override {
+    if (!WaitToIssue(thread_idx)) {
+      return true;
+    }
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = UsageTimer::Now();
     GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
@@ -109,17 +130,17 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     entry->set_value((UsageTimer::Now() - start) * 1e9);
-    return s.ok();
+    entry->set_status(s.error_code());
+    return true;
   }
 };
 
-class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
+class SynchronousStreamingClient final : public SynchronousClient {
  public:
   SynchronousStreamingClient(const ClientConfig& config)
-      : SynchronousClient(config) {
-    context_ = new grpc::ClientContext[num_threads_];
-    stream_ = new std::unique_ptr<
-        grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>[num_threads_];
+      : SynchronousClient(config),
+        context_(num_threads_),
+        stream_(num_threads_) {
     for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
@@ -139,12 +160,12 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
         }
       }
     }
-    delete[] stream_;
-    delete[] context_;
   }
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
-    WaitToIssue(thread_idx);
+  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override {
+    if (!WaitToIssue(thread_idx)) {
+      return true;
+    }
     GPR_TIMER_SCOPE("SynchronousStreamingClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
     if (stream_[thread_idx]->Write(request_) &&
@@ -158,8 +179,9 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
  private:
   // These are both conceptually std::vector but cannot be for old compilers
   // that expect contained classes to support copy constructors
-  grpc::ClientContext* context_;
-  std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>*
+  std::vector<grpc::ClientContext> context_;
+  std::vector<
+      std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>>
       stream_;
 };
 

@@ -61,7 +61,8 @@ typedef struct metadata {
    list to detail other expectations */
 typedef struct expectation {
   struct expectation *next;
-  struct expectation *prev;
+  const char *file;
+  int line;
   grpc_completion_type type;
   void *tag;
   int success;
@@ -71,17 +72,14 @@ typedef struct expectation {
 struct cq_verifier {
   /* bound completion queue */
   grpc_completion_queue *cq;
-  /* the root/sentinal expectation */
-  expectation expect;
+  /* start of expectation list */
+  expectation *first_expectation;
 };
 
 cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
   cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
-  v->expect.type = ROOT_EXPECTATION;
-  v->expect.tag = NULL;
-  v->expect.next = &v->expect;
-  v->expect.prev = &v->expect;
   v->cq = cq;
+  v->first_expectation = NULL;
   return v;
 }
 
@@ -107,41 +105,57 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
   return has_metadata(array->metadata, array->count, key, value);
 }
 
-static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
+static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
   uint8_t *cursor;
-  gpr_slice out;
+  grpc_slice out;
 
   for (i = 0; i < nslices; i++) {
-    len += GPR_SLICE_LENGTH(slices[i]);
+    len += GRPC_SLICE_LENGTH(slices[i]);
   }
 
-  out = gpr_slice_malloc(len);
-  cursor = GPR_SLICE_START_PTR(out);
+  out = grpc_slice_malloc(len);
+  cursor = GRPC_SLICE_START_PTR(out);
 
   for (i = 0; i < nslices; i++) {
-    memcpy(cursor, GPR_SLICE_START_PTR(slices[i]), GPR_SLICE_LENGTH(slices[i]));
-    cursor += GPR_SLICE_LENGTH(slices[i]);
+    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]),
+           GRPC_SLICE_LENGTH(slices[i]));
+    cursor += GRPC_SLICE_LENGTH(slices[i]);
   }
 
   return out;
 }
 
-static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
-  gpr_slice a;
+int raw_byte_buffer_eq_slice(grpc_byte_buffer *rbb, grpc_slice b) {
+  grpc_slice a;
   int ok;
 
-  if (!bb) return 0;
+  if (!rbb) return 0;
 
-  a = merge_slices(bb->data.raw.slice_buffer.slices,
-                   bb->data.raw.slice_buffer.count);
-  ok = GPR_SLICE_LENGTH(a) == GPR_SLICE_LENGTH(b) &&
-       0 == memcmp(GPR_SLICE_START_PTR(a), GPR_SLICE_START_PTR(b),
-                   GPR_SLICE_LENGTH(a));
-  gpr_slice_unref(a);
-  gpr_slice_unref(b);
+  a = merge_slices(rbb->data.raw.slice_buffer.slices,
+                   rbb->data.raw.slice_buffer.count);
+  ok = GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
+       0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                   GRPC_SLICE_LENGTH(a));
+  grpc_slice_unref(a);
+  grpc_slice_unref(b);
   return ok;
+}
+
+int byte_buffer_eq_slice(grpc_byte_buffer *bb, grpc_slice b) {
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer *rbb;
+  int res;
+
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
+             "Couldn't init byte buffer reader");
+  rbb = grpc_raw_byte_buffer_from_reader(&reader);
+  res = raw_byte_buffer_eq_slice(rbb, b);
+  grpc_byte_buffer_reader_destroy(&reader);
+  grpc_byte_buffer_destroy(rbb);
+
+  return res;
 }
 
 int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
@@ -152,7 +166,7 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
              "Couldn't init byte buffer reader");
   rbb = grpc_raw_byte_buffer_from_reader(&reader);
-  res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
+  res = raw_byte_buffer_eq_slice(rbb, grpc_slice_from_copied_string(str));
   grpc_byte_buffer_reader_destroy(&reader);
   grpc_byte_buffer_destroy(rbb);
 
@@ -184,7 +198,8 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->success);
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d %s:%d", e->success,
+                   e->file, e->line);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_QUEUE_TIMEOUT:
@@ -198,7 +213,7 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 static void expectations_to_strvec(gpr_strvec *buf, cq_verifier *v) {
   expectation *e;
 
-  for (e = v->expect.next; e != &v->expect; e = e->next) {
+  for (e = v->first_expectation; e != NULL; e = e->next) {
     expectation_to_strvec(buf, e);
     gpr_strvec_add(buf, gpr_strdup("\n"));
   }
@@ -218,53 +233,48 @@ static void fail_no_event_received(cq_verifier *v) {
 }
 
 void cq_verify(cq_verifier *v) {
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-  grpc_event ev;
-  expectation *e;
-  char *s;
-  gpr_strvec have_tags;
-
-  gpr_strvec_init(&have_tags);
-
-  while (v->expect.next != &v->expect) {
-    ev = grpc_completion_queue_next(v->cq, deadline, NULL);
+  const gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  while (v->first_expectation != NULL) {
+    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, NULL);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
     }
-
-    for (e = v->expect.next; e != &v->expect; e = e->next) {
-      gpr_asprintf(&s, " %p", e->tag);
-      gpr_strvec_add(&have_tags, s);
+    expectation *e;
+    expectation *prev = NULL;
+    for (e = v->first_expectation; e != NULL; e = e->next) {
       if (e->tag == ev.tag) {
         verify_matches(e, &ev);
-        e->next->prev = e->prev;
-        e->prev->next = e->next;
+        if (e == v->first_expectation) v->first_expectation = e->next;
+        if (prev != NULL) prev->next = e->next;
         gpr_free(e);
         break;
       }
+      prev = e;
     }
-    if (e == &v->expect) {
-      s = grpc_event_string(&ev);
-      gpr_log(GPR_ERROR, "event not found: %s", s);
+    if (e == NULL) {
+      char *s = grpc_event_string(&ev);
+      gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
       gpr_free(s);
-      s = gpr_strvec_flatten(&have_tags, NULL);
-      gpr_log(GPR_ERROR, "have tags:%s", s);
+      gpr_strvec expectations;
+      gpr_strvec_init(&expectations);
+      expectations_to_strvec(&expectations, v);
+      s = gpr_strvec_flatten(&expectations, NULL);
+      gpr_strvec_destroy(&expectations);
+      gpr_log(GPR_ERROR, "expected tags:\n%s", s);
       gpr_free(s);
-      gpr_strvec_destroy(&have_tags);
       abort();
     }
   }
-
-  gpr_strvec_destroy(&have_tags);
 }
 
-void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
+void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec) {
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
-  GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
+  GPR_ASSERT(v->first_expectation == NULL && "expectation queue must be empty");
 
   ev = grpc_completion_queue_next(v->cq, deadline, NULL);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
@@ -275,16 +285,21 @@ void cq_verify_empty(cq_verifier *v) {
   }
 }
 
-static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
+void cq_verify_empty(cq_verifier *v) { cq_verify_empty_timeout(v, 1); }
+
+static void add(cq_verifier *v, const char *file, int line,
+                grpc_completion_type type, void *tag, bool success) {
   expectation *e = gpr_malloc(sizeof(expectation));
   e->type = type;
+  e->file = file;
+  e->line = line;
   e->tag = tag;
-  e->next = &v->expect;
-  e->prev = e->next->prev;
-  e->next->prev = e->prev->next = e;
-  return e;
+  e->success = success;
+  e->next = v->first_expectation;
+  v->first_expectation = e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
-  add(v, GRPC_OP_COMPLETE, tag)->success = success;
+void cq_expect_completion(cq_verifier *v, const char *file, int line, void *tag,
+                          bool success) {
+  add(v, file, line, GRPC_OP_COMPLETE, tag, success);
 }

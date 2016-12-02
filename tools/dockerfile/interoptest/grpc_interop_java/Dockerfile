@@ -47,6 +47,21 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 ENV PATH $PATH:$JAVA_HOME/bin
 
 
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+
 
 # Trigger download of as many Gradle artifacts as possible.
 RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \

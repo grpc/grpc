@@ -31,7 +31,6 @@
  *
  */
 
-#include <signal.h>
 #include <unistd.h>
 
 #include <fstream>
@@ -48,6 +47,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
@@ -57,6 +57,7 @@
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -77,8 +78,6 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
-
-static bool got_sigint = false;
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
@@ -152,6 +151,17 @@ class TestServiceImpl : public TestService::Service {
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
     MaybeEchoMetadata(context);
+    return Status::OK;
+  }
+
+  // Response contains current timestamp. We ignore everything in the request.
+  Status CacheableUnaryCall(ServerContext* context,
+                            const SimpleRequest* request,
+                            SimpleResponse* response) {
+    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
+    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+    response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
+    context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
 
@@ -259,6 +269,11 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
+      if (request.has_response_status()) {
+        return Status(
+            static_cast<grpc::StatusCode>(request.response_status().code()),
+            request.response_status().message());
+      }
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
@@ -311,7 +326,9 @@ class TestServiceImpl : public TestService::Service {
   }
 };
 
-void RunServer() {
+void grpc::testing::interop::RunServer(
+    std::shared_ptr<ServerCredentials> creds) {
+  GPR_ASSERT(FLAGS_port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << FLAGS_port;
   TestServiceImpl service;
@@ -321,24 +338,13 @@ void RunServer() {
 
   ServerBuilder builder;
   builder.RegisterService(&service);
-  std::shared_ptr<ServerCredentials> creds =
-      grpc::testing::CreateInteropServerCredentials();
   builder.AddListeningPort(server_address.str(), creds);
+  if (FLAGS_max_send_message_size >= 0) {
+    builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
+  }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (!got_sigint) {
+  while (!g_got_sigint) {
     sleep(5);
   }
-}
-
-static void sigint_handler(int x) { got_sigint = true; }
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  signal(SIGINT, sigint_handler);
-
-  GPR_ASSERT(FLAGS_port != 0);
-  RunServer();
-
-  return 0;
 }

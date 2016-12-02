@@ -200,6 +200,6 @@ validator = GuardValidator()
 
 for filename in filename_list:
   if filename in KNOWN_BAD: continue
-  ok = validator.check(filename, args.fix)
+  ok = ok and validator.check(filename, args.fix)
 
 sys.exit(0 if ok else 1)

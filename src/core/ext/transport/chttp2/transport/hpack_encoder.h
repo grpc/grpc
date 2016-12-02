@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -91,7 +91,8 @@ void grpc_chttp2_hpack_compressor_set_max_usable_size(
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, uint32_t id,
                                grpc_metadata_batch *metadata, int is_eof,
+                               size_t max_frame_size,
                                grpc_transport_one_way_stats *stats,
-                               gpr_slice_buffer *outbuf);
+                               grpc_slice_buffer *outbuf);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

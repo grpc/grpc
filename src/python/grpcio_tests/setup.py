@@ -31,13 +31,9 @@
 
 import os
 import os.path
-import shutil
 import sys
 
-from distutils import core as _core
-from distutils import extension as _extension
 import setuptools
-from setuptools.command import egg_info
 
 import grpc.tools.command
 
@@ -84,8 +80,14 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin': [
-        'protoc_plugin_test.proto',
+    'tests.protoc_plugin.protos.invocation_testing': [
+        'same.proto',
+    ],
+    'tests.protoc_plugin.protos.invocation_testing.split_messages': [
+        'messages.proto',
+    ],
+    'tests.protoc_plugin.protos.invocation_testing.split_services': [
+        'services.proto',
     ],
     'tests.unit': [
         'credentials/ca.pem',

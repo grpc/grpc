@@ -38,9 +38,9 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
@@ -81,16 +81,16 @@ static void con_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  int r;
-
-  r = grpc_transport_init_stream(
+  int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data);
-  GPR_ASSERT(r == 0);
+  return r == 0 ? GRPC_ERROR_NONE
+                : GRPC_ERROR_CREATE("transport stream initialization failed");
 }
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
@@ -104,7 +104,7 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats,
+                              const grpc_call_final_info *final_info,
                               void *and_free_memory) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -134,6 +134,11 @@ static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return grpc_transport_get_peer(exec_ctx, chand->transport);
 }
 
+/* No-op. */
+static void con_get_channel_info(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem,
+                                 const grpc_channel_info *channel_info) {}
+
 static const grpc_channel_filter connected_channel_filter = {
     con_start_transport_stream_op,
     con_start_transport_op,
@@ -145,6 +150,7 @@ static const grpc_channel_filter connected_channel_filter = {
     init_channel_elem,
     destroy_channel_elem,
     con_get_peer,
+    con_get_channel_info,
     "connected",
 };
 

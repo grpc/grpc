@@ -29,6 +29,8 @@
 
 """Helpers to run docker instances as jobs."""
 
+from __future__ import print_function
+
 import jobset
 import tempfile
 import time
@@ -95,7 +97,7 @@ def remove_image(image, skip_nonexistent=False, max_retries=10):
                        stderr=subprocess.STDOUT) == 0:
       return True
     time.sleep(2)
-  print 'Failed to remove docker image %s' % image
+  print('Failed to remove docker image %s' % image)
   return False
 
 

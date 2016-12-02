@@ -53,10 +53,20 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     std::shared_ptr<grpc::Channel> channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
-ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {}
+ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
+  if (stream_) {
+    stream_->WritesDone();
+    Status status = stream_->Finish();
+    if (!status.ok()) {
+      gpr_log(GPR_INFO,
+              "ServerReflectionInfo rpc failed. Error code: %d, details: %s",
+              (int)status.error_code(), status.error_message().c_str());
+    }
+  }
+}
 
 bool ProtoReflectionDescriptorDatabase::FindFileByName(
-    const string& filename, google::protobuf::FileDescriptorProto* output) {
+    const string& filename, protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileByName(filename, output)) {
     return true;
   }
@@ -101,7 +111,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
 }
 
 bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
-    const string& symbol_name, google::protobuf::FileDescriptorProto* output) {
+    const string& symbol_name, protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingSymbol(symbol_name, output)) {
     return true;
   }
@@ -148,7 +158,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
 
 bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     const string& containing_type, int field_number,
-    google::protobuf::FileDescriptorProto* output) {
+    protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingExtension(containing_type, field_number,
                                              output)) {
     return true;
@@ -245,7 +255,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
 }
 
 bool ProtoReflectionDescriptorDatabase::GetServices(
-    std::vector<std::string>* output) {
+    std::vector<grpc::string>* output) {
   ServerReflectionRequest request;
   request.set_list_services("");
   ServerReflectionResponse response;
@@ -276,10 +286,10 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   return false;
 }
 
-const google::protobuf::FileDescriptorProto
+const protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
-    const std::string& byte_fd_proto) {
-  google::protobuf::FileDescriptorProto file_desc_proto;
+    const grpc::string& byte_fd_proto) {
+  protobuf::FileDescriptorProto file_desc_proto;
   file_desc_proto.ParseFromString(byte_fd_proto);
   return file_desc_proto;
 }
@@ -287,7 +297,7 @@ ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
 void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
     const grpc::reflection::v1alpha::FileDescriptorResponse& response) {
   for (int i = 0; i < response.file_descriptor_proto_size(); ++i) {
-    const google::protobuf::FileDescriptorProto file_proto =
+    const protobuf::FileDescriptorProto file_proto =
         ParseFileDescriptorProtoResponse(response.file_descriptor_proto(i));
     if (known_files_.find(file_proto.name()) == known_files_.end()) {
       known_files_.insert(file_proto.name());
@@ -304,13 +314,16 @@ ProtoReflectionDescriptorDatabase::GetStream() {
   return stream_;
 }
 
-void ProtoReflectionDescriptorDatabase::DoOneRequest(
+bool ProtoReflectionDescriptorDatabase::DoOneRequest(
     const ServerReflectionRequest& request,
     ServerReflectionResponse& response) {
+  bool success = false;
   stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
+  if (GetStream()->Write(request) && GetStream()->Read(&response)) {
+    success = true;
+  }
   stream_mutex_.unlock();
+  return success;
 }
 
 }  // namespace grpc

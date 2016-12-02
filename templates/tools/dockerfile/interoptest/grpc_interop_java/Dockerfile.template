@@ -32,7 +32,8 @@
   FROM debian:jessie
   
   <%include file="../../java_deps.include"/>
-  
+  <%include file="../../python_deps.include"/>
+
   # Trigger download of as many Gradle artifacts as possible.
   RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && ${'\\'}
     cd grpc-java && ${'\\'}

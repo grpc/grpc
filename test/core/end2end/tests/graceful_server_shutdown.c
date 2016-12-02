@@ -43,8 +43,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -113,8 +111,10 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -154,7 +154,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   /* shutdown and destroy the server */
@@ -183,16 +183,17 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
-  cq_expect_completion(cqv, tag(0xdead), 1);
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   grpc_call_destroy(s);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);

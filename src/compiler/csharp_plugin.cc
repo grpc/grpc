@@ -67,10 +67,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-    grpc::string code = grpc_csharp_generator::GetServices(file,
-                                                           generate_client,
-                                                           generate_server,
-                                                           internal_access);
+    grpc::string code = grpc_csharp_generator::GetServices(
+        file, generate_client, generate_server, internal_access);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }

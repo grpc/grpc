@@ -29,6 +29,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Run stress test in C++"""
 
+from __future__ import print_function
+
 import argparse
 import atexit
 import dockerjob
@@ -93,7 +95,7 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
 
   # turn environ into -e docker args
   if environ:
-    for k, v in environ.iteritems():
+    for k, v in environ.items():
       docker_cmdline += ['-e', '%s=%s' % (k, v)]
 
   # set working directory
@@ -140,7 +142,7 @@ def cloud_to_cloud_jobspec(language,
       '--num_channels_per_server=%s' % num_channels_per_server,
       '--metrics_port=%s' % metrics_port
   ]))
-  print cmdline
+  print(cmdline)
   cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
@@ -287,7 +289,7 @@ try:
     (server_host, server_port) = server[1].split(':')
     server_addresses[server_name] = (server_host, server_port)
 
-  for server_name, server_address in server_addresses.iteritems():
+  for server_name, server_address in server_addresses.items():
     (server_host, server_port) = server_address
     for language in languages:
       test_job = cloud_to_cloud_jobspec(
@@ -302,7 +304,7 @@ try:
       jobs.append(test_job)
 
   if not jobs:
-    print 'No jobs to run.'
+    print('No jobs to run.')
     for image in docker_images.itervalues():
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
@@ -317,12 +319,12 @@ try:
 
 finally:
   # Check if servers are still running.
-  for server, job in server_jobs.iteritems():
+  for server, job in server_jobs.items():
     if not job.is_running():
-      print 'Server "%s" has exited prematurely.' % server
+      print('Server "%s" has exited prematurely.' % server)
 
   dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
 
   for image in docker_images.itervalues():
-    print 'Removing docker image %s' % image
+    print('Removing docker image %s' % image)
     dockerjob.remove_image(image)

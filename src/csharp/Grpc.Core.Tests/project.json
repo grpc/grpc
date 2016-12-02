@@ -7,7 +7,6 @@
       "buildOptions": {
         "define": [ "SIGNED" ],
         "keyFile": "../keys/Grpc.snk",
-        "publicSign": true,
         "xmlDoc": true,
         "compile": {
           "includeFiles": [ "../Grpc.Core/Version.cs" ]
@@ -26,7 +25,6 @@
       "buildOptions": {
         "define": [ "SIGNED" ],
         "keyFile": "../keys/Grpc.snk",
-        "publicSign": true,
         "xmlDoc": true,
         "compile": {
           "includeFiles": [ "../Grpc.Core/Version.cs" ]
@@ -41,11 +39,6 @@
         }
       }
     }
-  },
-  "runtimes": {
-    "win7-x64": { },
-    "debian.8-x64": { },
-    "osx.10.11-x64": { }
   },
 
   "dependencies": {
@@ -66,8 +59,10 @@
         "portable-net45"
       ],
       "dependencies": {
-        "Microsoft.NETCore.App": "1.0.0",
-        "NETStandard.Library": "1.6.0"
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
       }
     }
   },

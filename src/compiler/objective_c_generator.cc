@@ -49,9 +49,9 @@ using ::std::map;
 namespace grpc_objective_c_generator {
 namespace {
 
-void PrintProtoRpcDeclarationAsPragma(Printer *printer,
-                                      const MethodDescriptor *method,
-                                      map< ::grpc::string, ::grpc::string> vars) {
+void PrintProtoRpcDeclarationAsPragma(
+    Printer *printer, const MethodDescriptor *method,
+    map< ::grpc::string, ::grpc::string> vars) {
   vars["client_stream"] = method->client_streaming() ? "stream " : "";
   vars["server_stream"] = method->server_streaming() ? "stream " : "";
 
@@ -61,7 +61,7 @@ void PrintProtoRpcDeclarationAsPragma(Printer *printer,
 }
 
 template <typename DescriptorType>
-static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
+static void PrintAllComments(const DescriptorType *desc, Printer *printer) {
   std::vector<grpc::string> comments;
   grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
                              &comments);
@@ -100,7 +100,8 @@ void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
   if (method->server_streaming()) {
     printer->Print(vars,
                    " eventHandler:(void(^)(BOOL done, "
-                   "$response_class$ *_Nullable response, NSError *_Nullable error))eventHandler");
+                   "$response_class$ *_Nullable response, NSError *_Nullable "
+                   "error))eventHandler");
   } else {
     printer->Print(vars,
                    " handler:(void(^)($response_class$ *_Nullable response, "
@@ -123,7 +124,8 @@ void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
   PrintMethodSignature(printer, method, vars);
 }
 
-inline map< ::grpc::string, ::grpc::string> GetMethodVars(const MethodDescriptor *method) {
+inline map< ::grpc::string, ::grpc::string> GetMethodVars(
+    const MethodDescriptor *method) {
   map< ::grpc::string, ::grpc::string> res;
   res["method_name"] = method->name();
   res["request_type"] = method->input_type()->name();
@@ -210,7 +212,8 @@ void PrintMethodImplementations(Printer *printer,
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
-    map< ::grpc::string, ::grpc::string> vars = {{"service_class", ServiceClassName(service)}};
+    map< ::grpc::string, ::grpc::string> vars = {
+        {"service_class", ServiceClassName(service)}};
 
     printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
 
@@ -237,21 +240,23 @@ void PrintMethodImplementations(Printer *printer,
 }
 
 ::grpc::string GetSource(const ServiceDescriptor *service) {
- ::grpc::string output;
+  ::grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
-    map< ::grpc::string,::grpc::string> vars = {{"service_name", service->name()},
-                                {"service_class", ServiceClassName(service)},
-                                {"package", service->file()->package()}};
+    map< ::grpc::string, ::grpc::string> vars = {
+        {"service_name", service->name()},
+        {"service_class", ServiceClassName(service)},
+        {"package", service->file()->package()}};
 
     printer.Print(vars, "@implementation $service_class$\n\n");
 
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-    printer.Print(vars,
+    printer.Print(
+        vars,
         "  return (self = [super initWithHost:host"
         " packageName:@\"$package$\" serviceName:@\"$service_name$\"]);\n");
     printer.Print("}\n\n");

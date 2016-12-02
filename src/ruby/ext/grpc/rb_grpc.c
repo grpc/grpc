@@ -49,6 +49,7 @@
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
+#include "rb_compression_options.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
@@ -220,7 +221,7 @@ static VALUE grpc_rb_time_val_to_time(VALUE self) {
                        time_const);
   real_time = gpr_convert_clock_type(*time_const, GPR_CLOCK_REALTIME);
   return rb_funcall(rb_cTime, id_at, 2, INT2NUM(real_time.tv_sec),
-                    INT2NUM(real_time.tv_nsec));
+                    INT2NUM(real_time.tv_nsec / 1000));
 }
 
 /* Invokes inspect on the ctime version of the time val. */
@@ -332,4 +333,5 @@ void Init_grpc_c() {
   Init_grpc_server_credentials();
   Init_grpc_status_codes();
   Init_grpc_time_consts();
+  Init_grpc_compression_options();
 }

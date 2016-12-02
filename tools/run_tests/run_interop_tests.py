@@ -30,6 +30,8 @@
 
 """Run interop (cross-language) tests in parallel."""
 
+from __future__ import print_function
+
 import argparse
 import atexit
 import dockerjob
@@ -62,8 +64,10 @@ _SKIP_SERVER_COMPRESSION = ['server_compressed_unary',
 
 _SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
-_SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
-                  'unimplemented_method']
+_SKIP_ADVANCED = ['status_code_and_message',
+                  'custom_metadata',
+                  'unimplemented_method',
+                  'unimplemented_service']
 
 _TEST_TIMEOUT = 3*60
 
@@ -87,10 +91,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED
+    return []
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED
+    return []
 
   def __str__(self):
     return 'c++'
@@ -123,6 +127,35 @@ class CSharpLanguage:
 
   def __str__(self):
     return 'csharp'
+
+
+class CSharpCoreCLRLanguage:
+
+  def __init__(self):
+    self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp1.0'
+    self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp1.0'
+    self.safename = str(self)
+
+  def client_cmd(self, args):
+    return ['dotnet', 'exec', 'Grpc.IntegrationTesting.Client.dll'] + args
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def server_cmd(self, args):
+    return ['dotnet', 'exec', 'Grpc.IntegrationTesting.Server.dll', '--use_tls=true'] + args
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    return _SKIP_SERVER_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_COMPRESSION
+
+  def __str__(self):
+    return 'csharpcoreclr'
 
 
 class JavaLanguage:
@@ -175,10 +208,10 @@ class GoLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'go'
@@ -220,13 +253,16 @@ class NodeLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['node', 'src/node/interop/interop_client.js'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_nvm.sh',
+            'node', 'src/node/interop/interop_server.js',
+            '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -299,19 +335,21 @@ class RubyLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/client.rb'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/client.rb'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
+    return ['tools/run_tests/interop/with_rvm.sh',
+            'ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED + _SKIP_SERVER_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_ADVANCED + _SKIP_COMPRESSION
@@ -353,10 +391,10 @@ class PythonLanguage:
             'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'python'
@@ -365,6 +403,7 @@ class PythonLanguage:
 _LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
+    'csharpcoreclr' : CSharpCoreCLRLanguage(),
     'go' : GoLanguage(),
     'java' : JavaLanguage(),
     'node' : NodeLanguage(),
@@ -375,7 +414,7 @@ _LANGUAGES = {
 }
 
 # languages supported as cloud_to_cloud servers
-_SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby', 'python']
+_SERVERS = ['c++', 'node', 'csharp', 'csharpcoreclr', 'java', 'go', 'ruby', 'python']
 
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'empty_stream', 'client_streaming', 'server_streaming',
@@ -383,7 +422,8 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'timeout_on_sleeping_server', 'custom_metadata',
                'status_code_and_message', 'unimplemented_method',
                'client_compressed_unary', 'server_compressed_unary',
-               'client_compressed_streaming', 'server_compressed_streaming']
+               'client_compressed_streaming', 'server_compressed_streaming',
+               'unimplemented_service']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
@@ -398,7 +438,7 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
 
   # turn environ into -e docker args
   if environ:
-    for k,v in environ.iteritems():
+    for k,v in environ.items():
       docker_cmdline += ['-e', '%s=%s' % (k,v)]
 
   # set working directory
@@ -411,12 +451,11 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   return docker_cmdline
 
 
-def bash_login_cmdline(cmdline):
-  """Creates bash -l -c cmdline from args list."""
+def bash_cmdline(cmdline):
+  """Creates bash -c cmdline from args list."""
   # Use login shell:
-  # * rvm and nvm require it
   # * makes error messages clearer if executables are missing
-  return ['bash', '-l', '-c', ' '.join(cmdline)]
+  return ['bash', '-c', ' '.join(cmdline)]
 
 
 def auth_options(language, test_case):
@@ -433,7 +472,7 @@ def auth_options(language, test_case):
   default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
   if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
-    if language in ['csharp', 'node', 'php', 'php7', 'python', 'ruby']:
+    if language in ['csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python', 'ruby']:
       env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
     else:
       cmdargs += [key_file_arg]
@@ -476,7 +515,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
     auth_cmdargs, auth_env = auth_options(language, test_case)
     cmdargs += auth_cmdargs
     environ.update(auth_env)
-  cmdline = bash_login_cmdline(language.client_cmd(cmdargs))
+  cmdline = bash_cmdline(language.client_cmd(cmdargs))
   cwd = language.client_cwd
 
   if docker_image:
@@ -510,7 +549,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_login_cmdline(language.client_cmd([
+  cmdline = bash_cmdline(language.client_cmd([
       '--server_host_override=foo.test.google.fr',
       '--use_tls=true',
       '--use_test_ca=true',
@@ -547,7 +586,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
 def server_jobspec(language, docker_image):
   """Create jobspec for running a server"""
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
-  cmdline = bash_login_cmdline(
+  cmdline = bash_cmdline(
       language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT]))
   environ = language.global_env()
   docker_cmdline = docker_run_cmdline(cmdline,
@@ -621,15 +660,15 @@ def aggregate_http2_results(stdout):
 # TODO(adelez): implement logic for errors_allowed where if the indicated tests
 # fail, they don't impact the overall test result.
 prod_servers = {
-    'default': ('grpc-test.sandbox.googleapis.com',
+    'default': ('216.239.32.254',
                 'grpc-test.sandbox.googleapis.com', False),
-    'gateway_v2': ('grpc-test2.sandbox.googleapis.com',
+    'gateway_v2': ('216.239.32.254',
                    'grpc-test2.sandbox.googleapis.com', True),
     'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com',
                       False),
     'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
                          True),
-    'gateway_v4': ('grpc-test4.sandbox.googleapis.com',
+    'gateway_v4': ('216.239.32.254',
                    'grpc-test4.sandbox.googleapis.com', True),
     'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
                          True),
@@ -660,7 +699,7 @@ argp.add_argument('--prod_servers',
                         'cloud_to_prod_auth tests against.'))
 argp.add_argument('-s', '--server',
                   choices=['all'] + sorted(_SERVERS),
-                  action='append',
+                  nargs='+',
                   help='Run cloud_to_cloud servers in a separate docker ' +
                        'image. Servers can only be started automatically if ' +
                        '--use_docker option is enabled.',
@@ -700,15 +739,15 @@ servers = set(s for s in itertools.chain.from_iterable(_SERVERS
 
 if args.use_docker:
   if not args.travis:
-    print 'Seen --use_docker flag, will run interop tests under docker.'
-    print
-    print 'IMPORTANT: The changes you are testing need to be locally committed'
-    print 'because only the committed changes in the current branch will be'
-    print 'copied to the docker environment.'
+    print('Seen --use_docker flag, will run interop tests under docker.')
+    print('')
+    print('IMPORTANT: The changes you are testing need to be locally committed')
+    print('because only the committed changes in the current branch will be')
+    print('copied to the docker environment.')
     time.sleep(5)
 
 if not args.use_docker and servers:
-  print 'Running interop servers is only supported with --use_docker option enabled.'
+  print('Running interop servers is only supported with --use_docker option enabled.')
   sys.exit(1)
 
 languages = set(_LANGUAGES[l]
@@ -794,7 +833,7 @@ try:
     (server_host, server_port) = server[1].split(':')
     server_addresses[server_name] = (server_host, server_port)
 
-  for server_name, server_address in server_addresses.iteritems():
+  for server_name, server_address in server_addresses.items():
     (server_host, server_port) = server_address
     server_language = _LANGUAGES.get(server_name, None)
     skip_server = []  # test cases unimplemented by server
@@ -826,7 +865,7 @@ try:
         jobs.append(test_job)
 
   if not jobs:
-    print 'No jobs to run.'
+    print('No jobs to run.')
     for image in docker_images.itervalues():
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
@@ -840,7 +879,7 @@ try:
 
   report_utils.render_junit_xml_report(resultset, 'report.xml')
 
-  for name, job in resultset.iteritems():
+  for name, job in resultset.items():
     if "http2" in name:
       job[0].http2results = aggregate_http2_results(job[0].message)
 
@@ -852,12 +891,12 @@ try:
 
 finally:
   # Check if servers are still running.
-  for server, job in server_jobs.iteritems():
+  for server, job in server_jobs.items():
     if not job.is_running():
-      print 'Server "%s" has exited prematurely.' % server
+      print('Server "%s" has exited prematurely.' % server)
 
   dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
 
   for image in docker_images.itervalues():
-    print 'Removing docker image %s' % image
+    print('Removing docker image %s' % image)
     dockerjob.remove_image(image)

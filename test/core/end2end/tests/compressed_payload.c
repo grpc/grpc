@@ -50,8 +50,6 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -112,7 +110,7 @@ static void request_for_disabled_algorithm(
     grpc_status_code expected_error, grpc_metadata *client_metadata) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice;
+  grpc_slice request_payload_slice;
   grpc_byte_buffer *request_payload;
   gpr_timespec deadline = five_seconds_time();
   grpc_channel_args *client_args;
@@ -135,7 +133,7 @@ static void request_for_disabled_algorithm(
 
   memset(str, 'x', 1023);
   str[1023] = '\0';
-  request_payload_slice = gpr_slice_from_copied_string(str);
+  request_payload_slice = grpc_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
   client_args = grpc_channel_args_set_compression_algorithm(
@@ -148,8 +146,10 @@ static void request_for_disabled_algorithm(
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -198,7 +198,7 @@ static void request_for_disabled_algorithm(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
   op = ops;
@@ -215,7 +215,7 @@ static void request_for_disabled_algorithm(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), false);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), false);
 
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -226,8 +226,8 @@ static void request_for_disabled_algorithm(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(103), true);
-  cq_expect_completion(cqv, tag(1), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   /* call was cancelled (closed) ... */
@@ -244,7 +244,8 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(0 == strcmp(details, expected_details));
   gpr_free(expected_details);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -257,7 +258,7 @@ static void request_for_disabled_algorithm(
 
   cq_verifier_destroy(cqv);
 
-  gpr_slice_unref(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
 
@@ -279,7 +280,7 @@ static void request_with_payload_template(
     grpc_compression_level server_compression_level) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice;
+  grpc_slice request_payload_slice;
   grpc_byte_buffer *request_payload;
   gpr_timespec deadline = five_seconds_time();
   grpc_channel_args *client_args;
@@ -309,8 +310,9 @@ static void request_with_payload_template(
   memset(response_str, 'y', 1023);
   response_str[1023] = '\0';
 
-  request_payload_slice = gpr_slice_from_copied_string(request_str);
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string(response_str);
+  request_payload_slice = grpc_slice_from_copied_string(request_str);
+  grpc_slice response_payload_slice =
+      grpc_slice_from_copied_string(response_str);
 
   client_args = grpc_channel_args_set_compression_algorithm(
       NULL, default_client_channel_compression_algorithm);
@@ -320,8 +322,10 @@ static void request_with_payload_template(
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, "/foo",
+      get_host_override_string("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -361,7 +365,7 @@ static void request_with_payload_template(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(100), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(100), true);
   cq_verify(cqv);
 
   GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(
@@ -421,7 +425,7 @@ static void request_with_payload_template(
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(102), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
     cq_verify(cqv);
 
     GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
@@ -438,8 +442,8 @@ static void request_with_payload_template(
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(103), 1);
-    cq_expect_completion(cqv, tag(2), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     cq_verify(cqv);
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
@@ -460,8 +464,8 @@ static void request_with_payload_template(
     grpc_byte_buffer_destroy(response_payload_recv);
   }
 
-  gpr_slice_unref(request_payload_slice);
-  gpr_slice_unref(response_payload_slice);
+  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref(response_payload_slice);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -484,16 +488,17 @@ static void request_with_payload_template(
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
-  cq_expect_completion(cqv, tag(3), 1);
-  cq_expect_completion(cqv, tag(101), 1);
-  cq_expect_completion(cqv, tag(104), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);

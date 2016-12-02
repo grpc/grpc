@@ -46,6 +46,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -186,14 +187,14 @@ static void test_add_to_empty_md_store(void) {
   grpc_credentials_md_store *store = grpc_credentials_md_store_create(0);
   const char *key_str = "hello";
   const char *value_str = "there blah blah blah blah blah blah blah";
-  gpr_slice key = gpr_slice_from_copied_string(key_str);
-  gpr_slice value = gpr_slice_from_copied_string(value_str);
+  grpc_slice key = grpc_slice_from_copied_string(key_str);
+  grpc_slice value = grpc_slice_from_copied_string(value_str);
   grpc_credentials_md_store_add(store, key, value);
   GPR_ASSERT(store->num_entries == 1);
-  GPR_ASSERT(gpr_slice_cmp(key, store->entries[0].key) == 0);
-  GPR_ASSERT(gpr_slice_cmp(value, store->entries[0].value) == 0);
-  gpr_slice_unref(key);
-  gpr_slice_unref(value);
+  GPR_ASSERT(grpc_slice_cmp(key, store->entries[0].key) == 0);
+  GPR_ASSERT(grpc_slice_cmp(value, store->entries[0].value) == 0);
+  grpc_slice_unref(key);
+  grpc_slice_unref(value);
   grpc_credentials_md_store_unref(store);
 }
 
@@ -203,8 +204,8 @@ static void test_add_cstrings_to_empty_md_store(void) {
   const char *value_str = "there blah blah blah blah blah blah blah";
   grpc_credentials_md_store_add_cstrings(store, key_str, value_str);
   GPR_ASSERT(store->num_entries == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(store->entries[0].key, key_str) == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(store->entries[0].value, value_str) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(store->entries[0].key, key_str) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(store->entries[0].value, value_str) == 0);
   grpc_credentials_md_store_unref(store);
 }
 
@@ -226,8 +227,8 @@ static void test_add_abunch_to_md_store(void) {
     grpc_credentials_md_store_add_cstrings(store, key_str, value_str);
   }
   for (i = 0; i < num_entries; i++) {
-    GPR_ASSERT(gpr_slice_str_cmp(store->entries[i].key, key_str) == 0);
-    GPR_ASSERT(gpr_slice_str_cmp(store->entries[i].value, value_str) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(store->entries[i].key, key_str) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(store->entries[i].value, value_str) == 0);
   }
   grpc_credentials_md_store_unref(store);
 }
@@ -242,9 +243,10 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   GPR_ASSERT(token_lifetime.tv_sec == 3599);
   GPR_ASSERT(token_lifetime.tv_nsec == 0);
   GPR_ASSERT(token_md->num_entries == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(token_md->entries[0].key, "authorization") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(token_md->entries[0].value,
-                               "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
+  GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].key, "authorization") ==
+             0);
+  GPR_ASSERT(grpc_slice_str_cmp(token_md->entries[0].value,
+                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   grpc_credentials_md_store_unref(token_md);
   grpc_http_response_destroy(&response);
@@ -332,8 +334,8 @@ static void check_metadata(expected_md *expected, grpc_credentials_md *md_elems,
   for (i = 0; i < num_md; i++) {
     size_t j;
     for (j = 0; j < num_md; j++) {
-      if (0 == gpr_slice_str_cmp(md_elems[j].key, expected[i].key)) {
-        GPR_ASSERT(gpr_slice_str_cmp(md_elems[j].value, expected[i].value) ==
+      if (0 == grpc_slice_str_cmp(md_elems[j].key, expected[i].key)) {
+        GPR_ASSERT(grpc_slice_str_cmp(md_elems[j].value, expected[i].value) ==
                    0);
         break;
       }
@@ -411,7 +413,7 @@ static grpc_security_status check_channel_oauth2_create_security_connector(
 static void test_channel_oauth2_composite_creds(void) {
   grpc_channel_args *new_args;
   grpc_channel_credentials_vtable vtable = {
-      NULL, check_channel_oauth2_create_security_connector};
+      NULL, check_channel_oauth2_create_security_connector, NULL};
   grpc_channel_credentials *channel_creds =
       grpc_mock_channel_credentials_create(&vtable);
   grpc_call_credentials *oauth2_creds =
@@ -495,7 +497,7 @@ check_channel_oauth2_google_iam_create_security_connector(
 static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_channel_args *new_args;
   grpc_channel_credentials_vtable vtable = {
-      NULL, check_channel_oauth2_google_iam_create_security_connector};
+      NULL, check_channel_oauth2_google_iam_create_security_connector, NULL};
   grpc_channel_credentials *channel_creds =
       grpc_mock_channel_credentials_create(&vtable);
   grpc_call_credentials *oauth2_creds =
@@ -527,9 +529,9 @@ static void on_oauth2_creds_get_metadata_success(
   GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].key, "authorization") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].value,
-                               "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].key, "authorization") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].value,
+                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   GPR_ASSERT(user_data != NULL);
   GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
@@ -780,8 +782,8 @@ static void on_jwt_creds_get_metadata_success(
   GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(error_details == NULL);
   GPR_ASSERT(num_md == 1);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].key, "authorization") == 0);
-  GPR_ASSERT(gpr_slice_str_cmp(md_elems[0].value, expected_md_value) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].key, "authorization") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(md_elems[0].value, expected_md_value) == 0);
   GPR_ASSERT(user_data != NULL);
   GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
   gpr_free(expected_md_value);
@@ -1056,8 +1058,8 @@ static void on_plugin_metadata_received_success(
   GPR_ASSERT(md_elems != NULL);
   GPR_ASSERT(num_md == GPR_ARRAY_SIZE(plugin_md));
   for (i = 0; i < num_md; i++) {
-    GPR_ASSERT(gpr_slice_str_cmp(md_elems[i].key, plugin_md[i].key) == 0);
-    GPR_ASSERT(gpr_slice_str_cmp(md_elems[i].value, plugin_md[i].value) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(md_elems[i].key, plugin_md[i].key) == 0);
+    GPR_ASSERT(grpc_slice_str_cmp(md_elems[i].value, plugin_md[i].value) == 0);
   }
 }
 
@@ -1124,28 +1126,44 @@ static void test_metadata_plugin_failure(void) {
 }
 
 static void test_get_well_known_google_credentials_file_path(void) {
-#ifdef GPR_POSIX_FILE
   char *path;
-  char *old_home = gpr_getenv("HOME");
-  gpr_setenv("HOME", "/tmp");
+  char *home = gpr_getenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path != NULL);
-  GPR_ASSERT(0 == strcmp("/tmp/.config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY
-                         "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE,
-                         path));
   gpr_free(path);
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
   unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == NULL);
-#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
-  gpr_setenv("HOME", old_home);
-  gpr_free(old_home);
-#else /* GPR_POSIX_FILE */
-  char *path = grpc_get_well_known_google_credentials_file_path();
-  GPR_ASSERT(path != NULL);
+  gpr_setenv("HOME", home);
   gpr_free(path);
-#endif
+#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  gpr_free(home);
+}
+
+static void test_channel_creds_duplicate_without_call_creds(void) {
+  grpc_channel_credentials *channel_creds =
+      grpc_fake_transport_security_credentials_create();
+
+  grpc_channel_credentials *dup =
+      grpc_channel_credentials_duplicate_without_call_credentials(
+          channel_creds);
+  GPR_ASSERT(dup == channel_creds);
+  grpc_channel_credentials_unref(dup);
+
+  grpc_call_credentials *call_creds =
+      grpc_access_token_credentials_create("blah", NULL);
+  grpc_channel_credentials *composite_creds =
+      grpc_composite_channel_credentials_create(channel_creds, call_creds,
+                                                NULL);
+  grpc_call_credentials_unref(call_creds);
+  dup = grpc_channel_credentials_duplicate_without_call_credentials(
+      composite_creds);
+  GPR_ASSERT(dup == channel_creds);
+  grpc_channel_credentials_unref(dup);
+
+  grpc_channel_credentials_unref(channel_creds);
+  grpc_channel_credentials_unref(composite_creds);
 }
 
 int main(int argc, char **argv) {
@@ -1182,6 +1200,7 @@ int main(int argc, char **argv) {
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
+  test_channel_creds_duplicate_without_call_creds();
   grpc_shutdown();
   return 0;
 }

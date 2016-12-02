@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from libc.stdint cimport intptr_t
 
 class ConnectivityState:
   idle = GRPC_CHANNEL_IDLE
@@ -39,7 +40,8 @@ class ConnectivityState:
 class ChannelArgKey:
   enable_census = GRPC_ARG_ENABLE_CENSUS
   max_concurrent_streams = GRPC_ARG_MAX_CONCURRENT_STREAMS
-  max_message_length = GRPC_ARG_MAX_MESSAGE_LENGTH
+  max_receive_message_length = GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
+  max_send_message_length = GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
   http2_initial_sequence_number = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
   default_authority = GRPC_ARG_DEFAULT_AUTHORITY
   primary_user_agent_string = GRPC_ARG_PRIMARY_USER_AGENT_STRING
@@ -176,12 +178,14 @@ cdef class Timespec:
 cdef class CallDetails:
 
   def __cinit__(self):
+    grpc_init()
     with nogil:
       grpc_call_details_init(&self.c_details)
 
   def __dealloc__(self):
     with nogil:
       grpc_call_details_destroy(&self.c_details)
+    grpc_shutdown()
 
   @property
   def method(self):
@@ -232,24 +236,25 @@ cdef class Event:
 cdef class ByteBuffer:
 
   def __cinit__(self, bytes data):
+    grpc_init()
     if data is None:
       self.c_byte_buffer = NULL
       return
 
     cdef char *c_data = data
-    cdef gpr_slice data_slice
+    cdef grpc_slice data_slice
     cdef size_t data_length = len(data)
     with nogil:
-      data_slice = gpr_slice_from_copied_buffer(c_data, data_length)
+      data_slice = grpc_slice_from_copied_buffer(c_data, data_length)
     with nogil:
       self.c_byte_buffer = grpc_raw_byte_buffer_create(
           &data_slice, 1)
     with nogil:
-      gpr_slice_unref(data_slice)
+      grpc_slice_unref(data_slice)
 
   def bytes(self):
     cdef grpc_byte_buffer_reader reader
-    cdef gpr_slice data_slice
+    cdef grpc_slice data_slice
     cdef size_t data_slice_length
     cdef void *data_slice_pointer
     cdef bint reader_status
@@ -262,11 +267,11 @@ cdef class ByteBuffer:
       result = bytearray()
       with nogil:
         while grpc_byte_buffer_reader_next(&reader, &data_slice):
-          data_slice_pointer = gpr_slice_start_ptr(data_slice)
-          data_slice_length = gpr_slice_length(data_slice)
+          data_slice_pointer = grpc_slice_start_ptr(data_slice)
+          data_slice_length = grpc_slice_length(data_slice)
           with gil:
             result += (<char *>data_slice_pointer)[:data_slice_length]
-          gpr_slice_unref(data_slice)
+          grpc_slice_unref(data_slice)
       with nogil:
         grpc_byte_buffer_reader_destroy(&reader)
       return bytes(result)
@@ -288,6 +293,7 @@ cdef class ByteBuffer:
   def __dealloc__(self):
     if self.c_byte_buffer != NULL:
       grpc_byte_buffer_destroy(self.c_byte_buffer)
+    grpc_shutdown()
 
 
 cdef class SslPemKeyCertPair:
@@ -299,26 +305,56 @@ cdef class SslPemKeyCertPair:
     self.c_pair.certificate_chain = self.certificate_chain
 
 
+
+cdef void* copy_ptr(void* ptr):
+  return ptr
+
+
+cdef void destroy_ptr(void* ptr):
+  pass
+
+
+cdef int compare_ptr(void* ptr1, void* ptr2):
+  if ptr1 < ptr2:
+    return -1
+  elif ptr1 > ptr2:
+    return 1
+  else:
+    return 0
+
+
 cdef class ChannelArg:
 
   def __cinit__(self, bytes key, value):
     self.key = key
+    self.value = value
     self.c_arg.key = self.key
     if isinstance(value, int):
-      self.value = value
       self.c_arg.type = GRPC_ARG_INTEGER
       self.c_arg.value.integer = self.value
     elif isinstance(value, bytes):
-      self.value = value
       self.c_arg.type = GRPC_ARG_STRING
       self.c_arg.value.string = self.value
+    elif hasattr(value, '__int__'):
+      # Pointer objects must override __int__() to return
+      # the underlying C address (Python ints are word size).  The
+      # lifecycle of the pointer is fixed to the lifecycle of the 
+      # python object wrapping it.
+      self.ptr_vtable.copy = &copy_ptr
+      self.ptr_vtable.destroy = &destroy_ptr
+      self.ptr_vtable.cmp = &compare_ptr
+      self.c_arg.type = GRPC_ARG_POINTER
+      self.c_arg.value.pointer.vtable = &self.ptr_vtable
+      self.c_arg.value.pointer.address = <void*>(<intptr_t>int(self.value))
     else:
+      # TODO Add supported pointer types to this message
       raise TypeError('Expected int or bytes, got {}'.format(type(value)))
 
 
 cdef class ChannelArgs:
 
   def __cinit__(self, args):
+    grpc_init()
     self.args = list(args)
     for arg in self.args:
       if not isinstance(arg, ChannelArg):
@@ -333,6 +369,7 @@ cdef class ChannelArgs:
   def __dealloc__(self):
     with nogil:
       gpr_free(self.c_args.arguments)
+    grpc_shutdown()
 
   def __len__(self):
     # self.args is never stale; it's only updated from this file
@@ -399,6 +436,7 @@ cdef class _MetadataIterator:
 cdef class Metadata:
 
   def __cinit__(self, metadata):
+    grpc_init()
     self.metadata = list(metadata)
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
@@ -420,6 +458,7 @@ cdef class Metadata:
     # it'd be nice if that were documented somewhere...)
     # TODO(atash): document this in the C core
     grpc_metadata_array_destroy(&self.c_metadata_array)
+    grpc_shutdown()
 
   def __len__(self):
     return self.c_metadata_array.count
@@ -437,6 +476,7 @@ cdef class Metadata:
 cdef class Operation:
 
   def __cinit__(self):
+    grpc_init()
     self.references = []
     self._received_status_details = NULL
     self._received_status_details_capacity = 0
@@ -529,6 +569,7 @@ cdef class Operation:
     # This means that we need to clean up after receive_status_on_client.
     if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
       gpr_free(self._received_status_details)
+    grpc_shutdown()
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
   cdef Operation op = Operation()
@@ -645,6 +686,7 @@ cdef class _OperationsIterator:
 cdef class Operations:
 
   def __cinit__(self, operations):
+    grpc_init()
     self.operations = list(operations)  # normalize iterable
     self.c_ops = NULL
     self.c_nops = 0
@@ -667,6 +709,7 @@ cdef class Operations:
   def __dealloc__(self):
     with nogil:
       gpr_free(self.c_ops)
+    grpc_shutdown()
 
   def __iter__(self):
     return _OperationsIterator(self)

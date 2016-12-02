@@ -60,7 +60,8 @@
 
 #ifndef GRPC_CUSTOM_PARSEGENERATORPARAMETER
 #include <google/protobuf/compiler/code_generator.h>
-#define GRPC_CUSTOM_PARSEGENERATORPARAMETER ::google::protobuf::compiler::ParseGeneratorParameter
+#define GRPC_CUSTOM_PARSEGENERATORPARAMETER \
+  ::google::protobuf::compiler::ParseGeneratorParameter
 #endif
 
 #ifndef GRPC_CUSTOM_STRING
@@ -81,8 +82,8 @@ static inline int PluginMain(int argc, char* argv[],
                              const CodeGenerator* generator) {
   return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
 }
-static inline void ParseGeneratorParameter(const string& parameter,
-    std::vector<std::pair<string, string> >* options) {
+static inline void ParseGeneratorParameter(
+    const string& parameter, std::vector<std::pair<string, string> >* options) {
   GRPC_CUSTOM_PARSEGENERATORPARAMETER(parameter, options);
 }
 

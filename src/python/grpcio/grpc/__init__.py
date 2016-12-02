@@ -649,6 +649,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -662,6 +666,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -675,6 +683,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -688,6 +700,10 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
     Args:
       method: The name of the RPC method.
+      request_serializer: Optional behaviour for serializing the request
+        message. Request goes unserialized in case None is passed.
+      response_deserializer: Optional behaviour for deserializing the response
+        message. Response goes undeserialized in case None is passed.
 
     Returns:
       A StreamStreamMultiCallable value for the named stream-stream method.
@@ -889,6 +905,21 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
+  def add_shutdown_handler(self, shutdown_handler):
+    """Adds a handler to be called on server shutdown.
+
+    Shutdown handlers are run on server stop() or in the event that a running
+    server is destroyed unexpectedly.  The handlers are run in series before
+    the stop grace period.
+
+    Args:
+      shutdown_handler:  A function taking a single arg, a time in seconds
+      within which the handler should complete.  None indicates the handler can
+      run for any duration.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
   def start(self):
     """Starts this Server's service of RPCs.
 
@@ -898,7 +929,7 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop(self, grace):
+  def stop(self, grace, shutdown_handler_grace=None):
     """Stops this Server's service of RPCs.
 
     All calls to this method immediately stop service of new RPCs. When existing
@@ -911,10 +942,18 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     passed in a previous call will not have the effect of stopping the server
     later.
 
+    This method does not block for any significant length of time. If None is
+    passed as the grace value, existing RPCs are immediately aborted and this
+    method blocks until this Server is completely stopped.
+
     Args:
-      grace: A duration of time in seconds to allow existing RPCs to complete
-        before being aborted by this Server's stopping. If None, this method
-        will block until the server is completely stopped.
+      grace: A duration of time in seconds or None. If a duration of time in
+        seconds, the time to allow existing RPCs to complete before being
+        aborted by this Server's stopping. If None, all RPCs will be aborted
+        immediately and this method will block until this Server is completely
+        stopped.
+      shutdown_handler_grace:  A duration of time in seconds or None.  This
+        value is passed to all shutdown handlers.
 
     Returns:
       A threading.Event that will be set when this Server has completely
@@ -1078,7 +1117,7 @@ def access_token_call_credentials(access_token):
 
   Args:
     access_token: A string to place directly in the http request
-      authorization header, ie "Authorization: Bearer <access_token>".
+      authorization header, ie "authorization: Bearer <access_token>".
 
   Returns:
     A CallCredentials.
@@ -1189,11 +1228,11 @@ def insecure_channel(target, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, options, None)
+  return _channel.Channel(target, () if options is None else options, None)
 
 
 def secure_channel(target, credentials, options=None):
-  """Creates an insecure Channel to a server.
+  """Creates a secure Channel to a server.
 
   Args:
     target: The target to which to connect.
@@ -1205,10 +1244,12 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, options, credentials._credentials)
+  return _channel.Channel(target, () if options is None else options,
+                          credentials._credentials)
 
 
-def server(thread_pool, handlers=None):
+def server(thread_pool, handlers=None, options=None, exit_grace=None,
+           exit_shutdown_handler_grace=None):
   """Creates a Server with which RPCs can be serviced.
 
   Args:
@@ -1219,12 +1260,21 @@ def server(thread_pool, handlers=None):
       only handlers the server will use to service RPCs; other handlers may
       later be added by calling add_generic_rpc_handlers any time before the
       returned Server is started.
+    options: A sequence of string-value pairs according to which to configure
+      the created server.
+    exit_grace:  The grace period to use when terminating
+      running servers at interpreter exit.  None indicates unspecified.
+    exit_shutdown_handler_grace:  The shutdown handler grace to use when
+      terminating running servers at interpreter exit.  None indicates
+      unspecified.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
   from grpc import _server
-  return _server.Server(thread_pool, () if handlers is None else handlers)
+  return _server.Server(thread_pool, () if handlers is None else handlers,
+                        () if options is None else options, exit_grace,
+                        exit_shutdown_handler_grace)
 
 
 ###################################  __all__  #################################

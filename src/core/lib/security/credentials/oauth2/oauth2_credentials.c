@@ -307,9 +307,15 @@ static void compute_engine_fetch_oauth2(
   request.http.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
-  grpc_httpcli_get(exec_ctx, httpcli_context, pollent, &request, deadline,
-                   grpc_closure_create(response_cb, metadata_req),
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+     channel. This would allow us to cancel an authentication query when under
+     extreme memory pressure. */
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("oauth2_credentials");
+  grpc_httpcli_get(exec_ctx, httpcli_context, pollent, resource_quota, &request,
+                   deadline, grpc_closure_create(response_cb, metadata_req),
                    &metadata_req->response);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
 }
 
 grpc_call_credentials *grpc_google_compute_engine_credentials_create(
@@ -357,10 +363,16 @@ static void refresh_token_fetch_oauth2(
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
-  grpc_httpcli_post(exec_ctx, httpcli_context, pollent, &request, body,
-                    strlen(body), deadline,
+  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+     channel. This would allow us to cancel an authentication query when under
+     extreme memory pressure. */
+  grpc_resource_quota *resource_quota =
+      grpc_resource_quota_create("oauth2_credentials_refresh");
+  grpc_httpcli_post(exec_ctx, httpcli_context, pollent, resource_quota,
+                    &request, body, strlen(body), deadline,
                     grpc_closure_create(response_cb, metadata_req),
                     &metadata_req->response);
+  grpc_resource_quota_internal_unref(exec_ctx, resource_quota);
   gpr_free(body);
 }
 
@@ -380,15 +392,32 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
   return &c->base.base;
 }
 
+static char *create_loggable_refresh_token(grpc_auth_refresh_token *token) {
+  if (strcmp(token->type, GRPC_AUTH_JSON_TYPE_INVALID) == 0) {
+    return gpr_strdup("<Invalid json token>");
+  }
+  char *loggable_token = NULL;
+  gpr_asprintf(&loggable_token,
+               "{\n type: %s\n client_id: %s\n client_secret: "
+               "<redacted>\n refresh_token: <redacted>\n}",
+               token->type, token->client_id);
+  return loggable_token;
+}
+
 grpc_call_credentials *grpc_google_refresh_token_credentials_create(
     const char *json_refresh_token, void *reserved) {
-  GRPC_API_TRACE(
-      "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
-      "reserved=%p)",
-      2, (json_refresh_token, reserved));
+  grpc_auth_refresh_token token =
+      grpc_auth_refresh_token_create_from_string(json_refresh_token);
+  if (grpc_api_trace) {
+    char *loggable_token = create_loggable_refresh_token(&token);
+    gpr_log(GPR_INFO,
+            "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
+            "reserved=%p)",
+            loggable_token, reserved);
+    gpr_free(loggable_token);
+  }
   GPR_ASSERT(reserved == NULL);
-  return grpc_refresh_token_credentials_create_from_auth_refresh_token(
-      grpc_auth_refresh_token_create_from_string(json_refresh_token));
+  return grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
 }
 
 //
@@ -418,9 +447,9 @@ grpc_call_credentials *grpc_access_token_credentials_create(
       gpr_malloc(sizeof(grpc_access_token_credentials));
   char *token_md_value;
   GRPC_API_TRACE(
-      "grpc_access_token_credentials_create(access_token=%s, "
+      "grpc_access_token_credentials_create(access_token=<redacted>, "
       "reserved=%p)",
-      2, (access_token, reserved));
+      1, (reserved));
   GPR_ASSERT(reserved == NULL);
   memset(c, 0, sizeof(grpc_access_token_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;

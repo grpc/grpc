@@ -36,8 +36,8 @@
 
 #include "src/compiler/config.h"
 
-#include <iostream>
 #include <initializer_list>
+#include <iostream>
 #include <map>
 #include <ostream>  // NOLINT
 #include <vector>
@@ -53,8 +53,7 @@ namespace grpc_ruby_generator {
 inline std::map<grpc::string, grpc::string> ListToDict(
     const initializer_list<grpc::string> &values) {
   if (values.size() % 2 != 0) {
-    std::cerr << "Not every 'key' has a value in `values`."
-              << std::endl;
+    std::cerr << "Not every 'key' has a value in `values`." << std::endl;
   }
   std::map<grpc::string, grpc::string> value_map;
   auto value_iter = values.begin();

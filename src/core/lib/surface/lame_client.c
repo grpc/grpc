@@ -88,6 +88,10 @@ static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return NULL;
 }
 
+static void lame_get_channel_info(grpc_exec_ctx *exec_ctx,
+                                  grpc_channel_element *elem,
+                                  const grpc_channel_info *channel_info) {}
+
 static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem,
                                     grpc_transport_op *op) {
@@ -97,21 +101,24 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
     grpc_exec_ctx_sched(exec_ctx, op->on_connectivity_state_change,
                         GRPC_ERROR_NONE, NULL);
   }
-  if (op->on_consumed != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
-  }
   if (op->send_ping != NULL) {
     grpc_exec_ctx_sched(exec_ctx, op->send_ping,
                         GRPC_ERROR_CREATE("lame client channel"), NULL);
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
+  if (op->on_consumed != NULL) {
+    grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
+  }
 }
 
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {}
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats,
+                              const grpc_call_final_info *final_info,
                               void *and_free_memory) {
   gpr_free(and_free_memory);
 }
@@ -137,6 +144,7 @@ const grpc_channel_filter grpc_lame_filter = {
     init_channel_elem,
     destroy_channel_elem,
     lame_get_peer,
+    lame_get_channel_info,
     "lame-client",
 };
 

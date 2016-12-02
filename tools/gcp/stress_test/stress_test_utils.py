@@ -121,7 +121,7 @@ class BigQueryHelper:
       if not page['jobComplete']:
         print('TIMEOUT ERROR: The query %s timed out. Current timeout value is'
               ' %d msec. Returning False (i.e assuming there are no failures)'
-             ) % (query, timeoout_msec)
+             ) % (query, timeout_msec)
         return False
 
       num_failures = int(page['totalRows'])

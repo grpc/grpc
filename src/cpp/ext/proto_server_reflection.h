@@ -30,18 +30,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 #ifndef GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
 #define GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
 #include <unordered_set>
 #include <vector>
 
-#include <grpc++/ext/reflection.grpc.pb.h>
 #include <grpc++/grpc++.h>
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
 
-class ProtoServerReflection GRPC_FINAL
+class ProtoServerReflection final
     : public reflection::v1alpha::ServerReflection::Service {
  public:
   ProtoServerReflection();
@@ -55,7 +56,7 @@ class ProtoServerReflection GRPC_FINAL
       ServerContext* context,
       ServerReaderWriter<reflection::v1alpha::ServerReflectionResponse,
                          reflection::v1alpha::ServerReflectionRequest>* stream)
-      GRPC_OVERRIDE;
+      override;
 
  private:
   Status ListService(ServerContext* context,

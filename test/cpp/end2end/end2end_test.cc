@@ -37,6 +37,7 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/auth_metadata_processor.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
@@ -44,6 +45,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
@@ -79,26 +81,29 @@ const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 
 class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
  public:
-  static const char kMetadataKey[];
+  static const char kGoodMetadataKey[];
+  static const char kBadMetadataKey[];
 
-  TestMetadataCredentialsPlugin(grpc::string_ref metadata_value,
+  TestMetadataCredentialsPlugin(grpc::string_ref metadata_key,
+                                grpc::string_ref metadata_value,
                                 bool is_blocking, bool is_successful)
-      : metadata_value_(metadata_value.data(), metadata_value.length()),
+      : metadata_key_(metadata_key.data(), metadata_key.length()),
+        metadata_value_(metadata_value.data(), metadata_value.length()),
         is_blocking_(is_blocking),
         is_successful_(is_successful) {}
 
-  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+  bool IsBlocking() const override { return is_blocking_; }
 
-  Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
-                     const grpc::AuthContext& channel_auth_context,
-                     std::multimap<grpc::string, grpc::string>* metadata)
-      GRPC_OVERRIDE {
+  Status GetMetadata(
+      grpc::string_ref service_url, grpc::string_ref method_name,
+      const grpc::AuthContext& channel_auth_context,
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     EXPECT_GT(service_url.length(), 0UL);
     EXPECT_GT(method_name.length(), 0UL);
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
     EXPECT_TRUE(metadata != nullptr);
     if (is_successful_) {
-      metadata->insert(std::make_pair(kMetadataKey, metadata_value_));
+      metadata->insert(std::make_pair(metadata_key_, metadata_value_));
       return Status::OK;
     } else {
       return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
@@ -106,12 +111,16 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
   }
 
  private:
+  grpc::string metadata_key_;
   grpc::string metadata_value_;
   bool is_blocking_;
   bool is_successful_;
 };
 
-const char TestMetadataCredentialsPlugin::kMetadataKey[] = "TestPluginMetadata";
+const char TestMetadataCredentialsPlugin::kBadMetadataKey[] =
+    "TestPluginMetadata";
+const char TestMetadataCredentialsPlugin::kGoodMetadataKey[] =
+    "test-plugin-metadata";
 
 class TestAuthMetadataProcessor : public AuthMetadataProcessor {
  public:
@@ -122,26 +131,30 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   std::shared_ptr<CallCredentials> GetCompatibleClientCreds() {
     return MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
-            new TestMetadataCredentialsPlugin(kGoodGuy, is_blocking_, true)));
+            new TestMetadataCredentialsPlugin(
+                TestMetadataCredentialsPlugin::kGoodMetadataKey, kGoodGuy,
+                is_blocking_, true)));
   }
 
   std::shared_ptr<CallCredentials> GetIncompatibleClientCreds() {
     return MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
-            new TestMetadataCredentialsPlugin("Mr Hyde", is_blocking_, true)));
+            new TestMetadataCredentialsPlugin(
+                TestMetadataCredentialsPlugin::kGoodMetadataKey, "Mr Hyde",
+                is_blocking_, true)));
   }
 
   // Interface implementation
-  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+  bool IsBlocking() const override { return is_blocking_; }
 
   Status Process(const InputMetadata& auth_metadata, AuthContext* context,
                  OutputMetadata* consumed_auth_metadata,
-                 OutputMetadata* response_metadata) GRPC_OVERRIDE {
+                 OutputMetadata* response_metadata) override {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
     auto auth_md =
-        auth_metadata.find(TestMetadataCredentialsPlugin::kMetadataKey);
+        auth_metadata.find(TestMetadataCredentialsPlugin::kGoodMetadataKey);
     EXPECT_NE(auth_md, auth_metadata.end());
     string_ref auth_md_value = auth_md->second;
     if (auth_md_value == kGoodGuy) {
@@ -172,7 +185,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
       : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     return stub_->Echo(client_context.get(), *request, response);
@@ -186,7 +199,7 @@ class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message("no package");
     return Status::OK;
   }
@@ -216,7 +229,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     GetParam().Log();
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     if (is_server_started_) {
       server_->Shutdown();
       if (proxy_server_) proxy_server_->Shutdown();
@@ -228,6 +241,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
+    ConfigureServerBuilder(&builder);
     auto server_creds = GetServerCredentials(GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
@@ -235,11 +249,19 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     builder.RegisterService("foo.test.youtube.com", &special_service_);
-    builder.SetMaxMessageSize(
-        kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
+
+    builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
+    builder.SetSyncServerOption(
+        ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
+  }
+
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) {
+    builder->SetMaxMessageSize(
+        kMaxMessageSize_);  // For testing max message size.
   }
 
   void ResetChannel() {
@@ -267,6 +289,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       ServerBuilder builder;
       builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
       builder.RegisterService(proxy_service_.get());
+
+      builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
+      builder.SetSyncServerOption(
+          ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+
       proxy_server_ = builder.BuildAndStart();
 
       channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
@@ -624,30 +651,28 @@ TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
   auto iter = trailing_metadata.find("user-agent");
   EXPECT_TRUE(iter != trailing_metadata.end());
   grpc::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
-  EXPECT_TRUE(iter->second.starts_with(expected_prefix));
+  EXPECT_TRUE(iter->second.starts_with(expected_prefix)) << iter->second;
 }
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, true));
+    threads.emplace_back(SendRpc, stub_.get(), 10, true);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
 TEST_P(End2endTest, MultipleRpcs) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+    threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
@@ -967,8 +992,8 @@ TEST_P(End2endTest, ChannelStateTimeout) {
 // Talking to a non-existing service.
 TEST_P(End2endTest, NonExistingService) {
   ResetChannel();
-  std::unique_ptr<grpc::testing::UnimplementedService::Stub> stub;
-  stub = grpc::testing::UnimplementedService::NewStub(channel_);
+  std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
+  stub = grpc::testing::UnimplementedEchoService::NewStub(channel_);
 
   EchoRequest request;
   EchoResponse response;
@@ -1031,13 +1056,12 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
   ResetStub();
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+    threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
   for (int i = 0; i < 10; ++i) {
-    threads[i]->join();
-    delete threads[i];
+    threads[i].join();
   }
 }
 
@@ -1321,6 +1345,40 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kBadMetadataKey,
+              "Does not matter, will fail the key is invalid.", false, true))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
+              "With illegal \n value.", false, true))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   ResetStub();
   EchoRequest request;
@@ -1329,6 +1387,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   context.set_credentials(
       MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "Does not matter, will fail anyway (see 3rd param)", false,
               false))));
   request.set_message("Hello");
@@ -1387,6 +1446,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   context.set_credentials(
       MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
+              TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "Does not matter, will fail anyway (see 3rd param)", true,
               false))));
   request.set_message("Hello");
@@ -1414,7 +1474,7 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, tst.size());
+  ASSERT_EQ(1u, tst.size());
   EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
   if (GetParam().credentials_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",
@@ -1426,6 +1486,32 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
     EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
     EXPECT_EQ("192.168.1.3", ToString(auth_ctx->GetPeerIdentity()[3]));
   }
+}
+
+class ResourceQuotaEnd2endTest : public End2endTest {
+ public:
+  ResourceQuotaEnd2endTest()
+      : server_resource_quota_("server_resource_quota") {}
+
+  virtual void ConfigureServerBuilder(ServerBuilder* builder) override {
+    builder->SetResourceQuota(server_resource_quota_);
+  }
+
+ private:
+  ResourceQuota server_resource_quota_;
+};
+
+TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
+  ResetStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
@@ -1463,6 +1549,10 @@ INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
+
+INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
                                                                 true)));
 
 }  // namespace

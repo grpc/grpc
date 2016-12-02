@@ -30,6 +30,8 @@
 
 """Runs selected gRPC test/build tasks."""
 
+from __future__ import print_function
+
 import argparse
 import atexit
 import jobset
@@ -111,7 +113,7 @@ build_jobs = []
 for target in targets:
   build_jobs.append(target.build_jobspec())
 if not build_jobs:
-  print 'Nothing to build.'
+  print('Nothing to build.')
   sys.exit(1)
 
 jobset.message('START', 'Building targets.', do_newline=True)

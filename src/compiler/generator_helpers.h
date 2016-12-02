@@ -84,7 +84,7 @@ inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
     }
     str.replace(pos, from.length(), to);
     pos += to.length();
-  } while(replace_all);
+  } while (replace_all);
 
   return str;
 }
@@ -139,8 +139,8 @@ inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
   return result;
 }
 
-inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file,
-                                         bool include_package_path) {
+inline grpc::string FileNameInUpperCamel(
+    const grpc::protobuf::FileDescriptor *file, bool include_package_path) {
   std::vector<grpc::string> tokens = tokenize(StripProto(file->name()), "/");
   grpc::string result = "";
   if (include_package_path) {
@@ -152,7 +152,8 @@ inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *f
   return result;
 }
 
-inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file) {
+inline grpc::string FileNameInUpperCamel(
+    const grpc::protobuf::FileDescriptor *file) {
   return FileNameInUpperCamel(file, true);
 }
 
@@ -163,7 +164,8 @@ enum MethodType {
   METHODTYPE_BIDI_STREAMING
 };
 
-inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor *method) {
+inline MethodType GetMethodType(
+    const grpc::protobuf::MethodDescriptor *method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return METHODTYPE_BIDI_STREAMING;
@@ -254,7 +256,7 @@ inline grpc::string GenerateCommentsWithPrefix(
     const std::vector<grpc::string> &in, const grpc::string &prefix) {
   std::ostringstream oss;
   for (auto it = in.begin(); it != in.end(); it++) {
-    const grpc::string& elem = *it;
+    const grpc::string &elem = *it;
     if (elem.empty()) {
       oss << prefix << "\n";
     } else if (elem[0] == ' ') {

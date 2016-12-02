@@ -63,6 +63,21 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+
 #=================
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
@@ -73,6 +88,11 @@ RUN apt-get update && apt-get install -y \
   gcc-4.4-multilib \
   g++-4.4 \
   g++-4.4-multilib
+
+# set up backport to allow installation of Git version > 1.7
+RUN echo "deb http://http.debian.net/debian wheezy-backports main"   >/etc/apt/sources.list.d/wheezy-backports.list
+RUN apt-get update -qq
+RUN apt-get -t wheezy-backports install -qq git
 
 RUN wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz
 
