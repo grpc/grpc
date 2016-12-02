@@ -90,6 +90,12 @@ static bool is_covered_by_poller(grpc_combiner *lock) {
          gpr_atm_acq_load(&lock->elements_covered_by_poller) > 0;
 }
 
+#define IS_COVERED_BY_POLLER_FMT "(final=%d elems=%" PRIdPTR ")->%d"
+#define IS_COVERED_BY_POLLER_ARGS(lock)                      \
+  (lock)->final_list_covered_by_poller,                      \
+      gpr_atm_acq_load(&(lock)->elements_covered_by_poller), \
+      is_covered_by_poller((lock))
+
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   grpc_combiner *lock = gpr_malloc(sizeof(*lock));
   lock->next_combiner_on_this_exec_ctx = NULL;
@@ -197,9 +203,10 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
   GRPC_COMBINER_TRACE(
       gpr_log(GPR_DEBUG,
               "C:%p grpc_combiner_continue_exec_ctx workqueue=%p "
-              "is_covered_by_poller=%d exec_ctx_ready_to_finish=%d "
+              "is_covered_by_poller=" IS_COVERED_BY_POLLER_FMT
+              " exec_ctx_ready_to_finish=%d "
               "time_to_execute_final_list=%d",
-              lock, lock->optional_workqueue, is_covered_by_poller(lock),
+              lock, lock->optional_workqueue, IS_COVERED_BY_POLLER_ARGS(lock),
               grpc_exec_ctx_ready_to_finish(exec_ctx),
               lock->time_to_execute_final_list));
 
