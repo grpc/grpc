@@ -50,7 +50,7 @@ using hellostreamingworld::HelloRequest;
 using hellostreamingworld::HelloReply;
 using hellostreamingworld::MultiGreeter;
 
-enum class Type { READ = 1, WRITE = 2, CONNECT = 3 };
+enum class Type { READ = 1, WRITE = 2, CONNECT = 3, FINISH = 4 };
 
 // Most of the logic is similar to AsyncBidiGreeterClient, so follow that class
 // for detailed comments. The only difference between the server and the client
@@ -102,21 +102,19 @@ class AsyncBidiGreeterServer {
   }
 
  private:
-  void AsyncHello() {
+  void AsyncWaitForHelloRequest() {
     // In the case of the server, we wait for a READ first and then write a
     // response. A server cannot initiate a connection so the server has to
     // wait for the client to send a message in order for it to respond back.
     stream_->Read(&request_, reinterpret_cast<void*>(Type::READ));
   }
 
-  void AsyncHelloResponse() {
+  void AsyncHelloSendResponse() {
     std::cout << " ** Handling request: " << request_.name() << std::endl;
     HelloReply response;
     std::cout << " ** Sending response: " << response_str_ << std::endl;
     response.set_message(response_str_);
     stream_->Write(response, reinterpret_cast<void*>(Type::WRITE));
-
-    AsyncHello();
   }
 
   // Runs a gRPC completion-queue processing thread. Checks for 'Next' tag
@@ -142,14 +140,15 @@ class AsyncBidiGreeterServer {
         switch (static_cast<Type>(reinterpret_cast<size_t>(got_tag))) {
           case Type::READ:
             std::cout << "Read a new message." << std::endl;
-            AsyncHelloResponse();
+            AsyncHelloSendResponse();
             break;
           case Type::WRITE:
             std::cout << "Sending message (async)." << std::endl;
+            AsyncWaitForHelloRequest();
             break;
           case Type::CONNECT:
             std::cout << "Client connected." << std::endl;
-            AsyncHello();
+            AsyncWaitForHelloRequest();
             break;
           default:
             std::cerr << "Unexpected tag " << got_tag << std::endl;
