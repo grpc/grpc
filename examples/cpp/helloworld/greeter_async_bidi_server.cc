@@ -57,10 +57,10 @@ enum class Type { READ = 1, WRITE = 2, CONNECT = 3, FINISH = 4 };
 // greeter_server/greeter_async_server first.
 
 // Most of the logic is similar to AsyncBidiGreeterClient, so follow that class
-// for detailed comments. The only difference between the server and the client
-// is the (a) concept of 'listening' as well as (b) client 'Finish()' that
-// closes a specific client->server stream (but lets the server handle multiple
-// streams).
+// for detailed comments. Two main differences between the server and the client
+// are: (a) Server cannot initiate a connection, so it first waits for a
+// 'connection'. (b) Server can handle multiple streams at the same time, so
+// the completion queue/server have a longer lifetime than the client(s).
 class AsyncBidiGreeterServer {
  public:
   AsyncBidiGreeterServer() {

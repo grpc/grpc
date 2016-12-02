@@ -266,6 +266,18 @@ A detailed example is in
 [greeter_async_bidi_server.cc](greeter_async_bidi_server.cc)
 and [greeter_async_bidi_client.cc](greeter_async_bidi_client.cc).
 
+To debug issues:
 
+```bash
+export GRPC_VERBOSITY=DEBUG
+```
 
+In the context of streaming servers/clients, several options are possible:
+ 1 Completion Queue  :: 1 Server :: 1 Stream (Simplest case)
+ 1 Completion Queue  :: 1 Server :: N Streams (Sharing completion queue).
+ N Completion Queues :: 1 Server :: N Streams (Independent completion queue
+  per stream).
+ A completion queue can also be shared among *different* RPCs as well, not
+  just for the same stream RPC API.
 
+  

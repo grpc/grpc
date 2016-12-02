@@ -36,12 +36,11 @@ CPPFLAGS += -I/usr/local/include -pthread
 CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
-           -lgrpc++_reflection \
-           -lprotobuf -lpthread -ldl
+           -lprotobuf -ldl
 else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
-           -Wl,--no-as-needed -Wl,--as-needed \
-           -lprotobuf  -ldl
+           -Wl,--no-as-needed -Wl,--as-needed                     \
+           -lprotobuf -ldl
 endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
