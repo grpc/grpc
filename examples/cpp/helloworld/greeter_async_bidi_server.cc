@@ -85,18 +85,19 @@ class AsyncBidiGreeterServer {
         new ServerAsyncReaderWriter<HelloReply, HelloRequest>(&context_));
     service_.RequestSayHello(&context_, stream_.get(), cq_.get(), cq_.get(),
                              reinterpret_cast<void*>(Type::CONNECT));
-
     grpc_thread_.reset(
-        new std::thread(&AsyncBidiGreeterServer::GrpcThread, this));
+        new std::thread([=]() { GrpcThread(); }));
     std::cout << "Server listening on " << server_address << std::endl;
   }
 
   void SetResponse(const std::string& response) { response_str_ = response; }
 
   ~AsyncBidiGreeterServer() {
+    std::cout << "Shutting down server." << std::endl;
     server_->Shutdown();
     // Always shutdown the completion queue after the server.
     cq_->Shutdown();
+    grpc_thread_->join();
   }
 
  private:
@@ -131,6 +132,7 @@ class AsyncBidiGreeterServer {
         std::cerr << "Client stream closed. Quitting" << std::endl;
         break;
       }
+
       if (ok) {
         std::cout << std::endl
                   << "**** Processing completion queue tag " << got_tag
@@ -145,7 +147,7 @@ class AsyncBidiGreeterServer {
             break;
           case Type::CONNECT:
             std::cout << "Client connected." << std::endl;
-            AsyncHello();
+            // AsyncHello();
             break;
           default:
             std::cerr << "Unexpected tag " << got_tag << std::endl;

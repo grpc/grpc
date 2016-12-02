@@ -73,19 +73,22 @@ class AsyncBidiGreeterClient {
     // at any given time. The throttling is performed by gRPC completion
     // queue. If you queue more than one write/read, the stream will crash.
     stream_->Write(request, reinterpret_cast<void*>(Type::WRITE));
+  }
+
+  ~AsyncBidiGreeterClient() {
+    std::cout << "Shutting down server." << std::endl;
+    grpc_thread_->join();
+  }
+
+ private:
+  void AsyncHelloResponse() {
+    std::cout << "Got response: " << response_.message() << std::endl;
 
     // The tag is the link between our thread (main thread) and the completion
     // queue thread. The tag allows the completion queue to fan off
     // notification handlers for the specified read/write requests as they
     // are being processed by gRPC.
     stream_->Read(&response_, reinterpret_cast<void*>(Type::READ));
-  }
-
-  ~AsyncBidiGreeterClient() { grpc_thread_->join(); }
-
- private:
-  void AsyncHelloResponse() {
-    std::cout << "Got response: " << response_.message() << std::endl;
   }
 
   // Runs a gRPC completion-queue processing thread. Checks for 'Next' tag
@@ -103,6 +106,11 @@ class AsyncBidiGreeterClient {
         std::cerr << "Client stream closed. Quitting" << std::endl;
         break;
       }
+
+      // It's important to process all tags even if the ok is false. One might
+      // want to deallocate memory that has be reinterpret_cast'ed to void*
+      // when the tag got initialized. For our example, we cast an int to a
+      // void*, so we don't have extra memory management to take care of.
       if (ok) {
         std::cout << std::endl
                   << "**** Processing completion queue tag " << got_tag
