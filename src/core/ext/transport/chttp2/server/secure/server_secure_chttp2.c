@@ -69,6 +69,7 @@ static void server_security_handshaker_factory_destroy(
       (server_security_handshaker_factory *)hf;
   GRPC_SECURITY_CONNECTOR_UNREF(&handshaker_factory->security_connector->base,
                                 "server");
+  gpr_free(hf);
 }
 
 static const grpc_chttp2_server_handshaker_factory_vtable
@@ -124,9 +125,6 @@ done:
     gpr_log(GPR_ERROR, "%s", msg);
     grpc_error_free_string(msg);
     GRPC_ERROR_UNREF(err);
-    if (sc != NULL) {
-      GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "server");
-    }
   }
   return port_num;
 }
