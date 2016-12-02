@@ -144,6 +144,12 @@ struct grpc_resource_quota {
   /* Closure around rq_reclamation_done */
   grpc_closure rq_reclamation_done_closure;
 
+  /* This is only really usable for debugging: it's always a stale pointer, but
+     a stale pointer that might just be fresh enough to guide us to where the
+     reclamation system is stuck */
+  grpc_closure *debug_only_last_initiated_reclaimer;
+  grpc_resource_user *debug_only_last_reclaimer_resource_user;
+
   /* Roots of all resource user lists */
   grpc_resource_user *roots[GRPC_RULIST_COUNT];
 
@@ -340,6 +346,9 @@ static bool rq_reclaim(grpc_exec_ctx *exec_ctx,
   resource_quota->reclaiming = true;
   grpc_resource_quota_internal_ref(resource_quota);
   grpc_closure *c = resource_user->reclaimers[destructive];
+  GPR_ASSERT(c);
+  resource_quota->debug_only_last_reclaimer_resource_user = resource_user;
+  resource_quota->debug_only_last_initiated_reclaimer = c;
   resource_user->reclaimers[destructive] = NULL;
   grpc_closure_run(exec_ctx, c, GRPC_ERROR_NONE);
   return true;
@@ -476,6 +485,8 @@ static void ru_shutdown(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
                       GRPC_ERROR_CANCELLED, NULL);
   resource_user->reclaimers[0] = NULL;
   resource_user->reclaimers[1] = NULL;
+  rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_BENIGN);
+  rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_DESTRUCTIVE);
 }
 
 static void ru_destroy(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
