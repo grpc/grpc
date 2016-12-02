@@ -262,7 +262,8 @@ An asynchronous streaming server or client can read and write streaming data
 from/to each other. A common theme for a server/client stream is a dedicated
 thread that can callback when there is a new stream data available.
 
-A detailed example is in [greeter_async_bidi_server.cc](greeter_async_bidi_server.cc)
+A detailed example is in
+[greeter_async_bidi_server.cc](greeter_async_bidi_server.cc)
 and [greeter_async_bidi_client.cc](greeter_async_bidi_client.cc).
 
 
