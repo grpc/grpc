@@ -8,6 +8,7 @@ class TestcaseRstStreamAfterData(object):
   def __init__(self):
     self._base_server = http2_base_server.H2ProtocolBaseServer()
     self._base_server._handlers['DataReceived'] = self.on_data_received
+    self._base_server._handlers['SendDone'] = self.on_send_done
 
   def get_base_server(self):
     return self._base_server
@@ -20,4 +21,7 @@ class TestcaseRstStreamAfterData(object):
       self._ready_to_send = True
       self._base_server.setup_send(response_data, event.stream_id)
       # send reset stream
-      self._base_server.send_reset_stream()
+
+  def on_send_done(self, stream_id):
+    self._base_server.send_reset_stream()
+    self._base_server._stream_status[stream_id] = False
