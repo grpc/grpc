@@ -436,9 +436,9 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.c
   src/core/lib/security/credentials/ssl/ssl_credentials.c
   src/core/lib/security/transport/client_auth_filter.c
-  src/core/lib/security/transport/handshake.c
   src/core/lib/security/transport/secure_endpoint.c
   src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
   src/core/lib/security/util/b64.c
@@ -447,6 +447,7 @@ add_library(grpc
   src/core/lib/tsi/fake_transport_security.c
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
+  src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   src/core/ext/client_channel/channel_connectivity.c
   src/core/ext/client_channel/client_channel.c
@@ -466,6 +467,7 @@ add_library(grpc
   src/core/ext/client_channel/subchannel.c
   src/core/ext/client_channel/subchannel_index.c
   src/core/ext/client_channel/uri_parser.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
@@ -736,9 +738,9 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.c
   src/core/lib/security/credentials/ssl/ssl_credentials.c
   src/core/lib/security/transport/client_auth_filter.c
-  src/core/lib/security/transport/handshake.c
   src/core/lib/security/transport/secure_endpoint.c
   src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/security_handshaker.c
   src/core/lib/security/transport/server_auth_filter.c
   src/core/lib/security/transport/tsi_error.c
   src/core/lib/security/util/b64.c
@@ -747,6 +749,7 @@ add_library(grpc_cronet
   src/core/lib/tsi/fake_transport_security.c
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
@@ -951,8 +954,10 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
   src/core/ext/transport/chttp2/alpn/alpn.c
+  src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/client_channel/channel_connectivity.c
   src/core/ext/client_channel/client_channel.c
   src/core/ext/client_channel/client_channel_factory.c
@@ -1258,6 +1263,7 @@ add_library(grpc++_cronet
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
@@ -1412,6 +1418,7 @@ add_library(grpc++_cronet
   src/core/ext/client_channel/uri_parser.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
+  src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
