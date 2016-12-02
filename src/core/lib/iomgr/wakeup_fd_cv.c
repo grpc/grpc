@@ -51,25 +51,22 @@
 
 extern cv_fd_table g_cvfds[TABLE_SHARDS];
 
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
-// We disable TSAN checking on this function because we aquire
-// locks in the reverse order as cvfd_poll() (ev_poll_posix.c).
-// See cvfd_poll() for why this is OK.
-static grpc_error* cv_fd_wakeup(grpc_wakeup_fd* fd_info)
-    __attribute__((no_sanitize_thread));
-#endif
-#endif
-
-static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
-  unsigned int i, newsize;
+// Attempt to allocate a cv fd on a shard.  Returns 1 on success, 0 on
+// failure
+static int cv_fd_init_on_shard(grpc_wakeup_fd* fd_info, int shard) {
+  int newsize;
   int idx;
-  int shard = rand() % TABLE_SHARDS;
   gpr_mu_lock(&g_cvfds[shard].mu);
   if (!g_cvfds[shard].free_fds) {
+    if(g_cvfds[shard].size == MAX_SHARD_SIZE) {
+      // No more room on this shard
+      gpr_mu_unlock(&g_cvfds[shard].mu);
+      return 0;
+    }
     newsize = GPR_MIN(g_cvfds[shard].size * 2, g_cvfds[shard].size + MAX_TABLE_RESIZE);
-    g_cvfds[shard].cvfds = gpr_realloc(g_cvfds[shard].cvfds, sizeof(fd_node) * newsize);
-    for (i = g_cvfds[shard].size; i < newsize; i++) {
+    newsize = GPR_MIN(MAX_SHARD_SIZE, newsize);
+    g_cvfds[shard].cvfds = gpr_realloc(g_cvfds[shard].cvfds, sizeof(fd_node) * (unsigned int) newsize);
+    for (int i = g_cvfds[shard].size; i < newsize; i++) {
       g_cvfds[shard].cvfds[i].is_set = 0;
       g_cvfds[shard].cvfds[i].cvs = NULL;
       g_cvfds[shard].cvfds[i].next_free = g_cvfds[shard].free_fds;
@@ -85,6 +82,21 @@ static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
   fd_info->read_fd = SHARD_IDX_TO_FD(shard, idx);
   fd_info->write_fd = -1;
   gpr_mu_unlock(&g_cvfds[shard].mu);
+  return 1;
+}
+
+static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
+  int shard = rand() % TABLE_SHARDS;
+  if(!cv_fd_init_on_shard(fd_info, shard)) {
+    // Our random shard was full, just try all shards
+    for (int i = 0; i < TABLE_SHARDS; i++) {
+      if (cv_fd_init_on_shard(fd_info, shard)) {
+        break;
+      }
+    }
+    // Exausted all 32-bit negative numbers with cv wakeup fds
+    GPR_ASSERT(0);
+  }
   return GRPC_ERROR_NONE;
 }
 

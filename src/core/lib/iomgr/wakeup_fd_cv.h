@@ -56,10 +56,11 @@
 
 
 #define TABLE_SHARDS 16
+#define MAX_SHARD_SIZE ((1 << 30) / TABLE_SHARDS)
 
-#define FD_TO_SHARD(fd) ((-(fd)-1) / TABLE_SHARDS)
-#define FD_TO_IDX(fd) ((-(fd)-1) % TABLE_SHARDS)
-#define SHARD_IDX_TO_FD(shard, idx) (-(shard * TABLE_SHARDS + idx)-1)
+#define FD_TO_SHARD(fd) ((-(fd)-1) / MAX_SHARD_SIZE)
+#define FD_TO_IDX(fd) ((-(fd)-1) % MAX_SHARD_SIZE)
+#define SHARD_IDX_TO_FD(shard, idx) (-(shard * MAX_SHARD_SIZE + idx)-1)
 
 typedef struct cv_node {
   gpr_cv* cv;
@@ -77,7 +78,7 @@ typedef struct cv_fd_table {
   gpr_mu mu;
   fd_node* cvfds;
   fd_node* free_fds;
-  unsigned int size;
+  int size;
 } cv_fd_table;
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */
