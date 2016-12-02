@@ -339,9 +339,8 @@ error:
   if (tcp_server) {
     grpc_tcp_server_unref(exec_ctx, tcp_server);
   } else {
-    grpc_channel_args_destroy(state->args);
-    grpc_chttp2_server_handshaker_factory_destroy(exec_ctx,
-                                                  state->handshaker_factory);
+    grpc_channel_args_destroy(args);
+    grpc_chttp2_server_handshaker_factory_destroy(exec_ctx, handshaker_factory);
     gpr_free(state);
   }
   *port_num = 0;
