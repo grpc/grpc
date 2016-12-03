@@ -52,6 +52,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/profiling/timers.h"
+#include "src/cpp/server/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
@@ -306,6 +307,15 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     sync_requests_.emplace_back(new SyncRequest(method, tag));
   }
 
+  void AddHealthCheckSyncMethod() {
+    if (!sync_requests_.empty()) {
+      health_check_.reset(
+          new RpcServiceMethod("???", RpcMethod::NORMAL_RPC, new XXXHandler));
+      sync_requests_.emplace_back(
+          new SyncRequest(health_check_.get(), nullptr));
+    }
+  }
+
   void AddUnknownSyncMethod() {
     if (!sync_requests_.empty()) {
       unknown_method_.reset(new RpcServiceMethod(
@@ -500,7 +510,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       EnableDefaultHealthCheckService()) {
-    health_check_service_.reset(CreateDefaultHealthCheckService());
+    health_check_service_.reset(new DefaultHealthCheckService);
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->AddHealthCheckSyncMethod();
     }
