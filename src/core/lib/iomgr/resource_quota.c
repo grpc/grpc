@@ -704,8 +704,6 @@ static void ru_unref_by(grpc_exec_ctx *exec_ctx,
                         grpc_resource_user *resource_user, gpr_atm amount) {
   GPR_ASSERT(amount > 0);
   gpr_atm old = gpr_atm_full_fetch_add(&resource_user->refs, -amount);
-  gpr_log(GPR_DEBUG, "%p unref_by %d, old=%d", resource_user, (int)amount,
-          (int)old);
   GPR_ASSERT(old >= amount);
   if (old == amount) {
     grpc_combiner_execute(exec_ctx, resource_user->resource_quota->combiner,
