@@ -231,6 +231,7 @@ static void rulist_remove(grpc_resource_user *resource_user, grpc_rulist list) {
       resource_user->links[list].prev;
   resource_user->links[list].prev->links[list].next =
       resource_user->links[list].next;
+  resource_user->links[list].next = resource_user->links[list].prev = NULL;
 }
 
 /*******************************************************************************
