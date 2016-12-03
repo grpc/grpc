@@ -208,7 +208,6 @@ bool grpc_chttp2_begin_write(grpc_exec_ctx *exec_ctx,
         GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:already_writing");
       }
     } else {
-      grpc_chttp2_leave_writing_lists(exec_ctx, t, s);
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:no_write");
     }
   }
@@ -253,9 +252,9 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
                                      GRPC_ERROR_REF(error));
     }
-    grpc_chttp2_leave_writing_lists(exec_ctx, t, s);
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");
   }
+  grpc_exec_ctx_enqueue_list(exec_ctx, &t->run_after_write, NULL);
   grpc_slice_buffer_reset_and_unref(&t->outbuf);
   GRPC_ERROR_UNREF(error);
   GPR_TIMER_END("grpc_chttp2_end_write", 0);
