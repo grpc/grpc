@@ -231,6 +231,9 @@ class CLanguage(object):
              'GRPC_POLL_STRATEGY': polling_strategy,
              'GRPC_VERBOSITY': 'DEBUG'}
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
+        timeout_scaling = 1
+        if polling_strategy == 'poll-cv':
+          timeout_scaling *= 5
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
@@ -269,6 +272,7 @@ class CLanguage(object):
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s --gtest_filter=%s %s' % (binary, test, shortname_ext),
                                                 cpu_cost=cpu_cost,
+                                                timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
@@ -279,7 +283,7 @@ class CLanguage(object):
                                                       shortname_ext,
                                             cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
-                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS),
+                                            timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                             environ=env))
         elif self.args.regex == '.*' or self.platform == 'windows':
           print('\nWARNING: binary not found, skipping', binary)
