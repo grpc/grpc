@@ -31,30 +31,17 @@
  *
  */
 
-#include <grpc/grpc.h>
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
-#include <grpc/support/log.h>
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/security/transport/security_connector.h"
 
-#include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/server.h"
+/// Creates any necessary security handshakers and adds them to
+/// \a handshake_mgr.
+void grpc_security_create_handshakers(grpc_exec_ctx *exec_ctx,
+                                      tsi_handshaker *handshaker,
+                                      grpc_security_connector *connector,
+                                      grpc_handshake_manager *handshake_mgr);
 
-int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  int port_num = 0;
-  GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
-                 (server, addr));
-  grpc_error* err = grpc_chttp2_server_add_port(
-      &exec_ctx, server, addr,
-      grpc_channel_args_copy(grpc_server_get_channel_args(server)),
-      NULL /* handshaker_factory */, &port_num);
-  if (err != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
-    grpc_error_free_string(msg);
-    GRPC_ERROR_UNREF(err);
-  }
-  grpc_exec_ctx_finish(&exec_ctx);
-  return port_num;
-}
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */
