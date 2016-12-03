@@ -73,7 +73,6 @@ void grpc_chttp2_server_handshaker_factory_destroy(
 grpc_error *grpc_chttp2_server_add_port(
     grpc_exec_ctx *exec_ctx, grpc_server *server, const char *addr,
     grpc_channel_args *args,
-    grpc_chttp2_server_handshaker_factory *handshaker_factory,
-    int *port_num);
+    grpc_chttp2_server_handshaker_factory *handshaker_factory, int *port_num);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H */
