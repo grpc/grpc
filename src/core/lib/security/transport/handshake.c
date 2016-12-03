@@ -63,7 +63,9 @@ typedef struct {
   grpc_closure on_handshake_data_received_from_peer;
   grpc_auth_context *auth_context;
   grpc_timer timer;
-  gpr_refcount refs;
+  bool timer_done;
+  gpr_mu timer_done_mu;
+  gpr_cv timer_done_cv;
 } grpc_security_handshake;
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
@@ -100,26 +102,50 @@ static void security_connector_remove_handshake(grpc_security_handshake *h) {
   gpr_mu_unlock(&sc->mu);
 }
 
-static void unref_handshake(grpc_security_handshake *h) {
-  if (gpr_unref(&h->refs)) {
-    if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
-    if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
-    grpc_slice_buffer_destroy(&h->left_overs);
-    grpc_slice_buffer_destroy(&h->outgoing);
-    grpc_slice_buffer_destroy(&h->incoming);
-    GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
-    GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
-    gpr_free(h);
+static void destroy_handshake(grpc_exec_ctx *exec_ctx,
+                              grpc_security_handshake *h,
+                              bool cleanup_endpoints) {
+  if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
+  if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
+  grpc_slice_buffer_destroy(&h->left_overs);
+  grpc_slice_buffer_destroy(&h->outgoing);
+  grpc_slice_buffer_destroy(&h->incoming);
+
+  if (cleanup_endpoints) {
+    if (h->secure_endpoint != NULL) {
+      grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
+      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
+    } else {
+      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
+    }
   }
+  gpr_mu_destroy(&h->timer_done_mu);
+  gpr_cv_destroy(&h->timer_done_cv);
+  GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
+  GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
+  gpr_free(h);
 }
 
 static void security_handshake_done(grpc_exec_ctx *exec_ctx,
                                     grpc_security_handshake *h,
                                     grpc_error *error) {
   grpc_timer_cancel(exec_ctx, &h->timer);
+  grpc_exec_ctx_flush(exec_ctx);
+  /* Wait for timer callback to finish.
+   * Normally it has either been run in the above flush if cancelled or has
+   * timed out previously. If the timeout callback is running in another
+   * thread's completion_queue_next, we wait for its completion here.
+   * More context: https://github.com/grpc/grpc/issues/8744 */
+  gpr_mu_lock(&h->timer_done_mu);
+  while (!h->timer_done) {
+    gpr_cv_wait(&h->timer_done_cv, &h->timer_done_mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&h->timer_done_mu);
   if (!h->is_client_side) {
     security_connector_remove_handshake(h);
   }
+  bool cleanup_endpoints = false;
   if (error == GRPC_ERROR_NONE) {
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_OK, h->secure_endpoint,
           h->auth_context);
@@ -128,15 +154,10 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
     grpc_error_free_string(msg);
 
-    if (h->secure_endpoint != NULL) {
-      grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
-      grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
-    } else {
-      grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
-    }
+    cleanup_endpoints = true;
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   }
-  unref_handshake(h);
+  destroy_handshake(exec_ctx, h, cleanup_endpoints);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -319,7 +340,10 @@ static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_shutdown(exec_ctx, h->wrapped_endpoint);
   }
-  unref_handshake(h);
+  gpr_mu_lock(&h->timer_done_mu);
+  h->timer_done = true;
+  gpr_cv_signal(&h->timer_done_cv);
+  gpr_mu_unlock(&h->timer_done_mu);
 }
 
 void grpc_do_security_handshake(
@@ -339,7 +363,8 @@ void grpc_do_security_handshake(
   h->wrapped_endpoint = nonsecure_endpoint;
   h->user_data = user_data;
   h->cb = cb;
-  gpr_ref_init(&h->refs, 2); /* timer and handshake proper each get a ref */
+  gpr_mu_init(&h->timer_done_mu);
+  gpr_cv_init(&h->timer_done_cv);
   grpc_closure_init(&h->on_handshake_data_sent_to_peer,
                     on_handshake_data_sent_to_peer, h);
   grpc_closure_init(&h->on_handshake_data_received_from_peer,
