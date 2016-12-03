@@ -483,7 +483,7 @@ void run_spec(const test_spec *spec) {
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
   arg_array[0].value.integer = RETRY_TIMEOUT;
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
@@ -521,7 +521,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff";
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
   arg_array[0].value.integer = RETRY_TIMEOUT;
   arg_array[1].type = GRPC_ARG_STRING;
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
