@@ -47,7 +47,10 @@ CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {
   InitialAvalanching();
 }
 
-void CompletionQueue::Shutdown() { CompleteAvalanching(); }
+void CompletionQueue::Shutdown() {
+  g_gli_initializer.summon();
+  CompleteAvalanching();
+}
 
 void CompletionQueue::CompleteAvalanching() {
   // Check if this was the last avalanching operation
