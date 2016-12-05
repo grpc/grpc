@@ -93,9 +93,11 @@ RUN pip install simplejson mako
 #======================================
 # More sanity test dependencies (bazel)
 RUN apt-get install -y openjdk-8-jdk
-# TOOD(jtattermusch): pin the bazel version
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel
-RUN cd /bazel && ./compile.sh
+# Check out Bazel version 0.4.1 since this version allows running
+# ./compile.sh without a local protoc dependency
+# TODO(mattkwong): install dependencies to support latest Bazel version if newer
+# version is needed
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel &&   cd /bazel && git checkout tags/0.4.1 && ./compile.sh
 RUN ln -s /bazel/output/bazel /bin/
 
 #===================

@@ -336,16 +336,18 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   int initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
   int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+  int min_backoff_ms = GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (c->args) {
     for (size_t i = 0; i < c->args->num_args; i++) {
       if (0 == strcmp(c->args->args[i].key,
-                      "grpc.testing.fixed_reconnect_backoff")) {
+                      "grpc.testing.fixed_reconnect_backoff_ms")) {
         GPR_ASSERT(c->args->args[i].type == GRPC_ARG_INTEGER);
         fixed_reconnect_backoff = true;
-        initial_backoff_ms = max_backoff_ms = grpc_channel_arg_get_integer(
-            &c->args->args[i],
-            (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
+        initial_backoff_ms = min_backoff_ms = max_backoff_ms =
+            grpc_channel_arg_get_integer(
+                &c->args->args[i],
+                (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
@@ -362,11 +364,11 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     }
   }
   gpr_backoff_init(
-      &c->backoff_state,
+      &c->backoff_state, initial_backoff_ms,
       fixed_reconnect_backoff ? 1.0
                               : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
       fixed_reconnect_backoff ? 0.0 : GRPC_SUBCHANNEL_RECONNECT_JITTER,
-      initial_backoff_ms, max_backoff_ms);
+      min_backoff_ms, max_backoff_ms);
   gpr_mu_init(&c->mu);
 
   return grpc_subchannel_index_register(exec_ctx, key, c);
@@ -643,9 +645,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
 
   /* setup subchannel watching connected subchannel for changes; subchannel
-     ref
-     for connecting is donated
-     to the state watcher */
+     ref for connecting is donated to the state watcher */
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
