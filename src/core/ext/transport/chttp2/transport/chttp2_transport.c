@@ -599,11 +599,13 @@ static void set_write_state(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                  write_state_name(t->write_state),
                                  write_state_name(st), reason));
   t->write_state = st;
-  if (st == GRPC_CHTTP2_WRITE_STATE_IDLE &&
-      t->close_transport_on_writes_finished != NULL) {
-    grpc_error *err = t->close_transport_on_writes_finished;
-    t->close_transport_on_writes_finished = NULL;
-    close_transport_locked(exec_ctx, t, err);
+  if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
+    grpc_exec_ctx_enqueue_list(exec_ctx, &t->run_after_write, NULL);
+    if (t->close_transport_on_writes_finished != NULL) {
+      grpc_error *err = t->close_transport_on_writes_finished;
+      t->close_transport_on_writes_finished = NULL;
+      close_transport_locked(exec_ctx, t, err);
+    }
   }
 }
 
