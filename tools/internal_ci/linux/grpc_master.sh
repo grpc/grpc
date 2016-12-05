@@ -42,7 +42,7 @@ docker --version || true
 
 git submodule update --init
 
-tools/run_tests/run_tests.py -l c || FAILED="true"
+tools/run_tests/run_tests.py -l c -t -x sponge_log.xml || FAILED="true"
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
