@@ -876,9 +876,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = NULL;
     }
-    if (t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE ||
-        (closure->next_data.scratch & CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE) ==
-            0) {
+    if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
+        ((closure->next_data.scratch & CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE) ==
+         0)) {
       grpc_closure_run(exec_ctx, closure, closure->error_data.error);
     } else {
       grpc_closure_list_append(&t->run_after_write, closure,
