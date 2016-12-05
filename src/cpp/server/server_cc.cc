@@ -575,7 +575,7 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
       tag_(tag),
       delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
-  call_cq_->RegisterAvalanching(); // This op will trigger more ops
+  call_cq_->RegisterAvalanching();  // This op will trigger more ops
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 

@@ -102,7 +102,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// instance.
   CompletionQueue() {
     cq_ = g_core_codegen_interface->grpc_completion_queue_create(nullptr);
-    RegisterAvalanching(); // reserve this for the future shutdown
+    RegisterAvalanching();  // reserve this for the future shutdown
   }
 
   /// Wrap \a take, taking ownership of the instance.
