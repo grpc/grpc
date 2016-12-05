@@ -42,4 +42,12 @@ docker --version || true
 
 git submodule update --init
 
-tools/run_tests/run_tests.py -l c --build_only
+tools/run_tests/run_tests.py -l c || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
