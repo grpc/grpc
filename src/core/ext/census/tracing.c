@@ -44,9 +44,7 @@ int census_trace_mask(const census_context *context) {
   return CENSUS_TRACE_MASK_NONE;
 }
 
-void census_set_trace_mask(int trace_mask) {
-  abort();
-}
+void census_set_trace_mask(int trace_mask) { abort(); }
 
 void census_trace_print(census_context *context, uint32_t type,
                         const char *buffer, size_t n) {
