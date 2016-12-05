@@ -18,5 +18,5 @@
 	path = third_party/thrift
 	url = https://github.com/apache/thrift.git
 [submodule "third_party/google_benchmark"]
-	path = third_party/benchmark
+	path = third_party/google_benchmark
 	url = https://github.com/google/benchmark
