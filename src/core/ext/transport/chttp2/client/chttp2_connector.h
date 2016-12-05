@@ -31,20 +31,22 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H
 
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/ext/client_channel/connector.h"
+#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
-/* Calls the callback upon completion. Takes owership of handshaker and
- * read_buffer. */
-void grpc_do_security_handshake(
-    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
-    grpc_security_connector *connector, bool is_client_side,
-    grpc_endpoint *nonsecure_endpoint, grpc_slice_buffer *read_buffer,
-    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
+typedef void (*grpc_chttp2_create_handshakers_func)(
+    grpc_exec_ctx* exec_ctx, void* user_data,
+    grpc_handshake_manager* handshake_mgr);
 
-void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx, void *handshake);
+/// If \a create_handshakers is non-NULL, it will be called with
+/// \a create_handshakers_user_data to add handshakers.
+grpc_connector* grpc_chttp2_connector_create(
+    grpc_exec_ctx* exec_ctx, const char* server_name,
+    grpc_chttp2_create_handshakers_func create_handshakers,
+    void* create_handshakers_user_data);
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_HANDSHAKE_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_CHTTP2_CONNECTOR_H */
