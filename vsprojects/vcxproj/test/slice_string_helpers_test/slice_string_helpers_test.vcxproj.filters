@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\slice\slice_string_helpers_test.c">
+      <Filter>test\core\slice</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{28e4a72c-aa96-0c05-4846-5cf3fc783de6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{2b4c98dc-c5e9-dbd2-65f2-cdb15beee76b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\slice">
+      <UniqueIdentifier>{c638007b-824d-9d7e-dd56-a732dadf7730}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

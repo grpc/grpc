@@ -160,8 +160,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\string_util.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\subprocess.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync.h" />
@@ -194,7 +192,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\percent_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string_windows.h" />
@@ -246,12 +243,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\percent_encoding.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice_buffer.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
     </ClCompile>

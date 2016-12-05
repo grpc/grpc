@@ -76,9 +76,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -140,6 +137,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_common_posix.c">
@@ -241,6 +241,18 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
+      <Filter>src\core\lib\slice</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
@@ -310,7 +322,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\method_config.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.c">
+      <Filter>src\core\lib\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\service_config.c">
       <Filter>src\core\lib\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
@@ -442,13 +457,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.c">
-      <Filter>src\core\lib\security\transport</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
@@ -474,6 +489,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
       <Filter>src\core\lib\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
+      <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\secure</Filter>
@@ -531,6 +549,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.c">
       <Filter>src\core\ext\client_channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
+      <Filter>src\core\ext\transport\chttp2\client</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
@@ -643,6 +664,12 @@
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
@@ -776,9 +803,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -846,6 +870,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h">
@@ -926,6 +953,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h">
+      <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h">
+      <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
@@ -974,7 +1007,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\method_config.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.h">
+      <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\service_config.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h">
@@ -1091,13 +1127,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.h">
-      <Filter>src\core\lib\security\transport</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h">
@@ -1123,6 +1159,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h">
       <Filter>src\core\lib\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h">
+      <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\client_channel.h">
       <Filter>src\core\ext\client_channel</Filter>
@@ -1168,6 +1207,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_channel\uri_parser.h">
       <Filter>src\core\ext\client_channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h">
+      <Filter>src\core\ext\transport\chttp2\client</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
@@ -1390,6 +1432,9 @@
     </Filter>
     <Filter Include="src\core\lib\security\util">
       <UniqueIdentifier>{fcd7b397-aadd-556a-8aae-0cb7c893fbe0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\slice">
+      <UniqueIdentifier>{aed4de18-0b8a-0fed-6f5b-41ea3442310d}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\surface">
       <UniqueIdentifier>{a21971fb-304f-da08-b1b2-7bd8df8ac373}</UniqueIdentifier>

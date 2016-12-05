@@ -48,7 +48,7 @@
 
 static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_mdstr *mdstr,
                        const char *str) {
-  GPR_ASSERT(gpr_slice_str_cmp(mdstr->slice, str) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(mdstr->slice, str) == 0);
 }
 
 static void assert_index(const grpc_chttp2_hptbl *tbl, uint32_t idx,
