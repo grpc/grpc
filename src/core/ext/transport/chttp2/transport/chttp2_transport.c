@@ -822,8 +822,14 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
   }
 }
 
+/* Flag that this closure barrier wants stats to be updated before finishing */
 #define CLOSURE_BARRIER_STATS_BIT (1 << 0)
-#define CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE (1 << 1)
+/* Flag that this closure barrier may be covering a write in a pollset, and so
+   we should not complete this closure until we can prove that the write got
+   scheduled */
+#define CLOSURE_BARRIER_MAY_COVER_WRITE (1 << 1)
+/* First bit of the reference count, stored in the high order bits (with the low
+   bits being used for flags defined above) */
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
 static grpc_closure *add_closure_barrier(grpc_closure *closure) {
@@ -877,8 +883,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
       s->collecting_stats = NULL;
     }
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
-        ((closure->next_data.scratch & CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE) ==
-         0)) {
+        !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       grpc_closure_run(exec_ctx, closure, closure->error_data.error);
     } else {
       grpc_closure_list_append(&t->run_after_write, closure,
@@ -1028,7 +1033,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
 
   if (op->send_initial_metadata != NULL) {
     GPR_ASSERT(s->send_initial_metadata_finished == NULL);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE;
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata = op->send_initial_metadata;
     const size_t metadata_size =
@@ -1082,7 +1087,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->send_message != NULL) {
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE;
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
       grpc_chttp2_complete_closure_step(
@@ -1120,7 +1125,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
 
   if (op->send_trailing_metadata != NULL) {
     GPR_ASSERT(s->send_trailing_metadata_finished == NULL);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_CANNOT_RUN_WITH_WRITE;
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->send_trailing_metadata = op->send_trailing_metadata;
     const size_t metadata_size =
