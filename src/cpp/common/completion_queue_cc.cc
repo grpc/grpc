@@ -44,7 +44,7 @@ namespace grpc {
 static internal::GrpcLibraryInitializer g_gli_initializer;
 
 CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {
-  RegisterAvalanching();
+  InitialAvalanching();
 }
 
 void CompletionQueue::Shutdown() { CompleteAvalanching(); }
