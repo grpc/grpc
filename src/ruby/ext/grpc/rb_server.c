@@ -67,17 +67,19 @@ static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
   grpc_event ev;
   // This can be started by app or implicitly by GC. Avoid a race between these.
   if (gpr_atm_full_fetch_add(&server->shutdown_started, (gpr_atm)1) == 0) {
-    grpc_server_shutdown_and_notify(server->wrapped, server->queue, NULL);
-    ev = rb_completion_queue_pluck(server->queue, NULL, deadline, NULL);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) {
-      grpc_server_cancel_all_calls(server->wrapped);
-      rb_completion_queue_pluck(server->queue, NULL,
-                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    if (server->wrapped != NULL) {
+      grpc_server_shutdown_and_notify(server->wrapped, server->queue, NULL);
+      ev = rb_completion_queue_pluck(server->queue, NULL, deadline, NULL);
+      if (ev.type == GRPC_QUEUE_TIMEOUT) {
+        grpc_server_cancel_all_calls(server->wrapped);
+        rb_completion_queue_pluck(server->queue, NULL,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      }
+      grpc_server_destroy(server->wrapped);
+      grpc_rb_completion_queue_destroy(server->queue);
+      server->wrapped = NULL;
+      server->queue = NULL;
     }
-    grpc_server_destroy(server->wrapped);
-    grpc_rb_completion_queue_destroy(server->queue);
-    server->wrapped = NULL;
-    server->queue = NULL;
   }
 }
 
