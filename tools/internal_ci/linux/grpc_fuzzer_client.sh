@@ -28,7 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_master.sh"
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+git submodule update --init
+
+# download fuzzer docker image from dockerhub
+export DOCKERHUB_ORGANIZATION=grpctesting
+config=asan-trace-cmp runtime=3600 tools/jenkins/run_fuzzer.sh client_fuzzer
