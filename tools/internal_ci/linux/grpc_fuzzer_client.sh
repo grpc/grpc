@@ -37,4 +37,5 @@ git submodule update --init
 
 # download fuzzer docker image from dockerhub
 export DOCKERHUB_ORGANIZATION=grpctesting
-config=asan-trace-cmp runtime=3600 tools/jenkins/run_fuzzer.sh client_fuzzer
+# runtime 23 * 60 mins
+config=asan-trace-cmp runtime=82800 tools/jenkins/run_fuzzer.sh client_fuzzer
