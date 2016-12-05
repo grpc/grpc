@@ -225,7 +225,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testResponseMetadataKVO {
