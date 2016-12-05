@@ -102,7 +102,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// instance.
   CompletionQueue() {
     cq_ = g_core_codegen_interface->grpc_completion_queue_create(nullptr);
-    RegisterAvalanching();  // reserve this for the future shutdown
+    InitialAvalanching();  // reserve this for the future shutdown
   }
 
   /// Wrap \a take, taking ownership of the instance.
@@ -174,6 +174,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
   /// elsehwere)
+  void InitialAvalanching() {
+    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
+  }
   void RegisterAvalanching() {
     gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
                                  static_cast<gpr_atm>(1));
